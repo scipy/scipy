@@ -7,8 +7,25 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+from typing import (
+    Optional,
+    Union,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import numpy as np
+
+IntNumber = Union[int, np.integer]
+DecimalNumber = Union[float, np.floating, np.integer]
+
+# Since Generator was introduced in numpy 1.17, the following condition is needed for
+# backward compatibility
+if TYPE_CHECKING:
+    SeedType = Optional[Union[IntNumber, np.random.Generator,
+                              np.random.RandomState]]
+    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
+                                                         np.random.RandomState])
 
 try:
     from numpy.random import Generator as Generator
