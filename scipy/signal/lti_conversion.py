@@ -398,7 +398,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     >>> C = np.array([[1, 0]])
     >>> D = np.array([[0]])
     >>> l_system = lti(A, B, C, D)
-    >>> t, x = l_system.step(T=np.linspace(0,5,100))
+    >>> t, x = l_system.step(T=np.linspace(0, 5, 100))
     >>> plt.plot(t, x, label='Continuous')
     >>> plt.hlines(1, t[0], t[-1], linestyles='dotted')
 
