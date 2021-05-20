@@ -1041,7 +1041,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
        STATISTICA NEERLANDICA, 24(1), 1970
 
     .. [2] "Boschloo's test", Wikipedia,
-           https://en.wikipedia.org/wiki/Boschloo%27s_test
+       https://en.wikipedia.org/wiki/Boschloo%27s_test
 
     .. [3] Lise M. Saari et al. "Employee attitudes and job satisfaction",
        Human Resource Management, 43(4), 395-407, 2004,
@@ -1049,8 +1049,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     Examples
     --------
-    In the following example, we consider the article "Work-Related
-    Attitudes" [3]_
+    In the following example, we consider the article "Employee
+    attitudes and job satisfaction" [3]_
     which reports the results of a survey from 63 Scientists and 117 College
     Professors. Of the 63 Scientists, 31 said they were very satisfied with
     their jobs, whereas 74 of the College Professors were very satisfied
@@ -1094,8 +1094,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     if n <= 0:
         raise ValueError(
-            "Number of points `n` must be strictly positive, "
-            f"found {n!r}"
+            "Number of points `n` must be strictly positive,"
+            f" found {n!r}"
         )
 
     table = np.asarray(table, dtype=np.int64)
