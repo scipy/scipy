@@ -83,7 +83,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     The nuclear norm is the sum of the singular values.
 
     Both the Frobenius and nuclear norm orders are only defined for
-    matrices and raise a ValueError when `a.ndim != 2`.
+    matrices.
 
     References
     ----------
