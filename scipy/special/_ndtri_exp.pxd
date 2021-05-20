@@ -153,7 +153,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     if y >= -DBL_MAX * 0.5:
         x = sqrt(-2 * y)
     else:
-        x = M_SQRT2 * sqrt(-y) # sqrt(-2 * y)
+        x = M_SQRT2 * sqrt(-y)
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
