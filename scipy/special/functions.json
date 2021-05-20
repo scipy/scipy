@@ -1423,5 +1423,10 @@
         "_wright_bessel.pxd": {
             "wright_bessel_scalar": "ddd->d"
         }
+    },
+    "ndtri_exp": {
+	"_ndtri_exp.pxd": {
+	    "ndtri_exp": "d->d"
+	}
     }
 }
