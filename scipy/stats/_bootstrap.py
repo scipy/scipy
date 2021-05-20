@@ -252,7 +252,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> res = bootstrap(data, np.std, confidence_level=0.9,
     ...                 random_state=rng)
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=3.570397848712619, high=4.3744412312285235)
+    ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
 
     If we sample from the distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
@@ -267,7 +267,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    873
+    875
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
@@ -281,14 +281,14 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     ``n_trials = 1000`` samples.
 
     >>> print(ci_l[995:])
-    [3.7168901  3.69223008 3.41495018 3.3701263  3.45061973]
+    [3.77729695 3.75090233 3.45829131 3.34078217 3.48072829]
     >>> print(ci_u[995:])
-    [4.78001236 4.79348079 4.23119694 4.32124204 4.52526014]
+    [4.88316666 4.86924034 4.32032996 4.2822427  4.59360598]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    897
+    900
 
     `bootstrap` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
@@ -351,7 +351,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=0.9952937934357521, high=0.9973835291326294)
+    ConfidenceInterval(low=0.9950085825848622, high=0.9971212407917497)
 
     """
     # Input validation
