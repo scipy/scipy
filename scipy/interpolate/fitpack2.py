@@ -97,7 +97,7 @@ class UnivariateSpline:
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If s is None, ``s = len(w)`` which should be a good value if
+        If `s` is None, ``s = len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
         If 0, spline will interpolate through all data points. Default is None.
     ext : int or str, optional
