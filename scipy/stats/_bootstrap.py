@@ -351,7 +351,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=0.9950085825848622, high=0.9971212407917497)
+    ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
     """
     # Input validation
