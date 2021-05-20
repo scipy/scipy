@@ -3011,7 +3011,6 @@ add_newdoc("eval_legendre",
 
     Evaluate the first-order Legendre polynomial between -1 and 1
 
-    >>> import numpy as np
     >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
     >>> eval_legendre(1, X)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
@@ -9653,4 +9652,54 @@ add_newdoc("wright_bessel",
     ----------
     .. [1] Digital Library of Mathematical Functions, 10.46.
            https://dlmf.nist.gov/10.46.E1
+    """)
+
+
+add_newdoc("ndtri_exp",
+    r"""
+    ndtri_exp(y)
+
+    Inverse of `log_ndtr` vs x. Allows for greater precision than
+    `ndtri` composed with `numpy.exp` for very small values of y and for
+    y close to 0.
+
+    Parameters
+    ----------
+    y : array_like of float
+
+    Returns
+    -------
+    scalar or ndarray
+        Inverse of the log CDF of the standard normal distribution, evaluated
+        at y.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    `ndtri_exp` agrees with the naive implementation when the latter does
+    not suffer from underflow.
+
+    >>> sc.ndtri_exp(-1)
+    -0.33747496376420244
+    >>> sc.ndtri(np.exp(-1))
+    -0.33747496376420244
+
+    For extreme values of y, the naive approach fails
+
+    >>> sc.ndtri(np.exp(-800))
+    -inf
+    >>> sc.ndtri(np.exp(-1e-20))
+    inf
+
+    whereas `ndtri_exp` is still able to compute the result to high precision.
+
+    >>> sc.ndtri_exp(-800)
+    -39.88469483825668
+    >>> sc.ndtri_exp(-1e-20)
+    9.262340089798409
+
+    See Also
+    --------
+    log_ndtr, ndtri, ndtr
     """)
