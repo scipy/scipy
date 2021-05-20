@@ -137,7 +137,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
 def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
-              n_resamples=9999, method='basic', random_state=None):
+              n_resamples=9999, method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
