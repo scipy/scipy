@@ -83,7 +83,7 @@ class UnivariateSpline:
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting.  Must be positive.  If weights are None,
+        Weights for spline fitting.  Must be positive.  If `w` is None,
         weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
