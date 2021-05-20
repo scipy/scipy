@@ -90,7 +90,7 @@ class UnivariateSpline:
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        `k` = 3 is a cubic spline. Default is 3.
+        ``k = 3`` is a cubic spline. Default is 3.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
