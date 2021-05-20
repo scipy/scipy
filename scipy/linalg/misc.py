@@ -146,7 +146,6 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     else:
         a = np.asarray(a)
 
-    # Only use optimized norms if axis and keepdims are not specified.
     if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
         if ord in (None, 2) and (a.ndim == 1):
