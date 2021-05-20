@@ -18,26 +18,29 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     """
     Matrix or vector norm.
 
-    This function is able to return one of seven different matrix norms,
+    This function is able to return one of eight different matrix norms,
     or one of an infinite number of vector norms (described below), depending
-    on the value of the ``ord`` parameter.
+    on the value of the ``ord`` parameter. For tensors with rank different from
+    1 or 2, only `ord=None` is supported.
 
     Parameters
     ----------
-    a : (M,) or (M, N) array_like
-        Input array. If `axis` is None, `a` must be 1D or 2D.
-    ord : {non-zero int, inf, -inf, 'fro'}, optional
+    a : array_like
+        Input array. If `axis` is None, `a` must be 1-D or 2-D, unless `ord`
+        is None. If both `axis` and `ord` are None, the 2-norm of
+        ``a.ravel`` will be returned.
+    ord : {int, inf, -inf, 'fro', 'nuc', None}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
-        `inf` object
+        `inf` object.
     axis : {int, 2-tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `a` along which to
-        compute the vector norms.  If `axis` is a 2-tuple, it specifies the
+        compute the vector norms. If `axis` is a 2-tuple, it specifies the
         axes that hold 2-D matrices, and the matrix norms of these matrices
-        are computed.  If `axis` is None then either a vector norm (when `a`
+        are computed. If `axis` is None then either a vector norm (when `a`
         is 1-D) or a matrix norm (when `a` is 2-D) is returned.
     keepdims : bool, optional
         If this is set to True, the axes which are normed over are left in the
-        result as dimensions with size one.  With this option the result will
+        result as dimensions with size one. With this option the result will
         broadcast correctly against the original `a`.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
@@ -62,23 +65,25 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     =====  ============================  ==========================
     None   Frobenius norm                2-norm
     'fro'  Frobenius norm                --
-    inf    max(sum(abs(x), axis=1))      max(abs(x))
-    -inf   min(sum(abs(x), axis=1))      min(abs(x))
-    0      --                            sum(x != 0)
-    1      max(sum(abs(x), axis=0))      as below
-    -1     min(sum(abs(x), axis=0))      as below
+    'nuc'  nuclear norm                  --
+    inf    max(sum(abs(a), axis=1))      max(abs(a))
+    -inf   min(sum(abs(a), axis=1))      min(abs(a))
+    0      --                            sum(a != 0)
+    1      max(sum(abs(a), axis=0))      as below
+    -1     min(sum(abs(a), axis=0))      as below
     2      2-norm (largest sing. value)  as below
     -2     smallest singular value       as below
-    other  --                            sum(abs(x)**ord)**(1./ord)
+    other  --                            sum(abs(a)**ord)**(1./ord)
     =====  ============================  ==========================
 
     The Frobenius norm is given by [1]_:
 
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
 
-    The ``axis`` and ``keepdims`` arguments are passed directly to
-    ``numpy.linalg.norm`` and are only usable if they are supported
-    by the version of numpy in use.
+    The nuclear norm is the sum of the singular values.
+
+    Both the Frobenius and nuclear norm orders are only defined for
+    matrices.
 
     References
     ----------
@@ -141,15 +146,14 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     else:
         a = np.asarray(a)
 
-    # Only use optimized norms if axis and keepdims are not specified.
-    if a.dtype.char in 'fdFD' and axis is None and not keepdims:
+    if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
             nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='preferred')
             return nrm2(a)
 
-        if a.ndim == 2 and axis is None and not keepdims:
+        if a.ndim == 2:
             # Use lapack for a couple fast matrix norms.
             # For some reason the *lange frobenius norm is slow.
             lange_args = None
@@ -169,14 +173,8 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
                 lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
                 return lange(*lange_args)
 
-    # Filter out the axis and keepdims arguments if they aren't used so they
-    # are never inadvertently passed to a version of numpy that doesn't
-    # support them.
-    if axis is not None:
-        if keepdims:
-            return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
-        return np.linalg.norm(a, ord=ord, axis=axis)
-    return np.linalg.norm(a, ord=ord)
+    # fall back to numpy in every other case
+    return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
 
 
 def _datacopied(arr, original):
