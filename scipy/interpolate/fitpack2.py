@@ -72,8 +72,8 @@ class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
-    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. `s`
-    specifies the number of knots by specifying a smoothing condition.
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
+    `s` specifies the number of knots by specifying a smoothing condition.
 
     Parameters
     ----------
@@ -83,15 +83,16 @@ class UnivariateSpline:
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting. Must be positive. If `w` is None,
-        weights are all equal. Default is None.
+        1-D array of weights for spline fitting, of the same length as `x`.
+        Must be positive. If `w` is None, weights are all equal.
+        Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline. Must be 1 <= `k` <= 5.
         ``k=3`` is a cubic spline. Default is 3.
-    s : float or None, optional
+    s : float, optional
         Positive smoothing factor used to choose the number of knots. Number
         of knots will be increased until the smoothing condition is satisfied::
 
@@ -99,14 +100,15 @@ class UnivariateSpline:
 
         If `s` is None, ``s=len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
-        If 0, spline will interpolate through all data points. Default is None.
+        If `s` is 0, spline will interpolate through all data points.
+        Default is None.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
-        * if ext=1 or 'zeros', return 0
-        * if ext=2 or 'raise', raise a ValueError
+        * if ext=1 or 'zeros', return 0.
+        * if ext=2 or 'raise', raise a ValueError.
         * if ext=3 of 'const', return the boundary value.
 
         Default is 0.
@@ -325,27 +327,26 @@ class UnivariateSpline:
 
     def __call__(self, x, nu=0, ext=None):
         """
-        Evaluate spline (or its nu-th derivative) at positions x.
+        Evaluate spline (or its nu-th derivative) at positions `x`.
 
         Parameters
         ----------
-        x : array_like
-            A 1-D array of points at which to return the value of the smoothed
+        x : (N,) array_like
+            1-D array of points at which to return the value of the smoothed
             spline or its derivatives. Note: `x` can be unordered but the
             evaluation is more efficient if `x` is (partially) ordered.
-        nu  : int
-            The order of derivative of the spline to compute.
-        ext : int
-            Controls the value returned for elements of `x` not in the
-            interval defined by the knot sequence.
+        nu  : int, optional
+            The order of derivative of the spline to compute. Default is 0.
+        ext : int or str, optional
+            Controls the extrapolation mode for elements
+            not in the interval defined by the knot sequence.
 
             * if ext=0 or 'extrapolate', return the extrapolated value.
-            * if ext=1 or 'zeros', return 0
-            * if ext=2 or 'raise', raise a ValueError
+            * if ext=1 or 'zeros', return 0.
+            * if ext=2 or 'raise', raise a ValueError.
             * if ext=3 or 'const', return the boundary value.
 
-            The default value is 0, passed from the initialization of
-            UnivariateSpline.
+            Default is 0.
 
         """
         x = np.asarray(x)
@@ -377,7 +378,7 @@ class UnivariateSpline:
         return data[9][:n-k-1]
 
     def get_residual(self):
-        """Return weighted sum of squared residuals of the spline approximation.
+        """ Return weighted sum of squared residuals of the spline approximation.
 
            This is equivalent to::
 
@@ -425,17 +426,17 @@ class UnivariateSpline:
         return dfitpack.splint(*(self._eval_args+(a, b)))
 
     def derivatives(self, x):
-        """ Return all derivatives of the spline at the point x.
+        """ Return all derivatives of the spline at the point `x`.
 
         Parameters
         ----------
         x : float
-            The point to evaluate the derivatives at.
+            The point to evaluate the derivatives at `x`.
 
         Returns
         -------
-        der : ndarray, shape(k+1,)
-            Derivatives of the orders 0 to k.
+        d : ndarray, shape(k+1,)
+            Derivatives of the orders 0 to `k`.
 
         Examples
         --------
@@ -473,12 +474,12 @@ class UnivariateSpline:
         Parameters
         ----------
         n : int, optional
-            Order of derivative to evaluate. Default: 1
+            Order of derivative to evaluate. Default is 1.
 
         Returns
         -------
         spline : UnivariateSpline
-            Spline of order k2=k-n representing the derivative of this
+            Spline of order ``k2=k-n`` representing the derivative of this
             spline.
 
         See Also
@@ -522,12 +523,12 @@ class UnivariateSpline:
         Parameters
         ----------
         n : int, optional
-            Order of antiderivative to evaluate. Default: 1
+            Order of antiderivative to evaluate. Default is 1
 
         Returns
         -------
         spline : UnivariateSpline
-            Spline of order k2=k+n representing the antiderivative of this
+            Spline of order ``k2=k+n`` representing the antiderivative of this
             spline.
 
         Notes
@@ -581,13 +582,13 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     Parameters
     ----------
     x : (N,) array_like
-        1-D array of independent input data. Must be increasing;
-        must be strictly increasing.
+        1-D array of independent input data. Must be strictly increasing.
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting. Must be positive. If `w` is None,
-        weights are all equal. Default is None.
+        1-D array of weights for spline fitting, of the same length as `x`.
+        Must be positive. If `w` is None, weights are all equal.
+        Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
@@ -599,8 +600,8 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
-        * if ext=1 or 'zeros', return 0
-        * if ext=2 or 'raise', raise a ValueError
+        * if ext=1 or 'zeros', return 0.
+        * if ext=2 or 'raise', raise a ValueError.
         * if ext=3 of 'const', return the boundary value.
 
         Default is 0.
@@ -690,14 +691,13 @@ class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
 
-    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. `t`
     specifies the internal knots of the spline
 
     Parameters
     ----------
     x : (N,) array_like
-        1-D array of independent input data. Must be increasing;
-        must be strictly increasing.
+        1-D array of independent input data. Must be increasing.
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     t : (M,) array_like
@@ -707,8 +707,9 @@ class LSQUnivariateSpline(UnivariateSpline):
             bbox[0] < t[0] < ... < t[-1] < bbox[-1]
 
     w : (N,) array_like, optional
-        Weights for spline fitting. Must be positive. If `w` is None,
-        weights are all equal. Default is None.
+        1-D array of weights for spline fitting, of the same length as `x`.
+        Must be positive. If `w` is None, weights are all equal.
+        Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None
@@ -720,8 +721,8 @@ class LSQUnivariateSpline(UnivariateSpline):
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
-        * if ext=1 or 'zeros', return 0
-        * if ext=2 or 'raise', raise a ValueError
+        * if ext=1 or 'zeros', return 0.
+        * if ext=2 or 'raise', raise a ValueError.
         * if ext=3 of 'const', return the boundary value.
 
         Default is 0.
@@ -830,9 +831,9 @@ class LSQUnivariateSpline(UnivariateSpline):
 # ############### Bivariate spline ####################
 
 class _BivariateSplineBase:
-    """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
-    [xb,xe] x [yb, ye] calculated from a given set of data points
-    (x,y,z).
+    """ Base class for Bivariate spline ``s(x,y)`` interpolation on the rectangle
+    [`xb`,`xe`] x [`yb`, `ye`] calculated from a given set of data points
+    (`x`,`y`,`z`).
 
     See Also
     --------
@@ -870,30 +871,35 @@ class _BivariateSplineBase:
 
         Parameters
         ----------
-        x, y : array_like
-            Input coordinates.
+        x : (N,) array_like
+            1-D array of independent input data. Must be increasing;
+            must be strictly increasing if `grid` is True.
+        y : (N,) array_like
+            1-D array of dependent input data, of the same length as `x`.
+        dx : int, optional
+            Order of `x`-derivative. Default is 0.
+
+            .. versionadded:: 0.14.0
+        dy : int, optional
+            Order of `y`-derivative. Default is 0.
+
+            .. versionadded:: 0.14.0
+        grid : bool, optional
+            Whether to evaluate the results on a grid spanned by the
+            input arrays, or at points specified by the input arrays.
 
             If `grid` is False, evaluate the spline at points ``(x[i],
-            y[i]), i=0, ..., len(x)-1``.  Standard Numpy broadcasting
+            y[i]), i=0, ..., len(x)-1``. Standard Numpy broadcasting
             is obeyed.
 
             If `grid` is True: evaluate spline at the grid points
-            defined by the coordinate arrays x, y. The arrays must be
+            defined by the coordinate arrays `x`, `y`. The arrays must be
             sorted to increasing order.
 
             Note that the axis ordering is inverted relative to
             the output of meshgrid.
-        dx : int
-            Order of x-derivative
 
-            .. versionadded:: 0.14.0
-        dy : int
-            Order of y-derivative
-
-            .. versionadded:: 0.14.0
-        grid : bool
-            Whether to evaluate the results on a grid spanned by the
-            input arrays, or at points specified by the input arrays.
+            Default value is True.
 
             .. versionadded:: 0.14.0
 
@@ -1035,21 +1041,23 @@ class BivariateSpline(_BivariateSplineBase):
 
     def ev(self, xi, yi, dx=0, dy=0):
         """
-        Evaluate the spline at points
+        Evaluate the spline at the points `xi` and `yi`.
 
         Returns the interpolated value at ``(xi[i], yi[i]),
         i=0,...,len(xi)-1``.
 
         Parameters
         ----------
-        xi, yi : array_like
-            Input coordinates. Standard Numpy broadcasting is obeyed.
+        xi : (N,) array_like
+            1-D array of independent input data. Must be increasing.
+        yi : (N,) array_like
+            1-D array of dependent input data, of the same length as `xi`.
         dx : int, optional
-            Order of x-derivative
+            Order of x-derivative. Default is 0.
 
             .. versionadded:: 0.14.0
         dy : int, optional
-            Order of y-derivative
+            Order of y-derivative. Default is 0.
 
             .. versionadded:: 0.14.0
         """
@@ -1057,14 +1065,18 @@ class BivariateSpline(_BivariateSplineBase):
 
     def integral(self, xa, xb, ya, yb):
         """
-        Evaluate the integral of the spline over area [xa,xb] x [ya,yb].
+        Evaluate the integral of the spline over area [`xa`,`xb`] x [`ya`,`yb`].
 
         Parameters
         ----------
-        xa, xb : float
-            The end-points of the x integration interval.
-        ya, yb : float
-            The end-points of the y integration interval.
+        xa : float
+            The start-point of the `x` integration interval.
+        xb : float
+            The end-point of the `x` integration interval.
+        ya : float
+            The start-point of the `y` integration interval.
+        yb : float
+            The end-point of the `y` integration interval.
 
         Returns
         -------
@@ -1102,25 +1114,39 @@ class SmoothBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x, y, z : array_like
-        1-D sequences of data points (order is not important).
-    w : array_like, optional
-        Positive 1-D sequence of weights, of same length as `x`, `y` and `z`.
+    x : (N,) array_like
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
+    y : (N,) array_like
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
+    z : (N,N, ) array_like
+        2-D array of dependent input data, with the shape of
+        ``(x.size, y.size)``.
+    w : (N, ) array_like, optional
+        Positive 1-D sequence of weights, of same length as `x`, `y`, and `z`.
+        If `w` is None, weights are all equal. Default is None.
     bbox : array_like, optional
-        Sequence of length 4 specifying the boundary of the rectangular
-        approximation domain.  By default,
-        ``bbox=[min(x), max(x), min(y), max(y)]``.
-    kx, ky : ints, optional
-        Degrees of the bivariate spline. Default is 3.
+        4-sequence specifying the boundary of the rectangular
+        approximation domain. If `bbox` is None,
+        ``bbox=[min(x), max(x), min(y), max(y)]``. Default is None.
+    kx : int, optional
+        Degrees of the bivariate spline for values `x`. Default is 3.
+    ky : int, optional
+        Degrees of the bivariate spline for values `y`. Default is 3.
     s : float, optional
-        Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
-        estimate of the standard deviation of ``z[i]``.
+        Positive smoothing factor used to choose the number of knots. Number
+        of knots will be increased until the smoothing condition is satisfied::
+
+        sum((w[i]*(z[i]-spl(x[i], y[i])))**2, axis=0) <= s
+
+        If `s` is None, ``s=len(w)`` which should be a good value if
+        ``1/w[i]`` is an estimate of the standard deviation of ``z[i]``.
+        Default is None.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval ``(0, 1)``, the default is 1e-16.
+        interval ``(0, 1)``. Default is 1e-16.
 
     See Also
     --------
@@ -1190,22 +1216,32 @@ class LSQBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x, y, z : array_like
-        1-D sequences of data points (order is not important).
-    tx, ty : array_like
-        Strictly ordered 1-D sequences of knots coordinates.
-    w : array_like, optional
+    x : (N,) array_like
+        1-D array of independent input data. Must be increasing.
+    y : (N,) array_like
+        1-D array of independent input data. Must be increasing.
+    z : (N,N, ) array_like
+        2-D array of dependent input data, with the shape of
+        ``(x.size, y.size)``.
+    tx : (N, ) array_like
+        1-D array of strictly ordered knots coordinates for `x`.
+    ty : (N, ) array_like
+        1-D array of strictly ordered knots coordinates for `y`.
+    w : (N, ) array_like, optional
         Positive 1-D array of weights, of the same length as `x`, `y` and `z`.
+        If `w` is None, weights are all equal. Default is None.
     bbox : (4,) array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
         ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
-    kx, ky : ints, optional
-        Degrees of the bivariate spline. Default is 3.
+    kx : int, optional
+        Degrees of the bivariate spline for values `x`. Default is 3.
+    ky : int, optional
+        Degrees of the bivariate spline for values `y`. Default is 3.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval ``(0, 1)``, the default is 1e-16.
+        interval ``(0, 1)``. Default is 1e-16.
 
     See Also
     --------
@@ -1287,20 +1323,31 @@ class RectBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x,y : array_like
-        1-D arrays of coordinates in strictly ascending order.
-    z : array_like
-        2-D array of data with shape (x.size,y.size).
+    x : (N,) array_like
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
+    y : (N,) array_like
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
+    z : (N,N, ) array_like
+        2-D array of dependent input data, with the shape of
+        ``(x.size, y.size)``.
     bbox : array_like, optional
-        Sequence of length 4 specifying the boundary of the rectangular
-        approximation domain.  By default,
-        ``bbox=[min(x), max(x), min(y), max(y)]``.
-    kx, ky : ints, optional
-        Degrees of the bivariate spline. Default is 3.
+        4-sequence specifying the boundary of the rectangular
+        approximation domain. If `bbox` is None,
+        ``bbox=[min(x), max(x), min(y), max(y)]``. Default is None.
+    kx : int, optional
+        Degrees of the bivariate spline for values `x`. Default is 3.
+    ky : int, optional
+        Degrees of the bivariate spline for values `y`. Default is 3.
     s : float, optional
-        Positive smoothing factor defined for estimation condition:
-        ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
-        function. Default is ``s=0``, which is for interpolation.
+        Positive smoothing factor used to choose the number of knots. Number
+        of knots will be increased until the smoothing condition is satisfied::
+
+        sum((z[i]-spl(x[i], y[i]))**2, axis=0) <= s
+
+        If `s` is 0, spline will interpolate through all data points.
+        Default is 0.
 
     See Also
     --------
@@ -1409,27 +1456,34 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta, phi : array_like
-            Input coordinates.
+        theta : (N,) array_like
+            1-D array of independent input data. Must be strictly increasing.
+        phi : (N,) array_like
+            1-D array of dependent input data, of the same length as `theta`.
+        dtheta : int, optional
+            Order of `theta`-derivative. Default is 0.
+
+            .. versionadded:: 0.14.0
+        dphi : int, optional
+            Order of `phi`-derivative. Default is 0.
+
+            .. versionadded:: 0.14.0
+        grid : bool, optional
+            Whether to evaluate the results on a grid spanned by the
+            input arrays, or at points specified by the input arrays.
 
             If `grid` is False, evaluate the spline at points
-            ``(theta[i], phi[i]), i=0, ..., len(x)-1``.  Standard
+            ``(theta[i], phi[i]), i=0, ..., len(x)-1``. Standard
             Numpy broadcasting is obeyed.
 
             If `grid` is True: evaluate spline at the grid points
-            defined by the coordinate arrays theta, phi. The arrays
+            defined by the coordinate arrays `theta`, `phi`. The arrays
             must be sorted to increasing order.
-        dtheta : int, optional
-            Order of theta-derivative
 
-            .. versionadded:: 0.14.0
-        dphi : int
-            Order of phi-derivative
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
 
-            .. versionadded:: 0.14.0
-        grid : bool
-            Whether to evaluate the results on a grid spanned by the
-            input arrays, or at points specified by the input arrays.
+            Default is True.
 
             .. versionadded:: 0.14.0
 
@@ -1452,16 +1506,18 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta, phi : array_like
-            Input coordinates. Standard Numpy broadcasting is obeyed.
+        theta : (N,) array_like
+            1-D array of independent input data. Must be strictly increasing.
+        phi : (N,) array_like
+            1-D array of dependent input data, of the same length as `theta`.
         dtheta : int, optional
-            Order of theta-derivative
+            Order of `theta`-derivative. Default is 0.
 
             .. versionadded:: 0.14.0
         dphi : int, optional
-            Order of phi-derivative
+            Order of `phi`-derivative. Default is 0.
 
-            .. versionadded:: 0.14.0
+            .. versionadded:: 0.14.00
         """
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
@@ -1474,21 +1530,33 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta, phi, r : array_like
-        1-D sequences of data points (order is not important). Coordinates
+    theta : (N,) array_like
+        1-D array of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
-    w : array_like, optional
-        Positive 1-D sequence of weights.
+        ``[0, pi]``.
+    phi : (N,) array_like
+        1-D array of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval
+        ``[0, 2pi]``.
+    r : (N,N, ) array_like
+        2-D array of data with shape ``(u.size, v.size)``.
+    w : (N, ) array_like, optional
+        1-D array of weights for spline fitting. Must be positive.
+        If `w` is None, weights are all equal. Default is None.
     s : float, optional
-        Positive smoothing factor defined for estimation condition:
-        ``sum((w(i)*(r(i) - s(theta(i), phi(i))))**2, axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
-        estimate of the standard deviation of ``r[i]``.
+        Positive smoothing factor defined for estimation condition::
+
+        sum((w(i)*(r(i) - spl(theta(i), phi(i))))**2, axis=0) <= s
+
+        If `s` is None, ``s=len(w)`` which should be a good value if
+        ``1/w[i]`` is an estimate of the standard deviation of ``r[i]``.
+        If `s` is 0, spline will interpolate through all data points.
+        Default is 0.
+
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval ``(0, 1)``, the default is 1e-16.
+        interval ``(0, 1)``. Default is 1e-16.
 
     See Also
     --------
@@ -1620,20 +1688,29 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta, phi, r : array_like
-        1-D sequences of data points (order is not important). Coordinates
+    theta : (N,) array_like
+        1-D array of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
-    tt, tp : array_like
+        ``[0, pi]``.
+    phi : (N,) array_like
+        1-D array of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval
+        ``[0, 2pi]``.
+    r : (N,N, ) array_like
+        2-D array of data with shape ``(u.size, v.size)``.
+    tt: (N, ) array_like
         Strictly ordered 1-D sequences of knots coordinates.
-        Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
-    w : array_like, optional
+        Coordinates must satisfy ``0 < tt[i] < pi``
+    tp: (N, ) array_like
+        Strictly ordered 1-D sequences of knots coordinates.
+        Coordinates must satisfy ``0 < tp[i] < 2*pi``.
+    w : (N, ) array_like, optional
         Positive 1-D sequence of weights, of the same length as `theta`, `phi`
-        and `r`.
+        and `r`. If `w` is None, weights are all equal. Default is None.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value within the
-        open interval ``(0, 1)``, the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval ``(0, 1)``. Default is 1e-16.
 
     See Also
     --------
@@ -1802,36 +1879,37 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    u : array_like
+    u : (N,) array_like
         1-D array of colatitude coordinates in strictly ascending order.
         Coordinates must be given in radians and lie within the open interval
         ``(0, pi)``.
-    v : array_like
+    v : (N,) array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
         within the interval ``[-pi, pi)``. Last element (``v[-1]``) must satisfy
         ``v[-1] <= v[0] + 2*pi``.
-    r : array_like
+    r : (N,N,) array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
         Positive smoothing factor defined for estimation condition
-        (``s=0`` is for interpolation).
+        If `s` is 0, spline will interpolate through all data points.
+        Default is None.
     pole_continuity : bool or (bool, bool), optional
         Order of continuity at the poles ``u=0`` (``pole_continuity[0]``) and
         ``u=pi`` (``pole_continuity[1]``).  The order of continuity at the pole
         will be 1 or 0 when this is True or False, respectively.
-        Defaults to False.
+        Defaults is False.
     pole_values : float or (float, float), optional
-        Data values at the poles ``u=0`` and ``u=pi``.  Either the whole
-        parameter or each individual element can be None.  Defaults to None.
+        Data values at the poles ``u=0`` and ``u=pi``. Either the whole
+        parameter or each individual element can be None. Defaults is None.
     pole_exact : bool or (bool, bool), optional
-        Data value exactness at the poles ``u=0`` and ``u=pi``.  If True, the
+        Data value exactness at the poles ``u=0`` and ``u=pi``. If True, the
         value is considered to be the right function value, and it will be
         fitted exactly. If False, the value will be considered to be a data
-        value just like the other data values.  Defaults to False.
+        value just like the other data values. Defaults is False.
     pole_flat : bool or (bool, bool), optional
         For the poles at ``u=0`` and ``u=pi``, specify whether or not the
-        approximation has vanishing derivatives.  Defaults to False.
+        approximation has vanishing derivatives. Defaults is False.
 
     See Also
     --------
@@ -1910,9 +1988,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     values for ``s`` depend on the accuracy of the data values.  If the user
     has an idea of the statistical errors on the data, she can also find a
     proper estimate for ``s``. By assuming that, if she specifies the
-    right ``s``, the interpolator will use a spline ``f(u,v)`` which exactly
+    right ``s``, the interpolator will use a spline ``spl(u,v)`` which exactly
     reproduces the function underlying the data, she can evaluate
-    ``sum((r(i,j)-s(u(i),v(j)))**2)`` to find a good estimate for this ``s``.
+    ``sum((r(i,j)-spl(u(i),v(j)))**2)`` to find a good estimate for this ``s``.
     For example, if she knows that the statistical errors on her
     ``r(i,j)``-values are not greater than 0.1, she may expect that a good
     ``s`` should have a value not larger than ``u.size * v.size * (0.1)**2``.
@@ -1941,7 +2019,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     """
 
-    def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
+    def __init__(self, u, v, r, s=0, pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=dfitpack_int)
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
