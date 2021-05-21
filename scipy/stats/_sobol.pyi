@@ -1,12 +1,13 @@
 import numpy.typing as npt
+from scipy._lib._util import IntNumber
 
 def initialize_v(
     v : npt.ArrayLike, 
-    dim : int
+    dim : IntNumber
 ) -> None: ...
 
 def _cscramble (
-    dim : int,
+    dim : IntNumber,
     ltm : npt.ArrayLike,
     sv: npt.ArrayLike
 ) -> None: ...
@@ -17,18 +18,18 @@ def _fill_p_cumulative(
 ) -> None: ...
 
 def _draw(
-    n : int,
-    num_gen: int,
-    dim: int,
+    n : IntNumber,
+    num_gen: IntNumber,
+    dim: IntNumber,
     sv: npt.ArrayLike,
     quasi: npt.ArrayLike,
     result: npt.ArrayLike
     ) -> None: ...
 
 def _fast_forward(
-    n: int,
-    num_gen: int,
-    dim: int,
+    n: IntNumber,
+    num_gen: IntNumber,
+    dim: IntNumber,
     sv: npt.ArrayLike,
     quasi: npt.ArrayLike
     ) -> None: ...
