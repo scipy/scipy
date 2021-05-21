@@ -16,12 +16,6 @@ def _fill_p_cumulative(
     p_cumulative: npt.ArrayLike
 ) -> None: ...
 
-def _categorize(
-    draws: npt.ArrayLike,
-    p_cumulative: npt.ArrayLike,
-    result: npt.ArrayLike
-) -> None: ...
-
 def _draw(
     n : int,
     num_gen: int,
