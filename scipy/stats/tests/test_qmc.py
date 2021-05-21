@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from functools import partial
 
 import pytest
 import numpy as np
@@ -555,15 +556,15 @@ class TestLHS(QMCEngineTests):
 
 
 class TestOptimalLatinHypercube(QMCEngineTests):
-    qmce = qmc.OptimalLatinHypercube
+    qmce = partial(qmc.OptimalLatinHypercube, n_perturbations=100)
     can_scramble = False
-    unscramble_nd = np.array([[0.48412877, 0.00416027],
-                              [0.06857794, 0.26284543],
-                              [0.82837347, 0.83297228],
-                              [0.20290629, 0.89496811],
-                              [0.98461223, 0.43212172],
-                              [0.3424405 , 0.5690004 ],
-                              [0.60881992, 0.14251516],
+    unscramble_nd = np.array([[0.60881992, 0.00416027],
+                              [0.82837347, 0.26284543],
+                              [0.20290629, 0.83297228],
+                              [0.48412877, 0.89496811],
+                              [0.06857794, 0.43212172],
+                              [0.98461223, 0.5690004],
+                              [0.3424405, 0.14251516],
                               [0.64745145, 0.70599331]])
 
     def test_continuing(self, *args):
@@ -573,7 +574,8 @@ class TestOptimalLatinHypercube(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_discrepancy_hierarchy(self):
-        # base discrepancy as a reference for testing OptimalLatinHypercube is better
+        # base discrepancy as a reference for testing
+        # OptimalLatinHypercube is better
         seed = np.random.RandomState(123456)
         lhs = qmc.LatinHypercube(d=2, seed=seed)
         sample_ref = lhs.random(n=20)
@@ -581,7 +583,7 @@ class TestOptimalLatinHypercube(QMCEngineTests):
 
         # all defaults
         seed = np.random.RandomState(123456)
-        optimal_ = qmc.OptimalLatinHypercube(d=2, seed=seed)
+        optimal_ = qmc.OptimalLatinHypercube(d=2, seed=seed, n_perturbations=5)
         sample_ = optimal_.random(n=20)
         disc_ = qmc.discrepancy(sample_)
 
@@ -590,15 +592,16 @@ class TestOptimalLatinHypercube(QMCEngineTests):
         # using an initial sample
         seed = np.random.RandomState(123456)
         optimal_1 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
+                                              n_perturbations=5,
                                               seed=seed)
         sample_1 = optimal_1.random(n=20)
         disc_1 = qmc.discrepancy(sample_1)
 
         assert disc_1 < disc_ref
 
-        # 5 iterations is better than 1
+        # 10 perturbations is better than 5
         optimal_2 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
-                                              niter=5, seed=seed)
+                                              n_perturbations=10, seed=seed)
         sample_2 = optimal_2.random(n=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1

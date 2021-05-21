@@ -1116,6 +1116,19 @@ class OptimalLatinHypercube(QMCEngine):
         self.num_generated += n
         return best_sample
 
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: OptimalLatinHypercube
+            Engine reset to its base state.
+
+        """
+        self.__init__(d=self.d, start_sample=self.start_sample,
+                      n_perturbations=self.n_perturbations, seed=self.rng_seed)
+        self.num_generated = 0
+        return self
 
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
