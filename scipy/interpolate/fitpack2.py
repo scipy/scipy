@@ -1517,7 +1517,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
         dphi : int, optional
             Order of `phi`-derivative. Default is 0.
 
-            .. versionadded:: 0.14.00
+            .. versionadded:: 0.14.0
         """
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
