@@ -426,6 +426,46 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      [8.         7.5534414  4.25308709 1.73277247 0.72069014 0.29932181
       0.12428631 0.05403123]]
 
+    A couple examples of using solve_ivp to solve differential functions with
+    complex matrix A
+
+    >>> import numpy as np
+    >>> from scipy.integrate import solve_ivp
+    >>> A = np.array([[-0.25 + 0.14j, 0, 0.33 + 0.44j],
+    ...               [0.25 + 0.58j, -0.2 + 0.14j, 0],
+    ...               [0, 0.2 + 0.4j, -0.1 + 0.97j]])
+
+    Solving an ivp with A from above and y as 3x1 vector:
+
+    >>> def deriv_vec(t, y):
+    ...     return A @ y
+    >>> result = solve_ivp(deriv_vec, [0, 25],
+    ...                    np.array([10 + 0j, 20 + 0j, 30 + 0j]),
+    ...                    t_eval=np.linspace(0, 25, 101)
+    >>> print(result.y[:, 0])
+    [10.+0.j 20.+0.j 30.+0.j]
+    >>> print(result.y[:, -1])
+    [18.46+45.25j 10.01+36.23j -4.98+80.07j]
+
+    Solving an ivp with A from above y as 3x3 matrix :
+
+    >>> def deriv_mat(t, y):
+    ...     return (A @ y.reshape(3, 3)).flatten()
+    >>> y0 = np.array([[2 + 0j, 3 + 0j, 4 + 0j],
+    ...                [5 + 0j, 6 + 0j, 7 + 0j],
+    ...                [9 + 0j, 34 + 0j, 78 + 0j]])
+
+    >>> result = solve_ivp(deriv_mat, [0, 25], y0.flatten(),
+    ...                    t_eval=np.linspace(0, 25, 101))
+    >>> print(result.y[:, 0].reshape(3, 3))
+    [[ 2.+0.j  3.+0.j  4.+0.j]
+     [ 5.+0.j  6.+0.j  7.+0.j]
+     [ 9.+0.j 34.+0.j 78.+0.j]]
+    >>> print(result.y[:, -1].reshape(3, 3))
+    [[ 5.67+12.07j 17.28+31.03j 37.83+63.25j]
+     [ 3.39+11.82j 21.32+44.88j 53.17+103.80j]
+     [ -2.26+22.19j -15.12+70.191j -38.34+153.29j]]
+
     Specifying points where the solution is desired.
 
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8],
