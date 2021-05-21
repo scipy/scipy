@@ -195,16 +195,15 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
-    ...
-    >>> np.random.seed(0)
+    >>> rng = np.random.default_rng()
     ...
     >>> m = 20000
     >>> n = 10000
     ...
-    >>> A = rand(m, n, density=1e-4)
-    >>> b = np.random.randn(m)
+    >>> A = rand(m, n, density=1e-4, random_state=rng)
+    >>> b = rng.standard_normal(m)
     ...
-    >>> lb = np.random.randn(n)
+    >>> lb = rng.standard_normal(n)
     >>> ub = lb + 1
     ...
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)

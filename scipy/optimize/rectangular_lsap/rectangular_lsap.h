@@ -41,7 +41,7 @@ extern "C" {
 #include <stdint.h>
 
 int solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
-                                            int64_t* col4row);
+                                            int64_t* a, int64_t* b);
 
 #ifdef __cplusplus
 }

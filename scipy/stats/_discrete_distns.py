@@ -12,12 +12,12 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-        _check_shape)
+    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+    _check_shape)
+import scipy.stats._boost as _boost
 from .biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
-
 
 class binom_gen(rv_discrete):
     r"""A binomial discrete random variable.
@@ -63,32 +63,30 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return exp(self._logpmf(x, n, p))
+        return _boost._binom_pdf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        vals = special.bdtr(k, n, p)
-        return vals
+        return _boost._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return special.bdtrc(k, n, p)
+        return _boost._binom_sf(k, n, p)
 
+    def _isf(self, x, n, p):
+        return _boost._binom_isf(x, n, p)
+    
     def _ppf(self, q, n, p):
-        vals = ceil(special.bdtrik(q, n, p))
-        vals1 = np.maximum(vals - 1, 0)
-        temp = special.bdtr(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        q = 1.0 - p
-        mu = n * p
-        var = n * p * q
+        mu = _boost._binom_mean(n, p)
+        var = _boost._binom_variance(n, p)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = (q - p) / sqrt(var)
+            g1 = _boost._binom_skewness(n, p)
         if 'k' in moments:
-            g2 = (1.0 - 6*p*q) / var
+            g2 = _boost._binom_kurtosis_excess(n, p)
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
@@ -149,6 +147,9 @@ class bernoulli_gen(binom_gen):
     def _sf(self, x, p):
         return binom._sf(x, 1, p)
 
+    def _isf(self, x, p):
+        return binom._isf(x, 1, p)        
+    
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
 
@@ -302,7 +303,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return exp(self._logpmf(x, n, p))
+        return _boost._nbinom_pdf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -310,7 +311,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return special.betainc(n, k+1, p)
+        return _boost._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -326,25 +327,23 @@ class nbinom_gen(rv_discrete):
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
-    def _sf_skip(self, x, n, p):
-        # skip because special.nbdtrc doesn't work for 0<n<1
+    def _sf(self, x, n, p):
         k = floor(x)
-        return special.nbdtrc(k, n, p)
+        return _boost._nbinom_sf(k, n, p)
 
+    def _isf(self, x, n, p):
+        return _boost._nbinom_isf(x, n, p)
+    
     def _ppf(self, q, n, p):
-        vals = ceil(special.nbdtrik(q, n, p))
-        vals1 = (vals-1).clip(0.0, np.inf)
-        temp = self._cdf(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        Q = 1.0 / p
-        P = Q - 1.0
-        mu = n*P
-        var = n*P*Q
-        g1 = (Q+P)/sqrt(n*P*Q)
-        g2 = (1.0 + 6*P*Q) / (n*P*Q)
-        return mu, var, g1, g2
+        return(
+            _boost._nbinom_mean(n, p),
+            _boost._nbinom_variance(n, p),
+            _boost._nbinom_skewness(n, p),
+            _boost._nbinom_kurtosis_excess(n, p),
+        )
 
 
 nbinom = nbinom_gen(name='nbinom')

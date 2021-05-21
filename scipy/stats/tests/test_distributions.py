@@ -26,9 +26,9 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy, polygamma, entr
-from .test_continuous_basic import distcont, invdistcont
+from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import FitDataError
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
 
 # python -OO strips docstrings
@@ -413,6 +413,169 @@ class TestGenInvGauss:
         # if x is large and p is moderate, make sure that pdf does not
         # overflow because of x**(p-1); exp(-b*x) forces pdf to zero
         assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
+
+
+class TestGenHyperbolic:
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_pdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # x <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::dghyp(
+        #    x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            2.94895678275316e-13, 1.75746848647696e-10, 9.48149804073045e-08,
+            4.17862521692026e-05, 0.0103947630463822, 0.240864958986839,
+            0.162833527161649, 0.0374609592899472, 0.00634894847327781,
+            0.000941920705790324
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.pdf(x), vals_R, atol=0, rtol=1e-13)
+
+    def test_cdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # q <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::pghyp(
+        #   q = q, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            1.01881590921421e-13, 6.13697274983578e-11, 3.37504977637992e-08,
+            1.55258698166181e-05, 0.00447005453832497, 0.228935323956347,
+            0.755759458895243, 0.953061062884484, 0.992598013917513,
+            0.998942646586662
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
+
+    def test_moments_r(self):
+        # test against R package GeneralizedHyperbolic
+        # sapply(1:4,
+        #    function(x) GeneralizedHyperbolic::ghypMom(
+        #        order = x, lambda = 2, alpha = 2,
+        #        beta = 1, delta = 1.5, mu = 0.5,
+        #        momType = 'raw')
+        # )
+
+        vals_R = [2.36848366948115, 8.4739346779246,
+                  37.8870502710066, 205.76608511485]
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        vals_us = [
+            stats.genhyperbolic(*args, loc=mu, scale=delta).moment(i)
+            for i in range(1, 5)
+            ]
+
+        assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
+
+    def test_rvs(self):
+        # Kolmogorov-Smirnov test to ensure alignemnt
+        # of analytical and empirical cdfs
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
+
+        assert_equal(p > 0.05, True)
+
+    def test_pdf_t(self):
+        # Test Against T-Student with 1 - 30 df
+        df = np.linspace(1, 30, 10)
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        alpha, beta = np.float_power(df, 2)*np.finfo(np.float32).eps, 0
+        mu, delta = 0, np.sqrt(df)
+        args = (-df/2, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.t.pdf(x, df),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_cauchy(self):
+        # Test Against Cauchy distribution
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        lmbda, alpha, beta = -0.5, np.finfo(np.float32).eps, 0
+        mu, delta = 0, 1
+        args = (lmbda, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.cauchy.pdf(x),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_laplace(self):
+        # Test Against Laplace with location param [-10, 10]
+        loc = np.linspace(-10, 10, 10)
+
+        # in principle delta should be zero in practice for big loc delta
+        # cannot be too small else pdf does not integrate
+        delta = np.finfo(np.float32).eps
+
+        lmbda, alpha, beta = 1, 1, 0
+        args = (lmbda, alpha*delta, beta*delta)
+
+        # ppf does not integrate for scale < 5e-4
+        # therefore using simple linspace to define the support
+        gh = stats.genhyperbolic(*args, loc=loc, scale=delta)
+        x = np.linspace(-20, 20, 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
+            atol=0, rtol=1e-11
+            )
+
+    def test_pdf_norminvgauss(self):
+        # Test Against NIG with varying alpha/beta/delta/mu
+
+        alpha, beta, delta, mu = (
+                np.linspace(1, 20, 10),
+                np.linspace(0, 19, 10)*np.float_power(-1, range(10)),
+                np.linspace(1, 1, 10),
+                np.linspace(-100, 100, 10)
+                )
+
+        lmbda = - 0.5
+        args = (lmbda, alpha * delta, beta * delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.norminvgauss.pdf(
+                x, a=alpha, b=beta, loc=mu, scale=delta),
+            atol=0, rtol=1e-13
+            )
 
 
 class TestNormInvGauss:
@@ -2674,6 +2837,56 @@ class TestBeta:
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
+    def test_issue_12635(self):
+        # Confirm that Boost's beta distribution resolves gh-12635.
+        # Check against R:
+        # options(digits=16)
+        # p = 0.9999999999997369
+        # a = 75.0
+        # b = 66334470.0
+        # print(qbeta(p, a, b))
+        p, a, b = 0.9999999999997369, 75.0, 66334470.0
+        assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
+
+    def test_issue_12794(self):
+        # Confirm that Boost's beta distribution resolves gh-12794.
+        # Check against R.
+        # options(digits=16)
+        # p = 1e-11
+        # count_list = c(10,100,1000)
+        # print(qbeta(1-p, count_list + 1, 100000 - count_list))
+        inv_R = np.array([0.0004944464889611935,
+                          0.0018360586912635726,
+                          0.0122663919942518351])
+        count_list = np.array([10, 100, 1000])
+        p = 1e-11
+        inv = stats.beta.isf(p, count_list + 1, 100000 - count_list)
+        assert_allclose(inv, inv_R)
+        res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
+        assert_allclose(res, p)
+
+    def test_issue_12796(self):
+        # Confirm that Boost's beta distribution succeeds in the case
+        # of gh-12796
+        alpha_2 = 5e-6
+        count_ = np.arange(1, 20)
+        nobs = 100000
+        q, a, b = 1 - alpha_2, count_ + 1, nobs - count_
+        inv = stats.beta.ppf(q, a, b)
+        res = stats.beta.cdf(inv, a, b)
+        assert_allclose(res, 1 - alpha_2)
+
+    def test_endpoints(self):
+        # Confirm that boost's beta distribution returns inf at x=1
+        # when b<1
+        a, b = 1, 0.5
+        assert_equal(stats.beta.pdf(1, a, b), np.inf)
+
+        # Confirm that boost's beta distribution returns inf at x=0
+        # when a<1
+        a, b = 0.2, 3
+        assert_equal(stats.beta.pdf(0, a, b), np.inf)
+
 
 class TestBetaPrime:
     def test_logpdf(self):
@@ -3044,195 +3257,6 @@ class TestDocstring:
         # If name is not given, construction shouldn't fail.  See #1508.
         stats.rv_continuous()
         stats.rv_discrete()
-
-
-class TestEntropy:
-    def test_entropy_positive(self):
-        # See ticket #497
-        pk = [0.5, 0.2, 0.3]
-        qk = [0.1, 0.25, 0.65]
-        eself = stats.entropy(pk, pk)
-        edouble = stats.entropy(pk, qk)
-        assert_(0.0 == eself)
-        assert_(edouble >= 0.0)
-
-    def test_entropy_base(self):
-        pk = np.ones(16, float)
-        S = stats.entropy(pk, base=2.)
-        assert_(abs(S - 4.) < 1.e-5)
-
-        qk = np.ones(16, float)
-        qk[:8] = 2.
-        S = stats.entropy(pk, qk)
-        S2 = stats.entropy(pk, qk, base=2.)
-        assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
-
-    def test_entropy_zero(self):
-        # Test for PR-479
-        assert_almost_equal(stats.entropy([0, 1, 2]), 0.63651416829481278,
-                            decimal=12)
-
-    def test_entropy_2d(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.1933259, 0.18609809])
-
-    def test_entropy_2d_zero(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [np.inf, 0.18609809])
-
-        pk[0][0] = 0.0
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.17403988, 0.18609809])
-
-    def test_entropy_base_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=1),
-                                  [0.63651417, 0.63651417, 0.66156324])
-
-    def test_entropy_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=1),
-                                  [0.231049, 0.231049, 0.127706])
-
-    def test_entropy_raises_value_error(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.1, 0.2], [0.6, 0.3]]
-        assert_raises(ValueError, stats.entropy, pk, qk)
-
-    def test_base_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=0),
-                                  stats.entropy(pk))
-
-    def test_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
-                                  stats.entropy(pk, qk))
-
-    def test_base_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        assert_array_almost_equal(stats.entropy(pk.T).T,
-                                  stats.entropy(pk, axis=1))
-
-    def test_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
-        assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
-                                  stats.entropy(pk, qk, axis=1))
-
-    def test_entropy_broadcasting(self):
-        np.random.rand(0)
-        x = np.random.rand(3)
-        y = np.random.rand(2, 1)
-        res = stats.entropy(x, y, axis=-1)
-        assert_equal(res[0], stats.entropy(x, y[0]))
-        assert_equal(res[1], stats.entropy(x, y[1]))
-
-    def test_entropy_shape_mismatch(self):
-        x = np.random.rand(10, 1, 12)
-        y = np.random.rand(11, 2)
-        message = "shape mismatch: objects cannot be broadcast"
-        with pytest.raises(ValueError, match=message):
-            stats.entropy(x, y)
-
-
-class TestDifferentialEntropy(object):
-    """
-    Results are compared with the R package vsgoftest.
-
-    # library(vsgoftest)
-    #
-    # samp <- c(<values>)
-    # entropy.estimate(x = samp, window = <window_length>)
-
-    """
-
-    def test_differential_entropy_base(self):
-
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal(100)
-
-        entropy = stats.differential_entropy(values)
-        assert_allclose(entropy, 1.342551, rtol=1e-6)
-
-        entropy = stats.differential_entropy(values, window_length=1)
-        assert_allclose(entropy, 1.122044, rtol=1e-6)
-
-        entropy = stats.differential_entropy(values, window_length=8)
-        assert_allclose(entropy, 1.349401, rtol=1e-6)
-
-    def test_differential_entropy_base_2d_nondefault_axis(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        entropy = stats.differential_entropy(values, axis=1)
-        assert_allclose(
-            entropy,
-            [1.342551, 1.341826, 1.293775],
-            rtol=1e-6,
-        )
-
-        entropy = stats.differential_entropy(values, axis=1, window_length=1)
-        assert_allclose(
-            entropy,
-            [1.122044, 1.102944, 1.129616],
-            rtol=1e-6,
-        )
-
-        entropy = stats.differential_entropy(values, axis=1, window_length=8)
-        assert_allclose(
-            entropy,
-            [1.349401, 1.338514, 1.292332],
-            rtol=1e-6,
-        )
-
-    def test_differential_entropy_raises_value_error(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        error_str = (
-            r"Window length \({window_length}\) must be positive and less "
-            r"than half the sample size \({sample_size}\)."
-        )
-
-        sample_size = values.shape[1]
-
-        for window_length in {-1, 0, sample_size//2, sample_size}:
-
-            formatted_error_str = error_str.format(
-                window_length=window_length,
-                sample_size=sample_size,
-            )
-
-            with assert_raises(ValueError, match=formatted_error_str):
-                stats.differential_entropy(
-                    values,
-                    window_length=window_length,
-                    axis=1,
-                )
-
-    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((100, 3))
-
-        entropy = stats.differential_entropy(values, axis=0)
-        default_entropy = stats.differential_entropy(values)
-        assert_allclose(entropy, default_entropy)
-
-    def test_base_differential_entropy_transposed(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        assert_allclose(
-            stats.differential_entropy(values.T).T,
-            stats.differential_entropy(values, axis=1),
-        )
 
 
 def TestArgsreduce():
@@ -5625,6 +5649,79 @@ class TestArgus:
     def test_var(self, chi, expected_var, rtol):
         v = stats.argus.var(chi, scale=1)
         assert_allclose(v, expected_var, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize('chi, expected, rtol',
+                             [(0.9, 0.07646314974436118, 1e-14),
+                              (0.5, 0.015429797891863365, 1e-14),
+                              (0.1, 0.0001325825293278049, 1e-14),
+                              (0.01, 1.3297677078224565e-07, 1e-15),
+                              (1e-3, 1.3298072023958999e-10, 1e-14),
+                              (1e-4, 1.3298075973486862e-13, 1e-14),
+                              (1e-6, 1.32980760133771e-19, 1e-14),
+                              (1e-9, 1.329807601338109e-28, 1e-15)])
+    def test_argus_phi_small_chi(self, chi, expected, rtol):
+        assert_allclose(_argus_phi(chi), expected, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.28414073302940573, 1.2742227939992954, 1.2381254688255896)),
+         (0.2, (0.296172952995264, 1.2951290588110516, 1.1865767100877576)),
+         (0.1, (0.29791447523536274, 1.29806307956989, 1.1793168289857412)),
+         (0.01, (0.2984904104866452, 1.2990283628160553, 1.1769268414080531)),
+         (1e-3, (0.298496172925224, 1.2990380082487925, 1.176902956021053)),
+         (1e-4, (0.29849623054991836, 1.2990381047023793, 1.1769027171686324)),
+         (1e-6, (0.2984962311319278, 1.2990381056765605, 1.1769027147562232)),
+         (1e-9, (0.298496231131986, 1.299038105676658, 1.1769027147559818))])
+    def test_pdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.pdf(x, chi), expected, rtol=1e-13)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.9857660526895221, 0.6616565930168475, 0.08796070398429937)),
+         (0.2, (0.9851555052359501, 0.6514666238985464, 0.08362690023746594)),
+         (0.1, (0.9850670974995661, 0.6500061310508574, 0.08302050640683846)),
+         (0.01, (0.9850378582451867, 0.6495239242251358, 0.08282109244852445)),
+         (1e-3, (0.9850375656906663, 0.6495191015522573, 0.08281910005231098)),
+         (1e-4, (0.9850375627651049, 0.6495190533254682, 0.08281908012852317)),
+         (1e-6, (0.9850375627355568, 0.6495190528383777, 0.08281907992729293)),
+         (1e-9, (0.9850375627355538, 0.649519052838329, 0.0828190799272728))])
+    def test_sf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.0142339473104779, 0.3383434069831524, 0.9120392960157007)),
+         (0.2, (0.014844494764049919, 0.34853337610145363, 0.916373099762534)),
+         (0.1, (0.014932902500433911, 0.34999386894914264, 0.9169794935931616)),
+         (0.01, (0.014962141754813293, 0.35047607577486417, 0.9171789075514756)),
+         (1e-3, (0.01496243430933372, 0.35048089844774266, 0.917180899947689)),
+         (1e-4, (0.014962437234895118, 0.3504809466745317, 0.9171809198714769)),
+         (1e-6, (0.01496243726444329, 0.3504809471616223, 0.9171809200727071)),
+         (1e-9, (0.014962437264446245, 0.350480947161671, 0.9171809200727272))])
+    def test_cdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.cdf(x, chi), expected, rtol=1e-12)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected, rtol',
+        [(0.5, (0.5964284712757741, 0.052890651988588604), 1e-12),
+         (0.101, (0.5893490968089076, 0.053017469847275685), 1e-11),
+         (0.1, (0.5893431757009437, 0.05301755449499372), 1e-13),
+         (0.01, (0.5890515677940915, 0.05302167905837031), 1e-13),
+         (1e-3, (0.5890486520005177, 0.053021719862088104), 1e-13),
+         (1e-4, (0.5890486228426105, 0.0530217202700811), 1e-13),
+         (1e-6, (0.5890486225481156, 0.05302172027420182), 1e-13),
+         (1e-9, (0.5890486225480862, 0.05302172027420224), 1e-13)])
+    def test_stats_small_chi(self, chi, expected, rtol):
+        val = stats.argus.stats(chi, moments='mv')
+        assert_allclose(val, expected, rtol=rtol)
 
 
 class TestNakagami:

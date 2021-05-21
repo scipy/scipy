@@ -18,8 +18,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
 
 
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
-    """
-    Compute the Epps-Singleton (ES) test statistic.
+    """Compute the Epps-Singleton (ES) test statistic.
 
     Test the null hypothesis that two samples have the same underlying
     probability distribution.
@@ -84,7 +83,6 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
-
     x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
     # check if x and y are valid inputs
     if x.ndim > 1:
@@ -239,7 +237,7 @@ def _cdf_cvm_inf(x):
 def _cdf_cvm(x, n=None):
     """
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
-    size n. If N is None, use the asymptotic cdf (n=inf)
+    size n. If N is None, use the asymptotic cdf (n=inf).
 
     See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
     1.2 for the asymptotic cdf.
@@ -266,8 +264,7 @@ def _cdf_cvm(x, n=None):
 
 
 def cramervonmises(rvs, cdf, args=()):
-    """
-    Perform the one-sample Cramér-von Mises test for goodness of fit.
+    """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -326,11 +323,11 @@ def cramervonmises(rvs, cdf, args=()):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> np.random.seed(626)
-    >>> x = stats.norm.rvs(size=500)
+    >>> rng = np.random.default_rng()
+    >>> x = stats.norm.rvs(size=500, random_state=rng)
     >>> res = stats.cramervonmises(x, 'norm')
     >>> res.statistic, res.pvalue
-    (0.06342154705518796, 0.792680516270629)
+    (0.49121480855028343, 0.04189256516661377)
 
     The p-value 0.79 exceeds our chosen significance level, so we do not
     reject the null hypothesis that the observed sample is drawn from the
@@ -342,7 +339,7 @@ def cramervonmises(rvs, cdf, args=()):
     >>> y = x + 2.1
     >>> res = stats.cramervonmises(y, 'norm', args=(2,))
     >>> res.statistic, res.pvalue
-    (0.4798693195559657, 0.044782228803623814)
+    (0.07400330012187435, 0.7274595666160468)
 
     Here we have used the `args` keyword to specify the mean (``loc``)
     of the normal distribution to test the data against. This is equivalent
@@ -352,7 +349,7 @@ def cramervonmises(rvs, cdf, args=()):
     >>> frozen_dist = stats.norm(loc=2)
     >>> res = stats.cramervonmises(y, frozen_dist.cdf)
     >>> res.statistic, res.pvalue
-    (0.4798693195559657, 0.044782228803623814)
+    (0.07400330012187435, 0.7274595666160468)
 
     In either case, we would reject the null hypothesis that the observed
     sample is drawn from a normal distribution with a mean of 2 (and default
@@ -399,13 +396,13 @@ def _get_wilcoxon_distr(n):
 
 
 def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table"""
+    """Sum of upper-left and lower right blocks of contingency table."""
     # See [2] bottom of page 309
     return A[:i, :j].sum() + A[i+1:, j+1:].sum()
 
 
 def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table"""
+    """Sum of lower-left and upper-right blocks of contingency table."""
     # See [2] bottom of page 309
     return A[i+1:, :j].sum() + A[:i, j+1:].sum()
 
@@ -433,7 +430,7 @@ def _Q(A):
 
 
 def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D"""
+    """A term that appears in the ASE of Kendall's tau and Somers' D."""
     # See [2] section 4: Modified ASEs to test the null hypothesis...
     m, n = A.shape
     count = 0
@@ -444,7 +441,7 @@ def _a_ij_Aij_Dij2(A):
 
 
 def _tau_b(A):
-    """Calculate Kendall's tau-b and p-value from contingency table"""
+    """Calculate Kendall's tau-b and p-value from contingency table."""
     # See [2] 2.2 and 4.2
 
     # contingency table must be truly 2D
@@ -471,7 +468,7 @@ def _tau_b(A):
 
 
 def _somers_d(A):
-    """Calculate Somers' D and p-value from contingency table"""
+    """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
 
     # contingency table must be truly 2D
@@ -500,8 +497,7 @@ SomersDResult = make_dataclass("SomersDResult",
 
 
 def somersd(x, y=None):
-    r"""
-    Calculates Somers' D, an asymmetric measure of ordinal association
+    r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
     correspondence between two rankings. Both statistics consider the
@@ -647,6 +643,7 @@ def somersd(x, y=None):
     our sample of 189 customers is drawn) is zero. This supports the
     alternative hypothesis that the true value of Somers' D for the population
     is nonzero.
+
     """
     x, y = np.array(x), np.array(y)
     if x.ndim == 1:
@@ -670,8 +667,24 @@ def somersd(x, y=None):
     return SomersDResult(d, p, table)
 
 
+def _all_partitions(nx, ny):
+    """
+    Partition a set of indices into two fixed-length sets in all possible ways
+
+    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
+    ny in all possible ways (ignoring order of elements).
+    """
+    z = np.arange(nx+ny)
+    for c in combinations(z, nx):
+        x = np.array(c)
+        mask = np.ones(nx+ny, bool)
+        mask[x] = False
+        y = z[mask]
+        yield x, y
+
+        
 def _compute_log_combinations(n):
-    """Compute all log combination of C(n, k)"""
+    """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
@@ -700,10 +713,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     n : int, optional
         Number of sampling points used in the construction of the sampling
-        method. Note that this argument must be a power of two since we are
-        using `scipy.stats.qmc.Sobol`.
-        Default is 32. Must be positive. In most cases, 32 points is
-        enough to reach good precision. More points comes at performance cost.
+        method. Note that this argument will automatically be converted to
+        the next higher power of 2 since `scipy.stats.qmc.Sobol` is used to
+        select sample points. Default is 32. Must be positive. In most cases,
+        32 points is enough to reach good precision. More points comes at
+        performance cost.
 
     Returns
     -------
@@ -932,7 +946,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         _get_binomial_log_p_value_with_nuisance_param,
         args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
         bounds=((0, 1),),
-        n=n,  # Need to be a power of two since it is used by sobol
+        n=n,
         sampling_method="sobol",
     )
 
@@ -1039,36 +1053,28 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     for a given value s (float) of the test statistic by enumerating
     all possible combinations. nx and ny are the sizes of the samples.
     """
-    z = np.arange(1, nx+ny+1)
-    rangex = np.arange(1, nx+1)
-    rangey = np.arange(1, ny+1)
+    rangex = np.arange(nx)
+    rangey = np.arange(ny)
 
     us = []
-    # for the first sample x, select all possible combinations of
-    # the ranks of the elements of x in the combined sample
-    # note that the acutal values of the samples are irrelevant
-    # once the ranks of the elements of x are fixed, the
-    # ranks of the elements in the second sample
-    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all
-    for c in combinations(z, nx):
-        x = np.array(c)
-        # the ranks of the second sample y are given by the set z - x
-        # note than one needs to shift by -1 since the lowest rank is 1
-        mask = np.ones(nx+ny, bool)
-        mask[x-1] = False
-        y = z[mask]
+
+    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
+    # into two sets of length nx and ny
+    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
+    # this does not change the value of the statistic.
+    for x, y in _all_partitions(nx, ny):
         # compute the statistic
         u = nx * np.sum((x - rangex)**2)
         u += ny * np.sum((y - rangey)**2)
         us.append(u)
+
     # compute the values of u and the frequencies
     u, cnt = np.unique(us, return_counts=True)
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
 def cramervonmises_2samp(x, y, method='auto'):
-    """
-    Perform the two-sample Cramér-von Mises test for goodness of fit.
+    """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
     This is the two-sample version of the Cramér-von Mises test ([1]_):
     for two independent samples :math:`X_1, ..., X_n` and
@@ -1135,12 +1141,12 @@ def cramervonmises_2samp(x, y, method='auto'):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> np.random.seed(626)
-    >>> x = stats.norm.rvs(size=100)
-    >>> y = stats.norm.rvs(size=70)
+    >>> rng = np.random.default_rng()
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> y = stats.norm.rvs(size=70, random_state=rng)
     >>> res = stats.cramervonmises_2samp(x, y)
     >>> res.statistic, res.pvalue
-    (0.24331932773109344, 0.19815666195647663)
+    (0.29376470588235293, 0.1412873014573014)
 
     The p-value exceeds our chosen significance level, so we do not
     reject the null hypothesis that the observed samples are drawn from the
@@ -1148,23 +1154,23 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     For small sample sizes, one can compute the exact p-values:
 
-    >>> x = stats.norm.rvs(size=7)
-    >>> y = stats.t.rvs(df=2, size=6)
+    >>> x = stats.norm.rvs(size=7, random_state=rng)
+    >>> y = stats.t.rvs(df=2, size=6, random_state=rng)
     >>> res = stats.cramervonmises_2samp(x, y, method='exact')
     >>> res.statistic, res.pvalue
-    (0.2655677655677655, 0.18706293706293706)
+    (0.197802197802198, 0.31643356643356646)
 
     The p-value based on the asymptotic distribution is a good approximation
     even though the sample size is small.
 
     >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
     >>> res.statistic, res.pvalue
-    (0.2655677655677655, 0.17974247316290415)
+    (0.197802197802198, 0.2966041181527128)
 
     Independent of the method, one would not reject the null hypothesis at the
     chosen significance level in this example.
-    """
 
+    """
     xa = np.sort(np.asarray(x))
     ya = np.sort(np.asarray(y))
 

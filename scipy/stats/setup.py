@@ -1,5 +1,4 @@
 from os.path import join
-from platform import system
 
 from numpy.distutils.misc_util import get_info
 
@@ -75,10 +74,12 @@ def configuration(parent_package='', top_path=None):
         libraries=biasedurn_libs,
         define_macros=[('R_BUILD', None)],
         language='c++',
-        extra_compile_args=['-Wno-narrowing'] if system() == 'Darwin' else [],
         depends=['biasedurn/stocR.h'],
     )
     ext._pre_build_hook = pre_build_hook
+
+    # add boost stats distributions
+    config.add_subpackage('_boost')
 
     # Type stubs
     config.add_data_files('*.pyi')

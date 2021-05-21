@@ -24,6 +24,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -68,8 +70,8 @@ jobs:
         echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
 
     - name: A few other packages
+      continue-on-error: true
       run: |
-        brew update  # temporary needed until GiHub updates brew to 3.1.0
         brew install libmpc suitesparse swig
 
     - name: Install packages

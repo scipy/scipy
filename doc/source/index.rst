@@ -8,94 +8,87 @@ SciPy documentation
 
 **Date**: |today| **Version**: |version|
 
-**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.1/scipy-ref-1.6.1.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-1.6.1/scipy-html-1.6.1.zip>`__
+**Download documentation**: https://docs.scipy.org/doc/
 
 **Useful links**:
-`Binary Installers <https://pypi.org/project/scipy>`__ |
+`Install <https://scipy.org/install.html>`__ |
 `Source Repository <https://github.com/scipy/scipy>`__ |
 `Issues & Ideas <https://github.com/scipy/scipy/issues>`__ |
 `Q&A Support <https://stackoverflow.com/questions/tagged/scipy>`__ |
-`Mailing List <https://mail.python.org/pipermail/scipy-user>`__
+`Mailing List <https://scipy.org/scipylib/mailing-lists.html>`__
 
-:mod:`scipy` (pronounced "Sigh Pie") is open-source software for mathematics,
+**SciPy** (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering.
 
-.. raw:: html
+.. panels::
+    :card: + intro-card text-center
+    :column: col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex
 
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/index_getting_started.svg" class="card-img-top" alt="getting started with SciPy action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">Getting started</h5>
-                    <p class="card-text">New to <em>SciPy</em>? Check out the getting started guides. They
-                    contain an introduction to <em>SciPy'</em> main concepts and links to additional tutorials.</p>
+    ---
+    :img-top: _static/index_getting_started.png
 
-.. container:: custom-button
+    Getting started
+    ^^^^^^^^^^^^^^^
 
-    :ref:`To the getting started guides<getting_started>`
+    New to *SciPy*? Check out the getting started guides. They contain an
+    introduction to *SciPy'* main concepts and links to additional tutorials.
 
-.. raw:: html
+    +++
 
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/index_user_guide.svg" class="card-img-top" alt="SciPy user guide action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">User guide</h5>
-                    <p class="card-text">The user guide provides in-depth information on the
-                    key concepts of SciPy with useful background information and explanation.</p>
+    .. link-button:: getting_started_ref
+            :type: ref
+            :text: To the getting started guides
+            :classes: btn-block btn-secondary stretched-link
 
-.. container:: custom-button
+    ---
+    :img-top: _static/index_user_guide.png
 
-    :ref:`To the user guide<user_guide>`
+    User guide
+    ^^^^^^^^^^
 
-.. raw:: html
+    The user guide provides in-depth information on the
+    key concepts of SciPy with useful background information and explanation.
 
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/index_api.svg" class="card-img-top" alt="api of SciPy action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">API reference</h5>
-                    <p class="card-text">The reference guide contains a detailed description of
-                    the SciPy API. The reference describes how the methods work and which parameters can
-                    be used. It assumes that you have an understanding of the key concepts.</p>
+    +++
 
-.. container:: custom-button
+    .. link-button:: user_guide
+            :type: ref
+            :text: To the user guide
+            :classes: btn-block btn-secondary stretched-link
 
-    :ref:`To the reference guide<scipy-api>`
+    ---
+    :img-top: _static/index_api.png
 
-.. raw:: html
+    API reference
+    ^^^^^^^^^^^^^
 
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/index_contribute.svg" class="card-img-top" alt="contribute to SciPy action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">Developer guide</h5>
-                    <p class="card-text">Saw a typo in the documentation? Want to improve
-                    existing functionalities? The contributing guidelines will guide
-                    you through the process of improving SciPy.</p>
+    The reference guide contains a detailed description of
+    the SciPy API. The reference describes how the methods work and which parameters can
+    be used. It assumes that you have an understanding of the key concepts.
 
-.. container:: custom-button
+    +++
 
-    :ref:`To the development guide<scipy-development>`
+    .. link-button:: scipy-api
+            :type: ref
+            :text: To the reference guide
+            :classes: btn-block btn-secondary stretched-link
 
-.. raw:: html
+    ---
+    :img-top: _static/index_contribute.png
 
-                </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    Developer guide
+    ^^^^^^^^^^^^^^^
+
+    Saw a typo in the documentation? Want to improve
+    existing functionalities? The contributing guidelines will guide
+    you through the process of improving pandas.
+
+    +++
+
+    .. link-button:: scipy-development
+            :type: ref
+            :text: To the development guide
+            :classes: btn-block btn-secondary stretched-link
 
 .. toctree::
    :maxdepth: 1

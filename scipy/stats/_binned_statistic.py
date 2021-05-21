@@ -127,8 +127,9 @@ def binned_statistic(x, values, statistic='mean',
     as a function of wind speed, and then determine how fast our boat is for
     certain wind speeds:
 
-    >>> windspeed = 8 * np.random.rand(500)
-    >>> boatspeed = .3 * windspeed**.5 + .2 * np.random.rand(500)
+    >>> rng = np.random.default_rng()
+    >>> windspeed = 8 * rng.random(500)
+    >>> boatspeed = .3 * windspeed**.5 + .2 * rng.random(500)
     >>> bin_means, bin_edges, binnumber = stats.binned_statistic(windspeed,
     ...                 boatspeed, statistic='median', bins=[1,2,3,4,5,6,7])
     >>> plt.figure()

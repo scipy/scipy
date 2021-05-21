@@ -4,3 +4,9 @@
 [submodule "doc/source/_static/scipy-mathjax"]
 	path = doc/source/_static/scipy-mathjax
 	url = https://github.com/scipy/scipy-mathjax.git
+[submodule "scipy/_lib/boost"]
+	path = scipy/_lib/boost
+	url = https://github.com/scipy/boost-headers-only
+	shallow = true
+	active = false
+	ignore = all
