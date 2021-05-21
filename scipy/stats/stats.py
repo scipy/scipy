@@ -3767,8 +3767,10 @@ def tukeykramer(*args, sig_level=.05):
 
     References
     ----------
-    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's Method."
-           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm, 28 November 2020.
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method." 
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
 
 
     Examples
@@ -3817,14 +3819,15 @@ def tukeykramer(*args, sig_level=.05):
     # appropriate significance level, number of treatments, and degrees
     # of freedom as determined by the number of data less the number of
     # treatments. ("Confidence limits for Tukey's method")[1].
-    nsamples = np.sum([a.shape[0] for a in args])
+    nsamples_args = np.asarray([a.shape[0] for a in args])
+    nsamples = np.sum(nsamples_args)
     params = (1 - sig_level, len(args), nsamples - len(args))
     srd = distributions.studentized_range.ppf(*params)
     print(srd)
 
     # determine mean square error
-    mse = np.sum([(np.var(arg, ddof=1) *
-                   (len(arg) - 1)) for arg in args]) / (nsamples - len(args))
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_args - 1)) / (nsamples - len(args)))
 
     # create permutations of input group means along with keys to keep track
     # of which is which
@@ -3837,7 +3840,7 @@ def tukeykramer(*args, sig_level=.05):
     # This only applies for treatments of equal sizes. The criterion is
     # calculated for each comparison when treatments differ in size.
     # See ("Unequal sample sizes")[1].
-    if len(set(permutations_lengths)) > 1:
+    if len(set(nsamples_args)) > 1:
         # to compare groups of differing sizes, we must compute a variance
         # value for each individual comparison
         normalize = np.asarray([1/x + 1/y for (x, y) in permutations_lengths])
@@ -3864,6 +3867,12 @@ def tukeykramer(*args, sig_level=.05):
     # from 0 if their confidence intervals include 0.
     # ("Conclusions")[1]
     is_significant = np.abs(mean_differences) > tukey_criterions
+
+    # output matrix
+    nargs = len(args)
+    out_mean_diff = np.zeros((nargs, nargs))
+    
+
 
     # form 2d output array
     res = np.zeros((len(args), len(args), 5))
