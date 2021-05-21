@@ -6,7 +6,7 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.spatial import KDTree
 from scipy.special import comb
-from scipy.linalg.lapack import dgesv
+from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
 from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 
@@ -308,7 +308,7 @@ class RBFInterpolator:
     data points. See `RBFLocalInterpolator` for a more memory-efficient
     alternative to this class.
 
-    .. versionadded:: 1.17.0
+    .. versionadded:: 1.7.0
 
     See Also
     --------
@@ -472,7 +472,7 @@ class RBFLocalInterpolator:
     Notes
     -----
 
-    .. versionadded:: 1.17.0
+    .. versionadded:: 1.7.0
 
     See Also
     --------
