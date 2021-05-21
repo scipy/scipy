@@ -30,7 +30,6 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
-from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -48,6 +47,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
+from ._hypotests import _all_partitions
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -3324,6 +3324,14 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         Trimmed version of array `a`. The order of the trimmed content is
         undefined.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.arange(20)
+    >>> b = stats.trim1(a, 0.5, 'left')
+    >>> b
+    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+
     """
     a = np.asarray(a)
     if axis is None:
@@ -5816,12 +5824,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         The 'omit' option is not currently available for permutation tests or
         one-sided asympyotic tests.
 
-    permutations : int or None (default), optional
-        The number of random permutations that will be used to estimate
-        p-values using a permutation test. If `permutations` equals or exceeds
-        the number of distinct permutations, an exact test is performed
-        instead (i.e. each distinct permutation is used exactly once).
-        If None (default), use the t-distribution to calculate p-values.
+    permutations : non-negative int, np.inf, or None (default), optional
+        If 0 or None (default), use the t-distribution to calculate p-values.
+        Otherwise, `permutations` is  the number of random permutations that
+        will be used to estimate p-values using a permutation test. If
+        `permutations` equals or exceeds the number of distinct partitions of
+        the pooled data, an exact test is performed instead (i.e. each
+        distinct partition is used exactly once). See Notes for details.
 
         .. versionadded:: 1.7.0
 
@@ -5884,16 +5893,20 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     against the null hypothesis of equal population means.
 
     By default, the p-value is determined by comparing the t-statistic of the
-    observed data against a theoretical t-distribution, which assumes that the
-    populations are normally distributed.
-    When ``1 < permutations < factorial(n)``, where ``n`` is the total
-    number of data, the data are randomly assigned to either group `a`
+    observed data against a theoretical t-distribution.
+    When ``1 < permutations < binom(n, k)``, where
+
+    * ``k`` is the number of observations in `a`,
+    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are pooled (concatenated), randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations >= factorial(n)``, an exact test is performed: the data are
-    permuted within and between the groups in each distinct way exactly once.
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6009,12 +6022,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    if permutations:
+    if permutations is not None and permutations != 0:
         if trim != 0:
             raise ValueError("Permutations are currently not supported "
                              "with trimming.")
-        if int(permutations) != permutations or permutations < 0:
-            raise ValueError("Permutations must be a positive integer.")
+        if permutations < 0 or (np.isfinite(permutations) and
+                                int(permutations) != permutations) :
+            raise ValueError("Permutations must be a non-negative integer.")
 
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
@@ -6117,29 +6131,31 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
-def _data_permutations(data, n, axis=-1, random_state=None):
-    """
-    Vectorized permutation of data, assumes `random_state` is already checked.
-    """
+def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
+    """All partitions of data into sets of given lengths, ignoring order"""
+
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
 
     # prepare permutation indices
-    m = data.shape[axis]
-    n_max = float_factorial(m)  # number of distinct permutations
+    size = data.shape[axis]
+    # number of distinct combinations
+    n_max = special.comb(size, size_a)
 
-    if n < n_max:
-        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    if permutations < n_max:
+        indices = np.array([random_state.permutation(size)
+                            for i in range(permutations)]).T
     else:
-        n = n_max
-        indices = np.array(list(permutations(range(m)))).T
+        permutations = n_max
+        indices = np.array([np.concatenate(z)
+                            for z in _all_partitions(size_a, size-size_a)]).T
 
     data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
     data = data.swapaxes(-2, axis)   # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, n
+    return data, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6208,8 +6224,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_permutations(mat, n=permutations,
-                                                random_state=random_state)
+    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
+                                              random_state=random_state)
+
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
@@ -6655,18 +6672,18 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
-    scipy.stats.fisher_exact : A more powerful alternative to the chisquare
-                               test if any of the frequencies are less than 5.
+    scipy.stats.fisher_exact : Fisher exact test on a 2x2 contingency table.
+    scipy.stats.barnard_exact : An unconditional exact test. An alternative
+        to chi-squared test for small sample sizes.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5. If one or more frequencies
-    are less than 5, Fisher's Exact Test can be used with greater statistical
-    power. According to [3]_, the total number of samples is recommended to be
-    greater than 13, otherwise a table-based method of obtaining p-values is 
-    recommended.
+    and expected frequencies should be at least 5. According to [3]_, the
+    total number of samples is recommended to be greater than 13,
+    otherwise exact tests (such as Barnard's Exact test) should be used
+    because they do not overreject.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
@@ -6688,7 +6705,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
     .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
            in the case of a correlated system of variables is such that it can be reasonably 
-           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50 
            (1900), pp. 157-175.
 
     Examples

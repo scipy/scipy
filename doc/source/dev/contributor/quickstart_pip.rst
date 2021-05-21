@@ -9,8 +9,8 @@ Development environment quickstart guide using ``pip`` on Ubuntu Linux
 This is a high-level overview of what is needed to set up a development
 environment. This is only one possible way out of many. This guide assumes
 you have a fresh install of Ubuntu Linux 20.04, which only has a ``python3``
-executable. We also assume you have already installed ``git`` and cloned
-the SciPy repository.
+executable. We also assume you have already installed ``git``, cloned
+the SciPy repository and initialized/updated git submodules.
 
 
 Installing the system-level dependencies

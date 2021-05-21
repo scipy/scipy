@@ -667,6 +667,22 @@ def somersd(x, y=None):
     return SomersDResult(d, p, table)
 
 
+def _all_partitions(nx, ny):
+    """
+    Partition a set of indices into two fixed-length sets in all possible ways
+
+    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
+    ny in all possible ways (ignoring order of elements).
+    """
+    z = np.arange(nx+ny)
+    for c in combinations(z, nx):
+        x = np.array(c)
+        mask = np.ones(nx+ny, bool)
+        mask[x] = False
+        y = z[mask]
+        yield x, y
+
+        
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -1037,28 +1053,21 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     for a given value s (float) of the test statistic by enumerating
     all possible combinations. nx and ny are the sizes of the samples.
     """
-    z = np.arange(1, nx+ny+1)
-    rangex = np.arange(1, nx+1)
-    rangey = np.arange(1, ny+1)
+    rangex = np.arange(nx)
+    rangey = np.arange(ny)
 
     us = []
-    # for the first sample x, select all possible combinations of
-    # the ranks of the elements of x in the combined sample
-    # note that the acutal values of the samples are irrelevant
-    # once the ranks of the elements of x are fixed, the
-    # ranks of the elements in the second sample
-    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all
-    for c in combinations(z, nx):
-        x = np.array(c)
-        # the ranks of the second sample y are given by the set z - x
-        # note than one needs to shift by -1 since the lowest rank is 1
-        mask = np.ones(nx+ny, bool)
-        mask[x-1] = False
-        y = z[mask]
+
+    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
+    # into two sets of length nx and ny
+    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
+    # this does not change the value of the statistic.
+    for x, y in _all_partitions(nx, ny):
         # compute the statistic
         u = nx * np.sum((x - rangex)**2)
         u += ny * np.sum((y - rangey)**2)
         us.append(u)
+
     # compute the values of u and the frequencies
     u, cnt = np.unique(us, return_counts=True)
     return np.sum(cnt[u >= s]) / np.sum(cnt)
