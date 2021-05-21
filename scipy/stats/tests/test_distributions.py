@@ -28,7 +28,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import FitDataError
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
 
 # python -OO strips docstrings
@@ -5649,6 +5649,79 @@ class TestArgus:
     def test_var(self, chi, expected_var, rtol):
         v = stats.argus.var(chi, scale=1)
         assert_allclose(v, expected_var, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize('chi, expected, rtol',
+                             [(0.9, 0.07646314974436118, 1e-14),
+                              (0.5, 0.015429797891863365, 1e-14),
+                              (0.1, 0.0001325825293278049, 1e-14),
+                              (0.01, 1.3297677078224565e-07, 1e-15),
+                              (1e-3, 1.3298072023958999e-10, 1e-14),
+                              (1e-4, 1.3298075973486862e-13, 1e-14),
+                              (1e-6, 1.32980760133771e-19, 1e-14),
+                              (1e-9, 1.329807601338109e-28, 1e-15)])
+    def test_argus_phi_small_chi(self, chi, expected, rtol):
+        assert_allclose(_argus_phi(chi), expected, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.28414073302940573, 1.2742227939992954, 1.2381254688255896)),
+         (0.2, (0.296172952995264, 1.2951290588110516, 1.1865767100877576)),
+         (0.1, (0.29791447523536274, 1.29806307956989, 1.1793168289857412)),
+         (0.01, (0.2984904104866452, 1.2990283628160553, 1.1769268414080531)),
+         (1e-3, (0.298496172925224, 1.2990380082487925, 1.176902956021053)),
+         (1e-4, (0.29849623054991836, 1.2990381047023793, 1.1769027171686324)),
+         (1e-6, (0.2984962311319278, 1.2990381056765605, 1.1769027147562232)),
+         (1e-9, (0.298496231131986, 1.299038105676658, 1.1769027147559818))])
+    def test_pdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.pdf(x, chi), expected, rtol=1e-13)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.9857660526895221, 0.6616565930168475, 0.08796070398429937)),
+         (0.2, (0.9851555052359501, 0.6514666238985464, 0.08362690023746594)),
+         (0.1, (0.9850670974995661, 0.6500061310508574, 0.08302050640683846)),
+         (0.01, (0.9850378582451867, 0.6495239242251358, 0.08282109244852445)),
+         (1e-3, (0.9850375656906663, 0.6495191015522573, 0.08281910005231098)),
+         (1e-4, (0.9850375627651049, 0.6495190533254682, 0.08281908012852317)),
+         (1e-6, (0.9850375627355568, 0.6495190528383777, 0.08281907992729293)),
+         (1e-9, (0.9850375627355538, 0.649519052838329, 0.0828190799272728))])
+    def test_sf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.0142339473104779, 0.3383434069831524, 0.9120392960157007)),
+         (0.2, (0.014844494764049919, 0.34853337610145363, 0.916373099762534)),
+         (0.1, (0.014932902500433911, 0.34999386894914264, 0.9169794935931616)),
+         (0.01, (0.014962141754813293, 0.35047607577486417, 0.9171789075514756)),
+         (1e-3, (0.01496243430933372, 0.35048089844774266, 0.917180899947689)),
+         (1e-4, (0.014962437234895118, 0.3504809466745317, 0.9171809198714769)),
+         (1e-6, (0.01496243726444329, 0.3504809471616223, 0.9171809200727071)),
+         (1e-9, (0.014962437264446245, 0.350480947161671, 0.9171809200727272))])
+    def test_cdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.cdf(x, chi), expected, rtol=1e-12)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected, rtol',
+        [(0.5, (0.5964284712757741, 0.052890651988588604), 1e-12),
+         (0.101, (0.5893490968089076, 0.053017469847275685), 1e-11),
+         (0.1, (0.5893431757009437, 0.05301755449499372), 1e-13),
+         (0.01, (0.5890515677940915, 0.05302167905837031), 1e-13),
+         (1e-3, (0.5890486520005177, 0.053021719862088104), 1e-13),
+         (1e-4, (0.5890486228426105, 0.0530217202700811), 1e-13),
+         (1e-6, (0.5890486225481156, 0.05302172027420182), 1e-13),
+         (1e-9, (0.5890486225480862, 0.05302172027420224), 1e-13)])
+    def test_stats_small_chi(self, chi, expected, rtol):
+        val = stats.argus.stats(chi, moments='mv')
+        assert_allclose(val, expected, rtol=rtol)
 
 
 class TestNakagami:

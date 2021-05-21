@@ -321,3 +321,27 @@ struct BraycurtisDistance {
         });
     }
 };
+
+struct CanberraDistance {
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
+        // dist = (abs(x - y) / (abs(x) + abs(y))).sum()
+        transform_reduce_2d_<2>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+            auto num = std::abs(x - y);
+            auto denom = std::abs(x) + std::abs(y);
+            // branchless replacement for (denom == 0) ? 0 : num / denom;
+            return num / (denom + (denom == 0));
+        });
+    }
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
+        // dist = (w * abs(x - y) / (abs(x) + abs(y))).sum()
+        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+            auto num = w * std::abs(x - y);
+            auto denom = std::abs(x) + std::abs(y);
+            // branchless replacement for (denom == 0) ? 0 : num / denom;
+            return num / (denom + (denom == 0));
+        });
+    }
+};

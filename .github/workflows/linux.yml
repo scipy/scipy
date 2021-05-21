@@ -81,7 +81,8 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
+        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
+        pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python3.10 -m pip install -r mypy_requirements.txt
 
     - name: Mypy
