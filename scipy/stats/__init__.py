@@ -231,6 +231,7 @@ Summary statistics
    differential_entropy
    median_absolute_deviation
    median_abs_deviation
+   bootstrap
 
 Frequency statistics
 ====================
@@ -445,6 +446,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms

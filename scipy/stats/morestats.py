@@ -2927,6 +2927,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
         y = y.flatten()
         axis = 0
 
+    if axis < 0:
+        axis = x.ndim + axis
+
     # Determine shape of the result arrays
     res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
     if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
