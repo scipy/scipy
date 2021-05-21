@@ -1,7 +1,4 @@
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
+import numpy.typing as npt
 
 def initialize_v(
     v : npt.ArrayLike, 
@@ -52,7 +49,9 @@ def initialize_direction_numbers() -> None: ...
 
 _MAXDIM: int = ...
 _MAXBIT: int = ...
- 
 
-
-
+def _test_find_index(
+    p_cumulative: npt.ArrayLike, 
+    size: int, 
+    value: float
+    ) -> int: ...
