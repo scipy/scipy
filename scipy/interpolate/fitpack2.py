@@ -72,7 +72,7 @@ class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
-    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. `s`
     specifies the number of knots by specifying a smoothing condition.
 
     Parameters
@@ -83,16 +83,16 @@ class UnivariateSpline:
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting.  Must be positive.  If `w` is None,
+        Weights for spline fitting. Must be positive. If `w` is None,
         weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
     k : int, optional
-        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+        Degree of the smoothing spline. Must be 1 <= `k` <= 5.
         ``k = 3`` is a cubic spline. Default is 3.
     s : float or None, optional
-        Positive smoothing factor used to choose the number of knots.  Number
+        Positive smoothing factor used to choose the number of knots. Number
         of knots will be increased until the smoothing condition is satisfied::
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
