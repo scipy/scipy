@@ -5,12 +5,10 @@ import numbers
 from abc import ABC, abstractmethod
 import math
 import warnings
-from typing import List
 
 import numpy as np
 
 from scipy._lib._util import rng_integers
-from scipy.optimize import dual_annealing
 import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
@@ -953,8 +951,8 @@ class OptimalLatinHypercube(QMCEngine):
     start_sample : array_like (n, d), optional
         Initial sample to optimize. `LatinHypercube`
         is used to generate a first design otherwise.
-    niter : int, optional
-        Number of iterations of optimization to perform. Default is 1.
+    n_perturbations : int, optional
+        Number of perturbation to perform. Default is 10000.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -964,25 +962,15 @@ class OptimalLatinHypercube(QMCEngine):
 
     Notes
     -----
-    The specified optimization `method` is used to select a new set of
-    permutations to perform. If `method` is None,
-    `~scipy.optimize.dual_annealing` optimization is used. `niter` set of
-    optimizations are performed.
-
-    During the optimization, the best design is constantly update. This is
-    known as
-    Enhanced Stochastic Evolutionary algorithm (ESE) in the literature.
-
-    Centered discrepancy-based design shows better space filling robustness
-    toward 2D and 3D subprojections. Distance-based design shows better space
-    filling but less robustness to subprojections [2]_.
+    `n_perturbations` set of random permutations are performed aginst a LHS
+    sample. The best design based on the centered discrepancy is constantly
+    update. Centered discrepancy-based design shows better space filling
+    robustness toward 2D and 3D subprojections. Distance-based design shows
+    better space filling but less robustness to subprojections [1]_.
 
     References
     ----------
-    .. [1] Jin et al., "An efficient algorithm for constructing optimal design
-       of computer experiments."
-       Journal of Statistical Planning and Inference, 2005.
-    .. [2] Damblin et al., "Numerical studies of space filling designs:
+    .. [1] Damblin et al., "Numerical studies of space filling designs:
        optimization of Latin Hypercube Samples and subprojection properties."
        Journal of Simulation, 2013.
 
@@ -1008,23 +996,25 @@ class OptimalLatinHypercube(QMCEngine):
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
-    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2,niter=5)
+    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2, n_perturbations=5000)
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
     0.01600398742881648  # random
 
     """
 
-    def __init__(self, d, start_sample=None, niter=1, seed=None):
+    def __init__(self, d, *, start_sample=None,
+                 n_perturbations: int = 10000,
+                 seed=None):
         super().__init__(d=d, seed=seed)
-        self.niter = niter
+        self.n_perturbations = n_perturbations
 
         if start_sample is not None:
-            self.best_sample = np.asarray(start_sample).copy()
-            self.best_disc = discrepancy(self.best_sample)
+            self.start_sample = np.asarray(start_sample).copy()
+            self.start_disc = discrepancy(self.start_sample)
         else:
-            self.best_disc = np.inf
-            self.best_sample = None
+            self.start_sample = None
+            self.start_disc = np.inf
 
         self.lhs = LatinHypercube(self.d, seed=self.rng)
 
@@ -1045,98 +1035,36 @@ class OptimalLatinHypercube(QMCEngine):
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        if self.best_sample is None:
-            self.best_sample = self.lhs.random(n)
-            self.best_disc = discrepancy(self.best_sample)
+        if self.start_sample is None:
+            best_sample = self.lhs.random(n)
+            best_disc = discrepancy(best_sample)
+        else:
+            best_sample = self.start_sample
+            best_disc = self.start_disc
 
         if n == 1:
-            return self.best_sample
+            return best_sample
 
         bounds = ([0, self.d - 1],
                   [0, n - 1],
                   [0, n - 1])
 
-        def outer_loop(alpha=0.8, alpha_2=0.9, alpha_3=0.7, tol=1):
-            th = 0.005 * self.best_disc
-            sample = self.best_sample
-            disc = self.best_disc
-
-            for _ in range(self.niter):
-                old_best_disc = self.best_disc
-
-                # inner loop
-                n_iters = 100  # M
-                n_perms = 50  # J
-                n_acpt = 0
-                n_imp = 0
-
-                for _ in range(n_iters):
-                    col = rng_integers(self.rng, *bounds[0], size=n_perms)
-                    row_1 = rng_integers(self.rng, *bounds[1], size=n_perms)
-                    row_2 = rng_integers(self.rng, *bounds[2], size=n_perms)
-
-                    disc_inner = [_perturb_discrepancy(sample,
-                                                       row_1[i], row_2[i],
-                                                       col[i],
-                                                       disc)
-                                  for i in range(n_perms)]
-
-                    idx = np.argmin(disc_inner)
-                    disc_inner = disc_inner[idx]
-
-                    if (disc_inner - disc) <= (th * self.rng.uniform()):
-                        col, row_1, row_2 = col[idx], row_1[idx], row_2[idx]
-
-                        sample[row_1, col], sample[row_2, col] = (
-                            sample[row_2, col], sample[row_1, col])
-
-                        disc = disc_inner
-                        n_acpt += 1
-
-                        if disc < self.best_disc:
-                            self.best_sample = sample
-                            self.best_disc = disc
-                            n_imp += 1
-
-                r_acpt, r_imp = n_acpt / n_iters, n_imp / n_iters
-
-                if (old_best_disc / self.best_disc) > tol:
-                    # improvement
-                    if (r_acpt > 0.1) and (r_imp < r_acpt):
-                        th *= alpha_2  # decrease
-                    elif (r_acpt > 0.1) and (r_imp == r_acpt):
-                        pass  # maintain
-                    else:
-                        th /= alpha_3  # increase
-                else:
-                    # exploration
-                    if r_acpt < 0.1:
-                        th /= alpha  # increase
-                    elif r_acpt > 0.8:
-                        th *= alpha  # decrease
-
-        outer_loop()
+        for _ in range(self.n_perturbations):
+            col = rng_integers(self.rng, *bounds[0])
+            row_1 = rng_integers(self.rng, *bounds[1])
+            row_2 = rng_integers(self.rng, *bounds[2])
+            doe = best_sample.copy()
+            disc = _perturb_discrepancy(best_sample,
+                                        row_1, row_2, col,
+                                        best_disc)
+            if disc < best_disc:
+                doe[row_1, col], doe[row_2, col] = (
+                    doe[row_2, col], doe[row_1, col])
+                best_disc = disc
+                best_sample = doe
 
         self.num_generated += n
-
-        sample = self.best_sample
-        # will force next calls to random to start from a LHS
-        self.best_sample = None
-
-        return sample
-
-    def reset(self):
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine: OptimalLatinHypercube
-            Engine reset to its base state.
-
-        """
-        self.__init__(d=self.d, seed=self.rng_seed)
-        self.num_generated = 0
-        return self
+        return best_sample
 
 
 class Sobol(QMCEngine):
