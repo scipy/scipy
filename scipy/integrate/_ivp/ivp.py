@@ -427,15 +427,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
       0.12428631 0.05403123]]
 
     A couple examples of using solve_ivp to solve differential functions with
-    complex matrix A
+    complex matrix ``A``.
 
-    >>> import numpy as np
     >>> from scipy.integrate import solve_ivp
     >>> A = np.array([[-0.25 + 0.14j, 0, 0.33 + 0.44j],
     ...               [0.25 + 0.58j, -0.2 + 0.14j, 0],
     ...               [0, 0.2 + 0.4j, -0.1 + 0.97j]])
 
-    Solving an ivp with A from above and y as 3x1 vector:
+    Solving an ivp with ``A`` from above and ``y`` as 3x1 vector:
 
     >>> def deriv_vec(t, y):
     ...     return A @ y
@@ -447,7 +446,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> print(result.y[:, -1])
     [18.46+45.25j 10.01+36.23j -4.98+80.07j]
 
-    Solving an ivp with A from above y as 3x3 matrix :
+    Solving an ivp with ``A`` from above ``y`` as 3x3 matrix :
 
     >>> def deriv_mat(t, y):
     ...     return (A @ y.reshape(3, 3)).flatten()
