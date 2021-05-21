@@ -388,7 +388,8 @@ def update_discrepancy(
     return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 
 
-def _perturb_discrepancy(sample, i1, i2, k, disc):
+def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
+                         disc: float):
     """Centered discrepancy after an elementary perturbation of a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
@@ -420,7 +421,6 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
        Inference, 2005.
 
     """
-    sample = np.asarray(sample)
     n = sample.shape[0]
 
     z_ij = sample - 0.5
@@ -1053,9 +1053,9 @@ class OptimalLatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, d, *, start_sample=None,
-                 n_perturbations: int = 10000,
-                 seed=None):
+    def __init__(self, d: IntNumber, *, start_sample: npt.ArrayLike = None,
+                 n_perturbations: IntNumber = 10000,
+                 seed: SeedType = None):
         super().__init__(d=d, seed=seed)
         self.n_perturbations = n_perturbations
 
@@ -1068,7 +1068,7 @@ class OptimalLatinHypercube(QMCEngine):
 
         self.lhs = LatinHypercube(self.d, seed=self.rng)
 
-    def random(self, n=1):
+    def random(self, n: IntNumber = 1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -1079,7 +1079,7 @@ class OptimalLatinHypercube(QMCEngine):
         Returns
         -------
         sample : array_like (n, d)
-            Optimal sample.
+            Optimal LHS sample.
 
         """
         if self.d == 0 or n == 0:
