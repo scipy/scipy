@@ -87,7 +87,7 @@ class UnivariateSpline:
         weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
+        `bbox` is None, ``bbox = [x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline. Must be 1 <= `k` <= 5.
         ``k = 3`` is a cubic spline. Default is 3.
@@ -590,7 +590,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
+        `bbox` is None, ``bbox = [x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline. Must be 1 <= `k` <= 5.
         ``k = 3`` is a cubic spline. Default is 3.
@@ -711,7 +711,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None
+        `bbox` is None, ``bbox = [x[0], x[-1]]``. Default is None
     k : int, optional
         Degree of the smoothing spline. Must be 1 <= `k` <= 5.
         ``k = 3`` is a cubic spline. Default is 3.
