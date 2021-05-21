@@ -1016,11 +1016,14 @@ class OptimalLatinHypercube(QMCEngine):
     sample. The best design based on the centered discrepancy is constantly
     update. Centered discrepancy-based design shows better space filling
     robustness toward 2D and 3D subprojections. Distance-based design shows
-    better space filling but less robustness to subprojections [1]_.
+    better space filling but less robustness to subprojections [2]_.
 
     References
     ----------
-    .. [1] Damblin et al., "Numerical studies of space filling designs:
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
+    .. [2] Damblin et al., "Numerical studies of space filling designs:
        optimization of Latin Hypercube Samples and subprojection properties."
        Journal of Simulation, 2013.
 
