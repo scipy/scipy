@@ -131,83 +131,6 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
     return shift, scale, coeffs
 
 
-def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
-    """Sanitize __init__ arguments for RBF(Local)Interpolator."""
-    y = np.asarray(y, dtype=float, order="C")
-    if y.ndim != 2:
-        raise ValueError("`y` must be a 2-dimensional array.")
-
-    ny, ndim = y.shape
-
-    dtype = complex if np.iscomplexobj(d) else float
-    d = np.asarray(d, dtype=dtype, order="C")
-    if d.shape[0] != ny:
-        raise ValueError(
-            f"Expected the first axis of `d` to have length {ny}."
-            )
-
-    if np.isscalar(smoothing):
-        smoothing = np.full(ny, smoothing, dtype=float)
-    else:
-        smoothing = np.asarray(smoothing, dtype=float, order="C")
-        if smoothing.shape != (ny,):
-            raise ValueError(
-                f"Expected `smoothing` to be a scalar or have shape ({ny},)."
-                )
-
-    kernel = kernel.lower()
-    if kernel not in _AVAILABLE:
-        raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
-
-    if epsilon is None:
-        if kernel in _SCALE_INVARIANT:
-            epsilon = 1.0
-        else:
-            raise ValueError(
-                "`epsilon` must be specified if `kernel` is not one of "
-                f"{_SCALE_INVARIANT}."
-                )
-    else:
-        epsilon = float(epsilon)
-
-    min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
-    if degree is None:
-        degree = max(min_degree, 0)
-    else:
-        degree = int(degree)
-        if degree < -1:
-            raise ValueError("`degree` must be at least -1.")
-        elif degree < min_degree:
-            warnings.warn(
-                f"`degree` should not be below {min_degree} when `kernel` is "
-                f"'{kernel}'. The interpolant may not be uniquely solvable, "
-                "and the smoothing parameter may have an unintuitive effect.",
-                UserWarning
-                )
-
-    if k is None:
-        nobs = ny
-    else:
-        # make sure the number of nearest neighbors used for interpolation does
-        # not exceed the number of observations
-        k = int(min(k, ny))
-        nobs = k
-
-    # The polynomial matrix must have full column rank in order for the
-    # interpolant to be well-posed, which is not possible if there are fewer
-    # observations than monomials
-    nmonos = comb(degree + ndim, ndim, exact=True)
-    if nmonos > nobs:
-        raise ValueError(
-            f"At least {nmonos} data points are required when `degree` is "
-            f"{degree} and the number of dimensions is {ndim}. Consider "
-            "lowering `degree` and/or setting `kernel` to an RBF with a lower "
-            "minimum degree."
-            )
-
-    return y, d, smoothing, kernel, epsilon, degree, k
-
-
 class RBFInterpolator:
     """Radial basis function (RBF) interpolation in N dimensions.
 
@@ -217,6 +140,10 @@ class RBFInterpolator:
         Data point coordinates.
     d : (P, ...) array_like
         Data values at `y`.
+    neighbors : int, optional
+        Number of nearest observations used to determine the value at each
+        interpolation point. All observations are used by default.
+        TODO ELABORATE
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
@@ -306,7 +233,7 @@ class RBFInterpolator:
     increases quadratically with the number of data points. This makes RBF
     interpolation impractical when interpolating more than about a thousand
     data points. See `RBFLocalInterpolator` for a more memory-efficient
-    alternative to this class.
+    alternative to this class. TODO UPDATE
 
     .. versionadded:: 1.7.0
 
@@ -353,164 +280,114 @@ class RBFInterpolator:
     """
 
     def __init__(self, y, d,
+                 neighbors=None,
                  smoothing=0.0,
                  kernel="thin_plate_spline",
                  epsilon=None,
                  degree=None):
-        y, d, smoothing, kernel, epsilon, degree, _ = _sanitize_init_args(
-            y, d, smoothing, kernel, epsilon, degree, None
-            )
+        y = np.asarray(y, dtype=float, order="C")
+        if y.ndim != 2:
+            raise ValueError("`y` must be a 2-dimensional array.")
 
         ny, ndim = y.shape
-        data_shape = d.shape[1:]
-        data_type = d.dtype
-        d = d.reshape((ny, -1))
-        # If `d` is complex, convert it to a float array with twice as many
-        # columns. Otherwise, the lhs matrix would need to be converted to
-        # complex and take up 2x more memory than necessary.
-        d = d.view(float)
-        powers = _monomial_powers(ndim, degree)
-        shift, scale, coeffs = _build_and_solve_system(
-            y, d, smoothing, kernel, epsilon, powers
-            )
 
-        self.y = y
-        self.kernel = kernel
-        self.epsilon = epsilon
-        self.powers = powers
-        self.shift = shift
-        self.scale = scale
-        self.coeffs = coeffs
-        self.data_shape = data_shape
-        self.data_type = data_type
-
-    def __call__(self, x):
-        """Evaluate the interpolant at `x`.
-
-        Parameters
-        ----------
-        x : (Q, N) array_like
-            Interpolation point coordinates.
-
-        Returns
-        -------
-        (Q, ...) ndarray
-            Values of the interpolant at `x`.
-
-        """
-        x = np.asarray(x, dtype=float, order="C")
-        if x.ndim != 2:
-            raise ValueError("`x` must be a 2-dimensional array.")
-
-        nx, ndim = x.shape
-        if ndim != self.y.shape[1]:
+        d_dtype = complex if np.iscomplexobj(d) else float
+        d = np.asarray(d, dtype=d_dtype, order="C")
+        if d.shape[0] != ny:
             raise ValueError(
-                "Expected the second axis of `x` to have length "
-                f"{self.y.shape[1]}."
+                f"Expected the first axis of `d` to have length {ny}."
                 )
 
-        out = _evaluate(
-            x, self.y, self.kernel, self.epsilon, self.powers, self.shift,
-            self.scale, self.coeffs
-            )
-        out = out.view(self.data_type)
-        out = out.reshape((nx,) + self.data_shape)
-        return out
-
-
-class RBFLocalInterpolator:
-    """RBF interpolation using the k nearest data points.
-
-    This class can be a faster and more memory-efficient alternative to
-    `RBFInterpolator` when interpolating many data points.
-
-    See the Notes section of `RBFInterpolator` for a description of RBF
-    interpolation.
-
-    Parameters
-    ----------
-    y : (P, N) array_like
-        Data point coordinates.
-    d : (P, ...) array_like
-        Data values at `y`.
-    k : int, optional
-        Number of nearest data points to use for each interpolation point.
-    smoothing : float or (P,) array_like, optional
-        Smoothing parameter. The interpolant perfectly fits the data when this
-        is set to 0.
-    kernel : str, optional
-        Type of RBF. This should be one of:
-
-            - 'linear'               : ``-r``
-            - 'thin_plate_spline'    : ``r**2 * log(r)``
-            - 'cubic'                : ``r**3``
-            - 'quintic'              : ``-r**5``
-            - 'multiquadric'         : ``-sqrt(1 + r**2)``
-            - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
-            - 'inverse_quadratic'    : ``1/(1 + r**2)``
-            - 'gaussian'             : ``exp(-r**2)``
-
-    epsilon : float, optional
-        Shape parameter that scales the input to the RBF. This can be ignored
-        if `kernel` is 'linear', 'thin_plate_spline', 'cubic', or 'quintic'
-        because it has the same effect as scaling the smoothing parameter.
-        Otherwise, this must be specified.
-    degree : int, optional
-        Degree of the added polynomial. For some RBFs the interpolant may not
-        be well-posed if the polynomial degree is too small. Those RBFs and
-        their corresponding minimum degrees are:
-
-            - 'multiquadric'      : 0
-            - 'linear'            : 0
-            - 'thin_plate_spline' : 1
-            - 'cubic'             : 1
-            - 'quintic'           : 2
-
-        The default value is the minimum degree for `kernel` or 0 if there is
-        no minimum degree. Set this to -1 for no added polynomial.
-
-    Notes
-    -----
-
-    .. versionadded:: 1.7.0
-
-    See Also
-    --------
-    RBFInterpolator
-    LinearNDInterpolator
-    NearestNDInterpolator
-    CloughTocher2DInterpolator
-
-    """
-
-    def __init__(self, y, d,
-                 k=50,
-                 smoothing=0.0,
-                 kernel="thin_plate_spline",
-                 epsilon=None,
-                 degree=None):
-        y, d, smoothing, kernel, epsilon, degree, k = _sanitize_init_args(
-            y, d, smoothing, kernel, epsilon, degree, k
-            )
-
-        ny, ndim = y.shape
-        data_shape = d.shape[1:]
-        data_type = d.dtype
+        d_shape = d.shape[1:]
         d = d.reshape((ny, -1))
+        # If `d` is complex, convert it to a float array with twice as many
+        # columns. Otherwise, the LHS matrix would need to be converted to
+        # complex and take up 2x more memory than necessary.
         d = d.view(float)
+
+        if np.isscalar(smoothing):
+            smoothing = np.full(ny, smoothing, dtype=float)
+        else:
+            smoothing = np.asarray(smoothing, dtype=float, order="C")
+            if smoothing.shape != (ny,):
+                raise ValueError(
+                    "Expected `smoothing` to be a scalar or have shape "
+                    f"({ny},)."
+                    )
+
+        kernel = kernel.lower()
+        if kernel not in _AVAILABLE:
+            raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
+
+        if epsilon is None:
+            if kernel in _SCALE_INVARIANT:
+                epsilon = 1.0
+            else:
+                raise ValueError(
+                    "`epsilon` must be specified if `kernel` is not one of "
+                    f"{_SCALE_INVARIANT}."
+                    )
+        else:
+            epsilon = float(epsilon)
+
+        min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
+        if degree is None:
+            degree = max(min_degree, 0)
+        else:
+            degree = int(degree)
+            if degree < -1:
+                raise ValueError("`degree` must be at least -1.")
+            elif degree < min_degree:
+                warnings.warn(
+                    f"`degree` should not be below {min_degree} when `kernel` "
+                    f"is '{kernel}'. The interpolant may not be uniquely "
+                    "solvable, and the smoothing parameter may have an "
+                    "unintuitive effect.",
+                    UserWarning
+                    )
+
+        if neighbors is None:
+            nobs = ny
+        else:
+            # make sure the number of nearest neighbors used for interpolation
+            # does not exceed the number of observations
+            neighbors = int(min(neighbors, ny))
+            nobs = neighbors
+
         powers = _monomial_powers(ndim, degree)
-        tree = KDTree(y)
+        # The polynomial matrix must have full column rank in order for the
+        # interpolant to be well-posed, which is not possible if there are
+        # fewer observations than monomials
+        nmonos = powers.shape[0]
+        if nmonos > nobs:
+            raise ValueError(
+                f"At least {nmonos} data points are required when `degree` is "
+                f"{degree} and the number of dimensions is {ndim}. Consider "
+                "lowering `degree` and/or setting `kernel` to an RBF with a "
+                "lower minimum degree."
+                )
+
+        if neighbors is None:
+            shift, scale, coeffs = _build_and_solve_system(
+                y, d, smoothing, kernel, epsilon, powers
+                )
+            # Make these attributes private since they do not always exist.
+            self._shift = shift
+            self._scale = scale
+            self._coeffs = coeffs
+
+        else:
+            self._tree = KDTree(y)
 
         self.y = y
         self.d = d
-        self.k = k
+        self.d_shape = d_shape
+        self.d_dtype = d_dtype
+        self.neighbors = neighbors
         self.smoothing = smoothing
         self.kernel = kernel
         self.epsilon = epsilon
         self.powers = powers
-        self.tree = tree
-        self.data_shape = data_shape
-        self.data_type = data_type
 
     def __call__(self, x):
         """Evaluate the interpolant at `x`.
@@ -537,43 +414,60 @@ class RBFLocalInterpolator:
                 f"{self.y.shape[1]}."
                 )
 
-        # Get the indices of the k nearest observation points to each
-        # interpolation point.
-        _, yindices = self.tree.query(x, self.k)
-        if self.k == 1:
-            # KDTree squeezes the output when k=1.
-            yindices = yindices[:, None]
-
-        # Multiple interpolation points may have the same neighborhood of
-        # observation points. Make the neighborhoods unique so that we only
-        # compute the interpolation coefficients once for each neighborhood
-        yindices = np.sort(yindices, axis=1)
-        yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
-        # `inv` tells us which neighborhood will be used by each interpolation
-        # point. Now we find which interpolation points will be using each
-        # neighborhood.
-        xindices = [[] for _ in range(len(yindices))]
-        for i, j in enumerate(inv):
-            xindices[j].append(i)
-
-        out = np.empty((nx, self.d.shape[1]), dtype=float)
-        for xidx, yidx in zip(xindices, yindices):
-            # `yidx` are the indices of the observations in this neighborhood.
-            # `xidx` are the indices of the interpolation points that are using
-            # this neighborhood.
-            xnbr = x[xidx]
-            ynbr = self.y[yidx]
-            dnbr = self.d[yidx]
-            snbr = self.smoothing[yidx]
-            shift, scale, coeffs = _build_and_solve_system(
-                ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
+        if self.neighbors is None:
+            out = _evaluate(
+                x, self.y, self.kernel, self.epsilon, self.powers, self._shift,
+                self._scale, self._coeffs
                 )
 
-            out[xidx] = _evaluate(
-                xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
-                scale, coeffs
-                )
+        else:
+            # Get the indices of the k nearest observation points to each
+            # interpolation point.
+            _, yindices = self._tree.query(x, self.neighbors)
+            if self.neighbors == 1:
+                # `KDTree` squeezes the output when neighbors=1.
+                yindices = yindices[:, None]
 
-        out = out.view(self.data_type)
-        out = out.reshape((nx,) + self.data_shape)
+            # Multiple interpolation points may have the same neighborhood of
+            # observation points. Make the neighborhoods unique so that we only
+            # compute the interpolation coefficients once for each
+            # neighborhood.
+            yindices = np.sort(yindices, axis=1)
+            yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+            # `inv` tells us which neighborhood will be used by each
+            # interpolation point. Now we find which interpolation points will
+            # be using each neighborhood.
+            xindices = [[] for _ in range(len(yindices))]
+            for i, j in enumerate(inv):
+                xindices[j].append(i)
+
+            out = np.empty((nx, self.d.shape[1]), dtype=float)
+            for xidx, yidx in zip(xindices, yindices):
+                # `yidx` are the indices of the observations in this
+                # neighborhood. `xidx` are the indices of the interpolation
+                # points that are using this neighborhood.
+                xnbr = x[xidx]
+                ynbr = self.y[yidx]
+                dnbr = self.d[yidx]
+                snbr = self.smoothing[yidx]
+                shift, scale, coeffs = _build_and_solve_system(
+                    ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
+                    )
+
+                out[xidx] = _evaluate(
+                    xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
+                    scale, coeffs
+                    )
+
+        out = out.view(self.d_dtype)
+        out = out.reshape((nx,) + self.d_shape)
         return out
+
+
+class RBFLocalInterpolator(RBFInterpolator):
+    """TODO REMOVE THIS"""
+
+    def __init__(self, *args, **kwargs):
+        neighbors = kwargs.pop('k', 50)
+        super().__init__(*args, neighbors=neighbors, **kwargs)
+
