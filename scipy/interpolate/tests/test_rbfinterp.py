@@ -6,8 +6,8 @@ from numpy.testing import assert_allclose, assert_array_equal
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
-    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE,
-    _monomial_powers, RBFInterpolator, RBFLocalInterpolator
+    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, _monomial_powers,
+    RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
 
@@ -41,7 +41,7 @@ def _2d_test_function(x):
 
 def _is_conditionally_positive_definite(kernel, m):
     # Tests whether the kernel is conditionally positive definite of order m.
-    # See chapter 8 of Fasshauer's "Meshfree Approximation Methods with
+    # See chapter 7 of Fasshauer's "Meshfree Approximation Methods with
     # MATLAB".
     nx = 10
     ntests = 100
@@ -377,7 +377,7 @@ class _TestRBFInterpolator:
         assert_array_equal(yitp1, yitp2)
 
 
-class TestRBFInterpolator(_TestRBFInterpolator):
+class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
     def build(self, *args, **kwargs):
         return RBFInterpolator(*args, **kwargs)
 
@@ -432,14 +432,12 @@ class TestRBFInterpolator(_TestRBFInterpolator):
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
 
-class TestRBFLocalInterpolator20(_TestRBFInterpolator):
-    # RBFLocalInterpolator using 20 nearest neighbors
+class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
+    # RBFInterpolator using 20 nearest neighbors
     def build(self, *args, **kwargs):
-        return RBFLocalInterpolator(*args, **kwargs, k=20)
+        return RBFInterpolator(*args, **kwargs, neighbors=20)
 
     def test_equivalent_to_rbf_interpolator(self):
-        # Make sure this is equivalent to using RBFInterpolator with the 20
-        # nearest observations
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
@@ -458,11 +456,11 @@ class TestRBFLocalInterpolator20(_TestRBFInterpolator):
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
 
-class TestRBFLocalInterpolatorInf(TestRBFInterpolator):
-    # RBFLocalInterpolator using all points. This should behave exactly like
-    # RBFInterpolator
+class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
+    # RBFInterpolator using neighbors=np.inf. This should give exactly the same
+    # results as neighbors=None, but it will be slower.
     def build(self, *args, **kwargs):
-        return RBFLocalInterpolator(*args, **kwargs, k=np.inf)
+        return RBFInterpolator(*args, **kwargs, neighbors=np.inf)
 
     def test_equivalent_to_rbf_interpolator(self):
         seq = Halton(1, scramble=False, seed=np.random.RandomState())

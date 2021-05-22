@@ -11,7 +11,7 @@ from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 
 
-__all__ = ["RBFInterpolator", "RBFLocalInterpolator"]
+__all__ = ["RBFInterpolator"]
 
 
 # The RBFs that are implemented
@@ -460,12 +460,4 @@ class RBFInterpolator:
         out = out.view(self.d_dtype)
         out = out.reshape((nx,) + self.d_shape)
         return out
-
-
-class RBFLocalInterpolator(RBFInterpolator):
-    """TODO REMOVE THIS"""
-
-    def __init__(self, *args, **kwargs):
-        neighbors = kwargs.pop('k', 50)
-        super().__init__(*args, neighbors=neighbors, **kwargs)
 
