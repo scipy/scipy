@@ -1165,7 +1165,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     statistic : float
         The Mann-Whitney statistics
     pvalue : float
-        Approximate p-value assuming a normal distribution.
+        Approximate two-sided p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
