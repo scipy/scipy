@@ -201,8 +201,13 @@ def bootstrap(data, statistic, *, vectorized=True, axis=0,
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
         as separate arguments and returns the resulting statistic.
+        If `vectorized` is set ``True``,
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
+    vectorized : bool, optional (default: ``True``)
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis`, and is assumed to calculate the statistic
+        only for 1D samples.
     axis : int, optional
         The axis of the samples in `data` along which the `statistic` is
         calculated. The default is ``0``.
@@ -368,14 +373,11 @@ def bootstrap(data, statistic, *, vectorized=True, axis=0,
     >>> print(my_statistic(i))
     0.9962357936065914
 
-    `pearsonr` isn't vectorized, but NumPy can take care of that.
-
-    >>> def my_vectorized_statistic(i, axis):
-    ...    return np.apply_along_axis(my_statistic, axis, i)
-
     We call `bootstrap` using the indices of the observations as `data`.
+    Also, since ``my_statistic`` isn't vectorized to calculate the statistic
+    along a given axis, pass in `vectorized=False`.
 
-    >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
+    >>> res = bootstrap((i,), my_statistic, vectorized=False, random_state=rng)
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
