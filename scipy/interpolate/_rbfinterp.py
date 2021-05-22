@@ -121,9 +121,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
                 msg = (
                     "Singular matrix. The matrix of monomials evaluated at "
                     "the data point coordinates does not have full column "
-                    f"rank ({rank}/{nmonos}). Consider lowering `degree` "
-                    "and/or setting `kernel` to an RBF with a lower minimum "
-                    "degree."
+                    f"rank ({rank}/{nmonos})."
                     )
 
         raise LinAlgError(msg)
@@ -141,9 +139,8 @@ class RBFInterpolator:
     d : (P, ...) array_like
         Data values at `y`.
     neighbors : int, optional
-        Number of nearest observations used to determine the value at each
-        interpolation point. All observations are used by default.
-        TODO ELABORATE
+        If specified, the value at each interpolation point will be computed
+        using only this many nearest data points.
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
@@ -185,7 +182,7 @@ class RBFInterpolator:
     :math:`x` can be expressed in terms of :math:`r=||x - c||`, where :math:`c`
     is the center of the RBF.
 
-    An RBF interpolant for the vector of observations :math:`d`, which are made
+    An RBF interpolant for the vector of data values :math:`d`, which are made
     at the locations :math:`y`, is a linear combination of RBFs centered at
     :math:`y` plus a polynomial with a specified degree. The RBF interpolant is
     written as
@@ -208,16 +205,16 @@ class RBFInterpolator:
         P(y)^T a = 0,
 
     where :math:`\\lambda` is a non-negative smoothing parameter that controls
-    how well we want to fit the observations. The observations are fit exactly
-    when the smoothing parameter is 0.
+    how well we want to fit the data. The data are fit exactly when the
+    smoothing parameter is 0.
 
     The above system is uniquely solvable if the following requirements are
     met:
 
         - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
           column rank when `degree` is -1 or 0. When `degree` is 1,
-          :math:`P(y)` has full column rank if there are at least N+1 data
-          points and they are not collinear (N=2), coplanar (N=3), etc.
+          :math:`P(y)` has full column rank when the data point locations are
+          not all collinear (N=2), coplanar (N=3), etc.
         - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
           'cubic', or 'quintic', then `degree` must not be lower than the
           minimum value listed above.
@@ -230,16 +227,19 @@ class RBFInterpolator:
     become ill-conditioned or singular when the shape parameter is too small.
 
     The memory required to solve for the RBF interpolation coefficients
-    increases quadratically with the number of data points. This makes RBF
-    interpolation impractical when interpolating more than about a thousand
-    data points. See `RBFLocalInterpolator` for a more memory-efficient
-    alternative to this class. TODO UPDATE
+    increases quadratically with the number of data points, which can become
+    impractical when interpolating more than about a thousand data points. For
+    large interpolation problems, the `neighbors` argument can be specified to
+    compute the RBF interpolation coefficients using only the nearest data
+    points to each interpolation point. However, specifying `neighbors` adds
+    the computational cost of querying for the nearest data points and causes
+    the RBF interpolation coefficients to be computed each time this class is
+    called.
 
     .. versionadded:: 1.7.0
 
     See Also
     --------
-    RBFLocalInterpolator
     NearestNDInterpolator
     LinearNDInterpolator
     CloughTocher2DInterpolator
@@ -349,28 +349,26 @@ class RBFInterpolator:
         if neighbors is None:
             nobs = ny
         else:
-            # make sure the number of nearest neighbors used for interpolation
-            # does not exceed the number of observations
+            # Make sure the number of nearest neighbors used for interpolation
+            # does not exceed the number of observations.
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
         powers = _monomial_powers(ndim, degree)
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
-        # fewer observations than monomials
-        nmonos = powers.shape[0]
-        if nmonos > nobs:
+        # fewer observations than monomials.
+        if powers.shape[0] > nobs:
             raise ValueError(
-                f"At least {nmonos} data points are required when `degree` is "
-                f"{degree} and the number of dimensions is {ndim}. Consider "
-                "lowering `degree` and/or setting `kernel` to an RBF with a "
-                "lower minimum degree."
+                f"At least {powers.shape[0]} data points are required when "
+                f"`degree` is {degree} and the number of dimensions is {ndim}."
                 )
 
         if neighbors is None:
             shift, scale, coeffs = _build_and_solve_system(
                 y, d, smoothing, kernel, epsilon, powers
                 )
+
             # Make these attributes private since they do not always exist.
             self._shift = shift
             self._scale = scale
