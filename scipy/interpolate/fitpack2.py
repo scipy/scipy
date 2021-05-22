@@ -691,7 +691,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
 
-    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. `t`
+    Fits a spline ``y=spl(x)`` of degree `k` to the provided `x`, `y` data. `t`
     specifies the internal knots of the spline
 
     Parameters
