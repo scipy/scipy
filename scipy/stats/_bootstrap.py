@@ -4,6 +4,24 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
+from scipy.stats.stats import _broadcast_concatenate
+
+
+def _vectorize_statistic(statistic):
+    """Vectorize an n-sample statistic"""
+    # This is a little cleaner than np.nditer at the expense of some data
+    # copying: concatenate samples together, then use np.apply_along_axis
+    def stat_nd(data, axis=0):
+        lengths = [sample.shape[axis] for sample in data]
+        split_indices = np.cumsum(lengths)[:-1]
+        z = _broadcast_concatenate(data, axis)
+
+        def stat_1d(z):
+            data = np.split(z, split_indices)
+            return statistic(data)
+
+        return np.apply_along_axis(stat_1d, axis, z)[()]
+    return stat_nd
 
 
 def _jackknife_resample(sample):

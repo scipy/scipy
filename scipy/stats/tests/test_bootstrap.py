@@ -268,3 +268,30 @@ def test_percentile_along_axis():
         res = y[i]
         expected = np.percentile(x[i], q[i], axis=-1)
         assert_allclose(res, expected, 1e-15)
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_vectorize_statistic(axis):
+    # test that _vectorize_statistic vectorizes a statistic along `axis`
+
+    def statistic(data, axis):
+        # an arbitrary, vectorized statistic
+        return sum((sample.mean(axis) for sample in data))
+
+    def statistic_1d(data):
+        # the same statistic, not vectorized
+        for sample in data:
+            assert sample.ndim == 1
+        return statistic(data, axis=0)
+
+    # vectorize the non-vectorized statistic
+    statistic2 = _bootstrap._vectorize_statistic(statistic_1d)
+
+    np.random.seed(0)
+    x = np.random.rand(4, 5, 6)
+    y = np.random.rand(4, 1, 6)
+    z = np.random.rand(1, 5, 6)
+
+    res1 = statistic([x, y, z], axis=axis)
+    res2 = statistic2([x, y, z], axis=axis)
+    assert_allclose(res1, res2)
