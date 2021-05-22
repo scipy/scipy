@@ -182,10 +182,10 @@ class RBFInterpolator:
     :math:`x` can be expressed in terms of :math:`r=||x - c||`, where :math:`c`
     is the center of the RBF.
 
-    An RBF interpolant for the vector of data values :math:`d`, which are made
-    at the locations :math:`y`, is a linear combination of RBFs centered at
-    :math:`y` plus a polynomial with a specified degree. The RBF interpolant is
-    written as
+    An RBF interpolant for the vector of data values :math:`d`, which are from
+    locations :math:`y`, is a linear combination of RBFs centered at :math:`y`
+    plus a polynomial with a specified degree. The RBF interpolant is written
+    as
 
     .. math::
         f(x) = K(x, y) a + P(x) b,

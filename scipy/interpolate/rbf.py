@@ -131,7 +131,6 @@ class Rbf:
     See Also
     --------
     RBFInterpolator
-    RBFLocalInterpolator
 
     Examples
     --------
