@@ -1041,7 +1041,7 @@ class BivariateSpline(_BivariateSplineBase):
 
     def ev(self, xi, yi, dx=0, dy=0):
         """
-        Evaluate the spline at the points `xi` and `yi`.
+        Evaluate the spline at the points.
 
         Returns the interpolated value at ``(xi[i], yi[i]),
         i=0,...,len(xi)-1``.
@@ -1138,7 +1138,7 @@ class SmoothBivariateSpline(BivariateSpline):
         Positive smoothing factor used to choose the number of knots. Number
         of knots will be increased until the smoothing condition is satisfied::
 
-        sum((w[i]*(z[i]-spl(x[i], y[i])))**2, axis=0) <= s
+            sum((w[i]*(z[i]-spl(x[i], y[i])))**2, axis=0) <= s
 
         If `s` is None, ``s=len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``z[i]``.
@@ -2019,7 +2019,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     """
 
-    def __init__(self, u, v, r, s=0, pole_continuity=False, pole_values=None,
+    def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=dfitpack_int)
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
