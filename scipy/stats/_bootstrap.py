@@ -84,7 +84,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     return alpha_1, alpha_2
 
 
-def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
+def _bootstrap_iv(data, statistic, paired, axis, confidence_level, n_resamples,
                   method, random_state):
     """Input validation for `bootstrap`."""
     axis_int = int(axis)
@@ -109,6 +109,25 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
+    if paired is not True and paired is not False:
+        raise ValueError("`paired` must be `True` or `False`.")
+
+    if paired:
+        n = data_iv[0].shape[-1]
+        for sample in data_iv[1:]:
+            if sample.shape[-1] != n:
+                message = ("When `paired is True`, all samples must have the "
+                           "same length along `axis`")
+                raise ValueError(message)
+
+        # to generate the bootstrap distribution for paired-sample statistics,
+        # resample the indices of the observations
+        def statistic(i, axis=-1, data=data_iv, unpaired_statistic=statistic):
+            data = [sample[..., i] for sample in data]
+            return unpaired_statistic(*data, axis=axis)
+
+        data_iv = [np.arange(n),]
+
     # should we try: statistic(data, axis=axis) here?
 
     confidence_level_float = float(confidence_level)
@@ -123,12 +142,12 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
         raise ValueError(f"`method` must be in {methods}")
 
     message = "`method = 'BCa' is only available for one-sample statistics"
-    if n_samples > 1 and method == 'bca':
+    if not paired and n_samples > 1 and method == 'bca':
         raise ValueError(message)
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, axis_int, confidence_level_float,
+    return (data_iv, statistic, paired, axis_int, confidence_level_float,
             n_resamples_int, method, random_state)
 
 
@@ -136,7 +155,7 @@ fields = ['confidence_interval', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
-def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
+def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
               n_resamples=9999, method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
@@ -355,10 +374,10 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     """
     # Input validation
-    args = _bootstrap_iv(data, statistic, axis, confidence_level,
+    args = _bootstrap_iv(data, statistic, paired, axis, confidence_level,
                          n_resamples, method, random_state)
-    data, statistic, axis, confidence_level = args[:4]
-    n_resamples, method, random_state = args[4:]
+    data, statistic, paired, axis, confidence_level = args[:5]
+    n_resamples, method, random_state = args[5:]
 
     # Generate resamples
     resampled_data = []
