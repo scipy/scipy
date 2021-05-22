@@ -1163,7 +1163,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     Returns
     -------
     statistic : float
-        The Mann-Whitney statistics
+        The minimum of the Mann-Whitney statistics
     pvalue : float
         Approximate p-value assuming a normal distribution.
 
