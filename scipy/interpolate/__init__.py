@@ -46,7 +46,6 @@ Unstructured data:
    NearestNDInterpolator
    CloughTocher2DInterpolator
    RBFInterpolator
-   RBFLocalInterpolator
    Rbf
    interp2d
 
