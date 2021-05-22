@@ -11,14 +11,14 @@ def _vectorize_statistic(statistic):
     """Vectorize an n-sample statistic"""
     # This is a little cleaner than np.nditer at the expense of some data
     # copying: concatenate samples together, then use np.apply_along_axis
-    def stat_nd(data, axis=0):
+    def stat_nd(*data, axis=0):
         lengths = [sample.shape[axis] for sample in data]
         split_indices = np.cumsum(lengths)[:-1]
         z = _broadcast_concatenate(data, axis)
 
         def stat_1d(z):
             data = np.split(z, split_indices)
-            return statistic(data)
+            return statistic(*data)
 
         return np.apply_along_axis(stat_1d, axis, z)[()]
     return stat_nd
@@ -102,9 +102,16 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     return alpha_1, alpha_2
 
 
-def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
-                  method, random_state):
-    """Input validation for `bootstrap`."""
+def _bootstrap_iv(data, statistic, vectorized, axis, confidence_level,
+                  n_resamples, method, random_state):
+    """Input validation and standardization for `bootstrap`."""
+
+    if vectorized not in {True, False}:
+        raise ValueError("`vectorized` must be `True` or `False`.")
+
+    if not vectorized:
+        statistic = _vectorize_statistic(statistic)
+
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -146,7 +153,7 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, axis_int, confidence_level_float,
+    return (data_iv, statistic, vectorized, axis_int, confidence_level_float,
             n_resamples_int, method, random_state)
 
 
@@ -154,8 +161,9 @@ fields = ['confidence_interval', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
-def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
-              n_resamples=9999, method='BCa', random_state=None):
+def bootstrap(data, statistic, *, vectorized=True, axis=0,
+              confidence_level=0.95, n_resamples=9999, method='BCa',
+              random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -373,10 +381,10 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     """
     # Input validation
-    args = _bootstrap_iv(data, statistic, axis, confidence_level,
+    args = _bootstrap_iv(data, statistic, vectorized, axis, confidence_level,
                          n_resamples, method, random_state)
-    data, statistic, axis, confidence_level = args[:4]
-    n_resamples, method, random_state = args[4:]
+    data, statistic, vectorized, axis, confidence_level = args[:5]
+    n_resamples, method, random_state = args[5:]
 
     # Generate resamples
     resampled_data = []
@@ -391,7 +399,8 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
-        interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
+        interval = _bca_interval(data, statistic, axis=-1,
+                                 alpha=alpha, theta_hat_b=theta_hat_b)
         percentile_fun = _percentile_along_axis
 
     else:
