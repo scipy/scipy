@@ -269,8 +269,8 @@ class _TestRBFInterpolator:
         assert_allclose(yitp, y, atol=1e-4)
 
     def test_inconsistent_x_dimensions_error(self):
-        # ValueError should be raised if the observations points and
-        # interpolation points have a different number of dimensions.
+        # ValueError should be raised if the observation points and evaluation
+        # points have a different number of dimensions.
         y = Halton(2, scramble=False, seed=np.random.RandomState()).random(10)
         d = _2d_test_function(y)
         x = Halton(1, scramble=False, seed=np.random.RandomState()).random(10)
