@@ -178,7 +178,7 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     Parameters
     ----------
     x : (Q, N) float ndarray
-        Interpolation point coordinates.
+        Evaluation point coordinates.
     y : (P, N) float ndarray
         Data point coordinates.
     kernel : str

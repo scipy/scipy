@@ -139,8 +139,8 @@ class RBFInterpolator:
     d : (P, ...) array_like
         Data values at `y`.
     neighbors : int, optional
-        If specified, the value at each interpolation point will be computed
-        using only this many nearest data points.
+        If specified, the value at each evaluation point will be computed using
+        only this many nearest data points.
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
@@ -191,10 +191,10 @@ class RBFInterpolator:
         f(x) = K(x, y) a + P(x) b,
 
     where :math:`K(x, y)` is a matrix of RBFs with centers at :math:`y`
-    evaluated at the interpolation points :math:`x`, and :math:`P(x)` is a
-    matrix of monomials, which span polynomials with the specified degree,
-    evaluated at :math:`x`. The coefficients :math:`a` and :math:`b` are the
-    solution to the linear equations
+    evaluated at the points :math:`x`, and :math:`P(x)` is a matrix of
+    monomials, which span polynomials with the specified degree, evaluated at
+    :math:`x`. The coefficients :math:`a` and :math:`b` are the solution to the
+    linear equations
 
     .. math::
         (K(y, y) + \\lambda I) a + P(y) b = d
@@ -231,9 +231,9 @@ class RBFInterpolator:
     impractical when interpolating more than about a thousand data points. For
     large interpolation problems, the `neighbors` argument can be specified to
     compute the RBF interpolation coefficients using only the nearest data
-    points to each interpolation point. However, specifying `neighbors` adds
-    the computational cost of querying for the nearest data points and causes
-    the RBF interpolation coefficients to be computed each time this class is
+    points to each evaluation point. However, specifying `neighbors` adds the
+    computational cost of querying for the nearest data points and causes the
+    RBF interpolation coefficients to be computed each time this class is
     called.
 
     .. versionadded:: 1.7.0
@@ -393,7 +393,7 @@ class RBFInterpolator:
         Parameters
         ----------
         x : (Q, N) array_like
-            Interpolation point coordinates.
+            Evaluation point coordinates.
 
         Returns
         -------
@@ -420,21 +420,21 @@ class RBFInterpolator:
 
         else:
             # Get the indices of the k nearest observation points to each
-            # interpolation point.
+            # evaluation point.
             _, yindices = self._tree.query(x, self.neighbors)
             if self.neighbors == 1:
                 # `KDTree` squeezes the output when neighbors=1.
                 yindices = yindices[:, None]
 
-            # Multiple interpolation points may have the same neighborhood of
+            # Multiple evaluation points may have the same neighborhood of
             # observation points. Make the neighborhoods unique so that we only
             # compute the interpolation coefficients once for each
             # neighborhood.
             yindices = np.sort(yindices, axis=1)
             yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
-            # `inv` tells us which neighborhood will be used by each
-            # interpolation point. Now we find which interpolation points will
-            # be using each neighborhood.
+            # `inv` tells us which neighborhood will be used by each evaluation
+            # point. Now we find which evaluation points will be using each
+            # neighborhood.
             xindices = [[] for _ in range(len(yindices))]
             for i, j in enumerate(inv):
                 xindices[j].append(i)
