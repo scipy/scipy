@@ -306,7 +306,7 @@ class UnivariateSpline:
         return data
 
     def set_smoothing_factor(self, s):
-        """ Continue spline computation with the given smoothing
+        """Continue spline computation with the given smoothing
         factor s and with the knots found at the last call.
 
         This routine modifies the spline in place.
@@ -363,7 +363,7 @@ class UnivariateSpline:
         return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
-        """ Return positions of interior knots of the spline.
+        """Return positions of interior knots of the spline.
 
         Internally, the knot vector contains ``2*k`` additional boundary knots.
         """
@@ -378,7 +378,7 @@ class UnivariateSpline:
         return data[9][:n-k-1]
 
     def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline approximation.
+        """Return weighted sum of squared residuals of the spline approximation.
 
            This is equivalent to::
 
@@ -388,7 +388,7 @@ class UnivariateSpline:
         return self._data[10]
 
     def integral(self, a, b):
-        """ Return definite integral of the spline between two given points.
+        """Return definite integral of the spline between two given points.
 
         Parameters
         ----------
@@ -426,7 +426,7 @@ class UnivariateSpline:
         return dfitpack.splint(*(self._eval_args+(a, b)))
 
     def derivatives(self, x):
-        """ Return all derivatives of the spline at the point `x`.
+        """Return all derivatives of the spline at the point `x`.
 
         Parameters
         ----------
@@ -454,7 +454,7 @@ class UnivariateSpline:
         return d
 
     def roots(self):
-        """ Return the zeros of the spline.
+        """Return the zeros of the spline.
 
         Restriction: only cubic splines are supported by fitpack.
         """
@@ -831,7 +831,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 # ############### Bivariate spline ####################
 
 class _BivariateSplineBase:
-    """ Base class for Bivariate spline ``s(x,y)`` interpolation on the rectangle
+    """Base class for Bivariate spline ``s(x,y)`` interpolation on the rectangle
     [`xb`,`xe`] x [`yb`, `ye`] calculated from a given set of data points
     (`x`,`y`,`z`).
 
@@ -848,13 +848,13 @@ class _BivariateSplineBase:
     """
 
     def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline
+        """Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
         """
         return self.fp
 
     def get_knots(self):
-        """ Return a tuple (tx,ty) where tx,ty contain knots positions
+        """Return a tuple (tx,ty) where tx,ty contain knots positions
         of the spline with respect to x-, y-variable, respectively.
         The position of interior and additional knots are given as
         t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
@@ -862,7 +862,7 @@ class _BivariateSplineBase:
         return self.tck[:2]
 
     def get_coeffs(self):
-        """ Return spline coefficients."""
+        """Return spline coefficients."""
         return self.tck[2]
 
     def __call__(self, x, y, dx=0, dy=0, grid=True):
