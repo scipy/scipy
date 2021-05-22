@@ -77,12 +77,12 @@ class UnivariateSpline:
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (n,) array_like
         1-D array of independent input data. Must be increasing;
         must be strictly increasing if `s` is 0.
-    y : (N,) array_like
+    y : (n,) array_like
         1-D array of dependent input data, of the same length as `x`.
-    w : (N,) array_like, optional
+    w : (n,) array_like, optional
         1-D array of weights for spline fitting, of the same length as `x`.
         Must be positive. If `w` is None, weights are all equal.
         Default is None.
@@ -331,7 +331,7 @@ class UnivariateSpline:
 
         Parameters
         ----------
-        x : (N,) array_like
+        x : (n,) array_like
             1-D array of points at which to return the value of the smoothed
             spline or its derivatives. Note: `x` can be unordered but the
             evaluation is more efficient if `x` is (partially) ordered.
@@ -581,11 +581,11 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (n,) array_like
         1-D array of independent input data. Must be strictly increasing.
-    y : (N,) array_like
+    y : (n,) array_like
         1-D array of dependent input data, of the same length as `x`.
-    w : (N,) array_like, optional
+    w : (n,) array_like, optional
         1-D array of weights for spline fitting, of the same length as `x`.
         Must be positive. If `w` is None, weights are all equal.
         Default is None.
@@ -696,9 +696,9 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (n,) array_like
         1-D array of independent input data. Must be increasing.
-    y : (N,) array_like
+    y : (n,) array_like
         1-D array of dependent input data, of the same length as `x`.
     t : (M,) array_like
         1-D array of interior knots of the spline.
@@ -706,7 +706,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
             bbox[0] < t[0] < ... < t[-1] < bbox[-1]
 
-    w : (N,) array_like, optional
+    w : (n,) array_like, optional
         1-D array of weights for spline fitting, of the same length as `x`.
         Must be positive. If `w` is None, weights are all equal.
         Default is None.
@@ -871,10 +871,10 @@ class _BivariateSplineBase:
 
         Parameters
         ----------
-        x : (N,) array_like
+        x : (n,) array_like
             1-D array of independent input data. Must be increasing;
             must be strictly increasing if `grid` is True.
-        y : (N,) array_like
+        y : (n,) array_like
             1-D array of dependent input data, of the same length as `x`.
         dx : int, optional
             Order of `x`-derivative. Default is 0.
@@ -1048,9 +1048,9 @@ class BivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        xi : (N,) array_like
+        xi : (n,) array_like
             1-D array of independent input data. Must be increasing.
-        yi : (N,) array_like
+        yi : (n,) array_like
             1-D array of dependent input data, of the same length as `xi`.
         dx : int, optional
             Order of x-derivative. Default is 0.
@@ -1114,13 +1114,13 @@ class SmoothBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x, y : (N,) array_like
+    x, y : (n,) array_like
         1-D array of independent input data. Must be increasing;
         must be strictly increasing if `s` is 0.
-    z : (N,N, ) array_like
+    z : (n,n,) array_like
         2-D array of dependent input data, with the shape of
         ``(x.size, y.size)``.
-    w : (N, ) array_like, optional
+    w : (n,) array_like, optional
         Positive 1-D sequence of weights, of same length as `x`, `y`, and `z`.
         If `w` is None, weights are all equal. Default is None.
     bbox : array_like, optional
@@ -1211,14 +1211,14 @@ class LSQBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x, y : (N,) array_like
+    x, y : (n,) array_like
         1-D array of independent input data. Must be increasing.
-    z : (N,N, ) array_like
+    z : (n,n,) array_like
         2-D array of dependent input data, with the shape of
         ``(x.size, y.size)``.
-    tx, ty : (N, ) array_like
+    tx, ty : (n,) array_like
         1-D array of strictly ordered knots coordinates for `x` and `y`.
-    w : (N, ) array_like, optional
+    w : (n,) array_like, optional
         Positive 1-D array of weights, of the same length as `x`, `y` and `z`.
         If `w` is None, weights are all equal. Default is None.
     bbox : (4,) array_like, optional
@@ -1314,10 +1314,10 @@ class RectBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x, y : (N,) array_like
+    x, y : (n,) array_like
         1-D array of independent input data. Must be increasing;
         must be strictly increasing if `s` is 0.
-    z : (N,N, ) array_like
+    z : (n,n,) array_like
         2-D array of dependent input data, with the shape of
         ``(x.size, y.size)``.
     bbox : array_like, optional
@@ -1442,9 +1442,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta : (N,) array_like
+        theta : (n,) array_like
             1-D array of independent input data. Must be strictly increasing.
-        phi : (N,) array_like
+        phi : (n,) array_like
             1-D array of dependent input data, of the same length as `theta`.
         dtheta : int, optional
             Order of `theta`-derivative. Default is 0.
@@ -1492,9 +1492,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta : (N,) array_like
+        theta : (n,) array_like
             1-D array of independent input data. Must be strictly increasing.
-        phi : (N,) array_like
+        phi : (n,) array_like
             1-D array of dependent input data, of the same length as `theta`.
         dtheta : int, optional
             Order of `theta`-derivative. Default is 0.
@@ -1516,13 +1516,13 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta, phi : (N,) array_like
+    theta, phi : (n,) array_like
         1-D array of data points (order is not important). Coordinates
         must be given in radians. `theta` must lie within the interval
         ``[0, pi]``; `phi` must lie within the interval ``[0, 2pi]``.
-    r : (N,N, ) array_like
+    r : (n,n,) array_like
         2-D array of data with shape ``(u.size, v.size)``.
-    w : (N, ) array_like, optional
+    w : (n,) array_like, optional
         1-D array of weights for spline fitting. Must be positive.
         If `w` is None, weights are all equal. Default is None.
     s : float, optional
@@ -1670,19 +1670,19 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta, phi : (N,) array_like
+    theta, phi : (n,) array_like
         1-D array of data points (order is not important). Coordinates
         must be given in radians. `theta` must lie within the interval
         ``[0, pi]``; `phi` must lie within the interval ``[0, 2pi]``.
-    r : (N,N, ) array_like
+    r : (n,n,) array_like
         2-D array of data with shape ``(u.size, v.size)``.
-    tt: (N, ) array_like
+    tt: (n,) array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tt[i] < pi``
-    tp: (N, ) array_like
+    tp: (n,) array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tp[i] < 2*pi``.
-    w : (N, ) array_like, optional
+    w : (n,) array_like, optional
         Positive 1-D sequence of weights, of the same length as `theta`, `phi`
         and `r`. If `w` is None, weights are all equal. Default is None.
     eps : float, optional
@@ -1857,16 +1857,16 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (n,) array_like
         1-D array of colatitude coordinates in strictly ascending order.
         Coordinates must be given in radians and lie within the open interval
         ``(0, pi)``.
-    v : (N,) array_like
+    v : (n,) array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
         within the interval ``[-pi, pi)``. Last element (``v[-1]``) must satisfy
         ``v[-1] <= v[0] + 2*pi``.
-    r : (N,N,) array_like
+    r : (n,n,) array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
         Positive smoothing factor defined for estimation condition
