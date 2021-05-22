@@ -14,13 +14,13 @@ from scipy.interpolate import _rbfinterp_pythran
 
 def _vandermonde(x, degree):
     # Returns a matrix of monomials that span polynomials with the specified
-    # degree evaluated at x
+    # degree evaluated at x.
     powers = _monomial_powers(x.shape[1], degree)
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
 
 def _1d_test_function(x):
-    # test function used in Wahba's "Spline Models for Observational Data"
+    # Test function used in Wahba's "Spline Models for Observational Data".
     # domain ~= (0, 3), range ~= (-1.0, 0.2)
     x = x[:, 0]
     y = 4.26*(np.exp(-x) - 4*np.exp(-2*x) + 3*np.exp(-3*x))
@@ -28,7 +28,7 @@ def _1d_test_function(x):
 
 
 def _2d_test_function(x):
-    # Franke's test function
+    # Franke's test function.
     # domain ~= (0, 1) X (0, 1), range ~= (0.0, 1.2)
     x1, x2 = x[:, 0], x[:, 1]
     term1 = 0.75 * np.exp(-(9*x1-2)**2/4 - (9*x2-2)**2/4)
@@ -46,8 +46,8 @@ def _is_conditionally_positive_definite(kernel, m):
     nx = 10
     ntests = 100
     for ndim in [1, 2, 3, 4, 5]:
-        # generate sample points with a Halton sequence to avoid samples that
-        # are too close to eachother, which can make the matrix singular
+        # Generate sample points with a Halton sequence to avoid samples that
+        # are too close to eachother, which can make the matrix singular.
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
@@ -57,7 +57,7 @@ def _is_conditionally_positive_definite(kernel, m):
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
             # A onto this space, and then see if it is positive definite using
             # the Cholesky decomposition. If not, then the kernel is not c.p.d.
-            # of order m
+            # of order m.
             Q2 = Q[:, P.shape[1]:]
             B = Q2.T.dot(A).dot(Q2)
             try:
@@ -68,13 +68,13 @@ def _is_conditionally_positive_definite(kernel, m):
     return True
 
 
-# sorting the parametrize arguments is necessary to avoid a parallelization
-# issue described here: https://github.com/pytest-dev/pytest-xdist/issues/432
+# Sorting the parametrize arguments is necessary to avoid a parallelization
+# issue described here: https://github.com/pytest-dev/pytest-xdist/issues/432.
 @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
 def test_conditionally_positive_definite(kernel):
     # Test if each kernel in _AVAILABLE is conditionally positive definite of
     # order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
-    # condition for the smoothed RBF interpolant to be well-posed in general
+    # condition for the smoothed RBF interpolant to be well-posed in general.
     m = _NAME_TO_MIN_DEGREE.get(kernel, -1) + 1
     assert _is_conditionally_positive_definite(kernel, m)
 
@@ -83,7 +83,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
     def test_scale_invariance_1d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
-        # shape parameter (when smoothing == 0) in 1d
+        # shape parameter (when smoothing == 0) in 1d.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
         x = 3*seq.random(50)
         y = _1d_test_function(x)
@@ -95,7 +95,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
     def test_scale_invariance_2d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
-        # shape parameter (when smoothing == 0) in 2d
+        # shape parameter (when smoothing == 0) in 2d.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
         x = seq.random(100)
         y = _2d_test_function(x)
@@ -107,7 +107,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_extreme_domains(self, kernel):
         # Make sure the interpolant remains numerically stable for very
-        # large/small domains
+        # large/small domains.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
         scale = 1e50
         shift = 1e55
@@ -135,7 +135,7 @@ class _TestRBFInterpolator:
     def test_polynomial_reproduction(self):
         # If the observed data comes from a polynomial, then the interpolant
         # should be able to reproduce the polynomial exactly, provided that
-        # `degree` is sufficiently high
+        # `degree` is sufficiently high.
         rng = np.random.RandomState(0)
         seq = Halton(2, scramble=False, seed=rng)
         degree = 3
@@ -156,7 +156,7 @@ class _TestRBFInterpolator:
 
     def test_vector_data(self):
         # Make sure interpolating a vector field is the same as interpolating
-        # each component separately
+        # each component separately.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
@@ -174,7 +174,7 @@ class _TestRBFInterpolator:
 
     def test_complex_data(self):
         # Interpolating complex input should be the same as interpolating the
-        # real and complex components
+        # real and complex components.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
@@ -192,7 +192,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_interpolation_misfit_1d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
-        # appropriate `epsilon`, does a good job at interpolation in 1d
+        # appropriate `epsilon`, does a good job at interpolation in 1d.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         x = 3*seq.random(50)
@@ -208,7 +208,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_interpolation_misfit_2d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
-        # appropriate `epsilon`, does a good job at interpolation in 2d
+        # appropriate `epsilon`, does a good job at interpolation in 2d.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
@@ -224,7 +224,7 @@ class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_smoothing_misfit(self, kernel):
         # Make sure we can find a smoothing parameter for each kernel that
-        # removes a sufficient amount of noise
+        # removes a sufficient amount of noise.
         rng = np.random.RandomState(0)
         seq = Halton(1, scramble=False, seed=rng)
 
@@ -250,8 +250,8 @@ class _TestRBFInterpolator:
         assert rmse_within_tol
 
     def test_array_smoothing(self):
-        # test using an array for `smoothing` to give less weight to a known
-        # outlier
+        # Test using an array for `smoothing` to give less weight to a known
+        # outlier.
         rng = np.random.RandomState(0)
         seq = Halton(1, scramble=False, seed=rng)
         degree = 2
@@ -265,12 +265,12 @@ class _TestRBFInterpolator:
         smoothing = np.zeros((50,))
         smoothing[10] = 1000.0
         yitp = self.build(x, y_with_outlier, smoothing=smoothing)(x)
-        # should be able to reproduce the uncorrupted data almost exactly
+        # Should be able to reproduce the uncorrupted data almost exactly.
         assert_allclose(yitp, y, atol=1e-4)
 
     def test_inconsistent_x_dimensions_error(self):
         # ValueError should be raised if the observations points and
-        # interpolation points have a different number of dimensions
+        # interpolation points have a different number of dimensions.
         y = Halton(2, scramble=False, seed=np.random.RandomState()).random(10)
         d = _2d_test_function(y)
         x = Halton(1, scramble=False, seed=np.random.RandomState()).random(10)
@@ -343,7 +343,7 @@ class _TestRBFInterpolator:
 
     def test_rank_error(self):
         # An error should be raised when `kernel` is "thin_plate_spline" and
-        # observations are 2-D and collinear
+        # observations are 2-D and collinear.
         y = np.array([[2.0, 0.0], [1.0, 0.0], [0.0, 0.0]])
         d = np.array([0.0, 0.0, 0.0])
         match = 'does not have full column rank'
@@ -351,8 +351,8 @@ class _TestRBFInterpolator:
             self.build(y, d, kernel='thin_plate_spline')(y)
 
     def test_single_point(self):
-        # make sure interpolation still works with only one point (in 1, 2, and
-        # 3 dimensions)
+        # Make sure interpolation still works with only one point (in 1, 2, and
+        # 3 dimensions).
         for dim in [1, 2, 3]:
             y = np.zeros((1, dim))
             d = np.ones((1,))
@@ -361,7 +361,7 @@ class _TestRBFInterpolator:
 
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
-        # changes in the behavior
+        # changes in the behavior.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         x = 3*seq.random(50)
@@ -383,7 +383,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
     def test_smoothing_limit_1d(self):
         # For large smoothing parameters, the interpolant should approach a
-        # least squares fit of a polynomial with the specified degree
+        # least squares fit of a polynomial with the specified degree.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         degree = 3
@@ -408,7 +408,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
     def test_smoothing_limit_2d(self):
         # For large smoothing parameters, the interpolant should approach a
-        # least squares fit of a polynomial with the specified degree
+        # least squares fit of a polynomial with the specified degree.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         degree = 3
@@ -433,7 +433,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
 
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
-    # RBFInterpolator using 20 nearest neighbors
+    # RBFInterpolator using 20 nearest neighbors.
     def build(self, *args, **kwargs):
         return RBFInterpolator(*args, **kwargs, neighbors=20)
 

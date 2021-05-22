@@ -14,7 +14,7 @@ from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 __all__ = ["RBFInterpolator"]
 
 
-# The RBFs that are implemented
+# These RBFs are implemented.
 _AVAILABLE = {
     "linear",
     "thin_plate_spline",
@@ -27,7 +27,7 @@ _AVAILABLE = {
     }
 
 
-# The shape parameter does not need to be specified when using these RBFs
+# The shape parameter does not need to be specified when using these RBFs.
 _SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic"}
 
 
@@ -35,7 +35,7 @@ _SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic"}
 # should include polynomial terms with degree >= m - 1. Define the minimum
 # degrees here. These values are from Chapter 8 of Fasshauer's "Meshfree
 # Approximation Methods with MATLAB". The RBFs that are not in this dictionary
-# are positive definite and do not need polynomial terms
+# are positive definite and do not need polynomial terms.
 _NAME_TO_MIN_DEGREE = {
     "multiquadric": 0,
     "linear": 0,
