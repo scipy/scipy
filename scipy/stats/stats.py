@@ -5907,6 +5907,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     data is compared to this distribution to determine the p-value. When
     ``permutations >= binom(n, k)``, an exact test is performed: the data are
     partitioned between the groups in each distinct way exactly once.
+    For random permutation and exact tests, the definition used for a two-sided
+    p-value is twice the minimum of the one-sided p-values.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -5981,7 +5983,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0054)
 
     Take these two samples, one of which has an extreme tail.
 
@@ -6231,13 +6233,24 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
+    def pvalue_less(null_distribution, observed):
+        cmps = null_distribution <= observed
+        return cmps.sum(axis=0) / permutations
 
-    # Calculate the p-values
-    cmps = compare[alternative](t_stat, t_stat_observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    def pvalue_greater(null_distribution, observed):
+        cmps = null_distribution >= observed
+        return cmps.sum(axis=0) / permutations
+
+    def pvalue_two_sided(null_distribution, observed):
+        pvalues_less = pvalue_less(null_distribution, observed)
+        pvalues_greater = pvalue_greater(null_distribution, observed)
+        return np.clip(np.minimum(pvalues_less, pvalues_greater) * 2, 0, 1)
+
+    pvalue_funcs = {"less": pvalue_less,
+                    "greater": pvalue_greater,
+                    "two-sided": pvalue_two_sided}
+
+    pvalues = pvalue_funcs[alternative](t_stat, t_stat_observed)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
@@ -6703,9 +6716,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
-    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
-           in the case of a correlated system of variables is such that it can be reasonably 
-           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50 
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable
+           in the case of a correlated system of variables is such that it can be reasonably
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
 
     Examples

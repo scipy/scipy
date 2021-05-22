@@ -3980,9 +3980,11 @@ class Test_ttest_ind_permutations():
                           size=500).reshape(100, 5)
     rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
 
-    p_d = [0, 0.676]  # desired pvalues
-    p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
-    p_d_big = [0.993, 0.685, 0.84, 0.955, 0.255]
+    # These are not from an outside reference; they make sure the options
+    # are working and that behavior doesn't change
+    p_d = [0, 0.624]  # desired pvalues
+    p_d_gen = [0, 0.636]  # desired pvalues for Generator seed
+    p_d_big = [0.976, 0.676, 0.82 , 0.95 , 0.242]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test
@@ -4108,6 +4110,10 @@ class Test_ttest_ind_permutations():
         res_l_ab = stats.ttest_ind(a, b, **options_p)
         res_l_ba = stats.ttest_ind(b, a, **options_p)
 
+        options_p.update(alternative="two-sided")
+        res_2_ab = stats.ttest_ind(a, b, **options_p)
+        res_2_ba = stats.ttest_ind(b, a, **options_p)
+
         # Alternative doesn't affect the statistic
         assert_equal(res_g_ab.statistic, res_l_ab.statistic)
 
@@ -4119,6 +4125,13 @@ class Test_ttest_ind_permutations():
         # test statistic and the population is small, so:
         assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
         assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
+
+        # Two-sided p-value is defined as twice the minimum of the one-sided
+        # p-values
+        assert_equal(res_2_ab.pvalue,
+                     2 * np.minimum(res_l_ab.pvalue, res_g_ab.pvalue))
+        assert_equal(res_2_ba.pvalue,
+                     2 * np.minimum(res_l_ba.pvalue, res_g_ba.pvalue))
 
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
