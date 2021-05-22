@@ -380,9 +380,9 @@ class UnivariateSpline:
     def get_residual(self):
         """Return weighted sum of squared residuals of the spline approximation.
 
-           This is equivalent to::
+        This is equivalent to::
 
-                sum((w[i] * (y[i]-spl(x[i])))**2, axis=0)
+            sum((w[i] * (y[i]-spl(x[i])))**2, axis=0)
 
         """
         return self._data[10]
@@ -1114,10 +1114,7 @@ class SmoothBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x : (N,) array_like
-        1-D array of independent input data. Must be increasing;
-        must be strictly increasing if `s` is 0.
-    y : (N,) array_like
+    x, y : (N,) array_like
         1-D array of independent input data. Must be increasing;
         must be strictly increasing if `s` is 0.
     z : (N,N, ) array_like
@@ -1130,10 +1127,8 @@ class SmoothBivariateSpline(BivariateSpline):
         4-sequence specifying the boundary of the rectangular
         approximation domain. If `bbox` is None,
         ``bbox=[min(x), max(x), min(y), max(y)]``. Default is None.
-    kx : int, optional
-        Degrees of the bivariate spline for values `x`. Default is 3.
-    ky : int, optional
-        Degrees of the bivariate spline for values `y`. Default is 3.
+    kx, ky : int, optional
+        Degrees of the bivariate spline for values `x` and `y`. Default is 3.
     s : float, optional
         Positive smoothing factor used to choose the number of knots. Number
         of knots will be increased until the smoothing condition is satisfied::
@@ -1216,17 +1211,13 @@ class LSQBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x : (N,) array_like
-        1-D array of independent input data. Must be increasing.
-    y : (N,) array_like
+    x, y : (N,) array_like
         1-D array of independent input data. Must be increasing.
     z : (N,N, ) array_like
         2-D array of dependent input data, with the shape of
         ``(x.size, y.size)``.
-    tx : (N, ) array_like
-        1-D array of strictly ordered knots coordinates for `x`.
-    ty : (N, ) array_like
-        1-D array of strictly ordered knots coordinates for `y`.
+    tx, ty : (N, ) array_like
+        1-D array of strictly ordered knots coordinates for `x` and `y`.
     w : (N, ) array_like, optional
         Positive 1-D array of weights, of the same length as `x`, `y` and `z`.
         If `w` is None, weights are all equal. Default is None.
@@ -1323,10 +1314,7 @@ class RectBivariateSpline(BivariateSpline):
 
     Parameters
     ----------
-    x : (N,) array_like
-        1-D array of independent input data. Must be increasing;
-        must be strictly increasing if `s` is 0.
-    y : (N,) array_like
+    x, y : (N,) array_like
         1-D array of independent input data. Must be increasing;
         must be strictly increasing if `s` is 0.
     z : (N,N, ) array_like
@@ -1336,15 +1324,13 @@ class RectBivariateSpline(BivariateSpline):
         4-sequence specifying the boundary of the rectangular
         approximation domain. If `bbox` is None,
         ``bbox=[min(x), max(x), min(y), max(y)]``. Default is None.
-    kx : int, optional
-        Degrees of the bivariate spline for values `x`. Default is 3.
-    ky : int, optional
-        Degrees of the bivariate spline for values `y`. Default is 3.
+    kx, ky : int, optional
+        Degrees of the bivariate spline for values `x` and `y`. Default is 3.
     s : float, optional
         Positive smoothing factor used to choose the number of knots. Number
         of knots will be increased until the smoothing condition is satisfied::
 
-        sum((z[i]-spl(x[i], y[i]))**2, axis=0) <= s
+            sum((z[i]-spl(x[i], y[i]))**2, axis=0) <= s
 
         If `s` is 0, spline will interpolate through all data points.
         Default is 0.
@@ -1530,14 +1516,10 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta : (N,) array_like
+    theta, phi : (N,) array_like
         1-D array of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval
-        ``[0, pi]``.
-    phi : (N,) array_like
-        1-D array of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval
-        ``[0, 2pi]``.
+        must be given in radians. `theta` must lie within the interval
+        ``[0, pi]``; `phi` must lie within the interval ``[0, 2pi]``.
     r : (N,N, ) array_like
         2-D array of data with shape ``(u.size, v.size)``.
     w : (N, ) array_like, optional
@@ -1546,7 +1528,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     s : float, optional
         Positive smoothing factor defined for estimation condition::
 
-        sum((w(i)*(r(i) - spl(theta(i), phi(i))))**2, axis=0) <= s
+            sum((w(i)*(r(i) - spl(theta(i), phi(i))))**2, axis=0) <= s
 
         If `s` is None, ``s=len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``r[i]``.
@@ -1688,14 +1670,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     Parameters
     ----------
-    theta : (N,) array_like
+    theta, phi : (N,) array_like
         1-D array of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval
-        ``[0, pi]``.
-    phi : (N,) array_like
-        1-D array of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval
-        ``[0, 2pi]``.
+        must be given in radians. `theta` must lie within the interval
+        ``[0, pi]``; `phi` must lie within the interval ``[0, 2pi]``.
     r : (N,N, ) array_like
         2-D array of data with shape ``(u.size, v.size)``.
     tt: (N, ) array_like
