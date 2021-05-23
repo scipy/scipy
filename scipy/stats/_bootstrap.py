@@ -405,4 +405,4 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
-                           standard_error=np.std(theta_hat_b, ddof=1))
+                           standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
