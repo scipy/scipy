@@ -20,6 +20,10 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1]), np.mean)
 
+    message = ("When `paired is True`, all samples must have the same length ")
+    with pytest.raises(ValueError, match=message):
+        bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
+
     message = "`axis` must be an integer."
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, axis=1.5)
@@ -53,6 +57,29 @@ def test_bootstrap_iv():
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, random_state='herring')
+
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+def test_bootstrap_paired(method):
+    np.random.seed(0)
+    n = 100
+    x = np.random.rand(n)
+    y = np.random.rand(n)
+
+    def my_statistic(x, y, axis=-1):
+        return x.mean(axis=axis) - y.mean(axis=axis)
+
+    def my_paired_statistic(i, axis=-1):
+        a = x[i]
+        b = y[i]
+        res = my_statistic(a, b)
+        return res
+    i = np.arange(len(x))
+
+    res1 = bootstrap((i,), my_paired_statistic, random_state=0)
+    res2 = bootstrap((x, y), my_statistic, paired=True, random_state=0)
+
+    assert_allclose(res1.confidence_interval, res2.confidence_interval)
+    assert_allclose(res1.standard_error, res2.standard_error)
 
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])

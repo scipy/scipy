@@ -358,7 +358,7 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
     ...     x, y = z[:n], z[n:]
     ...     return pearsonr(x, y)[0]
     >>> def my_vectorized_statistic(x, y, axis):
-    ...     z = np.concatenate([x, y])
+    ...     z = np.hstack([x, y])
     ...     return np.apply_along_axis(my_statistic, axis, z)
 
     We call `bootstrap` using `paired=True`.
