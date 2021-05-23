@@ -435,7 +435,7 @@ class UnivariateSpline:
 
         Returns
         -------
-        d : ndarray, shape(k+1,)
+        der : ndarray, shape(k+1,)
             Derivatives of the orders 0 to `k`.
 
         Examples
