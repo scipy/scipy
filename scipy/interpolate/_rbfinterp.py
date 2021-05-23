@@ -147,7 +147,7 @@ class RBFInterpolator:
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
     kernel : str, optional
-        Type of RBF. This should be one of:
+        Type of RBF. This should be one of
 
             - 'linear'               : ``-r``
             - 'thin_plate_spline'    : ``r**2 * log(r)``
@@ -167,7 +167,7 @@ class RBFInterpolator:
     degree : int, optional
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
-        their corresponding minimum degrees are:
+        their corresponding minimum degrees are
 
             - 'multiquadric'      : 0
             - 'linear'            : 0
