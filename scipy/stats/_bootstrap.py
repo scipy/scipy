@@ -196,6 +196,9 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
         as separate arguments and returns the resulting statistic.
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
+    paired : bool, optional
+        Whether the statistic treats corresponding elements of the samples
+        in `data` as paired. The default is ``False``.
     axis : int, optional
         The axis of the samples in `data` along which the `statistic` is
         calculated. The default is ``0``.
@@ -348,27 +351,20 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
     >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
     0.9962357936065914
 
-    To ensure that samples remain paired, we define a function that accepts
-    an array of _indices_ of the observations for which the statistic is to
-    be calculated.
-
-    >>> def my_statistic(i):
-    ...     a = x[i]
-    ...     b = y[i]
-    ...     res = pearsonr(a, b)
-    ...     return res[0]
-    >>> i = np.arange(n)
-    >>> print(my_statistic(i))
-    0.9962357936065914
-
     `pearsonr` isn't vectorized, but NumPy can take care of that.
 
-    >>> def my_vectorized_statistic(i, axis):
-    ...    return np.apply_along_axis(my_statistic, axis, i)
+    >>> def my_statistic(z):
+    ...     n = int(len(z)/2)
+    ...     x, y = z[:n], z[n:]
+    ...     return pearsonr(x, y)[0]
+    >>> def my_vectorized_statistic(x, y, axis):
+    ...     z = np.concatenate([x, y])
+    ...     return np.apply_along_axis(my_statistic, axis, z)
 
-    We call `bootstrap` using the indices of the observations as `data`.
+    We call `bootstrap` using `paired=True`.
 
-    >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
+    >>> res = bootstrap((x, y), my_vectorized_statistic, paired=True,
+    ...                 random_state=rng)
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
@@ -392,7 +388,7 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
-        interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
+        interval = _bca_interval(data, statistic, -1, alpha, theta_hat_b)
         percentile_fun = _percentile_along_axis
 
     else:
