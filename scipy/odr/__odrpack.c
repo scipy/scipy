@@ -100,7 +100,7 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
           PYERR2(odr_error, "Function has not been initialized");
         }
 
-      if ((result = PyEval_CallObject(odr_global.fcn, arglist)) == NULL)
+      if ((result = PyObject_CallObject(odr_global.fcn, arglist)) == NULL)
         {
           if (PyErr_ExceptionMatches(odr_stop))
             {
@@ -136,7 +136,7 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
           PYERR2(odr_error, "Function has not been initialized");
         }
 
-      if ((result = PyEval_CallObject(odr_global.fjacb, arglist)) == NULL)
+      if ((result = PyObject_CallObject(odr_global.fjacb, arglist)) == NULL)
         {
           if (PyErr_ExceptionMatches(odr_stop))
             {
@@ -195,7 +195,7 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
           PYERR2(odr_error, "fjcad has not been initialized");
         }
 
-      if ((result = PyEval_CallObject(odr_global.fjacd, arglist)) == NULL)
+      if ((result = PyObject_CallObject(odr_global.fjacd, arglist)) == NULL)
         {
           if (PyErr_ExceptionMatches(odr_stop))
             {
@@ -1118,7 +1118,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
       if (PyArray_DIMS(work)[0] < lwork)
         {
-            printf("%ld " F_INT_FMT "\n", PyArray_DIMS(work)[0], lwork);
+          printf("%ld %lld\n", PyArray_DIMS(work)[0], (long long)lwork);
           PYERR(PyExc_ValueError, "work is too small");
         }
     }
