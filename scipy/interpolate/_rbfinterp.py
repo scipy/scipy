@@ -158,7 +158,7 @@ class RBFInterpolator:
             - 'inverse_quadratic'    : ``1/(1 + r**2)``
             - 'gaussian'             : ``exp(-r**2)``
 
-        Default is `thin_plate_spline`.
+        Default is 'thin_plate_spline'.
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. If `kernel` is
         'linear', 'thin_plate_spline', 'cubic', or 'quintic', this defaults to
