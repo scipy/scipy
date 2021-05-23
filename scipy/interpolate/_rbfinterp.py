@@ -139,12 +139,13 @@ class RBFInterpolator:
     d : (P, ...) array_like
         Data values at `y`.
     neighbors : int, optional
-        If specified, the value at each evaluation point will be computed using
-        only this many nearest data points.
+        If specified, the value of the interpolant at each evaluation point
+        will be computed using only this many nearest data points. All the data
+        points are used by default.
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
-        squares fit of a polynomial with the specified degree.
+        squares fit of a polynomial with the specified degree. Default is 0.
     kernel : str, optional
         Type of RBF. This should be one of:
 
@@ -157,11 +158,12 @@ class RBFInterpolator:
             - 'inverse_quadratic'    : ``1/(1 + r**2)``
             - 'gaussian'             : ``exp(-r**2)``
 
+        Default is `thin_plate_spline`.
     epsilon : float, optional
-        Shape parameter that scales the input to the RBF. This can be ignored
-        if `kernel` is 'linear', 'thin_plate_spline', 'cubic', or 'quintic'
-        because it has the same effect as scaling the smoothing parameter.
-        Otherwise, this must be specified.
+        Shape parameter that scales the input to the RBF. If `kernel` is
+        'linear', 'thin_plate_spline', 'cubic', or 'quintic', this defaults to
+        1 and can be ignored because it has the same effect as scaling the
+        smoothing parameter. Otherwise, this must be specified.
     degree : int, optional
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
@@ -228,13 +230,10 @@ class RBFInterpolator:
 
     The memory required to solve for the RBF interpolation coefficients
     increases quadratically with the number of data points, which can become
-    impractical when interpolating more than about a thousand data points. For
-    large interpolation problems, the `neighbors` argument can be specified to
-    compute the RBF interpolation coefficients using only the nearest data
-    points to each evaluation point. However, specifying `neighbors` adds the
-    computational cost of querying for the nearest data points and causes the
-    RBF interpolation coefficients to be computed each time the instance is
-    called.
+    impractical when interpolating more than about a thousand data points.
+    To overcome memory limitations for large interpolation problems, the
+    `neighbors` argument can be specified to compute an RBF interpolant for
+    each evaluation point using only the nearest data points.
 
     .. versionadded:: 1.7.0
 
@@ -442,8 +441,8 @@ class RBFInterpolator:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for xidx, yidx in zip(xindices, yindices):
                 # `yidx` are the indices of the observations in this
-                # neighborhood. `xidx` are the indices of the interpolation
-                # points that are using this neighborhood.
+                # neighborhood. `xidx` are the indices of the evaluation points
+                # that are using this neighborhood.
                 xnbr = x[xidx]
                 ynbr = self.y[yidx]
                 dnbr = self.d[yidx]
