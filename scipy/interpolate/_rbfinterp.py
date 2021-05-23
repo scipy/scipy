@@ -271,9 +271,10 @@ class RBFInterpolator:
     >>> yflat = RBFInterpolator(xobs, yobs)(xflat)
     >>> ygrid = yflat.reshape(50, 50)
 
-    >>> plt.pcolormesh(*xgrid, ygrid, vmin=-0.25, vmax=0.25, shading='gouraud')
-    >>> plt.scatter(*xobs.T, c=yobs, s=50, ec='k', vmin=-0.25, vmax=0.25)
-    >>> plt.colorbar()
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(*xgrid, ygrid, vmin=-0.25, vmax=0.25, shading='gouraud')
+    >>> p = ax.scatter(*xobs.T, c=yobs, s=50, ec='k', vmin=-0.25, vmax=0.25)
+    >>> fig.colorbar(p)
     >>> plt.show()
 
     """
