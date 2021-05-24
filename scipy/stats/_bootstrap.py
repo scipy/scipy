@@ -6,19 +6,24 @@ from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
 
 
-def _jackknife_resample(sample):
+def _jackknife_resample(sample, batch=None):
     """Jackknife resample the sample. Only one-sample stats for now."""
     n = sample.shape[-1]
+    batch_nominal = batch or n
 
-    # jackknife - each row leaves out one observation
-    j = np.ones((n, n), dtype=bool)
-    np.fill_diagonal(j, False)
-    i = np.arange(n)
-    i = np.broadcast_to(i, (n, n))
-    i = i[j].reshape((n, n-1))
+    for k in range(0, n, batch_nominal):
+        # col_start:col_end are the observations to remove
+        batch_actual = min(batch_nominal, n-k)
 
-    resamples = sample[..., i]
-    return resamples
+        # jackknife - each row leaves out one observation
+        j = np.ones((batch_actual, n), dtype=bool)
+        np.fill_diagonal(j[:, k:k+batch_actual], False)
+        i = np.arange(n)
+        i = np.broadcast_to(i, (batch_actual, n))
+        i = i[j].reshape((batch_actual, n-1))
+
+        resamples = sample[..., i]
+        yield resamples
 
 
 def _bootstrap_resample(sample, n_resamples=None, random_state=None):
@@ -56,7 +61,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
     return percentiles[()]  # return scalar instead of 0d array
 
 
-def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
+def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
     # closely follows [2] "BCa Bootstrap CIs"
     sample = data[0]  # only works with 1 sample statistics right now
@@ -67,8 +72,10 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    jackknife_sample = _jackknife_resample(sample)
-    theta_hat_i = statistic(jackknife_sample, axis=-1)
+    theta_hat_i = []  # would be better to fill pre-allocated array
+    for jackknife_sample in _jackknife_resample(sample, batch):
+        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
+    theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
     den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
@@ -137,7 +144,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
 def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
-              n_resamples=9999, method='BCa', random_state=None):
+              n_resamples=9999, batch=None, method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -360,20 +367,28 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     data, statistic, axis, confidence_level = args[:4]
     n_resamples, method, random_state = args[4:]
 
-    # Generate resamples
-    resampled_data = []
-    for sample in data:
-        resample = _bootstrap_resample(sample, n_resamples=n_resamples,
-                                       random_state=random_state)
-        resampled_data.append(resample)
+    theta_hat_b = []
 
-    # Compute bootstrap distribution of statistic
-    theta_hat_b = statistic(*resampled_data, axis=-1)
+    batch_nominal = batch or n_resamples
+
+    for k in range(0, n_resamples, batch_nominal):
+        batch_actual = min(batch_nominal, n_resamples-k)
+        # Generate resamples
+        resampled_data = []
+        for sample in data:
+            resample = _bootstrap_resample(sample, n_resamples=batch_actual,
+                                           random_state=random_state)
+            resampled_data.append(resample)
+
+        # Compute bootstrap distribution of statistic
+        theta_hat_b.append(statistic(*resampled_data, axis=-1))
+    theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
-        interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
+        interval = _bca_interval(data, statistic, axis, alpha,
+                                 theta_hat_b, batch)
         percentile_fun = _percentile_along_axis
 
     else:
