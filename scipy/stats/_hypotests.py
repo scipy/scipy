@@ -729,8 +729,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             on the user choice of `pooled`.
 
         pvalue : float
-            The probability of obtaining a test statistic at least as extreme
-            as the one observed under the null hypothesis.
+            P-value, the probability of obtaining a distribution at least as
+            extreme as the one that was actually observed, assuming that the
+            null hypothesis is true.
 
     See Also
     --------
