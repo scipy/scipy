@@ -1,3 +1,4 @@
+import os
 from os.path import join
 
 
@@ -52,6 +53,15 @@ def configuration(parent_package='',top_path=None):
                          depends=fitpack_src,
                          f2py_options=f2py_options
                          )
+
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        from pythran.dist import PythranExtension
+        ext = PythranExtension(
+            'scipy.interpolate._rbfinterp_pythran',
+            sources=['scipy/interpolate/_rbfinterp_pythran.py'],
+            config=['compiler.blas=none']
+            )
+        config.ext_modules.append(ext)
 
     config.add_data_dir('tests')
 

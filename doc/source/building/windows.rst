@@ -379,7 +379,7 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran pytest pytest-xdist
+    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran>=0.9.11 pytest pytest-xdist
 
 .. note::
 

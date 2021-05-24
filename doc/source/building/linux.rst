@@ -36,7 +36,7 @@ SciPy depend on
 * The `Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__
   ahead-of-time compilers are necessary (typically packaged as ``cython``
   and ``pythran``.  For building recent SciPy, it is possible that you need
-  Cython in a newer version than is available in your distribution.
+  Cython and Pythran in a newer version than is available in your distribution.
 
 Typically, you will want to install all of the above from packages
 supplied by your Linux distribution, as building them yourself is
