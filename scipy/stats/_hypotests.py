@@ -993,8 +993,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
             The Fisher statistic.
 
         pvalue : float
-            The probability of obtaining a test statistic at least as extreme
-            as the one observed under the null hypothesis.
+            P-value, the probability of obtaining a distribution at least as
+            extreme as the one that was actually observed, assuming that the
+            null hypothesis is true.
 
     See Also
     --------
