@@ -200,6 +200,11 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     n_resamples : int, optional
         The number of resamples performed to form the bootstrap distribution
         of the statistic. The default is ``9999``.
+    batch : int or None, optional
+        The number of resamples to process in each vectorized call to
+        `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
+        sample size. Default is ``None``, in which case ``batch = n_resamples``
+        (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
     method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
