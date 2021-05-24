@@ -1054,14 +1054,14 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     --------
     In the following example, we consider the article "Employee
     attitudes and job satisfaction" [3]_
-    which reports the results of a survey from 63 Scientists and 117 College
-    Professors. Of the 63 Scientists, 31 said they were very satisfied with
-    their jobs, whereas 74 of the College Professors were very satisfied
-    with their work. Is this significant evidence that College
-    Professors are happier with their work than Scientists?
+    which reports the results of a survey from 63 scientists and 117 college
+    Professors. Of the 63 scientists, 31 said they were very satisfied with
+    their jobs, whereas 74 of the college Professors were very satisfied
+    with their work. Is this significant evidence that college
+    Professors are happier with their work than scientists?
     The following table summarizes the data mentioned above::
 
-                         College Professors   Scientists
+                         college Professors   scientists
         Very Satisfied   74                     31
         Dissatisfied     43                     32
 
@@ -1070,10 +1070,10 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     to reject the null hypothesis :math:`H_0`. Suppose we choose the common
     significance level of 5%.
 
-    Our alternative hypothesis is that College Professors are truly more
-    satisfied with their work than Scientists. Therefore, we expect
-    :math:`p_1` the proportion of very satisfied College Professors to be
-    greater than :math:`p_2`, the proportion of very satisfied Scientists.
+    Our alternative hypothesis is that college Professors are truly more
+    satisfied with their work than scientists. Therefore, we expect
+    :math:`p_1` the proportion of very satisfied college Professors to be
+    greater than :math:`p_2`, the proportion of very satisfied scientists.
     We thus call `boschloo_exact` with the ``alternative="greater"`` option:
 
     >>> import scipy.stats as stats
@@ -1083,8 +1083,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> res.pvalue
     0.0355...
 
-    Under the null hypothesis that Scientists and College Professors are
-    equally satisfied with their work, the probability of obtaining test
+    Under the null hypothesis that scientists are happier in their work than
+    college Professors, the probability of obtaining test
     results at least as extreme as the observed data is approximately 3.55%.
     Since this p-value is less than our chosen significance level, we have
     evidence to reject :math:`H_0` in favor of the alternative hypothesis.
