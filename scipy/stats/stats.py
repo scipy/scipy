@@ -3692,50 +3692,9 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-class TukeyKramerResult():
-    def __init__(self, res, alpha, qcrit):
-        self.res = res
-        self.alpha = alpha
-        self.qcrit = qcrit
-
-    def __repr__(self):
-        nargs = self.res.shape[0]
-        s = ("~~~~~~~~~~~~\n\tComparison between groups with Simultanious"
-             f"\n(with {100*(1-self.alpha):.0f}% Confidence Limits and "
-             f"significance at the {self.alpha} level)\n~~~~~~~~~~~~\n")
-        s += (f"{'group':<7}{'mean':^10}{'min':^10}"
-              f"{'max':>5}{'sig':>9}{'p-value':>11}\n")
-        for i in range(nargs):
-            for j in range(nargs):
-                if i == j:
-                    pass
-                else:
-                    paircomp = self.res[i, j]
-                    s += (f"{i+1} - {j+1}  "
-                          f"{paircomp[0]:>8.3f}{paircomp[1]:>10.3f}"
-                          f"{paircomp[2]:>8.3f}{paircomp[3]:>8}"
-                          f"{paircomp[4]:>10.3f}\n")
-        return s
-
-    def __getitem__(self, key):
-        return self.res[key]
-
-    def get_pairwise(self, n, m):
-        '''
-        Parameters
-        ----------
-        n : int
-            first group for comparison.
-        m : int
-            second group for comparison.
-
-        Returns
-        -------
-        ndarray
-            array of mean, min, max, sig for the comparison.
-
-        '''
-        return self.res[n - 1, m - 1]
+TukeyKramerResult = make_dataclass("TukeyKramerResult",
+                                   ("statistic", "pvalue", "lower_conf",
+                                    "upper_conf", "significant"))
 
 
 def tukeykramer(*args, sig_level=.05):
@@ -3748,7 +3707,7 @@ def tukeykramer(*args, sig_level=.05):
     significance. For inputs of differing sample sizes, the Tukey Kramer
     method is used, albeit with a higher confidence coefficient. [1]_
 
-        Parameters
+    Parameters
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group. There must be at least
@@ -3758,11 +3717,24 @@ def tukeykramer(*args, sig_level=.05):
         range distribution value.
         Default is .05.
 
+    Returns
+    -------
+    pvalue : float ndarray, shape (n, n)
+        The associated p-value from the studentized range distribution, in the
+        format of n x n matrix corresponding to each comparison.
+    statistic : float ndarray, shape (n, n)
+        The computed statistic of the test.
+    lower : float ndarray, shape (n, n)
+        The computed statistic of the test.
+    upper : float ndarray, shape (n, n)
+        The computed statistic of the test.
+    significant : float ndarray, shape (n, n)
+        The computed statistic of the test.
     Notes
     -----
     The use of this test relies on several assumptions.
 
-     1. There are equal variances between the samples.
+    1. There are equal variances between the samples.
     2. Each sample is from a normally distributed population.
 
     References
@@ -3775,45 +3747,76 @@ def tukeykramer(*args, sig_level=.05):
 
     Examples
     --------
-        >>> from scipy.stats import tukeykramer
-        Here are some data comparing the time to relief of three brands of
-        headache medicine, reported in minutes. Data adapted from
-        https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
+    Here are some data comparing the time to relief of three brands of
+    headache medicine, reported in minutes. Data adapted from
+    https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
 
-        >>> group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
-        >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
-        >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
-        >>> tukeykramer(group1, group2, group3)
-        ~~~~~~~~~~~~
-            Comparison between groups with Simultanious
-        (with 95% Confidence Limits and significance at the 0.05 level)
-        ~~~~~~~~~~~~
-        group     mean      min      max      sig    p-value
-        1 - 2    -4.600    -8.249  -0.951     1.0     0.012
-        1 - 3    -0.260    -3.909   3.389     0.0     0.980
-        2 - 1     4.600     0.951   8.249     1.0     0.012
-        2 - 3     4.340     0.691   7.989     1.0     0.017
-        3 - 1     0.260    -3.389   3.909     0.0     0.980
-        3 - 2    -4.340    -7.989  -0.691     1.0     0.017
-        >>> group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
-        >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
-        >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
-        The test can also be conducted with varying group sizes.
-        >>> tukeykramer(group1, group2, group3)
-        ~~~~~~~~~~~~
-            	Comparison between groups with Simultanious
-        (with 95% Confidence Limits and significance at the 0.05 level)
-        ~~~~~~~~~~~~
-        group     mean      min      max      sig    p-value
-        1 - 2    -3.645    -7.022  -0.268     1.0     0.031
-        1 - 3     0.695    -2.682   4.072     0.0     0.856
-        2 - 1     3.645     0.268   7.022     1.0     0.031
-        2 - 3     4.340     0.593   8.087     1.0     0.020
-        3 - 1    -0.695    -4.072   2.682     0.0     0.856
-        3 - 2    -4.340    -8.087  -0.593     1.0     0.020
+    >>> from scipy.stats import tukeykramer
+    >>> group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    >>> res = tukeykramer(group1, group2, group3)
+    ~~~~~~~~~~~~
+        Comparison between groups with Simultanious
+    (with 95% Confidence Limits and significance at the 0.05 level)
+    ~~~~~~~~~~~~
+    group     mean      min      max      sig    p-value
+    1 - 2    -4.600    -8.249  -0.951     1.0     0.012
+    1 - 3    -0.260    -3.909   3.389     0.0     0.980
+    2 - 1     4.600     0.951   8.249     1.0     0.012
+    2 - 3     4.340     0.691   7.989     1.0     0.017
+    3 - 1     0.260    -3.389   3.909     0.0     0.980
+    3 - 2    -4.340    -7.989  -0.691     1.0     0.017
+    >>> group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
+    >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
+    The test can also be conducted with varying group sizes.
+
+    >>> res = tukeykramer(group1, group2, group3)
+    We can examine the p-value of each comparison:
+    >>> from itertools import permutations
+    >>> print("group pvalue")
+    >>> for (i, j) in permutations((1, 2, 3), 2):
+    >>>     print(f"{i} - {j} {res.pvalue[i - 1, j - 1]:.03f}")
+    group pvalue
+    1 - 2 0.031
+    1 - 3 0.856
+    2 - 1 0.031
+    2 - 3 0.020
+    3 - 1 0.856
+    3 - 2 0.020
+
+    This comparison concludes that there is no significant difference
+    between the means of ``group1`` and ``group3``, as well as the means of
+    ``group1`` and ```group2``. There is a significant difference between the
+    means of ``group2`` and ``group3``. We can reaffirm this conclusion by
+    looking at a box and whisker plot.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.boxplot([group1, group2, group3])
+    >>> ax.set_xlabel("group")
+    >>> ax.set_ylabel("mean")
+    >>> plt.show()
+
+    # We see overlap of the interquartile ranges of ``group1`` to both ``group2``
+    # and ``group3``, but not ``group2`` to ``group3``.
+    #
+    # Comparisons of groups 1 and 2, as well as 2 and 3 yield a small
+    # p-value, indicating that their true means may be regarded as equal.
+    #
+    # group  pvalue  statistic  lower_conf  upper_conf  significant
+    # 1 - 2   0.031     3.645     0.268       7.022       True
+    # 1 - 3   0.856    -0.695    -4.072       2.682       False
+    # 2 - 1   0.031    -3.645    -7.022      -0.268       True
+    # 2 - 3   0.020    -4.340    -8.087      -0.593       True
+    # 3 - 1   0.856     0.695    -2.682       4.072       False
+    # 3 - 2   0.020     4.340     0.593       8.087       True
     """
     args = [np.asarray(arg) for arg in args]
-    means = [np.mean(arg) for arg in args]
+    nargs = len(args)
+    means = np.asarray([np.mean(arg) for arg in args])
 
     # determine the critical value of the studentized range using the
     # appropriate significance level, number of treatments, and degrees
@@ -3829,24 +3832,19 @@ def tukeykramer(*args, sig_level=.05):
     mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
                   (nsamples_args - 1)) / (nsamples - len(args)))
 
-    # create permutations of input group means along with keys to keep track
-    # of which is which
-    permutations_key = list(permutations(np.arange(1, len(args) + 1), 2))
-    permutations_means = list(permutations(means, 2))
-    permutations_lengths = list(permutations([len(x) for x in args], 2))
-
     # also called maximum critical value, tukey criterion is the studentized
-    # range value * the square root of mean square error over the sample size.
-    # This only applies for treatments of equal sizes. The criterion is
-    # calculated for each comparison when treatments differ in size.
-    # See ("Unequal sample sizes")[1].
+    # range critical value * the square root of mean square error over the
+    # sample size. This only applies for treatments of equal sizes. The
+    # criterion is calculated for each comparison when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
     if len(set(nsamples_args)) > 1:
         # to compare groups of differing sizes, we must compute a variance
-        # value for each individual comparison
-        normalize = np.asarray([1/x + 1/y for (x, y) in permutations_lengths])
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix.
+        normalize = 1 / nsamples_args + 1 / nsamples_args.reshape((nargs, 1))
     else:
         # all input groups are the same length, so only one value needs to be
-        # calculated
+        # calculated. Singular value works with
         normalize = 2 / len(args[0])
 
     # the standard error is used in the computation of the tukey criterion and
@@ -3854,33 +3852,23 @@ def tukeykramer(*args, sig_level=.05):
     stand_err = np.sqrt(normalize * mse / 2)
     tukey_criterions = srd * stand_err
 
-    # determine the mean difference for each pairwaise
-    mean_differences = np.asarray([x[0] - x[1] for x in permutations_means])
-    # the confidence levels are determined by the mean diff +- tukey_criterion
-    conf_levels = (mean_differences - tukey_criterions,
-                   mean_differences + tukey_criterions)
+    mean_differences = means.reshape((nargs, 1)) - means
+    
+    # the confidence levels are determined by the
+    # `mean_differences` +- `tukey_criterions`
+    upper_conf = mean_differences + tukey_criterions
+    lower_conf = mean_differences - tukey_criterions
     t_stat = np.abs(mean_differences) / stand_err
     
-    params = t_stat, len(args), nsamples - 1
-    p_vals = distributions.studentized_range.sf(*params)
+    params = t_stat, nargs, nsamples - 1
+    pvalues = distributions.studentized_range.sf(*params)
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
     # ("Conclusions")[1]
     is_significant = np.abs(mean_differences) > tukey_criterions
 
-    # output matrix
-    nargs = len(args)
-    out_mean_diff = np.zeros((nargs, nargs))
-    
-
-
-    # form 2d output array
-    res = np.zeros((len(args), len(args), 5))
-    for i in range(len(mean_differences)):
-        m, n = permutations_key[i]
-        res[m-1, n-1] = [mean_differences[i], conf_levels[0][i],
-                         conf_levels[1][i], is_significant[i], p_vals[i]]
-    return TukeyKramerResult(res, sig_level, srd)
+    return TukeyKramerResult(mean_differences, pvalues, lower_conf,
+                             upper_conf, is_significant)
 
     
 def alexandergovern(*args, nan_policy='propagate'):

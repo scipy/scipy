@@ -6106,20 +6106,20 @@ class TestTukeykramer:
         res = stats.tukeykramer([24.5, 23.5, 26.4, 27.1, 29.9],
                                 [28.4, 34.2, 29.5, 32.2, 30.1],
                                 [26.1, 28.3, 24.3, 26.2, 27.8])
-        SAS_res = [['Brand', 'Comparison', 'Mean', 'Difference',
-                    'Simultanious', '95%', 'Confidence', 'Limits'],
-                   ['2', '3', '4.340', '0.691', '7.989', '1'],
+        SAS_res = [['2', '3', '4.340', '0.691', '7.989', '1'],
                    ['2', '1', '4.600', '0.951', '8.249', '1'],
                    ['3', '2', '-4.340', '-7.989', '-0.691', '1'],
                    ['3', '1', '0.260', '-3.389', '3.909', '0'],
                    ['1', '2', '-4.600', '-8.249', '-0.951', '1'],
                    ['1', '3', '-0.260', '-3.909', '3.389', '0']]
-        for comp in SAS_res[1:]:
-            comp = np.asarray(comp, dtype=float)
-            res_nm = res.get_pairwise(int(comp[0]), int(comp[1]))[:-1]
-            res_sas = comp[2:]
-            # SAS provide
-            assert_allclose(res_sas, res_nm, atol=1e-3)
+        for comp in SAS_res:
+            i, j, stat, lower, upper, sig = np.asarray(comp, dtype=float)
+            # make int for slicing, zero index
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(stat, res.statistic[i, j])
+            assert_allclose(lower, res.lower_conf[i, j], atol=1e-3)
+            assert_allclose(upper, res.upper_conf[i, j], atol=1e-3)
+            assert_allclose(sig, res.significant[i, j], atol=1e-3)
 
 
     def test_SAS_diff_size_treatments(self):
@@ -6177,18 +6177,21 @@ class TestTukeykramer:
         res = stats.tukeykramer([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1,
                                  30.1], [28.4, 34.2, 29.5, 32.2, 30.1],
                                 [26.1, 28.3, 24.3, 26.2, 27.8])
-        SAS_res = [['Brand', 'Comparison', 'Mean', 'Difference',
-                    'Simultanious', '95%', 'Confidence', 'Limits'],
-                   ['2', '1', '3.645', '0.2679292644988780', '7.022070735501120', '1'],
+        SAS_res = [['2', '1', '3.645', '0.2679292644988780', '7.022070735501120', '1'],
                    ['2', '3', '4.340', '0.5934764007020940', '8.086523599297900', '1'],
                    ['1', '2', '-3.645', '-7.02207073550113', '-.267929264498878', '1'],
                    ['1', '3', '.6949999999999960', '-2.68207073550113', ' 4.072070735501120', '0'],
                    ['3', '2', '-4.340', '-8.08652359929791', '-.593476400702094', '1'],
                    ['3', '1', '-.694999999999997', ' -4.07207073550112', '2.682070735501120', '0']]
-        for comp in SAS_res[1:]:
-            comp = np.asarray(comp, dtype=float)
-            assert_allclose(comp[2:], res.get_pairwise(int(comp[0]),
-                                                       int(comp[1]))[:-1], atol=1e-7)
+        for comp in SAS_res:
+            i, j, stat, lower, upper, sig = np.asarray(comp, dtype=float)
+            # make int for slicing, zero index
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(stat, res.statistic[i, j])
+            assert_allclose(lower, res.lower_conf[i, j], atol=1e-7)
+            assert_allclose(upper, res.upper_conf[i, j], atol=1e-7)
+            assert_allclose(sig, res.significant[i, j], atol=1e-7)
+
     def test_comp_R(self):
         '''  
         Testing against results and p-values from R:
@@ -6221,16 +6224,21 @@ class TestTukeykramer:
              20, 21, 24, 17, 13, 15, 15, 16, 28]
         res = stats.tukeykramer(l, m, h)
 
-        # obtain comparisons and cut out true/false significance value
-        m_h = np.delete(res.get_pairwise(2, 3), 3)
-        l_h = np.delete(res.get_pairwise(1, 3), 3)
-        l_m = np.delete(res.get_pairwise(1, 2), 3)
-        assert_array_almost_equal(m_h, [4.722222, -4.8376022, 14.28205,
-                                        0.4630831], decimal=1e-4)
-        assert_array_almost_equal(l_h, [14.722222,  5.1623978, 24.28205,
-                                        0.0014315], decimal=1e-4)
-        assert_array_almost_equal(l_m, [10.000000,  0.4401756, 19.55982,
-                                        0.0384598], decimal=1e-4)
+        r_res = np.zeros((4, 3, 3))
+
+        r_pvalues = [0.4630831, 0.0014315, 0.0384598]
+        r_stat = [4.722222, 14.722222, 10.000000]
+        r_lower = [-4.8376022, 5.1623978, 0.4401756]
+        r_upper = [14.28205, 24.28205, 19.55982]
+
+        for (i, j) in [(2, 3), (1, 3), (1, 2)]:
+            assert_allclose()
+        # assert_array_almost_equal(m_h, [, -4.8376022, 14.28205,
+        #                                 ], decimal=1e-4)
+        # assert_array_almost_equal(l_h, [,  5.1623978, 24.28205,
+        #                                 ], decimal=1e-4)
+        # assert_array_almost_equal(l_m, [,  0.4401756, 19.55982,
+        #                                 0.0384598], decimal=1e-4)
 
     def test_engineering_stat_handbook(self):
         '''
