@@ -440,11 +440,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     ...     return A @ y
     >>> result = solve_ivp(deriv_vec, [0, 25],
     ...                    np.array([10 + 0j, 20 + 0j, 30 + 0j]),
-    ...                    t_eval=np.linspace(0, 25, 101)
+    ...                    t_eval=np.linspace(0, 25, 101))
     >>> print(result.y[:, 0])
     [10.+0.j 20.+0.j 30.+0.j]
     >>> print(result.y[:, -1])
-    [18.46+45.25j 10.01+36.23j -4.98+80.07j]
+    [18.46291039+45.25653651j 10.01569306+36.23293216j
+     -4.98662741+80.07360388j]
 
     Solving an ivp with ``A`` from above ``y`` as 3x3 matrix :
 
@@ -461,9 +462,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      [ 5.+0.j  6.+0.j  7.+0.j]
      [ 9.+0.j 34.+0.j 78.+0.j]]
     >>> print(result.y[:, -1].reshape(3, 3))
-    [[ 5.67+12.07j 17.28+31.03j 37.83+63.25j]
-     [ 3.39+11.82j 21.32+44.88j 53.17+103.80j]
-     [ -2.26+22.19j -15.12+70.191j -38.34+153.29j]]
+    [[  5.67451179 +12.07938445j  17.2888073  +31.03278837j
+        37.83405768 +63.25138759j]
+     [  3.39949503 +11.82123994j  21.32530996 +44.88668871j
+        53.17531184+103.80400411j]
+     [ -2.26105874 +22.19277664j -15.1255713  +70.19616341j
+       -38.34616845+153.29039931j]]
 
     Specifying points where the solution is desired.
 
