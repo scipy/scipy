@@ -1185,7 +1185,6 @@ class TestBoschlooExact:
         )
 
 
-
 class TestCvm_2samp:
     def test_invalid_input(self):
         x = np.arange(10).reshape((2, 5))

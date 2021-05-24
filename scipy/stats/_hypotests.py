@@ -964,7 +964,7 @@ BoschlooExactResult = make_dataclass(
 
 
 def boschloo_exact(table, alternative="two-sided", n=32):
-    r"""Perform a Boschloo exact test on a 2x2 contingency table.
+    r"""Perform Boschloo's exact test on a 2x2 contingency table.
 
     Parameters
     ----------
@@ -1025,20 +1025,21 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    In order to compute Boschloo's exact test, we are using the Fisher's
-    pvalue as a statistic.
+    Boschloo's exact test uses the p-value of Fisher's exact test as a 
+    statistic, and Boschloo's p-value is the probability under the null 
+    hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
     test. From some local testing, it appears that Boschloo is slightly
-    more powerfull than Barnard's procedure, but a lot slower.
+    more powerful than Barnard's procedure, but a lot slower.
 
     .. versionadded:: 1.7.0
 
     References
     ----------
     .. [1] R.D. Boschloo. "Raised conditional level of significance for the
-       2 x 2-table when testing the equality of two probabilities", 
-       STATISTICA NEERLANDICA, 24(1), 1970
+       2 x 2-table when testing the equality of two probabilities",
+       Statistica Neerlandica, 24(1), 1970
 
     .. [2] "Boschloo's test", Wikipedia,
        https://en.wikipedia.org/wiki/Boschloo%27s_test
@@ -1054,9 +1055,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     which reports the results of a survey from 63 Scientists and 117 College
     Professors. Of the 63 Scientists, 31 said they were very satisfied with
     their jobs, whereas 74 of the College Professors were very satisfied
-    with their work. Are there strong evidence suggesting that College
-    Professors are more happy with their works than Scientists?
-    The following table summurize the data mentionned above::
+    with their work. Is this significant evidence that College
+    Professors are happier with their work than Scientists?
+    The following table summarizes the data mentioned above::
 
                          College Professors   Scientists
         Very Satisfied   74                     31
@@ -1067,8 +1068,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     to reject the null hypothesis :math:`H_0`. Suppose we choose the common
     significance level of 5%.
 
-    Our alternative hypothesis is that College Professors are trully more
-    satisfied in their works than Scientists. Therefore, we expect
+    Our alternative hypothesis is that College Professors are truly more
+    satisfied with their work than Scientists. Therefore, we expect
     :math:`p_1` the proportion of very satisfied College Professors to be
     greater than :math:`p_2`, the proportion of very satisfied Scientists.
     We thus call `boschloo_exact` with the ``alternative="greater"`` option:
@@ -1081,10 +1082,10 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     0.0355...
 
     Under the null hypothesis that Scientists and College Professors are
-    equally satisfied of their works, the probability of obtaining test
+    equally satisfied with their work, the probability of obtaining test
     results at least as extreme as the observed data is approximately 3.55%.
     Since this p-value is less than our chosen significance level, we have
-    evidence to reject :math:`H_0` in favor of the alternative's hypothesis.
+    evidence to reject :math:`H_0` in favor of the alternative hypothesis.
 
     Notice that the Fisher statistic given by `res.pvalue` is equal to 0.0483,
     which is a little bit above our own statistic.
@@ -1186,7 +1187,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Notes
     -----
 
-    Barnard and Boschloo exact test iterate over a nuisance parameter
+    Both Barnard'd test and Boschloo's test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
     maxima, this function return the negative log pvalue with respect to the
     nuisance parameter passed in params. This negative log p-value is then
