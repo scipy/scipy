@@ -237,7 +237,15 @@ def get_build_ext_override():
         distutils_build_ext = distutils.command.build_ext.build_ext
         distutils.command.build_ext.build_ext = npy_build_ext
         try:
+            import pythran
             from pythran.dist import PythranBuildExt as BaseBuildExt
+            # Version check - a too old Pythran will give problems
+            if LooseVersion(pythran.__version__) < LooseVersion('0.9.11'):
+                raise RuntimeError("The installed `pythran` is too old, >= "
+                                   "0.9.11 is needed, {} detected. Please "
+                                   "upgrade Pythran, or use `export "
+                                   "SCIPY_USE_PYTHRAN=0`.".format(
+                                   pythran.__version__))
         except ImportError:
             BaseBuildExt = npy_build_ext
         finally:
