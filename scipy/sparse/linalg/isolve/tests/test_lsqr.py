@@ -1,6 +1,7 @@
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal)
+from numpy.testing import (assert_, assert_array_equal, assert_allclose,
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_equal)
 
 import scipy.sparse
 import scipy.sparse.linalg
@@ -28,25 +29,24 @@ maxit = None
 
 def test_basic():
     b_copy = b.copy()
-    X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
-    assert_(np.all(b_copy == b))
+    xo, *_ = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
+    assert_array_equal(b_copy, b)
 
     svx = np.linalg.solve(G, b)
-    xo = X[0]
-    assert_(norm(svx - xo) < 1e-5)
+    assert_allclose(xo, svx, atol=tol, rtol=tol)
 
     # Now the same but with damp > 0.
-    # This is equivalent to solving extented system:
+    # This is equivalent to solving the extented system:
     # ( G      ) * x = ( b )
     # ( damp*I )       ( 0 )
     damp = 1.5
-    X = lsqr(G, b, damp=damp, show=show, atol=tol, btol=tol, iter_lim=maxit)
+    xo, *_ = lsqr(
+        G, b, damp=damp, show=show, atol=tol, btol=tol, iter_lim=maxit)
 
     Gext = np.r_[G, damp * np.eye(G.shape[1])]
     bext = np.r_[b, np.zeros(G.shape[1])]
-    svx, _, _, _ = np.linalg.lstsq(Gext, bext, rcond=None)
-    xo = X[0]
-    assert_(norm(svx - xo) < 1e-5)
+    svx, *_ = np.linalg.lstsq(Gext, bext, rcond=None)
+    assert_allclose(xo, svx, atol=tol, rtol=tol)
 
 
 def test_gh_2466():
