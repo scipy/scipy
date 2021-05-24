@@ -1112,7 +1112,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     if 0 in table.sum(axis=0):
         # If both values in column are zero, the p-value is 1 and
         # the score's statistic is NaN.
-        return BoschlooExactResult(np.nan, 1.0)
+        return BoschlooExactResult(np.nan, np.nan)
 
     total_col_1, total_col_2 = table.sum(axis=0)
     total = total_col_1 + total_col_2
