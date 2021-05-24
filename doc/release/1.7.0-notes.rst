@@ -72,18 +72,18 @@ the ``out`` array.
 `scipy.optimize` improvements
 -----------------------------
 
-The optional parameter ``bounds`` was added to 
+The optional parameter ``bounds`` was added to
 `scipy.optimize.optimize._minimize_neldermead` to support bounds constraints
 for the Nelder-Mead solver.
 
 ``trustregion`` methods ``trust-krylov``, ``dogleg`` and ``trust-ncg`` can now
-estimate ``hess`` by finite difference using one of 
+estimate ``hess`` by finite difference using one of
 ``["2-point", "3-point", "cs"]``.
 
-``halton`` was added as a ``sampling_method`` in `scipy.optimize.shgo`. 
+``halton`` was added as a ``sampling_method`` in `scipy.optimize.shgo`.
 ``sobol`` was fixed and is now using `scipy.stats.qmc.Sobol`.
 
-``halton`` and ``sobol`` were added as ``init`` methods in 
+``halton`` and ``sobol`` were added as ``init`` methods in
 `scipy.optimize.differential_evolution.`
 
 ``differential_evolution`` now accepts an ``x0`` parameter to provide an
@@ -95,7 +95,7 @@ with Pythran transpiler enabled
 `scipy.signal` improvements
 ---------------------------
 
-``get_window`` supports ``general_cosine`` and ``general_hamming`` window 
+``get_window`` supports ``general_cosine`` and ``general_hamming`` window
 functions.
 
 `scipy.signal.medfilt2d` now releases the GIL where appropriate to enable
@@ -110,24 +110,24 @@ Addition of ``dia_matrix`` sparse matrices is now faster.
 `scipy.spatial` improvements
 ----------------------------
 
-``distance.cdist`` and ``distance.pdist`` performance has greatly improved for 
+``distance.cdist`` and ``distance.pdist`` performance has greatly improved for
 certain weighted metrics. Namely: ``minkowski``, ``euclidean``, ``chebyshev``,
 ``canberra``, and ``cityblock``.
 
-Modest performance improvements for many of the unweighted ``cdist`` and 
+Modest performance improvements for many of the unweighted ``cdist`` and
 ``pdist`` metrics noted above.
 
-The parameter ``seed`` was added to `scipy.spatial.vq.kmeans` and 
+The parameter ``seed`` was added to `scipy.spatial.vq.kmeans` and
 `scipy.spatial.vq.kmeans2`.
 
-The parameters ``axis`` and ``keepdims`` where added to 
+The parameters ``axis`` and ``keepdims`` where added to
 `scipy.spatial.distance.jensenshannon.`
 
 The ``rotation`` methods `from_rotvec` and `as_rotvec` now accept a `degrees`
 argument to specify usage of degrees instead of radians.
 
 `scipy.special` improvements
---------------------------
+----------------------------
 
 Wright's generalized Bessel function for positive arguments was added as
 `scipy.special.wright_bessel.`
@@ -138,110 +138,63 @@ now available via `scipy.special.ndtri_exp`.
 `scipy.stats` improvements
 --------------------------
 
-An overhaul of the Mann-Whitney-Wilcoxon test, ``mannwhitneyu``, including
-support n-dimensional input, an exact test method, and improved documentation.
+Hypothesis Tests
+^^^^^^^^^^^^^^^^
 
-The method of moments (``MM``) option is now available for
-``rv_continuous.fit``.
+The Mann-Whitney-Wilcoxon test, ``mannwhitneyu``, has been rewritten. It now
+supports n-dimensional input, an exact test method when there are no ties,
+and improved documentation. Please see "Other changes" for adjustments to
+default behavior.
 
-Optional bounds on lambda may now be specified for ``boxcox`` and 
-``boxcox_normmax``.
+The new function `scipy.stats.binomtest` replaces `scipy.stats.binom_test`. The
+new function returns an object that calculates a confidence intervals of the
+proportion parameter. Also, performance was improved from O(n) to O(log(n)) by
+using binary search.
 
-An implementation of the relative risk calculation is now available in
-`scipy.stats.contingency.relative_risk`
-
-Added the two-sample version of Cramer-von Mises test in
+The two-sample version of the Cramer-von Mises test is implemented in
 `scipy.stats.cramervonmises_2samp`.
 
-An implementation of the Generalized Hyperbolic Distribution was added
-in `scipy.stats.genhyperbolic`.
+The Alexander-Govern test is implemented in the new function
+`scipy.stats.alexandergovern`.
 
-We now vendor and leverage the Boost C++ library to address a number of
-previously reported issues in ``stats``. Notably, ``beta``, ``binom``,
-``nbinom`` now have Boost backends, and it is straightforward to leverage
-the backend for additional functions.
+The new function `scipy.stats.barnard_exact` performs Barnard's exact test for
+2x2 contingency tables.
 
-`scipy.stats.argus` now has improved handling for small parameter values
+The new function `scipy.stats.page_trend_test` performs Page's test for ordered
+alternatives.
 
-`scipy.stats.boostrap` has been added to allow estimation of the confidence
-interval and standard error of a statistic.
-
-Performance improvements in the ``skew`` and ``kurtosis`` functions achieved
-by removal of repeated/redundant calculations.
-
-The ``alternative`` parameter was added to the ``skewtest``, ``kurtosistest``,
-``mood``, and ``ranksums`` functions to allow one-tailed hypothesis testing.
-
-Substantial performance improvements in `scipy.stats.mstats.hdquantiles_sd`.
-
-Better argument handling/preparation has resulted in performance improvements
-for many distributions.
-
-The ``alternative`` parameter was added to `scipy.stats.ansari` to enable
-specification of the alternative hypothesis. Likewise for ``linregress`` and
-``spearmanr``.
+The new function `scipy.stats.somersd` performs Somers' D test for ordinal
+association between two variables.
 
 An option, ``permutations``, has been added in `scipy.stats.ttest_ind` to
 perform permutation t-tests. A ``trim`` option was also added to perform
 a trimmed (Yuen's) t-test.
 
-New distributions have been added to `scipy.stats`:
+The ``alternative`` parameter was added to the ``skewtest``, ``kurtosistest``,
+``ranksums``, ``mood``, ``ansari``, ``linregress``, and ``spearmanr`` functions
+to allow one-sided hypothesis testing.
 
-- The skew Cauchy probability distribution has been implemented as 
-  `scipy.stats.skewcauchy.`
-- The Zipfian probability distribution has been implemented as 
-  `scipy.stats.zipfian.`
-- The new distributions ``nchypergeom_fisher`` and ``nchypergeom_wallenius``
-  implement the Fisher and Wallenius versions of the noncentral hypergeometric
-  distribution, respectively.
+Sample statistics
+^^^^^^^^^^^^^^^^^
 
-The ``cosine`` distribution has added ufuncs for ``ppf``, ``cdf``, ``sf``, and
-``isf`` methods including numerical precision improvements at the edges of the
-support of the distribution.
+The new function `scipy.stats.differential_entropy` estimates the differential
+entropy of a continuous distribution from a sample.
 
-The function `scipy.stats.mannwhitenyu` has been rewritten. There are two 
-changes to default behavior:
+The ``boxcox`` and ``boxcox_normmax`` now allow the user to control the
+optimizer used to minimize the negative log-likelihood function.
 
-- For years, use of the default ``alternative=None`` was deprecated; explicit 
-  ``alternative`` specification was required. Use of the new default value of
-  ``alternative``, "two-sided", is now permitted.
-- Previously, all p-values were based on an asymptotic approximation. Now, for
-  small samples without ties, the p-values returned are exact by default.
+A new function `scipy.stats.contingency.relative_risk` calculates the
+relative risk, or risk ratio, of a 2x2 contingency table. The object
+returned has a method to compute the confidence interval of the relative risk.
 
-The new ``axis`` parameter of `scipy.stats.mannwhitenyu` allows vectorized
-computation of the test statistic and p-values along a given axis of the
-provided samples. The new parameter ``method`` enables control over the method
-used for p-value calculation ("auto", "exact", or "asymptotic"). Note that the
-exact calculation is based on the null distribution of the statistic derived
-without ties.
+Performance improvements in the ``skew`` and ``kurtosis`` functions achieved
+by removal of repeated/redundant calculations.
 
-The new function `scipy.stats.binomtest` replaces `scipy.stats.binom_test`. The
-new function returns an object that allows confidence intervals for the
-estimated proportion to be computed. Also, performance was improved from O(n)
-to O(log(n)) by using binary search.
-
-The new function `scipy.stats.contingency.crosstab` computes a contingency
-table (i.e. a table of counts of unique entries) for the given data.
+Substantial performance improvements in `scipy.stats.mstats.hdquantiles_sd`.
 
 The new function `scipy.stats.contingency.association` computes several
 measures of association for a contingency table: Pearsons contingency
 coefficient, Cramer's V, and Tschuprow's T.
-
-The Alexander-Govern test is implemented in the new function
-`scipy.stats.alexandergovern`.
-
-The new function `scipy.stats.barnard_exact` performs Barnard exact test for
-2x2 contingency tables.
-
-The new function `scipy.stats.differential_entropy` calculates the differential
-entropy with five ``method`` values: ``{'vasicek', 'van es', 'ebrahimi',
-'correa', 'auto'}``.
-
-The new function `scipy.stats.page_trend_test` performs Page's test for ordered
-alternatives.
-
-The new function `scipy.stats.somersd` computes Somers' D, a measure of ordinal
-association between two variables.
 
 The parameter ``nan_policy`` was added to `scipy.stats.zmap` to provide options
 for handling the occurrence of ``nan`` in the input data.
@@ -251,14 +204,49 @@ The parameter ``ddof`` was added to `scipy.stats.variation` and
 
 The parameter ``weights`` was added to `scipy.stats.gmean`.
 
+Statistical Distributions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We now vendor and leverage the Boost C++ library to address a number of
+previously reported issues in ``stats``. Notably, ``beta``, ``binom``,
+``nbinom`` now have Boost backends, and it is straightforward to leverage
+the backend for additional functions.
+
+The skew Cauchy probability distribution has been implemented as
+`scipy.stats.skewcauchy`.
+
+The Zipfian probability distribution has been implemented as
+`scipy.stats.zipfian`.
+
+The new distributions ``nchypergeom_fisher`` and ``nchypergeom_wallenius``
+implement the Fisher and Wallenius versions of the noncentral hypergeometric
+distribution, respectively.
+
+The generalized hyperbolic distribution was added in
+`scipy.stats.genhyperbolic`.
+
+`scipy.stats.argus` now has improved handling for small parameter values.
+
+Better argument handling/preparation has resulted in performance improvements
+for many distributions.
+
+The ``cosine`` distribution has added ufuncs for ``ppf``, ``cdf``, ``sf``, and
+``isf`` methods including numerical precision improvements at the edges of the
+support of the distribution.
+
 An option to fit the distribution to data by the method of moments has been
 added to the ``fit`` method of the univariate continuous distributions.
 
-We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
-Software for Science program for supporting many of these improvements to
-`scipy.stats`.
+Other
+^^^^^
+`scipy.stats.bootstrap` has been added to allow estimation of the confidence
+interval and standard error of a statistic.
 
-A new `scipy.stats.qmc` module for quasi-Monte Carlo
+The new function `scipy.stats.contingency.crosstab` computes a contingency
+table (i.e. a table of counts of unique entries) for the given data.
+
+New `scipy.stats.qmc` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This new module provides Quasi-Monte Carlo (QMC) generators and associated
 helper functions.
@@ -289,6 +277,10 @@ The module also provide the following helpers:
   construct a good set of points.
 - `scipy.stats.qmc.scale`: easily scale a set of points from (to) the unit
   interval to (from) a given range.
+
+_We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
+Software for Science program for supporting many of these improvements to_
+`scipy.stats`.
 
 Deprecated features
 ===================
