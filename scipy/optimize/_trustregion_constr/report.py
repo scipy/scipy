@@ -19,11 +19,13 @@ class ReportBase:
 
     @classmethod
     def print_iteration(cls, *args):
-        # args[3] is obj func. It should really be a float. However,
-        # trust-constr typically provides a length 1 array. We have to coerce
-        # it to a float, otherwise the string format doesn't work.
+        # args[3] is obj func, and args[4] is tr-radius. They should really be
+        # floats. However, trust-constr typically provides a ndarray for these
+        # values. We have to coerce them to floats, otherwise the string
+        # formatting doesn't work.
         args = list(args)
         args[3] = float(args[3])
+        args[4] = float(args[4])
 
         iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
