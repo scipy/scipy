@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scipy.stats import bootstrap
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 from .. import _bootstrap as _bootstrap
 from scipy._lib._util import rng_integers
@@ -36,6 +36,14 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, n_resamples=1000.5)
 
+    message = "`batch` must be a positive integer or None."
+    with pytest.raises(ValueError, match=message):
+        bootstrap(([1, 2, 3],), np.mean, batch=-1000)
+
+    message = "`batch` must be a positive integer or None."
+    with pytest.raises(ValueError, match=message):
+        bootstrap(([1, 2, 3],), np.mean, batch=1000.5)
+
     message = "`method` must be in"
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, method='ekki')
@@ -53,6 +61,23 @@ def test_bootstrap_iv():
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, random_state='herring')
+
+
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_bootstrap_batch(method, axis):
+    # for one-sample statistics, batch size shouldn't affect the result
+    np.random.seed(0)
+
+    x = np.random.rand(10, 11, 12)
+    res1 = bootstrap((x,), np.mean, batch=None, method=method,
+                     random_state=0, axis=axis, n_resamples=100)
+    res2 = bootstrap((x,), np.mean, batch=10, method=method,
+                     random_state=0, axis=axis, n_resamples=100)
+
+    assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
+    assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
+    assert_equal(res2.standard_error, res1.standard_error)
 
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
@@ -200,7 +225,7 @@ def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
     x = np.random.rand(*shape)
-    y = _bootstrap._jackknife_resample(x)
+    y = next(_bootstrap._jackknife_resample(x))
 
     for i in range(shape[-1]):
         # each resample is indexed along second to last axis
@@ -209,6 +234,10 @@ def test_jackknife_resample():
         expected = np.delete(x, i, axis=-1)
 
         assert np.array_equal(slc, expected)
+
+    y2 = np.concatenate(list(_bootstrap._jackknife_resample(x, batch=2)),
+                        axis=-2)
+    assert np.array_equal(y2, y)
 
 
 @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])

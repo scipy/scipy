@@ -91,7 +91,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     return alpha_1, alpha_2
 
 
-def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
+def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples, batch,
                   method, random_state):
     """Input validation for `bootstrap`."""
     axis_int = int(axis)
@@ -124,6 +124,13 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
         raise ValueError("`n_resamples` must be a positive integer.")
 
+    if batch is None:
+        batch_iv = batch
+    else:
+        batch_iv = int(batch)
+        if batch != batch_iv or batch_iv <= 0:
+            raise ValueError("`batch` must be a positive integer or None.")
+
     methods = {'percentile', 'basic', 'bca'}
     method = method.lower()
     if method not in methods:
@@ -136,7 +143,7 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, axis_int, confidence_level_float,
-            n_resamples_int, method, random_state)
+            n_resamples_int, batch_iv, method, random_state)
 
 
 fields = ['confidence_interval', 'standard_error']
@@ -363,9 +370,9 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, axis, confidence_level,
-                         n_resamples, method, random_state)
+                         n_resamples, batch, method, random_state)
     data, statistic, axis, confidence_level = args[:4]
-    n_resamples, method, random_state = args[4:]
+    n_resamples, batch, method, random_state = args[4:]
 
     theta_hat_b = []
 
@@ -387,7 +394,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
-        interval = _bca_interval(data, statistic, axis, alpha,
+        interval = _bca_interval(data, statistic, -1, alpha,
                                  theta_hat_b, batch)
         percentile_fun = _percentile_along_axis
 
@@ -405,4 +412,4 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
-                           standard_error=np.std(theta_hat_b, ddof=1))
+                           standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
