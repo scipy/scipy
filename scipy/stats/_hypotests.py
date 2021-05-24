@@ -1089,9 +1089,6 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     Since this p-value is less than our chosen significance level, we have
     evidence to reject :math:`H_0` in favor of the alternative hypothesis.
 
-    Notice that the Fisher statistic given by `res.pvalue` is equal to 0.0483,
-    which is a little bit above our own statistic.
-
     """
     hypergeom = distributions.hypergeom
 
