@@ -113,6 +113,7 @@ jobs:
           name: run asv
           command: |
             . venv/bin/activate
+            pip install --upgrade pip
             pip install pyfftw cffi pytest
             export PYTHONPATH=$PWD/build/testenv/lib/python3.7/site-packages
             cd benchmarks
