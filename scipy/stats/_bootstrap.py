@@ -4,6 +4,24 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
+from scipy.stats.stats import _broadcast_concatenate
+
+
+def _vectorize_statistic(statistic):
+    """Vectorize an n-sample statistic"""
+    # This is a little cleaner than np.nditer at the expense of some data
+    # copying: concatenate samples together, then use np.apply_along_axis
+    def stat_nd(*data, axis=0):
+        lengths = [sample.shape[axis] for sample in data]
+        split_indices = np.cumsum(lengths)[:-1]
+        z = _broadcast_concatenate(data, axis)
+
+        def stat_1d(z):
+            data = np.split(z, split_indices)
+            return statistic(*data)
+
+        return np.apply_along_axis(stat_1d, axis, z)[()]
+    return stat_nd
 
 
 def _jackknife_resample(sample):
@@ -84,9 +102,16 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     return alpha_1, alpha_2
 
 
-def _bootstrap_iv(data, statistic, paired, axis, confidence_level, n_resamples,
-                  method, random_state):
-    """Input validation for `bootstrap`."""
+def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
+                  n_resamples, method, random_state):
+    """Input validation and standardization for `bootstrap`."""
+
+    if not isinstance(vectorized, bool):
+        raise ValueError("`vectorized` must be `True` or `False`.")
+
+    if not vectorized:
+        statistic = _vectorize_statistic(statistic)
+
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -147,16 +172,17 @@ def _bootstrap_iv(data, statistic, paired, axis, confidence_level, n_resamples,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, paired, axis_int, confidence_level_float,
-            n_resamples_int, method, random_state)
+    return (data_iv, statistic, vectorized, paired, axis_int,
+            confidence_level_float, n_resamples_int, method, random_state)
 
 
 fields = ['confidence_interval', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
-def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
-              n_resamples=9999, method='BCa', random_state=None):
+def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
+              confidence_level=0.95, n_resamples=9999, method='BCa',
+              random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -194,8 +220,13 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
         as separate arguments and returns the resulting statistic.
+        If `vectorized` is set ``True``,
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
+    vectorized : bool, default: ``True``
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis`, and is assumed to calculate the statistic
+        only for 1D samples.
     paired : bool, optional
         Whether the statistic treats corresponding elements of the samples
         in `data` as paired. The default is ``False``.
@@ -351,29 +382,26 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
     >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
     0.9962357936065914
 
-    `pearsonr` isn't vectorized, but NumPy can take care of that.
+    We wrap `pearsonr` so that it returns only the statistic.
 
-    >>> def my_statistic(z):
-    ...     n = int(len(z)/2)
-    ...     x, y = z[:n], z[n:]
+    >>> def my_statistic(x, y):
     ...     return pearsonr(x, y)[0]
-    >>> def my_vectorized_statistic(x, y, axis):
-    ...     z = np.hstack([x, y])
-    ...     return np.apply_along_axis(my_statistic, axis, z)
 
-    We call `bootstrap` using `paired=True`.
+    We call `bootstrap` using ``paired=True``.
+    Also, since ``my_statistic`` isn't vectorized to calculate the statistic
+    along a given axis, we pass in ``vectorized=False``.
 
-    >>> res = bootstrap((x, y), my_vectorized_statistic, paired=True,
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
     ...                 random_state=rng)
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
     """
     # Input validation
-    args = _bootstrap_iv(data, statistic, paired, axis, confidence_level,
-                         n_resamples, method, random_state)
-    data, statistic, paired, axis, confidence_level = args[:5]
-    n_resamples, method, random_state = args[5:]
+    args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
+                         confidence_level, n_resamples, method, random_state)
+    data, statistic, vectorized, paired, axis = args[:5]
+    confidence_level, n_resamples, method, random_state = args[5:]
 
     # Generate resamples
     resampled_data = []
@@ -388,7 +416,8 @@ def bootstrap(data, statistic, *, paired=False, axis=0, confidence_level=0.95,
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
-        interval = _bca_interval(data, statistic, -1, alpha, theta_hat_b)
+        interval = _bca_interval(data, statistic, axis=-1,
+                                 alpha=alpha, theta_hat_b=theta_hat_b)
         percentile_fun = _percentile_along_axis
 
     else:

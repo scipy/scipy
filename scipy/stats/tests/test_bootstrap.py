@@ -8,6 +8,7 @@ from scipy._lib._util import rng_integers
 
 
 def test_bootstrap_iv():
+
     message = "`data` must be a sequence of samples."
     with pytest.raises(ValueError, match=message):
         bootstrap(1, np.mean)
@@ -23,6 +24,10 @@ def test_bootstrap_iv():
     message = ("When `paired is True`, all samples must have the same length ")
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
+
+    message = "`vectorized` must be `True` or `False`."
+    with pytest.raises(ValueError, match=message):
+        bootstrap(1, np.mean, vectorized='ekki')
 
     message = "`axis` must be an integer."
     with pytest.raises(ValueError, match=message):
@@ -262,6 +267,54 @@ def test_bootstrap_against_itself_2samp(method, expected):
     assert pvalue > 0.1
 
 
+@pytest.mark.parametrize("method", ["basic", "percentile"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_bootstrap_vectorized_3samp(method, axis):
+    def statistic(*data, axis=0):
+        # an arbitrary, vectorized statistic
+        return sum((sample.mean(axis) for sample in data))
+
+    def statistic_1d(*data):
+        # the same statistic, not vectorized
+        for sample in data:
+            assert sample.ndim == 1
+        return statistic(*data, axis=0)
+
+    np.random.seed(0)
+    x = np.random.rand(4, 5)
+    y = np.random.rand(4, 5)
+    z = np.random.rand(4, 5)
+    res1 = bootstrap((x, y, z), statistic, vectorized=True,
+                     axis=axis, n_resamples=100, method=method, random_state=0)
+    res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
+                     axis=axis, n_resamples=100, method=method, random_state=0)
+    assert_allclose(res1.confidence_interval, res2.confidence_interval)
+    assert_allclose(res1.standard_error, res2.standard_error)
+
+
+@pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_bootstrap_vectorized_1samp(method, axis):
+    def statistic(x, axis=0):
+        # an arbitrary, vectorized statistic
+        return x.mean(axis=axis)
+
+    def statistic_1d(x):
+        # the same statistic, not vectorized
+        assert x.ndim == 1
+        return statistic(x, axis=0)
+
+    np.random.seed(0)
+    x = np.random.rand(4, 5)
+    res1 = bootstrap((x,), statistic, vectorized=True,
+                     axis=axis, n_resamples=100, method=method, random_state=0)
+    res2 = bootstrap((x,), statistic_1d, vectorized=False,
+                     axis=axis, n_resamples=100, method=method, random_state=0)
+    assert_allclose(res1.confidence_interval, res2.confidence_interval)
+    assert_allclose(res1.standard_error, res2.standard_error)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
@@ -334,3 +387,30 @@ def test_percentile_along_axis():
         res = y[i]
         expected = np.percentile(x[i], q[i], axis=-1)
         assert_allclose(res, expected, 1e-15)
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_vectorize_statistic(axis):
+    # test that _vectorize_statistic vectorizes a statistic along `axis`
+
+    def statistic(*data, axis):
+        # an arbitrary, vectorized statistic
+        return sum((sample.mean(axis) for sample in data))
+
+    def statistic_1d(*data):
+        # the same statistic, not vectorized
+        for sample in data:
+            assert sample.ndim == 1
+        return statistic(*data, axis=0)
+
+    # vectorize the non-vectorized statistic
+    statistic2 = _bootstrap._vectorize_statistic(statistic_1d)
+
+    np.random.seed(0)
+    x = np.random.rand(4, 5, 6)
+    y = np.random.rand(4, 1, 6)
+    z = np.random.rand(1, 5, 6)
+
+    res1 = statistic(x, y, z, axis=axis)
+    res2 = statistic2(x, y, z, axis=axis)
+    assert_allclose(res1, res2)
