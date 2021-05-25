@@ -6716,9 +6716,11 @@ class TestNumericalInverseHermite:
                       'norminvgauss', 'genhyperbolic'}
 
         if distname in slow_dists:
-            pytest.skip("NumericalInverseHermite is not fast enough.")
+            pytest.skip("Distribution is too slow")
         if distname in fail_dists:
-            pytest.xfail("NumericalInverseHermite fails; should fix.")
+            # specific reasons documented in gh-13319
+            # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
+            pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
 
         np.random.seed(0)
 
@@ -6856,6 +6858,7 @@ class TestNumericalInverseHermite:
 
     def test_inaccurate_CDF(self):
         # CDF function with inaccurate tail cannot be inverted; see gh-13319
+        # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
         shapes = (2.3098496451481823, 0.6268795430096368)
         match = "The interpolating spline could not be created."
 

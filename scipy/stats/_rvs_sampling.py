@@ -258,7 +258,7 @@ class NumericalInverseHermite:
     >>> from scipy import stats
     >>> from timeit import timeit
     >>> time_once = lambda f: f"{timeit(f, number=1)*1000:.6} ms"
-    >>> dist = stats.genexpon(9, 16, 3)
+    >>> dist = stats.genexpon(9, 16, 3)  # freeze the distribution
     >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
     >>> time_once(lambda: dist.ppf(p))
     '154.565 ms'  # may vary
@@ -314,16 +314,16 @@ class NumericalInverseHermite:
     >>> from scipy.special import ndtr, ndtri
     >>>
     >>> class MyNormal:
-    >>>
-    >>>     def pdf(self, x):
+    ...
+    ...     def pdf(self, x):
     ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
-    >>>
-    >>>     def cdf(self, x):
+    ...
+    ...     def cdf(self, x):
     ...        return ndtr(x)
-    >>>
-    >>>     def ppf(self, x):
+    ...
+    ...     def ppf(self, x):
     ...        return ndtri(x)
-    >>>
+    ...
     >>> dist1 = MyNormal()
     >>> fni1 = NumericalInverseHermite(dist1)
     >>>
