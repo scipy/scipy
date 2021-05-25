@@ -1009,6 +1009,7 @@ class TestBarnardExact:
 class TestBoschlooExact:
     """Some tests to show that boschloo_exact() works correctly."""
 
+    ATOL = 1e-7
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
@@ -1041,7 +1042,7 @@ class TestBoschlooExact:
         """
         res = boschloo_exact(input_sample, alternative="less")
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-7)
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -1072,7 +1073,7 @@ class TestBoschlooExact:
         """
         res = boschloo_exact(input_sample, alternative="greater")
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-7)
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -1106,7 +1107,7 @@ class TestBoschlooExact:
         res = boschloo_exact(input_sample, alternative="two-sided", n=64)
         # Need n = 64 for python 32-bit
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-7)
+        assert_allclose([statistic, pvalue], expected, atol=self.ATOL)
 
     def test_raises(self):
         # test we raise an error for wrong input number of nuisances.
