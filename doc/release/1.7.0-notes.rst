@@ -29,15 +29,21 @@ Highlights of this release
   other NumFOCUS packages like NumPy.
 - We now vendor and leverage the Boost C++ library to enable numerous
   improvements for long-standing weaknesses in `scipy.stats`
+- `scipy.stats` has five new distributions, seven new (or overhauled)
+  hypothesis tests, a new function for bootstrapping, and many other
+  enhancements.
 - ``cdist`` and ``pdist`` distance calculations are faster for several metrics,
   especially weighted cases, thanks to a rewrite to a new C++ backend framework
+- A new class for radial basis function interpolation, `RBFInterpolator`, was
+  added to address issues with the `Rbf` class.
+
 
 
 New features
 ============
 
 `scipy.cluster` improvements
-------------------------------
+----------------------------
 
 An optional argument, ``seed``, has been added to ``kmeans`` and ``kmeans2`` to
 set the random generator and random state.
@@ -122,10 +128,10 @@ The parameter ``seed`` was added to `scipy.spatial.vq.kmeans` and
 `scipy.spatial.vq.kmeans2`.
 
 The parameters ``axis`` and ``keepdims`` where added to
-`scipy.spatial.distance.jensenshannon.`
+`scipy.spatial.distance.jensenshannon`.
 
-The ``rotation`` methods `from_rotvec` and `as_rotvec` now accept a `degrees`
-argument to specify usage of degrees instead of radians.
+The ``rotation`` methods ``from_rotvec`` and ``as_rotvec`` now accept a
+``degrees`` argument to specify usage of degrees instead of radians.
 
 `scipy.special` improvements
 ----------------------------
@@ -322,8 +328,8 @@ Other changes
 =============
 
 We now accept and leverage performance improvements from the ahead-of-time
-Python-to-C++ transpiler, Pythran, which can be optionally disabled but is
-enabled by default at build time.
+Python-to-C++ transpiler, Pythran, which can be optionally disabled (via
+``export SCIPY_USE_PYTHRAN=0``) but is enabled by default at build time.
 
 There are two changes to the default behavior of `scipy.stats.mannwhitenyu`:
 
@@ -665,7 +671,7 @@ Pull requests for 1.7.0
 * `#13297 <https://github.com/scipy/scipy/pull/13297>`__: TST: mark kde.logpdf overflow test as xslow
 * `#13298 <https://github.com/scipy/scipy/pull/13298>`__: Generalized Hyperbolic Distribution
 * `#13301 <https://github.com/scipy/scipy/pull/13301>`__: DOC: cluster: Add cluster number note to the docstring of cluster.vq.kmeans
-* `#13302 <https://github.com/scipy/scipy/pull/13302>`__: BUG: Fix ndimage.morphology.distance_transform_\* argument handling
+* `#13302 <https://github.com/scipy/scipy/pull/13302>`__: BUG: Fix ndimage.morphology.distance_transform\_\* argument handling
 * `#13303 <https://github.com/scipy/scipy/pull/13303>`__: CI: prevent Codecov giving false CI failures and wrong PR annotations
 * `#13313 <https://github.com/scipy/scipy/pull/13313>`__: ENH: static typing for qhull
 * `#13316 <https://github.com/scipy/scipy/pull/13316>`__: Pythran implementation of scipy.signal._spectral
@@ -920,7 +926,7 @@ Pull requests for 1.7.0
 * `#14015 <https://github.com/scipy/scipy/pull/14015>`__: MAINT: remove brew update
 * `#14017 <https://github.com/scipy/scipy/pull/14017>`__: BENCH: Add more formats for sparse arithmetic
 * `#14018 <https://github.com/scipy/scipy/pull/14018>`__: BENCH: add benchmark for f_oneway
-* `#14020 <https://github.com/scipy/scipy/pull/14020>`__: MAINT: modify np.int_ to np.int32 to make it the same for 32/64...
+* `#14020 <https://github.com/scipy/scipy/pull/14020>`__: MAINT: modify np.int\_ to np.int32 to make it the same for 32/64...
 * `#14023 <https://github.com/scipy/scipy/pull/14023>`__: MAINT: Fix clang build and remove some unicode characters
 * `#14025 <https://github.com/scipy/scipy/pull/14025>`__: BUG: sparse: fix DIA.setdiag issue
 * `#14026 <https://github.com/scipy/scipy/pull/14026>`__: TST: optimize: xfail part of test_powell
