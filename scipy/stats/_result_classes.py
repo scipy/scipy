@@ -15,8 +15,9 @@ Result classes
 
 """
 
-__all__ = ['BinomTestResult', 'RelativeRiskResult']
+__all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyKramerResult']
 
 
 from ._binomtest import BinomTestResult
 from ._relative_risk import RelativeRiskResult
+from ._hypotests import TukeyKramerResult

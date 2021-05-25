@@ -1228,14 +1228,9 @@ def cramervonmises_2samp(x, y, method='auto'):
     return CramerVonMisesResult(statistic=t, pvalue=p)
 
 
-TukeyKramerResult = make_dataclass("TukeyKramerResult",
-                                   ("statistic", "pvalue", "lower_conf",
-                                    "upper_conf", "significant"))
-
-
 class TukeyKramerResult:
-    """
-    Result of `scipy.stats.tukeykramer`.
+    """Result of `scipy.stats.tukeykramer`.
+
     Attributes
     ----------
     sig_level : float
@@ -1246,11 +1241,19 @@ class TukeyKramerResult:
     pvalue : float ndarray
         The associated p-value from the studentized range distribution. The
         ``(i, j)`` index is the p-value for the ith - jth group comparison.
+
     Methods
     -------
     confidence_inteval() :
         Compute the confidence interval for the significance level
         specified in the test.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
     """
 
     def __init__(self, sig_level, statistic, pvalue, _nargs, _nsamples,
