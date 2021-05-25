@@ -201,7 +201,6 @@ def test_bootstrap_against_itself_2samp(method, expected):
     assert pvalue > 0.1
 
 
-
 @pytest.mark.parametrize("method", ["basic", "percentile"])
 @pytest.mark.parametrize("axis", [0, 1])
 def test_bootstrap_vectorized_3samp(method, axis):
@@ -227,6 +226,7 @@ def test_bootstrap_vectorized_3samp(method, axis):
     assert_allclose(res1.standard_error, res2.standard_error)
 
 
+@pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 @pytest.mark.parametrize("axis", [0, 1])
 def test_bootstrap_vectorized_1samp(method, axis):

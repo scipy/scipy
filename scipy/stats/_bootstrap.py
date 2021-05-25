@@ -106,7 +106,7 @@ def _bootstrap_iv(data, statistic, vectorized, axis, confidence_level,
                   n_resamples, method, random_state):
     """Input validation and standardization for `bootstrap`."""
 
-    if vectorized not in {True, False}:
+    if not isinstance(vectorized, bool):
         raise ValueError("`vectorized` must be `True` or `False`.")
 
     if not vectorized:
@@ -204,7 +204,7 @@ def bootstrap(data, statistic, *, vectorized=True, axis=0,
         If `vectorized` is set ``True``,
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
-    vectorized : bool, optional (default: ``True``)
+    vectorized : bool, default: ``True``
         If `vectorized` is set ``False``, `statistic` will not be passed
         keyword argument `axis`, and is assumed to calculate the statistic
         only for 1D samples.
