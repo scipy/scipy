@@ -395,7 +395,7 @@ class BenchQMCDiscrepancy(Benchmark):
         disc = stats.qmc.discrepancy(self.sample, method=method)
 
 
-class FastNumericalInverse(Benchmark):
+class NumericalInverseHermite(Benchmark):
 
     param_names = ['distribution']
     params = [distcont]
@@ -418,4 +418,4 @@ class FastNumericalInverse(Benchmark):
             sup.filter(RuntimeWarning, "overflow encountered")
             sup.filter(RuntimeWarning, "divide by zero")
             sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = stats.FastNumericalInverse(dist)
+            stats.NumericalInverseHermite(dist)

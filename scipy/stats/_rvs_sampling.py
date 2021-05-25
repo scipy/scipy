@@ -173,11 +173,11 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     return np.reshape(x, size1d)
 
 
-class FastNumericalInverse():
+class NumericalInverseHermite():
     r"""
-    Object representing a Fast Numerical Inverse of a probability distribution.
+    A Hermite spline fast numerical inverse of a probability distribution.
 
-    The initializer of `FastNumericalInverse` accepts `dist`, an object
+    The initializer of `NumericalInverseHermite` accepts `dist`, an object
     representing a continuous distribution, and provides an object with methods
     that approximate `dist.ppf` and `dist.rvs`. For most distributions,
     these methods are faster than those of `dist` itself.
@@ -203,7 +203,7 @@ class FastNumericalInverse():
 
     Notes
     -----
-    `FastNumericalInverse` approximates the inverse of a continuous
+    `NumericalInverseHermite` approximates the inverse of a continuous
     statistical distribution's CDF with a cubic Hermite spline.
 
     As described in [1]_, it begins by evaluating the distribution's PDF and
@@ -266,10 +266,10 @@ class FastNumericalInverse():
     >>> time_once(lambda: dist.rvs(size=100))
     '148.979 ms'  # may vary
 
-    The `FastNumericalInverse` has a method that approximates ``dist.ppf``.
+    The `NumericalInverseHermite` has a method that approximates ``dist.ppf``.
 
-    >>> from scipy.stats import FastNumericalInverse
-    >>> fni = FastNumericalInverse(dist)
+    >>> from scipy.stats import NumericalInverseHermite
+    >>> fni = NumericalInverseHermite(dist)
     >>> np.allclose(fni.ppf(p), dist.ppf(p))
     True
 
@@ -277,7 +277,7 @@ class FastNumericalInverse():
     and use it than to call ``dist.ppf``.
 
     >>> def time_me():
-    ...     fni = FastNumericalInverse(dist)
+    ...     fni = NumericalInverseHermite(dist)
     ...     fni.ppf(p)
     >>> time_once(time_me)
     '11.9222 ms'  # may vary
@@ -304,7 +304,7 @@ class FastNumericalInverse():
     >>> np.allclose(rvs1, rvs2)
     True
 
-    To use `FastNumericalInverse` with a custom distribution, users may
+    To use `NumericalInverseHermite` with a custom distribution, users may
     subclass  `scipy.stats.rv_continuous` and initialize a frozen instance or
     create an object with equivalent ``pdf``, ``cdf``, and ``ppf`` methods.
     For instance, the following object represents the standard normal
@@ -325,10 +325,10 @@ class FastNumericalInverse():
     ...        return ndtri(x)
     >>>
     >>> dist1 = MyNormal()
-    >>> fni1 = FastNumericalInverse(dist1)
+    >>> fni1 = NumericalInverseHermite(dist1)
     >>>
     >>> dist2 = stats.norm()
-    >>> fni2 = FastNumericalInverse(dist2)
+    >>> fni2 = NumericalInverseHermite(dist2)
     >>>
     >>> print(fni1.rvs(random_state=seed), fni2.rvs(random_state=seed))
     -1.9603810921759424 -1.9603810921747074

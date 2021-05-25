@@ -6708,17 +6708,17 @@ class TestMGCStat:
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
 
-class TestFNI:
+class TestNumericalInverseHermite:
     @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_FastNumericalInverse(self, distname, shapes):
+    def test_NumericalInverseHermite(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic'}
 
         if distname in slow_dists:
-            pytest.skip("FastNumericalInverse is not fast enough.")
+            pytest.skip("NumericalInverseHermite is not fast enough.")
         if distname in fail_dists:
-            pytest.xfail("FastNumericalInverse fails; should fix.")
+            pytest.xfail("NumericalInverseHermite fails; should fix.")
 
         np.random.seed(0)
 
@@ -6728,7 +6728,7 @@ class TestFNI:
             sup.filter(RuntimeWarning, "overflow encountered")
             sup.filter(RuntimeWarning, "divide by zero")
             sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = stats.FastNumericalInverse(dist)
+            fni = stats.NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -6740,24 +6740,24 @@ class TestFNI:
     def test_fni_input_validation(self):
         match = "`dist` must have methods `pdf`, `cdf`, and `ppf`"
         with pytest.raises(ValueError, match=match):
-            stats.FastNumericalInverse("norm")
+            stats.NumericalInverseHermite("norm")
 
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
-            stats.FastNumericalInverse(stats.norm(), tol='ekki')
+            stats.NumericalInverseHermite(stats.norm(), tol='ekki')
 
         match = "`max_intervals' must be..."
         with pytest.raises(ValueError, match=match):
-            stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
+            stats.NumericalInverseHermite(stats.norm(), max_intervals=-1)
 
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):
-            fni = stats.FastNumericalInverse(stats.norm())
+            fni = stats.NumericalInverseHermite(stats.norm())
             fni.qrvs(qmc_engine=0)
 
         if NumpyVersion(np.__version__) >= '1.18.0':
             # issues with QMCEngines and old NumPy
-            fni = stats.FastNumericalInverse(stats.norm())
+            fni = stats.NumericalInverseHermite(stats.norm())
 
             match = "`d` must be consistent with dimension of `qmc_engine`."
             with pytest.raises(ValueError, match=match):
@@ -6770,9 +6770,9 @@ class TestFNI:
 
     @pytest.mark.parametrize('rng', rngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
-    def test_FastNumericalInverseRVS(self, rng, size_in, size_out):
+    def test_NumericalInverseHermiteRVS(self, rng, size_in, size_out):
         dist = stats.norm()
-        fni = stats.FastNumericalInverse(dist)
+        fni = stats.NumericalInverseHermite(dist)
 
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
@@ -6797,10 +6797,10 @@ class TestFNI:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_FastNumericalInverseQRVS(self, qrng, size_in, size_out,
+    def test_NumericalInverseHermiteQRVS(self, qrng, size_in, size_out,
                                       d_in, d_out):
         dist = stats.norm()
-        fni = stats.FastNumericalInverse(dist)
+        fni = stats.NumericalInverseHermite(dist)
 
         # If d and qrng.d are inconsistent, an error is raised
         if d_in is not None and qrng is not None and qrng.d != d_in:
@@ -6824,7 +6824,7 @@ class TestFNI:
             qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
             assert_allclose(qrvs, qrvs2, atol=1e-12)
 
-    def test_FastNumericalInverseQRVS_size_tuple(self):
+    def test_NumericalInverseHermiteQRVS_size_tuple(self):
         # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
         # we set `n = prod(size)` in the call to qmc_engine.random, transform
         # the sample, and reshape it to the final dimensions. When we reshape,
@@ -6838,7 +6838,7 @@ class TestFNI:
             pytest.skip("QMC doesn't play well with old NumPy")
 
         dist = stats.norm()
-        fni = stats.FastNumericalInverse(dist)
+        fni = stats.NumericalInverseHermite(dist)
 
         size = (3, 4)
         d = 5
@@ -6855,17 +6855,17 @@ class TestFNI:
             sample2 = qrvs2[:, i].reshape(size)
             assert_allclose(sample, sample2, atol=1e-12)
 
-    def test_FastNumericalInverse_inaccurate_CDF(self):
+    def test_NumericalInverseHermite_inaccurate_CDF(self):
         # CDF function with inaccurate tail cannot be inverted; see gh-13319
         shapes = (2.3098496451481823, 0.6268795430096368)
         match = "The interpolating spline could not be created."
 
         # fails with default tol
         with pytest.raises(ValueError, match=match):
-            stats.FastNumericalInverse(stats.beta(*shapes))
+            stats.NumericalInverseHermite(stats.beta(*shapes))
 
         # no error with coarser tol
-        stats.FastNumericalInverse(stats.beta(*shapes), tol=1e-10)
+        stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-10)
 
     def test_custom_distribution(self):
         class MyNormal:
@@ -6880,10 +6880,10 @@ class TestFNI:
                 return special.ndtri(x)
 
         dist1 = MyNormal()
-        fni1 = stats.FastNumericalInverse(dist1)
+        fni1 = stats.NumericalInverseHermite(dist1)
 
         dist2 = stats.norm()
-        fni2 = stats.FastNumericalInverse(dist2)
+        fni2 = stats.NumericalInverseHermite(dist2)
 
         assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
 
