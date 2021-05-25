@@ -1032,8 +1032,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test. From some local testing, it appears that Boschloo is slightly
-    more powerful than Barnard's procedure, but a lot slower.
+    test.
 
     .. versionadded:: 1.7.0
 
