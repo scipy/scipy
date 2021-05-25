@@ -6,12 +6,13 @@ from itertools import combinations
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
+from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'cramervonmises_2samp', 'tukeykramer']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -1225,3 +1226,210 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
+
+
+TukeyKramerResult = make_dataclass("TukeyKramerResult",
+                                   ("statistic", "pvalue", "lower_conf",
+                                    "upper_conf", "significant"))
+
+
+class TukeyKramerResult:
+    """
+    Result of `scipy.stats.tukeykramer`.
+    Attributes
+    ----------
+    sig_level : float
+            The desired significance level (copied from `tukeykramer` input).
+    statistic : float ndarray
+        The computed statistic of the test for each comparison. The
+        ``(i, j)`` index is the p-value for the ith - jth group comparison.
+    pvalue : float ndarray
+        The associated p-value from the studentized range distribution. The
+        ``(i, j)`` index is the p-value for the ith - jth group comparison.
+    Methods
+    -------
+    confidence_inteval() :
+        Compute the confidence interval for the significance level
+        specified in the test.
+    """
+
+    def __init__(self, sig_level, statistic, pvalue, _nargs, _nsamples,
+                 _stand_err):
+        self.sig_level = sig_level
+        self.statistic = statistic
+        self.pvalue = pvalue
+        self._nargs = _nargs
+        self._nsamples = _nsamples
+        self._stand_err = _stand_err
+
+    def confidence_interval(self):
+        # determine the critical value of the studentized range using the
+        # appropriate significance level, number of treatments, and degrees
+        # of freedom as determined by the number of data less the number of
+        # treatments. ("Confidence limits for Tukey's method")[1]. Note that
+        # in the cases of unequal sample sizes there will be a criterion for
+        # each group comparison.
+        params = (1 - self.sig_level, self._nargs,
+                  self._nsamples - self._nargs)
+        srd = distributions.studentized_range.ppf(*params)
+        # also called maximum critical value, the tukey criterion is the
+        # studentized range critical value * the square root of mean square
+        # error over the sample size.
+        tukey_criterion = srd * self._stand_err
+        # the confidence levels are determined by the
+        # `mean_differences` +- `tukey_criterion`
+        upper_conf = self.statistic + tukey_criterion
+        lower_conf = self.statistic - tukey_criterion
+        return ConfidenceInterval(low=lower_conf, high=upper_conf)
+
+
+def _tukeykramer_iv(args, sig_level):
+    args = [np.asarray(arg) for arg in args]
+    for arg in args:
+        if arg.ndim != 1:
+            raise ValueError("Input samples must be one-dimensional")
+        if arg.size <= 1:
+            raise ValueError("Input sample size must be greater than one.")
+        if np.isinf(arg).any():
+            raise ValueError("Input samples must be finite.")
+    if not 0 < sig_level < 1:
+        raise ValueError("Significance level should be between 0 and 1.")
+    return args
+
+
+def tukeykramer(*args, sig_level=.05):
+    """
+    Perform Tukey-Kramer.
+    Under the assumption of a rejected null hypothesis that two or more samples
+    have the same population mean, the Tukey Kramer test compares the absolute
+    mean difference between each input group to the Tukey criterion for
+    significance. For inputs of differing sample sizes, the Tukey Kramer
+    method is used, albeit with a higher confidence coefficient. [1]_
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group. There must be at least
+        two arguments.
+    sig_level : float, optional
+        Significance level for which to determine the appropriate studentized
+        range distribution value.
+        Default is .05.
+    Returns
+    -------
+    result : `~scipy.stats._result_classes.TukeyKramerTestResult` instance
+        The return value is an object with the following attributes:
+        sig_level : float
+            The desired significance level (copied from `tukeykramer` input).
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The
+            (i, j) index is the p-value for the ith - jth group comparison.
+        pvalue : float ndarray
+            The associated p-value from the studentized range distribution. The
+            (i, j) index is the p-value for the ith - jth group comparison.
+        The object has the following methods:
+        confidence_ci() :
+            Compute the confidence interval for the significance level
+            specified in the test.
+    Notes
+    -----
+    The use of this test relies on several assumptions.
+    1. There are equal variances between the samples.
+    2. Each sample is from a normally distributed population.
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    .. [2] Abdi, Herve & Williams, Lynne. (2021). Tukey's Honestly Signiflcant
+           Difierence (HSD) Test.
+    .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
+           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+    .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
+           Means with Unequal Numbers of Replications." Biometrics, vol. 12,
+           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
+           Accessed 25 May 2021.
+    .. [5]
+    Examples
+    --------
+    Here are some data comparing the time to relief of three brands of
+    headache medicine, reported in minutes. Data adapted from [3]_.
+    >>> from scipy.stats import tukeykramer
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    We would like to see if the means between any of the groups are
+    significantly different. First, visually examine a box and whisker plot.
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.boxplot([group0, group1, group2])
+    >>> ax.set_xticklabels(["group0", "group1", "group2"])
+    >>> ax.set_ylabel("mean")
+    >>> plt.show()
+    From a box and whisker plot we can see overlap in the interquartile ranges
+    group 1 to group 2 and group 3, but we can apply the ``tukeykramer`` test
+    to determine if the difference between means is significant.
+    >>> res = tukeykramer(group0, group1, group2)
+    >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
+    >>>     # filter out self comparisons
+    >>>     if i != j:
+    >>>         print(f"({i} - {j}) {p:.03f}")
+    (0 - 1) 0.012
+    (0 - 2) 0.980
+    (1 - 0) 0.012
+    (1 - 2) 0.017
+    (2 - 0) 0.980
+    (2 - 1) 0.017
+    The null hypothesis is that each group has the same mean. We choose a
+    significance level of .05. The p-value for comparisons (``group0`` -
+    ``group1``), and (``group1`` - ``group2``), do not exceed .05, so we reject
+    the null hypothesis that they have the same means. The comparison of
+    (``group0`` - ``group2``) exceeds .05, so we accept the null hypothesis
+    that they have the same mean.
+    There are also confidence intervals associated with the test statistic.
+    They are applicable for the 95% confidence level becuase the test was
+    applied with a .05 significance level.
+    >>> conf = res.confidence_interval()
+    >>> for ((i, j), l) in np.ndenumerate(conf.low):
+    >>>     # filter out self comparisons
+    >>>     if i != j:
+    >>>         print(f"({i} - {j}) {p:.03f}")
+    """
+    args = _tukeykramer_iv(args, sig_level)
+    nargs = len(args)
+    means = np.asarray([np.mean(arg) for arg in args])
+    nsamples_args = np.asarray([a.size for a in args])
+    nsamples = np.sum(nsamples_args)
+
+    # determine mean square error
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_args - 1)) / (nsamples - len(args)))
+
+    # The calculation of the standard error differs when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
+    if np.unique(nsamples_args).size == 1:
+        # all input groups are the same length, so only one value needs to be
+        # calculated [1].
+        normalize = 2 / nsamples_args[0]
+    else:
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix. [3], verified against [4] (page 308).
+        normalize = 1 / nsamples_args + 1 / nsamples_args.reshape((nargs, 1))
+
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
+
+    # the mean difference is the test statistic.
+    mean_differences = means.reshape((nargs, 1)) - means
+
+    # Calculate the t-statistic to use within the survival function of the
+    # studentized range to get the p-value.
+    t_stat = np.abs(mean_differences) / stand_err
+
+    params = t_stat, nargs, nsamples - 1
+    pvalues = distributions.studentized_range.sf(*params)
+
+    return TukeyKramerResult(sig_level, mean_differences, pvalues, nargs,
+                             nsamples, stand_err)
