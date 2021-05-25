@@ -6710,7 +6710,7 @@ class TestMGCStat:
 
 class TestNumericalInverseHermite:
     @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_NumericalInverseHermite(self, distname, shapes):
+    def test_basic(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic'}
@@ -6737,7 +6737,7 @@ class TestNumericalInverseHermite:
         assert p_tol < 1e-8
         assert u_tol < 1e-12
 
-    def test_fni_input_validation(self):
+    def test_input_validation(self):
         match = "`dist` must have methods `pdf`, `cdf`, and `ppf`"
         with pytest.raises(ValueError, match=match):
             stats.NumericalInverseHermite("norm")
@@ -6770,7 +6770,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.parametrize('rng', rngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
-    def test_NumericalInverseHermiteRVS(self, rng, size_in, size_out):
+    def test_RVS(self, rng, size_in, size_out):
         dist = stats.norm()
         fni = stats.NumericalInverseHermite(dist)
 
@@ -6797,8 +6797,7 @@ class TestNumericalInverseHermite:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_NumericalInverseHermiteQRVS(self, qrng, size_in, size_out,
-                                      d_in, d_out):
+    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
         dist = stats.norm()
         fni = stats.NumericalInverseHermite(dist)
 
@@ -6824,7 +6823,7 @@ class TestNumericalInverseHermite:
             qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
             assert_allclose(qrvs, qrvs2, atol=1e-12)
 
-    def test_NumericalInverseHermiteQRVS_size_tuple(self):
+    def test_QRVS_size_tuple(self):
         # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
         # we set `n = prod(size)` in the call to qmc_engine.random, transform
         # the sample, and reshape it to the final dimensions. When we reshape,
@@ -6855,7 +6854,7 @@ class TestNumericalInverseHermite:
             sample2 = qrvs2[:, i].reshape(size)
             assert_allclose(sample, sample2, atol=1e-12)
 
-    def test_NumericalInverseHermite_inaccurate_CDF(self):
+    def test_inaccurate_CDF(self):
         # CDF function with inaccurate tail cannot be inverted; see gh-13319
         shapes = (2.3098496451481823, 0.6268795430096368)
         match = "The interpolating spline could not be created."

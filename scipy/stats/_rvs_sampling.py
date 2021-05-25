@@ -173,7 +173,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     return np.reshape(x, size1d)
 
 
-class NumericalInverseHermite():
+class NumericalInverseHermite:
     r"""
     A Hermite spline fast numerical inverse of a probability distribution.
 
@@ -336,7 +336,7 @@ class NumericalInverseHermite():
     """
 
     def __init__(self, dist, tol=1e-12, max_intervals=100000):
-        res =_fast_numerical_inverse(dist, tol, max_intervals)
+        res = _fast_numerical_inverse(dist, tol, max_intervals)
         H, eu, intervals, a, b = res
         self.H = H
         self.midpoint_error = eu
@@ -526,15 +526,17 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     """
     Generate fast, approximate PPF (inverse CDF) of probability distribution.
 
-    `_fast_numerical_inverse` accepts `dist`, a frozen instance of
-    `scipy.stats.rv_continuous`, and returns a object `fni` with methods
-    that approximate `dist.ppf` and `dist.rvs`. For some distributions,
-    these methods may be faster than those of `dist` itself.
+    `_fast_numerical_inverse` accepts `dist`, an object representing the
+    distribution for which a fast approximate PPF is desired, and returns an
+    object `fni` with methods that approximate `dist.ppf` and `dist.rvs`.
+    For some distributions, these methods may be faster than those of `dist`
+    itself.
 
     Parameters
     ----------
-    dist : scipy.stats.rv_frozen
-        Frozen distribution for which fast approximate PPF is desired.
+    dist : object
+        Object representing distribution for which fast approximate PPF is
+        desired; e.g., a frozen instance of `scipy.stats.rv_continuous`.
     tol : float, optional
         u-error tolerance. The default is 1e-12.
     max_intervals : int, optional
@@ -543,7 +545,7 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
 
     Returns
     -------
-    H: scipy.interpolate.CubicHermiteSpline
+    H : scipy.interpolate.CubicHermiteSpline
         Interpolant of the distributions's PPF.
     intervals : int
         The number of intervals of the interpolant.
