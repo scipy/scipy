@@ -1039,8 +1039,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     k = operator.index(k)
 
     if bc_type == 'periodic' and t is not None:
-        raise ValueError("For periodic case t is constructed automatically "
-                         "and can not be passed manually")
+        raise NotImplementedError("For periodic case t is constructed "
+                         "automatically and can not be passed manually")
 
     # come up with a sensible knot vector, if needed
     if t is None:
