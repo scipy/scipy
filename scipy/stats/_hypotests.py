@@ -1123,10 +1123,16 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         # Same formula as the 'less' case, but with the second column.
         pvalues = hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T
     elif alternative == 'two-sided':
-        pvalues = np.minimum(
-            hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T,
-            hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T,
+        boschloo_less = boschloo_exact(table, alternative="less", n=n)
+        boschloo_greater = boschloo_exact(table, alternative="greater", n=n)
+
+        res = (
+            boschloo_less if boschloo_less.pvalue < boschloo_greater.pvalue
+            else boschloo_greater
         )
+
+        pvalue = 2 * res.pvalue
+        return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (
             f"`alternative` should be one of {'two-sided', 'less', 'greater'},"

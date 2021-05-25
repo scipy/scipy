@@ -1012,10 +1012,10 @@ class TestBoschlooExact:
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
-            ([[43, 40], [10, 39]], (0.9999374, 0.9998659)),
             ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
             ([[5, 1], [10, 10]], (0.9782609, 0.9450994)),
             ([[5, 16], [20, 25]], (0.08913823, 0.05827348)),
+            ([[10, 5], [10, 1]], (0.1652174, 0.08565611)),
             ([[5, 0], [1, 4]], (1, 1)),
             pytest.param(
                 [[0, 1], [3, 2]], (0.5, 0.34375),
@@ -1023,7 +1023,6 @@ class TestBoschlooExact:
                     "This test is sensitive to machine epsilon level",
                     reason="numerical error"),
             ),
-            ([[0, 2], [6, 4]], (0.2272727, 0.09850981)),
             ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
             ([[7, 12], [8, 3]], (0.06406797, 0.03410916)),
             ([[10, 24], [25, 37]], (0.2009359, 0.1512882)),
@@ -1042,7 +1041,7 @@ class TestBoschlooExact:
         """
         res = boschloo_exact(input_sample, alternative="less")
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-4)
+        assert_allclose([statistic, pvalue], expected, atol=1e-7)
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -1073,7 +1072,7 @@ class TestBoschlooExact:
         """
         res = boschloo_exact(input_sample, alternative="greater")
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-4)
+        assert_allclose([statistic, pvalue], expected, atol=1e-7)
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -1081,7 +1080,6 @@ class TestBoschlooExact:
             ([[43, 40], [10, 39]], (0.0002875544, 0.0003231115)),
             ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
             ([[5, 1], [10, 10]], (0.1652174, 0.1801707)),
-            ([[5, 15], [20, 20]], (0.05625775, 0.06858755)),
             ([[5, 16], [20, 25]], (0.08913823, 0.116547)),
             ([[5, 0], [1, 4]], (0.02380952, 0.01373073)),
             pytest.param(
@@ -1090,7 +1088,6 @@ class TestBoschlooExact:
                     "This test is sensitive to machine epsilon level",
                     reason="numerical error"),
             ),
-            ([[0, 2], [6, 4]], (0.2272727, 0.1970196)),
             ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
             ([[7, 12], [8, 3]], (0.06406797, 0.06821831)),
         ],
@@ -1109,7 +1106,7 @@ class TestBoschlooExact:
         res = boschloo_exact(input_sample, alternative="two-sided", n=64)
         # Need n = 64 for python 32-bit
         statistic, pvalue = res.statistic, res.pvalue
-        assert_allclose([statistic, pvalue], expected, atol=1e-2)
+        assert_allclose([statistic, pvalue], expected, atol=1e-7)
 
     def test_raises(self):
         # test we raise an error for wrong input number of nuisances.
