@@ -580,7 +580,7 @@ by [Ham00]_
 
 .. math::
 
-    A(k) = \int_{0}^{\infty} ! a(r) \, J_{\mu}(kr) \, k \, dr \;,
+    A(k) = \int_{0}^{\infty} \! a(r) \, J_{\mu}(kr) \, k \, dr \;,
 
 with :math:`J_{\mu}` the Bessel function of order :math:`\mu`. Under a change
 of variables :math:`r \to \log r`, :math:`k \to \log k`, this becomes
@@ -588,16 +588,16 @@ of variables :math:`r \to \log r`, :math:`k \to \log k`, this becomes
 .. math::
 
     A(e^{\log k})
-    = \int_{0}^{\infty} ! a(e^{\log r}) \, J_{\mu}(e^{\log k + \log r})
+    = \int_{0}^{\infty} \! a(e^{\log r}) \, J_{\mu}(e^{\log k + \log r})
                                         \, e^{\log k + \log r} \, d{\log r}
 
 which is a convolution in logarithmic space. The FHT algorithm uses the FFT
 to perform this convolution on discrete input data.
 
-If the FHT is used to approximate the continuous Hankel transform, care must
-be taken not to introduce numerical ringing effects, since FFT convolution is
-circular. To ensure that the low-ringing condition [Ham00]_ holds, the output
-array can be slightly shifted with an offset computed by :math:`fhtoffset`.
+Care must be taken to minimise numerical ringing due to the circular nature
+of FFT convolution. To ensure that the low-ringing condition [Ham00]_ holds,
+the output array can be slightly shifted by an offset computed using the
+:func:`fhtoffset` function.
 
 
 References
