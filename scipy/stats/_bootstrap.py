@@ -128,13 +128,13 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     data_iv = []
     for sample in data:
         sample = np.atleast_1d(sample)
-        if sample.shape[axis] <= 1:
+        if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
-    if paired is not True and paired is not False:
+    if not isinstance(paired, bool):
         raise ValueError("`paired` must be `True` or `False`.")
 
     if paired:
@@ -151,9 +151,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [sample[..., i] for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [np.arange(n),]
-
-    # should we try: statistic(data, axis=axis) here?
+        data_iv = [np.arange(n)]
 
     confidence_level_float = float(confidence_level)
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scipy.stats import bootstrap
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 from .. import _bootstrap as _bootstrap
 from scipy._lib._util import rng_integers
@@ -63,6 +63,7 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, random_state='herring')
 
+
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_paired(method):
     # test that `paired` works as expected
@@ -79,6 +80,7 @@ def test_bootstrap_paired(method):
         b = y[i]
         res = my_statistic(a, b)
         return res
+
     i = np.arange(len(x))
 
     res1 = bootstrap((i,), my_paired_statistic, random_state=0)
@@ -86,6 +88,7 @@ def test_bootstrap_paired(method):
 
     assert_allclose(res1.confidence_interval, res2.confidence_interval)
     assert_allclose(res1.standard_error, res2.standard_error)
+
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 @pytest.mark.parametrize("axis", [0, 1, 2])
@@ -95,7 +98,7 @@ def test_bootstrap_vectorized(method, axis, paired):
     # CI and standard_error of each axis-slice is the same as those of the
     # original 1d sample
 
-    if not paired and method=='BCa':
+    if not paired and method == 'BCa':
         # should re-assess when BCa is extended
         pytest.xfail(reason="BCa currently for 1-sample statistics only")
     np.random.seed(0)
@@ -125,6 +128,14 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_allclose(res2.confidence_interval.high,
                     res1.confidence_interval.high)
     assert_allclose(res2.standard_error, res1.standard_error)
+
+    result_shape = list(shape)
+    result_shape.pop(axis)
+
+    assert_equal(res2.confidence_interval.low.shape, result_shape)
+    assert_equal(res2.confidence_interval.high.shape, result_shape)
+    assert_equal(res2.standard_error.shape, result_shape)
+
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
