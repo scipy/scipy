@@ -23,6 +23,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 from scipy._lib._util import check_random_state
+from scipy import special
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
@@ -6737,9 +6738,9 @@ class TestFNI:
         assert u_tol < 1e-12
 
     def test_fni_input_validation(self):
-        match = "`dist` must be a frozen continuous distribution."
+        match = "`dist` must have methods `pdf`, `cdf`, and `ppf`"
         with pytest.raises(ValueError, match=match):
-            stats.FastNumericalInverse(stats.norm)
+            stats.FastNumericalInverse("norm")
 
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
@@ -6865,6 +6866,26 @@ class TestFNI:
 
         # no error with coarser tol
         stats.FastNumericalInverse(stats.beta(*shapes), tol=1e-10)
+
+    def test_custom_distribution(self):
+        class MyNormal:
+
+            def pdf(self, x):
+                return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
+
+            def cdf(self, x):
+                return special.ndtr(x)
+
+            def ppf(self, x):
+                return special.ndtri(x)
+
+        dist1 = MyNormal()
+        fni1 = stats.FastNumericalInverse(dist1)
+
+        dist2 = stats.norm()
+        fni2 = stats.FastNumericalInverse(dist2)
+
+        assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
 
 
 class TestPageTrendTest:

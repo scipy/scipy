@@ -3,7 +3,6 @@ import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicHermiteSpline
 from scipy import stats
-from scipy.stats._distn_infrastructure import rv_frozen
 
 
 def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
@@ -178,15 +177,17 @@ class FastNumericalInverse():
     r"""
     Object representing a Fast Numerical Inverse of a probability distribution.
 
-    The initializer of `FastNumericalInverse` accepts `dist`, a frozen instance
-    of a continuous distribution, and provides an object with methods
+    The initializer of `FastNumericalInverse` accepts `dist`, an object
+    representing a continuous distribution, and provides an object with methods
     that approximate `dist.ppf` and `dist.rvs`. For most distributions,
     these methods are faster than those of `dist` itself.
 
     Parameters
     ----------
-    dist : scipy.stats.rv_frozen
-        Frozen distribution for which a fast numerical inverse is desired.
+    dist : object
+        Object representing the distribution for which a fast numerical inverse
+        is desired; for instance, a frozen instance of a `scipy.stats`
+        continuous distribution. See Notes and Examples for details.
     tol : float, optional
         u-error tolerance (see Notes). The default is 1e-12.
     max_intervals : int, optional
@@ -225,8 +226,20 @@ class FastNumericalInverse():
     tolerance is achieved or when the number of mesh intervals after the next
     refinement could exceed the maximum allowed number `max_intervals`.
 
-    The approximation will not be accurate for the extreme tails of the
-    distribution (e.g. ``H(1e-17)``, ``H(1)``).
+    The object `dist` must have methods ``pdf``, ``cdf``, and ``ppf`` that
+    behave like those of a *frozen* instance of `scipy.stats.rv_continuous`.
+    Specifically, it must have methods ``pdf`` and ``cdf`` that accept exactly
+    one ndarray argument ``x`` and return the probability density function and
+    cumulative density function (respectively) at ``x``. The object must also
+    have a method ``ppf`` that accepts a float ``p`` and returns the percentile
+    point function at ``p``. The object may also have a method ``isf`` that
+    accepts a float ``p`` and returns the inverse survival function at ``p``;
+    if it does not, it will be assigned an attribute ``isf`` that calculates
+    the inverse survival function using ``ppf``. The ``ppf`` and
+    ``isf` methods will each be evaluated at a small positive float ``p``
+    (e.g. ``p = utol/10``), and the domain over which the approximate numerical
+    inverse is defined will be ``ppf(p)`` to ``isf(p)``. The approximation will
+    not be accurate in the extreme tails beyond this domain.
 
     References
     ----------
@@ -237,12 +250,15 @@ class FastNumericalInverse():
     Examples
     --------
     For some distributions, ``dist.ppf`` and ``dist.rvs`` are quite slow.
+    For instance, consider `scipy.stats.genexpon`. We freeze the distribution
+    by passing all shape parameters into its initializer and time the resulting
+    object's ``ppf`` and ``rvs`` functions.
 
     >>> import numpy as np
-    >>> from scipy.stats import genexpon
+    >>> from scipy import stats
     >>> from timeit import timeit
     >>> time_once = lambda f: f"{timeit(f, number=1)*1000:.6} ms"
-    >>> dist = genexpon(9, 16, 3)  # freeze the distribution
+    >>> dist = stats.genexpon(9, 16, 3)
     >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
     >>> time_once(lambda: dist.ppf(p))
     '154.565 ms'  # may vary
@@ -287,6 +303,35 @@ class FastNumericalInverse():
     >>> rvs2 = fni.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> np.allclose(rvs1, rvs2)
     True
+
+    To use `FastNumericalInverse` with a custom distribution, users may
+    subclass  `scipy.stats.rv_continuous` and initialize a frozen instance or
+    create an object with equivalent ``pdf``, ``cdf``, and ``ppf`` methods.
+    For instance, the following object represents the standard normal
+    distribution. For simplicity, we use `scipy.special.ndtr` and
+    `scipy.special.ndtri` to compute the ``cdf`` and ``ppf``, respectively.
+
+    >>> from scipy.special import ndtr, ndtri
+    >>>
+    >>> class MyNormal:
+    >>>
+    >>>     def pdf(self, x):
+    ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
+    >>>
+    >>>     def cdf(self, x):
+    ...        return ndtr(x)
+    >>>
+    >>>     def ppf(self, x):
+    ...        return ndtri(x)
+    >>>
+    >>> dist1 = MyNormal()
+    >>> fni1 = FastNumericalInverse(dist1)
+    >>>
+    >>> dist2 = stats.norm()
+    >>> fni2 = FastNumericalInverse(dist2)
+    >>>
+    >>> print(fni1.rvs(random_state=seed), fni2.rvs(random_state=seed))
+    -1.9603810921759424 -1.9603810921747074
 
     """
 
@@ -452,12 +497,22 @@ class FastNumericalInverse():
 
 def _fni_input_validation(dist, tol, max_intervals):
     """
-    Input validation for _fast_numerical_inverse.
+    Input validation and standardization for _fast_numerical_inverse.
 
     """
 
-    if not isinstance(dist, rv_frozen):
-        raise ValueError("`dist` must be a frozen continuous distribution.")
+    has_pdf = hasattr(dist, 'pdf') and callable(dist.pdf)
+    has_cdf = hasattr(dist, 'cdf') and callable(dist.cdf)
+    has_ppf = hasattr(dist, 'ppf') and callable(dist.ppf)
+    has_isf = hasattr(dist, 'isf') and callable(dist.isf)
+
+    if not (has_pdf and has_cdf and has_ppf):
+        raise ValueError("`dist` must have methods `pdf`, `cdf`, and `ppf`.")
+
+    if not has_isf:
+        def isf(x):
+            return 1 - dist.ppf(x)
+        dist.isf = isf
 
     tol = float(tol)  # if there's an exception, raise it now
 
