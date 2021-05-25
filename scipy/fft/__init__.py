@@ -48,7 +48,7 @@ Fast Hankel Transforms
 ======================
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
    fht - Fast Hankel transform
    ifht - Inverse of fht
