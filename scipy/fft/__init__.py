@@ -50,8 +50,8 @@ Fast Hankel Transforms
 .. autosummary::
     :toctree: generated/
 
-    fht - Fast Hankel transform
-    ifht - Inverse of fht
+   fht - Fast Hankel transform
+   ifht - Inverse of fht
 
 Helper functions
 ================
