@@ -1131,6 +1131,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
             else boschloo_greater
         )
 
+        # Two-sided p-value is defined as twice the minimum of the one-sided
+        # p-values
         pvalue = 2 * res.pvalue
         return BoschlooExactResult(res.statistic, pvalue)
     else:
