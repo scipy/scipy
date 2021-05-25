@@ -1298,13 +1298,16 @@ def _tukeykramer_iv(args, sig_level):
 
 
 def tukeykramer(*args, sig_level=.05):
-    """
-    Perform Tukey-Kramer.
-    Under the assumption of a rejected null hypothesis that two or more samples
-    have the same population mean, the Tukey Kramer test compares the absolute
-    mean difference between each input group to the Tukey criterion for
-    significance. For inputs of differing sample sizes, the Tukey Kramer
-    method is used, albeit with a higher confidence coefficient. [1]_
+    """Perform the multiple comparison Tukey-Kramer test for equality of means.
+
+    Under the assumption of a previously rejected null hypothesis that two or
+    more samples have the same population mean, the Tukey-Kramer test compares
+    the absolute mean difference between each input group to the Tukey
+    criterion for significance. The null hypothesis for each comparison is that
+    they have equal means. For inputs of differing sample sizes, the
+    Tukey-Kramer method is used, albeit with a higher confidence coefficient,
+    leading to a more conservative estimate [1]_.
+
     Parameters
     ----------
     sample1, sample2, ... : array_like
@@ -1314,27 +1317,35 @@ def tukeykramer(*args, sig_level=.05):
         Significance level for which to determine the appropriate studentized
         range distribution value.
         Default is .05.
+
     Returns
     -------
     result : `~scipy.stats._result_classes.TukeyKramerTestResult` instance
         The return value is an object with the following attributes:
+
         sig_level : float
             The desired significance level (copied from `tukeykramer` input).
         statistic : float ndarray
             The computed statistic of the test for each comparison. The
-            (i, j) index is the p-value for the ith - jth group comparison.
+            (i, j) index is the statistic for the ith - jth group comparison.
         pvalue : float ndarray
             The associated p-value from the studentized range distribution. The
             (i, j) index is the p-value for the ith - jth group comparison.
+
+
         The object has the following methods:
+
         confidence_ci() :
             Compute the confidence interval for the significance level
             specified in the test.
+
     Notes
     -----
     The use of this test relies on several assumptions.
+
     1. There are equal variances between the samples.
     2. Each sample is from a normally distributed population.
+
     References
     ----------
     .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
@@ -1349,26 +1360,32 @@ def tukeykramer(*args, sig_level=.05):
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
            no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
            Accessed 25 May 2021.
-    .. [5]
+
+
     Examples
     --------
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
+
     >>> from scipy.stats import tukeykramer
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
     >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
     We would like to see if the means between any of the groups are
     significantly different. First, visually examine a box and whisker plot.
+
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.boxplot([group0, group1, group2])
     >>> ax.set_xticklabels(["group0", "group1", "group2"])
     >>> ax.set_ylabel("mean")
     >>> plt.show()
-    From a box and whisker plot we can see overlap in the interquartile ranges
-    group 1 to group 2 and group 3, but we can apply the ``tukeykramer`` test
-    to determine if the difference between means is significant.
+
+    From the box and whisker plot we can see overlap in the interquartile
+    ranges group 1 to group 2 and group 3, but we can apply the ``tukeykramer``
+    test to determine if the difference between means is significant.
+
     >>> res = tukeykramer(group0, group1, group2)
     >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
     >>>     # filter out self comparisons
@@ -1380,20 +1397,32 @@ def tukeykramer(*args, sig_level=.05):
     (1 - 2) 0.017
     (2 - 0) 0.980
     (2 - 1) 0.017
+
     The null hypothesis is that each group has the same mean. We choose a
-    significance level of .05. The p-value for comparisons (``group0`` -
-    ``group1``), and (``group1`` - ``group2``), do not exceed .05, so we reject
-    the null hypothesis that they have the same means. The comparison of
-    (``group0`` - ``group2``) exceeds .05, so we accept the null hypothesis
-    that they have the same mean.
+    significance level of .05. The p-value for comparisons between ``group0``
+    and ``group1`` as well as ``group1`` and ``group2`` do not exceed .05, so
+    we reject the null hypothesis that they have the same means. The p-value of
+    the comparison between ``group0`` and ``group2`` exceeds .05, so we accept
+    the null hypothesis that there is not a significant difference between
+    their means.
+
     There are also confidence intervals associated with the test statistic.
     They are applicable for the 95% confidence level becuase the test was
-    applied with a .05 significance level.
+    applied with a .05 significance level. Print out the lower confidence
+    interval for this result:
+
     >>> conf = res.confidence_interval()
     >>> for ((i, j), l) in np.ndenumerate(conf.low):
     >>>     # filter out self comparisons
     >>>     if i != j:
-    >>>         print(f"({i} - {j}) {p:.03f}")
+    >>>         h = conf.high[i,j]
+    >>>         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    (0 - 1) -8.249 -0.951
+    (0 - 2) -3.909  3.389
+    (1 - 0)  0.951  8.249
+    (1 - 2)  0.691  7.989
+    (2 - 0) -3.389  3.909
+    (2 - 1) -7.989 -0.691
     """
     args = _tukeykramer_iv(args, sig_level)
     nargs = len(args)
