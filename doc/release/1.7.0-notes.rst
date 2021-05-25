@@ -53,6 +53,7 @@ Improved input validation and error messages for ``fitpack.bispev`` and
 ``fitpack.parder`` for scenarios that previously caused substantial confusion
 for users.
 
+The class `RBFInterpolator` was added to supersede the `Rbf` class. The new class has usage that more closely follows other interpolator classes, corrects sign errors that caused unexpected smoothing behavior, includes polynomial terms in the interpolant (which are necessary for some RBF choices), and supports interpolation using only the k-nearest neighbors for memory efficiency.  
 `scipy.io` improvements
 -----------------------
 
