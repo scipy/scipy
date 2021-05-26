@@ -990,7 +990,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         A result object with the following attributes.
 
         statistic : float
-            The Fisher statistic.
+            The statistic used in Boschloo's test; that is, the p-value from Fisher's exact test.
 
         pvalue : float
             P-value, the probability of obtaining a distribution at least as
@@ -1054,13 +1054,13 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     In the following example, we consider the article "Employee
     attitudes and job satisfaction" [3]_
     which reports the results of a survey from 63 scientists and 117 college
-    Professors. Of the 63 scientists, 31 said they were very satisfied with
-    their jobs, whereas 74 of the college Professors were very satisfied
+    professors. Of the 63 scientists, 31 said they were very satisfied with
+    their jobs, whereas 74 of the college professors were very satisfied
     with their work. Is this significant evidence that college
-    Professors are happier with their work than scientists?
+    professors are happier with their work than scientists?
     The following table summarizes the data mentioned above::
 
-                         college Professors   scientists
+                         college professors   scientists
         Very Satisfied   74                     31
         Dissatisfied     43                     32
 
@@ -1069,9 +1069,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     to reject the null hypothesis :math:`H_0`. Suppose we choose the common
     significance level of 5%.
 
-    Our alternative hypothesis is that college Professors are truly more
+    Our alternative hypothesis is that college professors are truly more
     satisfied with their work than scientists. Therefore, we expect
-    :math:`p_1` the proportion of very satisfied college Professors to be
+    :math:`p_1` the proportion of very satisfied college professors to be
     greater than :math:`p_2`, the proportion of very satisfied scientists.
     We thus call `boschloo_exact` with the ``alternative="greater"`` option:
 
@@ -1083,7 +1083,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     0.0355...
 
     Under the null hypothesis that scientists are happier in their work than
-    college Professors, the probability of obtaining test
+    college professors, the probability of obtaining test
     results at least as extreme as the observed data is approximately 3.55%.
     Since this p-value is less than our chosen significance level, we have
     evidence to reject :math:`H_0` in favor of the alternative hypothesis.
@@ -1193,7 +1193,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Notes
     -----
 
-    Both Barnard'd test and Boschloo's test iterate over a nuisance parameter
+    Both Barnard's test and Boschloo's test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
     maxima, this function return the negative log pvalue with respect to the
     nuisance parameter passed in params. This negative log p-value is then
