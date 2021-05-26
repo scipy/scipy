@@ -43,7 +43,6 @@ from collections import namedtuple
 from . import distributions
 import scipy.special as special
 import scipy.stats.stats
-from scipy._lib._util import float_factorial
 
 from ._stats_mstats_common import (
         _find_repeats,
@@ -1166,7 +1165,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     statistic : float
         The Mann-Whitney statistics
     pvalue : float
-        Approximate p-value assuming a normal distribution.
+        Approximate two-sided p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)

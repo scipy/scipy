@@ -45,7 +45,7 @@ Building SciPy
 
       If ``conda`` is not a recognized command, try restarting your terminal. If it is still not recognized, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
-#. Enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pythran pytest gfortran_linux-64 gxx_linux-64 sphinx pydata-sphinx-theme matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
+#. Enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pythran pytest gfortran_linux-64 gxx_linux-64 sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
@@ -53,7 +53,7 @@ Building SciPy
 
    * ``pytest`` is needed for running the test suite.
 
-   * ``sphinx``, ``pydata-sphinx-theme`` and ``matplotlib`` are required to render the SciPy documentation.
+   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-panels`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
 
@@ -82,6 +82,8 @@ Building SciPy
 #. Enter the command ``git clone`` followed by your fork's .git URL. Note that this creates in the terminal's working directory a ``scipy`` folder containing the SciPy source code.
 
 #. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
+
+#. Initialize git submodules: ``git submodule update --init``.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 

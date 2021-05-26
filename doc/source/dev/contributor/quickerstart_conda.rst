@@ -14,7 +14,13 @@ your `SciPy <https://github.com/scipy/scipy>`_ clone::
     conda env create -f environment.yml  # works with `mamba` too
     conda activate scipy-dev
 
+    # Initialize git submodules
+    git submodule update --init
+
     # Build SciPy for development work plus run tests
     python runtests.py    # Alternatively, it's fine to use `python setup.py develop`
+
+    # Install SciPy in develop mode in conda
+    conda develop .
 
 For more detailed instructions, see the other :ref:`dev-env` guides.

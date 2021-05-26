@@ -44,9 +44,10 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
-Topic :: Software Development
+Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
+Operating System :: POSIX :: Linux
 Operating System :: POSIX
 Operating System :: Unix
 Operating System :: MacOS
@@ -236,7 +237,15 @@ def get_build_ext_override():
         distutils_build_ext = distutils.command.build_ext.build_ext
         distutils.command.build_ext.build_ext = npy_build_ext
         try:
+            import pythran
             from pythran.dist import PythranBuildExt as BaseBuildExt
+            # Version check - a too old Pythran will give problems
+            if LooseVersion(pythran.__version__) < LooseVersion('0.9.11'):
+                raise RuntimeError("The installed `pythran` is too old, >= "
+                                   "0.9.11 is needed, {} detected. Please "
+                                   "upgrade Pythran, or use `export "
+                                   "SCIPY_USE_PYTHRAN=0`.".format(
+                                   pythran.__version__))
         except ImportError:
             BaseBuildExt = npy_build_ext
         finally:
@@ -533,7 +542,7 @@ def configuration(parent_package='', top_path=None):
 
 def setup_package():
     # In maintenance branch, change np_maxversion to N+3 if numpy is at N
-    # Update here and in scipy/__init__.py
+    # Update here, in pyproject.toml, and in scipy/__init__.py
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
@@ -570,7 +579,6 @@ def setup_package():
         cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-        test_suite='nose.collector',
         install_requires=[req_np],
         python_requires=req_py,
     )

@@ -16,6 +16,7 @@ from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
+
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
@@ -28,6 +29,7 @@ from ._distn_infrastructure import (
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+import scipy.stats._boost as _boost
 
 
 def _remove_optimizer_parameters(kwds):
@@ -602,7 +604,7 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return np.exp(self._logpdf(x, a, b))
+        return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -610,18 +612,23 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return sc.btdtr(a, b, x)
+        return _boost._beta_cdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _boost._beta_sf(x, a, b)
+
+    def _isf(self, x, a, b):
+        return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        return sc.btdtri(a, b, q)
+        return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
-        mn = a*1.0 / (a + b)
-        var = (a*b*1.0)/(a+b+1.0)/(a+b)**2.0
-        g1 = 2.0*(b-a)*np.sqrt((1.0+a+b)/(a*b)) / (2+a+b)
-        g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
-        g2 /= a*b*(a+b+2)*(a+b+3)
-        return mn, var, g1, g2
+        return(
+            _boost._beta_mean(a, b),
+            _boost._beta_variance(a, b),
+            _boost._beta_skewness(a, b),
+            _boost._beta_kurtosis_excess(a, b))
 
     def _fitstart(self, data):
         g1 = _skew(data)
@@ -6934,7 +6941,7 @@ class rdist_gen(rv_continuous):
     """
     # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        return 0.5*beta._pdf((x + 1)/2, c/2, c/2)
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return -np.log(2) + beta._logpdf((x + 1)/2, c/2, c/2)
@@ -9007,11 +9014,16 @@ crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Functi
 
 def _argus_phi(chi):
     """
-    Utility function for the argus distribution
-    used in the CDF and norm of the Argus Funktion
+    Utility function for the argus distribution used in the pdf, sf and
+    moment calculation.
+    Note that for all x > 0:
+    gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
+    This can be verified directly by noting that the cdf of Gamma(1.5) can
+    be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
+    We use gammainc instead of the usual definition because it is more precise
+    for small chi.
     """
-    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
-
+    return sc.gammainc(1.5, chi**2/2) / 2
 
 class argus_gen(rv_continuous):
     r"""
@@ -9050,10 +9062,15 @@ class argus_gen(rv_continuous):
 
     %(example)s
     """
+    def _logpdf(self, x, chi):
+        # for x = 0 or 1, logpdf returns -np.inf
+        with np.errstate(divide='ignore'):
+            y = 1.0 - x*x
+            A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
+            return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+
     def _pdf(self, x, chi):
-        y = 1.0 - x**2
-        A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
-        return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        return np.exp(self._logpdf(x, chi))
 
     def _cdf(self, x, chi):
         return 1.0 - self._sf(x, chi)
@@ -9158,11 +9175,20 @@ class argus_gen(rv_continuous):
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
-        chi2 = chi**2
+        # need to ensure that dtype is float
+        # otherwise the mask below does not work for integers
+        chi = np.asarray(chi, dtype=float)
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
-        v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
-        return m, v, None, None
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi**2/4) / phi
+        # compute second moment, use Taylor expansion for small chi (<= 0.1)
+        mu2 = np.empty_like(chi)
+        mask = chi > 0.1
+        c = chi[mask]
+        mu2[mask] = 1 - 3 / c**2 + c * _norm_pdf(c) / phi[mask]
+        c = chi[~mask]
+        coef = [-358/65690625, 0, -94/1010625, 0, 2/2625, 0, 6/175, 0, 0.4]
+        mu2[~mask] = np.polyval(coef, c)
+        return m, mu2 - m**2, None, None
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)

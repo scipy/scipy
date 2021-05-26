@@ -135,7 +135,8 @@ std(%(shapes)s, loc=0, scale=1)
 """
 _doc_interval = """\
 interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the distribution
+    Endpoints of the range that contains fraction alpha [0, 1] of the
+    distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -1441,6 +1442,7 @@ class rv_generic:
             location parameter, Default is 0.
         scale : array_like, optional
             scale parameter, Default is 1.
+
         Returns
         -------
         a, b : array_like
@@ -3683,6 +3685,7 @@ class rv_sample(rv_discrete):
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
+
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)

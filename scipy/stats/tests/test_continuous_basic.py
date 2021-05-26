@@ -15,7 +15,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
                            check_pickling, check_rvs_broadcast, check_freezing)
-from scipy.stats._distr_params import distcont, invdistcont
+from scipy.stats._distr_params import distcont
 
 """
 Test all continuous distributions.
@@ -94,10 +94,10 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-
-fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'cosine', 'dgamma',
-                   'dweibull', 'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'genhyperbolic', 'geninvgauss', 'gennorm', 'genpareto',
+fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
+                   'gausshyper', 'gengamma', 'genhyperbolic',
+                   'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
