@@ -188,9 +188,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             inequality constraints, `b_ub`. A dictionary consisting of the
             fields:
 
-            slack : np.ndnarray
+            residual : np.ndnarray
                 The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``.
+                ``b_ub - A_ub @ x``.  This quantity is also commonly
+                referred to as "slack".
 
             marginals : np.ndarray
                 The sensitivity (partial derivative) of the objective
@@ -202,7 +203,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             equality constraints, `b_eq`.  A dictionary consisting of the
             fields:
 
-            violation : np.ndarray
+            residual : np.ndarray
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``.
 
@@ -215,7 +216,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Solution and sensitivity information corresponding to the
             lower and upper bounds on decision variables, `bounds`.
 
-            freedom : np.ndarray
+            residual : np.ndarray
                 The (nominally positive) values of the quantity
                 ``x - lb`` (lower) or ``ub - x`` (upper).
 
@@ -428,9 +429,10 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             inequality constraints, `b_ub`. A dictionary consisting of the
             fields:
 
-            slack : np.ndnarray
+            residual : np.ndnarray
                 The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``.
+                ``b_ub - A_ub @ x``.  This quantity is also commonly
+                referred to as "slack".
 
             marginals : np.ndarray
                 The sensitivity (partial derivative) of the objective
@@ -442,7 +444,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             equality constraints, `b_eq`.  A dictionary consisting of the
             fields:
 
-            violation : np.ndarray
+            residual : np.ndarray
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``.
 
@@ -455,7 +457,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Solution and sensitivity information corresponding to the
             lower and upper bounds on decision variables, `bounds`.
 
-            freedom : np.ndarray
+            residual : np.ndarray
                 The (nominally positive) values of the quantity
                 ``x - lb`` (lower) or ``ub - x`` (upper).
 
@@ -658,9 +660,10 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             inequality constraints, `b_ub`. A dictionary consisting of the
             fields:
 
-            slack : np.ndnarray
+            residual : np.ndnarray
                 The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``.
+                ``b_ub - A_ub @ x``.  This quantity is also commonly
+                referred to as "slack".
 
             marginals : np.ndarray
                 The sensitivity (partial derivative) of the objective
@@ -672,7 +675,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             equality constraints, `b_eq`.  A dictionary consisting of the
             fields:
 
-            violation : np.ndarray
+            residual : np.ndarray
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``.
 
@@ -685,7 +688,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Solution and sensitivity information corresponding to the
             lower and upper bounds on decision variables, `bounds`.
 
-            freedom : np.ndarray
+            residual : np.ndarray
                 The (nominally positive) values of the quantity
                 ``x - lb`` (lower) or ``ub - x`` (upper).
 
