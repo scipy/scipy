@@ -315,11 +315,11 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-    
+
     For higher-dimensional input ``rosen`` broadcasts.
     In the following example, we use this to plot a 2D landscape.
     Note that ``rosen_hess`` does not broadcast in this manner.
-    
+
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
     >>> x = np.linspace(-1, 1, 50)
@@ -1039,29 +1039,29 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Parameters
     ----------
-    f : callable f(x,*args)
+    f : callable ``f(x,*args)``
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    fprime : callable f'(x,*args), optional
+    fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than gtol before successful termination.
+        Gradient norm must be less than `gtol` before successful termination.
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
-        If fprime is approximated, use this value for the step size.
+        If `fprime` is approximated, use this value for the step size.
     callback : callable, optional
         An optional user-supplied function to call after each
-        iteration. Called as callback(xk), where xk is the
+        iteration. Called as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
     maxiter : int, optional
         Maximum number of iterations to perform.
     full_output : bool, optional
-        If True,return fopt, func_calls, grad_calls, and warnflag
-        in addition to xopt.
+        If True, return ``fopt``, ``func_calls``, ``grad_calls``, and
+        ``warnflag`` in addition to ``xopt``.
     disp : bool, optional
         Print convergence message if True.
     retall : bool, optional
@@ -1070,7 +1070,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Returns
     -------
     xopt : ndarray
-        Parameters which minimize f, i.e., f(xopt) == fopt.
+        Parameters which minimize f, i.e., ``f(xopt) == fopt``.
     fopt : float
         Minimum value.
     gopt : ndarray
@@ -1085,14 +1085,30 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
         3 : NaN result encountered.
-    allvecs  :  list
-        The value of xopt at each iteration. Only returned if retall is True.
+    allvecs : list
+        The value of `xopt` at each iteration. Only returned if `retall` is
+        True.
+
+    Notes
+    -----
+    Optimize the function, `f`, whose gradient is given by `fprime`
+    using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
+    and Shanno (BFGS).
+
+    See Also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See ``method='BFGS'`` in particular.
+
+    References
+    ----------
+    Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     Examples
     --------
     >>> from scipy.optimize import fmin_bfgs
     >>> def quadratic_cost(x, Q):
-    ...     return x@Q@x
+    ...     return x @ Q @ x
     ...
     >>> x0 = np.array([-3, -4])
     >>> cost_weight =  np.diag([1., 10.])
@@ -1106,7 +1122,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     array([ 2.85169950e-06, -4.61820139e-07])
 
     >>> def quadratic_cost_grad(x, Q):
-    ...     return 2*Q@x
+    ...     return 2 * Q @ x
     ...
     >>> fmin_bfgs(quadratic_cost, x0, quadratic_cost_grad, args=(cost_weight,))
     Optimization terminated successfully.
@@ -1115,21 +1131,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             Function evaluations: 8
             Gradient evaluations: 8
     array([ 2.85916637e-06, -4.54371951e-07])
-
-    See also
-    --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See the 'BFGS' `method` in particular.
-
-    Notes
-    -----
-    Optimize the function, f, whose gradient is given by fprime
-    using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
-    and Shanno (BFGS)
-
-    References
-    ----------
-    Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
 
     """
     opts = {'gtol': gtol,
