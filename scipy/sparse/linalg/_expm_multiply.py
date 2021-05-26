@@ -7,6 +7,9 @@ import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse.linalg.interface import IdentityOperator
+from scipy.sparse.linalg._traceest import traceest
+from scipy.sparse.linalg._onenormest import onenormest
 
 __all__ = ['expm_multiply']
 
@@ -49,11 +52,13 @@ def _ident_like(A):
     elif is_pydata_spmatrix(A):
         import sparse
         return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+    elif isinstance(A, scipy.sparse.linalg.LinearOperator):
+        return IdentityOperator(A.shape, dtype=A.dtype)
     else:
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
+def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None, traceA=None):
     """
     Compute the action of the matrix exponential of A on B.
 
@@ -74,6 +79,10 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
         Number of time points to use.
     endpoint : bool, optional
         If True, `stop` is the last time point.  Otherwise, it is not included.
+    traceA : scalar, optional
+        Trace of `A`. If not given the trace is estimated for linear operators,
+        or calculated exactly for sparse matrices. It is used to precondition
+        `A`, thus an approximate trace is acceptable
 
     Returns
     -------
@@ -136,13 +145,13 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     array([ 2.71828183,  1.        ])
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        X = _expm_multiply_simple(A, B)
+        X = _expm_multiply_simple(A, B, traceA=traceA)
     else:
-        X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint)
+        X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint, traceA=traceA)
     return X
 
 
-def _expm_multiply_simple(A, B, t=1.0, balance=False):
+def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     """
     Compute the action of the matrix exponential at a single time point.
 
@@ -154,6 +163,10 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
         The matrix to be multiplied by the matrix exponential of A.
     t : float
         A time point.
+    traceA : scalar, optional
+        Trace of `A`. If not given the trace is estimated for linear operators,
+        or calculated exactly for sparse matrices. It is used to precondition
+        `A`, thus an approximate trace is acceptable
     balance : bool
         Indicates whether or not to apply balancing.
 
@@ -175,6 +188,7 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
         raise ValueError('shapes of matrices A {} and B {} are incompatible'
                          .format(A.shape, B.shape))
     ident = _ident_like(A)
+    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
     if len(B.shape) == 1:
         n0 = 1
@@ -184,9 +198,11 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
         raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
-    mu = _trace(A) / float(n)
+    if traceA is None:  # TODO: we need a good number for m3
+        traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
+    mu = traceA / float(n)
     A = A - mu * ident
-    A_1_norm = _exact_1_norm(A)
+    A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
@@ -511,7 +527,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
 
 
 def _expm_multiply_interval(A, B, start=None, stop=None,
-        num=None, endpoint=None, balance=False, status_only=False):
+        num=None, endpoint=None, traceA=None, balance=False, status_only=False):
     """
     Compute the action of the matrix exponential at multiple time points.
 
@@ -530,6 +546,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         Note that the step size changes when `endpoint` is False.
     num : int, optional
         Number of time points to use.
+    traceA : scalar, optional
+        Trace of `A`. If not given the trace is estimated for linear operators,
+        or calculated exactly for sparse matrices. It is used to precondition
+        `A`, thus an approximate trace is acceptable
     endpoint : bool, optional
         If True, `stop` is the last time point. Otherwise, it is not included.
     balance : bool
@@ -560,6 +580,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         raise ValueError('shapes of matrices A {} and B {} are incompatible'
                          .format(A.shape, B.shape))
     ident = _ident_like(A)
+    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
     if len(B.shape) == 1:
         n0 = 1
@@ -569,7 +590,9 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
-    mu = _trace(A) / float(n)
+    if traceA is None:  # TODO: we need a good number for m3
+        traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
+    mu = traceA / float(n)
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
     linspace_kwargs = {'retstep': True}
@@ -595,7 +618,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
     A = A - mu * ident
-    A_1_norm = _exact_1_norm(A)
+    A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
     norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
     if t*A_1_norm == 0:

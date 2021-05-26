@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_, assert_equal,
                            suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
+from scipy.sparse.linalg import aslinearoperator
 import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
@@ -65,6 +66,10 @@ class TestExpmActionSimple:
             observed = expm_multiply(A, B)
             expected = np.dot(scipy.linalg.expm(A), B)
             assert_allclose(observed, expected)
+            observed = expm_multiply(aslinearoperator(A), B)
+            assert_allclose(observed, expected)
+            observed = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A))
+            assert_allclose(observed, expected)
 
     def test_matrix_vector_multiply(self):
         np.random.seed(1234)
@@ -75,6 +80,8 @@ class TestExpmActionSimple:
             v = np.random.randn(n)
             observed = expm_multiply(A, v)
             expected = np.dot(scipy.linalg.expm(A), v)
+            assert_allclose(observed, expected)
+            observed = expm_multiply(aslinearoperator(A), v)
             assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply(self):
@@ -90,6 +97,8 @@ class TestExpmActionSimple:
                     observed = _expm_multiply_simple(A, B, t=t)
                     expected = np.dot(scipy.linalg.expm(t*A), B)
                     assert_allclose(observed, expected)
+                    observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+                    assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)
@@ -100,6 +109,8 @@ class TestExpmActionSimple:
         B = np.random.randn(n, k)
         observed = _expm_multiply_simple(A, B, t=t)
         expected = scipy.linalg.expm(t*A).dot(B)
+        assert_allclose(observed, expected)
+        observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
@@ -118,6 +129,8 @@ class TestExpmActionSimple:
                            "spsolve is more efficient when sparse b is in the CSC matrix format")
                 expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
+            observed = expm_multiply(aslinearoperator(A), B)
+            assert_allclose(observed, expected)
 
     def test_complex(self):
         A = np.array([
@@ -128,6 +141,8 @@ class TestExpmActionSimple:
         expected = np.array([
             1j * np.exp(1j) + 1j * (1j*np.cos(1) - np.sin(1)),
             1j * np.exp(1j)], dtype=complex)
+        assert_allclose(observed, expected)
+        observed = expm_multiply(aslinearoperator(A), B)
         assert_allclose(observed, expected)
 
 
@@ -173,6 +188,12 @@ class TestExpmActionInterval:
                         num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
                     assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
+                X = expm_multiply(aslinearoperator(A), v,
+                        start=start, stop=stop, num=num, endpoint=endpoint)
+                samples = np.linspace(start=start, stop=stop,
+                        num=num, endpoint=endpoint)
+                for solution, t in zip(X, samples):
+                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
 
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
@@ -185,6 +206,12 @@ class TestExpmActionInterval:
                     A = scipy.linalg.inv(np.random.randn(n, n))
                     B = np.random.randn(n, k)
                     X = expm_multiply(A, B,
+                            start=start, stop=stop, num=num, endpoint=endpoint)
+                    samples = np.linspace(start=start, stop=stop,
+                            num=num, endpoint=endpoint)
+                    for solution, t in zip(X, samples):
+                        assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+                    X = expm_multiply(aslinearoperator(A), B,
                             start=start, stop=stop, num=num, endpoint=endpoint)
                     samples = np.linspace(start=start, stop=stop,
                             num=num, endpoint=endpoint)
@@ -248,4 +275,3 @@ class TestExpmActionInterval:
         if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
-
