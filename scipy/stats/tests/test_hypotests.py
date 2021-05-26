@@ -1129,8 +1129,8 @@ class TestBoschlooExact:
 
         # Test value error on wrong alternative param
         error_msg = (
-            "`alternative` should be one of \\('two-sided', 'less', "
-            "'greater'\\), found .*"
+            r"`alternative` should be one of \('two-sided', 'less', "
+            r"'greater'\), found .*"
         )
         with assert_raises(ValueError, match=error_msg):
             boschloo_exact([[1, 2], [3, 4]], "not-correct")
