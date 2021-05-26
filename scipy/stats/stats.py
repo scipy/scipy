@@ -4111,7 +4111,7 @@ def fisher_exact(table, alternative='two-sided'):
     *Null hypothesis and p-values*
 
     The null hypothesis is that the input table is from the hypergeometric
-    distribution with parameters (as used in `scipy.stats.hypergeom`)
+    distribution with parameters (as used in `hypergeom`)
     ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
     input table is ``[[a, b], [c, d]]``.  This distribution has support
     ``max(0, N + n - M) <= x <= min(N, n)``, or, in terms of the values
@@ -4142,17 +4142,17 @@ def fisher_exact(table, alternative='two-sided'):
 
     These can be computed with::
 
+        >>> from scipy.stats import hypergeom
         >>> table = np.array([[6, 2], [1, 4]])
         >>> M = table.sum()
         >>> n = table[0].sum()
         >>> N = table[:, 0].sum()
-        >>> from scipy.stats import hypergeom
         >>> start, end = hypergeom.support(M, n, N)
         >>> hypergeom.pmf(np.arange(start, end+1), M, n, N)
         array([0.01631702, 0.16317016, 0.40792541, 0.32634033, 0.08158508,
                0.004662  ])
 
-    The two-sided p-value is the probabilty that, under the null hypothesis,
+    The two-sided p-value is the probability that, under the null hypothesis,
     a random table would have a probability equal to or less than the
     probability of the input table.  For our example, the probability of
     the input table (where ``x = 6``) is 0.0816.  The x values where the
@@ -4195,7 +4195,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     *Odds ratio*
 
-    The calculated odds ratio is different from the one R uses. This scipy
+    The calculated odds ratio is different from the one R uses. This SciPy
     implementation returns the (more common) "unconditional Maximum
     Likelihood Estimate", while R uses the "conditional Maximum Likelihood
     Estimate".
@@ -6790,9 +6790,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
-    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
-           in the case of a correlated system of variables is such that it can be reasonably 
-           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50 
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable
+           in the case of a correlated system of variables is such that it can be reasonably
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
 
     Examples
