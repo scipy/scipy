@@ -113,7 +113,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                   n_resamples, batch, method, random_state):
     """Input validation and standardization for `bootstrap`."""
 
-    if not isinstance(vectorized, bool):
+    if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
     if not vectorized:
@@ -141,7 +141,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
-    if not isinstance(paired, bool):
+    if paired not in {True, False}:
         raise ValueError("`paired` must be `True` or `False`.")
 
     if paired:
@@ -240,33 +240,32 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         If `vectorized` is set ``False``, `statistic` will not be passed
         keyword argument `axis`, and is assumed to calculate the statistic
         only for 1D samples.
-    paired : bool, optional
+    paired : bool, default: ``False``
         Whether the statistic treats corresponding elements of the samples
-        in `data` as paired. The default is ``False``.
-    axis : int, optional
+        in `data` as paired.
+    axis : int, default: ``0``
         The axis of the samples in `data` along which the `statistic` is
-        calculated. The default is ``0``.
-    confidence_level : float, optional
+        calculated.
+    confidence_level : float, default: ``0.95``
         The confidence level of the confidence interval.
-        The default is ``0.95``.
-    n_resamples : int, optional
+    n_resamples : int, default: ``9999``
         The number of resamples performed to form the bootstrap distribution
-        of the statistic. The default is ``9999``.
-    batch : int or None, optional
+        of the statistic.
+    batch : int, optional
         The number of resamples to process in each vectorized call to
         `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
         sample size. Default is ``None``, in which case ``batch = n_resamples``
         (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
-    method : str in {'percentile', 'basic', 'bca'}, optional
+    method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
+        bootstrap confidence interval (``'BCa'``).
         Note that only ``'percentile'`` and ``'basic'`` support multi-sample
         statistics at this time.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
