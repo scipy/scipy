@@ -1390,6 +1390,8 @@ def gegenbauer(n, alpha, monic=False):
     ----------
     n : int
         Degree of the polynomial.
+    alpha : float
+        Parameter, must be greater than -0.5.
     monic : bool, optional
         If `True`, scale the leading coefficient to be 1. Default is
         `False`.
@@ -1404,6 +1406,35 @@ def gegenbauer(n, alpha, monic=False):
     The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
     :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+
+    We can initialize a variable ``p`` as a Gegenbauer polynomial using the
+    `gegenbauer` function and evaluate at a point ``x = 1``.
+
+    >>> p = special.gegenbauer(3, 0.5, monic=False)
+    >>> p
+    poly1d([ 2.5,  0. , -1.5,  0. ])
+    >>> p(1)
+    1.0
+
+    To evaluate ``p`` at various points ``x`` in the interval ``(-3, 3)``,
+    simply pass an array ``x`` to ``p`` as follows:
+
+    >>> x = np.linspace(-3, 3, 400)
+    >>> y = p(x)
+
+    We can then visualize ``x, y`` using `matplotlib.pyplot`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y)
+    >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel("G_3(x)")
+    >>> plt.show()
 
     """
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
