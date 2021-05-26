@@ -6713,7 +6713,7 @@ class TestNumericalInverseHermite:
     def test_basic(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic'}
+                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
 
         if distname in slow_dists:
             pytest.skip("Distribution is too slow")
