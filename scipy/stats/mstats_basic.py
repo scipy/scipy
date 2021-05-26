@@ -34,6 +34,7 @@ import numpy as np
 from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
+import math
 
 import itertools
 import warnings
@@ -42,7 +43,6 @@ from collections import namedtuple
 from . import distributions
 import scipy.special as special
 import scipy.stats.stats
-from scipy._lib._util import float_factorial
 
 from ._stats_mstats_common import (
         _find_repeats,
@@ -406,7 +406,8 @@ def pearsonr(x, y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
+              alternative='two-sided'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -447,6 +448,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -506,7 +516,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        prob = 2 * distributions.t.sf(np.abs(t), dof)
+        t, prob = scipy.stats.stats._ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
@@ -536,7 +546,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
 def _kendall_p_exact(n, c):
     # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
     if n <= 0:
-        raise ValueError('n ({n}) must be positive')
+        raise ValueError(f'n ({n}) must be positive')
     elif c < 0 or 4*c > n*(n-1):
         raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
     elif n == 1:
@@ -544,9 +554,9 @@ def _kendall_p_exact(n, c):
     elif n == 2:
         prob = 1.0
     elif c == 0:
-        prob = 2.0/np.math.factorial(n) if n < 171 else 0.0
+        prob = 2.0/math.factorial(n) if n < 171 else 0.0
     elif c == 1:
-        prob = 2.0/np.math.factorial(n-1) if n < 172 else 0.0
+        prob = 2.0/math.factorial(n-1) if n < 172 else 0.0
     elif 4*c == n*(n-1):
         prob = 1.0
     elif n < 171:
@@ -556,7 +566,7 @@ def _kendall_p_exact(n, c):
             new = np.cumsum(new)
             if j <= c:
                 new[j:] -= new[:c+1-j]
-        prob = 2.0*np.sum(new)/np.math.factorial(n)
+        prob = 2.0*np.sum(new)/math.factorial(n)
     else:
         new = np.zeros(c+1)
         new[0:2] = 1.0
@@ -1153,9 +1163,9 @@ def mannwhitneyu(x,y, use_continuity=True):
     Returns
     -------
     statistic : float
-        The Mann-Whitney statistics
+        The minimum of the Mann-Whitney statistics
     pvalue : float
-        Approximate p-value assuming a normal distribution.
+        Approximate two-sided p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
@@ -2183,16 +2193,43 @@ def moment(a, moment=1, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    if moment == 1:
-        # By definition the first moment about the mean is 0.
+    if a.size == 0:
+        moment_shape = list(a.shape)
+        del moment_shape[axis]
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+        # empty array, return nan(s) with shape matching `moment`
+        out_shape = (moment_shape if np.isscalar(moment)
+                    else [len(moment)] + moment_shape)
+        if len(out_shape) == 0:
+            return dtype(np.nan)
+        else:
+            return ma.array(np.full(out_shape, np.nan, dtype=dtype))
+
+    # for array_like moment input, return a value for each.
+    if not np.isscalar(moment):
+        mean = a.mean(axis, keepdims=True)
+        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        return ma.array(mmnt)
+    else:
+        return _moment(a, moment, axis)
+
+# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
+def _moment(a, moment, axis, *, mean=None):
+    if np.abs(moment - np.round(moment)) > 0:
+        raise ValueError("All moment parameters must be integers")
+
+    if moment == 0 or moment == 1:
+        # By definition the zeroth moment about the mean is 1, and the first
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float)
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+        if len(shape) == 0:
+            return dtype(1.0 if moment == 0 else 0.0)
         else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(0.0)
+            return (ma.ones(shape, dtype=dtype) if moment == 0
+                    else ma.zeros(shape, dtype=dtype))
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -2205,7 +2242,8 @@ def moment(a, moment=1, axis=0):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - ma.expand_dims(a.mean(axis), axis)
+        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        a_zero_mean = a - mean
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -2219,10 +2257,18 @@ def moment(a, moment=1, axis=0):
         return s.mean(axis)
 
 
-def variation(a, axis=0):
+def variation(a, axis=0, ddof=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Compute the coefficient of variation.
+
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
+
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
@@ -2231,6 +2277,8 @@ def variation(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
@@ -2258,7 +2306,7 @@ def variation(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return a.std(axis)/a.mean(axis)
+    return a.std(axis, ddof=ddof)/a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
@@ -2287,14 +2335,16 @@ def skew(a, axis=0, bias=True):
 
     """
     a, axis = _chk_asarray(a,axis)
-    n = a.count(axis)
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m3 = _moment(a, 3, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+        vals = ma.where(zero, 0, m3 / m2**1.5)
 
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
+        n = a.count(axis)
+        can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -2341,14 +2391,16 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m4 = _moment(a, 4, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(zero, 0, m4 / m2**2.0)
 
-    if not bias:
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
         n = a.count(axis)
-        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
+        can_correct = ~zero & (n > 3)
         if can_correct.any():
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
@@ -3002,7 +3054,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     For more details on `brunnermunzel`, see `stats.brunnermunzel`.
 
     """

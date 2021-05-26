@@ -762,7 +762,7 @@ HighsDebugStatus debugCompareSolutionParamValue(const string name,
     value_adjective = "Large";
     report_level = ML_DETAILED;
     return_status = HighsDebugStatus::WARNING;
-  } else if (v0 != v1) {
+  } else {
     value_adjective = "OK";
     report_level = ML_VERBOSE;
   }

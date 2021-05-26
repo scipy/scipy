@@ -172,9 +172,10 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
-    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
     >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
 
     >>> clock = np.arange(64, len(sig), 128)
@@ -196,7 +197,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     >>> x = np.arange(128) / 128
     >>> sig = np.sin(2 * np.pi * x)
-    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
     >>> corr = signal.correlate(sig_noise, sig)
     >>> lags = signal.correlation_lags(len(sig), len(sig_noise))
     >>> corr /= np.max(corr)
@@ -216,6 +217,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_corr.margins(0, 0.1)
     >>> fig.tight_layout()
     >>> plt.show()
+
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -336,7 +338,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Cross-correlation of a signal with its time-delayed self.
 
     >>> from scipy import signal
-    >>> rng = np.random.RandomState(0)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -603,7 +606,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     Autocorrelation of white noise is an impulse.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(1000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(1000)
     >>> autocorr = signal.fftconvolve(sig, sig[::-1], mode='full')
 
     >>> import matplotlib.pyplot as plt
@@ -638,6 +642,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> ax_blurred.set_title('Blurred')
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
+
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -830,7 +835,8 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     Convolve a 100,000 sample signal with a 512-sample filter.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(100000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(100000)
     >>> filt = signal.firwin(512, 0.01)
     >>> fsig = signal.oaconvolve(sig, filt)
 
@@ -1235,16 +1241,17 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> img = np.random.rand(32, 32)
-    >>> filter = np.random.rand(8, 8)
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((32, 32))
+    >>> filter = rng.random((8, 8))
     >>> method = signal.choose_conv_method(img, filter, mode='same')
     >>> method
     'fft'
 
     This can then be applied to other arrays of the same dtype and shape:
 
-    >>> img2 = np.random.rand(32, 32)
-    >>> filter2 = np.random.rand(8, 8)
+    >>> img2 = rng.random((32, 32))
+    >>> filter2 = rng.random((8, 8))
     >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
     >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
 
@@ -1499,11 +1506,16 @@ def medfilt(volume, kernel_size=None):
     See Also
     --------
     scipy.ndimage.median_filter
+    scipy.signal.medfilt2d
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
+
+    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
+    the specialised function `scipy.signal.medfilt2d` may be faster.
+
     """
     volume = np.atleast_1d(volume)
     if kernel_size is None:
@@ -1519,7 +1531,7 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1557,7 +1569,8 @@ def wiener(im, mysize=None, noise=None):
     >>> from scipy.signal.signaltools import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((40, 40))    #Create a random image
     >>> filtered_img = wiener(img, (5, 5))  #Filter the image
     >>> f, (plot1, plot2) = plt.subplots(1, 2)
     >>> plot1.imshow(img)
@@ -1748,10 +1761,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
+    >>> rng = np.random.default_rng()
     >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
-    >>> face = face + np.random.randn(*face.shape) * 50  # add noise
+    >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
     >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
@@ -1821,11 +1835,21 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
+    -----
+    This is faster than `medfilt` when the input dtype is ``uint8``,
+    ``float32``, or ``float64``; for other types, this falls back to
+    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
+    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    faster than this function.
+
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
@@ -1925,11 +1949,12 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> t = np.linspace(-1, 1, 201)
     >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
     ...      0.1*np.sin(2*np.pi*1.25*t + 1) +
     ...      0.18*np.cos(2*np.pi*3.85*t))
-    >>> xn = x + np.random.randn(len(t)) * 0.08
+    >>> xn = x + rng.standard_normal(len(t)) * 0.08
 
     Create an order 3 lowpass butterworth filter:
 
@@ -2201,7 +2226,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
@@ -2231,16 +2256,15 @@ def hilbert(x, N=None, axis=-1):
     >>> instantaneous_frequency = (np.diff(instantaneous_phase) /
     ...                            (2.0*np.pi) * fs)
 
-    >>> fig = plt.figure()
-    >>> ax0 = fig.add_subplot(211)
+    >>> fig, (ax0, ax1) = plt.subplots(nrows=2)
     >>> ax0.plot(t, signal, label='signal')
     >>> ax0.plot(t, amplitude_envelope, label='envelope')
     >>> ax0.set_xlabel("time in seconds")
     >>> ax0.legend()
-    >>> ax1 = fig.add_subplot(212)
     >>> ax1.plot(t[1:], instantaneous_frequency)
     >>> ax1.set_xlabel("time in seconds")
     >>> ax1.set_ylim(0.0, 120.0)
+    >>> fig.tight_layout()
 
     References
     ----------
@@ -3413,12 +3437,13 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     Examples
     --------
     >>> from scipy import signal
-    >>> randgen = np.random.RandomState(9)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> npoints = 1000
-    >>> noise = randgen.randn(npoints)
+    >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max() < 0.01
-    True
+    >>> (signal.detrend(x) - noise).max()
+    0.06  # random
 
     """
     if type not in ['linear', 'l', 'constant', 'c']:
@@ -3428,7 +3453,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape
@@ -3973,12 +3998,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     First, create a filter.
 
     >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
-    >>> np.random.seed(123456)
 
     `sig` is a random input signal to be filtered.
 
+    >>> rng = np.random.default_rng()
     >>> n = 60
-    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+    >>> sig = rng.standard_normal(n)**3 + 3*rng.standard_normal(n).cumsum()
 
     Apply `filtfilt` to `sig`, once using the Gustafsson method, and
     once using padding, and plot the results for comparison.
@@ -4007,7 +4032,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = np.random.randn(5000)
+    >>> x = rng.standard_normal(5000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
@@ -4267,13 +4292,13 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     --------
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Create an interesting signal to filter.
 
     >>> n = 201
     >>> t = np.linspace(0, 1, n)
-    >>> np.random.seed(123)
-    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*rng.standard_normal(n)
 
     Create a lowpass Butterworth filter, and use it to filter `x`.
 

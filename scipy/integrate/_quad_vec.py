@@ -15,7 +15,7 @@ class LRUDict(collections.OrderedDict):
 
     def __setitem__(self, key, value):
         existing_key = (key in self)
-        super(LRUDict, self).__setitem__(key, value)
+        super().__setitem__(key, value)
         if existing_key:
             self.move_to_end(key)
         elif len(self) > self.__max_size:
@@ -26,7 +26,7 @@ class LRUDict(collections.OrderedDict):
         raise NotImplementedError()
 
 
-class SemiInfiniteFunc(object):
+class SemiInfiniteFunc:
     """
     Argument transform from (start, +-oo) to (0, 1)
     """
@@ -54,7 +54,7 @@ class SemiInfiniteFunc(object):
             return self._sgn * (f / t) / t
 
 
-class DoubleInfiniteFunc(object):
+class DoubleInfiniteFunc:
     """
     Argument transform from (-oo, oo) to (-1, 1)
     """
@@ -91,7 +91,7 @@ def _get_sizeof(obj):
         return 64
 
 
-class _Bunch(object):
+class _Bunch:
     def __init__(self, **kwargs):
         self.__keys = kwargs.keys()
         self.__dict__.update(**kwargs)
@@ -267,7 +267,6 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     else:
         norm_func = norm_funcs[norm]
 
-    mapwrapper = MapWrapper(workers)
 
     parallel_count = 128
     min_intervals = 2
@@ -341,7 +340,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     }
 
     # Process intervals
-    with mapwrapper:
+    with MapWrapper(workers) as mapwrapper:
         ier = NOT_CONVERGED
 
         while intervals and len(intervals) < limit:

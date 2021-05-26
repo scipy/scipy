@@ -283,6 +283,22 @@ class TestNdimageMorphology:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
+    def test_distance_transform_bf07(self):
+        # test input validation per discussion on PR #13302
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        with assert_raises(RuntimeError):
+            ndimage.distance_transform_bf(
+                data, return_distances=False, return_indices=False
+            )
+
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt01(self, dtype):
         # chamfer type distance (cdt) transform
@@ -405,6 +421,26 @@ class TestNdimageMorphology:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
+    def test_distance_transform_cdt04(self):
+        # test input validation per discussion on PR #13302
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        indices_out = numpy.zeros((data.ndim,) + data.shape, dtype=numpy.int32)
+        with assert_raises(RuntimeError):
+            ndimage.distance_transform_bf(
+                data,
+                return_distances=True,
+                return_indices=False,
+                indices=indices_out
+            )
+
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype):
         # euclidean distance transform (edt)
@@ -512,6 +548,26 @@ class TestNdimageMorphology:
         # Ticket #954 regression test
         out = ndimage.distance_transform_edt(False)
         assert_array_almost_equal(out, [0.])
+
+    def test_distance_transform_edt6(self):
+        # test input validation per discussion on PR #13302
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        distances_out = numpy.zeros(data.shape, dtype=numpy.float64)
+        with assert_raises(RuntimeError):
+            ndimage.distance_transform_bf(
+                data,
+                return_indices=True,
+                return_distances=False,
+                distances=distances_out
+            )
 
     def test_generate_structure01(self):
         struct = ndimage.generate_binary_structure(0, 1)

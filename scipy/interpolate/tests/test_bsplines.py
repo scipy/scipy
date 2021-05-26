@@ -6,16 +6,18 @@ import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, insert)
+         sproot, splint, insert, CubicSpline)
 import scipy.linalg as sl
 from scipy._lib import _pep440
 
-from scipy.interpolate._bsplines import _not_a_knot, _augknt
+from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
+                                        _woodbury_algorithm, _periodic_knots,
+                                         _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
 
 
-class TestBSpline(object):
+class TestBSpline:
 
     def test_ctor(self):
         # knots should be an ordered 1-D array of finite real numbers
@@ -556,7 +558,7 @@ def _make_multiples(b):
     yield BSpline(t1, c, k)
 
 
-class TestInterop(object):
+class TestInterop:
     #
     # Test that FITPACK-based spl* functions can deal with BSpline objects
     #
@@ -791,7 +793,7 @@ class TestInterop(object):
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
 
-class TestInterp(object):
+class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
     #
@@ -818,6 +820,106 @@ class TestInterp(object):
         for k in [3, 5]:
             b = make_interp_spline(self.xx, self.yy, k)
             assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_periodic(self):
+        # k = 5 here for more derivatives
+        b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic')
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        # in periodic case it is expected equality of k-1 first
+        # derivatives at the boundaries
+        for i in range(1, 5):
+            assert_allclose(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+        # tests for axis=-1
+        b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic', axis=-1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        for i in range(1, 5):
+            assert_allclose(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+
+    @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
+    def test_periodic_random(self, k):
+        # tests for both cases (k > n and k <= n)
+        n = 5
+        np.random.seed(1234)
+        x = np.sort(np.random.random_sample(n) * 10)
+        y = np.random.random_sample(n) * 100
+        y[0] = y[-1]
+        b = make_interp_spline(x, y, k=k, bc_type='periodic')
+        assert_allclose(b(x), y, atol=1e-14)
+
+    def test_periodic_axis(self):
+        n = self.xx.shape[0]
+        np.random.seed(1234)
+        x = np.random.random_sample(n) * 2 * np.pi
+        x = np.sort(x)
+        x[0] = 0.
+        x[-1] = 2 * np.pi
+        y = np.zeros((2, n))
+        y[0] = np.sin(x)
+        y[1] = np.cos(x)
+        b = make_interp_spline(x, y, k=5, bc_type='periodic', axis=1)
+        for i in range(n):
+            assert_allclose(b(x[i]), y[:, i], atol=1e-14)
+        assert_allclose(b(x[0]), b(x[-1]), atol=1e-14)
+
+    def test_periodic_points_exception(self):
+        # first and last points should match when periodic case expected
+        np.random.seed(1234)
+        k = 5
+        n = 8
+        x = np.sort(np.random.random_sample(n))
+        y = np.random.random_sample(n)
+        y[0] = y[-1] - 1  # to be sure that they are not equal
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, k=k, bc_type='periodic')
+
+    def test_periodic_knots_exception(self):
+        # `periodic` case does not work with passed vector of knots
+        np.random.seed(1234)
+        k = 3
+        n = 7
+        x = np.sort(np.random.random_sample(n))
+        y = np.random.random_sample(n)
+        t = np.zeros(n + 2 * k)
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, k, t, 'periodic')
+
+    @pytest.mark.parametrize('k', [2, 3, 4, 5])
+    def test_periodic_splev(self, k):
+        # comparision values of periodic b-spline with splev
+        b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
+        tck = splrep(self.xx, self.yy, per=True, k=k)
+        spl = splev(self.xx, tck)
+        assert_allclose(spl, b(self.xx), atol=1e-14)
+
+        # comparison derivatives of periodic b-spline with splev
+        for i in range(1, k):
+            spl = splev(self.xx, tck, der=i)
+            assert_allclose(spl, b(self.xx, nu=i), atol=1e-10)
+
+    def test_periodic_cubic(self):
+        # comparison values of cubic periodic b-spline with CubicSpline
+        b = make_interp_spline(self.xx, self.yy, k=3, bc_type='periodic')
+        cub = CubicSpline(self.xx, self.yy, bc_type='periodic')
+        assert_allclose(b(self.xx), cub(self.xx), atol=1e-14)
+
+        # edge case: Cubic interpolation on 3 points
+        n = 3
+        x = np.sort(np.random.random_sample(n) * 10)
+        y = np.random.random_sample(n) * 100
+        y[0] = y[-1]
+        b = make_interp_spline(x, y, k=3, bc_type='periodic')
+        cub = CubicSpline(x, y, bc_type='periodic')
+        assert_allclose(b(x), cub(x), atol=1e-14)
+
+    def test_periodic_full_matrix(self):
+        # comparison values of cubic periodic b-spline with
+        # solution of the system with full matrix
+        k = 3
+        b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
+        t = _periodic_knots(self.xx, k)
+        c = _make_interp_per_full_matr(self.xx, self.yy, t, k)
+        b1 = np.vectorize(lambda x: _naive_eval(x, t, c, k))
+        assert_allclose(b(self.xx), b1(self.xx), atol=1e-14)
 
     def test_quadratic_deriv(self):
         der = [(1, 8.)]  # order, value: f'(x) = 8.
@@ -1065,6 +1167,34 @@ class TestInterp(object):
         cf = make_interp_full_matr(x, y, t, k)
         assert_allclose(b.c, cf, atol=1e-14, rtol=1e-14)
 
+    def test_woodbury(self):
+        '''
+        Random elements in diagonal matrix with blocks in the
+        left lower and right upper corners checking the
+        implementation of Woodbury algorithm.
+        '''
+        np.random.seed(1234)
+        n = 201
+        for k in range(3, 32, 2):
+            offset = int((k - 1) / 2)
+            a = np.diagflat(np.random.random((1, n)))
+            for i in range(1, offset + 1):
+                a[:-i, i:] += np.diagflat(np.random.random((1, n - i)))
+                a[i:, :-i] += np.diagflat(np.random.random((1, n - i)))
+            ur = np.random.random((offset, offset))
+            a[:offset, -offset:] = ur
+            ll = np.random.random((offset, offset))
+            a[-offset:, :offset] = ll
+            d = np.zeros((k, n))
+            for i, j in enumerate(range(offset, -offset - 1, -1)):
+                if j < 0:
+                    d[i, :j] = np.diagonal(a, offset=j)
+                else:
+                    d[i, j:] = np.diagonal(a, offset=j)
+            b = np.random.random(n)
+            assert_allclose(_woodbury_algorithm(d, ur, ll, b, k),
+                            np.linalg.solve(a, b), atol=1e-14)
+
 
 def make_interp_full_matr(x, y, t, k):
     """Assemble an spline order k with knots t to interpolate
@@ -1089,59 +1219,6 @@ def make_interp_full_matr(x, y, t, k):
         # fill a row
         bb = _bspl.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
-
-    c = sl.solve(A, y)
-    return c
-
-
-### XXX: 'periodic' interp spline using full matrices
-def make_interp_per_full_matr(x, y, t, k):
-    x, y, t = map(np.asarray, (x, y, t))
-
-    n = x.size
-    nt = t.size - k - 1
-
-    # have `n` conditions for `nt` coefficients; need nt-n derivatives
-    assert nt - n == k - 1
-
-    # LHS: the collocation matrix + derivatives at edges
-    A = np.zeros((nt, nt), dtype=np.float_)
-
-    # derivatives at x[0]:
-    offset = 0
-
-    if x[0] == t[k]:
-        left = k
-    else:
-        left = np.searchsorted(t, x[0]) - 1
-
-    if x[-1] == t[k]:
-        left2 = k
-    else:
-        left2 = np.searchsorted(t, x[-1]) - 1
-
-    for i in range(k-1):
-        bb = _bspl.evaluate_all_bspl(t, k, x[0], left, nu=i+1)
-        A[i, left-k:left+1] = bb
-        bb = _bspl.evaluate_all_bspl(t, k, x[-1], left2, nu=i+1)
-        A[i, left2-k:left2+1] = -bb
-        offset += 1
-
-    # RHS
-    y = np.r_[[0]*(k-1), y]
-
-    # collocation matrix
-    for j in range(n):
-        xval = x[j]
-        # find interval
-        if xval == t[k]:
-            left = k
-        else:
-            left = np.searchsorted(t, xval) - 1
-
-        # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
-        A[j + offset, left-k:left+1] = bb
 
     c = sl.solve(A, y)
     return c
@@ -1175,7 +1252,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
-class TestLSQ(object):
+class TestLSQ:
     #
     # Test make_lsq_spline
     #

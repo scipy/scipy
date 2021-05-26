@@ -9,7 +9,7 @@ from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
 from scipy.linalg._testutils import assert_no_overwrite
 
 
-class TestCholesky(object):
+class TestCholesky:
 
     def test_simple(self):
         a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
@@ -66,7 +66,7 @@ class TestCholesky(object):
             assert_array_almost_equal(cholesky(a, lower=1), c)
 
 
-class TestCholeskyBanded(object):
+class TestCholeskyBanded:
     """Tests for cholesky_banded() and cho_solve_banded."""
 
     def test_check_finite(self):
@@ -165,7 +165,7 @@ class TestCholeskyBanded(object):
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     def test_cholesky(self):
         assert_no_overwrite(cholesky, [(3, 3)])
 
@@ -187,7 +187,7 @@ class TestOverwrite(object):
                             [(3,)])
 
 
-class TestEmptyArray(object):
+class TestEmptyArray:
     def test_cho_factor_empty_square(self):
         a = empty((0, 0))
         b = array([])
