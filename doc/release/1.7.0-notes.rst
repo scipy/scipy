@@ -80,7 +80,7 @@ the ``out`` array.
 -----------------------------
 
 The optional parameter ``bounds`` was added to
-`scipy.optimize.optimize._minimize_neldermead` to support bounds constraints
+``_minimize_neldermead`` to support bounds constraints
 for the Nelder-Mead solver.
 
 ``trustregion`` methods ``trust-krylov``, ``dogleg`` and ``trust-ncg`` can now
@@ -146,7 +146,7 @@ now available via `scipy.special.ndtri_exp`.
 --------------------------
 
 Hypothesis Tests
-^^^^^^^^^^^^^^^^
+----------------
 
 The Mann-Whitney-Wilcoxon test, ``mannwhitneyu``, has been rewritten. It now
 supports n-dimensional input, an exact test method when there are no ties,
@@ -182,7 +182,7 @@ The ``alternative`` parameter was added to the ``skewtest``, ``kurtosistest``,
 to allow one-sided hypothesis testing.
 
 Sample statistics
-^^^^^^^^^^^^^^^^^
+-----------------
 
 The new function `scipy.stats.differential_entropy` estimates the differential
 entropy of a continuous distribution from a sample.
@@ -212,7 +212,7 @@ The parameter ``ddof`` was added to `scipy.stats.variation` and
 The parameter ``weights`` was added to `scipy.stats.gmean`.
 
 Statistical Distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 We now vendor and leverage the Boost C++ library to address a number of
 previously reported issues in ``stats``. Notably, ``beta``, ``binom``,
@@ -245,7 +245,7 @@ An option to fit the distribution to data by the method of moments has been
 added to the ``fit`` method of the univariate continuous distributions.
 
 Other
-^^^^^
+-----
 `scipy.stats.bootstrap` has been added to allow estimation of the confidence
 interval and standard error of a statistic.
 
@@ -253,7 +253,7 @@ The new function `scipy.stats.contingency.crosstab` computes a contingency
 table (i.e. a table of counts of unique entries) for the given data.
 
 New `scipy.stats.qmc` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 This new module provides Quasi-Monte Carlo (QMC) generators and associated
 helper functions.
@@ -286,7 +286,7 @@ The module also provide the following helpers:
   interval to (from) a given range.
 
 _We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
-Software for Science program for supporting many of these improvements to_
+Software for Science program for supporting many of these improvements to
 `scipy.stats`.
 
 Deprecated features
@@ -334,8 +334,8 @@ Python-to-C++ transpiler, Pythran, which can be optionally disabled (via
 There are two changes to the default behavior of `scipy.stats.mannwhitenyu`:
 
 - For years, use of the default ``alternative=None`` was deprecated; explicit
-``alternative`` specification was required. Use of the new default value of
-``alternative``, "two-sided", is now permitted.
+  ``alternative`` specification was required. Use of the new default value of
+  ``alternative``, "two-sided", is now permitted.
 - Previously, all p-values were based on an asymptotic approximation. Now, for
   small samples without ties, the p-values returned are exact by default.
 
