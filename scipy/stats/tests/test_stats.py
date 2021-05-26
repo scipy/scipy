@@ -7147,7 +7147,7 @@ class TestTukeyKramer:
            ods output  CLDiffs =tc;
         proc print data=tc;
             format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
-            title “Output with many digits”;
+            title "Output with many digits";
         RUN;
         QUIT;
         ODS RTF close;
