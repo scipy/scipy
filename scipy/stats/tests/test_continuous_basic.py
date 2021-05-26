@@ -38,20 +38,24 @@ distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
 
+distxslow = ['studentized_range']
+# distxslow are sorted by speed (very slow to slow)
+
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
                      'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
                      'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
                      'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
-                     'rv_histogram_instance']
+                     'rv_histogram_instance', 'studentized_range']
 
 # these were really slow in `test_fit`.py.
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
                     'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
-                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line']
+                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
+                    'studentized_range']
 # pearson3 fails due to something weird
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
@@ -74,7 +78,8 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'vonmises', 'vonmises_line']
+                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'studentized_range']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
@@ -103,7 +108,8 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -116,6 +122,8 @@ def cases_test_cont_basic():
             continue
         elif distname in distslow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        elif distname in distxslow:
+            yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
@@ -242,6 +250,13 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
+        if distname == 'studentized_range':
+            msg = ("studentized_range is far too slow for this test and it is "
+                   "redundant with test_distributions::TestStudentizedRange::"
+                   "test_moment_against_mp")
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xslow(reason=msg))
+            continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
@@ -287,7 +302,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon']:
+    if dist in ['gausshyper', 'genexpon', 'studentized_range']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the

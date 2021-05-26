@@ -136,6 +136,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
+   studentized_range    -- Studentized Range
    t                 -- Student's T
    trapezoid         -- Trapezoidal
    triang            -- Triangular
