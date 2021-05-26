@@ -21,8 +21,10 @@ This release requires Python 3.7+ and NumPy 1.16.5 or greater.
 
 For running on PyPy, PyPy3 6.0+ is required.
 
+
+**************************
 Highlights of this release
---------------------------
+**************************
 
 - A new submodule for quasi-Monte Carlo, `scipy.stats.qmc`, was added
 - The documentation design was updated to use the same PyData-Sphinx theme as
@@ -38,46 +40,50 @@ Highlights of this release
   added to address issues with the `Rbf` class.
 
 
-
+************
 New features
-============
+************
 
 `scipy.cluster` improvements
-----------------------------
+============================
 
 An optional argument, ``seed``, has been added to ``kmeans`` and ``kmeans2`` to
 set the random generator and random state.
 
 `scipy.integrate` improvements
-------------------------------
+==============================
 
 
 `scipy.interpolate` improvements
---------------------------------
+================================
 
 Improved input validation and error messages for ``fitpack.bispev`` and
 ``fitpack.parder`` for scenarios that previously caused substantial confusion
 for users.
 
-The class `RBFInterpolator` was added to supersede the `Rbf` class. The new class has usage that more closely follows other interpolator classes, corrects sign errors that caused unexpected smoothing behavior, includes polynomial terms in the interpolant (which are necessary for some RBF choices), and supports interpolation using only the k-nearest neighbors for memory efficiency.  
-`scipy.io` improvements
------------------------
+The class `RBFInterpolator` was added to supersede the `Rbf` class. The new
+class has usage that more closely follows other interpolator classes, corrects
+sign errors that caused unexpected smoothing behavior, includes polynomial
+terms in the interpolant (which are necessary for some RBF choices), and
+supports interpolation using only the k-nearest neighbors for memory
+efficiency.
 
+`scipy.io` improvements
+=======================
 
 `scipy.linalg` improvements
----------------------------
+===========================
 
 An LAPACK wrapper was added for access to the ``tgexc`` subroutine.
 
-
 `scipy.ndimage` improvements
-----------------------------
+============================
 
 `scipy.ndimage.affine_transform` is now able to infer the ``output_shape`` from
 the ``out`` array.
 
 `scipy.optimize` improvements
------------------------------
+=============================
 
 The optional parameter ``bounds`` was added to
 ``_minimize_neldermead`` to support bounds constraints
@@ -104,7 +110,7 @@ When ``linprog`` is used with ``method`` ``'highs'``, ``'highs-ipm'``, or
 prices, dual values) and residuals associated with each constraint.
 
 `scipy.signal` improvements
----------------------------
+===========================
 
 ``get_window`` supports ``general_cosine`` and ``general_hamming`` window
 functions.
@@ -113,13 +119,13 @@ functions.
 performance gains via multithreaded calculations.
 
 `scipy.sparse` improvements
----------------------------
+===========================
 
 Addition of ``dia_matrix`` sparse matrices is now faster.
 
 
 `scipy.spatial` improvements
-----------------------------
+============================
 
 ``distance.cdist`` and ``distance.pdist`` performance has greatly improved for
 certain weighted metrics. Namely: ``minkowski``, ``euclidean``, ``chebyshev``,
@@ -138,7 +144,7 @@ The ``rotation`` methods ``from_rotvec`` and ``as_rotvec`` now accept a
 ``degrees`` argument to specify usage of degrees instead of radians.
 
 `scipy.special` improvements
-----------------------------
+============================
 
 Wright's generalized Bessel function for positive arguments was added as
 `scipy.special.wright_bessel.`
@@ -147,7 +153,7 @@ An implementation of the inverse of the Log CDF of the Normal Distribution is
 now available via `scipy.special.ndtri_exp`.
 
 `scipy.stats` improvements
---------------------------
+==========================
 
 Hypothesis Tests
 ----------------
@@ -295,11 +301,13 @@ The module also provide the following helpers:
 Software for Science program for supporting many of these improvements to*
 `scipy.stats`.
 
+
+*******************
 Deprecated features
-===================
+*******************
 
 `scipy.linalg` deprecations
----------------------------
+===========================
 
 - `scipy.linalg.pinv2` is deprecated and its functionality is completely
   subsumed into `scipy.linalg.pinv`
@@ -308,30 +316,33 @@ Deprecated features
   replaced with functioning ``atol`` and ``rtol`` keywords with clear usage.
 
 `scipy.spatial` deprecations
-----------------------------
+============================
 
 - `scipy.spatial.distance` metrics expect 1d input vectors but will call
   ``np.squeeze`` on their inputs to accept any extra length-1 dimensions. That
   behaviour is now deprecated.
 
+
+******************************
 Backwards incompatible changes
-==============================
+******************************
 
 `scipy.interpolate` changes
----------------------------
+===========================
 
 `scipy.linalg` changes
-----------------------
+======================
 
 `scipy.signal` changes
-----------------------
+======================
 
 `scipy.stats` changes
----------------------
+=====================
 
 
+*************
 Other changes
-=============
+*************
 
 We now accept and leverage performance improvements from the ahead-of-time
 Python-to-C++ transpiler, Pythran, which can be optionally disabled (via
@@ -350,8 +361,10 @@ Support has been added for PEP 621 (project metadata in ``pyproject.toml``)
 We now support a Gitpod environment to reduce the barrier to entry for SciPy
 development.
 
+
+*******
 Authors
-=======
+*******
 
 * @endolith
 * Jelle Aalbers +
@@ -474,8 +487,10 @@ A total of 116 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
+
+***********************
 Issues closed for 1.7.0
------------------------
+***********************
 
 * `#636 <https://github.com/scipy/scipy/issues/636>`__: Statistics Review: mannwhitneyu (Trac #109)
 * `#1346 <https://github.com/scipy/scipy/issues/1346>`__: signal.medfilt2d should fall back on signal.medfilt for types...
@@ -610,8 +625,10 @@ Issues closed for 1.7.0
 * `#14055 <https://github.com/scipy/scipy/issues/14055>`__: linalg.solve: Unclear error when using assume_a='her' with real...
 * `#14093 <https://github.com/scipy/scipy/issues/14093>`__: DOC: Inconsistency in the definition of default values in the...
 
+
+***********************
 Pull requests for 1.7.0
------------------------
+***********************
 
 * `#4824 <https://github.com/scipy/scipy/pull/4824>`__: Permutation Ttest (new PR)
 * `#4933 <https://github.com/scipy/scipy/pull/4933>`__: Update the Mann-Whitney-Wilcoxon test
