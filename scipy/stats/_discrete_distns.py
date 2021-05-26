@@ -6,6 +6,7 @@ from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
 from scipy._lib._util import _lazywhere, rng_integers
+from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -669,12 +670,29 @@ class nhypergeom_gen(rv_discrete):
            http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     """
+
     def _get_support(self, M, n, r):
         return 0, n
 
     def _argcheck(self, M, n, r):
         cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
         return cond
+
+    def _rvs(self, M, n, r, size=None, random_state=None):
+
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, r, size, random_state):
+            # invert cdf by calculating all values in support, scalar M, n, r
+            a, b = self.support(M, n, r)
+            ks = np.arange(a, b+1)
+            cdf = self.cdf(ks, M, n, r)
+            ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
+            rvs = ppf(random_state.uniform(size=size)).astype(int)
+            if size is None:
+                return rvs.item()
+            return rvs
+
+        return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
