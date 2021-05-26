@@ -252,7 +252,7 @@ def cases_test_moments():
             msg = ("studentized_range is far too slow for this test and it is "
                    "redundant with test_distributions::TestStudentizedRange::"
                    "test_moment_against_mp")
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason=msg))
             continue
         cond1 = distname not in fail_normalization
