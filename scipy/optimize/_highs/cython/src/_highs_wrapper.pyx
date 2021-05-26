@@ -1,7 +1,8 @@
 # distutils: language=c++
 # cython: language_level=3
 
-
+import numpy as np
+cimport numpy as np
 from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
@@ -35,6 +36,9 @@ from .HConst cimport (
     HighsOptionTypeINT,
     HighsOptionTypeDOUBLE,
     HighsOptionTypeSTRING,
+
+    HighsBasisStatusLOWER,
+    HighsBasisStatusUPPER,
 )
 from .Highs cimport Highs
 from .HighsStatus cimport (
@@ -47,6 +51,7 @@ from .HighsStatus cimport (
 from .HighsLp cimport (
     HighsLp,
     HighsSolution,
+    HighsBasis,
 )
 from .HighsInfo cimport HighsInfo
 from .HighsOptions cimport (
@@ -661,6 +666,9 @@ def _highs_wrapper(
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
+    cdef HighsBasis basis
+    cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
+                                                           # marg_bnds[1, :]: upper
 
     # If the status is bad, don't look up the solution
     if model_status != HighsModelStatusOPTIMAL:
@@ -677,6 +685,15 @@ def _highs_wrapper(
     else:
         # Should be safe to read the solution:
         solution = highs.getSolution()
+        basis = highs.getBasis()
+
+        # lagrangians for bounds based on column statuses
+        for ii in range(numcol):
+            if HighsBasisStatusLOWER == basis.col_status[ii]:
+                marg_bnds[0, ii] = solution.col_dual[ii]
+            elif HighsBasisStatusUPPER == basis.col_status[ii]:
+                marg_bnds[1, ii] = solution.col_dual[ii]
+
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
@@ -688,6 +705,11 @@ def _highs_wrapper(
             # Ax + s = b => Ax = b - s
             # Note: this is for all constraints (A_ub and A_eq)
             'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
+
+            # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
+            # lambda are the lagrange multipliers associated with Ax=b
+            'lambda': [-1*solution.row_dual[ii] for ii in range(numrow)],
+            'marg_bnds': marg_bnds,
 
             'fun': info.objective_function_value,
             'simplex_nit': info.simplex_iteration_count,
