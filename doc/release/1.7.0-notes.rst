@@ -97,7 +97,11 @@ estimate ``hess`` by finite difference using one of
 initial guess for the minimization.
 
 ``least_squares`` has a modest performance improvement when SciPy is built
-with Pythran transpiler enabled
+with Pythran transpiler enabled.
+
+When ``linprog`` is used with ``method`` ``'highs'``, ``'highs-ipm'``, or
+``'highs-ds'``, the result object now reports the marginals (AKA shadow
+prices, dual values) and residuals associated with each constraint.
 
 `scipy.signal` improvements
 ---------------------------
