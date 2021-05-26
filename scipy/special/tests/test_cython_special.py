@@ -22,7 +22,7 @@ CYTHON_SIGNATURE_MAP = {
     'F': 'float complex',
     'D': 'double complex',
     'G': 'long double complex',
-    'i':'int',
+    'i': 'int',
     'l': 'long'
 }
 
@@ -186,6 +186,7 @@ PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.kve, cython_special.kve, ('dd', 'dD'), None),
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
     (special.lpmv, cython_special.lpmv, ('ddd',), None),
@@ -265,6 +266,7 @@ PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
     (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
+    (special.wright_bessel, cython_special.wright_bessel, ('ddd',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
     (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
@@ -282,7 +284,7 @@ IDS = [x[0].__name__ for x in PARAMS]
 
 
 def _generate_test_points(typecodes):
-    axes = tuple(map(lambda x: TEST_POINTS[x], typecodes))
+    axes = tuple(TEST_POINTS[x] for x in typecodes)
     pts = list(product(*axes))
     return pts
 
@@ -296,7 +298,7 @@ def test_cython_api_completeness():
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)

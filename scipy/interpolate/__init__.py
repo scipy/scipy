@@ -45,6 +45,7 @@ Unstructured data:
    LinearNDInterpolator
    NearestNDInterpolator
    CloughTocher2DInterpolator
+   RBFInterpolator
    Rbf
    interp2d
 
@@ -169,6 +170,8 @@ from .fitpack import *
 from .fitpack2 import *
 
 from .rbf import Rbf
+
+from ._rbfinterp import *
 
 from .polyint import *
 

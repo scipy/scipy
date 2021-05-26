@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 from scipy._lib._util import prod
 
-__all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
+__all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
@@ -114,6 +114,18 @@ def getdtype(dtype, a=None, default=None):
             warnings.warn("object dtype is not supported by sparse matrices")
 
     return newdtype
+
+
+def getdata(obj, dtype=None, copy=False):
+    """
+    This is a wrapper of `np.array(obj, dtype=dtype, copy=copy)`
+    that will generate a warning if the result is an object array.
+    """
+    data = np.array(obj, dtype=dtype, copy=copy)
+    # Defer to getdtype for checking that the dtype is OK.
+    # This is called for the validation only; we don't need the return value.
+    getdtype(data.dtype)
+    return data
 
 
 def get_index_dtype(arrays=(), maxval=None, check_contents=False):

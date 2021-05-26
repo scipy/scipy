@@ -209,7 +209,7 @@ query_ball_tree(const ckdtree *self, const ckdtree *other,
         {}
     }
 
-    for (size_t i = 0; i < self->n; ++i) {
+    for (ckdtree_intp_t i = 0; i < self->n; ++i) {
         std::sort(results[i].begin(), results[i].end());
     }
 

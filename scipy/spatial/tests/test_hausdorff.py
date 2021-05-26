@@ -8,7 +8,7 @@ from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
 
-class TestHausdorff(object):
+class TestHausdorff:
     # Test various properties of the directed Hausdorff code.
 
     def setup_method(self):

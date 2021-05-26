@@ -825,7 +825,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
-class _RangeFunc(object):
+class _RangeFunc:
     def __init__(self, range_):
         self.range_ = range_
 
@@ -838,7 +838,7 @@ class _RangeFunc(object):
         return self.range_
 
 
-class _OptFunc(object):
+class _OptFunc:
     def __init__(self, opt):
         self.opt = opt
 
@@ -847,7 +847,7 @@ class _OptFunc(object):
         return self.opt
 
 
-class _NQuad(object):
+class _NQuad:
     def __init__(self, func, ranges, opts, full_output):
         self.abserr = 0
         self.func = func

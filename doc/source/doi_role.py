@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     doilinks
-    ~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~
     Extension to add links to DOIs. With this extension you can use e.g.
     :doi:`10.1016/S0022-2836(05)80360-2` in your documents. This will
     create a link to a DOI resolver
@@ -41,10 +41,10 @@ def arxiv_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 
 
 def setup_link_role(app):
-    app.add_role('doi', doi_role)
-    app.add_role('DOI', doi_role)
-    app.add_role('arXiv', arxiv_role)
-    app.add_role('arxiv', arxiv_role)
+    app.add_role('doi', doi_role, override=True)
+    app.add_role('DOI', doi_role, override=True)
+    app.add_role('arXiv', arxiv_role, override=True)
+    app.add_role('arxiv', arxiv_role, override=True)
 
 
 def setup(app):

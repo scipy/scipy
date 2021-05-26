@@ -154,7 +154,7 @@ def _find_missing_index(ind, n):
         return -1
 
 
-class _minmax_mixin(object):
+class _minmax_mixin:
     """Mixin for min and max methods.
 
     These are not implemented for dia_matrix, hence the separate class.
@@ -271,7 +271,9 @@ class _minmax_mixin(object):
                 m = mat.data[am]
 
                 if compare(m, zero):
-                    return mat.row[am] * mat.shape[1] + mat.col[am]
+                    # cast to Python int to avoid overflow
+                    # and RuntimeError
+                    return int(mat.row[am])*mat.shape[1] + int(mat.col[am])
                 else:
                     size = np.prod(mat.shape)
                     if size == mat.nnz:
