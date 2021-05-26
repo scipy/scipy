@@ -335,7 +335,7 @@ class NumericalInverseHermite:
 
     """
 
-    def __init__(self, dist, tol=1e-12, max_intervals=100000):
+    def __init__(self, dist, *, tol=1e-12, max_intervals=100000):
         res = _fast_numerical_inverse(dist, tol, max_intervals)
         H, eu, intervals, a, b = res
         self.H = H
