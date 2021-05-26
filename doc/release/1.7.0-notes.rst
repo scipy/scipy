@@ -29,7 +29,7 @@ Highlights of this release
   other NumFOCUS packages like NumPy.
 - We now vendor and leverage the Boost C++ library to enable numerous
   improvements for long-standing weaknesses in `scipy.stats`
-- `scipy.stats` has five new distributions, seven new (or overhauled)
+- `scipy.stats` has six new distributions, seven new (or overhauled)
   hypothesis tests, a new function for bootstrapping, and many other
   enhancements.
 - ``cdist`` and ``pdist`` distance calculations are faster for several metrics,
