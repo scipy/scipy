@@ -1,4 +1,7 @@
 import pathlib
+from shutil import copyfile
+import subprocess
+import sys
 
 
 def isNPY_OLD():
@@ -20,5 +23,12 @@ def make_biasedurn():
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 
 
+def make_boost():
+    # Call code generator inside _boost directory
+    code_gen = pathlib.Path(__file__).parent / '_boost/include/code_gen.py'
+    subprocess.run([sys.executable, str(code_gen)], check=True)
+
+
 if __name__ == '__main__':
     make_biasedurn()
+    make_boost()

@@ -241,3 +241,8 @@ Name: HiGHS
 Files: scipy/optimize/_highs/*
 License: MIT
   For details, see scipy/optimize/_highs/LICENCE
+
+Name: Boost
+Files: scipy/_lib/boost/*
+License: Boost Software License - Version 1.0
+  For details, see scipy/_lib/boost/LICENSE_1_0.txt

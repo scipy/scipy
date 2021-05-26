@@ -4,10 +4,10 @@ import warnings
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray,
-                   zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, compress,
-                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
+from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   compress, pi, exp, ravel, count_nonzero, sin, cos,
+                   arctan2, hypot)
 
 from scipy import optimize
 from scipy import special
@@ -18,7 +18,6 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
-from .stats import _normtest_finish
 
 
 __all__ = ['mvsdist',
@@ -1058,7 +1057,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     if np.all(x == x[0]):
         raise ValueError("Data must not be constant.")
 
-    if any(x <= 0):
+    if np.any(x <= 0):
         raise ValueError("Data must be positive.")
 
     if lmbda is not None:  # single transformation
@@ -2103,7 +2102,7 @@ def anderson_ksamp(samples, midrank=True):
                          "observation")
 
     n = np.array([sample.size for sample in samples])
-    if any(n == 0):
+    if np.any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
@@ -2927,6 +2926,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
         x = x.flatten()
         y = y.flatten()
         axis = 0
+
+    if axis < 0:
+        axis = x.ndim + axis
 
     # Determine shape of the result arrays
     res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
