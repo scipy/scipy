@@ -407,7 +407,7 @@ class NumericalInverseHermite(Benchmark):
         distname, shapes = distcase
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic'}
+                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
 
         if distname in slow_dists or distname in fail_dists:
             raise NotImplementedError("skipped")
