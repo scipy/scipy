@@ -780,6 +780,29 @@ def test_moments_with_array_gh12192_regression():
     expected10 = np.array([26., 832.])
     npt.assert_allclose(vals10, expected10, rtol=1e-13)
 
+    # test broadcasting and more
+    a = [-1.1, 0, 1, 2.2, np.pi]
+    b = [-1.1, 0, 1, 2.2, np.pi]
+    loc = [-1.1, 0, np.sqrt(2)]
+    scale = [-2.1, 0, 1, 2.2, np.pi]
+
+    a = np.array(a).reshape((-1, 1, 1, 1))
+    b = np.array(b).reshape((-1, 1, 1))
+    loc = np.array(loc).reshape((-1, 1))
+    scale = np.array(scale)
+
+    vals11 = stats.beta.moment(n=2, a=a, b=b, loc=loc, scale=scale)
+
+    a, b, loc, scale = np.broadcast_arrays(a, b, loc, scale)
+
+    for i in np.ndenumerate(a):
+        with np.errstate(invalid='ignore', divide='ignore'):
+            i = i[0]  # just get the index
+            # check against same function with scalar input
+            expected = stats.beta.moment(n=2, a=a[i], b=b[i],
+                                         loc=loc[i], scale=scale[i])
+            np.testing.assert_equal(vals11[i], expected)
+
 
 def test_broadcasting_in_moments_gh12192_regression():
     vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[[1]])
