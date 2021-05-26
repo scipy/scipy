@@ -990,7 +990,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         A result object with the following attributes.
 
         statistic : float
-            The statistic used in Boschloo's test; that is, the p-value from Fisher's exact test.
+            The statistic used in Boschloo's test; that is, the p-value
+            from Fisher's exact test.
 
         pvalue : float
             P-value, the probability of obtaining a distribution at least as
