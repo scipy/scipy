@@ -1461,15 +1461,15 @@ def bernoulli(n):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+    .. [2] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
 
     Examples
     --------
     >>> from scipy.special import bernoulli, zeta
-    >>> import numpy as np
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
 
-    The wikipedia article points out the relationship between the
+    The Wikipedia article ([2]_) points out the relationship between the
     Bernoulli numbers and the zeta function, ``B_n^+ = -n * zeta(1 - n)``
     for ``n > 0``:
 
@@ -1479,8 +1479,8 @@ def bernoulli(n):
 
     Note that, in the notation used in the wikipedia article,
     `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
-    B_1 is -1/2).  The relation given above is for ``B_n^+``, so the
-    sign of 0.5 does not match the output of `bernoulli(4)`.
+    ``B_1`` is -1/2).  The relation given above is for ``B_n^+``, so the
+    sign of 0.5 does not match the output of ``bernoulli(4)``.
 
     """
     if not isscalar(n) or (n < 0):
