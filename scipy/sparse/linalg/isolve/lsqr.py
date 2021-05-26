@@ -262,7 +262,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     >>> b = np.array([0., 0., 0.], dtype=float)
     >>> x, istop, itn, normr = lsqr(A, b)[:4]
-    The exact solution is  x = 0
     >>> istop
     0
     >>> x
