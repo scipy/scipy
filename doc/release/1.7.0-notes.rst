@@ -232,6 +232,8 @@ distribution, respectively.
 The generalized hyperbolic distribution was added in
 `scipy.stats.genhyperbolic`.
 
+The studentized range distribution was added in `scipy.stats.studentized_range`.
+
 `scipy.stats.argus` now has improved handling for small parameter values.
 
 Better argument handling/preparation has resulted in performance improvements
