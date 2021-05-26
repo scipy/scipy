@@ -83,6 +83,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
@@ -135,6 +136,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
+   studentized_range    -- Studentized Range
    t                 -- Student's T
    trapezoid         -- Trapezoidal
    triang            -- Triangular
@@ -174,23 +176,25 @@ Discrete distributions
 .. autosummary::
    :toctree: generated/
 
-   bernoulli         -- Bernoulli
-   betabinom         -- Beta-Binomial
-   binom             -- Binomial
-   boltzmann         -- Boltzmann (Truncated Discrete Exponential)
-   dlaplace          -- Discrete Laplacian
-   geom              -- Geometric
-   hypergeom         -- Hypergeometric
-   logser            -- Logarithmic (Log-Series, Series)
-   nbinom            -- Negative Binomial
-   nhypergeom        -- Negative Hypergeometric
-   planck            -- Planck (Discrete Exponential)
-   poisson           -- Poisson
-   randint           -- Discrete Uniform
-   skellam           -- Skellam
-   yulesimon         -- Yule-Simon
-   zipf              -- Zipf (Zeta)
-   zipfian           -- Zipfian
+   bernoulli                -- Bernoulli
+   betabinom                -- Beta-Binomial
+   binom                    -- Binomial
+   boltzmann                -- Boltzmann (Truncated Discrete Exponential)
+   dlaplace                 -- Discrete Laplacian
+   geom                     -- Geometric
+   hypergeom                -- Hypergeometric
+   logser                   -- Logarithmic (Log-Series, Series)
+   nbinom                   -- Negative Binomial
+   nchypergeom_fisher       -- Fisher's Noncentral Hypergeometric
+   nchypergeom_wallenius    -- Wallenius's Noncentral Hypergeometric
+   nhypergeom               -- Negative Hypergeometric
+   planck                   -- Planck (Discrete Exponential)
+   poisson                  -- Poisson
+   randint                  -- Discrete Uniform
+   skellam                  -- Skellam
+   yulesimon                -- Yule-Simon
+   zipf                     -- Zipf (Zeta)
+   zipfian                  -- Zipfian
 
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
@@ -225,8 +229,10 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   differential_entropy
    median_absolute_deviation
    median_abs_deviation
+   bootstrap
 
 Frequency statistics
 ====================
@@ -254,6 +260,7 @@ Correlation functions
    :toctree: generated/
 
    f_oneway
+   alexandergovern
    pearsonr
    spearmanr
    pointbiserialr
@@ -277,6 +284,7 @@ Statistical tests
    ttest_rel
    chisquare
    cramervonmises
+   cramervonmises_2samp
    power_divergence
    kstest
    ks_1samp
@@ -311,14 +319,6 @@ Statistical tests
    skewtest
    kurtosistest
    normaltest
-
-Objects returned by some statistical tests
-------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   BinomTestResult
 
 
 Quasi-Monte Carlo
@@ -397,8 +397,10 @@ Contingency table functions
    contingency.crosstab
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
    contingency.association
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------
@@ -433,10 +435,11 @@ Warnings used in :mod:`scipy.stats`
    SpearmanRConstantInputWarning
 
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *
-from ._binomtest import binomtest, BinomTestResult
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
@@ -444,6 +447,12 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._bootstrap import bootstrap
+from ._entropy import *
+from ._hypotests import *
+from ._rvs_sampling import rvs_ratio_uniforms
+from ._page_trend_test import page_trend_test
+from ._mannwhitneyu import mannwhitneyu
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

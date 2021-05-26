@@ -86,7 +86,7 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-class interp2d(object):
+class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
@@ -409,6 +409,10 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
+    
+    If the values in `x` are not unique, the resulting behavior is
+    undefined and specific to the choice of `kind`, i.e., changing
+    `kind` will change the behavior for duplicates.
 
 
     Examples
@@ -717,7 +721,7 @@ class interp1d(_Interpolator1D):
         return below_bounds, above_bounds
 
 
-class _PPolyBase(object):
+class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
@@ -1905,7 +1909,7 @@ class BPoly(_PPolyBase):
         return out
 
 
-class NdPPoly(object):
+class NdPPoly:
     """
     Piecewise tensor product polynomial
 
@@ -2338,7 +2342,7 @@ class NdPPoly(object):
         return c
 
 
-class RegularGridInterpolator(object):
+class RegularGridInterpolator:
     """
     Interpolation on a regular grid in arbitrary dimensions
 
@@ -2396,7 +2400,8 @@ class RegularGridInterpolator(object):
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+    >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+    >>> data = f(xg, yg, zg)
 
     ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:

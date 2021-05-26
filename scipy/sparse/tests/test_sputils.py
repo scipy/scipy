@@ -7,7 +7,7 @@ from scipy.sparse import sputils
 from scipy.sparse.sputils import matrix
 
 
-class TestSparseUtils(object):
+class TestSparseUtils:
 
     def test_upcast(self):
         assert_equal(sputils.upcast('intc'), np.intc)

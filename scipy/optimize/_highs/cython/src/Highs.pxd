@@ -40,6 +40,7 @@ cdef extern from "Highs.h":
 
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
+        HighsStatus setBasis()
         const HighsSolution& getSolution() const
         const HighsBasis& getBasis() const
 

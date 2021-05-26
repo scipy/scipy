@@ -8,7 +8,7 @@ from scipy.sparse import issparse, rand
 from scipy.sparse.linalg import norm
 
 
-class TestClarksonWoodruffTransform(object):
+class TestClarksonWoodruffTransform:
     """
     Testing the Clarkson Woodruff Transform
     """

@@ -1,7 +1,6 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 import re
 import datetime
-from collections import OrderedDict
 
 import numpy as np
 
@@ -63,7 +62,7 @@ class ParseArffError(ArffError):
 # ----------
 # Attributes
 # ----------
-class Attribute(object):
+class Attribute:
 
     type_name = None
 
@@ -333,7 +332,7 @@ class DateAttribute(Attribute):
                 "datetime64[%s]" % self.datetime_unit)
 
     def __str__(self):
-        return super(DateAttribute, self).__str__() + ',' + self.date_format
+        return super().__str__() + ',' + self.date_format
 
 
 class RelationalAttribute(Attribute):
@@ -380,7 +379,7 @@ class RelationalAttribute(Attribute):
                         [(a.name, a.dtype) for a in self.attributes])
 
     def __str__(self):
-        return (super(RelationalAttribute, self).__str__() + '\n\t' +
+        return (super().__str__() + '\n\t' +
                 '\n\t'.join(str(a) for a in self.attributes))
 
 
@@ -651,7 +650,7 @@ def read_header(ofile):
     return relation, attributes
 
 
-class MetaData(object):
+class MetaData:
     """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
@@ -682,9 +681,7 @@ class MetaData(object):
     """
     def __init__(self, rel, attr):
         self.name = rel
-
-        # We need the dictionary to be ordered
-        self._attributes = OrderedDict((a.name, a) for a in attr)
+        self._attributes = {a.name: a for a in attr}
 
     def __repr__(self):
         msg = ""

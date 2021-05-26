@@ -18,9 +18,9 @@ in macOS (Tested on 11.1).
 
 .. note::
 
-	This guide does not present the only way to set up a development environment; there are many valid choices of Python distribution, C/Fortran compiler, and installation options. The steps here can often be adapted for other choices, but we cannot provide documentation tailored for them.
+   This guide does not present the only way to set up a development environment; there are many valid choices of Python distribution, C/Fortran compiler, and installation options. The steps here can often be adapted for other choices, but we cannot provide documentation tailored for them.
 
-	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
+   This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
 
 .. _quickstart-mac-build:
 
@@ -46,13 +46,15 @@ Building SciPy
 
 #. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy`` to install the following packages:
+#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pythran pytest compilers sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy`` to install the following packages:
 
-   * ``numpy pybind11 cython pytest`` are four packages that SciPy depends on.
+   * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
    * ``compilers`` holds compilers used to build SciPy's Fortran, C, and C++ source code.
 
-   * ``sphinx`` and ``matplotlib`` are required to render the SciPy documentation.
+   * ``pytest`` is needed for running the test suite.
+
+   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-panels`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
 
@@ -69,6 +71,8 @@ Building SciPy
 #. Enter the command ``git clone`` followed by your fork's .git URL. Note that this creates in the terminal's working directory a ``scipy`` folder containing the SciPy source code.
 
 #. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
+
+#. Initialize git submodules: ``git submodule update --init``.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 

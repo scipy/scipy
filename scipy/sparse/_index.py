@@ -25,7 +25,7 @@ def _broadcast_arrays(a, b):
     return x, y
 
 
-class IndexMixin(object):
+class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """

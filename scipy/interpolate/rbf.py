@@ -52,12 +52,16 @@ from scipy.spatial.distance import cdist, pdist, squareform
 __all__ = ['Rbf']
 
 
-class Rbf(object):
+class Rbf:
     """
     Rbf(*args)
 
     A class for radial basis function interpolation of functions from
     N-D scattered data to an M-D domain.
+
+    .. note::
+        `Rbf` is legacy code, for new usage please use `RBFInterpolator`
+        instead.
 
     Parameters
     ----------
@@ -124,10 +128,15 @@ class Rbf(object):
         A 1-D array of node values for the interpolation.
     A : internal property, do not use
 
+    See Also
+    --------
+    RBFInterpolator
+
     Examples
     --------
     >>> from scipy.interpolate import Rbf
-    >>> x, y, z, d = np.random.rand(4, 50)
+    >>> rng = np.random.default_rng()
+    >>> x, y, z, d = rng.random((4, 50))
     >>> rbfi = Rbf(x, y, z, d)  # radial basis function interpolator instance
     >>> xi = yi = zi = np.linspace(0, 1, 20)
     >>> di = rbfi(xi, yi, zi)   # interpolated values

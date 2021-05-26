@@ -6,14 +6,19 @@ from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
 from scipy._lib._util import _lazywhere, rng_integers
+from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
-
+    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+    _check_shape)
+import scipy.stats._boost as _boost
+from .biasedurn import (_PyFishersNCHypergeometric,
+                        _PyWalleniusNCHypergeometric,
+                        _PyStochasticLib3)
 
 class binom_gen(rv_discrete):
     r"""A binomial discrete random variable.
@@ -59,32 +64,30 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return exp(self._logpmf(x, n, p))
+        return _boost._binom_pdf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        vals = special.bdtr(k, n, p)
-        return vals
+        return _boost._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return special.bdtrc(k, n, p)
+        return _boost._binom_sf(k, n, p)
 
+    def _isf(self, x, n, p):
+        return _boost._binom_isf(x, n, p)
+    
     def _ppf(self, q, n, p):
-        vals = ceil(special.bdtrik(q, n, p))
-        vals1 = np.maximum(vals - 1, 0)
-        temp = special.bdtr(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        q = 1.0 - p
-        mu = n * p
-        var = n * p * q
+        mu = _boost._binom_mean(n, p)
+        var = _boost._binom_variance(n, p)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = (q - p) / sqrt(var)
+            g1 = _boost._binom_skewness(n, p)
         if 'k' in moments:
-            g2 = (1.0 - 6*p*q) / var
+            g2 = _boost._binom_kurtosis_excess(n, p)
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
@@ -145,6 +148,9 @@ class bernoulli_gen(binom_gen):
     def _sf(self, x, p):
         return binom._sf(x, 1, p)
 
+    def _isf(self, x, p):
+        return binom._isf(x, 1, p)        
+    
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
 
@@ -298,7 +304,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return exp(self._logpmf(x, n, p))
+        return _boost._nbinom_pdf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -306,41 +312,39 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return special.betainc(n, k+1, p)
+        return _boost._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
-        
+
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
-            
+
         def f2(k, n, p):
             return np.log(cdf)
-            
+
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
-    def _sf_skip(self, x, n, p):
-        # skip because special.nbdtrc doesn't work for 0<n<1
+    def _sf(self, x, n, p):
         k = floor(x)
-        return special.nbdtrc(k, n, p)
+        return _boost._nbinom_sf(k, n, p)
 
+    def _isf(self, x, n, p):
+        return _boost._nbinom_isf(x, n, p)
+    
     def _ppf(self, q, n, p):
-        vals = ceil(special.nbdtrik(q, n, p))
-        vals1 = (vals-1).clip(0.0, np.inf)
-        temp = self._cdf(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        Q = 1.0 / p
-        P = Q - 1.0
-        mu = n*P
-        var = n*P*Q
-        g1 = (Q+P)/sqrt(n*P*Q)
-        g2 = (1.0 + 6*P*Q) / (n*P*Q)
-        return mu, var, g1, g2
+        return(
+            _boost._nbinom_mean(n, p),
+            _boost._nbinom_variance(n, p),
+            _boost._nbinom_skewness(n, p),
+            _boost._nbinom_kurtosis_excess(n, p),
+        )
 
 
 nbinom = nbinom_gen(name='nbinom')
@@ -532,7 +536,7 @@ class hypergeom_gen(rv_discrete):
         # therefore unpack all inputs args, so we can do the manual
         # integration.
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             # Manual integration over probability mass function. More accurate
             # than integrate.quad.
             k2 = np.arange(quant + 1, draw + 1)
@@ -541,7 +545,7 @@ class hypergeom_gen(rv_discrete):
 
     def _logsf(self, k, M, n, N):
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
                 # Less terms to sum if we calculate log(1-cdf)
                 res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
@@ -553,7 +557,7 @@ class hypergeom_gen(rv_discrete):
 
     def _logcdf(self, k, M, n, N):
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
                 # Less terms to sum if we calculate log(1-sf)
                 res.append(log1p(-exp(self.logsf(quant, tot, good, draw))))
@@ -666,12 +670,29 @@ class nhypergeom_gen(rv_discrete):
            http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     """
+
     def _get_support(self, M, n, r):
         return 0, n
 
     def _argcheck(self, M, n, r):
         cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
         return cond
+
+    def _rvs(self, M, n, r, size=None, random_state=None):
+
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, r, size, random_state):
+            # invert cdf by calculating all values in support, scalar M, n, r
+            a, b = self.support(M, n, r)
+            ks = np.arange(a, b+1)
+            cdf = self.cdf(ks, M, n, r)
+            ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
+            rvs = ppf(random_state.uniform(size=size)).astype(int)
+            if size is None:
+                return rvs.item()
+            return rvs
+
+        return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
@@ -1424,6 +1445,273 @@ class yulesimon_gen(rv_discrete):
 
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
+
+
+def _vectorize_rvs_over_shapes(_rvs1):
+    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
+    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
+    # arguments, `size` and `random_state` as keyword arguments.
+    # _rvs1 must return a random variate array with shape `size`. If `size` is
+    # None, _rvs1 must return a scalar.
+    # When applied to _rvs1, this decorator broadcasts ndarray args
+    # and loops over them, calling _rvs1 for each set of scalar args.
+    # For usage example, see _nchypergeom_gen
+    def _rvs(*args, size, random_state):
+        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
+
+        size = np.array(size)
+        _rvs1_size = np.array(_rvs1_size)
+        _rvs1_indices = np.array(_rvs1_indices)
+
+        if np.all(_rvs1_indices):  # all args are scalars
+            return _rvs1(*args, size, random_state)
+
+        out = np.empty(size)
+
+        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
+        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
+        # corresponding with the different sets of scalar args
+        j0 = np.arange(out.ndim)
+        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
+        out = np.moveaxis(out, j1, j0)
+
+        for i in np.ndindex(*size[~_rvs1_indices]):
+            # arg can be squeezed because singleton dimensions will be
+            # associated with _rvs1_size, not arg_shape per _check_shape
+            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
+                           _rvs1_size, random_state)
+
+        return np.moveaxis(out, j0, j1)  # move axes back before returning
+    return _rvs
+
+
+class _nchypergeom_gen(rv_discrete):
+    r"""A noncentral hypergeometric discrete random variable.
+
+    For subclassing by nchypergeom_fisher_gen and nchypergeom_wallenius_gen.
+
+    """
+
+    rvs_name = None
+    dist = None
+
+    def _get_support(self, M, n, N, odds):
+        N, m1, n = M, n, N  # follow Wikipedia notation
+        m2 = N - m1
+        x_min = np.maximum(0, n - m2)
+        x_max = np.minimum(n, m1)
+        return x_min, x_max
+
+    def _argcheck(self, M, n, N, odds):
+        M, n = np.asarray(M), np.asarray(n),
+        N, odds = np.asarray(N), np.asarray(odds)
+        cond1 = (M.astype(int) == M) & (M >= 0)
+        cond2 = (n.astype(int) == n) & (n >= 0)
+        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond4 = odds > 0
+        cond5 = N <= M
+        cond6 = n <= M
+        return cond1 & cond2 & cond3 & cond4 & cond5 & cond6
+
+    def _rvs(self, M, n, N, odds, size=None, random_state=None):
+
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, N, odds, size, random_state):
+            length = np.prod(size)
+            urn = _PyStochasticLib3()
+            rv_gen = getattr(urn, self.rvs_name)
+            rvs = rv_gen(N, n, M, odds, length, random_state)
+            rvs = rvs.reshape(size)
+            return rvs
+
+        return _rvs1(M, n, N, odds, size=size, random_state=random_state)
+
+    def _pmf(self, x, M, n, N, odds):
+
+        @np.vectorize
+        def _pmf1(x, M, n, N, odds):
+            urn = self.dist(N, n, M, odds, 1e-12)
+            return urn.probability(x)
+
+        return _pmf1(x, M, n, N, odds)
+
+    def _stats(self, M, n, N, odds, moments):
+
+        @np.vectorize
+        def _moments1(M, n, N, odds):
+            urn = self.dist(N, n, M, odds, 1e-12)
+            return urn.moments()
+
+        m, v = _moments1(M, n, N, odds) if ("m" in moments
+                                            or "v" in moments) else None
+        s, k = None, None
+        return m, v, s, k
+
+
+class nchypergeom_fisher_gen(_nchypergeom_gen):
+    r"""A Fisher's noncentral hypergeometric discrete random variable.
+
+    Fisher's noncentral hypergeometric distribution models drawing objects of
+    two types from a bin. `M` is the total number of objects, `n` is the
+    number of Type I objects, and `odds` is the odds ratio: the odds of
+    selecting a Type I object rather than a Type II object when there is only
+    one object of each type.
+    The random variate represents the number of Type I objects drawn if we
+    take a handful of objects from the bin at once and find out afterwards
+    that we took `N` objects.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    nchypergeom_wallenius, hypergeom, nhypergeom
+
+    Notes
+    -----
+    Let mathematical symbols :math:`N`, :math:`n`, and :math:`M` correspond
+    with parameters `N`, `n`, and `M` (respectively) as defined above.
+
+    The probability mass function is defined as
+
+    .. math::
+
+        p(x; M, n, N, \omega) =
+        \frac{\binom{n}{x}\binom{M - n}{N-x}\omega^x}{P_0},
+
+    for
+    :math:`x \in [x_l, x_u]`,
+    :math:`M \in {\mathbb N}`,
+    :math:`n \in [0, M]`,
+    :math:`N \in [0, M]`,
+    :math:`\omega > 0`,
+    where
+    :math:`x_l = \max(0, N - (M - n))`,
+    :math:`x_u = \min(N, n)`,
+
+    .. math::
+
+        P_0 = \sum_{y=x_l}^{x_u} \binom{n}{y}\binom{M - n}{N-y}\omega^y,
+
+    and the binomial coefficients are defined as
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    `nchypergeom_fisher` uses the BiasedUrn package by Agner Fog with
+    permission for it to be distributed under SciPy's license.
+
+    The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
+    universally accepted; they are chosen for consistency with `hypergeom`.
+
+    Note that Fisher's noncentral hypergeometric distribution is distinct
+    from Wallenius' noncentral hypergeometric distribution, which models
+    drawing a pre-determined `N` objects from a bin one by one.
+    When the odds ratio is unity, however, both distributions reduce to the
+    ordinary hypergeometric distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Agner Fog, "Biased Urn Theory".
+           https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
+
+    .. [2] "Fisher's noncentral hypergeometric distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Fisher's_noncentral_hypergeometric_distribution
+
+    %(example)s
+
+    """
+
+    rvs_name = "rvs_fisher"
+    dist = _PyFishersNCHypergeometric
+
+
+nchypergeom_fisher = nchypergeom_fisher_gen(
+    name='nchypergeom_fisher',
+    longname="A Fisher's noncentral hypergeometric")
+
+
+class nchypergeom_wallenius_gen(_nchypergeom_gen):
+    r"""A Wallenius' noncentral hypergeometric discrete random variable.
+
+    Wallenius' noncentral hypergeometric distribution models drawing objects of
+    two types from a bin. `M` is the total number of objects, `n` is the
+    number of Type I objects, and `odds` is the odds ratio: the odds of
+    selecting a Type I object rather than a Type II object when there is only
+    one object of each type.
+    The random variate represents the number of Type I objects drawn if we
+    draw a pre-determined `N` objects from a bin one by one.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    nchypergeom_fisher, hypergeom, nhypergeom
+
+    Notes
+    -----
+    Let mathematical symbols :math:`N`, :math:`n`, and :math:`M` correspond
+    with parameters `N`, `n`, and `M` (respectively) as defined above.
+
+    The probability mass function is defined as
+
+    .. math::
+
+        p(x; N, n, M) = \binom{n}{x} \binom{M - n}{N-x}
+        \int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{N-x} dt
+
+    for
+    :math:`x \in [x_l, x_u]`,
+    :math:`M \in {\mathbb N}`,
+    :math:`n \in [0, M]`,
+    :math:`N \in [0, M]`,
+    :math:`\omega > 0`,
+    where
+    :math:`x_l = \max(0, N - (M - n))`,
+    :math:`x_u = \min(N, n)`,
+
+    .. math::
+
+        D = \omega(n - x) + ((M - n)-(N-x)),
+
+    and the binomial coefficients are defined as
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    `nchypergeom_wallenius` uses the BiasedUrn package by Agner Fog with
+    permission for it to be distributed under SciPy's license.
+
+    The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
+    universally accepted; they are chosen for consistency with `hypergeom`.
+
+    Note that Wallenius' noncentral hypergeometric distribution is distinct
+    from Fisher's noncentral hypergeometric distribution, which models
+    take a handful of objects from the bin at once, finding out afterwards
+    that `N` objects were taken.
+    When the odds ratio is unity, however, both distributions reduce to the
+    ordinary hypergeometric distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Agner Fog, "Biased Urn Theory".
+           https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
+
+    .. [2] "Wallenius' noncentral hypergeometric distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Wallenius'_noncentral_hypergeometric_distribution
+
+    %(example)s
+
+    """
+
+    rvs_name = "rvs_wallenius"
+    dist = _PyWalleniusNCHypergeometric
+
+
+nchypergeom_wallenius = nchypergeom_wallenius_gen(
+    name='nchypergeom_wallenius',
+    longname="A Wallenius' noncentral hypergeometric")
 
 
 # Collect names of classes and objects in this module.
