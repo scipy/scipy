@@ -291,8 +291,8 @@ The module also provide the following helpers:
 - `scipy.stats.qmc.scale`: easily scale a set of points from (to) the unit
   interval to (from) a given range.
 
-_We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
-Software for Science program for supporting many of these improvements to
+*We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
+Software for Science program for supporting many of these improvements to*
 `scipy.stats`.
 
 Deprecated features
