@@ -483,7 +483,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     ...
 
     We pass in the parameter values a=1.5, b=1, c=3 and d=1 with the `args`
-    argument.
+    argument. (If you have only one argument, use args=(1.5,) or args=[1.5])
 
     >>> sol = solve_ivp(lotkavolterra, [0, 15], [10, 5], args=(1.5, 1, 3, 1),
     ...                 dense_output=True)
