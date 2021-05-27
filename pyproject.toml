@@ -9,10 +9,10 @@
 
 [build-system]
 requires = [
-    "wheel",
+    "wheel<0.37.0",
     "setuptools",
-    "Cython>=0.29.18",
-    "pybind11>=2.4.3",
+    "Cython>=0.29.18,<3.0",
+    "pybind11>=2.4.3,<2.7.0",
     "pythran>=0.9.11",
 
     # NumPy dependencies - to update these, sync from
