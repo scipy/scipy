@@ -55,7 +55,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 7
+MINOR = 8
 MICRO = 0
 ISRELEASED = False
 IS_RELEASE_BRANCH = False
@@ -93,6 +93,7 @@ def git_version():
         out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
                                 '--count'])
         COMMIT_COUNT = out.strip().decode('ascii')
+        COMMIT_COUNT = '0' if not COMMIT_COUNT else COMMIT_COUNT
     except OSError:
         GIT_REVISION = "Unknown"
         COMMIT_COUNT = "Unknown"

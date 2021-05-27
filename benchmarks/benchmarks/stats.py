@@ -40,6 +40,9 @@ class CorrelationFunctions(Benchmark):
     def time_barnard_exact(self, alternative):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
+    def time_boschloo_exact(self, alternative):
+        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+
 
 class ANOVAFunction(Benchmark):
     def setup(self):
@@ -372,6 +375,7 @@ class BenchMoment(Benchmark):
     def time_moment(self, order, size):
         stats.moment(self.x, order)
 
+
 class BenchSkewKurtosis(Benchmark):
     params = [
         [1, 2, 3, 8],
@@ -404,3 +408,29 @@ class BenchQMCDiscrepancy(Benchmark):
 
     def time_discrepancy(self, method):
         disc = stats.qmc.discrepancy(self.sample, method=method)
+
+
+class NumericalInverseHermite(Benchmark):
+
+    param_names = ['distribution']
+    params = [distcont]
+
+    def setup(self, *args):
+        self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
+
+    def time_fni(self, distcase):
+        distname, shapes = distcase
+        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
+
+        if distname in slow_dists or distname in fail_dists:
+            raise NotImplementedError("skipped")
+
+        dist = getattr(stats, distname)(*shapes)
+
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
+            sup.filter(RuntimeWarning, "divide by zero")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            stats.NumericalInverseHermite(dist)
