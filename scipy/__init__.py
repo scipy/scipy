@@ -56,7 +56,13 @@ Utility tools
  __numpy_version__ --- Numpy version string
 
 """
-__all__ = ['test']
+
+
+def __dir__():
+    return ['test']
+
+
+__all__ = __dir__()
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:

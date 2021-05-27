@@ -241,8 +241,8 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     >>> gaussian_filter1d([1.0, 2.0, 3.0, 4.0, 5.0], 4)
     array([ 2.91948343,  2.95023502,  3.        ,  3.04976498,  3.08051657])
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(280490)
-    >>> x = np.random.randn(101).cumsum()
+    >>> rng = np.random.default_rng()
+    >>> x = rng.standard_normal(101).cumsum()
     >>> y3 = gaussian_filter1d(x, 3)
     >>> y6 = gaussian_filter1d(x, 6)
     >>> plt.plot(x, 'k', label='original data')
@@ -251,6 +251,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     >>> plt.legend()
     >>> plt.grid()
     >>> plt.show()
+
     """
     sd = float(sigma)
     # make the radius of the filter equal to truncate standard deviations

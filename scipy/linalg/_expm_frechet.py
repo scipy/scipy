@@ -67,15 +67,17 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     Examples
     --------
     >>> import scipy.linalg
-    >>> A = np.random.randn(3, 3)
-    >>> E = np.random.randn(3, 3)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((3, 3))
+    >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
     >>> expm_A.shape, expm_frechet_AE.shape
     ((3, 3), (3, 3))
 
     >>> import scipy.linalg
-    >>> A = np.random.randn(3, 3)
-    >>> E = np.random.randn(3, 3)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((3, 3))
+    >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
     >>> M = np.zeros((6, 6))
     >>> M[:3, :3] = A; M[:3, 3:] = E; M[3:, 3:] = A

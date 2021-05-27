@@ -81,7 +81,6 @@ from io import BytesIO
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
@@ -311,7 +310,7 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = hdr.name.decode('latin1')
             if name in mdict:
                 warnings.warn('Duplicate variable name "%s" in stream'
                               ' - replacing previous with new\n'
@@ -359,7 +358,7 @@ class MatFile5Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = hdr.name.decode('latin1')
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -430,7 +429,7 @@ def varmats_from_mat(file_obj):
     while not rdr.end_of_stream():
         start_position = next_position
         hdr, next_position = rdr.read_var_header()
-        name = asstr(hdr.name)
+        name = hdr.name.decode('latin1')
         # Read raw variable string
         file_obj.seek(start_position)
         byte_count = next_position - start_position
@@ -882,7 +881,7 @@ class MatFile5Writer:
             if self.do_compression:
                 stream = BytesIO()
                 self._matrix_writer.file_stream = stream
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                self._matrix_writer.write_top(var, name.encode('latin1'), is_global)
                 out_str = zlib.compress(stream.getvalue())
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
@@ -890,4 +889,4 @@ class MatFile5Writer:
                 self.file_stream.write(tag.tobytes())
                 self.file_stream.write(out_str)
             else:  # not compressing
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                self._matrix_writer.write_top(var, name.encode('latin1'), is_global)

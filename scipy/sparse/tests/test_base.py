@@ -714,6 +714,7 @@ class _TestCommon:
         mats.append([[1],[0],[2]])
         mats.append([[0,1],[0,2],[0,3]])
         mats.append([[0,0,1],[0,0,2],[0,3,0]])
+        mats.append([[1,0],[0,0]])
 
         mats.append(kron(mats[0],[[1,2]]))
         mats.append(kron(mats[0],[[1],[2]]))
@@ -842,6 +843,7 @@ class _TestCommon:
     def test_setdiag(self):
         # simple test cases
         m = self.spmatrix(np.eye(3))
+        m2 = self.spmatrix((4, 4))
         values = [3, 2, 1]
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning,
@@ -861,6 +863,13 @@ class _TestCommon:
             assert_array_equal(m.A[0,2], 9)
             m.setdiag((9,), k=-2)
             assert_array_equal(m.A[2,0], 9)
+            # test short values on an empty matrix
+            m2.setdiag([1], k=2)
+            assert_array_equal(m2.A[0], [0, 0, 1, 0])
+            # test overwriting that same diagonal
+            m2.setdiag([1, 1], k=2)
+            assert_array_equal(m2.A[:2], [[0, 0, 1, 0],
+                                          [0, 0, 0, 1]])
 
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])

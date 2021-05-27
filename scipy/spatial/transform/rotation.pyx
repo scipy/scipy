@@ -291,7 +291,7 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
-cdef class Rotation(object):
+cdef class Rotation:
     """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
@@ -2331,7 +2331,7 @@ cdef class Rotation(object):
             return cls.from_matrix(C), rmsd
 
 
-class Slerp(object):
+class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
     The interpolation between consecutive rotations is performed as a rotation
