@@ -175,8 +175,9 @@ The two-sample version of the Cramer-von Mises test is implemented in
 The Alexander-Govern test is implemented in the new function
 `scipy.stats.alexandergovern`.
 
-The new function `scipy.stats.barnard_exact` performs Barnard's exact test for
-2x2 contingency tables.
+The new functions `scipy.stats.barnard_exact` and  `scipy.stats. boschloo_exact`
+respectively perform Barnard's exact test and Boschloo's exact test
+for 2x2 contingency tables.
 
 The new function `scipy.stats.page_trend_test` performs Page's test for ordered
 alternatives.
