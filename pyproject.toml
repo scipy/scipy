@@ -10,10 +10,10 @@
 [build-system]
 requires = [
     "wheel<0.37.0",
-    "setuptools",
+    "setuptools<58.0.0",
     "Cython>=0.29.18,<3.0",
     "pybind11>=2.4.3,<2.7.0",
-    "pythran>=0.9.11",
+    "pythran==0.9.11",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -22,25 +22,20 @@ requires = [
 
     # numpy 1.19 was the first minor release to provide aarch64 wheels, but
     # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.6' and platform_machine=='aarch64'",
     "numpy==1.19.2; python_version=='3.7' and platform_machine=='aarch64'",
+    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64'",
+    # aarch64 for py39 is covered by default requirement below
 
     # default numpy requirements
-    "numpy==1.16.5; python_version=='3.6' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.16.5; python_version=='3.7' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.17.3; python_version=='3.8' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and platform_python_implementation != 'PyPy'",
 
     # First PyPy versions for which there are numpy wheels
-    "numpy==1.19.0; python_version=='3.6' and platform_python_implementation=='PyPy'",
     "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
-
-    # For Python versions which aren't yet officially supported,
-    # we specify an unpinned NumPy which allows source distributions
-    # to be used and allows wheels to be used as soon as they
-    # become available.
-    "numpy; python_version>='3.10'",
-    "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
+    # Unpinned NumPy version in case PyPy catches up with supported Python versions
+    "numpy; python_version=='3.8' and platform_python_implementation=='PyPy'",
+    "numpy; python_version=='3.9' and platform_python_implementation=='PyPy'",
 ]
 
 [project]
@@ -53,9 +48,9 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.7"
+requires-python = ">=3.7,<3.10"
 dependencies = [
-    "numpy>=1.16.5",
+    "numpy>=1.16.5,<1.23.0",
 ]
 readme = "README.rst"
 classifiers = [
