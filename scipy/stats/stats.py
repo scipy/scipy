@@ -8183,7 +8183,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         quantile : float The quantile for which we want to compute the
         confidence interval. Must be strictly between 0 and 1. confidence :
         float The desired confidence level of the confidence interval. Must be
-        strictly between 0 and 1. type : {'one-sided', 'two-sided'}, optional
+        strictly between 0 and 1. 
+    type : {'one-sided', 'two-sided'}, optional
         Defines the type of confidence interval computed. Default is
         'one-sided'.
 
