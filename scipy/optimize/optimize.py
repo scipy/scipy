@@ -467,7 +467,8 @@ def _wrap_scalar_function(function, args):
         try:
             fx = np.asarray(fx).item()
         except (TypeError, ValueError) as e:
-            raise ValueError("Objective function must return a scalar") from e
+            raise ValueError("The user-provided objective function "
+                             "must return a scalar value.") from e
         return fx
 
     return ncalls, function_wrapper
