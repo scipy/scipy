@@ -44,9 +44,10 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
-Topic :: Software Development
+Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
+Operating System :: POSIX :: Linux
 Operating System :: POSIX
 Operating System :: Unix
 Operating System :: MacOS
@@ -54,7 +55,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 7
+MINOR = 8
 MICRO = 0
 ISRELEASED = False
 IS_RELEASE_BRANCH = False
@@ -79,11 +80,25 @@ def git_version():
 
     try:
         out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
-        GIT_REVISION = out.strip().decode('ascii')
+        GIT_REVISION = out.strip().decode('ascii')[:7]
+
+        # We need a version number that's regularly incrementing for newer commits,
+        # so the sort order in a wheelhouse of nightly builds is correct (see
+        # https://github.com/MacPython/scipy-wheels/issues/114). It should also be
+        # a reproducible version number, so don't rely on date/time but base it on
+        # commit history. This gives the commit count since the previous branch
+        # point from the current branch (assuming a full `git clone`, it may be
+        # less if `--depth` was used - commonly the default in CI):
+        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 1)
+        out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
+                                '--count'])
+        COMMIT_COUNT = out.strip().decode('ascii')
+        COMMIT_COUNT = '0' if not COMMIT_COUNT else COMMIT_COUNT
     except OSError:
         GIT_REVISION = "Unknown"
+        COMMIT_COUNT = "Unknown"
 
-    return GIT_REVISION
+    return GIT_REVISION, COMMIT_COUNT
 
 
 # BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
@@ -105,20 +120,22 @@ def get_version_info():
     # up the build under Python 3.
     FULLVERSION = VERSION
     if os.path.exists('.git'):
-        GIT_REVISION = git_version()
+        GIT_REVISION, COMMIT_COUNT = git_version()
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
         import runpy
         ns = runpy.run_path('scipy/version.py')
         GIT_REVISION = ns['git_revision']
+        COMMIT_COUNT = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
+        COMMIT_COUNT = "Unknown"
 
     if not ISRELEASED:
-        FULLVERSION += '.dev0+' + GIT_REVISION[:7]
+        FULLVERSION += '.dev0+' + COMMIT_COUNT + '.' + GIT_REVISION
 
-    return FULLVERSION, GIT_REVISION
+    return FULLVERSION, GIT_REVISION, COMMIT_COUNT
 
 
 def write_version_py(filename='scipy/version.py'):
@@ -128,18 +145,20 @@ short_version = '%(version)s'
 version = '%(version)s'
 full_version = '%(full_version)s'
 git_revision = '%(git_revision)s'
+commit_count = '%(commit_count)s'
 release = %(isrelease)s
 
 if not release:
     version = full_version
 """
-    FULLVERSION, GIT_REVISION = get_version_info()
+    FULLVERSION, GIT_REVISION, COMMIT_COUNT = get_version_info()
 
     a = open(filename, 'w')
     try:
         a.write(cnt % {'version': VERSION,
                        'full_version': FULLVERSION,
                        'git_revision': GIT_REVISION,
+                       'commit_count': COMMIT_COUNT,
                        'isrelease': str(ISRELEASED)})
     finally:
         a.close()
@@ -219,7 +238,15 @@ def get_build_ext_override():
         distutils_build_ext = distutils.command.build_ext.build_ext
         distutils.command.build_ext.build_ext = npy_build_ext
         try:
+            import pythran
             from pythran.dist import PythranBuildExt as BaseBuildExt
+            # Version check - a too old Pythran will give problems
+            if LooseVersion(pythran.__version__) < LooseVersion('0.9.11'):
+                raise RuntimeError("The installed `pythran` is too old, >= "
+                                   "0.9.11 is needed, {} detected. Please "
+                                   "upgrade Pythran, or use `export "
+                                   "SCIPY_USE_PYTHRAN=0`.".format(
+                                   pythran.__version__))
         except ImportError:
             BaseBuildExt = npy_build_ext
         finally:
@@ -256,7 +283,7 @@ def get_build_ext_override():
             hooks = getattr(ext, '_pre_build_hook', ())
             _run_pre_build_hooks(hooks, (self, ext))
 
-            super(build_ext, self).build_extension(ext)
+            super().build_extension(ext)
 
         def __is_using_gnu_linker(self, ext):
             if not sys.platform.startswith('linux'):
@@ -516,7 +543,7 @@ def configuration(parent_package='', top_path=None):
 
 def setup_package():
     # In maintenance branch, change np_maxversion to N+3 if numpy is at N
-    # Update here and in scipy/__init__.py
+    # Update here, in pyproject.toml, and in scipy/__init__.py
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
@@ -553,7 +580,6 @@ def setup_package():
         cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-        test_suite='nose.collector',
         install_requires=[req_np],
         python_requires=req_py,
     )

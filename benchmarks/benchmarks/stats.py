@@ -40,6 +40,42 @@ class CorrelationFunctions(Benchmark):
     def time_barnard_exact(self, alternative):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
+    def time_boschloo_exact(self, alternative):
+        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+
+
+class ANOVAFunction(Benchmark):
+    def setup(self):
+        rng = np.random.default_rng(12345678)
+        self.a = rng.random((6,3)) * 10
+        self.b = rng.random((6,3)) * 10
+        self.c = rng.random((6,3)) * 10
+    
+    def time_f_oneway(self):
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+
+
+class Kendalltau(Benchmark):
+    param_names = ['nan_policy','method','variant']
+    params = [
+        ['propagate', 'raise', 'omit'],
+        ['auto', 'asymptotic', 'exact'],
+        ['b', 'c']
+    ]
+
+    def setup(self, nan_policy, method, variant):
+        rng = np.random.default_rng(12345678)
+        a = np.arange(200)
+        rng.shuffle(a)
+        b = np.arange(200)
+        rng.shuffle(b)
+        self.a = a
+        self.b = b
+
+    def time_kendalltau(self, nan_policy, method, variant):
+        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, method=method, variant=variant)
+
 
 class InferentialStats(Benchmark):
     def setup(self):
@@ -339,6 +375,7 @@ class BenchMoment(Benchmark):
     def time_moment(self, order, size):
         stats.moment(self.x, order)
 
+
 class BenchSkewKurtosis(Benchmark):
     params = [
         [1, 2, 3, 8],
@@ -356,3 +393,44 @@ class BenchSkewKurtosis(Benchmark):
 
     def time_kurtosis(self, order, size, bias):
         stats.kurtosis(self.x, bias=bias)
+
+
+class BenchQMCDiscrepancy(Benchmark):
+    param_names = ['method']
+    params = [
+        ["CD", "WD", "MD", "L2-star",]
+    ]
+
+    def setup(self, method):
+        np.random.seed(1234)
+        sample = np.random.random_sample((1000, 10))
+        self.sample = sample
+
+    def time_discrepancy(self, method):
+        disc = stats.qmc.discrepancy(self.sample, method=method)
+
+
+class NumericalInverseHermite(Benchmark):
+
+    param_names = ['distribution']
+    params = [distcont]
+
+    def setup(self, *args):
+        self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
+
+    def time_fni(self, distcase):
+        distname, shapes = distcase
+        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
+
+        if distname in slow_dists or distname in fail_dists:
+            raise NotImplementedError("skipped")
+
+        dist = getattr(stats, distname)(*shapes)
+
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
+            sup.filter(RuntimeWarning, "divide by zero")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            stats.NumericalInverseHermite(dist)

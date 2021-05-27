@@ -390,6 +390,15 @@ class TestLeastSq:
     def test_concurrent_with_gradient(self):
         return sequence_parallel([self.test_basic_with_gradient] * 10)
 
+    def test_func_input_output_length_check(self):
+
+        def func(x):
+            return 2 * (x[0] - 3) ** 2 + 1
+
+        with assert_raises(TypeError,
+                           match='Improper input: func input vector length N='):
+            optimize.leastsq(func, x0=[0, 1])
+
 
 class TestCurveFit:
     def setup_method(self):
@@ -802,6 +811,15 @@ class TestCurveFit:
                       ydata=[5, 9, 13, 17],
                       p0=[1],
                       args=(1,))
+
+    def test_data_point_number_validation(self):
+        def func(x, a, b, c, d, e):
+            return a * np.exp(-b * x) + c + d + e
+
+        with assert_raises(TypeError, match="The number of func parameters="):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17])
 
 
 class TestFixedPoint:

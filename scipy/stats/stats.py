@@ -17,150 +17,7 @@
 # such damage.
 
 """
-A collection of basic statistical functions for Python.  The function
-names appear below.
-
- Some scalar functions defined here are also available in the scipy.special
- package where they work on arbitrary sized arrays.
-
-Disclaimers:  The function list is obviously incomplete and, worse, the
-functions are not optimized.  All functions have been tested (some more
-so than others), but they are far from bulletproof.  Thus, as with any
-free software, no warranty or guarantee is expressed or implied. :-)  A
-few extra functions that don't appear in the list below can be found by
-interested treasure-hunters.  These functions don't necessarily have
-both list and array versions but were deemed useful.
-
-Central Tendency
-----------------
-.. autosummary::
-   :toctree: generated/
-
-    gmean
-    hmean
-    mode
-
-Moments
--------
-.. autosummary::
-   :toctree: generated/
-
-    moment
-    variation
-    skew
-    kurtosis
-    normaltest
-
-Altered Versions
-----------------
-.. autosummary::
-   :toctree: generated/
-
-    tmean
-    tvar
-    tstd
-    tsem
-    describe
-
-Frequency Stats
----------------
-.. autosummary::
-   :toctree: generated/
-
-    itemfreq
-    scoreatpercentile
-    percentileofscore
-    cumfreq
-    relfreq
-
-Variability
------------
-.. autosummary::
-   :toctree: generated/
-
-    obrientransform
-    sem
-    zmap
-    zscore
-    gstd
-    iqr
-    median_abs_deviation
-
-Trimming Functions
-------------------
-.. autosummary::
-   :toctree: generated/
-
-   trimboth
-   trim1
-
-Correlation Functions
----------------------
-.. autosummary::
-   :toctree: generated/
-
-   pearsonr
-   fisher_exact
-   barnard_exact
-   spearmanr
-   pointbiserialr
-   kendalltau
-   weightedtau
-   somersd
-   linregress
-   theilslopes
-   multiscale_graphcorr
-
-Inferential Stats
------------------
-.. autosummary::
-   :toctree: generated/
-
-   ttest_1samp
-   ttest_ind
-   ttest_ind_from_stats
-   ttest_rel
-   chisquare
-   power_divergence
-   kstest
-   ks_1samp
-   ks_2samp
-   cramervonmises
-   cramervonmises_2samp
-   epps_singleton_2samp
-   mannwhitneyu
-   ranksums
-   wilcoxon
-   kruskal
-   friedmanchisquare
-   brunnermunzel
-   combine_pvalues
-   page_trend_test
-   confint_quantile
-
-Statistical Distances
----------------------
-.. autosummary::
-   :toctree: generated/
-
-   wasserstein_distance
-   energy_distance
-
-ANOVA Functions
----------------
-.. autosummary::
-   :toctree: generated/
-
-   f_oneway
-   alexandergovern
-
-Support Functions
------------------
-.. autosummary::
-   :toctree: generated/
-
-   rankdata
-   rvs_ratio_uniforms
+A collection of basic statistical functions for Python.
 
 References
 ----------
@@ -169,35 +26,31 @@ References
    York. 2000.
 
 """
-
 import warnings
 import math
 from math import gcd
 from collections import namedtuple
-from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
-from ._discrete_distns import binom
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from ._rvs_sampling import rvs_ratio_uniforms
-from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
-from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp, barnard_exact)
+from ._hypotests import _all_partitions
 
+
+# Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
@@ -210,20 +63,17 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact', 'barnard_exact',
+           'pearsonr', 'fisher_exact',
            'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
-           'chisquare', 'power_divergence', 'mannwhitneyu',
+           'chisquare', 'power_divergence',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'confint_quantile',
-           'rankdata', 'rvs_ratio_uniforms',
+           'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'cramervonmises_2samp', 'alexandergovern', 'page_trend_test',
-           'somersd']
+           'brunnermunzel', 'alexandergovern']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -246,8 +96,9 @@ def _contains_nan(a, nan_policy='propagate'):
             # issue a warning.
             contains_nan = False
             nan_policy = 'omit'
-            warnings.warn("The input array could not be properly checked for nan "
-                          "values. nan values will be ignored.", RuntimeWarning)
+            warnings.warn("The input array could not be properly "
+                          "checked for nan values. nan values "
+                          "will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -8375,7 +8226,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}, optional
+    method : {'fisher', 'pearson', 'tippett', 'stouffer',
+              'mudholkar_george'}, optional
+
         Name of method to use to combine p-values.
         The following methods are available (default is 'fisher'):
 
@@ -8454,7 +8307,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * normalizing_factor * approx_factor, nu)
+        pval = distributions.t.sf(statistic * normalizing_factor
+                                  * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
         pval = distributions.beta.sf(statistic, 1, len(pvalues))
@@ -8483,6 +8337,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #####################################
 #       STATISTICAL DISTANCES       #
 #####################################
+
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
@@ -8562,8 +8417,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
-    r"""
-    Compute the energy distance between two 1D distributions.
+    r"""Compute the energy distance between two 1D distributions.
 
     .. versionadded:: 1.0.0
 
@@ -8782,8 +8636,7 @@ RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
 
 
 def find_repeats(arr):
-    """
-    Find repeats and repeat counts.
+    """Find repeats and repeat counts.
 
     Parameters
     ----------
@@ -8818,8 +8671,7 @@ def find_repeats(arr):
 
 
 def _sum_of_squares(a, axis=0):
-    """
-    Square each element of the input array, and return the sum(s) of that.
+    """Square each element of the input array, and return the sum(s) of that.
 
     Parameters
     ----------
@@ -8845,8 +8697,7 @@ def _sum_of_squares(a, axis=0):
 
 
 def _square_of_sums(a, axis=0):
-    """
-    Sum elements of the input array, and return the square(s) of that sum.
+    """Sum elements of the input array, and return the square(s) of that sum.
 
     Parameters
     ----------
@@ -8875,8 +8726,7 @@ def _square_of_sums(a, axis=0):
 
 
 def rankdata(a, method='average', *, axis=None):
-    """
-    Assign ranks to data, dealing with ties appropriately.
+    """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
     array of ranks is returned. Separately reshape the rank array to the
@@ -8938,6 +8788,7 @@ def rankdata(a, method='average', *, axis=None):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
+
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))

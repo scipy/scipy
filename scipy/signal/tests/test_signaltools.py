@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
@@ -1094,6 +1095,63 @@ class TestMedFilt:
         out_object = np.array(self.OUT, dtype=object)
         assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
                            out_object)
+
+    @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
+    def test_medfilt2d_parallel(self, dtype):
+        in_typed = np.array(self.IN, dtype=dtype)
+        expected = np.array(self.OUT, dtype=dtype)
+
+        # This is used to simplify the indexing calculations.
+        assert in_typed.shape == expected.shape
+
+        # We'll do the calculation in four chunks. M1 and N1 are the dimensions
+        # of the first output chunk. We have to extend the input by half the
+        # kernel size to be able to calculate the full output chunk.
+        M1 = expected.shape[0] // 2
+        N1 = expected.shape[1] // 2
+        offM = self.KERNEL_SIZE[0] // 2 + 1
+        offN = self.KERNEL_SIZE[1] // 2 + 1
+
+        def apply(chunk):
+            # in = slice of in_typed to use.
+            # sel = slice of output to crop it to the correct region.
+            # out = slice of output array to store in.
+            M, N = chunk
+            if M == 0:
+                Min = slice(0, M1 + offM)
+                Msel = slice(0, -offM)
+                Mout = slice(0, M1)
+            else:
+                Min = slice(M1 - offM, None)
+                Msel = slice(offM, None)
+                Mout = slice(M1, None)
+            if N == 0:
+                Nin = slice(0, N1 + offN)
+                Nsel = slice(0, -offN)
+                Nout = slice(0, N1)
+            else:
+                Nin = slice(N1 - offN, None)
+                Nsel = slice(offN, None)
+                Nout = slice(N1, None)
+
+            # Do the calculation, but do not write to the output in the threads.
+            chunk_data = in_typed[Min, Nin]
+            med = signal.medfilt2d(chunk_data, self.KERNEL_SIZE)
+            return med[Msel, Nsel], Mout, Nout
+
+        # Give each chunk to a different thread.
+        output = np.zeros_like(expected)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            chunks = {(0, 0), (0, 1), (1, 0), (1, 1)}
+            futures = {pool.submit(apply, chunk) for chunk in chunks}
+
+            # Store each result in the output as it arrives.
+            for future in as_completed(futures):
+                data, Mslice, Nslice = future.result()
+                output[Mslice, Nslice] = data
+
+        assert_array_equal(output, expected)
+
 
 class TestWiener:
 

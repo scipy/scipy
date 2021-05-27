@@ -11,7 +11,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
 
     def __init__(self, x, fun, jac, hess, hessp, tol_rel_i=-2.0, tol_rel_b=-3.0,
                  disp=False):
-        super(TRLIBQuadraticSubproblem, self).__init__(x, fun, jac, hess, hessp)
+        super().__init__(x, fun, jac, hess, hessp)
         self.tol_rel_i = tol_rel_i
         self.tol_rel_b = tol_rel_b
         self.disp = disp

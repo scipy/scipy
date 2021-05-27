@@ -14,7 +14,7 @@ except ImportError:
     sympy = MissingModule('sympy')
 
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     mp = MissingModule('mpmath')
 
