@@ -1319,9 +1319,7 @@ class rv_generic:
             res2 *= loc**n
             place(result, i2, res2)
 
-        if result.ndim == 0:
-            return result.item()
-        return result
+        return result[()]
 
     def median(self, *args, **kwds):
         """Median of the distribution.
