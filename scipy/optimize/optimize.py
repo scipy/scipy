@@ -464,11 +464,12 @@ def _wrap_scalar_function(function, args):
         fx = function(np.copy(x), *(wrapper_args + args))
         # Ideally, we'd like to a have a true scalar returned from f(x). For
         # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
-        try:
-            fx = np.asarray(fx).item()
-        except (TypeError, ValueError) as e:
-            raise ValueError("The user-provided objective function "
-                             "must return a scalar value.") from e
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError("The user-provided objective function "
+                                 "must return a scalar value.") from e
         return fx
 
     return ncalls, function_wrapper
