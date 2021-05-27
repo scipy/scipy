@@ -513,13 +513,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         # argument to keep it in the scope of the lambda.
         try:
             _ = [*(args)]
-        except TypeError:
+        except TypeError as exp:
             suggestion_tuple = (
-                "Supplied 'args' cannot be unpacked. If you have "
-                "one argument, try coma in the end of tuple. Ex. args=(2,)"
+                "Supplied 'args' cannot be unpacked. If you have"
+                " one argument, try coma in the end of tuple. Ex. args=(2,)"
             )
-            raise TypeError(suggestion_tuple)
-             
+            raise TypeError(suggestion_tuple) from exp
+
         fun = lambda t, x, fun=fun: fun(t, x, *args)
         jac = options.get('jac')
         if callable(jac):
