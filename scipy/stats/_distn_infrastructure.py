@@ -1305,8 +1305,16 @@ class rv_generic:
             place(result, i1, res1)
 
         if i2.any():
-            if mu is not None:
-                mu, mu2, g1, g2 = argsreduce(loc != 0, mu, mu2, g1, g2)
+            mom = [mu, mu2, g1, g2]
+            arrs = [i for i in mom if i is not None]
+            idx = [i for i in range(4) if mom[i] is not None]
+            if any(idx):
+                arrs = argsreduce(loc != 0, *arrs)
+                j=0
+                for i in idx:
+                    mom[i] = arrs[j]
+                    j+=1
+            mu, mu2, g1, g2 = mom
             args = argsreduce(loc != 0, *shapes, loc, scale, val)
             shapes, loc, scale, val = args[:-3], args[-3], args[-2], args[-1]
 
@@ -1319,7 +1327,9 @@ class rv_generic:
             res2 *= loc**n
             place(result, i2, res2)
 
-        return result[()]
+        if result.ndim == 0:
+            return result.item()
+        return result
 
     def median(self, *args, **kwds):
         """Median of the distribution.
