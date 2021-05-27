@@ -40,6 +40,9 @@ Highlights of this release
 - A new class for radial basis function interpolation, `RBFInterpolator`, was
   added to address issues with the `Rbf` class.
 
+*We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
+Software for Science program for supporting many of the improvements to*
+`scipy.stats`.
 
 ************
 New features
@@ -50,10 +53,6 @@ New features
 
 An optional argument, ``seed``, has been added to ``kmeans`` and ``kmeans2`` to
 set the random generator and random state.
-
-`scipy.integrate` improvements
-==============================
-
 
 `scipy.interpolate` improvements
 ================================
@@ -68,9 +67,6 @@ sign errors that caused unexpected smoothing behavior, includes polynomial
 terms in the interpolant (which are necessary for some RBF choices), and
 supports interpolation using only the k-nearest neighbors for memory
 efficiency.
-
-`scipy.io` improvements
-=======================
 
 `scipy.linalg` improvements
 ===========================
@@ -303,10 +299,6 @@ The module also provide the following helpers:
 - `scipy.stats.qmc.scale`: easily scale a set of points from (to) the unit
   interval to (from) a given range.
 
-*We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
-Software for Science program for supporting many of these improvements to*
-`scipy.stats`.
-
 
 *******************
 Deprecated features
@@ -333,19 +325,6 @@ Deprecated features
 Backwards incompatible changes
 ******************************
 
-`scipy.interpolate` changes
-===========================
-
-`scipy.linalg` changes
-======================
-
-`scipy.signal` changes
-======================
-
-`scipy.stats` changes
-=====================
-
-
 *************
 Other changes
 *************
@@ -365,7 +344,7 @@ There are two changes to the default behavior of `scipy.stats.mannwhitenyu`:
 Support has been added for PEP 621 (project metadata in ``pyproject.toml``)
 
 We now support a Gitpod environment to reduce the barrier to entry for SciPy
-development.
+development; for more details see :ref:`quickstart-gitpod`.
 
 
 *******
