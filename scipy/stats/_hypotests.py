@@ -1391,9 +1391,9 @@ def tukeykramer(*args, sig_level=.05):
 
     >>> res = tukeykramer(group0, group1, group2)
     >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
-    >>>     # filter out self comparisons
-    >>>     if i != j:
-    >>>         print(f"({i} - {j}) {p:.03f}")
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         print(f"({i} - {j}) {p:.03f}")
     (0 - 1) 0.012
     (0 - 2) 0.980
     (1 - 0) 0.012
@@ -1416,10 +1416,10 @@ def tukeykramer(*args, sig_level=.05):
 
     >>> conf = res.confidence_interval()
     >>> for ((i, j), l) in np.ndenumerate(conf.low):
-    >>>     # filter out self comparisons
-    >>>     if i != j:
-    >>>         h = conf.high[i,j]
-    >>>         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         h = conf.high[i,j]
+    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
     (0 - 1) -8.249 -0.951
     (0 - 2) -3.909  3.389
     (1 - 0)  0.951  8.249
