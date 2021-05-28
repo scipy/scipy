@@ -37,8 +37,7 @@ def _get_rand(minv, maxv, only_int=False, exclude_int=False):
 
 
 def _get_rnd_tuple(*args):
-    """
-    Returns a tuple containing randomly generated values.
+    """Returns a tuple containing randomly generated values.
 
     The returned tuple will contain as many random values as there are
     arguments to this function. Each argument to _get_rnd_tuple should be a
@@ -199,35 +198,7 @@ def _build_test_cases():
     count = 0
     for (a, b, c), r, theta in itertools.product(abc_list, rho, phi):
         z = r * np.exp(1.0j * theta)
-
-        # For most values of a,b,c mpmath returns the x - 0j branch
-        # of hyp2f1 on the branch cut x=(1,inf) whereas scipy's
-        # hyp2f1 calculates the x + 0j branch. Thus, to generate the right
-        # comparison values on the branch cut, we evaluate mpmath.hyp2f1
-        # at x + 1e-15*j.
-        #
-        # The exception to this occurs when c-a=-m in which case both
-        # mpmath and scipy calculate the x + 0j branch on the branch
-        # cut. When this happens mpmath.hyp2f1 will be evaluated
-        # at the normal z point.
-        on_branch_cut = (np.real(z) > 1.0) and (np.abs(np.imag(z)) < 1.0e-15)
-
-        i_ca = np.round(c - a)
-        i_cb = np.round(c - b)
-
-        c_a_int = (np.abs(c - a - i_ca) < 1.0e-15) and (i_ca <= 0)
-        c_b_int = (np.abs(c - b - i_cb) < 1.0e-15) and (i_cb <= 0)
-
-        # Make sure imaginary part is *exactly* zero
-        if on_branch_cut:
-            z = np.real(z) + 0.0j
-
-        if on_branch_cut and not (c_a_int or c_b_int):
-            z_mpmath = np.real(z) + 1.0e-15j
-        else:
-            z_mpmath = z
-
-        right = complex(mpmath.hyp2f1(a, b, c, z_mpmath))
+        right = mpmath_hyp2f1_wrap(a, b, c, z)
         dataset[count, :] = a, b, c, z, right
         count += 1
 
@@ -239,6 +210,37 @@ def _build_test_cases():
     return dataset
 
 
+def mpmath_hyp2f1_wrap(a, b, c, z):
+    """ Return mpmath hyp2f1 calculated on same branch as scipy hyp2f1.
+
+    For most values of a,b,c mpmath returns the x - 0j branch of hyp2f1 on the
+    branch cut x=(1,inf) whereas scipy's hyp2f1 calculates the x + 0j branch.
+    Thus, to generate the right comparison values on the branch cut, we
+    evaluate mpmath.hyp2f1 at x + 1e-15*j.
+
+    The exception to this occurs when c-a=-m in which case both mpmath and
+    scipy calculate the x + 0j branch on the branch cut. When this happens
+    mpmath.hyp2f1 will be evaluated at the original z point.
+    """
+    on_branch_cut = (np.real(z) > 1.0) and (np.abs(np.imag(z)) < 1.0e-15)
+
+    i_ca = np.round(c - a)
+    i_cb = np.round(c - b)
+
+    c_a_int = (np.abs(c - a - i_ca) < 1.0e-15) and (i_ca <= 0)
+    c_b_int = (np.abs(c - b - i_cb) < 1.0e-15) and (i_cb <= 0)
+
+    # Make sure imaginary part is *exactly* zero
+    if on_branch_cut:
+        z = np.real(z) + 0.0j
+
+    if on_branch_cut and not (c_a_int or c_b_int):
+        z_mpmath = np.real(z) + 1.0e-15j
+    else:
+        z_mpmath = z
+    return complex(mpmath.hyp2f1(a, b, c, z_mpmath))
+
+
 def _hyp2f1_wrap(a, b, c, z):
     a = np.real(a)
     b = np.real(b)
@@ -246,12 +248,9 @@ def _hyp2f1_wrap(a, b, c, z):
     return hyp2f1(a, b, c, z)
 
 
-##########################################
-#  Testing hyp2f1 throughout the complex plane
-##########################################
 @check_version(mpmath, "1.0.0")
 def test_hyp2f1():
-
+    """Testing hyp2f1 throughout the complex plane."""
     # Fix the seed number
     np.random.seed(1108257)
 
