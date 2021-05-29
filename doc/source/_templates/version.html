@@ -12,6 +12,10 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
         {# orange for dev #E69F00 #}
         <img src="https://img.shields.io/badge/release-{{ version|replace("+", "%2B") }}-E69F00?style=for-the-badge"
          style="margin-left: 1em; width: 60%;">
+    {% elif versionwarning %}
+        {# red for old #980F0F #}
+        <img src="https://img.shields.io/badge/release-{{ version|replace("+", "%2B") }}-980F0F?style=for-the-badge"
+         style="margin-left: 1em; width: 60%;">
     {% else %}
         {# green for stable #009E73 #}
         <img src="https://img.shields.io/badge/release-{{ version }}-009E73?style=for-the-badge"
