@@ -1,3 +1,4 @@
+import os
 from os.path import join
 from platform import system
 
@@ -82,6 +83,15 @@ def configuration(parent_package='', top_path=None):
 
     # Type stubs
     config.add_data_files('*.pyi')
+
+    # add _cdf_distance_1d module
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.stats._cdf_distance_1d',
+            sources=["scipy/stats/_cdf_distance_1d.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
 
     return config
 
