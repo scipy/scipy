@@ -2,6 +2,8 @@ import numpy as np
 
 #pythran export _cdf_distance_1d(int, float[:], float[:])
 #pythran export _cdf_distance_1d(int, float[:], float[:], None, None)
+#pythran export _cdf_distance_1d(int, float[:], float[:], None, float[:])
+#pythran export _cdf_distance_1d(int, float[:], float[:], float[:], None)
 #pythran export _cdf_distance_1d(int, float[:], float[:], float[:], float[:])
 def _cdf_distance_1d(p, u_values, v_values, u_weights=None, v_weights=None):
     r"""
