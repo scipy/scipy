@@ -8266,7 +8266,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     --------
     >>> from scipy.stats import confint_quantile
     >>> x = [2, 8, 3, 6, 4, 1, 5, 9, 7]
-    >>> confint_quantile(x, 0.5, 0.95) (2, 8)
+    >>> confint_quantile(x, 0.5, 0.95)
+    (2, 8)
 
     To compute a two-sided interval instead, use the `type` parameter.
 
