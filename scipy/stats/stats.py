@@ -8270,7 +8270,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     To compute a two-sided interval instead, use the `type` parameter.
 
-    >>> confint_quantile(x, 0.5, 0.99, type='two-sided') (1, 9)
+    >>> confint_quantile(x, 0.5, 0.99, type='two-sided')
+    (1, 9)
 
     You can also pass the number of samples as argument (instead of the samples)
     themselves. The returned values are then the indexes of the upper and lower
