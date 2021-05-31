@@ -8200,10 +8200,10 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     ----------
     x : array_like or int Array of samples, should be one-dimensional. If
         integer, taken as the number of samples available (strictly positive)
-        quantile : float The quantile for which we want to compute the
-        confidence interval. Must be strictly between 0 and 1. confidence :
-        float The desired confidence level of the confidence interval. Must be
-        strictly between 0 and 1.
+    quantile : float The quantile for which we want to compute the confidence 
+        interval. Must be strictly between 0 and 1. 
+    confidence : float The desired confidence level of the confidence interval. 
+        Must be strictly between 0 and 1.
     type : {'one-sided', 'two-sided'}, optional
         Defines the type of confidence interval computed. Default is
         'one-sided'.
@@ -8280,10 +8280,13 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     first example.
 
     >>> N = len(x)
-    >>> lb, ub = confint_quantile(N, 0.75, 0.90)
-    >>> # Since we pass an interger to the function, we get the CI indexes
-    >>> print(x[lb], x[ub])
-    (2, 8)
+    ... lb, ub = confint_quantile(N, 0.5, 0.95)
+    ... # Since we pass an interger to the function, we get the CI indexes
+    ... print('Indexes:  ',lb, ub)
+    ... # Don't forgot to sort your data if working with indexes!
+    ... print('CI bounds:',sorted(x)[lb], sorted(x)[ub])
+    Indexes:   1 7
+    CI bounds: 2 8
 
     Generally, the more samples, the narrower the confidence intervals.
 
