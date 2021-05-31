@@ -8280,11 +8280,11 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     first example.
 
     >>> N = len(x)
-    ... lb, ub = confint_quantile(N, 0.5, 0.95)
-    ... # Since we pass an interger to the function, we get the CI indexes
-    ... print('Indexes:  ',lb, ub)
-    ... # Don't forgot to sort your data if working with indexes!
-    ... print('CI bounds:',sorted(x)[lb], sorted(x)[ub])
+    >>> lb, ub = confint_quantile(N, 0.5, 0.95)
+    >>> # Since we pass an interger to the function, we get the CI indexes
+    >>> print('Indexes:  ',lb, ub)
+    >>> # Don't forgot to sort your data if working with indexes!
+    >>> print('CI bounds:',sorted(x)[lb], sorted(x)[ub])
     Indexes:   1 7
     CI bounds: 2 8
 
