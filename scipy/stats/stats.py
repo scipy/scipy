@@ -8282,7 +8282,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     >>> N = len(x)
     >>> lb, ub = confint_quantile(N, 0.75, 0.90)
     >>> # Since we pass an interger to the function, we get the CI indexes
-    >>> print(x[lb], x[ub]) (2, 8)
+    >>> print(x[lb], x[ub])
+    (2, 8)
 
     Generally, the more samples, the narrower the confidence intervals.
 
