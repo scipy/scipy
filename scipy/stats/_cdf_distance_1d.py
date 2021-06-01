@@ -61,8 +61,8 @@ def _cdf_distance_1d(p, u_values, v_values, u_weights=None, v_weights=None):
 
     # Get the respective positions of the values of u and v among the values of
     # both distributions.
-    u_cdf_indices = np.searchsorted(u_values[u_sorter],all_values[:-1],'right')
-    v_cdf_indices = np.searchsorted(v_values[v_sorter],all_values[:-1],'right')
+    u_cdf_indices = np.searchsorted(u_values[u_sorter], all_values[:-1], 'right')
+    v_cdf_indices = np.searchsorted(v_values[v_sorter], all_values[:-1], 'right')
 
     # Calculate the CDFs of u and v using their weights, if specified.
     if u_weights is None:
