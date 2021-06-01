@@ -147,6 +147,7 @@ scipy/integrate/vodemodule.c
 scipy/integrate/_dop-f2pywrappers.f
 scipy/integrate/lsoda-f2pywrappers.f
 scipy/integrate/vode-f2pywrappers.f
+scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c

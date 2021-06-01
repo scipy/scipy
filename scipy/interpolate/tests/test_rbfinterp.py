@@ -200,7 +200,7 @@ class _TestRBFInterpolator:
 
         y = _1d_test_function(x)
         ytrue = _1d_test_function(xitp)
-        yitp = self.build(x, y, epsilon=0.6, kernel=kernel)(xitp)
+        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
 
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
