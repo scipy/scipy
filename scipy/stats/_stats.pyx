@@ -7,12 +7,6 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
-try:
-    from numpy.random cimport bitgen_t
-    from numpy.random import PCG64
-except ImportError:
-    pass
-
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
@@ -760,82 +754,3 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
                 estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _rvs_argus_rejection_beta(double chi, Py_ssize_t n, rand_state):
-    cdef Py_ssize_t i
-    cdef bitgen_t *rng
-    cdef const char *capsule_name = "BitGenerator"
-    cdef double u, v, z, d
-    cdef double[::1] random_values
-
-    if chi < 0:
-        raise ValueError('chi must be >= 0')
-
-    random_values = np.empty(n, dtype='float64')
-    d = -0.5 * chi * chi
-
-    x = rand_state.bit_generator
-    capsule = x.capsule
-    if not PyCapsule_IsValid(capsule, capsule_name):
-        raise ValueError("Invalid pointer to anon_func_state")
-    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-
-    with x.lock, nogil:
-        for i in range(n):
-            while (1):
-                u = rng.next_double(rng.state)
-                v = rng.next_double(rng.state)
-                z = v**(2/3)
-                if math.log(u) <= d * z:
-                    break
-            random_values[i] = math.sqrt(1 - z)
-
-    return np.asarray(random_values)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-def _rvs_argus_rou_gamma(double chi, Py_ssize_t n, rand_state):
-    cdef Py_ssize_t i
-    cdef bitgen_t *rng
-    cdef const char *capsule_name = "BitGenerator"
-    cdef double u, v, vmax, umax, z, chi2, m
-    cdef double[::1] random_values
-
-    if chi <= 0:
-        raise ValueError('chi must be > 0')
-
-    random_values = np.empty(n, dtype='float64')
-    chi2 = chi * chi
-    if chi <= 1:
-        m = chi2 / 2
-    else:
-        m = 0.5
-    if chi2 >= 5:
-        vmax = 2.5**(1.25) * math.exp(-1.25)
-    else:
-        vmax = chi**2.5 * math.exp(-0.25 * chi2) / 2**1.25
-    umax = m**(0.25) * math.exp(-m / 2)
-
-    x = rand_state.bit_generator
-    capsule = x.capsule
-    if not PyCapsule_IsValid(capsule, capsule_name):
-        raise ValueError("Invalid pointer to anon_func_state")
-    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-
-    with x.lock, nogil:
-        for i in range(n):
-            while (1):
-                u = rng.next_double(rng.state) * umax
-                v = rng.next_double(rng.state) * vmax
-                z = v / u
-                if z < chi2 / 2:
-                    if u * u <= math.sqrt(z) * math.exp(-z):
-                        break
-            random_values[i] = math.sqrt(1 - 2 * z / chi2)
-
-    return np.asarray(random_values)

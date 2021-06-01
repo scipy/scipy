@@ -9073,11 +9073,6 @@ class argus_gen(rv_continuous):
 
     %(after_notes)s
 
-    To sample random variates of the distribution, it is recommended to use a
-    ``numpy.random.Generator`` for the keyword argument ``random_state`` of
-    the methods ``rvs``: in that case, the generation of the random variates
-    uses Cython code for :math:`\chi < 5`, leading to better performance.
-
     References
     ----------
     .. [1] "ARGUS distribution",
@@ -9128,8 +9123,6 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None, random_state=None):
-        # If random_state is a numpy.random.RandomState, a pure Python
-        # implementation is used.
         # if chi <= 1.825:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
@@ -9155,62 +9148,45 @@ class argus_gen(rv_continuous):
         # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
         # conditioned on [0, chi**2 / 2]).
         #
-        # If random_state is a numpy.random.Generator, a Cython
-        # implementation is used. It relies on case 1 for chi < 1.15.
-        # For 1.15 <= chi < 5, the ratio of uniforms method is used to
-        # generate Gamma(3/2) rvs conditioned on [0, chi**2 / 2]. These rvs
-        # are transformed back to the ARGUS distribution.
-        # For chi > 5, sample again directly from the Gamma(3/2) distribution
-        #
         # The points to switch between the different methods are determined
         # by a comparison of the runtime of the different methods. However,
         # the runtime is platform-dependent. The implemented values should
-        # ensure a good overall performance and are supported by an anlysis
+        # ensure a good overall performance and are supported by an analysis
         # of the rejection constants of different methods.
 
         size1d = tuple(np.atleast_1d(numsamples))
         N = int(np.prod(size1d))
-
-        if isinstance(random_state, np.random.RandomState) and chi <= 1.825:
-            x = np.zeros(N)
-            simulated = 0
-            chi2 = chi * chi
-            if chi < 1.15:
-                d = -chi2 / 2
-                while simulated < N:
-                    k = N - simulated
-                    u = random_state.uniform(size=k)
-                    v = random_state.uniform(size=k)
-                    z = v**(2/3)
-                    accept = (np.log(u) <= d * z)
-                    num_accept = np.sum(accept)
-                    if num_accept > 0:
-                        rvs = np.sqrt(1 - z[accept])
-                        x[simulated:(simulated + num_accept)] = rvs
-                        simulated += num_accept
-            elif chi <= 1.825:
-                echi = np.exp(-chi2 / 2)
-                while simulated < N:
-                    k = N - simulated
-                    u = random_state.uniform(size=k)
-                    v = random_state.uniform(size=k)
-                    z = 2 * np.log(echi * (1 - v) + v) / chi2
-                    accept = (u**2 + z <= 0)
-                    num_accept = np.sum(accept)
-                    if num_accept > 0:
-                        rvs = np.sqrt(1 + z[accept])
-                        x[simulated:(simulated + num_accept)] = rvs
-                        simulated += num_accept
-        elif isinstance(random_state, np.random.Generator) and chi < 5:
-            if chi < 1.15:
-                x = _stats._rvs_argus_rejection_beta(chi, N, random_state)
-            elif chi < 5:
-                x = _stats._rvs_argus_rou_gamma(chi, N, random_state)
+        x = np.zeros(N)
+        simulated = 0
+        chi2 = chi * chi
+        if chi <= 1.15:
+            d = -chi2 / 2
+            while simulated < N:
+                k = N - simulated
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
+                z = v**(2/3)
+                accept = (np.log(u) <= d * z)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    rvs = np.sqrt(1 - z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
+        elif chi <= 1.825:
+            echi = np.exp(-chi2 / 2)
+            while simulated < N:
+                k = N - simulated
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
+                z = 2 * np.log(echi * (1 - v) + v) / chi2
+                accept = (u**2 + z <= 0)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    rvs = np.sqrt(1 + z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
         else:
             # conditional Gamma
-            x = np.zeros(N)
-            simulated = 0
-            chi2 = chi * chi
             while simulated < N:
                 k = N - simulated
                 g = random_state.standard_gamma(1.5, size=k)

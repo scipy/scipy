@@ -35,11 +35,6 @@ from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
 from itertools import product
 
-try:
-    from numpy.random import default_rng
-except ImportError:
-    pass
-
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
@@ -5792,19 +5787,6 @@ class TestArgus:
         ])
     def test_rvs_randomstate(self, chi, random_state):
         x = stats.argus.rvs(chi, size=500, random_state=random_state)
-        _, p = stats.kstest(x, "argus", (chi, ))
-        assert_(p > 0.05)
-
-    @pytest.mark.parametrize('chi, generator', [
-            [0.1, default_rng(325)],   # chi < 1.15: rejection case 1
-            [2.5, default_rng(251)],   # 1.15 <= chi < 5: RoU Gamma
-            [5.5, default_rng(258)]    # chi > 5: transform conditional Gamma
-        ])
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.18.0'),
-                        reason='Generator Cython API not available for numpy,'
-                               ' < 1.18.0')
-    def test_rvs_generator(self, chi, generator):
-        x = stats.argus.rvs(chi, size=500, random_state=generator)
         _, p = stats.kstest(x, "argus", (chi, ))
         assert_(p > 0.05)
 
