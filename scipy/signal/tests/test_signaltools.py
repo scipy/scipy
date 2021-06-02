@@ -2373,10 +2373,10 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     zo1 = np.swapaxes(zo1, -1, axis)
     zo2 = np.swapaxes(zo2, -1, axis)
 
-    assert_allclose(y, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+    assert_allclose(y, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(yg, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg1, zo1, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
 def test_choose_conv_method():
