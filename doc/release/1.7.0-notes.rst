@@ -629,6 +629,7 @@ Issues closed for 1.7.0
 * `#14048 <https://github.com/scipy/scipy/issues/14048>`__: DOC: missing git submodule information
 * `#14055 <https://github.com/scipy/scipy/issues/14055>`__: linalg.solve: Unclear error when using assume_a='her' with real...
 * `#14093 <https://github.com/scipy/scipy/issues/14093>`__: DOC: Inconsistency in the definition of default values in the...
+* `#14158 <https://github.com/scipy/scipy/issues/14158>`__: TST, BUG: test_rbfinterp.py -- test_interpolation_misfit_1d fails...
 
 
 ***********************
@@ -1022,3 +1023,5 @@ Pull requests for 1.7.0
 * `#14139 <https://github.com/scipy/scipy/pull/14139>`__: FIX/DOC: lsqr doctests print failure
 * `#14145 <https://github.com/scipy/scipy/pull/14145>`__: MAINT: 1.7.x version pins ("backport")
 * `#14146 <https://github.com/scipy/scipy/pull/14146>`__: MAINT: commit count if no tag
+* `#14164 <https://github.com/scipy/scipy/pull/14164>`__: TST, BUG: fix rbf matrix value
+* `#14166 <https://github.com/scipy/scipy/pull/14166>`__: CI, MAINT: restrictions on pre-release CI
