@@ -1,4 +1,64 @@
+"""This script tests scipy's implementation of hyp2f1 against mpmath's
+
+Produces a tab separated values file with 11 columns. The first four contain
+the parameters a, b, c and the argument z. The next two contain |z| and a
+region code for which region of the complex plane belongs to. The regions
+are
+
+    1) |z| < 0.9 and real(z) >= 0
+    2) |z| < 1 and real(z) < 0
+    3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
+    4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9:
+    5) |z| > 1
+
+Parameters a, b, c are taken from a 10 * 10 * 10 grid with values near
+
+    -16, -8, -4, -2, -1, 1, 2, 4, 8, 16
+
+with random perturbations applied. The following cases are handled.
+
+    1) A, B, C, B - A, C - A, C - B, C - A - B all non-integral.
+    2) B - A integral
+    3) C - A integral
+    4) C - B integral
+    5) C - A - B integral
+    6) A integral
+    7) B integral
+    8) C integral
+
+The seventh column of the output file is an integer between 1 and 8 specifying
+the parameter group above.
+
+The argument z is taken from a 20 * 20 grid in the box
+    -2 <= real(z) <= 2, -2 <= imag(z) <= 2.
+
+The final four columns have the expected value of hyp2f1 for the given
+parameters and argument calculated with mpmath, the observed value calculated
+with scipy's hyp2f1, the relative error, and the absolute error.
+
+As special cases of hyp2f1 are moved from the original Fortran implementation
+into Cython, this script can be used to ensure that no regressions occur, and
+to point out where improvements are needed in the implementation.
+
+The generated file is roughly 700MB in size. The script has two arguments;
+a positional argument for specifying the path to the location where the output
+file is to be placed, and an optional argument specifying the number of
+processes to use for parallel execution.
+
+Takes around 40 minutes using an Intel(R) Core(TM) i5-8250U CPU with n_jobs
+set to 8 (utilizing all threads).
+"""
+
+
+import os
+import csv
+import argparse
 import numpy as np
+from itertools import product
+from multiprocessing import Pool
+
+
+from scipy.special import hyp2f1
 
 
 try:
@@ -32,191 +92,211 @@ def mp_hyp2f1(a, b, c, z):
     return complex(mpmath.hyp2f1(a, b, c, z_mpmath))
 
 
-
-
-def _get_rand(minv, maxv, only_int=False, exclude_int=False):
-    """Gets a random value in the range (minv, maxv).
-    When only_int=True, this function only returns integers in (minv, maxv).
-    When exclude_int=True, this function only returns *non*-integers in
-    (minv, maxv).
-    """
-    if only_int:
-        randv = np.random.randint(minv, maxv + 1)
+def get_region(z):
+    """Assign numbers for regions where hyp2f1 is calculated differently."""
+    if abs(z) < 0.9 and z.real >= 0:
+        return 1
+    elif abs(z) < 1 and z.real < 0:
+        return 2
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 0.9:
+        return 3
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 0.9:
+        return 4
     else:
-        keep_going = True
-        count = 0
-        while keep_going and count < 100:
-            randv = minv + (maxv - minv) * np.random.rand()
-            # Get a new randv if we are excluding integers and this value is
-            # too close to an int
-            keep_going = (
-                exclude_int and
-                np.abs(np.round(randv) - randv) < 1.0e-2
-            )
-            count += 1
-
-    return randv
+        return 5
 
 
-def _get_rnd_tuple(*args):
-    """Returns a tuple containing randomly generated values.
+def get_result(a, b, c, z, group):
+    """Get results for given parameter and value combination."""
+    expected, observed = mp_hyp2f1(a, b, c, z), hyp2f1(a, b, c, z)
+    if expected != 0:
+        relative_error = abs(expected - observed) / abs(expected)
+    else:
+        relative_error = float('nan')
+    return (
+        a,
+        b,
+        c,
+        z,
+        abs(z),
+        get_region(z),
+        group,
+        expected,
+        observed,
+        relative_error,
+        abs(expected - observed),
+    )
 
-    The returned tuple will contain as many random values as there are
-    arguments to this function. Each argument to _get_rnd_tuple should be a
-    3-tuple of the form:
 
-    (flag, minv, maxv)
+def get_results(params, Z, n_jobs=1):
+    """Batch compute results for multiple parameter and argument values.
 
-    flag: i -> this value will be a random integer
-            f -> this value will be a floating point number BUT not an integer
-            a -> this value will be any random number between minv, maxv
-                    (integers included)
+    Parameters
+    ----------
+    params : iterable
+        iterable of tuples of floats (a, b, c) specificying parameter values
+        a, b, c for hyp2f1
+    Z : iterable of complex
+        Arguments at which to evaluate hyp2f1
+    n_jobs : Optional[int]
+        Number of jobs for parallel execution.
+
+    Returns
+    -------
+    list
+        List of tuples of results values. See return value in source code
+        of `get_result`.
     """
-    curr_params = []
-
-    for p in args:
-        flag = p[0]
-        flag = flag.capitalize()
-
-        minv = p[1]
-        maxv = p[2]
-
-        # I -> pick a random integer
-        if flag == "I":
-            randv = _get_rand(minv, maxv, only_int=True)
-        # F -> pick a floating point number (exclude integers)
-        elif flag == "F":
-            randv = _get_rand(minv, maxv, exclude_int=True)
-        else:
-            randv = _get_rand(minv, maxv)
-
-        curr_params.append(randv)
-
-    return tuple(curr_params)
-
-
-def _add_params(plist, *args):
-    rnd_tuple = _get_rnd_tuple(*args)
-    plist.append(rnd_tuple)
-    return
-
-
-# Build a list of a, b, c values that covers each code branch
-# in specfun.f
-def _build_abc_list():
-    small = 1.0e-2
-    plist = []
-
-    # +a, +b, +c test case
-    _add_params(
-        plist, ("f", small, 3.0), ("f", small, 3.0), ("f", small, 3.0)
+    input_ = (
+        (a, b, c, z, group) for (a, b, c, group), z in product(params, Z)
     )
 
-    # -a, +b, +c test case
-    _add_params(
-        plist, ("f", -3.0, -small), ("f", small, 3.0), ("f", small, 3.0)
+    with Pool(n_jobs) as pool:
+        rows = pool.starmap(get_result, input_)
+    return rows
+
+
+def main(outpath, n_jobs=1):
+    outpath = os.path.realpath(os.path.expanduser(outpath))
+
+    random_state = np.random.RandomState(1234)
+    root_params = np.array(
+        [-16, -8, -4, -2, -1, 1, 2, 4, 8, 16]
     )
 
-    # -a, -b, +c test case
-    _add_params(
-        plist, ("f", -3.0, -small), ("f", -3.0, -small), ("f", small, 3.0)
+    perturbations = 0.1 * random_state.random_sample(
+        size=(3, len(root_params))
     )
 
-    # -a, -b, -c test case
-    _add_params(
-        plist, ("f", -3.0, -small), ("f", -3.0, -small), ("f", -3.0, -small)
+    params = []
+    # No integer differences
+    A = root_params + perturbations[0, :]
+    B = root_params + perturbations[1, :]
+    C = root_params + perturbations[2, :]
+    params.extend(
+        sorted(
+            ((a, b, c, 1) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
     )
 
-    # Re(c-a-b)>0 test case
-    _add_params(
-        plist, ("f", small, 2.0), ("f", small, 2.0), ("f", 4.0 + small, 6.0)
+    # B - A an integer
+    A = root_params + 0.5
+    B = root_params + 0.5
+    C = root_params + perturbations[1, :]
+    params.extend(
+        sorted(
+            ((a, b, c, 2) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
     )
 
-    # Re(c-a-b)<-1 test case
-    _add_params(
-        plist, ("f", 2.0, 4.0), ("f", 2.0, 4.0), ("f", small, 3.0 - small)
+    # C - A an integer
+    A = root_params + 0.5
+    B = root_params + perturbations[1, :]
+    C = root_params + 0.5
+    params.extend(
+        sorted(
+            ((a, b, c, 3) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
     )
 
-    # c-a-b=m>0
-    a, b, m = _get_rnd_tuple(("f", small, 2.0), ("f", small, 2.0), ("i", 1, 6))
-    c = a + b + m
-    plist.append((a, b, c))
-
-    # c-a-b=0
-    a, b = _get_rnd_tuple(("f", small, 2.0), ("f", small, 2.0))
-    c = a + b
-    plist.append((a, b, c))
-
-    # c-a-b=-m<0
-    a, b, m = _get_rnd_tuple(("f", 3.0, 5.0), ("f", 3.0, 5.0), ("i", 1, 6))
-    c = a + b - m
-    plist.append((a, b, c))
-
-    # b-a=m>0
-    a, m, c = _get_rnd_tuple(("f", small, 2.0), ("i", 1, 5), ("f", small, 2.0))
-    b = a + m
-    plist.append((a, b, c))
-
-    # b-a=0
-    a, c = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0))
-    b = a
-    plist.append((a, b, c))
-
-    # b-a=-m<0
-    a, m, c = _get_rnd_tuple(("f", 4.0, 6.0), ("i", 1, 4), ("f", small, 2.0))
-    b = a - m
-    plist.append((a, b, c))
-
-    # c-a=m>0
-    a, b, m = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0), ("i", 1, 5))
-    c = a + m
-    plist.append((a, b, c))
-
-    # c-a=0
-    a, b = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0))
-    c = a
-    plist.append((a, b, c))
-
-    # c-a=-m<0
-    a, b, m = _get_rnd_tuple(("f", 4.0, 6.0), ("f", small, 3.0), ("i", 1, 4))
-    c = a - m
-    plist.append((a, b, c))
-
-    # a=-m
-    m, b, c = _get_rnd_tuple(
-        ("i", 1, 10), ("f", small, 3.0), ("f", small, 3.0)
+    # C - B an integer
+    A = root_params + perturbations[0, :]
+    B = root_params + 0.5
+    C = root_params + 0.5
+    params.extend(
+        sorted(
+            ((a, b, c, 4) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
     )
-    a = -m
-    plist.append((a, b, c))
 
-    # c=-m, a=-n, |m|>|n|
+    # C - A - B an integer
+    A = root_params + 0.25
+    B = root_params + 0.25
+    C = root_params + 0.5
+    params.extend(
+        sorted(
+            ((a, b, c, 5) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
+    )
 
-    # b, m, n = _get_rnd_tuple(('f',small,3.0),('i',5,8),('i',2,4))
-    # a = -n
-    # c = -m
-    # plist.append((a,b,c))
+    # A an integer
+    A = root_params
+    B = root_params + perturbations[0, :]
+    C = root_params + perturbations[1, :]
+    params.extend(
+        sorted(
+            ((a, b, c, 6) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
+    )
 
-    return plist
+    # B an integer
+    A = root_params + perturbations[0, :]
+    B = root_params
+    C = root_params + perturbations[1, :]
+    params.extend(
+        sorted(
+            ((a, b, c, 7) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
+    )
+
+    # C an integer
+    A = root_params + perturbations[0, :]
+    B = root_params + perturbations[1, :]
+    C = root_params
+    params.extend(
+        sorted(
+            ((a, b, c, 8) for a, b, c in product(A, B, C)),
+            key=lambda x: max(abs(x[0]), abs(x[1])),
+        )
+    )
+
+    X, Y = np.meshgrid(np.linspace(-2, 2, 20), np.linspace(-2, 2, 20))
+    Z = X + Y * 1j
+    Z = Z.flatten()
+
+    rows = get_results(params, Z, n_jobs=n_jobs)
+
+    with open(outpath, "w", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(
+            [
+                "a",
+                "b",
+                "c",
+                "z",
+                "|z|",
+                "region",
+                "parameter_group",
+                "expected",
+                "observed",
+                "relative_error",
+                "absolute_error",
+            ]
+        )
+        for row in rows:
+            writer.writerow(row)
 
 
-# Build the test case data that FuncData needs
-def _build_test_cases(rho, phi):
-    abc_list = _build_abc_list()
-
-    # The total number of test cases
-    N = 2 * len(abc_list)
-    dataset = np.zeros((N, 5), dtype=complex)
-
-    count = 0
-    for a, b, c in abc_list:
-        z = rho * np.exp(1.0j * phi)
-        right = mpmath_hyp2f1_wrap(a, b, c, z)
-        dataset[count, :] = a, b, c, z, right
-        count += 1
-
-        # Make sure that scipy's hyp2f1 returns same result
-        # when we swap a, b
-        dataset[count, :] = b, a, c, z, right
-        count += 1
-
-    return dataset
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Test hyp2f1 against mpmath on a grid in the complex plane"
+        " over a grid of parameter values."
+    )
+    parser.add_argument(
+        "outpath", type=str, help="Path to output tsv file."
+    )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="Number of jobs for multiprocessing.",
+    )
+    args = parser.parse_args()
+    main(args.outpath, n_jobs=args.n_jobs)
