@@ -142,7 +142,6 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
-   tukeykramer
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
@@ -302,6 +301,7 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   tukey_hsd
 
 .. autosummary::
    :toctree: generated/

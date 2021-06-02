@@ -13,7 +13,7 @@ from . import _wilcoxon_data
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
-           'tukeykramer']
+           'tukey_hsd']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -1437,8 +1437,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     return CramerVonMisesResult(statistic=t, pvalue=p)
 
 
-class TukeyKramerResult:
-    """Result of `scipy.stats.tukeykramer`.
+class Tukey_HSDResult:
+    """Result of `scipy.stats.tukey_hsd`.
 
     Attributes
     ----------
@@ -1499,11 +1499,11 @@ class TukeyKramerResult:
 
         Examples
         --------
-        >>> from scipy.stats import tukeykramer
+        >>> from scipy.stats import tukey_hsd
         >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
         >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
         >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
-        >>> result = tukeykramer(group0, group1, group2)
+        >>> result = tukey_hsd(group0, group1, group2)
 
         Print out the high and low confidence intervals for this result:
         >>> conf = res.confidence_interval()
@@ -1541,7 +1541,7 @@ class TukeyKramerResult:
         return ConfidenceInterval(low=lower_conf, high=upper_conf)
 
 
-def _tukeykramer_iv(args):
+def _tukey_hsd_iv(args):
     if (len(args)) < 3:
         raise ValueError("There must be more than 2 treatments.")
     args = [np.asarray(arg) for arg in args]
@@ -1555,16 +1555,20 @@ def _tukeykramer_iv(args):
     return args
 
 
-def tukeykramer(*args):
-    """Perform the multiple comparison Tukey-Kramer test for equality of means.
+def tukey_hsd(*args):
+    """Perform the multiple comparison Tukey's HSD test for equality of means.
 
-    Under the assumption of a previously rejected null hypothesis that two or
-    more samples have the same population mean, the Tukey-Kramer test compares
-    the absolute mean difference between each input group to the Tukey
-    criterion for significance. The null hypothesis for each comparison is that
-    they have equal means. For inputs of differing sample sizes, the
-    Tukey-Kramer method is used, albeit with a higher confidence coefficient,
-    leading to a more conservative estimate [1]_.
+    Tukey's HSD, or honest significant difference test is performed under the
+    assumption of a previously rejected null hypothesis that two or more
+    samples have the same population mean. With unequal sample sizes, it
+    utilizes the enhancement made my Kramer, sometimes called the Tukey-Kramer
+    method.
+
+    The test compares the absolute mean difference between each input group to
+    the Tukey criterion for significance. The null hypothesis for each
+    comparison is that they have equal means. When the Tukey-Kramer method is
+    used the test computes a higher confidence coefficient, leading to more
+    conservative estimates [1]_.
 
     Parameters
     ----------
@@ -1574,11 +1578,11 @@ def tukeykramer(*args):
 
     Returns
     -------
-    result : `~scipy.stats._result_classes.TukeyKramerTestResult` instance
+    result : `~scipy.stats._result_classes.Tukey_HSDTestResult` instance
         The return value is an object with the following attributes:
 
         sig_level : float
-            The desired significance level (copied from `tukeykramer` input).
+            The desired significance level (copied from `tukey_hsd` input).
         statistic : float ndarray
             The computed statistic of the test for each comparison. The element
             at index ``(i, j)`` is the statistic for the comparison between
@@ -1623,7 +1627,7 @@ def tukeykramer(*args):
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
 
-    >>> from scipy.stats import tukeykramer
+    >>> from scipy.stats import tukey_hsd
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
     >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
@@ -1639,11 +1643,11 @@ def tukeykramer(*args):
     >>> plt.show()
 
     From the box and whisker plot we can see overlap in the interquartile
-    ranges group 1 to group 2 and group 3, but we can apply the ``tukeykramer``
+    ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
     test to determine if the difference between means is significant. We choose
     a significance level of .05 to reject the null hypothesis.
 
-    >>> res = tukeykramer(group0, group1, group2)
+    >>> res = tukey_hsd(group0, group1, group2)
     >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
     ...     # filter out self comparisons
     ...     if i != j:
@@ -1664,9 +1668,9 @@ def tukeykramer(*args):
 
     We can also compute the confidence interval associated with our chosen
     significance level. See
-    `~scipy.stats._result_classes.TukeyKramerTestResult` for its usage.
+    `~scipy.stats._result_classes.Tukey_HSDTestResult` for its usage.
     """
-    args = _tukeykramer_iv(args)
+    args = _tukey_hsd_iv(args)
     ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])
@@ -1702,5 +1706,5 @@ def tukeykramer(*args):
     params = t_stat, ntreatments, nobs - ntreatments
     pvalues = distributions.studentized_range.sf(*params)
 
-    return TukeyKramerResult(mean_differences, pvalues, ntreatments,
+    return Tukey_HSDResult(mean_differences, pvalues, ntreatments,
                              nobs, stand_err)
