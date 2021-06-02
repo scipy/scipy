@@ -1496,6 +1496,9 @@ class TukeyKramerResult:
 
 
 def _tukeykramer_iv(args, sig_level):
+def _tukeykramer_iv(args):
+    if (len(args)) < 3:
+        raise ValueError("There must be more than 2 treatments.")
     args = [np.asarray(arg) for arg in args]
     for arg in args:
         if arg.ndim != 1:
@@ -1504,12 +1507,10 @@ def _tukeykramer_iv(args, sig_level):
             raise ValueError("Input sample size must be greater than one.")
         if np.isinf(arg).any():
             raise ValueError("Input samples must be finite.")
-    if not 0 < sig_level < 1:
-        raise ValueError("Significance level should be between 0 and 1.")
     return args
 
 
-def tukeykramer(*args, sig_level=.05):
+def tukeykramer(*args):
     """Perform the multiple comparison Tukey-Kramer test for equality of means.
 
     Under the assumption of a previously rejected null hypothesis that two or
@@ -1548,6 +1549,7 @@ def tukeykramer(*args, sig_level=.05):
         The object has the following methods:
 
         confidence_ci() :
+        confidence_interval :
             Compute the confidence interval for the significance level
             specified in the test.
 
@@ -1636,41 +1638,41 @@ def tukeykramer(*args, sig_level=.05):
     (2 - 0) -3.389  3.909
     (2 - 1) -7.989 -0.691
     """
-    args = _tukeykramer_iv(args, sig_level)
-    nargs = len(args)
+    args = _tukeykramer_iv(args)
+    ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
-    nsamples_args = np.asarray([a.size for a in args])
-    nsamples = np.sum(nsamples_args)
+    nsamples_treatments = np.asarray([a.size for a in args])
+    nobs = np.sum(nsamples_treatments)
 
     # determine mean square error
     mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
-                  (nsamples_args - 1)) / (nsamples - len(args)))
+                  (nsamples_treatments - 1)) / (nobs - len(args)))
 
     # The calculation of the standard error differs when treatments differ in
     # size. See ("Unequal sample sizes")[1].
-    if np.unique(nsamples_args).size == 1:
+    if np.unique(nsamples_treatments).size == 1:
         # all input groups are the same length, so only one value needs to be
         # calculated [1].
-        normalize = 2 / nsamples_args[0]
+        normalize = 2 / nsamples_treatments[0]
     else:
         # to compare groups of differing sizes, we must compute a variance
         # value for each individual comparison. Use broadcasting to get the
         # resulting matrix. [3], verified against [4] (page 308).
-        normalize = 1 / nsamples_args + 1 / nsamples_args.reshape((nargs, 1))
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments.reshape((ntreatments, 1))
 
     # the standard error is used in the computation of the tukey criterion and
     # finding the p-values.
     stand_err = np.sqrt(normalize * mse / 2)
 
     # the mean difference is the test statistic.
-    mean_differences = means.reshape((nargs, 1)) - means
+    mean_differences = means.reshape((ntreatments, 1)) - means
 
     # Calculate the t-statistic to use within the survival function of the
     # studentized range to get the p-value.
     t_stat = np.abs(mean_differences) / stand_err
 
-    params = t_stat, nargs, nsamples - 1
+    params = t_stat, ntreatments, nobs - ntreatments
     pvalues = distributions.studentized_range.sf(*params)
 
-    return TukeyKramerResult(sig_level, mean_differences, pvalues, nargs,
-                             nsamples, stand_err)
+    return TukeyKramerResult(mean_differences, pvalues, ntreatments,
+                             nobs, stand_err)
