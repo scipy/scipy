@@ -1442,8 +1442,6 @@ class TukeyKramerResult:
 
     Attributes
     ----------
-    sig_level : float
-            The desired significance level (copied from `tukeykramer` input).
     statistic : float ndarray
         The computed statistic of the test for each comparison. The
         ``(i, j)`` index is the p-value for the ith - jth group comparison.
@@ -1453,9 +1451,10 @@ class TukeyKramerResult:
 
     Methods
     -------
-    confidence_inteval() :
+    confidence_interval :
         Compute the confidence interval for the significance level
         specified in the test.
+
 
     References
     ----------
@@ -1465,25 +1464,72 @@ class TukeyKramerResult:
            28 November 2020.
     """
 
-    def __init__(self, sig_level, statistic, pvalue, _nargs, _nsamples,
+    def __init__(self, statistic, pvalue, _nargs, _nsamples,
                  _stand_err):
-        self.sig_level = sig_level
         self.statistic = statistic
         self.pvalue = pvalue
         self._nargs = _nargs
         self._nsamples = _nsamples
         self._stand_err = _stand_err
 
-    def confidence_interval(self):
+    def confidence_interval(self, sig_level=.05):
+        """
+        Compute the confidence interval for the estimated proportion.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is 0.05.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence intervals for each
+            comparison. The high and low values are accessible for each
+            comparison at index ``(i, j)`` between groups ``i`` and ``j``..
+
+        References
+        ----------
+        .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+               Method."
+               https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+               28 November 2020.
+
+        Examples
+        --------
+        >>> from scipy.stats import tukeykramer
+        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> result = tukeykramer(group0, group1, group2)
+
+        Print out the high and low confidence intervals for this result:
+        >>> conf = res.confidence_interval()
+        >>> for ((i, j), l) in np.ndenumerate(conf.low):
+        ...     # filter out self comparisons
+        ...     if i != j:
+        ...         h = conf.high[i,j]
+        ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+        (0 - 1) -8.249 -0.951
+        (0 - 2) -3.909  3.389
+        (1 - 0)  0.951  8.249
+        (1 - 2)  0.691  7.989
+        (2 - 0) -3.389  3.909
+        (2 - 1) -7.989 -0.691
+        """
+        if not 0 < sig_level < 1:
+            raise ValueError("Significance level must be between 0 and 1.")
         # determine the critical value of the studentized range using the
         # appropriate significance level, number of treatments, and degrees
         # of freedom as determined by the number of data less the number of
         # treatments. ("Confidence limits for Tukey's method")[1]. Note that
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
-        params = (1 - self.sig_level, self._nargs,
+        params = (sig_level, self._nargs,
                   self._nsamples - self._nargs)
-        srd = distributions.studentized_range.ppf(*params)
+        srd = distributions.studentized_range.isf(*params)
         # also called maximum critical value, the tukey criterion is the
         # studentized range critical value * the square root of mean square
         # error over the sample size.
@@ -1495,7 +1541,6 @@ class TukeyKramerResult:
         return ConfidenceInterval(low=lower_conf, high=upper_conf)
 
 
-def _tukeykramer_iv(args, sig_level):
 def _tukeykramer_iv(args):
     if (len(args)) < 3:
         raise ValueError("There must be more than 2 treatments.")
@@ -1526,10 +1571,6 @@ def tukeykramer(*args):
     sample1, sample2, ... : array_like
         The sample measurements for each group. There must be at least
         two arguments.
-    sig_level : float, optional
-        Significance level for which to determine the appropriate studentized
-        range distribution value.
-        Default is .05.
 
     Returns
     -------
@@ -1539,16 +1580,17 @@ def tukeykramer(*args):
         sig_level : float
             The desired significance level (copied from `tukeykramer` input).
         statistic : float ndarray
-            The computed statistic of the test for each comparison. The
-            (i, j) index is the statistic for the ith - jth group comparison.
+            The computed statistic of the test for each comparison. The element
+            at index ``(i, j)`` is the statistic for the comparison between
+            groups ``i`` and ``j``..
         pvalue : float ndarray
-            The associated p-value from the studentized range distribution. The
-            (i, j) index is the p-value for the ith - jth group comparison.
+            The computed p-value of the test for each comparison. The element
+            at index ``(i, j)`` is the p-value for the comparison between
+            groups ``i`` and ``j``..
 
 
         The object has the following methods:
 
-        confidence_ci() :
         confidence_interval :
             Compute the confidence interval for the significance level
             specified in the test.
@@ -1558,7 +1600,7 @@ def tukeykramer(*args):
     The use of this test relies on several assumptions.
 
     1. There are equal variances between the samples.
-    2. Each sample is from a normally distributed population.
+    2. The sample means from each treatment are normally distributed.
 
     References
     ----------
@@ -1598,7 +1640,8 @@ def tukeykramer(*args):
 
     From the box and whisker plot we can see overlap in the interquartile
     ranges group 1 to group 2 and group 3, but we can apply the ``tukeykramer``
-    test to determine if the difference between means is significant.
+    test to determine if the difference between means is significant. We choose
+    a significance level of .05 to reject the null hypothesis.
 
     >>> res = tukeykramer(group0, group1, group2)
     >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
@@ -1612,31 +1655,16 @@ def tukeykramer(*args):
     (2 - 0) 0.980
     (2 - 1) 0.017
 
-    The null hypothesis is that each group has the same mean. We choose a
-    significance level of .05. The p-value for comparisons between ``group0``
-    and ``group1`` as well as ``group1`` and ``group2`` do not exceed .05, so
-    we reject the null hypothesis that they have the same means. The p-value of
-    the comparison between ``group0`` and ``group2`` exceeds .05, so we accept
-    the null hypothesis that there is not a significant difference between
-    their means.
+    The null hypothesis is that each group has the same mean. The p-value for
+    comparisons between ``group0`` and ``group1`` as well as ``group1`` and
+    ``group2`` do not exceed .05, so we reject the null hypothesis that they
+    have the same means. The p-value of the comparison between ``group0``
+    and ``group2`` exceeds .05, so we accept the null hypothesis that there
+    is not a significant difference between their means.
 
-    There are also confidence intervals associated with the test statistic.
-    They are applicable for the 95% confidence level becuase the test was
-    applied with a .05 significance level. Print out the lower confidence
-    interval for this result:
-
-    >>> conf = res.confidence_interval()
-    >>> for ((i, j), l) in np.ndenumerate(conf.low):
-    ...     # filter out self comparisons
-    ...     if i != j:
-    ...         h = conf.high[i,j]
-    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
-    (0 - 1) -8.249 -0.951
-    (0 - 2) -3.909  3.389
-    (1 - 0)  0.951  8.249
-    (1 - 2)  0.691  7.989
-    (2 - 0) -3.389  3.909
-    (2 - 1) -7.989 -0.691
+    We can also compute the confidence interval associated with our chosen
+    significance level. See
+    `~scipy.stats._result_classes.TukeyKramerTestResult` for its usage.
     """
     args = _tukeykramer_iv(args)
     ntreatments = len(args)

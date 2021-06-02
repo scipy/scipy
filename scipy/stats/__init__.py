@@ -142,6 +142,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   tukeykramer
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
