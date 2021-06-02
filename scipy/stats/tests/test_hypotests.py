@@ -1236,3 +1236,205 @@ class TestCvm_2samp:
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+
+
+class TestTukey_HSD:
+
+    data_same_size = ([24.5, 23.5, 26.4, 27.1, 29.9],
+                      [28.4, 34.2, 29.5, 32.2, 30.1],
+                      [26.1, 28.3, 24.3, 26.2, 27.8])
+    data_diff_size = ([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1],
+                      [28.4, 34.2, 29.5, 32.2, 30.1],
+                      [26.1, 28.3, 24.3, 26.2, 27.8])
+    extreme_size = ([24.5, 23.5, 26.4],
+                    [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
+                     30.1],
+                    [26.1, 28.3, 24.3, 26.2, 27.8])
+    sas_same_size = [
+        ['2', '3', '4.340', '.6908830567505320', '7.989116943249460', '1'],
+        ['2', '1', '4.600', '.9508830567505330', '8.249116943249470', '1'],
+        ['3', '2', '-4.340', '-7.98911694324947', '-.690883056750532', '1'],
+        ['3', '1', '0.260', '-3.38911694324947', '3.909116943249470', '0'],
+        ['1', '2', '-4.600', '-8.24911694324947', '-.950883056750534', '1'],
+        ['1', '3', '-0.260', '-3.90911694324947', '3.389116943249460', '0']]
+
+    sas_diff_size = [
+        ['2', '1', '3.645', '0.2679292644988780', '7.022070735501120', '1'],
+        ['2', '3', '4.340', '0.5934764007020940', '8.086523599297900', '1'],
+        ['1', '2', '-3.645', '-7.02207073550113', '-.267929264498878', '1'],
+        ['1', '3', '.6949999999999960', '-2.68207073550113',
+         '4.072070735501120', '0'],
+        ['3', '2', '-4.340', '-8.08652359929791', '-.593476400702094', '1'],
+        ['3', '1', '-.694999999999997', '-4.07207073550112',
+         '2.682070735501120', '0']]
+
+    sas_extreme = [
+        ['2', '3', '4.34', '1.561605075444930', '7.118394924555070', '1'],
+        ['2', '1', '6.08', '2.740784878675930', '9.419215121324070', '1'],
+        ['3', '2', '-4.34', '-7.11839492455507', '-1.56160507544493', '1'],
+        ['3', '1', '1.74', '-1.96452656607342', '5.444526566073420', '0'],
+        ['1', '2', '-6.08', '-9.41921512132407', '-2.74078487867593', '1'],
+        ['1', '3', '-1.74', '-5.44452656607343', '1.964526566073420', '0']
+    ]
+
+    @pytest.mark.parametrize("data,SAS_res", ((data_same_size, sas_same_size),
+                                              (data_diff_size, sas_diff_size),
+                                              (extreme_size, sas_extreme)),
+                             ids=["equal size sample", "unequal sample size",
+                                  "extreme sample size differences"])
+    def test_compare_sas(self, data, SAS_res):
+        '''
+        SAS code used to generate results for each sample:
+        DATA ACHE;
+        INPUT BRAND RELIEF;
+        CARDS;
+        1 24.5
+        1 23.5
+        1 26.28
+        1 26.4
+        1 27.1
+        1 29.9
+        1 30.1
+        1 30.1
+        2 28.4
+        2 34.2
+        2 29.5
+        2 32.2
+        2 30.1
+        3 26.1
+        3 28.3
+        3 24.3
+        3 26.2
+        3 27.8
+        ;
+        ods graphics on;   ODS RTF;ODS LISTING CLOSE;
+           PROC ANOVA DATA=ACHE;
+           CLASS BRAND;
+           MODEL RELIEF=BRAND;
+           MEANS BRAND/TUKEY CLDIFF;
+           TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+           ods output  CLDiffs =tc;
+        proc print data=tc;
+            format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
+            title "Output with many digits";
+        RUN;
+        QUIT;
+        ODS RTF close;
+        ODS LISTING;
+        # The standard output, not showing the additional digits. The code
+        # example above outputs a table with more digits.
+        Brand Comparison    Mean Difference  Simultanious 95% Confidence Limits
+        2 - 1               3.645               0.268           7.022   1
+        2 - 3               4.340               0.593           8.087   1
+        1 - 2              -3.645              -7.022          -0.268   1
+        1 - 3               0.695              -2.682           4.072   0
+        3 - 2              -4.340              -8.087          -0.593   1
+        3 - 1              -0.695              -4.072           2.682   0
+        '''
+
+        res = stats.tukey_hsd(*data)
+        conf = res.confidence_interval()
+        for comp in SAS_res:
+            i, j, stat, lower, upper, sig = np.asarray(comp, dtype=float)
+            # make int for slicing, zero index
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(stat, res.statistic[i, j])
+            assert_allclose(lower, conf.low[i, j], atol=1e-4)
+            assert_allclose(upper, conf.high[i, j], atol=1e-4)
+            assert ((sig == 1 and res.pvalue[i, j] < .05) or
+                    (sig == 0 and res.pvalue[i, j] > .05))
+
+    def test_comp_R(self):
+        '''
+        Testing against results and p-values from R:
+        from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
+        topics/TukeyHSD
+        > require(graphics)
+        > summary(fm1 <- aov(breaks ~ tension, data = warpbreaks))
+        > TukeyHSD(fm1, "tension", ordered = TRUE)
+        > plot(TukeyHSD(fm1, "tension"))
+        Tukey multiple comparisons of means
+        95% family-wise confidence level
+        factor levels have been ordered
+        Fit: aov(formula = breaks ~ tension, data = warpbreaks)
+        $tension
+                 diff        lwr      upr     p adj
+        M-H  4.722222 -4.8376022 14.28205 0.4630831
+        L-H 14.722222  5.1623978 24.28205 0.0014315
+        L-M 10.000000  0.4401756 19.55982 0.0384598
+        '''
+        group_l = [26, 30, 54, 25, 70, 52, 51, 26, 67,
+                   27, 14, 29, 19, 29, 31, 41, 20, 44]
+        group_m = [18, 21, 29, 17, 12, 18, 35, 30, 36,
+                   42, 26, 19, 16, 39, 28, 21, 39, 29]
+        group_h = [36, 21, 24, 18, 10, 43, 28, 15, 26,
+                   20, 21, 24, 17, 13, 15, 15, 16, 28]
+        res = stats.tukey_hsd(group_l, group_m, group_h)
+
+        r_pvalue = np.asarray(
+            [[0, 0.0384598, 0.0014315],
+             [0, 0, 0.4630831],
+             [0, 0, 0]])
+        r_stat = np.asarray(
+            [[0, 10.000000, 14.722222],
+             [0, 0, 4.722222],
+             [0, 0, 0]])
+        r_lower = np.asarray(
+            [[0, 0.4401756, 5.1623978],
+             [0, 0, -4.8376022],
+             [0, 0, 0]])
+        r_upper = np.asarray(
+            [[0, 19.55982, 24.28205],
+             [0, 0, 14.28205],
+             [0, 0, 0]])
+
+        conf = res.confidence_interval()
+        atol = 1e-3
+        for (i, j) in [(0, 1), (0, 2), (1, 2)]:
+            assert_allclose(r_pvalue[i, j], res.pvalue[i, j], atol=atol)
+            assert_allclose(r_stat[i, j], res.statistic[i, j], atol=atol)
+            assert_allclose(r_lower[i, j], conf.low[i, j], atol=atol)
+            assert_allclose(r_upper[i, j], conf.high[i, j], atol=atol)
+
+    def test_engineering_stat_handbook(self):
+        '''
+        Example sourced from:
+        https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
+        '''
+        group1 = [6.9, 5.4, 5.8, 4.6, 4.0]
+        group2 = [8.3, 6.8, 7.8, 9.2, 6.5]
+        group3 = [8.0, 10.5, 8.1, 6.9, 9.3]
+        group4 = [5.8, 3.8, 6.1, 5.6, 6.2]
+        res = stats.tukey_hsd(group1, group2, group3, group4)
+        conf = res.confidence_interval()
+        lower = np.asarray([
+            [0, 0, 0, -2.25],
+            [.29, 0, -2.93, .13],
+            [1.13, 0, 0, .97],
+            [0, 0, 0, 0]])
+        upper = np.asarray([
+            [0, 0, 0, 1.93],
+            [4.47, 0, 1.25, 4.31],
+            [5.31, 0, 0, 5.15],
+            [0, 0, 0, 0]])
+
+        for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
+            assert_allclose(lower[i, j], conf.low[i, j], atol=1e-2)
+            assert_allclose(upper[i, j], conf.high[i, j], atol=1e-2)
+
+    def test_no_inf(self):
+        with assert_raises(ValueError, match="...must be finite."):
+            stats.tukey_hsd([1, 2, 3], [2, np.inf], [6, 7, 3])
+
+    def test_is_1d(self):
+        with assert_raises(ValueError, match="...must be one-dimensional"):
+            stats.tukey_hsd([[1, 2], [2, 3]], [2, 5], [5, 23, 6])
+
+    def test_no_empty(self):
+        with assert_raises(ValueError, match="...must be greater than one"):
+            stats.tukey_hsd([], [2, 5], [4, 5, 6])
+
+    @pytest.mark.parametrize("nargs", (0, 1, 2))
+    def test_not_enough_treatments(self, nargs):
+        with assert_raises(ValueError, match="...more than 2 treatments."):
+            stats.tukey_hsd([23, 7, 3] * nargs)
