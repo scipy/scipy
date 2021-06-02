@@ -217,7 +217,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
             T[irow] = T[irow] - T[pivrow] * T[irow, pivcol]
 
     # The selected pivot should never lead to a pivot value less than the tol.
-    if np.isclose(pivval, tol, atol=0, rtol=1e4):
+    if np.abs(pivval) <= tol * 1e4:
         message = (
             "The pivot operation produces a pivot value of:{0: .1e}, "
             "which is only slightly greater than the specified "
