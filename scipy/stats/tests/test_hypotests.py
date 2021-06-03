@@ -1438,3 +1438,9 @@ class TestTukey_HSD:
     def test_not_enough_treatments(self, nargs):
         with assert_raises(ValueError, match="...more than 2 treatments."):
             stats.tukey_hsd([23, 7, 3] * nargs)
+
+    @pytest.mark.parametrize("alpha", [-.5, 0, 1, 2])
+    def test_alpha_invalid(self, alpha):
+        with assert_raises(ValueError, match="must be between 0 and 1"):
+            r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4])
+            r.confidence_interval(alpha)
