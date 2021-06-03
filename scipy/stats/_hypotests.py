@@ -1473,7 +1473,7 @@ class Tukey_HSDResult:
 
     def confidence_interval(self, sig_level=.05):
         """
-        Compute the confidence interval for the estimated proportion.
+        Compute the confidence interval for the specified significance level.
 
         Parameters
         ----------
@@ -1495,28 +1495,6 @@ class Tukey_HSDResult:
                Tukey's Method."
                https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
                28 November 2020.
-
-        Examples
-        --------
-        >>> from scipy.stats import tukey_hsd
-        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
-        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
-        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
-        >>> result = tukey_hsd(group0, group1, group2)
-
-        Print out the high and low confidence intervals for this result:
-        >>> conf = res.confidence_interval()
-        >>> for ((i, j), l) in np.ndenumerate(conf.low):
-        ...     # filter out self comparisons
-        ...     if i != j:
-        ...         h = conf.high[i,j]
-        ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
-        (0 - 1) -8.249 -0.951
-        (0 - 2) -3.909  3.389
-        (1 - 0)  0.951  8.249
-        (1 - 2)  0.691  7.989
-        (2 - 0) -3.389  3.909
-        (2 - 1) -7.989 -0.691
         """
         if not 0 < sig_level < 1:
             raise ValueError("Significance level must be between 0 and 1.")
@@ -1556,11 +1534,10 @@ def _tukey_hsd_iv(args):
 def tukey_hsd(*args):
     """Perform the multiple comparison Tukey's HSD test for equality of means.
 
-    Tukey's HSD, or honest significant difference test is performed under the
+    Tukey's HSD, or honest significant difference, test is performed under the
     assumption of a previously rejected null hypothesis that two or more
     samples have the same population mean. With unequal sample sizes, it
-    utilizes the enhancement made my Kramer, sometimes called the Tukey-Kramer
-    method.
+    utilizes the Tukey-Kramer method.
 
     The test compares the absolute mean difference between each input group to
     the Tukey criterion for significance. The null hypothesis for each
@@ -1576,7 +1553,7 @@ def tukey_hsd(*args):
 
     Returns
     -------
-    result : `~scipy.stats._result_classes.Tukey_HSDTestResult` instance
+    result : `~scipy.stats._result_classes.Tukey_HSDResult` instance
         The return value is an object with the following attributes:
 
         sig_level : float
@@ -1595,7 +1572,9 @@ def tukey_hsd(*args):
 
         confidence_interval :
             Compute the confidence interval for the significance level
-            specified in the test.
+            specified in the test. For both ``high`` and ``low``, the element
+            at index ``(i, j)`` is the bound for the comparison between
+            groups ``i`` and ``j``..
 
     Notes
     -----
@@ -1610,8 +1589,9 @@ def tukey_hsd(*args):
            Method."
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
            28 November 2020.
-    .. [2] Abdi, Herve & Williams, Lynne. (2021). Tukey's Honestly Signiflcant
-           Difierence (HSD) Test.
+    .. [2] Abdi, Herve & Williams, Lynne. (2021). "Tukey's Honestly Significant
+           Difference (HSD) Test."
+           https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
     .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
            Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
     .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
@@ -1665,8 +1645,24 @@ def tukey_hsd(*args):
     is not a significant difference between their means.
 
     We can also compute the confidence interval associated with our chosen
-    significance level. See
-    `~scipy.stats._result_classes.Tukey_HSDTestResult` for its usage.
+    significance level.
+
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    >>> result = tukey_hsd(group0, group1, group2)
+    >>> conf = res.confidence_interval()
+    >>> for ((i, j), l) in np.ndenumerate(conf.low):
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         h = conf.high[i,j]
+    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    (0 - 1) -8.249 -0.951
+    (0 - 2) -3.909  3.389
+    (1 - 0)  0.951  8.249
+    (1 - 2)  0.691  7.989
+    (2 - 0) -3.389  3.909
+    (2 - 1) -7.989 -0.691
     """
     args = _tukey_hsd_iv(args)
     ntreatments = len(args)

@@ -12,6 +12,7 @@ Result classes
 
    RelativeRiskResult
    BinomTestResult
+   Tukey_HSDResult
 
 """
 
