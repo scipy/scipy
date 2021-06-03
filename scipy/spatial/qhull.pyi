@@ -2,15 +2,10 @@
 Static type checking stub file for scipy/spatial/qhull.pyx
 '''
 
-from __future__ import annotations
-from typing import TYPE_CHECKING, List, Tuple, Any
-
-if TYPE_CHECKING:
-    from numpy.typing import ArrayLike
-else:
-    ArrayLike = Any
+from typing import List, Tuple, Any
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 class _Qhull:
     def __init__(
