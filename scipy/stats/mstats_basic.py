@@ -2527,12 +2527,15 @@ def skewtest(a, axis=0, alternative='two-sided'):
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the skewness of the distribution underlying the sample
+          is different from that of the normal distribution (i.e. 0)
+        * 'less': the skewness of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the skewness of the distribution underlying the sample
+          is greater than that of the normal distribution
 
         .. versionadded:: 1.7.0
 
@@ -2549,9 +2552,6 @@ def skewtest(a, axis=0, alternative='two-sided'):
 
     """
     a, axis = _chk_asarray(a, axis)
-    if alternative not in {'two-sided', 'less', 'greater'}:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
     if axis is None:
         a = a.ravel()
         axis = 0
@@ -2591,9 +2591,12 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the kurtosis of the distribution underlying the sample
+          is different from that of the normal distribution
+        * 'less': the kurtosis of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the kurtosis of the distribution underlying the sample
+          is greater than that of the normal distribution
 
         .. versionadded:: 1.7.0
 
@@ -2610,9 +2613,6 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
 
     """
     a, axis = _chk_asarray(a, axis)
-    if alternative not in {'two-sided', 'less', 'greater'}:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
     n = a.count(axis=axis)
     if np.min(n) < 5:
         raise ValueError(

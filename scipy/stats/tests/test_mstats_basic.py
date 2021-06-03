@@ -964,12 +964,20 @@ class TestNormalitytests():
     @pytest.mark.parametrize("test", ["skewtest", "kurtosistest"])
     @pytest.mark.parametrize("alternative", ["less", "greater"])
     def test_alternative(self, test, alternative):
-        x = stats.norm.rvs(loc=10, scale=2.5, size=20, random_state=123)
+        x = stats.norm.rvs(loc=10, scale=2.5, size=30, random_state=123)
 
         stats_test = getattr(stats, test)
         mstats_test = getattr(mstats, test)
 
         z_ex, p_ex = stats_test(x, alternative=alternative)
+        z, p = mstats_test(x, alternative=alternative)
+        assert_allclose(z, z_ex, atol=1e-12)
+        assert_allclose(p, p_ex, atol=1e-12)
+
+        # test with masked arrays
+        x[1:5] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        z_ex, p_ex = stats_test(x.compressed(), alternative=alternative)
         z, p = mstats_test(x, alternative=alternative)
         assert_allclose(z, z_ex, atol=1e-12)
         assert_allclose(p, p_ex, atol=1e-12)
