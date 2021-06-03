@@ -1477,7 +1477,7 @@ class Tukey_HSDResult:
 
         Parameters
         ----------
-        confidence_level : float, optional
+        confidence_interval : float, optional
             Confidence level for the computed confidence interval
             of the estimated proportion. Default is 0.05.
 
@@ -1636,8 +1636,8 @@ def tukey_hsd(*args):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.boxplot([group0, group1, group2])
-    >>> ax.set_xticklabels(["group0", "group1", "group2"])
-    >>> ax.set_ylabel("mean")
+    >>> ax.set_xticklabels(["group0", "group1", "group2"]) # doctest: +SKIP
+    >>> ax.set_ylabel("mean") # doctest: +SKIP
     >>> plt.show()
 
     From the box and whisker plot we can see overlap in the interquartile
@@ -1650,12 +1650,12 @@ def tukey_hsd(*args):
     ...     # filter out self comparisons
     ...     if i != j:
     ...         print(f"({i} - {j}) {p:.03f}")
-    (0 - 1) 0.012
+    (0 - 1) 0.014
     (0 - 2) 0.980
-    (1 - 0) 0.012
-    (1 - 2) 0.017
+    (1 - 0) 0.014
+    (1 - 2) 0.020
     (2 - 0) 0.980
-    (2 - 1) 0.017
+    (2 - 1) 0.020
 
     The null hypothesis is that each group has the same mean. The p-value for
     comparisons between ``group0`` and ``group1`` as well as ``group1`` and
