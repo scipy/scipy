@@ -6,7 +6,9 @@ from typing import List, Tuple, Any
 
 import numpy as np
 from numpy.typing import ArrayLike
+from typing_extensions import final
 
+@final
 class _Qhull:
     def __init__(
         self,
