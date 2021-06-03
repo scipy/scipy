@@ -1676,7 +1676,7 @@ def tukey_hsd(*args):
 
     # determine mean square error
     mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
-                  (nsamples_treatments - 1)) / (nobs - len(args)))
+                  (nsamples_treatments - 1)) / (nobs - ntreatments))
 
     # The calculation of the standard error differs when treatments differ in
     # size. See ("Unequal sample sizes")[1].
@@ -1688,7 +1688,7 @@ def tukey_hsd(*args):
         # to compare groups of differing sizes, we must compute a variance
         # value for each individual comparison. Use broadcasting to get the
         # resulting matrix. [3], verified against [4] (page 308).
-        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments.reshape((ntreatments, 1))
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
 
     # the standard error is used in the computation of the tukey criterion and
     # finding the p-values.
@@ -1705,4 +1705,4 @@ def tukey_hsd(*args):
     pvalues = distributions.studentized_range.sf(*params)
 
     return Tukey_HSDResult(mean_differences, pvalues, ntreatments,
-                             nobs, stand_err)
+                           nobs, stand_err)
