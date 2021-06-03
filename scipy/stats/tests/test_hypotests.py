@@ -1338,7 +1338,7 @@ class TestTukey_HSD:
             i, j, stat, lower, upper, sig = np.asarray(comp, dtype=float)
             # make int for slicing, zero index
             i, j = int(i) - 1, int(j) - 1
-            assert_allclose(stat, res.statistic[i, j])
+            assert_allclose(stat, res.statistic[i, j], atol=1e-13)
             assert_allclose(lower, conf.low[i, j], atol=1e-4)
             assert_allclose(upper, conf.high[i, j], atol=1e-4)
             assert ((sig == 1 and res.pvalue[i, j] < .05) or
@@ -1389,7 +1389,7 @@ class TestTukey_HSD:
              [0, 0, 0]])
 
         conf = res.confidence_interval()
-        atol = 1e-3
+        atol = 1e-5
         for (i, j) in [(0, 1), (0, 2), (1, 2)]:
             assert_allclose(r_pvalue[i, j], res.pvalue[i, j], atol=atol)
             assert_allclose(r_stat[i, j], res.statistic[i, j], atol=atol)
