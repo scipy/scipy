@@ -10,6 +10,13 @@ from typing_extensions import final
 
 @final
 class _Qhull:
+    # Read-only cython attribute that behaves, more or less, like a property
+    @property
+    def ndim(self) -> int: ...
+    mode_option: bytes
+    options: bytes
+    furthest_site: bool
+
     def __init__(
         self,
         points: ArrayLike,
@@ -43,6 +50,11 @@ def _get_barycentric_transforms(
 ) -> np.ndarray: ...
 
 class _QhullUser:
+    ndim: int
+    npoints: int
+    min_bound: np.ndarray
+    max_bound: np.ndarray
+
     def close(self) -> None: ...
     def _update(self, qhull: _Qhull) -> None: ...
     def _add_points(
@@ -53,6 +65,17 @@ class _QhullUser:
     ) -> None: ...
 
 class Delaunay(_QhullUser):
+    furthest_site: bool
+    paraboloid_scale: float
+    paraboloid_shift: float
+    simplices: np.ndarray
+    neighbors: np.ndarray
+    equations: np.ndarray
+    coplanar: np.ndarray
+    good: np.ndarray
+    nsimplex: int
+    vertices: np.ndarray
+
     def __init__(
         self,
         points: ArrayLike,
@@ -89,6 +112,13 @@ def tsearch(tri: Delaunay, xi: ArrayLike) -> np.ndarray: ...
 def _copy_docstr(dst: object, src: object) -> None: ...
 
 class ConvexHull(_QhullUser):
+    simplices: np.ndarray
+    neighbors: np.ndarray
+    equations: np.ndarray
+    coplanar: np.ndarray
+    good: None | np.ndarray
+    nsimplex: int
+
     def __init__(
         self,
         points: ArrayLike,
@@ -104,6 +134,13 @@ class ConvexHull(_QhullUser):
     def vertices(self) -> np.ndarray: ...
 
 class Voronoi(_QhullUser):
+    vertices: np.ndarray
+    ridge_points: np.ndarray
+    ridge_vertices: List[List[int]]
+    regions: List[List[int]]
+    point_region: np.ndarray
+    furthest_site: bool
+
     def __init__(
         self,
         points: ArrayLike,
@@ -123,6 +160,16 @@ class Voronoi(_QhullUser):
     def ridge_dict(self) -> dict: ...
 
 class HalfspaceIntersection(_QhullUser):
+    interior_point: np.ndarray
+    dual_facets: List[List[int]]
+    dual_equations: np.ndarray
+    dual_points: np.ndarray
+    dual_volume: float
+    dual_area: float
+    intersections: np.ndarray
+    ndim: int
+    nineq: int
+
     def __init__(
         self,
         halfspaces: ArrayLike,
