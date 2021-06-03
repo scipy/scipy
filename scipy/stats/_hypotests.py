@@ -1464,12 +1464,12 @@ class Tukey_HSDResult:
            28 November 2020.
     """
 
-    def __init__(self, statistic, pvalue, _nargs, _nsamples,
+    def __init__(self, statistic, pvalue, _ntreatments, _nobs,
                  _stand_err):
         self.statistic = statistic
         self.pvalue = pvalue
-        self._nargs = _nargs
-        self._nsamples = _nsamples
+        self._nargs = _ntreatments
+        self._nobs = _nobs
         self._stand_err = _stand_err
 
     def confidence_interval(self, sig_level=.05):
@@ -1527,8 +1527,8 @@ class Tukey_HSDResult:
         # treatments. ("Confidence limits for Tukey's method")[1]. Note that
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
-        params = (sig_level, self._nargs,
-                  self._nsamples - self._nargs)
+        params = (sig_level, self._nobs,
+                  self._ntreatments - self._nobs)
         srd = distributions.studentized_range.isf(*params)
         # also called maximum critical value, the tukey criterion is the
         # studentized range critical value * the square root of mean square
