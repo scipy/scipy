@@ -1598,6 +1598,10 @@ def tukey_hsd(*args):
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
            no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
            Accessed 25 May 2021.
+    .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
+           The ANOVA table and tests of hypotheses about means"
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.html,
+           2 June 2021.
 
 
     Examples
@@ -1670,7 +1674,8 @@ def tukey_hsd(*args):
     nsamples_treatments = np.asarray([a.size for a in args])
     nobs = np.sum(nsamples_treatments)
 
-    # determine mean square error
+    # determine mean square error [5]. Note that this is sometimes called
+    # mean square error within.
     mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
                   (nsamples_treatments - 1)) / (nobs - ntreatments))
 
