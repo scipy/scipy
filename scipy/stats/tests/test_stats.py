@@ -1462,7 +1462,7 @@ class TestRegression:
 
         # slope is greater than zero, so "greater" p-value should be small
         res3 = stats.linregress(x, y, alternative="greater")
-        assert_allclose(res3.pvalue, res1.pvalue / 2)
+        assert_allclose(res3.pvalue, res1.pvalue / 2, atol=1e-16)
 
         assert res1.rvalue == res2.rvalue == res3.rvalue
 
@@ -2880,21 +2880,6 @@ class TestStudentTest:
         t, p = stats.ttest_1samp(self.X1, 1, alternative="greater")
         assert_allclose(p, self.P1_1_g)
         assert_allclose(t, self.T1_1)
-
-    def test_1samp_nan_alternative(self):
-        x = stats.norm.rvs(loc=5, scale=10, size=1001, random_state=123)
-        x[0] = np.nan
-        x[100:120] = np.nan
-        x[1000] = np.nan
-        p = stats.ttest_1samp(x, 3.0, nan_policy='omit').pvalue
-        pl = stats.ttest_1samp(x, 3.0, nan_policy='omit',
-                               alternative='less').pvalue
-        pg = stats.ttest_1samp(x, 3.0, nan_policy='omit',
-                               alternative='greater').pvalue
-        assert_allclose(pl, 1, atol=1e-6)
-        assert_allclose(pg, 0, atol=1e-6)
-        assert_allclose(pl, 1 - p/2, atol=1e-10)
-        assert_allclose(pg, p/2, atol=1e-10)
 
 
 def test_percentileofscore():
