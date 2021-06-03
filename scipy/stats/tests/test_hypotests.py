@@ -1341,8 +1341,7 @@ class TestTukey_HSD:
             assert_allclose(stat, res.statistic[i, j], atol=1e-13)
             assert_allclose(lower, conf.low[i, j], atol=1e-4)
             assert_allclose(upper, conf.high[i, j], atol=1e-4)
-            assert ((sig == 1 and res.pvalue[i, j] < .05) or
-                    (sig == 0 and res.pvalue[i, j] > .05))
+            assert sig == (res.pvalue[i, j] < .05)
 
     def test_comp_R(self):
         '''
