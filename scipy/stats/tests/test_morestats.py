@@ -778,13 +778,12 @@ class TestBinomTest:
     # Expected results here are from R binom.test, e.g.
     # options(digits=16)
     # binom.test(484, 967, p=0.48)
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
+    #
     def test_two_sided_pvalues1(self):
-        # These tests work on all OS's but fail on
-        # Linux_Python_37_32bit_full due to numerical issues caused
-        # by large inputs.
-        rtol = 1e-13  # aarch64 observed rtol: 3.5e-13
+        # `tol` could be stricter on most architectures, but the value
+        # here is limited by accuracy of `binom.cdf` for large inputs on
+        # Linux_Python_37_32bit_full and aarch64
+        rtol = 1e-10  # aarch64 observed rtol: 1.5e-11
         res = stats.binomtest(10079999, 21000000, 0.48)
         assert_allclose(res.pvalue, 1.0, rtol=rtol)
         res = stats.binomtest(10079990, 21000000, 0.48)
@@ -794,10 +793,8 @@ class TestBinomTest:
         res = stats.binomtest(10080017, 21000000, 0.48)
         assert_allclose(res.pvalue, 0.9940754817328, rtol=1e-9)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_two_sided_pvalues2(self):
-        rtol = 1e-13  # no aarch64 failure with 1e-15, preemptive bump
+        rtol = 1e-10  # no aarch64 failure with 1e-15, preemptive bump
         res = stats.binomtest(9, n=21, p=0.48)
         assert_allclose(res.pvalue, 0.6689672431939, rtol=rtol)
         res = stats.binomtest(4, 21, 0.48)
@@ -805,7 +802,7 @@ class TestBinomTest:
         res = stats.binomtest(11, 21, 0.48)
         assert_allclose(res.pvalue, 0.8278629664608, rtol=rtol)
         res = stats.binomtest(7, 21, 0.48)
-        assert_allclose(res.pvalue, 0.1966772901718, rtol=1e-12)
+        assert_allclose(res.pvalue, 0.1966772901718, rtol=rtol)
         res = stats.binomtest(3, 10, .5)
         assert_allclose(res.pvalue, 0.34375, rtol=rtol)
         res = stats.binomtest(2, 2, .4)
@@ -813,10 +810,8 @@ class TestBinomTest:
         res = stats.binomtest(2, 4, .3)
         assert_allclose(res.pvalue, 0.5884, rtol=rtol)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_edge_cases(self):
-        rtol = 1e-14  # aarch64 observed rtol: 1.33e-15
+        rtol = 1e-10  # aarch64 observed rtol: 1.33e-15
         res = stats.binomtest(484, 967, 0.5)
         assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(3, 47, 3/47)
@@ -863,7 +858,7 @@ class TestBinomTest:
 
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
-                           [('less', 0.148831050443,
+                             [('less', 0.148831050443,
                                0.0, 0.2772002496709138),
                               ('greater', 0.9004695898947,
                                0.1366613252458672, 1.0),
