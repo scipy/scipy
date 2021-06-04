@@ -780,10 +780,10 @@ class TestBinomTest:
     # binom.test(484, 967, p=0.48)
     #
     def test_two_sided_pvalues1(self):
-        # These tests work on all OS's but fail on
-        # Linux_Python_37_32bit_full due to numerical issues caused
-        # by large inputs.
-        rtol = 1e-10  # aarch64 observed rtol: 3.5e-13
+        # `tol` could be stricter on most architectures, but the value
+        # here is limited by accuracy of `binom.cdf` for large inputs on
+        # Linux_Python_37_32bit_full and aarch64
+        rtol = 1e-10  # aarch64 observed rtol: 1.5e-11
         res = stats.binomtest(10079999, 21000000, 0.48)
         assert_allclose(res.pvalue, 1.0, rtol=rtol)
         res = stats.binomtest(10079990, 21000000, 0.48)
