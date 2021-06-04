@@ -56,6 +56,7 @@ stages:
     AZURE_CI: 'true'
   jobs:
   - job: pre_release_deps_source_dist
+    condition: eq(variables['System.PullRequest.TargetBranch'], 'master')
     pool:
       vmImage: 'ubuntu-18.04'
     steps:
