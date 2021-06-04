@@ -285,8 +285,8 @@ of order 2 or less.
 ...
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
->>> from scipy.integrate import simps
->>> I1 = simps(y1, x)
+>>> from scipy import integrate
+>>> I1 = integrate.simpson(y1, x)
 >>> print(I1)
 21.0
 
@@ -300,7 +300,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simps(y2, x)
+>>> I2 = integrate.simpson(y2, x)
 >>> print(I2)
 61.5
 
@@ -718,7 +718,9 @@ following ipython session.
 
 First, we define the required inputs::
 
-    In [31]: y0 = np.random.randn(5000)
+    In [30]: rng = np.random.default_rng()
+
+    In [31]: y0 = rng.standard_normal(5000)
 
     In [32]: t = np.linspace(0, 50, 11)
 

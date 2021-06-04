@@ -213,7 +213,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     def __init__(self, x, fun, jac, hess, hessp=None,
                  k_easy=0.1, k_hard=0.2):
 
-        super(IterativeSubproblem, self).__init__(x, fun, jac, hess)
+        super().__init__(x, fun, jac, hess)
 
         # When the trust-region shrinks in two consecutive
         # calculations (``tr_radius < previous_tr_radius``)

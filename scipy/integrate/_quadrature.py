@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Callable, Dict, Tuple, Any, cast
 import functools
 import numpy as np
 import math
@@ -47,6 +49,21 @@ class AccuracyWarning(Warning):
     pass
 
 
+if TYPE_CHECKING:
+    # workaround for mypy function attributes see:
+    # https://github.com/python/mypy/issues/2087#issuecomment-462726600
+    from typing_extensions import Protocol
+    class CacheAttributes(Protocol):
+        cache: Dict[int, Tuple[Any, Any]]
+else:
+    CacheAttributes = Callable
+
+
+def cache_decorator(func: Callable) -> CacheAttributes:
+    return cast(CacheAttributes, func)
+
+
+@cache_decorator
 def _cached_roots_legendre(n):
     """
     Cache roots_legendre results to speed up calls of the fixed_quad
@@ -382,8 +399,8 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even-spaced Simpson's rule.
-        result = np.sum(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
-                        axis=axis)
+        result = np.sum(y[slice0] + 4*y[slice1] + y[slice2], axis=axis)
+        result *= dx / 3.0
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
@@ -395,16 +412,16 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = h0 / h1
-        tmp = hsum/6.0 * (y[slice0]*(2-1.0/h0divh1) +
-                          y[slice1]*hsum*hsum/hprod +
-                          y[slice2]*(2-h0divh1))
+        tmp = hsum/6.0 * (y[slice0] * (2 - 1.0/h0divh1) +
+                          y[slice1] * (hsum * hsum / hprod) +
+                          y[slice2] * (2 - h0divh1))
         result = np.sum(tmp, axis=axis)
     return result
 
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1, axis=-1, even='avg'):
+def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
     """`An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
@@ -413,7 +430,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1, axis=-1, even='avg'):
+def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -428,7 +445,7 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
         Array to be integrated.
     x : array_like, optional
         If given, the points at which `y` is sampled.
-    dx : int, optional
+    dx : float, optional
         Spacing of integration points along axis of `x`. Only used when
         `x` is None. Default is 1.
     axis : int, optional

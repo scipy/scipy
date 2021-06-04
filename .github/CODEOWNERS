@@ -1,0 +1,54 @@
+# The purpose of this file is to trigger review requests when PRs touch
+# particular files. Those reviews are not mandatory, however it's often useful
+# to have an expert pinged who is interested in only one part of SciPy and
+# doesn't follow general development.
+#
+# Note that only GitHub handles (whether individuals or teams) with commit
+# rights should be added to this file.
+# See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+# for more details about how CODEOWNERS works.
+
+# Each line is a file pattern followed by one or more owners.
+
+.github/CODEOWNERS  @rgommers @larsoner
+
+# Build related files
+pyproject.toml  @rgommers
+setup.py  @rgommers @larsoner
+pavement.py  @tylerjereddy
+environment.yml  @rgommers
+
+# SciPy submodules (please keep in alphabetical order)
+scipy/fft/*  @peterbell10
+scipy/fftpack/*  @peterbell10
+scipy/linalg/*  @larsoner @ilayn
+scipy/interpolate/*  @ev-br
+scipy/optimize/*  @andyfaff
+scipy/signal/*  @larsoner @ilayn
+scipy/sparse/*  @perimosocordiae
+scipy/spatial/*  @tylerjereddy @peterbell10
+scipy/special/*  @person142
+scipy/stats/_distn_infrastructure  @andyfaff @ev-br
+scipy/stats/*distr*.py  @ev-br
+scipy/stats/_continuous_distns  @andyfaff
+scipy/stats/_hypothesis.py  @tupui
+scipy/stats/*qmc.*  @tupui
+scipy/stats/*sobol*  @tupui
+
+# Testing infrastructure
+ci/*  @larsoner @andyfaff
+tools/refguide_check.py  @ev-br
+tools/*  @larsoner @rgommers
+runtests.py  @larsoner
+pytest.ini  @larsoner
+tox.ini  @larsoner
+codecov.yml  @larsoner
+.coveragerc  @larsoner
+benchmarks/asv.conf.json  @larsoner
+
+# CI config
+.circleci/*  @larsoner
+.github/*  @larsoner @andyfaff
+azure-pipelines.yml  @larsoner
+.travis.yml  @larsoner
+

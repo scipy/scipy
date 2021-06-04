@@ -262,7 +262,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     >>> b = np.array([0., 0., 0.], dtype=float)
     >>> x, istop, itn, normr = lsqr(A, b)[:4]
-    The exact solution is  x = 0
     >>> istop
     0
     >>> x
@@ -317,13 +316,13 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     var = np.zeros(n)
 
     msg = ('The exact solution is  x = 0                              ',
-         'Ax - b is small enough, given atol, btol                  ',
-         'The least-squares solution is good enough, given atol     ',
-         'The estimate of cond(Abar) has exceeded conlim            ',
-         'Ax - b is small enough for this machine                   ',
-         'The least-squares solution is good enough for this machine',
-         'Cond(Abar) seems to be too large for this machine         ',
-         'The iteration limit has been reached                      ')
+           'Ax - b is small enough, given atol, btol                  ',
+           'The least-squares solution is good enough, given atol     ',
+           'The estimate of cond(Abar) has exceeded conlim            ',
+           'Ax - b is small enough for this machine                   ',
+           'The least-squares solution is good enough for this machine',
+           'Cond(Abar) seems to be too large for this machine         ',
+           'The iteration limit has been reached                      ')
 
     if show:
         print(' ')
@@ -353,10 +352,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     cs2 = -1
     sn2 = 0
 
-    """
-    Set up the first vectors u and v for the bidiagonalization.
-    These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
-    """
+    # Set up the first vectors u and v for the bidiagonalization.
+    # These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
     u = b
     bnorm = np.linalg.norm(b)
     if x0 is None:
@@ -389,7 +386,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     # there was an error on return when arnorm==0
     arnorm = alfa * beta
     if arnorm == 0:
-        print(msg[0])
+        if show:
+            print(msg[0])
         return x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var
 
     head1 = '   Itn      x[0]       r1norm     r2norm '
@@ -408,18 +406,16 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     # Main iteration loop.
     while itn < iter_lim:
         itn = itn + 1
-        """
-        %     Perform the next step of the bidiagonalization to obtain the
-        %     next  beta, u, alfa, v.  These satisfy the relations
-        %                beta*u  =  a*v   -  alfa*u,
-        %                alfa*v  =  A'*u  -  beta*v.
-        """
+        # Perform the next step of the bidiagonalization to obtain the
+        # next  beta, u, alfa, v. These satisfy the relations
+        #     beta*u  =  a*v   -  alfa*u,
+        #     alfa*v  =  A'*u  -  beta*v.
         u = A.matvec(v) - alfa * u
         beta = np.linalg.norm(u)
 
         if beta > 0:
             u = (1/beta) * u
-            anorm = sqrt(anorm**2 + alfa**2 + beta**2 + damp**2)
+            anorm = sqrt(anorm**2 + alfa**2 + beta**2 + dampsq)
             v = A.rmatvec(u) - beta * v
             alfa = np.linalg.norm(v)
             if alfa > 0:
@@ -427,11 +423,16 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
         # Use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
-        rhobar1 = sqrt(rhobar**2 + damp**2)
-        cs1 = rhobar / rhobar1
-        sn1 = damp / rhobar1
-        psi = sn1 * phibar
-        phibar = cs1 * phibar
+        if damp > 0:
+            rhobar1 = sqrt(rhobar**2 + dampsq)
+            cs1 = rhobar / rhobar1
+            sn1 = damp / rhobar1
+            psi = sn1 * phibar
+            phibar = cs1 * phibar
+        else:
+            # cs1 = 1 and sn1 = 0
+            rhobar1 = rhobar
+            psi = 0.
 
         # Use a plane rotation to eliminate the subdiagonal element (beta)
         # of the lower-bidiagonal matrix, giving an upper-bidiagonal matrix.
@@ -485,10 +486,13 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         #    Estimate r1norm from
         #    r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
         # Although there is cancellation, it might be accurate enough.
-        r1sq = rnorm**2 - dampsq * xxnorm
-        r1norm = sqrt(abs(r1sq))
-        if r1sq < 0:
-            r1norm = -r1norm
+        if damp > 0:
+            r1sq = rnorm**2 - dampsq * xxnorm
+            r1norm = sqrt(abs(r1sq))
+            if r1sq < 0:
+                r1norm = -r1norm
+        else:
+            r1norm = rnorm
         r2norm = rnorm
 
         # Now use these norms to estimate certain other quantities,
@@ -521,26 +525,26 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         if test1 <= rtol:
             istop = 1
 
-        # See if it is time to print something.
-        prnt = False
-        if n <= 40:
-            prnt = True
-        if itn <= 10:
-            prnt = True
-        if itn >= iter_lim-10:
-            prnt = True
-        # if itn%10 == 0: prnt = True
-        if test3 <= 2*ctol:
-            prnt = True
-        if test2 <= 10*atol:
-            prnt = True
-        if test1 <= 10*rtol:
-            prnt = True
-        if istop != 0:
-            prnt = True
+        if show:
+            # See if it is time to print something.
+            prnt = False
+            if n <= 40:
+                prnt = True
+            if itn <= 10:
+                prnt = True
+            if itn >= iter_lim-10:
+                prnt = True
+            # if itn%10 == 0: prnt = True
+            if test3 <= 2*ctol:
+                prnt = True
+            if test2 <= 10*atol:
+                prnt = True
+            if test1 <= 10*rtol:
+                prnt = True
+            if istop != 0:
+                prnt = True
 
-        if prnt:
-            if show:
+            if prnt:
                 str1 = '%6g %12.5e' % (itn, x[0])
                 str2 = ' %10.3e %10.3e' % (r1norm, r2norm)
                 str3 = '  %8.1e %8.1e' % (test1, test2)

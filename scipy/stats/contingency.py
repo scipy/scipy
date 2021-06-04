@@ -10,22 +10,26 @@ Functions for creating and analyzing contingency tables.
    :toctree: generated/
 
    chi2_contingency
+   relative_risk
    crosstab
+   association
+
    expected_freq
    margins
-   association
+
 """
 
 
 from functools import reduce
+import math
 import numpy as np
 from .stats import power_divergence
-import math
+from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association']
+           'association', 'relative_risk']
 
 
 def margins(a):
@@ -171,6 +175,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     fisher_exact
     chisquare
     power_divergence
+    barnard_exact
+    boschloo_exact
 
     Notes
     -----
@@ -282,7 +288,11 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     else:
         if dof == 1 and correction:
             # Adjust `observed` according to Yates' correction for continuity.
-            observed = observed + 0.5 * np.sign(expected - observed)
+            # Magnitude of correction no bigger than difference; see gh-13875
+            diff = expected - observed
+            direction = np.sign(diff)
+            magnitude = np.minimum(0.5, np.abs(diff))
+            observed = observed + magnitude * direction
 
         chi2, p = power_divergence(observed, expected,
                                    ddof=observed.size - 1 - dof, axis=None,
@@ -316,7 +326,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
         Value of the test statistic
 
     Notes
-    ------
+    -----
     Cramer's V, Tschuprow's T and Pearson's Contingency Coefficient, all
     measure the degree to which two nominal or ordinal variables are related,
     or the level of their association. This differs from correlation, although

@@ -22,7 +22,7 @@ from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minr
 # TODO test both preconditioner methods
 
 
-class Case(object):
+class Case:
     def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
@@ -43,7 +43,7 @@ class Case(object):
         return "<%s>" % self.name
 
 
-class IterativeParams(object):
+class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
         solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
@@ -512,7 +512,7 @@ def test_x0_working(solver):
 
 #------------------------------------------------------------------------------
 
-class TestQMR(object):
+class TestQMR:
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
@@ -556,7 +556,7 @@ class TestQMR(object):
         assert_normclose(A*x, b, tol=1e-8)
 
 
-class TestGMRES(object):
+class TestGMRES:
     def test_callback(self):
 
         def store_residual(r, rvec):

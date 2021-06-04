@@ -86,7 +86,7 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-class interp2d(object):
+class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
@@ -94,11 +94,14 @@ class interp2d(object):
     Interpolate over a 2-D grid.
 
     `x`, `y` and `z` are arrays of values used to approximate some function
-    f: ``z = f(x, y)``. This class returns a function whose call method uses
-    spline interpolation to find the value of new points.
+    f: ``z = f(x, y)`` which returns a scalar value `z`. This class returns a
+    function whose call method uses spline interpolation to find the value
+    of new points.
 
     If `x` and `y` represent a regular grid, consider using
-    RectBivariateSpline.
+    `RectBivariateSpline`.
+
+    If `z` is a vector value, consider using `interpn`.
 
     Note that calling `interp2d` with NaNs present in input values results in
     undefined behaviour.
@@ -406,6 +409,10 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
+    
+    If the values in `x` are not unique, the resulting behavior is
+    undefined and specific to the choice of `kind`, i.e., changing
+    `kind` will change the behavior for duplicates.
 
 
     Examples
@@ -714,7 +721,7 @@ class interp1d(_Interpolator1D):
         return below_bounds, above_bounds
 
 
-class _PPolyBase(object):
+class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
@@ -1902,7 +1909,7 @@ class BPoly(_PPolyBase):
         return out
 
 
-class NdPPoly(object):
+class NdPPoly:
     """
     Piecewise tensor product polynomial
 
@@ -2335,7 +2342,7 @@ class NdPPoly(object):
         return c
 
 
-class RegularGridInterpolator(object):
+class RegularGridInterpolator:
     """
     Interpolation on a regular grid in arbitrary dimensions
 
@@ -2393,7 +2400,8 @@ class RegularGridInterpolator(object):
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+    >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+    >>> data = f(xg, yg, zg)
 
     ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:
@@ -2613,17 +2621,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z
-    >>> x = np.linspace(0, 5)
-    >>> y = np.linspace(0, 5)
-    >>> z = np.linspace(0, 5)
+    >>> x = np.linspace(0, 4, 5)
+    >>> y = np.linspace(0, 5, 6)
+    >>> z = np.linspace(0, 6, 7)
     >>> points = (x, y, z)
-    >>> values = value_func_3d(*np.meshgrid(*points))
+    >>> values = value_func_3d(*np.meshgrid(*points, indexing='ij'))
 
     Evaluate the interpolating function at a point
 
     >>> point = np.array([2.21, 3.12, 1.15])
     >>> print(interpn(points, values, point))
-    [11.72]
+    [12.63]
 
     See also
     --------

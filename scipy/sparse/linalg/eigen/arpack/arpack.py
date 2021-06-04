@@ -306,7 +306,7 @@ def choose_ncv(k):
     return max(2 * k + 1, 20)
 
 
-class _ArpackParams(object):
+class _ArpackParams:
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
