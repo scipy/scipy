@@ -1144,6 +1144,10 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     fisher_stat = pvalues[table[0, 0], table[0, 1]]
     index_arr = pvalues <= fisher_stat
+    index_arr = np.logical_or(
+         index_arr,
+         np.isclose(pvalues - fisher_stat, 0)
+     )  # Because the hypergeometric has some slight numerical errors
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)
