@@ -1471,15 +1471,15 @@ class Tukey_HSDResult:
         self._nobs = _nobs
         self._stand_err = _stand_err
 
-    def confidence_interval(self, sig_level=.05):
+    def confidence_interval(self, confidence_level=.95):
         """
         Compute the confidence interval for the specified significance level.
 
         Parameters
         ----------
-        confidence_interval : float, optional
+        confidence_level : float, optional
             Confidence level for the computed confidence interval
-            of the estimated proportion. Default is 0.05.
+            of the estimated proportion. Default is .95.
 
         Returns
         -------
@@ -1495,8 +1495,24 @@ class Tukey_HSDResult:
                Tukey's Method."
                https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
                28 November 2020.
+        Examples
+        --------
+        >>> from scipy.stats import tukey_hsd
+        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> result = tukey_hsd(group0, group1, group2)
+        >>> ci = result.confidence_interval()
+        >>> ci.low
+        array([[-3.649159, -8.249159, -3.909159],
+               [ 0.950841, -3.649159,  0.690841],
+               [-3.389159, -7.989159, -3.649159]])
+        >>> ci.high
+        array([[ 3.649159, -0.950841,  3.389159],
+               [ 8.249159,  3.649159,  7.989159],
+               [ 3.909159, -0.690841,  3.649159]])
         """
-        if not 0 < sig_level < 1:
+        if not 0 < confidence_level < 1:
             raise ValueError("Significance level must be between 0 and 1.")
         # determine the critical value of the studentized range using the
         # appropriate significance level, number of treatments, and degrees
@@ -1504,8 +1520,8 @@ class Tukey_HSDResult:
         # treatments. ("Confidence limits for Tukey's method")[1]. Note that
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
-        params = (sig_level, self._nobs, self._ntreatments - self._nobs)
-        srd = distributions.studentized_range.isf(*params)
+        params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
+        srd = distributions.studentized_range.ppf(*params)
         # also called maximum critical value, the tukey criterion is the
         # studentized range critical value * the square root of mean square
         # error over the sample size.
