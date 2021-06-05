@@ -1323,7 +1323,7 @@ class TestTukey_HSD:
         ODS LISTING;
         # The standard output, not showing the additional digits. The code
         # example above outputs a table with more digits.
-        Brand Comparison    Mean Difference  Simultanious 95% Confidence Limits
+        Brand Comparison    Mean Difference  Simultaneous 95% Confidence Limits
         2 - 1               3.645               0.268           7.022   1
         2 - 3               4.340               0.593           8.087   1
         1 - 2              -3.645              -7.022          -0.268   1
