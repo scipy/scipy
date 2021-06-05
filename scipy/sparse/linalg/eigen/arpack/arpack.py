@@ -1872,7 +1872,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         jobv = ((isinstance(return_singular_vectors, str) and 'v' in return_singular_vectors)
                 or (isinstance(return_singular_vectors, bool) and return_singular_vectors))
         return svdp(
-            A, k=k, tol=tol, which=which, maxiter=maxiter, compute_u=jobu, compute_v=jobv,
+            A, k=k, tol=tol**2, which=which, maxiter=maxiter, compute_u=jobu, compute_v=jobv,
             irl_mode=True, kmax=ncv, v0=v0)
     elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,

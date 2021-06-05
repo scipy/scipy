@@ -137,7 +137,7 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         The smallest relative gap allowed between any shift in irl mode.
         Default = 0.001.  Accessed only if irl_mode == True.
     shifts : int (optional)
-        Number of shifts per restart in irl mode.  Default is 100
+       Number of shifts per restart in irl mode.  Default is 100
         Accessed only if irl_mode == True.
     maxiter : int (optional)
         Maximum number of restarts in irl mode.  Default is 1000
@@ -155,10 +155,11 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         returned only if compute_v is True.
     info : integer
         convergence info, returned only if full_output is True
-        - INFO = 0  : The K largest singular triplets were computed succesfully
-        - INFO = J>0, J<K: An invariant subspace of dimension J was found.
+        - INFO = 0 : The K largest (or smallest) singular triplets were
+                     computed succesfully
+        - INFO = J>0, J<K : An invariant subspace of dimension J was found.
         - INFO = -1 : K singular triplets did not converge within KMAX
-                     iterations.
+                      iterations.
     sigma_bound : ndarray
         the error bounds on the singular values sigma, returned only if
         full_output is True
@@ -211,7 +212,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     # guard against unnecessarily large kmax
     kmax = min(m + 1, n + 1, kmax)
     if kmax < k:
-        raise ValueError(f"kmax must be greater than or equal to k: {kmax} < {k}")
+        raise ValueError(
+            f"kmax must be greater than or equal to k: {kmax} < {k}")
 
     # convert python args to fortran args
     jobu = 'y' if compute_u else 'n'
@@ -249,10 +251,12 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
 
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
-    # BLAS-3 blocking size is 16, but docs don't specify; it's almost surely a power of 2.
+    # BLAS-3 blocking size is 16, but docs don't specify; it's almost surely a
+    # power of 2.
     blocksize = max(2, int(blocksize))
     if compute_u or compute_v:
-        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(3*kmax*kmax + 4*kmax + 4, blocksize*max(m, n))
+        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(3*kmax*kmax + 4*kmax + 4,
+                                                       blocksize*max(m, n))
         liwork = 8*kmax
     else:
         lwork = m + n + 9*kmax + 2*kmax*kmax + 4 + max(m + n, 4*kmax + 4)
@@ -295,9 +299,16 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
                                             ioption, dparm, iparm)
 
     if info > 0:
-        raise LinAlgError(f"An invariant subspace of dimension {info} was found.")
+        raise LinAlgError(
+            f"An invariant subspace of dimension {info} was found.")
     if info < 0:
-        raise LinAlgError(f"k={k} singular triplets did not converge within kmax={kmax} iterations")
+        raise LinAlgError(
+            f"k={k} singular triplets did not converge within "
+            f"kmax={kmax} iterations")
+
+    # catch corner case where A is all zeros and v is not orthogonal
+    if not np.any(v):
+        v = np.eye(*v.shape)
 
     # construct return tuple based on caller's desired output
     return {
