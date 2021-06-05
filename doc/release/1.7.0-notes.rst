@@ -1028,3 +1028,4 @@ Pull requests for 1.7.0
 * `#14166 <https://github.com/scipy/scipy/pull/14166>`__: CI, MAINT: restrictions on pre-release CI
 * `#14171 <https://github.com/scipy/scipy/pull/14171>`__: TST: signal: Bump tolerances for a test of Gustafsson's...
 * `#14175 <https://github.com/scipy/scipy/pull/14175>`__: TST: stats: Loosen tolerance in some binomtest tests.
+* `#14182 <https://github.com/scipy/scipy/pull/14182>`__: MAINT: stats: Update ppcc_plot and ppcc_max docstring.
