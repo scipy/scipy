@@ -3999,6 +3999,52 @@ def pearsonr(x, y):
     >>> stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
     (-0.7426106572325057, 0.1505558088534455)
 
+    It is important to keep in mind that no correlation does not imply
+    independence unless (X, Y) is Gaussian. Correlation can even be zero
+    when there is a very simple dependence structure: if X follows a
+    standard normal distribution, let Y = abs(X). A simple check
+    confirms that the correlation is close to zero:
+
+    >>> x = stats.norm.rvs(size=500)
+    >>> y = np.abs(x)
+    >>> stats.pearsonr(x, y)
+    (-0.016172891856853524, 0.7182823678751942) # may vary
+
+    Indeed, since the expectation of x is zero, cov(X, Y) = E(X*Y). This equals
+    EX*abs(X) which is zero by symmetry.
+
+    If the relationship between x and y is non-linear, the correlation
+    coefficient can be misleading. For example, if X has a standard normal
+    distribution, define Y = X if X < 0 and Y = 0 otherwise. A simple calculation
+    shows that corr(X, Y) = sqrt(2/Pi) = 0.797..., implying a high level of
+    correlation:
+
+    >>> y = np.where(x < 0, x, 0)
+    >>> stats.pearsonr(x, y)
+    (0.8537091583771509, 3.183461621422181e-143) # may vary
+
+    This is unintuitive since there is no dependence of X and Y if X is larger
+    than zero which happens in about half of the cases if we sample X and Y.
+
+    There is linear dependance between X and Y in the sense that
+    Y = a + b*X + e, were a,b are constants and e is a random error term,
+    assumed to be independent of X. For simplicity, assume that X is standard
+    normal, a=0, b=1 and let e follow a normal distribution with mean zero
+    and standard deviation s>0.
+
+    >>> s = 0.5
+    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> y = x + e
+    >>> stats.pearsonr(x, y)
+    (0.9029601878969703, 8.428978827629898e-185) # may vary
+
+    This should be close to the exact value given by
+
+    >>> 1/np.sqrt(1 + s**2)
+    0.8944271909999159
+
+    As expected, a large variance of the noise reduces the correlation, while
+    the correlation approaches one as the variance of the error goes to zero.
     """
     n = len(x)
     if n != len(y):
