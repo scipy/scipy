@@ -679,9 +679,9 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(1234567)
+    >>> rng = np.random.default_rng()
     >>> c = 2.5
-    >>> x = stats.weibull_min.rvs(c, scale=4, size=500, random_state=rng)
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
 
     Generate the PPCC plot for this data with the Weibull distribution.
 
@@ -693,8 +693,6 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     point in the PPCC graph.
 
     >>> cmax = stats.ppcc_max(x, brack=(c/2, 2*c), dist='weibull_min')
-    >>> print(cmax)
-    2.4937451834924382
     >>> ax.axvline(cmax, color='r')
     >>> plt.show()
 
@@ -773,9 +771,9 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(1234567)
+    >>> rng = np.random.default_rng()
     >>> c = 2.5
-    >>> x = stats.weibull_min.rvs(c, scale=4, size=500, random_state=rng)
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
 
     Take a look at the histogram of the data.
 
