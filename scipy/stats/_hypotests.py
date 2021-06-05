@@ -1710,7 +1710,7 @@ def tukey_hsd(*args):
     stand_err = np.sqrt(normalize * mse / 2)
 
     # the mean difference is the test statistic.
-    mean_differences = means.reshape((ntreatments, 1)) - means
+    mean_differences = means[None].T - means
 
     # Calculate the t-statistic to use within the survival function of the
     # studentized range to get the p-value.
