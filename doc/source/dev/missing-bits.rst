@@ -7,7 +7,10 @@ are not explicitly stated in the existing guidelines and standards, including
 
 * `PEP-8 <https://www.python.org/dev/peps/pep-0008>`_ Style Guide for Python Code
 * `PEP-257 <https://www.python.org/dev/peps/pep-0257>`_ Docstring Conventions
-* `NumPy docstring standard <https://numpydoc.readthedocs.io/en/latest/format.html>`_
+* `NumPy docstring standard
+  <https://numpydoc.readthedocs.io/en/latest/format.html>`_
+* NumPy `Testing Guidelines
+  <https://docs.scipy.org/doc/numpy/reference/testing.html>`_
 
 Some of these are trivial, and might not seem worth discussing, but in many
 cases, the issue has come up in a pull request review in either the SciPy
@@ -54,6 +57,8 @@ functions::
     instead of this function for more consistent floating point
     comparisons.
 
+For more information about writing unit tests, see `Testing Guidelines
+<https://docs.scipy.org/doc/numpy/reference/testing.html>`_.
 
 Testing that expected exceptions are raised
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
