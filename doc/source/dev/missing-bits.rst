@@ -228,16 +228,3 @@ Some examples:
         * You get the idea.
         Some text that follows the list.
 
-
-Last line of docstring is a blank line
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Include a blank line at the end of multiline docstrings.  (This refers
-to a final blank line *within* the docstring, not a blank line in the
-code that follows the docstring.)
-
-This is not part of [PEP-257](https://www.python.org/dev/peps/pep-0257/),
-and the examples in that PEP do not include the blank line.  It is
-also not explicitly stated in the 
-[NumPy docstring standard](https://numpydoc.readthedocs.io/en/latest/format.html),
-but the few complete examples shown there all include a blank line at
-the end.
