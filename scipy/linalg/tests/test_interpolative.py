@@ -34,7 +34,8 @@ from scipy.linalg.interpolative import interp_decomp
 import time
 import itertools
 
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           assert_array_equal)
 from pytest import raises as assert_raises
 
 
@@ -88,7 +89,7 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddp_aid / idzp_aid ...",)
         t0 = time.time()
@@ -96,7 +97,7 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddp_rid / idzp_rid ...",)
         t0 = time.time()
@@ -104,7 +105,7 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         # fixed rank
         k = rank
@@ -115,7 +116,7 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddr_aid / idzr_aid ...",)
         t0 = time.time()
@@ -123,7 +124,7 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddr_rid / idzr_rid ...",)
         t0 = time.time()
@@ -131,14 +132,14 @@ class TestInterpolativeDecomposition:
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         # check skeleton and interpolation matrices
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
-        assert_(np.allclose(B, A[:,idx[:k]], eps))
-        assert_(np.allclose(B.dot(P), A, eps))
+        assert_allclose(B, A[:,idx[:k]], rtol=eps, atol=1e-08)
+        assert_allclose(B @ P, A, rtol=eps, atol=1e-08)
 
         # test SVD routines
         _debug_print("-----------------------------------------")
@@ -150,25 +151,25 @@ class TestInterpolativeDecomposition:
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps, rand=False)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddp_asvd / idzp_asvd...",)
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddp_rsvd / idzp_rsvd...",)
         t0 = time.time()
         U, S, V = pymatrixid.svd(L, eps)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         # fixed rank
         k = rank
@@ -177,42 +178,42 @@ class TestInterpolativeDecomposition:
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, k, rand=False)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddr_asvd / idzr_asvd ...",)
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, k)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         _debug_print("Calling iddr_rsvd / idzr_rsvd ...",)
         t0 = time.time()
         U, S, V = pymatrixid.svd(L, k)
         t = time.time() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
+        B = U * S @ V.T.conj()
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         # ID to SVD
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
         Up, Sp, Vp = pymatrixid.id_to_svd(A[:, idx[:k]], idx, proj)
-        B = U.dot(np.diag(S).dot(V.T.conj()))
-        assert_(np.allclose(A, B, eps))
+        B = U * S @ V.T.conj()
+        assert_allclose(A, B, rtol=eps, atol=1e-08)
 
         # Norm estimates
         s = svdvals(A)
         norm_2_est = pymatrixid.estimate_spectral_norm(A)
-        assert_(np.allclose(norm_2_est, s[0], 1e-6))
+        assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
         B = A.copy()
         B[:,0] *= 1.2
         s = svdvals(A - B)
         norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B)
-        assert_(np.allclose(norm_2_est, s[0], 1e-6))
+        assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
         # Rank estimates
         B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=dtype)
@@ -232,11 +233,12 @@ class TestInterpolativeDecomposition:
 
     def test_rand(self):
         pymatrixid.seed('default')
-        assert_(np.allclose(pymatrixid.rand(2), [0.8932059, 0.64500803], 1e-4))
+        assert_allclose(pymatrixid.rand(2), [0.8932059, 0.64500803],
+                        rtol=1e-4, atol=1e-8)
 
         pymatrixid.seed(1234)
         x1 = pymatrixid.rand(2)
-        assert_(np.allclose(x1, [0.7513823, 0.06861718], 1e-4))
+        assert_allclose(x1, [0.7513823, 0.06861718], rtol=1e-4, atol=1e-8)
 
         np.random.seed(1234)
         pymatrixid.seed()
@@ -251,7 +253,8 @@ class TestInterpolativeDecomposition:
 
     def test_badcall(self):
         A = hilbert(5).astype(np.float32)
-        assert_raises(ValueError, pymatrixid.interp_decomp, A, 1e-6, rand=False)
+        with assert_raises(ValueError):
+            pymatrixid.interp_decomp(A, 1e-6, rand=False)
 
     def test_rank_too_large(self):
         # svd(array, k) should not segfault
@@ -265,18 +268,18 @@ class TestInterpolativeDecomposition:
         # fixed precision
         A = np.random.rand(16, 8)
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
-        assert_(k == A.shape[1])
+        assert_equal(k, A.shape[1])
 
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
-        assert_allclose(A, B.dot(P))
+        assert_allclose(A, B @ P)
 
         # fixed rank
         idx, proj = pymatrixid.interp_decomp(A, k)
 
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
-        assert_allclose(A, B.dot(P))
+        assert_allclose(A, B @ P)
 
     def test_bug_9793(self):
         dtypes = [np.float_, np.complex_]
@@ -292,4 +295,4 @@ class TestInterpolativeDecomposition:
                          dtype=dtype, order="C")
             B = A.copy()
             interp_decomp(A.T, eps, rand=rand)
-            assert_(np.array_equal(A, B))
+            assert_array_equal(A, B)
