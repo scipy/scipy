@@ -1250,39 +1250,111 @@ class TestTukey_HSD:
                     [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
                      30.1],
                     [26.1, 28.3, 24.3, 26.2, 27.8])
-    sas_same_size = [
-        ['2', '3', '4.340', '.6908830567505320', '7.989116943249460', '1'],
-        ['2', '1', '4.600', '.9508830567505330', '8.249116943249470', '1'],
-        ['3', '2', '-4.340', '-7.98911694324947', '-.690883056750532', '1'],
-        ['3', '1', '0.260', '-3.38911694324947', '3.909116943249470', '0'],
-        ['1', '2', '-4.600', '-8.24911694324947', '-.950883056750534', '1'],
-        ['1', '3', '-0.260', '-3.90911694324947', '3.389116943249460', '0']]
+    r_data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
+               27, 14, 29, 19, 29, 31, 41, 20, 44],
+              [18, 21, 29, 17, 12, 18, 35, 30, 36,
+               42, 26, 19, 16, 39, 28, 21, 39, 29],
+              [36, 21, 24, 18, 10, 43, 28, 15, 26,
+               20, 21, 24, 17, 13, 15, 15, 16, 28])
 
-    sas_diff_size = [
-        ['2', '1', '3.645', '0.2679292644988780', '7.022070735501120', '1'],
-        ['2', '3', '4.340', '0.5934764007020940', '8.086523599297900', '1'],
-        ['1', '2', '-3.645', '-7.02207073550113', '-.267929264498878', '1'],
-        ['1', '3', '.6949999999999960', '-2.68207073550113',
-         '4.072070735501120', '0'],
-        ['3', '2', '-4.340', '-8.08652359929791', '-.593476400702094', '1'],
-        ['3', '1', '-.694999999999997', '-4.07207073550112',
-         '2.682070735501120', '0']]
+    sas_same_size = np.asarray(
+        [[[0, -4.6, -0.26],
+          [4.6, 0., 4.34],
+          [0.26, -4.34, 0.]],
+         [[0., -8.24911694, -3.90911694],
+          [0.95088306, 0., 0.69088306],
+          [-3.38911694, -7.98911694, 0.]],
+         [[0., -0.95088306, 3.38911694],
+          [8.24911694, 0., 7.98911694],
+          [3.90911694, -0.69088306, 0.]],
+         [[0., 1., 0.],
+          [1., 0., 1.],
+          [0., 1., 0.]]])
 
-    sas_extreme = [
-        ['2', '3', '4.34', '1.561605075444930', '7.118394924555070', '1'],
-        ['2', '1', '6.08', '2.740784878675930', '9.419215121324070', '1'],
-        ['3', '2', '-4.34', '-7.11839492455507', '-1.56160507544493', '1'],
-        ['3', '1', '1.74', '-1.96452656607342', '5.444526566073420', '0'],
-        ['1', '2', '-6.08', '-9.41921512132407', '-2.74078487867593', '1'],
-        ['1', '3', '-1.74', '-5.44452656607343', '1.964526566073420', '0']
-    ]
+    sas_diff_size = np.asarray(
+        [[[0., -3.645, 0.695],
+          [3.645, 0., 4.34],
+          [-0.695, -4.34, 0.]],
+         [[0., -7.02207074, -2.68207074],
+          [0.26792926, 0., 0.5934764],
+          [-4.07207074, -8.0865236, 0.]],
+         [[0., -0.26792926, 4.07207074],
+          [7.02207074, 0., 8.0865236],
+          [2.68207074, -0.5934764, 0.]],
+         [[0., 1., 0.],
+          [1., 0., 1.],
+          [0., 1., 0.]]])
 
-    @pytest.mark.parametrize("data,SAS_res", ((data_same_size, sas_same_size),
-                                              (data_diff_size, sas_diff_size),
-                                              (extreme_size, sas_extreme)),
-                             ids=["equal size sample", "unequal sample size",
-                                  "extreme sample size differences"])
-    def test_compare_sas(self, data, SAS_res):
+    sas_extreme = np.asarray(
+        [[[0., -6.08, -1.74],
+          [6.08, 0., 4.34],
+          [1.74, -4.34, 0.]],
+         [[0., -9.41921512, -5.44452657],
+          [2.74078488, 0., 1.56160508],
+          [-1.96452657, -7.11839492, 0.]],
+         [[0., -2.74078488, 1.96452657],
+          [9.41921512, 0., 7.11839492],
+          [5.44452657, -1.56160508, 0.]],
+         [[0., 1., 0.],
+          [1., 0., 1.],
+          [0., 1., 0.]]])
+
+    matlab_sm_siz = np.asarray(
+        [[[0., -4.6, -0.26],
+          [0., 0., 4.34],
+          [0., 0., 0.]],
+         [[0., -8.24915902, -3.90915902],
+          [0., 0., 0.69084098],
+          [0., 0., 0.]],
+         [[0., -0.95084098, 3.38915902],
+          [0., 0., 7.98915902],
+          [0., 0., 0.]],
+         [[0., 0.01444833, 0.98031072],
+          [0., 0., 0.02033114],
+          [0., 0., 0.]]])
+
+    r_expected = (
+        [[0, 10.000000, 14.722222],
+         [0, 0, 4.722222],
+         [0, 0, 0]],
+        [[0, 0.4401756, 5.1623978],
+         [0, 0, -4.8376022],
+         [0, 0, 0]],
+        [[0, 19.55982, 24.28205],
+         [0, 0, 14.28205],
+         [0, 0, 0]],
+        [[0, 0.0384598, 0.0014315],
+         [0, 0, 0.4630831],
+         [0, 0, 0]])
+    matlab_diff_sz = np.asarray(
+        [[[0., -3.645, 0.695],
+          [0., 0., 4.34],
+          [0., 0., 0.]],
+         [[0., -7.0220707, -2.6820707],
+          [0., 0., 0.59347644],
+          [0., 0., 0.]],
+         [[0., -0.2679293, 4.0720707],
+          [0., 0., 8.08652356],
+          [0., 0., 0.]],
+         [[0., 0.03371498, 0.85572267],
+          [0., 0., 0.02259047],
+          [0., 0., 0.]]])
+
+    @pytest.mark.parametrize("data,res_expect,atol,trui,is_p",
+                             ((data_same_size, sas_same_size, 1e-4, -2, False),
+                              (data_diff_size, sas_diff_size, 1e-4, -2, False),
+                              (extreme_size, sas_extreme, 1e-10, -2, False),
+                              (data_same_size, matlab_sm_siz, 1e-8, 1, True),
+                              (data_diff_size, matlab_diff_sz, 1e-7, 1, True),
+                              (r_data, r_expected, 1e-5, 1, True)
+                              ),
+                             ids=["sas equal size sample",
+                                  "sas unequal sample size",
+                                  "sas extreme sample size differences",
+                                  "matlab equal size sample",
+                                  "matlab unequal size sample",
+                                  "r_comp"])
+    def test_compare(self, data, res_expect, atol, trui, is_p):
         '''
         SAS code used to generate results for each sample:
         DATA ACHE;
@@ -1330,21 +1402,7 @@ class TestTukey_HSD:
         1 - 3               0.695              -2.682           4.072   0
         3 - 2              -4.340              -8.087          -0.593   1
         3 - 1              -0.695              -4.072           2.682   0
-        '''
 
-        res = stats.tukey_hsd(*data)
-        conf = res.confidence_interval()
-        for comp in SAS_res:
-            i, j, stat, lower, upper, sig = np.asarray(comp, dtype=float)
-            # make int for slicing, zero index
-            i, j = int(i) - 1, int(j) - 1
-            assert_allclose(stat, res.statistic[i, j], atol=1e-13)
-            assert_allclose(lower, conf.low[i, j], atol=1e-4)
-            assert_allclose(upper, conf.high[i, j], atol=1e-4)
-            assert sig == (res.pvalue[i, j] < .05)
-
-    def test_comp_R(self):
-        '''
         Testing against results and p-values from R:
         from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
         topics/TukeyHSD
@@ -1361,42 +1419,38 @@ class TestTukey_HSD:
         M-H  4.722222 -4.8376022 14.28205 0.4630831
         L-H 14.722222  5.1623978 24.28205 0.0014315
         L-M 10.000000  0.4401756 19.55982 0.0384598
+
+        Matlab code:
+        vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
+         26.1, 28.3, 24.3, 26.2, 27.8]
+        names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
+         'one', 'one', 'two', 'two', 'two', 'two', 'two'}
+        [p,t,stats] = anova1(vals,names,”off”);
+        [c,m,h,nms] = multcompare(stats, "CType","hsd");
         '''
-        group_l = [26, 30, 54, 25, 70, 52, 51, 26, 67,
-                   27, 14, 29, 19, 29, 31, 41, 20, 44]
-        group_m = [18, 21, 29, 17, 12, 18, 35, 30, 36,
-                   42, 26, 19, 16, 39, 28, 21, 39, 29]
-        group_h = [36, 21, 24, 18, 10, 43, 28, 15, 26,
-                   20, 21, 24, 17, 13, 15, 15, 16, 28]
-        res = stats.tukey_hsd(group_l, group_m, group_h)
 
-        r_pvalue = np.asarray(
-            [[0, 0.0384598, 0.0014315],
-             [0, 0, 0.4630831],
-             [0, 0, 0]])
-        r_stat = np.asarray(
-            [[0, 10.000000, 14.722222],
-             [0, 0, 4.722222],
-             [0, 0, 0]])
-        r_lower = np.asarray(
-            [[0, 0.4401756, 5.1623978],
-             [0, 0, -4.8376022],
-             [0, 0, 0]])
-        r_upper = np.asarray(
-            [[0, 19.55982, 24.28205],
-             [0, 0, 14.28205],
-             [0, 0, 0]])
-
+        res = stats.tukey_hsd(*data)
         conf = res.confidence_interval()
-        atol = 1e-5
-        for (i, j) in [(0, 1), (0, 2), (1, 2)]:
-            assert_allclose(r_pvalue[i, j], res.pvalue[i, j], atol=atol)
-            assert_allclose(r_stat[i, j], res.statistic[i, j], atol=atol)
-            assert_allclose(r_lower[i, j], conf.low[i, j], atol=atol)
-            assert_allclose(r_upper[i, j], conf.high[i, j], atol=atol)
+        s, l, h, p = res_expect
+        np.fill_diagonal(res.statistic, 0)
+        np.fill_diagonal(res.pvalue, 1)
+        np.fill_diagonal(conf.low, 0)
+        np.fill_diagonal(conf.high, 0)
+
+        assert_allclose(s, np.triu(res.statistic, trui), atol=atol)
+        assert_allclose(l, np.triu(conf.low, trui), atol=atol)
+        assert_allclose(h, np.triu(conf.high, trui), atol=atol)
+
+        if is_p:
+            assert_allclose(p, np.triu(res.pvalue, trui), atol=atol)
+        else:
+            p[np.allclose(p, 1)] = True
+            assert_allclose(p, (res.pvalue <= .05))
 
     def test_engineering_stat_handbook(self):
         '''
+        This example does not have p-values or the statistic so it is a
+        different test.
         Example sourced from:
         https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
         '''
