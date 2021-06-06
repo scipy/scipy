@@ -326,3 +326,37 @@ cdef void one_thread_loop(func_type loop_func, double& disc, double[:,
     threaded_sum_mutex.lock()
     (&disc)[0] += tmp # workaround to "disc += tmp", see cython issue #1863
     threaded_sum_mutex.unlock()
+
+
+def _cy_van_der_corput(long n, long base, long start_index,
+                       long[:, ::1] permutations=None):
+    sequence = np.zeros(n)
+    cdef:
+        long i, j, quotient, remainder
+        double[:] sequence_view = sequence
+        double b2r
+
+    for i in range(n):
+        quotient = start_index + i
+        b2r = 1.0 / base
+        j = 0
+        while True:
+            # The stopping criteria is different depending on whether the
+            # sequence is scrambled.
+            if permutations is None:
+                if quotient == 0:
+                    break
+
+            elif j == permutations.shape[0]:
+                break
+
+            remainder = quotient % base
+            if permutations is not None:
+                remainder = permutations[j, remainder]
+
+            sequence_view[i] += remainder * b2r
+            b2r /= base
+            quotient //= base
+            j += 1
+
+    return sequence
