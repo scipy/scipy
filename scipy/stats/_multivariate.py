@@ -4081,7 +4081,7 @@ class multivariate_t_gen(multi_rv_generic):
             x = rng.chisquare(df, size=size) / df
 
         z = rng.multivariate_normal(np.zeros(dim), shape, size=size)
-        samples = loc + z / np.sqrt(x)[:, None]
+        samples = loc + z / np.sqrt(x)[..., None]
         return _squeeze_output(samples)
 
     def _process_quantiles(self, x, dim):
