@@ -443,7 +443,9 @@ class DistanceFunctions(Benchmark):
         self.v_values, self.v_weights = rng.random(2) * 10, rng.random(2) * 10
 
     def time_energy_distance(self):
-        distance = stats.energy_distance(self.u_values, self.v_values, self.u_weights, self.v_weights)
+        distance = stats.energy_distance(self.u_values, self.v_values, 
+                                         self.u_weights, self.v_weights)
 
     def time_wasserstein_distance(self):
-        distance = stats.wasserstein_distance(self.u_values, self.v_values, self.u_weights, self.v_weights)
+        distance = stats.wasserstein_distance(self.u_values, self.v_values, 
+                                              self.u_weights, self.v_weights)
