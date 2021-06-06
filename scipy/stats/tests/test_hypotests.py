@@ -1425,7 +1425,7 @@ class TestTukey_HSD:
          26.1, 28.3, 24.3, 26.2, 27.8]
         names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
          'one', 'one', 'two', 'two', 'two', 'two', 'two'}
-        [p,t,stats] = anova1(vals,names,”off”);
+        [p,t,stats] = anova1(vals,names,"off");
         [c,m,h,nms] = multcompare(stats, "CType","hsd");
         '''
 

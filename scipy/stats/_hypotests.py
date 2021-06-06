@@ -1455,7 +1455,6 @@ class Tukey_HSDResult:
         Compute the confidence interval for the significance level
         specified in the test.
 
-
     References
     ----------
     .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
@@ -1472,8 +1471,7 @@ class Tukey_HSDResult:
         self._stand_err = _stand_err
 
     def confidence_interval(self, confidence_level=.95):
-        """
-        Compute the confidence interval for the specified significance level.
+        """Compute the confidence interval for the specified confidence level.
 
         Parameters
         ----------
@@ -1495,6 +1493,7 @@ class Tukey_HSDResult:
                Tukey's Method."
                https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
                28 November 2020.
+
         Examples
         --------
         >>> from scipy.stats import tukey_hsd
