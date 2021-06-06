@@ -438,9 +438,12 @@ class NumericalInverseHermite(Benchmark):
 
 class DistanceFunctions(Benchmark):
     def setup(self):
+        size = 4000
         rng = np.random.default_rng(12345678)
-        self.u_values, self.u_weights = rng.random(4) * 10, rng.random(4) * 10
-        self.v_values, self.v_weights = rng.random(2) * 10, rng.random(2) * 10
+        self.u_values = rng.random(size) * 10
+        self.u_weights = rng.random(size) * 10
+        self.v_values = rng.random(size // 2) * 10
+        self.v_weights = rng.random(size // 2) * 10
 
     def time_energy_distance(self):
         distance = stats.energy_distance(self.u_values, self.v_values, 
