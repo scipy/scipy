@@ -166,6 +166,7 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
 
     Examples
     --------
+    >>> from scipy.sparse.linalg import svdp
     >>> A = np.random.random((10, 20))
     >>> u, sigma, vt = svdp(A, 3)
     >>> np.set_printoptions(precision=3, suppress=True)
