@@ -9,6 +9,7 @@ import re
 import shutil
 import argparse
 import urllib
+import urllib.request
 
 import urllib3
 from bs4 import BeautifulSoup
