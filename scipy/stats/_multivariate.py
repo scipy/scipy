@@ -1295,7 +1295,7 @@ def _lnB(alpha):
 class dirichlet_gen(multi_rv_generic):
     r"""A Dirichlet random variable.
 
-    The `alpha` keyword specifies the concentration parameters of the
+    The ``alpha`` keyword specifies the concentration parameters of the
     distribution.
 
     .. versionadded:: 0.15.0
