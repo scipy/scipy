@@ -115,23 +115,6 @@ Function or class              Variable name
        documents the argument as `lambda`.
 
 
-Implicit string continuation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-When an implicit continuation is used to create a long literal string, the
-string is generally split at a space, and the space is included in the
-second part of the string.
-
-  Yes::
-
-      long_string = ("This is a very long string that demonstrates"
-                     " this guideline.")
-
-  No::
-
-      long_string = ("This is a very long string that demonstrates "
-                     "this guideline.")
-
-
 Documentation Guidelines
 ------------------------
 
