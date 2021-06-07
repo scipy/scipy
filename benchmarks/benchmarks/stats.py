@@ -438,17 +438,34 @@ class NumericalInverseHermite(Benchmark):
 
 class DistanceFunctions(Benchmark):
     def setup(self):
-        size = 4000
         rng = np.random.default_rng(12345678)
-        self.u_values = rng.random(size) * 10
-        self.u_weights = rng.random(size) * 10
-        self.v_values = rng.random(size // 2) * 10
-        self.v_weights = rng.random(size // 2) * 10
+        size_large = 4000
+        self.u_values_large = rng.random(size_large) * 10
+        self.u_weights_large = rng.random(size_large) * 10
+        self.v_values_large = rng.random(size_large // 2) * 10
+        self.v_weights_large = rng.random(size_large // 2) * 10
+        size_small = 10
+        self.u_values_small = rng.random(size_small) * 10
+        self.u_weights_small = rng.random(size_small) * 10
+        self.v_values_small = rng.random(size_small // 2) * 10
+        self.v_weights_small = rng.random(size_small // 2) * 10
 
-    def time_energy_distance(self):
-        distance = stats.energy_distance(self.u_values, self.v_values, 
-                                         self.u_weights, self.v_weights)
+    def time_energy_distance_large(self):
+        distance = stats.energy_distance(
+                 self.u_values_large, self.v_values_large, 
+                 self.u_weights_large, self.v_weights_large)
 
-    def time_wasserstein_distance(self):
-        distance = stats.wasserstein_distance(self.u_values, self.v_values, 
-                                              self.u_weights, self.v_weights)
+    def time_energy_distance_small(self):
+        distance = stats.energy_distance(
+                 self.u_values_small, self.v_values_small, 
+                 self.u_weights_small, self.v_weights_small)
+    
+    def time_wasserstein_distance_large(self):
+        distance = stats.wasserstein_distance(
+                 self.u_values_large, self.v_values_large, 
+                 self.u_weights_large, self.v_weights_large)
+
+    def time_wasserstein_distance_small(self):
+        distance = stats.wasserstein_distance(
+                 self.u_values_small, self.v_values_small, 
+                 self.u_weights_small, self.v_weights_small)
