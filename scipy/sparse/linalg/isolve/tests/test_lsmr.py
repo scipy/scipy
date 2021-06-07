@@ -18,9 +18,8 @@ Dept of MS&E, Stanford University.
 
 from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
-from numpy.testing import (assert_allclose, assert_almost_equal,
-                           assert_array_almost_equal)
-
+from numpy.testing import assert_allclose
+import pytest
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
@@ -36,7 +35,7 @@ class TestLSMR:
         Afun = aslinearoperator(A)
         b = Afun.matvec(xtrue)
         x = lsmr(A, b)[0]
-        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+        assert norm(x - xtrue) == pytest.approx(0, abs=1e-5)
 
     def testIdentityACase1(self):
         A = eye(self.n)
@@ -62,7 +61,7 @@ class TestLSMR:
         A = array([[1.0, 2.0]])
         b = 3.0
         x = lsmr(A, b)[0]
-        assert_almost_equal(norm(A.dot(x) - b), 0)
+        assert norm(A.dot(x) - b) == pytest.approx(0)
 
     def testComplexX(self):
         A = eye(self.n)
@@ -75,7 +74,7 @@ class TestLSMR:
         b = aslinearoperator(A).matvec(xtrue)
         x0 = zeros(self.n, dtype=complex)
         x = lsmr(A, b, x0=x0)[0]
-        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+        assert norm(x - xtrue) == pytest.approx(0, abs=1e-5)
 
     def testComplexA(self):
         A = 4 * eye(self.n) + 1j * ones((self.n, self.n))
@@ -87,13 +86,13 @@ class TestLSMR:
         xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
         b = aslinearoperator(A).matvec(xtrue)
         x = lsmr(A, b)[0]
-        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+        assert norm(x - xtrue) == pytest.approx(0, abs=1e-5)
 
     def testColumnB(self):
         A = eye(self.n)
         b = ones((self.n, 1))
         x = lsmr(A, b)[0]
-        assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
+        assert norm(A.dot(x) - b.ravel()) == pytest.approx(0)
 
     def testInitialization(self):
         # Test that the default setting is not modified
@@ -103,7 +102,7 @@ class TestLSMR:
         # Test passing zeros yields similiar result
         x0 = zeros(b.shape)
         x = lsmr(G, b, x0=x0)[0]
-        assert_array_almost_equal(x, x_ref)
+        assert_allclose(x, x_ref)
 
         # Test warm-start with single iteration
         x0 = lsmr(G, b, maxiter=1)[0]
@@ -137,16 +136,16 @@ class TestLSMRReturns:
 
     def testNormr(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
-        assert_almost_equal(normr, norm(self.b - self.Afun.matvec(x)))
+        assert norm(self.b - self.Afun.matvec(x)) == pytest.approx(normr)
 
     def testNormar(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
-        assert_almost_equal(normar,
-                norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x))))
+        assert (norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x)))
+                == pytest.approx(normar))
 
     def testNormx(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
-        assert_almost_equal(normx, norm(x))
+        assert norm(x) == pytest.approx(normx)
 
 
 def lowerBidiagonalMatrix(m, n):
