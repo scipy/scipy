@@ -1019,11 +1019,11 @@ class TestBoschlooExact:
             ([[10, 5], [10, 1]], (0.1652174, 0.08565611)),
             ([[5, 0], [1, 4]], (1, 1)),
             pytest.param(
-                 [[0, 1], [3, 2]], (0.5, 0.34375),
-                 marks=pytest.mark.xfail(
-                     run=False,
-                     reason="This test is sensitive to machine epsilon level"),
-             ),
+                [[0, 1], [3, 2]], (0.5, 0.34375),
+                marks=pytest.mark.xfail(
+                    run=False,
+                    reason="This test is sensitive to machine epsilon level"),
+            ),
             ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
             ([[7, 12], [8, 3]], (0.06406797, 0.03410916)),
             ([[10, 24], [25, 37]], (0.2009359, 0.1512882)),
