@@ -513,6 +513,8 @@ class hypergeom_gen(rv_discrete):
         M, n, N = 1. * M, 1. * n, 1. * N
         m = M - n
 
+        # Boost kurtosis_excess doesn't return the same as the value
+        # computed here.
         g2 = M * (M + 1) - 6. * N * (M - N) - 6. * n * m
         g2 *= (M - 1) * M * M
         g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
@@ -521,7 +523,7 @@ class hypergeom_gen(rv_discrete):
             _boost._hypergeom_mean(n, N, M),
             _boost._hypergeom_variance(n, N, M),
             _boost._hypergeom_skewness(n, N, M),
-            g2,  # Boost kurtosis_excess doesn't return the same as the value computed here.
+            g2,
         )
 
     def _entropy(self, M, n, N):
