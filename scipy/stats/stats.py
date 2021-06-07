@@ -3891,12 +3891,6 @@ def pearsonr(x, y):
     distribution of the correlation coefficient.)  Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear relationship.
-    Positive correlations imply that as x increases, so does y. Negative
-    correlations imply that as x increases, y decreases.
-
-    The p-value roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets.
 
     Parameters
     ----------
@@ -3938,13 +3932,13 @@ def pearsonr(x, y):
         r = \frac{\sum (x - m_x) (y - m_y)}
                  {\sqrt{\sum (x - m_x)^2 \sum (y - m_y)^2}}
 
-    where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
-    the mean of the vector :math:`y`.
+    where :math:`m_x` is the mean of the vector x and :math:`m_y` is
+    the mean of the vector y.
 
-    Under the assumption that :math:`x` and :math:`m_y` are drawn from
+    Under the assumption that x and y are drawn from
     independent normal distributions (so the population correlation coefficient
     is 0), the probability density function of the sample correlation
-    coefficient :math:`r` is ([1]_, [2]_):
+    coefficient r is ([1]_, [2]_):
 
     .. math::
 
@@ -3959,11 +3953,14 @@ def pearsonr(x, y):
 
         dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
 
-    The p-value returned by `pearsonr` is a two-sided p-value.  For a
+    The p-value returned by `pearsonr` is a two-sided p-value. The p-value
+    roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets. More precisely, for a
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
-    to abs(r).  In terms of the object ``dist`` shown above, the p-value
+    to abs(r). In terms of the object ``dist`` shown above, the p-value
     for a given r and length n can be computed as::
 
         p = 2*dist.cdf(-abs(r))
@@ -4000,9 +3997,9 @@ def pearsonr(x, y):
     (-0.7426106572325057, 0.1505558088534455)
 
     It is important to keep in mind that no correlation does not imply
-    independence unless (X, Y) is Gaussian. Correlation can even be zero
-    when there is a very simple dependence structure: if X follows a
-    standard normal distribution, let Y = abs(X). A simple check
+    independence unless (x, y) is Gaussian. Correlation can even be zero
+    when there is a very simple dependence structure: if x follows a
+    standard normal distribution, let y = abs(x). A simple check
     confirms that the correlation is close to zero:
 
     >>> x = stats.norm.rvs(size=500)
@@ -4010,27 +4007,26 @@ def pearsonr(x, y):
     >>> stats.pearsonr(x, y)
     (-0.016172891856853524, 0.7182823678751942) # may vary
 
-    Indeed, since the expectation of x is zero, cov(X, Y) = E(X*Y). This equals
-    EX*abs(X) which is zero by symmetry.
+    Indeed, since the expectation of x is zero, cov(x, y) = E[x*y]. This equals
+    E[x*abs(x)] which is zero by symmetry.
 
     If the relationship between x and y is non-linear, the correlation
-    coefficient can be misleading. For example, if X has a standard normal
-    distribution, define Y = X if X < 0 and Y = 0 otherwise. A simple calculation
-    shows that corr(X, Y) = sqrt(2/Pi) = 0.797..., implying a high level of
-    correlation:
+    coefficient can be misleading. For example, if x has a standard normal
+    distribution, define y = x if x < 0 and y = 0 otherwise. A simple
+    alculation shows that corr(x, y) = sqrt(2/Pi) = 0.797..., implying a
+    high level of correlation:
 
     >>> y = np.where(x < 0, x, 0)
     >>> stats.pearsonr(x, y)
     (0.8537091583771509, 3.183461621422181e-143) # may vary
 
-    This is unintuitive since there is no dependence of X and Y if X is larger
-    than zero which happens in about half of the cases if we sample X and Y.
+    This is unintuitive since there is no dependence of x and y if x is larger
+    than zero which happens in about half of the cases if we sample x and y.
 
-    There is linear dependance between X and Y in the sense that
-    Y = a + b*X + e, were a,b are constants and e is a random error term,
-    assumed to be independent of X. For simplicity, assume that X is standard
-    normal, a=0, b=1 and let e follow a normal distribution with mean zero
-    and standard deviation s>0.
+    There is a linear dependance between x and y if y = a + b*x + e, where
+    a,b are constants and e is a random error term, assumed to be independent
+    of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
+    e follow a normal distribution with mean zero and standard deviation s>0.
 
     >>> s = 0.5
     >>> e = stats.norm.rvs(scale=s, size=500)
