@@ -85,5 +85,5 @@ just updated a ``.rst`` file in the documentation and ask to skip Azure and
 GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
-    [skip azp] [skip actions]
 
+    [skip azp] [skip actions]
