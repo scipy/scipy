@@ -1425,6 +1425,20 @@ class TestTukeyHSD:
             assert_allclose(lower[i, j], conf.low[i, j], atol=1e-2)
             assert_allclose(upper[i, j], conf.high[i, j], atol=1e-2)
 
+    def test_rand_symm(self):
+        np.random.seed(1234)
+        data = np.random.rand(3, 100)
+        res = stats.tukey_hsd(*data)
+        conf = res.confidence_interval()
+        # the confidence intervals should be negated symmetric of each other
+        assert_allclose(conf.low, -conf.high.T)
+        # upper diagonals of statistic should be negative symmetric to lower
+        # diagonals
+        assert_allclose(np.tril(res.statistic), -np.triu(res.statistic).T)
+        # p-values should be symmetric and 1 when compared to itself
+        assert_allclose(res.pvalue, res.pvalue.T)
+        assert_allclose(np.ones(3), np.diagonal(res.pvalue))
+
     def test_no_inf(self):
         with assert_raises(ValueError, match="...must be finite."):
             stats.tukey_hsd([1, 2, 3], [2, np.inf], [6, 7, 3])
