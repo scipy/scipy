@@ -6212,6 +6212,25 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
+def _batch_generator(iterable, batch):
+    """A generator that yields batches of elements from an iterable"""
+    iterator = iter(iterable)
+    if batch <= 0:
+        raise ValueError("`batch` must be positive.")
+    while True:
+        z = []
+        try:
+            # get elements from iterator `batch` at a time
+            for i in range(batch):
+                z.append(next(iterator))
+            yield z
+        except StopIteration:
+            # when there are no more elements, yield the final batch and stop
+            if z:
+                yield z
+            break
+
+
 def _permutation_distribution_t(data, permutations, size_a, equal_var,
                                 random_state=None):
     """Generation permutaiton distribution of t statistic"""
@@ -6224,19 +6243,28 @@ def _permutation_distribution_t(data, permutations, size_a, equal_var,
     n_max = special.comb(size, size_a)
 
     if permutations < n_max:
-        indices = np.array([random_state.permutation(size)
-                            for i in range(permutations)]).T
+        perm_generator = (random_state.permutation(size)
+                          for i in range(permutations))
     else:
         permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(size_a, size-size_a)]).T
+        perm_generator = (np.concatenate(z)
+                          for z in _all_partitions(size_a, size-size_a))
 
-    data = data[..., indices]        # generate permutations
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
+    t_stat = []
+    for indices in _batch_generator(perm_generator, batch=50):
+        # get batch from perm_generator at a time as a list
+        indices = np.array(indices)
 
-    a = data[..., :size_a]
-    b = data[..., size_a:]
-    t_stat = _calc_t_stat(a, b, equal_var)
+        # generate permutations
+        data_perm = data[..., indices]
+        # move axis indexing permutations to position 0 to broadcast
+        # nicely with t_stat_observed, which doesn't have this dimension
+        data_perm = np.moveaxis(data_perm, -2, 0)
+
+        a = data_perm[..., :size_a]
+        b = data_perm[..., size_a:]
+        t_stat.append(_calc_t_stat(a, b, equal_var))
+    t_stat = np.concatenate(t_stat, axis=0)
 
     return t_stat, permutations
 

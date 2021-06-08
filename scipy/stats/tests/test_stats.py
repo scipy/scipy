@@ -36,7 +36,7 @@ from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import (_broadcast_concatenate,
+from scipy.stats.stats import (_broadcast_concatenate, _batch_generator,
                                AlexanderGovernConstantInputWarning)
 from scipy.stats.stats import _permutation_distribution_t
 
@@ -4204,6 +4204,19 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
+
+    def test_batch_generator(self):
+        got = list(_batch_generator(range(0), 5))
+        expected = []
+        assert got == expected
+
+        got = list(_batch_generator(range(10), 5))
+        expected = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+        assert got == expected
+
+        got = list(_batch_generator(range(12), 5))
+        expected = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11]]
+        assert got == expected
 
 
 class Test_ttest_ind_common:
