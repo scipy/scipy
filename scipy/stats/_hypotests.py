@@ -1535,8 +1535,8 @@ class TukeyHSDResult:
 
 
 def _tukey_hsd_iv(args):
-    if (len(args)) < 3:
-        raise ValueError("There must be more than 2 treatments.")
+    if (len(args)) < 2:
+        raise ValueError("There must be more than 1 treatment.")
     args = [np.asarray(arg) for arg in args]
     for arg in args:
         if arg.ndim != 1:

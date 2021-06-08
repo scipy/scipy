@@ -1496,7 +1496,7 @@ class TestTukey_HSD:
 
     @pytest.mark.parametrize("nargs", (0, 1, 2))
     def test_not_enough_treatments(self, nargs):
-        with assert_raises(ValueError, match="...more than 2 treatments."):
+        with assert_raises(ValueError, match="...more than 1 treatment."):
             stats.tukey_hsd([23, 7, 3] * nargs)
 
     @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
