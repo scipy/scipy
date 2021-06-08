@@ -1238,7 +1238,7 @@ class TestCvm_2samp:
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
 
 
-class TestTukey_HSD:
+class TestTukeyHSD:
 
     data_same_size = ([24.5, 23.5, 26.4, 27.1, 29.9],
                       [28.4, 34.2, 29.5, 32.2, 30.1],
@@ -1250,133 +1250,48 @@ class TestTukey_HSD:
                     [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
                      30.1],
                     [26.1, 28.3, 24.3, 26.2, 27.8])
-    r_data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
-               27, 14, 29, 19, 29, 31, 41, 20, 44],
-              [18, 21, 29, 17, 12, 18, 35, 30, 36,
-               42, 26, 19, 16, 39, 28, 21, 39, 29],
-              [36, 21, 24, 18, 10, 43, 28, 15, 26,
-               20, 21, 24, 17, 13, 15, 15, 16, 28])
 
-    sas_same_size = np.asarray(
-        [[[0, -4.6, -0.26],
-          [4.6, 0., 4.34],
-          [0.26, -4.34, 0.]],
-         [[0., -8.24911694, -3.90911694],
-          [0.95088306, 0., 0.69088306],
-          [-3.38911694, -7.98911694, 0.]],
-         [[0., -0.95088306, 3.38911694],
-          [8.24911694, 0., 7.98911694],
-          [3.90911694, -0.69088306, 0.]],
-         [[0., 1., 0.],
-          [1., 0., 1.],
-          [0., 1., 0.]]])
+    sas_same_size = """
+    2 3	0.6908830568	4.34	7.989116943	1
+    2 1	0.9508830568	4.6	8.249116943	1
+    3 2	-7.989116943	-4.34	-0.6908830568	1
+    3 1	-3.389116943	0.26	3.909116943	0
+    1 2	-8.249116943	-4.6	-0.9508830568	1
+    1 3	-3.909116943	-0.26	3.389116943	0"""
 
-    sas_diff_size = np.asarray(
-        [[[0., -3.645, 0.695],
-          [3.645, 0., 4.34],
-          [-0.695, -4.34, 0.]],
-         [[0., -7.02207074, -2.68207074],
-          [0.26792926, 0., 0.5934764],
-          [-4.07207074, -8.0865236, 0.]],
-         [[0., -0.26792926, 4.07207074],
-          [7.02207074, 0., 8.0865236],
-          [2.68207074, -0.5934764, 0.]],
-         [[0., 1., 0.],
-          [1., 0., 1.],
-          [0., 1., 0.]]])
+    sas_diff_size = """
+    2 1	0.2679292645	3.645	7.022070736	1
+    2 3	0.5934764007	4.34	8.086523599	1
+    1 2	-7.022070736	-3.645	-0.2679292645	1
+    1 3	-2.682070736	0.695	4.072070736	0
+    3 2	-8.086523599	-4.34	-0.5934764007	1
+    3 1	-4.072070736	-0.695	2.682070736	0"""
 
-    sas_extreme = np.asarray(
-        [[[0., -6.08, -1.74],
-          [6.08, 0., 4.34],
-          [1.74, -4.34, 0.]],
-         [[0., -9.41921512, -5.44452657],
-          [2.74078488, 0., 1.56160508],
-          [-1.96452657, -7.11839492, 0.]],
-         [[0., -2.74078488, 1.96452657],
-          [9.41921512, 0., 7.11839492],
-          [5.44452657, -1.56160508, 0.]],
-         [[0., 1., 0.],
-          [1., 0., 1.],
-          [0., 1., 0.]]])
+    sas_extreme = """
+    2 3	1.561605075	4.34	7.118394925	1
+    2 1	2.740784879	6.08	9.419215121	1
+    3 2	-7.118394925	-4.34	-1.561605075	1
+    3 1	-1.964526566	1.74	5.444526566	0
+    1 2	-9.419215121	-6.08	-2.740784879	1
+    1 3	-5.444526566	-1.74	1.964526566	0
+    """
 
-    matlab_sm_siz = np.asarray(
-        [[[0., -4.6, -0.26],
-          [0., 0., 4.34],
-          [0., 0., 0.]],
-         [[0., -8.24915902, -3.90915902],
-          [0., 0., 0.69084098],
-          [0., 0., 0.]],
-         [[0., -0.95084098, 3.38915902],
-          [0., 0., 7.98915902],
-          [0., 0., 0.]],
-         [[0., 0.01444833, 0.98031072],
-          [0., 0., 0.02033114],
-          [0., 0., 0.]]])
-
-    r_expected = (
-        [[0, 10.000000, 14.722222],
-         [0, 0, 4.722222],
-         [0, 0, 0]],
-        [[0, 0.4401756, 5.1623978],
-         [0, 0, -4.8376022],
-         [0, 0, 0]],
-        [[0, 19.55982, 24.28205],
-         [0, 0, 14.28205],
-         [0, 0, 0]],
-        [[0, 0.0384598, 0.0014315],
-         [0, 0, 0.4630831],
-         [0, 0, 0]])
-    matlab_diff_sz = np.asarray(
-        [[[0., -3.645, 0.695],
-          [0., 0., 4.34],
-          [0., 0., 0.]],
-         [[0., -7.0220707, -2.6820707],
-          [0., 0., 0.59347644],
-          [0., 0., 0.]],
-         [[0., -0.2679293, 4.0720707],
-          [0., 0., 8.08652356],
-          [0., 0., 0.]],
-         [[0., 0.03371498, 0.85572267],
-          [0., 0., 0.02259047],
-          [0., 0., 0.]]])
-
-    @pytest.mark.parametrize("data,res_expect,atol,trui,is_p",
-                             ((data_same_size, sas_same_size, 1e-4, -2, False),
-                              (data_diff_size, sas_diff_size, 1e-4, -2, False),
-                              (extreme_size, sas_extreme, 1e-10, -2, False),
-                              (data_same_size, matlab_sm_siz, 1e-8, 1, True),
-                              (data_diff_size, matlab_diff_sz, 1e-7, 1, True),
-                              (r_data, r_expected, 1e-5, 1, True)
+    @pytest.mark.parametrize("data,res_expect_str,atol",
+                             ((data_same_size, sas_same_size, 1e-4),
+                              (data_diff_size, sas_diff_size, 1e-4),
+                              (extreme_size, sas_extreme, 1e-10),
                               ),
-                             ids=["sas equal size sample",
-                                  "sas unequal sample size",
-                                  "sas extreme sample size differences",
-                                  "matlab equal size sample",
-                                  "matlab unequal size sample",
-                                  "r_comp"])
-    def test_compare(self, data, res_expect, atol, trui, is_p):
+                             ids=["equal size sample",
+                                  "unequal sample size",
+                                  "extreme sample size differences"])
+    def test_compare_sas(self, data, res_expect_str, atol):
         '''
         SAS code used to generate results for each sample:
         DATA ACHE;
         INPUT BRAND RELIEF;
         CARDS;
         1 24.5
-        1 23.5
-        1 26.28
-        1 26.4
-        1 27.1
-        1 29.9
-        1 30.1
-        1 30.1
-        2 28.4
-        2 34.2
-        2 29.5
-        2 32.2
-        2 30.1
-        3 26.1
-        3 28.3
-        3 24.3
-        3 26.2
+        ...
         3 27.8
         ;
         ods graphics on;   ODS RTF;ODS LISTING CLOSE;
@@ -1393,16 +1308,58 @@ class TestTukey_HSD:
         QUIT;
         ODS RTF close;
         ODS LISTING;
-        # The standard output, not showing the additional digits. The code
-        # example above outputs a table with more digits.
-        Brand Comparison    Mean Difference  Simultaneous 95% Confidence Limits
-        2 - 1               3.645               0.268           7.022   1
-        2 - 3               4.340               0.593           8.087   1
-        1 - 2              -3.645              -7.022          -0.268   1
-        1 - 3               0.695              -2.682           4.072   0
-        3 - 2              -4.340              -8.087          -0.593   1
-        3 - 1              -0.695              -4.072           2.682   0
+        '''
+        res_expect = np.asarray(res_expect_str.split(),
+                                dtype=float).reshape((6, 6))
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, l, s, h, sig in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(l, conf.low[i, j], atol=atol)
+            assert_allclose(s, res_tukey.statistic[i, j], atol=atol)
+            assert_allclose(h, conf.high[i, j], atol=atol)
+            assert_allclose(sig == 1, (res_tukey.pvalue[i, j] <= .05))
 
+    matlab_sm_siz = """
+        1	2	-8.2491590248597	-4.6	-0.9508409751403	0.0144483269098
+        1	3	-3.9091590248597	-0.26	3.3891590248597	0.9803107240900
+        2	3	0.6908409751403	4.34	7.9891590248597	0.0203311368795"""
+
+    matlab_diff_sz = """
+        1	2	-7.02207069748501	-3.645	-0.26792930251500 0.03371498443080
+        1	3	-2.68207069748500	0.695	4.07207069748500 0.85572267328807
+        2	3	0.59347644287720	4.34	8.08652355712281 0.02259047020620
+        """
+
+    @pytest.mark.parametrize("data,res_expect_str,atol",
+                             ((data_same_size, matlab_sm_siz, 1e-12),
+                              (data_diff_size, matlab_diff_sz, 1e-7)),
+                             ids=["equal size sample",
+                                  "unequal size sample"])
+    def test_compare_matlab(self, data, res_expect_str, atol):
+        """
+        vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
+         26.1, 28.3, 24.3, 26.2, 27.8]
+        names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
+         'one', 'one', 'two', 'two', 'two', 'two', 'two'}
+        [p,t,stats] = anova1(vals,names,"off");
+        [c,m,h,nms] = multcompare(stats, "CType","hsd");
+        """
+        res_expect = np.asarray(res_expect_str.split(),
+                                dtype=float).reshape((3, 6))
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, l, s, h, p in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            assert_allclose(l, conf.low[i, j], atol=atol)
+            assert_allclose(s, res_tukey.statistic[i, j], atol=atol)
+            assert_allclose(h, conf.high[i, j], atol=atol)
+            assert_allclose(p, res_tukey.pvalue[i, j], atol=atol)
+
+    def test_compare_r(self):
+        """
         Testing against results and p-values from R:
         from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
         topics/TukeyHSD
@@ -1415,44 +1372,30 @@ class TestTukey_HSD:
         factor levels have been ordered
         Fit: aov(formula = breaks ~ tension, data = warpbreaks)
         $tension
-                 diff        lwr      upr     p adj
-        M-H  4.722222 -4.8376022 14.28205 0.4630831
-        L-H 14.722222  5.1623978 24.28205 0.0014315
-        L-M 10.000000  0.4401756 19.55982 0.0384598
+        """
+        str_res = """
+        2 3  4.722222 -4.8376022 14.28205 0.4630831
+        1 3 14.722222  5.1623978 24.28205 0.0014315
+        1 2 10.000000  0.4401756 19.55982 0.0384598"""
+        res_expect = np.asarray(str_res.split(),
+                                dtype=float).reshape((3, 6))
+        data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
+                 27, 14, 29, 19, 29, 31, 41, 20, 44],
+                [18, 21, 29, 17, 12, 18, 35, 30, 36,
+                 42, 26, 19, 16, 39, 28, 21, 39, 29],
+                [36, 21, 24, 18, 10, 43, 28, 15, 26,
+                 20, 21, 24, 17, 13, 15, 15, 16, 28])
 
-        Matlab code:
-        vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
-         26.1, 28.3, 24.3, 26.2, 27.8]
-        names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
-         'one', 'one', 'two', 'two', 'two', 'two', 'two'}
-        [p,t,stats] = anova1(vals,names,"off");
-        [c,m,h,nms] = multcompare(stats, "CType","hsd");
-        '''
-
-        res = stats.tukey_hsd(*data)
-        conf = res.confidence_interval()
-        s, l, h, p = res_expect
-
-        # the test computes values for all combinations, including a sample
-        # against itself. Zero it out for comparison to other methods that
-        # do not do this.
-        np.fill_diagonal(res.statistic, 0)
-        np.fill_diagonal(res.pvalue, 1)
-        np.fill_diagonal(conf.low, 0)
-        np.fill_diagonal(conf.high, 0)
-
-        # Compare only the upper diagonals based on the data given by the
-        # example being compared against.
-        assert_allclose(s, np.triu(res.statistic, trui), atol=atol)
-        assert_allclose(l, np.triu(conf.low, trui), atol=atol)
-        assert_allclose(h, np.triu(conf.high, trui), atol=atol)
-
-        # Some examples give p-values whereas others give only significance.
-        if is_p:
-            assert_allclose(p, np.triu(res.pvalue, trui), atol=atol)
-        else:
-            p[np.allclose(p, 1)] = True
-            assert_allclose(p, (res.pvalue <= .05))
+        res_tukey = stats.tukey_hsd(*data)
+        conf = res_tukey.confidence_interval()
+        # loop over the comparisons
+        for i, j, s, l, h, p in res_expect:
+            i, j = int(i) - 1, int(j) - 1
+            # atols are set to the number of digits present in the r result.
+            assert_allclose(l, conf.low[i, j], atol=1e-7)
+            assert_allclose(s, res_tukey.statistic[i, j], atol=1e-6)
+            assert_allclose(h, conf.high[i, j], atol=1e-5)
+            assert_allclose(p, res_tukey.pvalue[i, j], atol=1e-7)
 
     def test_engineering_stat_handbook(self):
         '''
