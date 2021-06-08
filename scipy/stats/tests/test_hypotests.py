@@ -1432,15 +1432,22 @@ class TestTukey_HSD:
         res = stats.tukey_hsd(*data)
         conf = res.confidence_interval()
         s, l, h, p = res_expect
+
+        # the test computes values for all combinations, including a sample
+        # against itself. Zero it out for comparison to other methods that
+        # do not do this.
         np.fill_diagonal(res.statistic, 0)
         np.fill_diagonal(res.pvalue, 1)
         np.fill_diagonal(conf.low, 0)
         np.fill_diagonal(conf.high, 0)
 
+        # Compare only the upper diagonals based on the data given by the
+        # example being compared against.
         assert_allclose(s, np.triu(res.statistic, trui), atol=atol)
         assert_allclose(l, np.triu(conf.low, trui), atol=atol)
         assert_allclose(h, np.triu(conf.high, trui), atol=atol)
 
+        # Some examples give p-values whereas others give only significance.
         if is_p:
             assert_allclose(p, np.triu(res.pvalue, trui), atol=atol)
         else:
@@ -1450,7 +1457,7 @@ class TestTukey_HSD:
     def test_engineering_stat_handbook(self):
         '''
         This example does not have p-values or the statistic so it is a
-        different test.
+        separate test than above.
         Example sourced from:
         https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
         '''
