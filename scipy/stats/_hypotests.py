@@ -1437,17 +1437,19 @@ def cramervonmises_2samp(x, y, method='auto'):
     return CramerVonMisesResult(statistic=t, pvalue=p)
 
 
-class Tukey_HSDResult:
+class TukeyHSDResult:
     """Result of `scipy.stats.tukey_hsd`.
 
     Attributes
     ----------
     statistic : float ndarray
-        The computed statistic of the test for each comparison. The
-        ``(i, j)`` index is the statistic for the ith - jth group comparison.
+        The computed statistic of the test for each comparison. The element
+        at index ``(i, j)`` is the statistic for the comparison between groups
+        ``i`` and ``j``.
     pvalue : float ndarray
         The associated p-value from the studentized range distribution. The
-        ``(i, j)`` index is the p-value for the ith - jth group comparison.
+        element at index ``(i, j)`` is the p-value for the comparison
+        between groups ``i`` and ``j``.
 
     Methods
     -------
@@ -1568,7 +1570,7 @@ def tukey_hsd(*args):
 
     Returns
     -------
-    result : `~scipy.stats._result_classes.Tukey_HSDResult` instance
+    result : `~scipy.stats._result_classes.TukeyHSDResult` instance
         The return value is an object with the following attributes:
 
         statistic : float ndarray
@@ -1718,5 +1720,5 @@ def tukey_hsd(*args):
     params = t_stat, ntreatments, nobs - ntreatments
     pvalues = distributions.studentized_range.sf(*params)
 
-    return Tukey_HSDResult(mean_differences, pvalues, ntreatments,
+    return TukeyHSDResult(mean_differences, pvalues, ntreatments,
                            nobs, stand_err)
