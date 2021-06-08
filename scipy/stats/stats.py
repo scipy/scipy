@@ -3988,42 +3988,10 @@ def pearsonr(x, y):
     Examples
     --------
     >>> from scipy import stats
-    >>> a = np.array([0, 0, 0, 1, 1, 1, 1])
-    >>> b = np.arange(7)
-    >>> stats.pearsonr(a, b)
-    (0.8660254037844386, 0.011724811003954649)
-
     >>> stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
     (-0.7426106572325057, 0.1505558088534455)
 
-    It is important to keep in mind that no correlation does not imply
-    independence unless (x, y) is Gaussian. Correlation can even be zero
-    when there is a very simple dependence structure: if x follows a
-    standard normal distribution, let y = abs(x). A simple check
-    confirms that the correlation is close to zero:
-
-    >>> x = stats.norm.rvs(size=500)
-    >>> y = np.abs(x)
-    >>> stats.pearsonr(x, y)
-    (-0.016172891856853524, 0.7182823678751942) # may vary
-
-    Indeed, since the expectation of x is zero, cov(x, y) = E[x*y]. This equals
-    E[x*abs(x)] which is zero by symmetry.
-
-    If the relationship between x and y is non-linear, the correlation
-    coefficient can be misleading. For example, if x has a standard normal
-    distribution, define y = x if x < 0 and y = 0 otherwise. A simple
-    alculation shows that corr(x, y) = sqrt(2/Pi) = 0.797..., implying a
-    high level of correlation:
-
-    >>> y = np.where(x < 0, x, 0)
-    >>> stats.pearsonr(x, y)
-    (0.8537091583771509, 3.183461621422181e-143) # may vary
-
-    This is unintuitive since there is no dependence of x and y if x is larger
-    than zero which happens in about half of the cases if we sample x and y.
-
-    There is a linear dependance between x and y if y = a + b*x + e, where
+    There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
     e follow a normal distribution with mean zero and standard deviation s>0.
@@ -4039,8 +4007,34 @@ def pearsonr(x, y):
     >>> 1/np.sqrt(1 + s**2)
     0.8944271909999159
 
-    As expected, a large variance of the noise reduces the correlation, while
-    the correlation approaches one as the variance of the error goes to zero.
+    For s=0.5, we observe a high level of correlation. In general, a large
+    variance of the noise reduces the correlation, while the correlation
+    approaches one as the variance of the error goes to zero.
+
+    It is important to keep in mind that no correlation does not imply
+    independence unless (x, y) is jointly normal. Correlation can even be zero
+    when there is a very simple dependence structure: if X follows a
+    standard normal distribution, let y = abs(x). Note that the correlation
+    between x and y is zero. Indeed, since the expectation of x is zero,
+    cov(x, y) = E[x*y]. By definition, this equals E[x*abs(x)] which is zero
+    by symmetry. The following lines of code illustrate this observation:
+
+    >>> x = stats.norm.rvs(size=500)
+    >>> y = np.abs(x)
+    >>> stats.pearsonr(x, y)
+    (-0.016172891856853524, 0.7182823678751942) # may vary
+
+    A non-zero correlation coefficient can be misleading. For example, if X has
+    a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
+    A simple calculation shows that corr(x, y) = sqrt(2/Pi) = 0.797...,
+    implying a high level of correlation:
+
+    >>> y = np.where(x < 0, x, 0)
+    >>> stats.pearsonr(x, y)
+    (0.8537091583771509, 3.183461621422181e-143) # may vary
+
+    This is unintuitive since there is no dependence of x and y if x is larger
+    than zero which happens in about half of the cases if we sample x and y.
     """
     n = len(x)
     if n != len(y):
