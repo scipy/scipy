@@ -1504,3 +1504,10 @@ class TestTukey_HSD:
         with assert_raises(ValueError, match="must be between 0 and 1"):
             r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4])
             r.confidence_interval(cl)
+
+    def test_2_args_ttest(self):
+        # that with 2 treatments the `pvalue` is equal to that of `ttest_ind`
+        res_tukey = stats.tukey_hsd(*self.data_diff_size[:2])
+        res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
+        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
+        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
