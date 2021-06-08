@@ -509,11 +509,12 @@ def van_der_corput(
 
     if scramble:
         rng = check_random_state(seed)
-        # Create a permutation of np.arange(base) for each positive integer k
-        # such that base**-k > epsilon.
-        epsilon = 1e-16
-        k = math.floor(-math.log(epsilon)/math.log(base))
-        permutations = np.repeat(np.arange(base)[None], k, axis=0)
+        # Create a set of permutation of np.arange(base) for each positive
+        # integer k such that base**-k > 2**-54. The number of permutations is
+        # equal to the number of iterations in the while loop in Algorithm 1 of
+        # Owen 2017.
+        count = math.ceil(54 / math.log2(base)) - 1
+        permutations = np.repeat(np.arange(base)[None], count, axis=0)
         for perm in permutations:
             rng.shuffle(perm)
 
