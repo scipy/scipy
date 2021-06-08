@@ -1549,9 +1549,9 @@ def _tukey_hsd_iv(args):
 
 
 def tukey_hsd(*args):
-    """Perform the multiple comparison Tukey's HSD test for equality of means.
+    """Perform Tukey's HSD test for equality of means over multiple treatments.
 
-    Tukey's HSD, or honest significant difference, test is performed under the
+    Tukey's honestly significant difference test is performed under the
     assumption of a previously rejected null hypothesis that two or more
     samples have the same population mean. With unequal sample sizes, it
     utilizes the Tukey-Kramer method.
