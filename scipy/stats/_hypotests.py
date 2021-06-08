@@ -1452,7 +1452,7 @@ class Tukey_HSDResult:
     Methods
     -------
     confidence_interval :
-        Compute the confidence interval for the significance level
+        Compute the confidence interval for the confidence level
         specified in the test.
 
     References
@@ -1512,9 +1512,9 @@ class Tukey_HSDResult:
                [ 3.909159, -0.690841,  3.649159]])
         """
         if not 0 < confidence_level < 1:
-            raise ValueError("Significance level must be between 0 and 1.")
+            raise ValueError("Confidence level must be between 0 and 1.")
         # determine the critical value of the studentized range using the
-        # appropriate significance level, number of treatments, and degrees
+        # appropriate confidence level, number of treatments, and degrees
         # of freedom as determined by the number of data less the number of
         # treatments. ("Confidence limits for Tukey's method")[1]. Note that
         # in the cases of unequal sample sizes there will be a criterion for
@@ -1584,7 +1584,7 @@ def tukey_hsd(*args):
         The object has the following methods:
 
         confidence_interval :
-            Compute the confidence interval for the significance level
+            Compute the confidence interval for the confidence level
             specified in the test. For both ``high`` and ``low``, the element
             at index ``(i, j)`` is the bound for the comparison between
             groups ``i`` and ``j``..
@@ -1662,7 +1662,7 @@ def tukey_hsd(*args):
     is not a significant difference between their means.
 
     We can also compute the confidence interval associated with our chosen
-    significance level.
+    confidence level.
 
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
