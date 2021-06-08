@@ -1,9 +1,12 @@
+import os
 import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises
 
 from scipy.sparse.linalg.propack import svdp
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
+
 
 TOLS = {
     np.float32: 1e-4,
@@ -75,3 +78,56 @@ def test_svdp(ctor, dtype, irl, which):
             check_svdp(n, m, ctor, dtype, k, irl, which)
     else:
         check_svdp(n, m, ctor, dtype, k, irl, which)
+
+
+def load_coord(folder, precision, file="illc1850.coord"):
+    dtype = {"single": np.float32, "double": np.float64}[precision]
+    path = os.path.join(folder, precision, file)
+    with open(path) as f:
+        m, n, nnz = (int(val) for val in f.readline().split())
+        coord = np.array([[float(val) for val in line.split()] for line in f])
+    i = coord[:, 0].astype(int) - 1
+    j = coord[:, 1].astype(int) - 1
+    data = coord[:, 2].astype(dtype)
+    A = coo_matrix((data, (i, j)))
+    return A
+
+
+def load_sigma(folder, precision="double", irl=False):
+    dtype = {"single": np.float32, "double": np.float64}[precision]
+    s_name = "Sigma_IRL.ascii" if irl else "Sigma.ascii"
+    path = os.path.join(folder, precision, s_name)
+    with open(path) as f:
+        data = np.array([float(line.split()[1]) for line in f], dtype=dtype)
+    return data
+
+
+def load_uv(folder, precision="double", uv="U", irl=False):
+    dtype = {"single": np.float32, "double": np.float64}[precision]
+    uv_name = (uv + "_IRL.ascii") if irl else (uv + ".ascii")
+    path = os.path.join(folder, precision, uv_name)
+    with open(path) as f:
+        m, n = (int(val) for val in f.readline().split())
+        data = np.array([float(val.strip()) for val in f], dtype=dtype)
+    return data.reshape((n, m)).T
+
+
+@pytest.mark.parametrize('precision', ('single', 'double'))
+def test_examples(precision):
+    atol = {'single': 1e-3, 'double': 1e-11}[precision]
+
+    path_prefix = os.path.dirname(__file__)
+    relative_path = "propack_examples"
+    folder = os.path.join(path_prefix, relative_path)
+
+    A = load_coord(folder, precision)
+    s_expected = load_sigma(folder, precision)
+    u_expected = load_uv(folder, precision, "U")
+    vt_expected = load_uv(folder, precision, "V").T
+
+    k = len(s_expected)
+    u, s, vt = svdp(A, k)
+
+    assert_allclose(s, s_expected, atol)
+    assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
+    assert_allclose(np.abs(vt), np.abs(vt_expected), atol=atol)
