@@ -6212,15 +6212,14 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
-def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
-    """All partitions of data into sets of given lengths, ignoring order"""
+def _permutation_distribution_t(data, permutations, size_a, equal_var,
+                                random_state=None):
+    """Generation permutaiton distribution of t statistic"""
 
     random_state = check_random_state(random_state)
-    if axis < 0:  # we'll be adding a new dimension at the end
-        axis = data.ndim + axis
 
     # prepare permutation indices
-    size = data.shape[axis]
+    size = data.shape[-1]
     # number of distinct combinations
     n_max = special.comb(size, size_a)
 
@@ -6232,11 +6231,14 @@ def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
         indices = np.array([np.concatenate(z)
                             for z in _all_partitions(size_a, size-size_a)]).T
 
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, permutations
+
+    a = data[..., :size_a]
+    b = data[..., size_a:]
+    t_stat = _calc_t_stat(a, b, equal_var)
+
+    return t_stat, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6305,12 +6307,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
-                                              random_state=random_state)
-
-    a = mat_perm[..., :na]
-    b = mat_perm[..., na:]
-    t_stat = _calc_t_stat(a, b, equal_var)
+    t_stat, permutations = _permutation_distribution_t(
+        mat, permutations, size_a=na, equal_var=equal_var,
+        random_state=random_state)
 
     compare = {"less": np.less_equal,
                "greater": np.greater_equal,

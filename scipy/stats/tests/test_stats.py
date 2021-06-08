@@ -38,7 +38,7 @@ from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
 from scipy.stats.stats import (_broadcast_concatenate,
                                AlexanderGovernConstantInputWarning)
-from scipy.stats.stats import _calc_t_stat, _data_partitions
+from scipy.stats.stats import _permutation_distribution_t
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -4088,11 +4088,8 @@ class Test_ttest_ind_permutations():
         na, nb = len(a), len(b)
 
         permutations = 100000
-        mat_perm, _ = _data_partitions(data, permutations, na)
+        t_stat, _ = _permutation_distribution_t(data, permutations, na, True)
 
-        a = mat_perm[..., :na]
-        b = mat_perm[..., nb:]
-        t_stat = _calc_t_stat(a, b, True)
         n_unique = len(set(t_stat))
         assert n_unique == binom(na + nb, na)
         assert len(t_stat) == n_unique
