@@ -333,7 +333,7 @@ def _cy_van_der_corput(long n, long base, long start_index,
     sequence = np.zeros(n)
     cdef:
         long i, j, quotient, remainder
-        double[:] sequence_view = sequence
+        double[::1] sequence_view = sequence
         double b2r
 
     for i in range(n):
