@@ -1242,6 +1242,84 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
 
 
+def test_kendalltau_alternative():
+    # Test alternative parameter
+
+    # Simple test - Based on TestCorrSpearman2::test_alternative
+    x1 = [1, 2, 3, 4, 5]
+    x2 = [5, 6, 7, 8, 7]
+
+    # strong positive correlation
+    expected = stats.kendalltau(x1, x2, alternative="two-sided")
+    assert expected[0] > 0
+
+    # rank correlation > 0 -> large "less" p-value
+    res = stats.kendalltau(x1, x2, alternative="less")
+    assert_equal(res[0], expected[0])
+    assert_allclose(res[1], 1 - (expected[1] / 2))
+
+    # rank correlation > 0 -> small "less" p-value
+    res = stats.kendalltau(x1, x2, alternative="greater")
+    assert_equal(res[0], expected[0])
+    assert_allclose(res[1], expected[1] / 2)
+
+    # reverse the direction of rank correlation
+    x2.reverse()
+
+    # strong negative correlation
+    expected = stats.kendalltau(x1, x2, alternative="two-sided")
+    assert expected[0] < 0
+
+    # rank correlation > 0 -> large "greater" p-value
+    res = stats.kendalltau(x1, x2, alternative="greater")
+    assert_equal(res[0], expected[0])
+    assert_allclose(res[1], 1 - (expected[1] / 2))
+
+    # rank correlation > 0 -> small "less" p-value
+    res = stats.kendalltau(x1, x2, alternative="less")
+    assert_equal(res[0], expected[0])
+    assert_allclose(res[1], expected[1] / 2)
+
+    with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        stats.kendalltau(x1, x2, alternative="ekki-ekki")
+
+
+@pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
+def test_kendalltau_alternative_nan_policy(alternative):
+    # Test nan policies
+    x1 = [1, 2, 3, 4, 5]
+    x2 = [5, 6, 7, 8, 7]
+    x1nan = x1 + [np.nan]
+    x2nan = x2 + [np.nan]
+
+    # test nan_policy="propagate"
+    assert_array_equal(stats.kendalltau(x1nan, x2nan), (np.nan, np.nan))
+
+    # test nan_policy="omit"
+    if alternative == 'two-sided':
+        res_actual = stats.kendalltau(x1nan, x2nan, nan_policy='omit',
+                                      alternative=alternative)
+        res_expected = stats.kendalltau(x1, x2, alternative=alternative)
+        assert_allclose(res_actual, res_expected)
+    else:
+        message = "`nan_policy='omit' is currently compatible only with"
+        with pytest.raises(ValueError, match=message):
+            stats.kendalltau(x1nan, x2nan, nan_policy='omit',
+                             alternative=alternative)
+
+    # test nan_policy="raise"
+    message = 'The input contains nan values'
+    with pytest.raises(ValueError, match=message):
+        stats.kendalltau(x1nan, x2nan, nan_policy='raise',
+                         alternative=alternative)
+
+    # test invalid nan_policy
+    message = "nan_policy must be one of..."
+    with pytest.raises(ValueError, match=message):
+        stats.kendalltau(x1nan, x2nan, nan_policy='ekki-ekki',
+                         alternative=alternative)
+
+
 def test_weightedtau():
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, 0]
