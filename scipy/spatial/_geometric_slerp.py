@@ -193,7 +193,7 @@ def geometric_slerp(start,
 
     # Ensure that the output is broadcasted to the correct shape
     if np.array_equal(start, end):
-        shape = t.shape + start.shape
+        shape = (t.size,) + start.shape
         return np.full(shape, start)
 
     # for points that violate equation for n-sphere

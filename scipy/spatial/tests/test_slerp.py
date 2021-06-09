@@ -363,15 +363,15 @@ class TestGeometricSlerp:
         np.linspace(0, 1, 5),
     ])
     def test_degenerate_input(self, start, t):
-        shape = t.shape + start.shape
+        shape = (t.size,) + start.shape
         expected = np.full(shape, start)
 
         actual = geometric_slerp(start=start, end=start, t=t)
         assert_allclose(actual, expected)
 
-        # Check that degenerate and non-degenerate inputs yield the same shape
+        # Check that degenerate and non-degenerate inputs yield the same size
         non_degenerate = geometric_slerp(start=start, end=start[::-1], t=t)
-        assert actual.shape == non_degenerate.shape
+        assert actual.size == non_degenerate.size
 
     @pytest.mark.parametrize('k', np.logspace(-10, -1, 10))
     def test_numerical_stability_pi(self, k):
