@@ -111,9 +111,8 @@
 /*   --with-urng-default=builtin                                             */
 
 #else
-/* use type FVOID (built-in) */
-#  define UNUR_URNG_DEFAULT      (unur_urng_builtin())
-#  define UNUR_URNG_AUX_DEFAULT  (unur_urng_builtin_aux())
+#  define UNUR_URNG_DEFAULT      (unur_get_default_urng())
+#  define UNUR_URNG_AUX_DEFAULT  (unur_get_default_urng_aux())
 #endif
 
 /* However, it is also possible to use any other URNG.                       */

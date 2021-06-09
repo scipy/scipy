@@ -35,22 +35,6 @@
 
 #include <unur_source.h>
 #include "urng.h"
-#include <uniform/urng_builtin.h>
-#include <uniform/urng_fvoid.h>
-#include <uniform/urng_randomshift.h>
-
-#if defined(UNURAN_HAS_GSL) && defined(UNUR_URNG_UNURAN)
-#  include <uniform/urng_gsl.h>
-#  include <uniform/urng_gslqrng.h>
-#endif
-
-#if defined(UNURAN_HAS_PRNG) && defined(UNUR_URNG_UNURAN)
-#  include <uniform/urng_prng.h>
-#endif
-
-#if defined(UNURAN_HAS_RNGSTREAM) && defined(UNUR_URNG_UNURAN)
-#  include <uniform/urng_rngstreams.h>
-#endif
 
 /*---------------------------------------------------------------------------*/
 /* pointer to default uniform random number generator */
@@ -83,15 +67,9 @@ unur_get_default_urng( void )
 {
   /* default generator already running ? */
   if( urng_default == NULL ) {
-    /* have to initialize default generator first */
-    urng_default = UNUR_URNG_DEFAULT;
-
-    if( urng_default == NULL ) {
-      /* some parameters invalid! */
-      _unur_error("URNG",UNUR_ERR_NULL,"Cannot set default URNG. EXIT !!!");
-      /* we cannot recover from this error */
-      exit(EXIT_FAILURE);
-    }
+    _unur_error("URNG",UNUR_ERR_NULL,"Default URNG not set. EXIT !!!");
+    /* we cannot recover from this error */
+    exit(EXIT_FAILURE);
   }
 
   /* return default generator */
@@ -146,15 +124,9 @@ unur_get_default_urng_aux( void )
 {
   /* default generator already running ? */
   if( urng_aux_default == NULL ) {
-    /* have to initialize default generator first */
-    urng_aux_default = UNUR_URNG_AUX_DEFAULT;
-
-    if( urng_aux_default == NULL ) {
-      /* some parameters invalid! */
-      _unur_error("URNG",UNUR_ERR_NULL,"Cannot set default auxilliary URNG. EXIT !!!");
-      /* we cannot recover from this error */
-      exit(EXIT_FAILURE);
-    }
+    _unur_error("URNG",UNUR_ERR_NULL,"Default auxilliary URNG not set. EXIT !!!");
+    /* we cannot recover from this error */
+    exit(EXIT_FAILURE);
   }
 
   /* return default generator */

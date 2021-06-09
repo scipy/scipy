@@ -126,41 +126,6 @@ int unur_urng_set_delete( UNUR_URNG *urng, void (*fpdelete)(void *state) );
 /* end of `urng.h' */
 /*-----*/
 /*-----*/
-/* <1> `urng_builtin.h' */
-#ifndef URNG_BUILTIN_H_SEEN
-#define URNG_BUILTIN_H_SEEN
-double unur_urng_MRG31k3p (void *dummy);
-void unur_urng_MRG31k3p_seed (void *dummy, unsigned long seed);
-void unur_urng_MRG31k3p_reset (void *dummy);
-double unur_urng_fish (void *dummy);
-void unur_urng_fish_seed (void *dummy, unsigned long seed);
-void unur_urng_fish_reset (void *dummy);
-double unur_urng_mstd (void *dummy);
-void unur_urng_mstd_seed (void *dummy, unsigned long seed);
-void unur_urng_mstd_reset (void *dummy);
-UNUR_URNG *unur_urng_builtin( void );
-UNUR_URNG *unur_urng_builtin_aux( void );
-#endif  
-/* end of `urng_builtin.h' */
-/*-----*/
-/*-----*/
-/* <1> `urng_fvoid.h' */
-#ifndef URNG_FVOID_H_SEEN
-#define URNG_FVOID_H_SEEN
-UNUR_URNG *unur_urng_fvoid_new( double (*urand)(void *state), void (*reset)(void *state) );
-#endif  
-/* end of `urng_fvoid.h' */
-/*-----*/
-/*-----*/
-/* <1> `urng_randomshift.h' */
-#ifndef URNG_RANDOMSHIFT_H_SEEN
-#define URNG_RANDOMSHIFT_H_SEEN
-UNUR_URNG *unur_urng_randomshift_new( UNUR_URNG *qrng, UNUR_URNG *srng, int dim );
-int unur_urng_randomshift_nextshift( UNUR_URNG *urng );
-#endif  
-/* end of `urng_randomshift.h' */
-/*-----*/
-/*-----*/
 /* <1> `distr.h' */
 enum {
   UNUR_DISTR_CONT  = 0x010u,      
