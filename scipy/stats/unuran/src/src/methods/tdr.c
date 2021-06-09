@@ -662,12 +662,12 @@ _unur_tdr_getSAMPLE( struct unur_gen *gen )
 /* #include directive.                                                       */
 
 /**  Public: User Interface (API)                                           **/
-#include "tdr_newset.ch"
+#include "tdr_newset.h"
 
 /**  Private                                                                **/
-#include "tdr_init.ch"
-#include "tdr_sample.ch"
-#include "tdr_debug.ch"
-#include "tdr_info.ch"
+#include "tdr_init.h"
+#include "tdr_sample.h"
+#include "tdr_debug.h"
+#include "tdr_info.h"
 
 /*---------------------------------------------------------------------------*/

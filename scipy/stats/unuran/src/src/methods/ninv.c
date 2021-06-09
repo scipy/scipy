@@ -325,14 +325,14 @@ _unur_ninv_getSAMPLE( struct unur_gen *gen )
 /* #include directive.                                                       */
 
 /**  Public: User Interface (API)                                           **/
-#include "ninv_newset.ch"
+#include "ninv_newset.h"
 
 /**  Private                                                                **/
-#include "ninv_init.ch"
-#include "ninv_sample.ch"
-#include "ninv_newton.ch"
-#include "ninv_regula.ch"
-#include "ninv_debug.ch"
-#include "ninv_info.ch"
+#include "ninv_init.h"
+#include "ninv_sample.h"
+#include "ninv_newton.h"
+#include "ninv_regula.h"
+#include "ninv_debug.h"
+#include "ninv_info.h"
 
 /*---------------------------------------------------------------------------*/

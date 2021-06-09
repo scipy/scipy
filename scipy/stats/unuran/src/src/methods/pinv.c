@@ -544,14 +544,14 @@ static void _unur_pinv_info( struct unur_gen *gen, int help );
 /* #include directive.                                                       */
 
 /**  Public: User Interface (API)                                           **/
-#include "pinv_newset.ch"
+#include "pinv_newset.h"
 
 /**  Private                                                                **/
-#include "pinv_init.ch"
-#include "pinv_sample.ch"
-#include "pinv_prep.ch"
-#include "pinv_newton.ch"
-#include "pinv_debug.ch"
-#include "pinv_info.ch"
+#include "pinv_init.h"
+#include "pinv_sample.h"
+#include "pinv_prep.h"
+#include "pinv_newton.h"
+#include "pinv_debug.h"
+#include "pinv_info.h"
 
 /*---------------------------------------------------------------------------*/

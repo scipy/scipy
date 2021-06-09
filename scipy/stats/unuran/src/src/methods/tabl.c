@@ -306,14 +306,14 @@ _unur_tabl_getSAMPLE( struct unur_gen *gen )
 /* #include directive.                                                       */
 
 /**  Public: User Interface (API)                                           **/
-#include "tabl_newset.ch"
+#include "tabl_newset.h"
 
 /**  Private                                                                **/
-#include "tabl_init.ch"
-#include "tabl_sample.ch"
-#include "tabl_debug.ch"
-#include "tabl_info.ch"
+#include "tabl_init.h"
+#include "tabl_sample.h"
+#include "tabl_debug.h"
+#include "tabl_info.h"
 
-/* #include "tabl_fast.ch" ... not implemented (only experimental code)      */
+/* #include "tabl_fast.h" ... not implemented (only experimental code)      */
 
 /*---------------------------------------------------------------------------*/

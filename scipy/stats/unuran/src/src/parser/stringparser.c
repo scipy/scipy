@@ -470,7 +470,7 @@ static void _unur_str_error_args( const char *file, int line, const char *key );
 /**  Load lists of ..._new and ..._set calls                                **/
 /*****************************************************************************/
 
-#include "stringparser_lists.ch"
+#include "stringparser_lists.h"
 
 /*****************************************************************************/
 /**  User Interface                                                         **/

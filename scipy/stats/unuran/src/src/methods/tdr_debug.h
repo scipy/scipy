@@ -39,8 +39,8 @@
 /**  Debugging utilities                                                    **/
 /*****************************************************************************/
 
-#include "tdr_gw_debug.ch"
-#include "tdr_ps_debug.ch"
+#include "tdr_gw_debug.h"
+#include "tdr_ps_debug.h"
 
 /*---------------------------------------------------------------------------*/
 #ifdef UNUR_ENABLE_LOGGING

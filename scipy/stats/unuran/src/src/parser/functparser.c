@@ -635,13 +635,13 @@ static void _unur_fstr_debug_deriv (const struct ftreenode *funct,
 /*****************************************************************************/
 
 /*---------------------------------------------------------------------------*/
-#include "functparser_init.ch"
-#include "functparser_scanner.ch"
-#include "functparser_parser.ch"
-#include "functparser_eval.ch"
-#include "functparser_deriv.ch"
-#include "functparser_stringgen.ch"
-#include "functparser_debug.ch"
+#include "functparser_init.h"
+#include "functparser_scanner.h"
+#include "functparser_parser.h"
+#include "functparser_eval.h"
+#include "functparser_deriv.h"
+#include "functparser_stringgen.h"
+#include "functparser_debug.h"
 /*---------------------------------------------------------------------------*/
 
 /*****************************************************************************/

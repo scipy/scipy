@@ -324,12 +324,12 @@ static void _unur_mvtdr_info( struct unur_gen *gen, int help );
 /* #include directive.                                                       */
 
 /**  Public: User Interface (API)                                           **/
-#include "mvtdr_newset.ch"
+#include "mvtdr_newset.h"
 
 /**  Private                                                                **/
-#include "mvtdr_init.ch"
-#include "mvtdr_sample.ch"
-#include "mvtdr_debug.ch"
-#include "mvtdr_info.ch"
+#include "mvtdr_init.h"
+#include "mvtdr_sample.h"
+#include "mvtdr_debug.h"
+#include "mvtdr_info.h"
 
 /*---------------------------------------------------------------------------*/

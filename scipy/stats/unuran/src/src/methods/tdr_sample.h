@@ -39,9 +39,9 @@
 /**  Sampling routines                                                      **/
 /*****************************************************************************/
 
-#include "tdr_gw_sample.ch"
-#include "tdr_ia_sample.ch"
-#include "tdr_ps_sample.ch"
+#include "tdr_gw_sample.h"
+#include "tdr_ia_sample.h"
+#include "tdr_ps_sample.h"
 
 /*---------------------------------------------------------------------------*/
 
