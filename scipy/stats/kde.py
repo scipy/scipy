@@ -76,8 +76,9 @@ class gaussian_kde:
 
         .. versionadded:: 1.2.0
     factor : float
-        The bandwidth factor, obtained from `kde.covariance_factor`, with which
-        the covariance matrix is multiplied.
+        The bandwidth factor, obtained from `kde.covariance_factor`. The square
+        of `kde.factor` multiplies the covariance matrix of the data in the kde
+        estimation.
     covariance : ndarray
         The covariance matrix of `dataset`, scaled by the calculated bandwidth
         (`kde.factor`).
