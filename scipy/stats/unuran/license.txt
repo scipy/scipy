@@ -344,6 +344,14 @@ under the BSD licence. The following files have been removed from the original l
     unuran-1.8.1/tests/testdistributions/vc_wo_logpdf.c
     unuran-1.8.1/tests/testroutines.c
     unuran-1.8.1/tests/testunuran.h
+    unuran-1.8.1/src/distr/deprecated_distr.c
+    unuran-1.8.1/src/distr/deprecated_distr.h
+    unuran-1.8.1/src/methods/deprecated_methods.c
+    unuran-1.8.1/src/methods/deprecated_methods.h
+    unuran-1.8.1/src/methods/deprecated_tdrgw.h
+    unuran-1.8.1/src/methods/deprecated_vmt.c
+    unuran-1.8.1/src/methods/deprecated_vmt.h
+    unuran-1.8.1/src/methods/deprecated_vmt_struct.h
 
 UNU.RAN relies on a modified version of the library Cephes, see ./src/src/specfunct/cephes_source.h
 
