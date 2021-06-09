@@ -4737,11 +4737,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     elif contains_nan and nan_policy == 'omit':
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
-        if variant == 'b' and alternative == 'two-sided':
-            return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
+        if variant == 'b':
+            return mstats_basic.kendalltau(x, y, method=method, use_ties=True,
+                                           alternative=alternative)
         else:
             message = ("`nan_policy='omit' is currently compatible only with "
-                       "`variant='b' and `alternative='two-sided'`.")
+                       "`variant='b'.")
             raise ValueError(message)
 
     if initial_lexsort is not None:  # deprecate to drop!
@@ -4806,7 +4807,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
+        pvalue = mstats_basic._kendall_p_exact(size, tot-dis, alternative)
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
         m = size * (size - 1.)
