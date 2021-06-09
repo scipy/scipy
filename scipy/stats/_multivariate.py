@@ -1295,7 +1295,7 @@ def _lnB(alpha):
 class dirichlet_gen(multi_rv_generic):
     r"""A Dirichlet random variable.
 
-    The `alpha` keyword specifies the concentration parameters of the
+    The ``alpha`` keyword specifies the concentration parameters of the
     distribution.
 
     .. versionadded:: 0.15.0
@@ -1338,7 +1338,7 @@ class dirichlet_gen(multi_rv_generic):
     .. math::
         \sum_{i=1}^{K} x_i = 1
 
-    where 0 < x_i < 1.
+    where :math:`0 < x_i < 1`.
 
     If the quantiles don't lie within the simplex, a ValueError is raised.
 
