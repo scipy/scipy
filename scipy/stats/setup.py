@@ -87,6 +87,9 @@ def configuration(parent_package='', top_path=None):
     )
     ext._pre_build_hook = pre_build_hook
 
+    # add unuran subumodule
+    config.add_subpackage('unuran')
+
     # add boost stats distributions
     config.add_subpackage('_boost')
 

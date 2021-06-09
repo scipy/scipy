@@ -377,6 +377,8 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
    NumericalInverseHermite
+   TransformedDensityRejection
+   DiscreteAliasUrn
 
 Circular statistical functions
 ------------------------------
@@ -453,6 +455,7 @@ from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from .unuran import *
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 
