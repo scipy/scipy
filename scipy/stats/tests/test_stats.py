@@ -1300,6 +1300,8 @@ class TestKendallTauAlternative:
     p_n2 = [1, 1, 0.5]
     p_c0 = [1, 0.3333333333333, 0.1666666666667]
     p_c1 = [0.9583333333333, 0.3333333333333, 0.1666666666667]
+    p_no_correlation = [0.5916666666667, 1, 0.5916666666667]
+    p_no_correlationb = [0.5475694444444, 1, 0.5475694444444]
     p_n_lt_171 = [0.9624118165785, 0.1194389329806, 0.0597194664903]
     p_n_lt_171b = [0.246236925303, 0.4924738506059, 0.755634083327]
     p_n_lt_171c = [0.9847475308925, 0.03071385306533, 0.01535692653267]
@@ -1342,6 +1344,22 @@ class TestKendallTauAlternative:
     def test_against_R_c1(self, alternative, p_expected, rev):
         x, y = [1, 2, 3, 4], [1, 2, 4, 3]
         stat_expected = 0.6666666666666667
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+
+    @pytest.mark.parametrize("alternative, p_expected, rev",
+        list(zip(alternatives, p_no_correlation, [False]*3)) +
+        list(zip(alternatives, reversed(p_no_correlation), [True]*3)))
+    def test_against_R_no_correlation(self, alternative, p_expected, rev):
+        x, y = [1, 2, 3, 4, 5], [1, 5, 4, 2, 3]
+        stat_expected = 0
+        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+
+    @pytest.mark.parametrize("alternative, p_expected, rev",
+        list(zip(alternatives, p_no_correlationb, [False]*3)) +
+        list(zip(alternatives, reversed(p_no_correlationb), [True]*3)))
+    def test_against_R_no_correlationb(self, alternative, p_expected, rev):
+        x, y = [1, 2, 3, 4, 5, 6, 7, 8], [8, 6, 1, 3, 2, 5, 4, 7]
+        stat_expected = 0
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
     @pytest.mark.parametrize("alternative, p_expected, rev",

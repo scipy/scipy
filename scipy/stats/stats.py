@@ -4665,7 +4665,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     correlation : float
        The tau statistic.
     pvalue : float
-       The two-sided p-value for a hypothesis test whose null hypothesis is
+       The p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
     See Also
@@ -5965,7 +5965,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -6305,7 +6305,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     """
     random_state = check_random_state(random_state)
