@@ -1321,10 +1321,10 @@ class TestTukeyHSD:
         # loop over the comparisons
         for i, j, l, s, h, sig in res_expect:
             i, j = int(i) - 1, int(j) - 1
-            assert_allclose(l, conf.low[i, j], atol=atol)
-            assert_allclose(s, res_tukey.statistic[i, j], atol=atol)
-            assert_allclose(h, conf.high[i, j], atol=atol)
-            assert_allclose(sig == 1, (res_tukey.pvalue[i, j] <= .05))
+            assert_allclose(conf.low[i, j], l, atol=atol)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+            assert_allclose(conf.high[i, j], h, atol=atol)
+            assert_allclose((res_tukey.pvalue[i, j] <= .05), sig == 1)
 
     matlab_sm_siz = """
         1	2	-8.2491590248597	-4.6	-0.9508409751403	0.0144483269098
@@ -1359,10 +1359,10 @@ class TestTukeyHSD:
         # loop over the comparisons
         for i, j, l, s, h, p in res_expect:
             i, j = int(i) - 1, int(j) - 1
-            assert_allclose(l, conf.low[i, j], atol=atol)
-            assert_allclose(s, res_tukey.statistic[i, j], atol=atol)
-            assert_allclose(h, conf.high[i, j], atol=atol)
-            assert_allclose(p, res_tukey.pvalue[i, j], atol=atol)
+            assert_allclose(conf.low[i, j], l, atol=atol)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+            assert_allclose(conf.high[i, j], h, atol=atol)
+            assert_allclose(res_tukey.pvalue[i, j], p, atol=atol)
 
     def test_compare_r(self):
         """
@@ -1400,10 +1400,10 @@ class TestTukeyHSD:
         for i, j, s, l, h, p in res_expect:
             i, j = int(i) - 1, int(j) - 1
             # atols are set to the number of digits present in the r result.
-            assert_allclose(l, conf.low[i, j], atol=1e-7)
-            assert_allclose(s, res_tukey.statistic[i, j], atol=1e-6)
-            assert_allclose(h, conf.high[i, j], atol=1e-5)
-            assert_allclose(p, res_tukey.pvalue[i, j], atol=1e-7)
+            assert_allclose(conf.low[i, j], l, atol=1e-7)
+            assert_allclose(res_tukey.statistic[i, j], s, atol=1e-6)
+            assert_allclose(conf.high[i, j], h, atol=1e-5)
+            assert_allclose(res_tukey.pvalue[i, j], p, atol=1e-7)
 
     def test_engineering_stat_handbook(self):
         '''
@@ -1430,6 +1430,8 @@ class TestTukeyHSD:
             [0, 0, 0, 0]])
 
         for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
+            assert_allclose(conf.low[i, j], lower[i, j], atol=1e-2)
+            assert_allclose(conf.high[i, j], upper[i, j], atol=1e-2)
 
     def test_rand_symm(self):
         np.random.seed(1234)
@@ -1444,10 +1446,10 @@ class TestTukeyHSD:
         assert_equal(np.diagonal(conf.low), conf.low[0, 0])
         # upper diagonals of statistic should be negative symmetric to lower
         # diagonals
-        assert_allclose(np.tril(res.statistic), -np.triu(res.statistic).T)
+        assert_allclose(res.statistic, -res.statistic.T)
         # p-values should be symmetric and 1 when compared to itself
         assert_allclose(res.pvalue, res.pvalue.T)
-        assert_allclose(np.ones(3), np.diagonal(res.pvalue))
+        assert_equal(np.diagonal(res.pvalue), 1)
 
     def test_no_inf(self):
         with assert_raises(ValueError, match="...must be finite."):
