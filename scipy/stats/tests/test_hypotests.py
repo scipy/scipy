@@ -1439,16 +1439,16 @@ class TestTukeyHSD:
         res = stats.tukey_hsd(*data)
         conf = res.confidence_interval()
         # the confidence intervals should be negated symmetric of each other
-        assert_allclose(conf.low, -conf.high.T)
+        assert_equal(conf.low, -conf.high.T)
         # the `high` and `low` center diagonals should be the same since the
         # mean difference in a self comparison is 0.
         assert_equal(np.diagonal(conf.high), conf.high[0, 0])
         assert_equal(np.diagonal(conf.low), conf.low[0, 0])
         # upper diagonals of statistic should be negative symmetric to lower
         # diagonals
-        assert_allclose(res.statistic, -res.statistic.T)
+        assert_equal(res.statistic, -res.statistic.T)
         # p-values should be symmetric and 1 when compared to itself
-        assert_allclose(res.pvalue, res.pvalue.T)
+        assert_equal(res.pvalue, res.pvalue.T)
         assert_equal(np.diagonal(res.pvalue), 1)
 
     def test_no_inf(self):
