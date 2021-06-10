@@ -1430,8 +1430,6 @@ class TestTukeyHSD:
             [0, 0, 0, 0]])
 
         for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
-            assert_allclose(lower[i, j], conf.low[i, j], atol=1e-2)
-            assert_allclose(upper[i, j], conf.high[i, j], atol=1e-2)
 
     def test_rand_symm(self):
         np.random.seed(1234)
@@ -1440,6 +1438,10 @@ class TestTukeyHSD:
         conf = res.confidence_interval()
         # the confidence intervals should be negated symmetric of each other
         assert_allclose(conf.low, -conf.high.T)
+        # the `high` and `low` center diagonals should be the same since the
+        # mean difference in a self comparison is 0.
+        assert_equal(np.diagonal(conf.high), conf.high[0, 0])
+        assert_equal(np.diagonal(conf.low), conf.low[0, 0])
         # upper diagonals of statistic should be negative symmetric to lower
         # diagonals
         assert_allclose(np.tril(res.statistic), -np.triu(res.statistic).T)
