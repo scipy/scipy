@@ -1031,9 +1031,8 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
 
-    return Ttest_1sampResult(
-        *scipy.stats.stats._ttest_finish(df, t, alternative)
-    )
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_1sampResult(t, prob)
 
 
 ttest_onesamp = ttest_1samp
@@ -1116,9 +1115,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
 
-    return Ttest_indResult(
-        *scipy.stats.stats._ttest_finish(df, t, alternative)
-    )
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_indResult(t, prob)
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
@@ -1178,9 +1176,8 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    return Ttest_relResult(
-        *scipy.stats.stats._ttest_finish(df, t, alternative)
-    )
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_relResult(t, prob)
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',

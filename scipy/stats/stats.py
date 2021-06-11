@@ -4410,9 +4410,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
     >>> stats.spearmanr(x2n)
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.43111687057697545)
+    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
     >>> stats.spearmanr(x2n[:,0], x2n[:,1])
-    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.43111687057697545)
+    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
     >>> rho, pval = stats.spearmanr(x2n, y2n)
     >>> rho
     array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
@@ -4431,14 +4431,14 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
            [-0.08314431, -0.14448245,  1.        ,  0.03234323],
            [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
     >>> stats.spearmanr(x2n, y2n, axis=None)
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336158)
+    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
     >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
-    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336158)
+    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
 
     >>> rng = np.random.default_rng()
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
-    SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932046)
+    SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
 
     """
     if axis is not None and axis > 1:
@@ -5652,20 +5652,17 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
-    # We use ``betainc`` here as it handles the case when ``nan``
+    # We use ``stdtr`` directly here as it handles the case when ``nan``
     # values are present in the data and masked arrays are passed
     # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
     # can be shared between the ``stats`` and ``mstats`` versions.
-    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
-    cdf = 1 - 0.5 * prob
-    cdf = np.where(t < 0, 1-cdf, cdf)
 
     if alternative == 'less':
-        pval = cdf
+        pval = special.stdtr(df, t)
     elif alternative == 'greater':
-        pval = 1 - cdf
+        pval = special.stdtr(df, -t)
     elif alternative == 'two-sided':
-        pval = prob
+        pval = special.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
@@ -5786,7 +5783,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> from scipy.stats import ttest_ind_from_stats
     >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
     ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
-    Ttest_indResult(statistic=0.9051358093310269, pvalue=0.3751996797581483)
+    Ttest_indResult(statistic=0.9051358093310269, pvalue=0.3751996797581487)
 
     For comparison, here is the data from which those summary statistics
     were taken.  With this data, we can compute the same result using
@@ -5796,7 +5793,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
-    Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581483)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
 
     Suppose we instead have binary data and would like to apply a t-test to
     compare the proportion of 1s in two independent groups::
@@ -5812,7 +5809,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
     ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
-    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691245175)
+    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
 
     For comparison, we could compute the t statistic and p-value using
     arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
@@ -5820,7 +5817,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> group1 = np.array([1]*30 + [0]*(150-30))
     >>> group2 = np.array([1]*45 + [0]*(200-45))
     >>> ttest_ind(group1, group2)
-    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.5739892771152655)
+    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
     mean1 = np.asarray(mean1)
@@ -6044,34 +6041,34 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs2)
-    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952038868563)
+    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952038870015)
     >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
-    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952553129556)
+    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952553131064)
 
     `ttest_ind` underestimates p for unequal variances:
 
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs3)
-    Ttest_indResult(statistic=-1.6370984482905417, pvalue=0.1019251574705468)
+    Ttest_indResult(statistic=-1.6370984482905417, pvalue=0.1019251574705033)
     >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
-    Ttest_indResult(statistic=-1.637098448290542, pvalue=0.10202110497959518)
+    Ttest_indResult(statistic=-1.637098448290542, pvalue=0.10202110497954867)
 
     When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs4)
-    Ttest_indResult(statistic=-1.9481646859513422, pvalue=0.0518627093584292)
+    Ttest_indResult(statistic=-1.9481646859513422, pvalue=0.05186270935842703)
     >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
-    Ttest_indResult(statistic=-1.3146566100751664, pvalue=0.19134952665138136)
+    Ttest_indResult(statistic=-1.3146566100751664, pvalue=0.1913495266513811)
 
     T-test with different means, variance, and n:
 
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs5)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.004641870756871036)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0046418707568707885)
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
-    Ttest_indResult(statistic=-1.8686598649188084, pvalue=0.06434714193919717)
+    Ttest_indResult(statistic=-1.8686598649188084, pvalue=0.06434714193919686)
 
     When performing a permutation test, more permutations typically yields
     more accurate results. Use a ``np.random.Generator`` to ensure
@@ -6092,7 +6089,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
 
     >>> stats.ttest_ind(a, b, trim=.2)
-    Ttest_indResult(statistic=3.4463884028073513, pvalue=0.013693387264995471)
+    Ttest_indResult(statistic=3.4463884028073513,
+                    pvalue=0.01369338726499547)
     """
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
@@ -6425,11 +6423,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs2)
-    Ttest_relResult(statistic=-0.4549717054410304, pvalue=0.6493274702088374)
+    Ttest_relResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672)
     >>> rvs3 = (stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs3)
-    Ttest_relResult(statistic=-5.879467544540889, pvalue=7.540777129099808e-09)
+    Ttest_relResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
