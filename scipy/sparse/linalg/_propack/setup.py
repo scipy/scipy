@@ -12,18 +12,6 @@ def configuration(parent_package='', top_path=None):
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
 
-    # PROPACK sources are zipped to save on space, so make sure
-    # they are unzipped before we try to use them
-    _curdir = pathlib.Path(__file__).parent
-    if not (_curdir / 'PROPACK').exists():
-        print('[propack] PROPACK directory not found, unzipping...')
-        zipfile = _curdir / 'PROPACK.zip'
-        t0 = time()
-        ZipFile(zipfile).extractall(path=_curdir / 'PROPACK')
-        print(f'[propack] Took {time() - t0} seconds to extract PROPACK')
-    else:
-        print('[propack] PROPACK directory found!')
-
     #------------------------------------------------------------
     # Set up the libraries.
     #  We need a different python extension file for each, because
