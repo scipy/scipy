@@ -19,7 +19,6 @@ from . cimport setlist
 from libc cimport stdlib
 from scipy._lib.messagestream cimport MessageStream
 
-from numpy.compat import asbytes
 import os
 import sys
 import tempfile
@@ -1539,7 +1538,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
 # Delaunay triangulation interface, for Python
 #------------------------------------------------------------------------------
 
-class _QhullUser(object):
+class _QhullUser:
     """
     Takes care of basic dealings with the Qhull objects
     """
@@ -1834,7 +1833,7 @@ class Delaunay(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
@@ -2429,7 +2428,7 @@ class ConvexHull(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b"Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"i", points, qhull_options, required_options=b"Qt",
@@ -2608,7 +2607,7 @@ class Voronoi(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
@@ -2805,7 +2804,7 @@ class HalfspaceIntersection(_QhullUser):
             if halfspaces.shape[1] >= 6:
                 qhull_options += b"Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         mode_option = "H"

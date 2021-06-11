@@ -1205,9 +1205,9 @@ def mannwhitneyu(x,y, use_continuity=True):
     Returns
     -------
     statistic : float
-        The Mann-Whitney statistics
+        The minimum of the Mann-Whitney statistics
     pvalue : float
-        Approximate p-value assuming a normal distribution.
+        Approximate two-sided p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
@@ -2556,24 +2556,36 @@ def stde_median(data, axis=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-def skewtest(a, axis=0):
+def skewtest(a, axis=0, alternative='two-sided'):
     """
     Tests whether the skew is different from the normal distribution.
 
     Parameters
     ----------
-    a : array
+    a : array_like
         The data to be tested
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the skewness of the distribution underlying the sample
+          is different from that of the normal distribution (i.e. 0)
+        * 'less': the skewness of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the skewness of the distribution underlying the sample
+          is greater than that of the normal distribution
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        a 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        A p-value for the hypothesis test
 
     Notes
     -----
@@ -2599,30 +2611,42 @@ def skewtest(a, axis=0):
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
 
-    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return SkewtestResult(*scipy.stats.stats._normtest_finish(Z, alternative))
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-def kurtosistest(a, axis=0):
+def kurtosistest(a, axis=0, alternative='two-sided'):
     """
     Tests whether a dataset has normal kurtosis
 
     Parameters
     ----------
-    a : array
+    a : array_like
         array of the sample data
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the kurtosis of the distribution underlying the sample
+          is different from that of the normal distribution
+        * 'less': the kurtosis of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the kurtosis of the distribution underlying the sample
+          is greater than that of the normal distribution
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        The 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        The p-value for the hypothesis test
 
     Notes
     -----
@@ -2659,7 +2683,9 @@ def kurtosistest(a, axis=0):
                         -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
-    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return KurtosistestResult(
+        *scipy.stats.stats._normtest_finish(Z, alternative)
+    )
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))

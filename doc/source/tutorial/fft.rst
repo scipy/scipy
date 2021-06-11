@@ -567,6 +567,39 @@ array([ 10.,  20.,  10., -10.,  15.])
 >>> idst(dst(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
+
+Fast Hankel Transform
+---------------------
+
+SciPy provides the functions ``fht`` and ``ifht`` to perform the Fast
+Hankel Transform (FHT) and its inverse (IFHT) on logarithmically-spaced input
+arrays.
+
+The FHT is the discretised version of the continuous Hankel transform defined
+by [Ham00]_
+
+.. math::
+
+    A(k) = \int_{0}^{\infty} \! a(r) \, J_{\mu}(kr) \, k \, dr \;,
+
+with :math:`J_{\mu}` the Bessel function of order :math:`\mu`. Under a change
+of variables :math:`r \to \log r`, :math:`k \to \log k`, this becomes
+
+.. math::
+
+    A(e^{\log k})
+    = \int_{0}^{\infty} \! a(e^{\log r}) \, J_{\mu}(e^{\log k + \log r})
+                                        \, e^{\log k + \log r} \, d{\log r}
+
+which is a convolution in logarithmic space. The FHT algorithm uses the FFT
+to perform this convolution on discrete input data.
+
+Care must be taken to minimise numerical ringing due to the circular nature
+of FFT convolution. To ensure that the low-ringing condition [Ham00]_ holds,
+the output array can be slightly shifted by an offset computed using the
+``fhtoffset`` function.
+
+
 References
 ----------
 
@@ -581,6 +614,9 @@ References
 .. [Mak] J. Makhoul, 1980, 'A Fast Cosine Transform in One and Two Dimensions',
        `IEEE Transactions on acoustics, speech and signal processing`
        vol. 28(1), pp. 27-34, :doi:`10.1109/TASSP.1980.1163351`
+
+.. [Ham00] A. J. S. Hamilton, 2000, "Uncorrelated modes of the non-linear power
+       spectrum", *MNRAS*, 312, 257. :doi:`10.1046/j.1365-8711.2000.03071.x`
 
 .. [WPW] https://en.wikipedia.org/wiki/Window_function
 
