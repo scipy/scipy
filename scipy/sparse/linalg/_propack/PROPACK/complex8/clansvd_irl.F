@@ -177,7 +177,7 @@ c     %--------------------------------%
 c     | Guard against absurd arguments |
 c     %--------------------------------%
       dim = min(dim,n+1,m+1)
-      k = abs(dim-p)
+      k = dim-p
       tol = min(one,max(16.0*eps,tolin))
       anorm = zero
 

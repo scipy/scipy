@@ -3,28 +3,28 @@
      c     liwork,doption,ioption,info,dparm,iparm)
 
 c     DLANSVD_IRL: Compute the leading singular triplets of a large
-c     and sparse matrix A by implicitly restarted Lanczos bidiagonalization 
+c     and sparse matrix A by implicitly restarted Lanczos bidiagonalization
 c     with partial reorthogonalization.
 c
 c     Parameters:
 c
-c     WHICH: CHARACTER*1. Decides which singular triplets to compute. 
+c     WHICH: CHARACTER*1. Decides which singular triplets to compute.
 c            If WHICH.EQ.'L' then compute triplets corresponding to the K
-c            largest singular values. 
+c            largest singular values.
 c            If WHICH.EQ.'S' then compute triplets corresponding to the K
-c            smallest singular values. 
+c            smallest singular values.
 c     JOBU: CHARACTER*1. If JOBU.EQ.'Y' then compute the left singular vectors.
 c           Otherwise the array U is not touched.
-c     JOBV: CHARACTER*1. If JOBV.EQ.'Y' then compute the right singular 
+c     JOBV: CHARACTER*1. If JOBV.EQ.'Y' then compute the right singular
 c           vectors. Otherwise the array V is not touched.
 c     M:    INTEGER. Number of rows of A.
 c     N:    INTEGER. Number of columns of A.
 c     DIM:  INTEGER. Dimension of the Krylov subspace.
 c     P:    INTEGER. Number of shift per restart.
-c     NEIG: INTEGER. Number of desired singular triplets.  
+c     NEIG: INTEGER. Number of desired singular triplets.
 c           NEIG <= MIN(DIM-P,M,N)
 c     MAXITER: INTEGER. Maximum number of restarts.
-c     APROD: Subroutine defining the linear operator A. 
+c     APROD: Subroutine defining the linear operator A.
 c            APROD should be of the form:
 c
 c           SUBROUTINE DAPROD(TRANSA,M,N,X,Y,DPARM,IPARM)
@@ -39,37 +39,37 @@ c           product Y = A^T * X.
 c           The arrays IPARM and DPARM are a means to pass user supplied
 c           data to APROD without the use of common blocks.
 c     U(LDU,KMAX+1): DOUBLE PRECISION array. On return the first K columns of U
-c               will contain approximations to the left singular vectors 
-c               corresponding to the K largest or smallest (depending on the 
+c               will contain approximations to the left singular vectors
+c               corresponding to the K largest or smallest (depending on the
 c               value of WHICH)  singular values of A.
 c               On entry the first column of U contains the starting vector
 c               for the Lanczos bidiagonalization. A random starting vector
 c               is used if U is zero.
 c     LDU: INTEGER. Leading dimension of the array U. LDV >= M.
 c     SIGMA(K): DOUBLE PRECISION array. On return Sigma contains approximation
-c               to the K largest or smallest (depending on the 
+c               to the K largest or smallest (depending on the
 c               value of WHICH) singular values of A.
-c     BND(K)  : DOUBLE PRECISION array. Error estimates on the computed 
+c     BND(K)  : DOUBLE PRECISION array. Error estimates on the computed
 c               singular values. The computed SIGMA(I) is within BND(I)
 c               of a singular value of A.
 c     V(LDV,KMAX): DOUBLE PRECISION array. On return the first K columns of V
-c               will contain approximations to the right singular vectors 
-c               corresponding to the K largest or smallest (depending on the 
+c               will contain approximations to the right singular vectors
+c               corresponding to the K largest or smallest (depending on the
 c               value of WHICH) singular values of A.
 c     LDV: INTEGER. Leading dimension of the array V. LDV >= N.
-c     TOLIN: DOUBLE PRECISION. Desired relative accuracy of computed singular 
-c            values. The error of SIGMA(I) is approximately 
+c     TOLIN: DOUBLE PRECISION. Desired relative accuracy of computed singular
+c            values. The error of SIGMA(I) is approximately
 c            MAX( 16*EPS*SIGMA(1), TOLIN*SIGMA(I) )
 c     WORK(LWORK): DOUBLE PRECISION array. Workspace of dimension LWORK.
-c     LWORK: INTEGER. Dimension of WORK. 
+c     LWORK: INTEGER. Dimension of WORK.
 c            If JOBU.EQ.'N' and JOBV.EQ.'N' then  LWORK should be at least
 c            M + N + 10*KMAX + 2*KMAX**2 + 5 + MAX(M,N,4*KMAX+4).
 c            If JOBU.EQ.'Y' or JOBV.EQ.'Y' then LWORK should be at least
-c            M + N + 10*KMAX + 5*KMAX**2 + 4 + 
-c            MAX(3*KMAX**2+4*KMAX+4, NB*MAX(M,N)), where NB>0 is a block 
+c            M + N + 10*KMAX + 5*KMAX**2 + 4 +
+c            MAX(3*KMAX**2+4*KMAX+4, NB*MAX(M,N)), where NB>0 is a block
 c            size, which determines how large a fraction of the work in
-c            setting up the singular vectors is done using fast BLAS-3 
-c            operation. 
+c            setting up the singular vectors is done using fast BLAS-3
+c            operation.
 c     IWORK: INTEGER array. Integer workspace of dimension LIWORK.
 c     LIWORK: INTEGER. Dimension of IWORK. Should be at least 8*KMAX if
 c             JOBU.EQ.'Y' or JOBV.EQ.'Y' and at least 2*KMAX+1 otherwise.
@@ -85,22 +85,22 @@ c                     the smallest requested Ritz value.
 c
 c     IOPTION: INTEGER array. Parameters for LANBPRO.
 c        ioption(1) = CGS.  If CGS.EQ.1 then reorthogonalization is done
-c          using iterated classical Gram-Schmidt. IF CGS.EQ.0 then 
+c          using iterated classical Gram-Schmidt. IF CGS.EQ.0 then
 c          reorthogonalization is done using iterated modified Gram-Schmidt.
 c        ioption(2) = ELR. If ELR.EQ.1 then extended local orthogonality is
 c          enforced among u_{k}, u_{k+1} and v_{k} and v_{k+1} respectively.
 c
-c     INFO: INTEGER. 
-c         INFO = 0  : The K largest or smallest (depending on the 
-c                     value of WHICH) singular triplets were computed 
+c     INFO: INTEGER.
+c         INFO = 0  : The K largest or smallest (depending on the
+c                     value of WHICH) singular triplets were computed
 c                     succesfully.
 c         INFO = J>0, J<K: An invariant subspace of dimension J was found.
 c         INFO = -1 : K singular triplets did not converge within KMAX
-c                     iterations.   
+c                     iterations.
 c     DPARM: DOUBLE PRECISION array. Array used for passing data to the APROD
-c         function.   
+c         function.
 c     IPARM: INTEGER array. Array used for passing data to the APROD
-c         function.   
+c         function.
 c
 c
 c     (C) Rasmus Munk Larsen, Stanford University, 2000,2004
@@ -125,7 +125,7 @@ c     | Parameters |
 c     %------------%
       double precision one, zero, FUDGE
       parameter(one = 1.0, zero = 0.0, FUDGE = 1.01)
-            
+
 c     %-----------------%
 c     | Local variables |
 c     %-----------------%
@@ -140,7 +140,7 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
       external dzero,izero,dcopy,daxpy,dbdsqr,dgemm
-      
+
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
@@ -154,7 +154,7 @@ c     %--------------------%
 #endif
 
 c-------------------- Here begins executable code ---------------------
-      
+
 c     %-------------%
 c     | Start timer |
 c     %-------------%
@@ -168,13 +168,13 @@ c     %---------------------------------%
       epsn = dble(max(m,n))*eps/2.0
       epsn2 = sqrt(dble(max(m,n)))*eps/2.0
       sfmin = dlamch('s')
-      
+
 
 c     %--------------------------------%
 c     | Guard against absurd arguments |
 c     %--------------------------------%
       dim = min(dim,n+1,m+1)
-      k = abs(dim-p)
+      k = dim-p
       tol = min(one,max(16.0*eps,tolin))
       anorm = zero
 
@@ -199,13 +199,13 @@ c     %---------------------------------------------------------------%
       rnorm = pdnrm2(m,U(1,1),1)
       if (rnorm.eq.zero) then
          call dgetu0('n',m,n,0,1,U,rnorm,U,ldu,aprod,
-     c        dparm,iparm, ierr,ioption(1),anorm,work(iwrk))     
+     c        dparm,iparm, ierr,ioption(1),anorm,work(iwrk))
       endif
 
       iter = 0
       info = 0
       nconv = 0
-      kold = 0       
+      kold = 0
 c     %------------------------------%
 c     | Iterate until convergence... |
 c     %------------------------------%
@@ -218,7 +218,7 @@ c     %---------------------------------------------------%
 
          call dlanbpro(m, n, kold, dim, aprod, U, ldu, V, ldv,
      c        work(ialpha),dim,rnorm,doption(1),ioption(1),
-     c        work(iwrk), iwork, dparm, iparm, ierr)         
+     c        work(iwrk), iwork, dparm, iparm, ierr)
          kold = k
 c     %---------------------------------------------%
 c     | Compute and analyze SVD(B) and error bounds |
@@ -231,7 +231,7 @@ c     %---------------------------------------------%
          call dbdqr((dim.eq.min(m,n)),'N',dim,work(ialpha1),
      c        work(ibeta1),work(ibnd+dim-1),work(ibnd+dim),
      c        work(ip),dim+1)
-         
+
          call dbdsqr('u',dim,0,1,0,work(ialpha1),work(ibeta1),work,1,
      c        work(ibnd),1,work,1,work(iwrk),lapinfo)
          call  second(t3)
@@ -253,15 +253,15 @@ c     | Refine error bounds using the "Gap theorem" |
 c     %---------------------------------------------%
          if (lsame(which,'s')) then
             call drefinebounds(min(m,n),dim,work(ialpha1),work(ibnd),
-     c           epsn*anorm,eps34) 
+     c           epsn*anorm,eps34)
          else
             call drefinebounds(min(m,n), min(dim,neig),work(ialpha1),
-     c           work(ibnd),epsn*anorm,eps34) 
+     c           work(ibnd),epsn*anorm,eps34)
          endif
 c         do i=1,dim
 c            write (*,*) 'bnd(',i,') = ',work(ibnd+i-1)
 c         enddo
-         
+
 c     %----------------------------------------------------%
 c     | Determine the number of converged singular values  |
 c     %----------------------------------------------------%
@@ -297,8 +297,8 @@ c               write(*,*)  iter,work(ialpha1+i-1),work(ibnd+i-1)
                endif
             enddo
          endif
-            
-         
+
+
 c     %-----------------------------------------------%
 c     | Test if an invariant subspace have been found |
 c     %-----------------------------------------------%
@@ -308,7 +308,7 @@ c     %-----------------------------------------------%
      c              ' Dimension = ',dim
                info = dim
             endif
-            goto 50               
+            goto 50
          endif
          if (nconv.lt.neig) then
 
@@ -339,7 +339,7 @@ c     %---------------------------------------------------------------------%
                   endif
 c                  write (*,*) 'shift = ',work(ishift + nshft)
                   nshft = nshft + 1
-               enddo      
+               enddo
             else
                do i=dim,k+1,-1
                   relgap = work(ialpha1+k-1) -
@@ -350,7 +350,7 @@ c                  write (*,*) 'shift = ',work(ishift + nshft)
                      work(ishift + nshft) = 0d0
                   endif
                   nshft = nshft + 1
-               enddo      
+               enddo
             endif
 
 c     %--------------------------------------------------%
@@ -378,7 +378,7 @@ c     | Lanczos vectors                                   |
 c     |   U_{dim+1}^{+} = U_{dim+1} * P(:,1:k+1)          |
 c     |   V_{dim}^{+} = V_{dim} * Q(:,1:k)                |
 c     %---------------------------------------------------%
-c$OMP PARALLEL private(tid,nt,cnk,st,wcnk,wst) 
+c$OMP PARALLEL private(tid,nt,cnk,st,wcnk,wst)
 #ifdef _OPENMP
             tid = omp_get_thread_num()
             nt = omp_get_num_threads()
@@ -395,7 +395,7 @@ c$OMP PARALLEL private(tid,nt,cnk,st,wcnk,wst)
                cnk = m-st+1
             endif
             call dgemm_ovwr_left('n',cnk,k+1,dim+1,1d0,U(st,1),ldu,0d0,
-     c           work(ip),dim+1,work(iwrk+wst-1),wcnk)            
+     c           work(ip),dim+1,work(iwrk+wst-1),wcnk)
             cnk = n/nt
             st = tid*cnk+1
             if (tid.eq.nt-1) then
@@ -408,11 +408,11 @@ c$OMP END PARALLEL
             call second(t3)
             trestart = trestart + (t3-t2)
             nrestart = nrestart + 1
-         endif         
+         endif
          iter = iter + 1
       enddo
 
- 50   if ((nconv.ge.neig .or. info.gt.0) .and. 
+ 50   if ((nconv.ge.neig .or. info.gt.0) .and.
      c     (lsame(jobu,'y') .or. lsame(jobv,'y'))) then
 c     %-----------------------------------------%
 c     | Calculate singular vectors if requested %
