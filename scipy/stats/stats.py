@@ -5652,20 +5652,17 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
-    # We use ``betainc`` here as it handles the case when ``nan``
+    # We use ``stdtr`` directly here as it handles the case when ``nan``
     # values are present in the data and masked arrays are passed
     # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
     # can be shared between the ``stats`` and ``mstats`` versions.
-    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
-    cdf = 1 - 0.5 * prob
-    cdf = np.where(t < 0, 1-cdf, cdf)
 
     if alternative == 'less':
-        pval = cdf
+        pval = special.stdtr(df, t)
     elif alternative == 'greater':
-        pval = 1 - cdf
+        pval = special.stdtr(df, -t)
     elif alternative == 'two-sided':
-        pval = prob
+        pval = special.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
