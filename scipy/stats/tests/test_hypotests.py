@@ -1407,8 +1407,6 @@ class TestTukeyHSD:
 
     def test_engineering_stat_handbook(self):
         '''
-        This example does not have p-values or the statistic so it is a
-        separate test than above.
         Example sourced from:
         https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
         '''
@@ -1434,6 +1432,7 @@ class TestTukeyHSD:
             assert_allclose(conf.high[i, j], upper[i, j], atol=1e-2)
 
     def test_rand_symm(self):
+        # test some expected identities of the results
         np.random.seed(1234)
         data = np.random.rand(3, 100)
         res = stats.tukey_hsd(*data)
@@ -1444,9 +1443,9 @@ class TestTukeyHSD:
         # mean difference in a self comparison is 0.
         assert_equal(np.diagonal(conf.high), conf.high[0, 0])
         assert_equal(np.diagonal(conf.low), conf.low[0, 0])
-        # upper diagonals of statistic should be negative symmetric to lower
-        # diagonals
+        # statistic array should be antisymmetric with zeros on the diagonal
         assert_equal(res.statistic, -res.statistic.T)
+        assert_equal(np.diagonal(res.statistic), 0)
         # p-values should be symmetric and 1 when compared to itself
         assert_equal(res.pvalue, res.pvalue.T)
         assert_equal(np.diagonal(res.pvalue), 1)

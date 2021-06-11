@@ -684,7 +684,7 @@ def _all_partitions(nx, ny):
         y = z[mask]
         yield x, y
 
-        
+
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -1030,8 +1030,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a 
-    statistic, and Boschloo's p-value is the probability under the null 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
     hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
@@ -1451,12 +1451,6 @@ class TukeyHSDResult:
         element at index ``(i, j)`` is the p-value for the comparison
         between groups ``i`` and ``j``.
 
-    Methods
-    -------
-    confidence_interval :
-        Compute the confidence interval for the confidence level
-        specified in the test.
-
     References
     ----------
     .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
@@ -1523,7 +1517,7 @@ class TukeyHSDResult:
         # each group comparison.
         params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
         srd = distributions.studentized_range.ppf(*params)
-        # also called maximum critical value, the tukey criterion is the
+        # also called maximum critical value, the Tukey criterion is the
         # studentized range critical value * the square root of mean square
         # error over the sample size.
         tukey_criterion = srd * self._stand_err
@@ -1540,7 +1534,7 @@ def _tukey_hsd_iv(args):
     args = [np.asarray(arg) for arg in args]
     for arg in args:
         if arg.ndim != 1:
-            raise ValueError("Input samples must be one-dimensional")
+            raise ValueError("Input samples must be one-dimensional.")
         if arg.size <= 1:
             raise ValueError("Input sample size must be greater than one.")
         if np.isinf(arg).any():
@@ -1551,16 +1545,20 @@ def _tukey_hsd_iv(args):
 def tukey_hsd(*args):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 
-    Tukey's honestly significant difference test is performed under the
-    assumption of a previously rejected null hypothesis that two or more
-    samples have the same population mean. With unequal sample sizes, it
-    utilizes the Tukey-Kramer method.
+    Tukey's honestly significant difference (HSD) test performs pairwise
+    comparison of means for a set of samples. Whereas ANOVA (e.g. `f_oneway`)
+    assesses whether the true means underlying each sample are identical,
+    Tukey's HSD is a post hoc test used to compare the mean of each sample
+    to the mean of each other sample.
 
-    The test compares the absolute mean difference between each input group to
-    the Tukey criterion for significance. The null hypothesis for each
-    comparison is that they have equal means. When the Tukey-Kramer method is
-    used the test computes a higher confidence coefficient, leading to more
-    conservative estimates [1]_.
+    The null hypothesis is that the distributions underlying the samples all
+    have the same mean. The test statistic, which is computed for every
+    possible pairing of samples, is simply the difference between the sample
+    means. For each pair, the p-value is the probability under the null
+    hypothesis (and other assumptions; see notes) of observing such an extreme
+    value of the statistic, considering that many pairwise comparisons are
+    being performed. Confidence intervals for the difference between each pair
+    of means are also available.
 
     Parameters
     ----------
@@ -1576,27 +1574,28 @@ def tukey_hsd(*args):
         statistic : float ndarray
             The computed statistic of the test for each comparison. The element
             at index ``(i, j)`` is the statistic for the comparison between
-            groups ``i`` and ``j``..
+            groups ``i`` and ``j``.
         pvalue : float ndarray
             The computed p-value of the test for each comparison. The element
             at index ``(i, j)`` is the p-value for the comparison between
-            groups ``i`` and ``j``..
-
+            groups ``i`` and ``j``.
 
         The object has the following methods:
 
-        confidence_interval :
-            Compute the confidence interval for the confidence level
-            specified in the test. For both ``high`` and ``low``, the element
-            at index ``(i, j)`` is the bound for the comparison between
-            groups ``i`` and ``j``..
+        confidence_interval(confidence_level=0.95):
+            Compute the confidence interval for the specified confidence level.
 
     Notes
     -----
     The use of this test relies on several assumptions.
 
-    1. There are equal variances between the samples.
-    2. The sample means from each treatment are normally distributed.
+    1. The observations are indendent within and among groups.
+    2. The observations within each group are normally distributed.
+    3. The distributions from which the samples are drawn have the same finite
+       variance.
+
+    The original formulation of the test was for samples of equal size. In case
+    of unequal sample sizes, the test uses the Tukey-Kramer method [4]_.
 
     References
     ----------
@@ -1641,7 +1640,7 @@ def tukey_hsd(*args):
 
     From the box and whisker plot we can see overlap in the interquartile
     ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
-    test to determine if the difference between means is significant. We choose
+    test to determine if the difference between means is significant. We
     a significance level of .05 to reject the null hypothesis.
 
     >>> res = tukey_hsd(group0, group1, group2)
