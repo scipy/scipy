@@ -81,88 +81,85 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
          delta=None, eta=None, anorm=0, cgs=False, elr=True, blocksize=16,
          min_relgap=0.002, shifts=100, maxiter=None):
     """
-    Compute the singular value decomposition of A using PROPACK
+    Compute the singular value decomposition of a linear operator using PROPACK
 
     Parameters
     ----------
     A : array_like, sparse matrix, or LinearOperator
-        Operator for which svd will be computed.  If A is a LinearOperator
+        Operator for which SVD will be computed.  If `A` is a LinearOperator
         object, it must define both ``matvec`` and ``rmatvec`` methods.
     k : int
         Number of singular values/vectors to compute
-    which : string (optional)
+    which : {"LM", "SM"}
         Which singluar triplets to compute:
-        - 'LM': compute triplets corresponding to the k largest singular values
-        - 'SM: compute triplets corresponding to the k smallest singular values
-        which='SM' requires irl=True.
-        Computes largest singular values by default.
-    irl_mode : boolean (optional)
-        If True, then compute SVD using iterative restarts.  Default is False.
-    kmax : int (optional)
+        - 'LM': compute triplets corresponding to the `k` largest singular
+                values
+        - 'SM': compute triplets corresponding to the `k` smallest singular
+                values
+        `which='SM'` requires `irl_mode=True`.  Computes largest singular
+        values by default.
+    irl_mode : bool, optional
+        If `True`, then compute SVD using IRL (implicitly restarted Lanczos)
+        mode.  Default is `False`.
+    kmax : int, optional
         Maximal number of iterations / maximal dimension of Krylov subspace.
-        default is 5 * k
-    compute_u : bool (optional)
-        If True (default) then compute left singular vectors u
-    compute_v : bool (optional)
-        If True (default) then compute right singular vectors v
-    tol : float (optional)
+        Default is ``5 * k``.
+    compute_u : bool, optional
+        If `True` (default) then compute left singular vectors, `u`.
+    compute_v : bool, optional
+        If `True` (default) then compute right singular vectors, `v`.
+    tol : float, optional
         The desired relative accuracy for computed singular values.
         If not specified, it will be set based on machine precision.
-    v0 : starting vector (optional)
-        Starting vector for iterations: should be of length A.shape[0].
+    v0 : array_like, optional
+        Starting vector for iterations: must be of length ``A.shape[0]``.
         If not specified, PROPACK will generate a starting vector.
-    full_output : boolean (optional)
-        If True, then return info and sigma_bound.  Default is False
-    delta : float (optional)
+    full_output : bool, optional
+        If `True`, then return sigma_bound.  Default is `False`.
+    delta : float, optional
         Level of orthogonality to maintain between Lanczos vectors.
         Default is set based on machine precision.
-    eta : float (optional)
+    eta : float, optional
         Orthogonality cutoff.  During reorthogonalization, vectors with
-        component larger than eta along the Lanczos vector will be purged.
+        component larger than `eta` along the Lanczos vector will be purged.
         Default is set based on machine precision.
-    anorm : float (optional)
-        Estimate of ||A||.  Default is zero.
-    cgs : boolean (optional)
-        If True, reorthogonalization is done using classical Gram-Schmidt.
-        If False (default), it is done using modified Gram-Schmidt.
-    elr : boolean (optional)
-        If True (default), then extended local orthogonality is enforced
+    anorm : float, optional
+        Estimate of ``||A||``.  Default is `0`.
+    cgs : bool, optional
+        If `True`, reorthogonalization is done using classical Gram-Schmidt.
+        If `False` (default), it is done using modified Gram-Schmidt.
+    elr : bool, optional
+        If `True` (default), then extended local orthogonality is enforced
         when obtaining singular vectors.
-    blocksize : int (optional)
-        If computing u or v, blocksize controls how large a fraction of the
+    blocksize : int, optional
+        If computing `u` or `v` (left and right singular vectors,
+        respectively), `blocksize` controls how large a fraction of the
         work is done via fast BLAS level 3 operations.  A larger blocksize
-        may lead to faster computation, at the expense of greater memory
-        consumption.  blocksize must be >= 1; default is 16.
-    min_relgap : float (optional)
-        The smallest relative gap allowed between any shift in irl mode.
-        Default = 0.001.  Accessed only if irl_mode == True.
-    shifts : int (optional)
-       Number of shifts per restart in irl mode.  Default is 100
-        Accessed only if irl_mode == True.
-    maxiter : int (optional)
-        Maximum number of restarts in irl mode.  Default is 1000
-        Accessed only if irl_mode == True.
+        may lead to faster computation at the expense of greater memory
+        consumption.  `blocksize` must be ``>= 1``.  Default is `16`.
+    min_relgap : float, optional
+        The smallest relative gap allowed between any shift in IRL mode.
+        Default is `0.001`.  Accessed only if ``irl_mode=True``.
+    shifts : int, optional
+        Number of shifts per restart in IRL mode.  Default is `100`.
+        Accessed only if ``irl_mode=True``.
+    maxiter : int, optional
+        Maximum number of restarts in IRL mode.  Default is `1000`.
+        Accessed only if ``irl_mode=True``.
 
     Returns
     -------
     u : ndarray
-        The top k left singular vectors, shape = (A.shape[0], 3),
-        returned only if compute_u is True.
+        The top `k` left singular vectors, ``shape == (A.shape[0], 3)``,
+        returned only if ``compute_u=True``.
     sigma : ndarray
-        The top k singular values, shape = (k,)
+        The top `k` singular values, ``shape == (k,)``
     vt : ndarray
-        The top k right singular vectors, shape = (3, A.shape[1]),
-        returned only if compute_v is True.
-    info : integer
-        convergence info, returned only if full_output is True
-        - INFO = 0 : The K largest (or smallest) singular triplets were
-                     computed succesfully
-        - INFO = J>0, J<K : An invariant subspace of dimension J was found.
-        - INFO = -1 : K singular triplets did not converge within KMAX
-                      iterations.
+        The top `k` right singular vectors, ``shape == (3, A.shape[1])``,
+        returned only if ``compute_v=True``.
     sigma_bound : ndarray
         the error bounds on the singular values sigma, returned only if
-        full_output is True
+        ``full_output=True``.
 
     Examples
     --------
@@ -302,10 +299,13 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     if info > 0:
         raise LinAlgError(
             f"An invariant subspace of dimension {info} was found.")
-    if info < 0:
+    elif info < 0:
         raise LinAlgError(
             f"k={k} singular triplets did not converge within "
             f"kmax={kmax} iterations")
+
+    # info == 0: The K largest (or smallest) singular triplets were computed
+    # succesfully!
 
     # catch corner case where A is all zeros and v is not orthogonal
     if not np.any(v):
@@ -317,8 +317,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         (1, 0, 0): (u[:, :k], sigma),
         (0, 1, 0): (sigma, v[:, :k].conj().T),
         (1, 1, 0): (u[:, :k], sigma, v[:, :k].conj().T),
-        (0, 0, 1): (sigma, info, bnd),
-        (1, 1, 1): (u[:, :k], sigma, v[:, :k].conj().T, info, bnd),
-        (0, 1, 1): (sigma, v[:, :k].conj().T, info, bnd),
-        (1, 0, 1): (u[:, :k], sigma, info, bnd),
+        (0, 0, 1): (sigma, bnd),
+        (1, 1, 1): (u[:, :k], sigma, v[:, :k].conj().T, bnd),
+        (0, 1, 1): (sigma, v[:, :k].conj().T, bnd),
+        (1, 0, 1): (u[:, :k], sigma, bnd),
     }[(compute_u, compute_v, full_output)]
