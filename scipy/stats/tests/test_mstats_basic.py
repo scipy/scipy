@@ -1131,13 +1131,13 @@ class TestTtest_rel():
 
     @pytest.mark.parametrize("alternative", ["less", "greater"])
     def test_alternative(self, alternative):
-        x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
-        y = stats.norm.rvs(loc=8, scale=2, size=100, random_state=123)
+        x = stats.norm.rvs(loc=10, scale=5, size=25, random_state=42)
+        y = stats.norm.rvs(loc=8, scale=2, size=25, random_state=42)
 
         t_ex, p_ex = stats.ttest_rel(x, y, alternative=alternative)
         t, p = mstats.ttest_rel(x, y, alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
         # test with masked arrays
         x[1:10] = np.nan
@@ -1147,8 +1147,8 @@ class TestTtest_rel():
         t, p = mstats.ttest_rel(x, y, alternative=alternative)
         t_ex, p_ex = stats.ttest_rel(x.compressed(), y.compressed(),
                                      alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
 
 class TestTtest_ind():
@@ -1230,8 +1230,8 @@ class TestTtest_ind():
 
         t_ex, p_ex = stats.ttest_ind(x, y, alternative=alternative)
         t, p = mstats.ttest_ind(x, y, alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
         # test with masked arrays
         x[1:10] = np.nan
@@ -1241,8 +1241,8 @@ class TestTtest_ind():
         t_ex, p_ex = stats.ttest_ind(x.compressed(), y.compressed(),
                                      alternative=alternative)
         t, p = mstats.ttest_ind(x, y, alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
 
 class TestTtest_1samp():
@@ -1312,8 +1312,8 @@ class TestTtest_1samp():
 
         t_ex, p_ex = stats.ttest_1samp(x, 9, alternative=alternative)
         t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
         # test with masked arrays
         x[1:10] = np.nan
@@ -1321,8 +1321,8 @@ class TestTtest_1samp():
         t_ex, p_ex = stats.ttest_1samp(x.compressed(), 9,
                                        alternative=alternative)
         t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
 
 class TestDescribe:

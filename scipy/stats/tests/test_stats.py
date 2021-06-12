@@ -1469,7 +1469,7 @@ class TestRegression:
 
         # slope is greater than zero, so "greater" p-value should be small
         res3 = stats.linregress(x, y, alternative="greater")
-        assert_allclose(res3.pvalue, res1.pvalue / 2, atol=1e-16)
+        assert_allclose(res3.pvalue, res1.pvalue / 2)
 
         assert res1.rvalue == res2.rvalue == res3.rvalue
 
@@ -3808,13 +3808,13 @@ def test_ttest_rel():
 
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='less')
-    assert_allclose(t, tr, atol=1e-12)
-    assert_allclose(p, converter(tr, pr, 'less'), atol=1e-12)
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
                            alternative='greater')
-    assert_allclose(t, tr, atol=1e-12)
-    assert_allclose(p, converter(tr, pr, 'greater'), atol=1e-12)
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
 def test_ttest_rel_nan_2nd_arg():
@@ -3998,13 +3998,13 @@ def test_ttest_ind():
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
                         alternative='less')
-    assert_allclose(t, tr, atol=1e-12)
-    assert_allclose(p, converter(tr, pr, 'less'), atol=1e-12)
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
                         alternative='greater')
-    assert_allclose(t, tr, atol=1e-12)
-    assert_allclose(p, converter(tr, pr, 'greater'), atol=1e-12)
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
 class Test_ttest_ind_permutations():
