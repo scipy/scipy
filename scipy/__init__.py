@@ -59,7 +59,7 @@ Utility tools
 
 
 def __dir__():
-    return ['test']
+    return ['LowLevelCallable', 'test']
 
 
 __all__ = __dir__()
