@@ -27,12 +27,12 @@ class Build(Benchmark):
         self.cls = KDTree if cls_name == 'KDTree' else cKDTree
         m, n, r = mnr
 
-        np.random.seed(1234)
-        self.data = np.concatenate((np.random.randn(n//2,m),
-                                    np.random.randn(n-n//2,m)+np.ones(m)))
+        rng = np.random.default_rng(1234)
+        self.data = np.concatenate((rng.standard_normal((n//2,m)),
+                                    rng.standard_normal((n-n//2,m))+np.ones(m)))
 
-        self.queries = np.concatenate((np.random.randn(r//2,m),
-                                       np.random.randn(r-r//2,m)+np.ones(m)))
+        self.queries = np.concatenate((rng.standard_normal((r//2,m)),
+                                       rng.standard_normal((r-r//2,m))+np.ones(m)))
 
     def time_build(self, mnr, cls_name):
         """
@@ -59,15 +59,15 @@ class PresortedDataSetup(Benchmark):
     def setup(self, mnr, balanced, order, radius):
         m, n, r = mnr
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         self.data = {
-            'random': np.random.uniform(size=(n, m)),
+            'random': rng.uniform(size=(n, m)),
             'sorted': np.repeat(np.arange(n, 0, -1)[:, np.newaxis],
                                 m,
                                 axis=1) / n
         }
 
-        self.queries = np.random.uniform(size=(r, m))
+        self.queries = rng.uniform(size=(r, m))
         self.T = cKDTree(self.data.get(order), balanced_tree=balanced)
 
 
@@ -120,10 +120,10 @@ class Query(LimitedParamBenchmark):
     def do_setup(self, mnr, p, boxsize, leafsize):
         m, n, r = mnr
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
-        self.data = np.random.uniform(size=(n, m))
-        self.queries = np.random.uniform(size=(r, m))
+        self.data = rng.uniform(size=(n, m))
+        self.queries = rng.uniform(size=(r, m))
 
         self.T = cKDTree(self.data, leafsize=leafsize, boxsize=boxsize)
 
@@ -276,8 +276,8 @@ class CNeighbors(Benchmark):
 def generate_spherical_points(num_points):
     # generate uniform points on sphere
     # see: https://stackoverflow.com/a/23785326
-    np.random.seed(123)
-    points = np.random.normal(size=(num_points, 3))
+    rng = np.random.default_rng(123)
+    points = rng.normal(size=(num_points, 3))
     points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
     return points
 
@@ -333,8 +333,8 @@ class Xdist(Benchmark):
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
         self.metric = metric
         if metric == 'minkowski-P3':
             # p=2 is just the euclidean metric, try another p value as well
@@ -369,8 +369,8 @@ class XdistWeighted(Benchmark):
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
         self.metric = metric
         if metric == 'minkowski-P3':
             # p=2 is just the euclidean metric, try another p value as well
@@ -395,8 +395,8 @@ class ConvexHullBench(Benchmark):
     param_names = ['num_points', 'incremental']
 
     def setup(self, num_points, incremental):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
 
     def time_convex_hull(self, num_points, incremental):
         """Time scipy.spatial.ConvexHull over a range of input data sizes
@@ -410,8 +410,8 @@ class VoronoiBench(Benchmark):
     param_names = ['num_points', 'furthest_site']
 
     def setup(self, num_points, furthest_site):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
 
     def time_voronoi_calculation(self, num_points, furthest_site):
         """Time conventional Voronoi diagram calculation."""
@@ -422,10 +422,9 @@ class Hausdorff(Benchmark):
     param_names = ['num_points']
 
     def setup(self, num_points):
-        np.random.seed(123)
-        self.points1 = np.random.random_sample((num_points, 3))
-        np.random.seed(71890)
-        self.points2 = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points1 = rng.random((num_points, 3))
+        self.points2 = rng.random((num_points, 3))
 
     def time_directed_hausdorff(self, num_points):
         # time directed_hausdorff code in 3 D
@@ -454,8 +453,8 @@ class RotationBench(Benchmark):
     param_names = ['num_rotations']
 
     def setup(self, num_rotations):
-        np.random.seed(1234)
-        self.rotations = Rotation.random(num_rotations)
+        rng = np.random.default_rng(1234)
+        self.rotations = Rotation.random(num_rotations, random_state=rng)
 
     def time_matrix_conversion(self, num_rotations):
         '''Time converting rotation from and to matrices'''
