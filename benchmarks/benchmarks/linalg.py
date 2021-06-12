@@ -148,22 +148,22 @@ class Lstsq(Benchmark):
             # skip: slow, and not useful to benchmark numpy
             raise NotImplementedError()
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = math.ceil(2./3. * size)
         k = math.ceil(1./2. * size)
         m = size
 
         if dtype is np.complex128:
-            A = ((10 * np.random.rand(m,k) - 5) +
-                 1j*(10 * np.random.rand(m,k) - 5))
-            temp = ((10 * np.random.rand(k,n) - 5) +
-                    1j*(10 * np.random.rand(k,n) - 5))
-            b = ((10 * np.random.rand(m,1) - 5) +
-                 1j*(10 * np.random.rand(m,1) - 5))
+            A = ((10 * rng.random((m,k)) - 5) +
+                 1j*(10 * rng.random((m,k)) - 5))
+            temp = ((10 * rng.random((k,n)) - 5) +
+                    1j*(10 * rng.random((k,n)) - 5))
+            b = ((10 * rng.random((m,1)) - 5) +
+                 1j*(10 * rng.random((m,1)) - 5))
         else:
-            A = (10 * np.random.rand(m,k) - 5)
-            temp = 10 * np.random.rand(k,n) - 5
-            b = 10 * np.random.rand(m,1) - 5
+            A = (10 * rng.random((m,k)) - 5)
+            temp = 10 * rng.random((k,n)) - 5
+            b = 10 * rng.random((m,1)) - 5
 
         self.A = A.dot(temp)
         self.b = b
