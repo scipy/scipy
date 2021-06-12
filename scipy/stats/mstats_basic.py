@@ -1064,7 +1064,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the mean of the distributions underlying the samples
+        * 'two-sided': the means of the distributions underlying the samples
           are unequal.
         * 'less': the mean of the distribution underlying the first sample
           is less than the mean of the distribution underlying the second
@@ -1137,7 +1137,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the mean of the distributions underlying the samples
+        * 'two-sided': the means of the distributions underlying the samples
           are unequal.
         * 'less': the mean of the distribution underlying the first sample
           is less than the mean of the distribution underlying the second
