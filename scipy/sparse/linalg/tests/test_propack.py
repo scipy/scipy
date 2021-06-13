@@ -113,7 +113,8 @@ def load_uv(folder, precision="double", uv="U", irl=False):
 
 
 @pytest.mark.parametrize('precision', ('single', 'double'))
-def test_examples(precision):
+@pytest.mark.parametrize('irl', (False, True))
+def test_examples(precision, irl):
     atol = {'single': 1e-3, 'double': 1e-11}[precision]
 
     path_prefix = os.path.dirname(__file__)
@@ -121,13 +122,27 @@ def test_examples(precision):
     folder = os.path.join(path_prefix, relative_path)
 
     A = load_coord(folder, precision)
-    s_expected = load_sigma(folder, precision)
-    u_expected = load_uv(folder, precision, "U")
-    vt_expected = load_uv(folder, precision, "V").T
+    s_expected = load_sigma(folder, precision, irl=irl)
+    u_expected = load_uv(folder, precision, "U", irl=irl)
+    vt_expected = load_uv(folder, precision, "V", irl=irl).T
 
     k = len(s_expected)
-    u, s, vt = svdp(A, k)
+    u, s, vt = svdp(A, k, irl_mode=irl)
 
     assert_allclose(s, s_expected, atol)
     assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
     assert_allclose(np.abs(vt), np.abs(vt_expected), atol=atol)
+
+
+@pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
+@pytest.mark.parametrize('dtype', (np.float32, np.float64,
+                                   np.complex64, np.complex128))
+def test_shifts(shifts, dtype):
+    np.random.seed(0)
+    n, k = 70, 10
+    A = np.random.random((n, n))
+    if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):
+        with pytest.raises(ValueError):
+            svdp(A, k, shifts=shifts, irl_mode=True)
+    else:
+        svdp(A, k, shifts=shifts, irl_mode=True)

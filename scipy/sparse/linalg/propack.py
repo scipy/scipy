@@ -79,7 +79,7 @@ class _AProd:
 def svdp(A, k, which='LM', irl_mode=False, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True, blocksize=16,
-         min_relgap=0.002, shifts=100, maxiter=None):
+         min_relgap=0.002, shifts=None, maxiter=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
@@ -141,7 +141,9 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         The smallest relative gap allowed between any shift in IRL mode.
         Default is `0.001`.  Accessed only if ``irl_mode=True``.
     shifts : int, optional
-        Number of shifts per restart in IRL mode.  Default is `100`.
+        Number of shifts per restart in IRL mode.  Default is determined
+        to satisfy ``k <= min(kmax-shifts, m, n)``.  Must be
+        >= 0, but choosing 0 might lead to performance degredation.
         Accessed only if ``irl_mode=True``.
     maxiter : int, optional
         Maximum number of restarts in IRL mode.  Default is `1000`.
@@ -242,6 +244,16 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
 
     if irl_mode:
         doption = np.array((delta, eta, anorm, min_relgap), dtype=typ.lower())
+
+        # validate or find default shifts
+        if shifts is None:
+            shifts = kmax - k
+        if k > min(kmax - shifts, m, n):
+            raise ValueError('shifts must satisfy '
+                             'k <= min(kmax-shifts, m, n)!')
+        elif shifts < 0:
+            raise ValueError('shifts must be >= 0!')
+
     else:
         doption = np.array((delta, eta, anorm), dtype=typ.lower())
 
