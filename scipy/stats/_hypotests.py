@@ -1143,11 +1143,11 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         raise ValueError(msg)
 
     fisher_stat = pvalues[table[0, 0], table[0, 1]]
-    index_arr = pvalues <= fisher_stat
-    index_arr = np.logical_or(
-         index_arr,
-         np.isclose(pvalues - fisher_stat, 0)
-     )  # Because the hypergeometric has some slight numerical errors
+
+    # fisher_stat * (1+1e-13) guards us from small numerical error. It is
+    # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
+    # For more throughout explanations, see gh-14178
+    index_arr = pvalues <= fisher_stat * (1+1e-13)
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)
