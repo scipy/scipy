@@ -979,7 +979,7 @@ def sen_seasonal_slopes(x):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0):
+def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     """
     Calculates the T-test for the mean of ONE group of scores.
 
@@ -993,13 +993,25 @@ def ttest_1samp(a, popmean, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the mean of the underlying distribution of the sample
+          is different than the given population mean (`popmean`)
+        * 'less': the mean of the underlying distribution of the sample is
+          less than the given population mean (`popmean`)
+        * 'greater': the mean of the underlying distribution of the sample is
+          greater than the given population mean (`popmean`)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         t-statistic
     pvalue : float or array
-        two-tailed p-value
+        The p-value
 
     Notes
     -----
@@ -1018,8 +1030,8 @@ def ttest_1samp(a, popmean, axis=0):
     svar = ((n - 1.0) * v) / df
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
-    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
     return Ttest_1sampResult(t, prob)
 
 
@@ -1029,7 +1041,7 @@ ttest_onesamp = ttest_1samp
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -1048,13 +1060,27 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         variance.
 
         .. versionadded:: 0.17.0
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -1088,15 +1114,15 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
-    return Ttest_indResult(t, probs.squeeze())
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_indResult(t, prob)
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
-def ttest_rel(a, b, axis=0):
+def ttest_rel(a, b, axis=0, alternative='two-sided'):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -1107,6 +1133,20 @@ def ttest_rel(a, b, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -1136,9 +1176,8 @@ def ttest_rel(a, b, axis=0):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
-
-    return Ttest_relResult(t, probs)
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_relResult(t, prob)
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
