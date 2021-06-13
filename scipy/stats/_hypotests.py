@@ -1019,13 +1019,13 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
     Boschloo exact test, we can assert three different null hypotheses :
 
-    - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
 
-    - :math:`H_0 : p_1 \leq p_2` versus :math:`H_1 : p_1 > p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 > p_2`,
       with `alternative` = "greater"
 
-    - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
     Boschloo's exact test uses the p-value of Fisher's exact test as a 
