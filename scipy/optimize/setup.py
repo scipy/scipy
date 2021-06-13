@@ -1,3 +1,4 @@
+import sys
 import os.path
 from os.path import join
 
@@ -123,7 +124,10 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('_shgo_lib')
 
     # HiGHS linear programming libraries and extensions
-    config.add_subpackage('_highs')
+    if 'sdist' not in sys.argv:
+        # Avoid running this during sdist creation - it makes numpy.distutils
+        # create an empty cython/src top-level directory.
+        config.add_subpackage('_highs')
 
     config.add_data_dir('tests')
 
