@@ -608,9 +608,10 @@ def setup_package():
         cmdclass['build_ext'] = get_build_ext_override()
         cmdclass['build_clib'] = get_build_clib_override()
 
-        cwd = os.path.abspath(os.path.dirname(__file__))
-        if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
-            # Generate Cython sources, unless building from source release
+        if not 'sdist' in sys.argv:
+            # Generate Cython sources, unless we're creating an sdist
+            # Cython is a build dependency, and shipping generated .c files
+            # can cause problems (see gh-14199)
             generate_cython()
 
         metadata['configuration'] = configuration
