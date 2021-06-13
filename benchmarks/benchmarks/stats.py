@@ -76,7 +76,8 @@ class Kendalltau(Benchmark):
         self.b = b
 
     def time_kendalltau(self, nan_policy, method, variant):
-        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, method=method, variant=variant)
+        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, 
+                                        method=method, variant=variant)
 
 
 class KS(Benchmark):
