@@ -1,5 +1,3 @@
-from operator import mod
-from scipy.stats.stats import mode
 import warnings
 
 import numpy as np
