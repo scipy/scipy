@@ -5548,7 +5548,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
-    This is a two-sided test for the null hypothesis that the expected value
+    This is a test for the null hypothesis that the expected value
     (mean) of a sample of independent observations `a` is equal to the given
     population mean, `popmean`.
 
@@ -5569,13 +5569,17 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the underlying distribution of the sample
+          is different than the given population mean (`popmean`)
+        * 'less': the mean of the underlying distribution of the sample is
+          less than the given population mean (`popmean`)
+        * 'greater': the mean of the underlying distribution of the sample is
+          greater than the given population mean (`popmean`)
 
         .. versionadded:: 1.6.0
 
@@ -5629,12 +5633,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis)
+        return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
 
     n = a.shape[axis]
     df = n - 1
@@ -5652,20 +5652,27 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
+    # We use ``stdtr`` directly here as it handles the case when ``nan``
+    # values are present in the data and masked arrays are passed
+    # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
+    # can be shared between the ``stats`` and ``mstats`` versions.
+
     if alternative == 'less':
-        prob = distributions.t.cdf(t, df)
+        pval = special.stdtr(df, t)
     elif alternative == 'greater':
-        prob = distributions.t.sf(t, df)
+        pval = special.stdtr(df, -t)
     elif alternative == 'two-sided':
-        prob = 2 * distributions.t.sf(np.abs(t), df)
+        pval = special.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
 
     if t.ndim == 0:
         t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
 
-    return t, prob
+    return t, pval
 
 
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
@@ -5706,7 +5713,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that two independent
+    This is a test for the null hypothesis that two independent
     samples have identical average (expected) values.
 
     Parameters
@@ -5732,9 +5739,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions are unequal.
+        * 'less': the mean of the first distribution is less than the
+          mean of the second distribution.
+        * 'greater': the mean of the first distribution is greater than the
+          mean of the second distribution.
 
         .. versionadded:: 1.6.0
 
@@ -5874,7 +5883,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
+    This is a test for the null hypothesis that 2 independent samples
     have identical average (expected) values. This test assumes that the
     populations have identical variances by default.
 
@@ -5934,9 +5943,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
         .. versionadded:: 1.6.0
 
@@ -5954,7 +5968,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -6091,14 +6105,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if permutations or alternative != 'two-sided' or trim != 0:
+        if permutations or trim != 0:
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by permutation tests, one-sided "
-                             "asymptotic tests, or trimmed tests.")
+                             "supported by permutation tests or "
+                             "trimmed tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var, alternative)
 
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
@@ -6294,7 +6308,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     """
     random_state = check_random_state(random_state)
@@ -6345,7 +6359,7 @@ Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
-    This is a two-sided test for the null hypothesis that 2 related or
+    This is a test for the null hypothesis that two related or
     repeated samples have identical average (expected) values.
 
     Parameters
@@ -6366,18 +6380,23 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
-          .. versionadded:: 1.6.0
+        .. versionadded:: 1.6.0
 
     Returns
     -------
     statistic : float or array
         t-statistic.
     pvalue : float or array
-        Two-sided p-value.
+        The p-value.
 
     Notes
     -----
@@ -6420,16 +6439,12 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         m = ma.mask_or(ma.getmask(a), ma.getmask(b))
         aa = ma.array(a, mask=m, copy=True)
         bb = ma.array(b, mask=m, copy=True)
-        return mstats_basic.ttest_rel(aa, bb, axis)
+        return mstats_basic.ttest_rel(aa, bb, axis, alternative)
 
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
