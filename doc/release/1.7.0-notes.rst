@@ -631,6 +631,8 @@ Issues closed for 1.7.0
 * `#14093 <https://github.com/scipy/scipy/issues/14093>`__: DOC: Inconsistency in the definition of default values in the...
 * `#14158 <https://github.com/scipy/scipy/issues/14158>`__: TST, BUG: test_rbfinterp.py -- test_interpolation_misfit_1d fails...
 * `#14170 <https://github.com/scipy/scipy/issues/14170>`__: TST: signal submodule test_filtfilt_gust failing on 32-bit amd64...
+* `#14194 <https://github.com/scipy/scipy/issues/14194>`__: MAINT: download-wheels.py missing import
+* `#14199 <https://github.com/scipy/scipy/issues/14199>`__: Generated sources for biasedurn extension are broken in 1.7.0rc1
 
 
 ***********************
@@ -1029,3 +1031,5 @@ Pull requests for 1.7.0
 * `#14171 <https://github.com/scipy/scipy/pull/14171>`__: TST: signal: Bump tolerances for a test of Gustafsson's...
 * `#14175 <https://github.com/scipy/scipy/pull/14175>`__: TST: stats: Loosen tolerance in some binomtest tests.
 * `#14182 <https://github.com/scipy/scipy/pull/14182>`__: MAINT: stats: Update ppcc_plot and ppcc_max docstring.
+* `#14195 <https://github.com/scipy/scipy/pull/14195>`__: MAINT: download-wheels missing import
+* `#14230 <https://github.com/scipy/scipy/pull/14230>`__: REL: stop shipping generated Cython sources in sdist
