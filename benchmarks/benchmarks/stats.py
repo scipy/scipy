@@ -1,3 +1,5 @@
+from operator import mod
+from scipy.stats.stats import mode
 import warnings
 
 import numpy as np
@@ -77,12 +79,84 @@ class Kendalltau(Benchmark):
         tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, method=method, variant=variant)
 
 
+class KS(Benchmark):
+    param_names = ['alternative', 'mode']
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['auto', 'exact', 'asymp'],
+    ]
+
+    def setup(self, alternative, mode):
+        rng = np.random.default_rng(12345678)
+        self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+        self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)                                           
+    
+    def time_ks_1samp(self, alternative, mode):
+        stats.ks_1samp(self.a, stats.norm.cdf, 
+                       alternative=alternative, mode=mode)
+
+    def time_ks_2samp(self, alternative, mode):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)
+
+
+class MannWhitneyU(Benchmark):
+    param_names = ['alternative', 'method']
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['auto', 'asymptotic', 'exact'],
+    ]
+
+    def setup(self, alternative, method):
+        rng = np.random.default_rng(12345678)
+        self.u1 = rng.uniform(-1, 1, 50)
+        self.u2 = rng.uniform(-0.5, 1.5, 100)
+
+    def time_mannwhitneyu(self, alternative, method):
+        stats.mannwhitneyu(self.u1, self.u2, 
+                           alternative=alternative, 
+                           method=method)
+
+
+class RankSums(Benchmark):
+    param_names = ['alternative']
+    params = [
+        ['two-sided', 'less', 'greater']
+    ]
+
+    def setup(self, alternative):
+        rng = np.random.default_rng(12345678)
+        self.u1 = rng.uniform(-1, 1, 200)
+        self.u2 = rng.uniform(-0.5, 1.5, 300)
+
+    def time_ranksums(self, alternative):
+        stats.ranksums(self.u1, self.u2, alternative=alternative)
+
+
+class BrunnerMunzel(Benchmark):
+    param_names = ['alternative', 'nan_policy', 'distribution']
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['propagate', 'raise', 'omit'],
+        ['t', 'normal']
+    ]
+
+    def setup(self, alternative, nan_policy, distribution):
+        rng = np.random.default_rng(12345678)
+        self.u1 = rng.uniform(-1, 1, 200)
+        self.u2 = rng.uniform(-0.5, 1.5, 300)
+
+    def time_brunnermunzel(self, alternative, nan_policy, distribution):
+        stats.brunnermunzel(self.u1, self.u2, alternative=alternative, 
+                            distribution=distribution, nan_policy=nan_policy)
+
+
 class InferentialStats(Benchmark):
     def setup(self):
         rng = np.random.default_rng(12345678)
         self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
-        self.b = stats.norm.rvs(loc=8, scale=10, size=20, random_state=rng)
-        self.c = stats.norm.rvs(loc=8, scale=20, size=20, random_state=rng)
+        self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
+        self.c = stats.norm.rvs(loc=8, scale=20, size=500, random_state=rng)
+        self.chisq = rng.integers(1, 20, 500)
 
     def time_ttest_ind_same_var(self):
         # test different sized sample with variances
@@ -93,6 +167,18 @@ class InferentialStats(Benchmark):
         # test different sized sample with different variances
         stats.ttest_ind(self.a, self.c)
         stats.ttest_ind(self.a, self.c, equal_var=False)
+
+    def time_chisqure(self):
+        stats.chisquare(self.chisq)
+    
+    def time_friedmanchisquare(self):
+        stats.friedmanchisquare(self.a, self.b, self.c)
+    
+    def time_epps_singleton_2samp(self):
+        stats.epps_singleton_2samp(self.a, self.b)
+
+    def time_kruskal(self):
+        stats.mstats.kruskal(self.a, self.b)
 
 
 class DistributionsAll(Benchmark):
