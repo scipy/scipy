@@ -86,7 +86,7 @@ class KS(Benchmark):
     ]
 
     def setup(self, alternative, mode):
-        rng = np.random.default_rng(12345678)
+        rng = np.random.default_rng(0x2e7c964ff9a5cd6be22014c09f1dbba9)
         self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
         self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)                                           
     
@@ -106,7 +106,7 @@ class MannWhitneyU(Benchmark):
     ]
 
     def setup(self, alternative, method):
-        rng = np.random.default_rng(12345678)
+        rng = np.random.default_rng(0x2cedaefb4c66ab35f32d163376cc0c1b)
         self.u1 = rng.uniform(-1, 1, 50)
         self.u2 = rng.uniform(-0.5, 1.5, 100)
 
@@ -123,7 +123,7 @@ class RankSums(Benchmark):
     ]
 
     def setup(self, alternative):
-        rng = np.random.default_rng(12345678)
+        rng = np.random.default_rng(0xb6acd7192d6e5da0f68b5d8ab8ce7af2)
         self.u1 = rng.uniform(-1, 1, 200)
         self.u2 = rng.uniform(-0.5, 1.5, 300)
 
@@ -140,7 +140,7 @@ class BrunnerMunzel(Benchmark):
     ]
 
     def setup(self, alternative, nan_policy, distribution):
-        rng = np.random.default_rng(12345678)
+        rng = np.random.default_rng(0xb82c4db22b2818bdbc5dbe15ad7528fe)
         self.u1 = rng.uniform(-1, 1, 200)
         self.u2 = rng.uniform(-0.5, 1.5, 300)
 
@@ -151,7 +151,7 @@ class BrunnerMunzel(Benchmark):
 
 class InferentialStats(Benchmark):
     def setup(self):
-        rng = np.random.default_rng(12345678)
+        rng = np.random.default_rng(0x13d756fadb635ae7f5a8d39bbfb0c931)
         self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
         self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
         self.c = stats.norm.rvs(loc=8, scale=20, size=500, random_state=rng)
