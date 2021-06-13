@@ -89,7 +89,7 @@ def git_version():
         # commit history. This gives the commit count since the previous branch
         # point from the current branch (assuming a full `git clone`, it may be
         # less if `--depth` was used - commonly the default in CI):
-        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 1)
+        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 2)
         out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
                                 '--count'])
         COMMIT_COUNT = out.strip().decode('ascii')
@@ -496,13 +496,15 @@ def check_setuppy_command():
     run_build = parse_setuppy_commands()
     if run_build:
         try:
+            pkgname = 'numpy'
             import numpy
+            pkgname = 'pybind11'
             import pybind11
         except ImportError as exc:  # We do not have our build deps installed
             print(textwrap.dedent(
                     """Error: '%s' must be installed before running the build.
                     """
-                    % (exc.name,)))
+                    % (pkgname,)))
             sys.exit(1)
 
     return run_build
