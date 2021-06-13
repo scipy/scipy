@@ -2888,6 +2888,7 @@ class TestStudentTest:
         assert_allclose(p, self.P1_1_g)
         assert_allclose(t, self.T1_1)
 
+
 def test_percentileofscore():
     pcos = stats.percentileofscore
 
@@ -3793,6 +3794,28 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, x.reshape((8, 3)),
                   x.reshape((2, 3, 4)))
 
+    # Convert from two-sided p-values to one sided using T result data.
+    def convert(t, p, alt):
+        if (t < 0 and alt == "less") or (t > 0 and alt == "greater"):
+            return p / 2
+        return 1 - (p / 2)
+    converter = np.vectorize(convert)
+
+    rvs1_2D[:, 20:30] = np.nan
+    rvs2_2D[:, 15:25] = np.nan
+
+    tr, pr = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit')
+
+    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
+                           alternative='less')
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
+
+    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
+                           alternative='greater')
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
+
 
 def test_ttest_rel_nan_2nd_arg():
     # regression test for gh-6134: nans in the second arg were not handled
@@ -3960,6 +3983,28 @@ def test_ttest_ind():
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
+
+    rvs1_3D[:, :, 10:15] = np.nan
+    rvs2_3D[:, :, 6:12] = np.nan
+
+    # Convert from two-sided p-values to one sided using T result data.
+    def convert(t, p, alt):
+        if (t < 0 and alt == "less") or (t > 0 and alt == "greater"):
+            return p / 2
+        return 1 - (p / 2)
+    converter = np.vectorize(convert)
+
+    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
+
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+                        alternative='less')
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
+
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+                        alternative='greater')
+    assert_allclose(t, tr, rtol=1e-14)
+    assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
 class Test_ttest_ind_permutations():
@@ -4193,12 +4238,6 @@ class Test_ttest_ind_permutations():
             assert(np.isnan(res.pvalue))  # assert makes sure it's a scalar
             assert(np.isnan(res.statistic))
 
-        # Omit
-        options_p.update(nan_policy="omit")
-        with assert_raises(ValueError,
-                           match="nan-containing/masked inputs with"):
-            res = stats.ttest_ind(a, b, **options_p)
-
     def test_ttest_ind_permutation_check_inputs(self):
         with assert_raises(ValueError, match="Permutations must be"):
             stats.ttest_ind(self.a2, self.b2, permutations=-3)
@@ -4404,8 +4443,7 @@ class Test_ttest_trim:
         match = "Permutations are currently not supported with trimming."
         with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
-        match = ("not supported by permutation tests, one-sided asymptotic "
-                 "tests, or trimmed tests.")
+        match = ("not supported by permutation tests or trimmed tests.")
         with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
@@ -4683,6 +4721,22 @@ def test_ttest_1samp_new():
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan],[-1, 1]])
         assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
+
+    rvn1[0:2, 1:3, 4:8] = np.nan
+
+    tr, pr = stats.ttest_1samp(rvn1[:, :, :], 1, nan_policy='omit')
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, nan_policy='omit',
+                             alternative="greater")
+    pc = converter(tr, pr, "greater")
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, nan_policy='omit',
+                             alternative="less")
+    pc = converter(tr, pr, "less")
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
 
 
 class TestDescribe:
