@@ -1724,4 +1724,4 @@ def tukey_hsd(*args):
     pvalues = distributions.studentized_range.sf(*params)
 
     return TukeyHSDResult(mean_differences, pvalues, ntreatments,
-                           nobs, stand_err)
+                          nobs, stand_err)
