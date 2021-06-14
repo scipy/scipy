@@ -2964,6 +2964,7 @@ class TestPercentileOfScore:
              ("propagate", [np.nan], [0, 1, 2], [np.nan, np.nan, np.nan]),
              ("propagate", [1, 2], [1, 2, np.nan], [50, 100, np.nan]),
              ("omit", [1, 2, np.nan], [0, 1, 2], [0, 50, 100]),
+             ("omit", [1, 2], [0, 1, np.nan], [0, 50, np.nan]),
              ("omit", [np.nan, np.nan], [0, 1, 2], [np.nan, np.nan, np.nan])]
 
     @pytest.mark.parametrize("policy, a, score, result", cases)
@@ -2975,9 +2976,6 @@ class TestPercentileOfScore:
          "The input contains nan values"),
         ("raise", [1, 2, 3], [1, 2, 3, np.nan],
          "The input contains nan values"),
-        ("omit", [1, 2, 3], [1, 2, 3, np.nan],
-         ("The input scores contains nan values,"
-          " which is incompatible with the 'omit' policy.")),
     ]
 
     @pytest.mark.parametrize("policy, a, score, message", cases)

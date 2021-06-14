@@ -1905,7 +1905,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
           * 'mean': The average of the "weak" and "strict" scores, often used
             in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
+        Specifies how to treat `nan` values in the input.
         The following options are available (default is 'propagate'):
 
           * 'propagate': returns nan
@@ -1970,9 +1970,6 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     array([ 50., 100.])
     >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
     array([nan, nan])
-
-    The 'omit' policy does not make sense if there are nan values
-    among the scores, and so an error in that case.
     """
 
     a = np.asarray(a)
@@ -1986,26 +1983,23 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    elif cns and nan_policy == "omit":
-        raise ValueError("The input scores contains nan values,"
-                         " which is incompatible with the 'omit' policy.")
-
-    # If a score is nan, then the output should be nan
-    if cns and nan_policy == "propagate":
+    if cns:
+        # If a score is nan, then the output should be nan
         score = ma.masked_where(np.isnan(score), score)
 
-    # Don't count nans
-    if cna and nan_policy == "omit":
-        a = ma.masked_where(np.isnan(a), a)
-        n = a.count()
+    if cna:
+        if nan_policy == "omit":
+            # Don't count nans
+            a = ma.masked_where(np.isnan(a), a)
+            n = a.count()
 
-    # With `propagate`, an `a` with nans should always yield nan
-    if cna and nan_policy == "propagate":
-        n = 0
+        if nan_policy == "propagate":
+            # All outputs should be nans
+            n = 0
 
     # Cannot compare to empty list ==> nan
     if n == 0:
-        perct = np.full_like(score, np.nan, dtype=float)
+        perct = np.full_like(score, np.nan, dtype=np.float64)
 
     else:
         # Prepare broadcasting
