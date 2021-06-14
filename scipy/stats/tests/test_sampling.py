@@ -38,8 +38,10 @@ class TestTransformedDensityRejection:
         # call the private method to avoid validations and expensive
         # numpy operations (like broadcasting).
         pdf = lambda x, loc=0, scale=1: dist._pdf((x - loc) / scale)
+        dist.pdf = pdf
+        dist.dpdf = dpdf
         rng = TransformedDensityRejection(
-            pdf, dpdf, params=params, domain=domain, seed=42
+            dist, params=params, domain=domain, seed=42
         )
         rvs = rng.rvs(100_000)
         # test if the first few moments match.
@@ -67,12 +69,13 @@ class TestTransformedDensityRejection:
             (lambda: 1.0, r"takes 0 positional arguments but 1 was given")
         ],
     )
-    @pytest.mark.parametrize(
-        "kwargs", [{"dpdf": (lambda x: x), "domain": (1, 10)}]
-    )
-    def test_bad_pdf(self, bad_pdf, msg, kwargs):
+    def test_bad_pdf(self, bad_pdf, msg):
+        class dist:
+            pdf = bad_pdf
+            dpdf = lambda x: x
+
         with pytest.raises(Exception, match=msg):
-            TransformedDensityRejection(bad_pdf, **kwargs)
+            TransformedDensityRejection(dist, domain=(1, 10))
 
     @pytest.mark.parametrize(
         "bad_dpdf, msg",
@@ -85,27 +88,30 @@ class TestTransformedDensityRejection:
             (lambda: 1.0, r"takes 0 positional arguments but 1 was given")
         ],
     )
-    @pytest.mark.parametrize(
-        "kwargs", [{"pdf": (lambda x: x * x / 2), "domain": (1, 10)}]
-    )
-    def test_bad_dpdf(self, bad_dpdf, msg, kwargs):
+    def test_bad_dpdf(self, bad_dpdf, msg):
+        class dist:
+            pdf = lambda x: x * x / 2
+            dpdf = bad_dpdf
+
         with pytest.raises(Exception, match=msg):
-            TransformedDensityRejection(dpdf=bad_dpdf, **kwargs)
+            TransformedDensityRejection(dist, domain=(1, 10))
 
     @pytest.mark.parametrize(
         "domain", [(0, 0), (1, 0), (np.inf, np.inf), (-np.inf, -np.inf)]
     )
     def test_bad_domain(self, domain):
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
         with pytest.raises(RuntimeError, match=r"left >= right"):
-            TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=domain
-            )
+            TransformedDensityRejection(dist, domain=domain)
 
     def test_bad_sized_domain(self):
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
         with pytest.raises(ValueError, match=r"must be a length 2 tuple"):
-            TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(1, 2, 3)
-            )
+            TransformedDensityRejection(dist, domain=(1, 2, 3))
 
     @pytest.mark.parametrize(
         "domain",
@@ -119,94 +125,96 @@ class TestTransformedDensityRejection:
         ],
     )
     def test_nan_domain(self, domain):
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
+
         with pytest.raises(ValueError, match=r"only non-nan values"):
-            TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=domain
-            )
+            TransformedDensityRejection(dist, domain=domain)
 
     def test_bad_cpoints(self):
-        # test bad cpoints
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
+
         with pytest.warns(
             UserWarning, match=r"number of starting points < 0"
         ):
-            TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), cpoints=-10
-            )
+            TransformedDensityRejection(dist, domain=(0, 10), cpoints=-10)
 
+        dist.pdf = lambda x: 1 - x * x
+        dist.dpdf = lambda x: -2 * x
         with pytest.warns(UserWarning, match=r"hat/squeeze ratio too small"):
-            TransformedDensityRejection(
-                lambda x: 1 - x * x,
-                lambda x: -2 * x,
-                domain=(-1, 1),
-                cpoints=1,
-            )
+            TransformedDensityRejection(dist, domain=(-1, 1), cpoints=1)
 
     def test_bad_cpoints_array(self):
+        class dist:
+            pdf = lambda x: 1 - x * x
+            dpdf = lambda x: -2 * x
+
         with pytest.warns(
             UserWarning,
             match=r"starting points not strictly "
             r"monotonically increasing",
         ):
-            rng = TransformedDensityRejection(
-                lambda x: 1 - x * x,
-                lambda x: -2 * x,
-                domain=(-1, 1),
-                cpoints=[1, 1, 1, 1, 1, 1],
-            )
+            rng = TransformedDensityRejection(dist, domain=(-1, 1),
+                                              cpoints=[1, 1, 1, 1, 1, 1])
+
         with pytest.raises(RuntimeError, match=r"bad construction points"):
             with pytest.warns(
                 UserWarning, match=r"starting point out of " r"domain"
             ):
                 cpoints = [1, 2, 3, 4, 5, 6]
-                rng = TransformedDensityRejection(
-                    lambda x: 1 - x * x,
-                    lambda x: -2 * x,
-                    domain=(-1, 1),
-                    cpoints=cpoints,
-                )
+                rng = TransformedDensityRejection(dist, domain=(-1, 1),
+                                                  cpoints=cpoints)
+
         with pytest.raises(RuntimeError, match=r"bad construction points"):
             with pytest.warns(
                 UserWarning, match=r"starting point out of " r"domain"
             ):
                 cpoints = [np.nan, np.inf, np.nan]
-                rng = TransformedDensityRejection(
-                    lambda x: 1 - x * x,
-                    lambda x: -2 * x,
-                    domain=(-1, 1),
-                    cpoints=cpoints,
-                )
+                rng = TransformedDensityRejection(dist, domain=(-1, 1),
+                                                  cpoints=cpoints)
 
     def test_bad_c(self):
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
+
         # c < -0.5
         with pytest.raises(
             RuntimeError, match=r"c < -0.5 not implemented yet"
         ):
             TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), c=-1.0
+                dist, domain=(0, 10), c=-1.0
             )
         with pytest.raises(
             RuntimeError, match=r"c < -0.5 not implemented yet"
         ):
             TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), c=-np.inf
+                dist, domain=(0, 10), c=-np.inf
             )
         #  c > 0
         with pytest.warns(UserWarning, match=r"c > 0"):
             TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), c=10.0
+                dist, domain=(0, 10), c=10.0
             )
         # c = nan
         with pytest.raises(ValueError, match=r"must be a non-nan value"):
             TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), c=np.nan
+                dist, domain=(0, 10), c=np.nan
             )
 
     def test_bad_variant(self):
+        class dist:
+            pdf = lambda x: x
+            dpdf = lambda x: 1
+
         with pytest.raises(
             ValueError, match=r"Invalid option for the `variant`"
         ):
             TransformedDensityRejection(
-                lambda x: x, lambda x: 1, domain=(0, 10), variant="foo"
+                dist, domain=(0, 10), variant="foo"
             )
 
     # TODO: test other parameters
@@ -223,11 +231,10 @@ class TestDiscreteAliasUrn:
     )
     def test_sampling_with_pmf(self, dist, params):
         domain = dist.support(*params)
-        pmf = dist._pmf
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
             rng = DiscreteAliasUrn(
-                pmf, domain=domain, params=params, seed=123
+                dist=dist, domain=domain, params=params, seed=123
             )
         rvs = rng.rvs(100_000)
         # test if the first few moments match
@@ -235,7 +242,7 @@ class TestDiscreteAliasUrn:
         mv_expected = dist.stats(*params, moments="mv")
         assert_allclose(mv, mv_expected, atol=1e-1)
 
-        pv = pmf(np.arange(domain[0], domain[1] + 1), *params)
+        pv = dist.pmf(np.arange(domain[0], domain[1] + 1), *params)
         # correct for some numerical errors
         pv = pv / pv.sum()
         obs_freqs = np.zeros_like(pv)
@@ -268,10 +275,13 @@ class TestDiscreteAliasUrn:
         ],
     )
     def test_bad_pmf(self, bad_pmf, msg):
+        class dist:
+            pmf = bad_pmf
+
         with pytest.raises(Exception, match=msg):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning)
-                DiscreteAliasUrn(bad_pmf, domain=(1, 10))
+                DiscreteAliasUrn(dist=dist, domain=(1, 10))
 
     @pytest.mark.parametrize(
         "pv", [[0.18, 0.02, 0.8], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]
@@ -313,9 +323,12 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", [(0, 0), (1, 0)])
     def test_bad_domain(self, domain):
         with pytest.raises(RuntimeError, match=r"left >= right"):
+            class dist:
+                pmf = lambda x: x
+
             with suppress_warnings() as sup:
                 sup.filter(UserWarning)
-                DiscreteAliasUrn(lambda x: x, domain=domain)
+                DiscreteAliasUrn(dist=dist, domain=domain)
 
     def test_bad_sized_domain(self):
         with pytest.raises(ValueError, match=r"must be a length 2 tuple"):
@@ -336,9 +349,12 @@ class TestDiscreteAliasUrn:
         with pytest.raises(
             ValueError, match=r"must contain only non-nan values"
         ):
+            class dist:
+                pmf = lambda x: x
+
             with suppress_warnings() as sup:
                 sup.filter(UserWarning)
-                DiscreteAliasUrn(lambda x: x, domain=domain)
+                DiscreteAliasUrn(dist=dist, domain=domain)
 
     @pytest.mark.parametrize(
         "domain",
@@ -351,10 +367,13 @@ class TestDiscreteAliasUrn:
         ],
     )
     def test_inf_domain(self, domain):
+        class dist:
+                pmf = lambda x: x
+
         with pytest.raises(ValueError, match=r"must be finite"):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning)
-                DiscreteAliasUrn(lambda x: x, domain=domain)
+                DiscreteAliasUrn(dist=dist, domain=domain)
 
     @pytest.mark.parametrize(
         "pv",

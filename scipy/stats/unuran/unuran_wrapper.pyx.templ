@@ -191,6 +191,93 @@ cdef object set_default_urng():
 set_default_urng()
 
 
+_cont_dist_meths = {"pdf", "cdf", "dpdf"}
+_discr_dist_meths = {"pmf", "cdf"}
+
+
+def _unpack_dist(dist, dist_type, meths=None, optional_meths=None):
+    """
+    Get the required methods from a Python class or object.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a Python class or object with required methods.
+    dist_type : str
+        Type of the distribution. "cont" for continuous distribution
+        and "discr" for discrete distribution.
+    meths : list or set, optional
+        A list or set of methods to get from `dist`. If None, a dictionary
+        containing all the available methods is returned.
+    optional_meths : list of set, optional
+        A list or set of optional methods to be returned if found. No error
+        is raised if some of the methods in this list/set are not found.
+
+    Returns
+    -------
+    callbacks : dict
+        A dictionary of callbacks (methods found).
+
+    Raises
+    ------
+    ValueError
+        A ValueError is raised in case some methods in the `meths` list/set
+        are not found.
+    """
+    callbacks = {}
+    if dist_type == "cont":
+        allmeths = _cont_dist_meths
+    else:
+        allmeths = _discr_dist_meths
+    not_found = []
+    methnames = set(meths) if meths is not None else allmeths
+    for methname in methnames:
+        if hasattr(dist, methname):
+            callbacks[methname] = getattr(dist, methname)
+        else:
+            not_found.append(methname)
+    if meths is not None and len(not_found) != 0:
+        msg = f"{methnames} required, "
+        msg += f"but didn't find {set(not_found)} "
+        msg += "in the given `dist` object."
+        raise ValueError(msg)
+    elif len(callbacks) == 0:  # no callbacks found => Error
+        msg = "The `dist` object should provide at least one of these "
+        msg += f"methods: {methnames}."
+        raise ValueError(msg)
+    if optional_meths is not None:
+        for methname in optional_meths:
+            if hasattr(dist, methname):
+                callbacks[methname] = getattr(dist, methname)
+    return callbacks
+
+
+cdef void _pack_dist(unur_distr *distr, dict callbacks):
+    """
+    Set the methods of a continuous or discrete distribution object
+    using a dictionary of callbacks.
+
+    Parameters
+    ----------
+    distr : unur_distr *
+        A continuous or discrete distribution object.
+    callbacks : dict
+        A dictionary of callbacks.
+    """
+    if unur_distr_is_cont(distr):
+        if "pdf" in callbacks:
+            unur_distr_cont_set_pdf(distr, pdf_thunk)
+        if "dpdf" in callbacks:
+            unur_distr_cont_set_dpdf(distr, dpdf_thunk)
+        if "cdf" in callbacks:
+            unur_distr_cont_set_cdf(distr, cont_cdf_thunk)
+    else:
+        if "pmf" in callbacks:
+            unur_distr_discr_set_pmf(distr, pmf_thunk)
+        if "cdf" in callbacks:
+            unur_distr_discr_set_cdf(distr, discr_cdf_thunk)
+
+
 cdef class Method:
     """
     A base class for all the methods.
@@ -358,14 +445,17 @@ cdef class TransformedDensityRejection(Method):
 
     Parameters
     ----------
-    pdf : callable
-        PDF of the distribution. The signature of the PDF is expected to be:
-        ``def pdf(x: float, *params) -> float``. i.e. the PDF should accept
-        a Python float and the parameters and return a Python float. It need
-        not integrate to 1 i.e. the PDF doesn't need to be normalized.
-    dpdf : callable
-        Derivative of the PDF w.r.t the variate. Must have the same signature
-        as the PDF.
+    dist : object
+        An instance of a class with 'pdf' and 'dpdf' methods.
+
+        * 'pdf': PDF of the distribution. The signature of the PDF is
+          expected to be: ``def pdf(x: float, *params) -> float``. i.e.
+          the PDF should accept a Python float and the parameters and
+          return a Python float. It doesn't need to integrate to 1 i.e.
+          the PDF doesn't need to be normalized.
+        * 'dpdf': Derivative of the PDF w.r.t the variate. Must have the
+          same signature as the PDF.
+
     mode : float, optional
         Mode of the distribution. It is optional and only required if
         `use_mode` is ``True``.
@@ -466,10 +556,14 @@ cdef class TransformedDensityRejection(Method):
     we can use:
 
     >>> urng = np.random.default_rng()
-    >>> pdf = lambda x: 1-x*x
-    >>> dpdf = lambda x: -2*x
-    >>> rng = TransformedDensityRejection(pdf, dpdf, domain=(-1, 1),
-    ...                                   seed=urng)
+    >>> class MyDist:
+    ...     def pdf(self, x):
+    ...         return 1-x*x
+    ...     def dpdf(self, x):
+    ...         return -2*x
+    ... 
+    >>> dist = MyDist()
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), seed=urng)
 
     Now, we can use the `rvs` method to generate samples from the
     distribution:
@@ -479,29 +573,29 @@ cdef class TransformedDensityRejection(Method):
     To use the log transformation with 10 construction points and the
     immediate acceptance variant of the method, do:
 
-    >>> rng = TransformedDensityRejection(pdf, dpdf, domain=(-1, 1), c=0.,
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), c=0.,
     ...                                   cpoints=10, variant='ia', seed=urng)
     >>> rvs = rng.rvs(1_000)
     """
-    def __cinit__(self, pdf, dpdf, mode=None, center=None, params=(),
+    def __cinit__(self, dist, mode=None, center=None, params=(),
                   domain=None, c=-0.5, cpoints=30, variant="ps",
                   use_dars=True, max_sqhratio=0.99, max_intervals=100,
                   use_center=True, use_mode=True, guide_factor=2, seed=None):
-        (pdf, dpdf, mode, center, params, domain, c, cpoints, cpoints_array,
+        (dist, mode, center, params, domain, c, cpoints, cpoints_array,
          variant, use_dars, max_sqhratio, max_intervals, use_center, use_mode,
          guide_factor, seed) = self._validate_args(
-            pdf, dpdf, mode, center, params, domain, c, cpoints, variant,
+            dist, mode, center, params, domain, c, cpoints, variant,
             use_dars, max_sqhratio, max_intervals, use_center, use_mode,
             guide_factor, seed
         )
         self._init_method(
-            pdf, dpdf, mode, center, params, domain, c, cpoints,
+            dist, mode, center, params, domain, c, cpoints,
             cpoints_array, variant, use_dars, max_sqhratio, max_intervals,
             use_center, use_mode, guide_factor, seed
         )
 
     cdef object _validate_args(
-        self, pdf, dpdf, mode, center, params, domain, c, cpoints, variant,
+        self, dist, mode, center, params, domain, c, cpoints, variant,
         use_dars, max_sqhratio, max_intervals, use_center, use_mode,
         guide_factor, seed
     ):
@@ -522,11 +616,11 @@ cdef class TransformedDensityRejection(Method):
 
         params = tuple(params)
 
-        return (pdf, dpdf, mode, center, params, domain, c, cpoints,
+        return (dist, mode, center, params, domain, c, cpoints,
                 cpoints_array, variant, use_dars, max_sqhratio,
                 max_intervals, use_center, use_mode, guide_factor, seed)
 
-    cdef int _init_method(self, pdf, dpdf, mode, center, params, domain, c,
+    cdef int _init_method(self, dist, mode, center, params, domain, c,
                           cpoints, double[::1] cpoints_array, variant,
                           use_dars, max_sqhratio, max_intervals, use_center,
                           use_mode, guide_factor, seed) except -1:
@@ -537,7 +631,7 @@ cdef class TransformedDensityRejection(Method):
             ccallback_t callback
             unuran_callback_t unur_callback
 
-        self.callbacks = {"pdf": pdf, "dpdf": dpdf}
+        self.callbacks = _unpack_dist(dist, "cont", meths={"pdf", "dpdf"})
         init_unuran_callback(&callback, &unur_callback, self.callbacks,
                              params)
         if setjmp(callback.error_buf) != 0:
@@ -545,8 +639,8 @@ cdef class TransformedDensityRejection(Method):
             return -1
 
         distr = unur_distr_cont_new()
-        unur_distr_cont_set_pdf(distr, pdf_thunk)
-        unur_distr_cont_set_dpdf(distr, dpdf_thunk)
+        _pack_dist(distr, self.callbacks)
+
         if mode is not None:
             unur_distr_cont_set_mode(distr, mode)
         if center is not None:
@@ -674,10 +768,14 @@ cdef class DiscreteAliasUrn(Method):
 
     Parameters
     ----------
-    pv_or_pmf : array_like, callable
-        Probability vector or the PMF of the distribution. The signature of
-        the PMF is expected to be: ``def pmf(k: int, *params) -> float``. i.e
-        the PMF should accecpt a Python integer and return a Python float.
+    pv : array_like, optional
+        Probability vector (PV) of the distribution. If PV isn't available,
+        PMF of the distribution is expected.
+    dist : object, optional
+        An instance of a class with a 'pmf' method. Only required if PV isn't
+        available. The signature of the PMF is expected to be:
+        ``def pmf(k: int, *params) -> float``. i.e it should accecpt a Python
+        integer and return a Python float.
     params : tuple, optional
         Parameters that the PMF takes. If a probability vector is available,
         this parameter is ignored. Default is an empty tuple.
@@ -786,20 +884,19 @@ cdef class DiscreteAliasUrn(Method):
     This uses a table twice the size of the probability vector to generate
     random variates from the distribution.
     """
-    def __cinit__(self, pv_or_pmf, params=(), domain=None, urn_factor=1,
-                  seed=None):
-        (pv_view, pmf, params, domain, urn_factor, seed
-        ) = self._validate_args(pv_or_pmf, params, domain, urn_factor, seed)
-        self._init_method(pv_view, pmf, params, domain, urn_factor, seed)
+    def __cinit__(self, pv=None, dist=None, params=(), domain=None,
+                  urn_factor=1, seed=None):
+        (pv_view, dist, params, domain, urn_factor, seed
+        ) = self._validate_args(pv, dist, params, domain, urn_factor, seed)
+        self._init_method(pv_view, dist, params, domain, urn_factor, seed)
 
-    cdef object _validate_args(self, pv_or_pmf, params, domain, urn_factor,
+    cdef object _validate_args(self, pv, dist, params, domain, urn_factor,
                                seed):
         cdef double[::1] pv_view = None
 
-        if callable(pv_or_pmf):
-            pv, pmf = None, pv_or_pmf
-        else:
-            pv, pmf = pv_or_pmf, None
+        if pv is None and dist is None:
+            raise ValueError("At least a `pv` or a `dist` object with a PMF "
+                             "method required but none given.")
         if pv is not None:
             pv = pv_view = np.ascontiguousarray(pv, dtype=np.float64)
             if pv.ndim > 1:
@@ -822,15 +919,15 @@ cdef class DiscreteAliasUrn(Method):
                 raise ValueError("`domain` must be finite.")
             domain = tuple(domain)
         else:
-            if pmf is not None:
+            if dist is not None:
                 raise ValueError("`domain` must be provided if "
                                  "`pv` is not available.")
 
         params = tuple(params)
 
-        return pv_view, pmf, params, domain, urn_factor, seed
+        return pv_view, dist, params, domain, urn_factor, seed
 
-    cdef int _init_method(self, double[::1] pv_view, pmf, params, domain,
+    cdef int _init_method(self, double[::1] pv_view, dist, params, domain,
                           urn_factor, seed) except -1:
         cdef:
             unur_distr *distr
@@ -839,7 +936,10 @@ cdef class DiscreteAliasUrn(Method):
             ccallback_t callback
             unuran_callback_t unur_callback
 
-        self.callbacks = {"pmf": pmf} if pmf is not None else {}
+        if dist is not None:
+            self.callbacks = _unpack_dist(dist, "discr", meths={"pmf"})
+        else:
+            self.callbacks = {}
         init_unuran_callback(&callback, &unur_callback, self.callbacks,
                              params)
         if setjmp(callback.error_buf) != 0:
@@ -852,7 +952,7 @@ cdef class DiscreteAliasUrn(Method):
             n_pv = len(pv_view)
             unur_distr_discr_set_pv(distr, &pv_view[0], n_pv)
         else:
-            unur_distr_discr_set_pmf(distr, pmf_thunk)
+            _pack_dist(distr, self.callbacks)
 
         if domain is not None:
             unur_distr_discr_set_domain(distr, domain[0], domain[1])
