@@ -1594,8 +1594,9 @@ def tukey_hsd(*args):
     3. The distributions from which the samples are drawn have the same finite
        variance.
 
-    The original formulation of the test was for samples of equal size. In case
-    of unequal sample sizes, the test uses the Tukey-Kramer method [4]_.
+    The original formulation of the test was for samples of equal size [6]_.
+    In case of unequal sample sizes, the test uses the Tukey-Kramer method
+    [4]_.
 
     References
     ----------
@@ -1616,6 +1617,9 @@ def tukey_hsd(*args):
            The ANOVA table and tests of hypotheses about means"
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.html,
            2 June 2021.
+    .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
+           www.jstor.org/stable/3001913. Accessed 14 June 2021.
 
 
     Examples
