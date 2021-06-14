@@ -1951,24 +1951,19 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
-    Multidimensional score arrays are supported:
+    Score arrays (of any dimensionality) are supported:
 
     >>> stats.percentileofscore([1, 2, 3, 3, 4], [2, 3])
     array([40., 70.])
 
     The inputs can be infinite:
 
-    >>> stats.percentileofscore([-np.inf, 0, 1, np.inf], [1, 100])
-    array([75., 75.])
+    >>> stats.percentileofscore([-np.inf, 0, 1, np.inf], [1, 2, np.inf])
+    array([75., 75., 100.])
 
-    If `a` is empty, or containing only nan values (which are omitted),
-    the resulting percentiles are all nan:
+    If `a` is empty, then the resulting percentiles are all `nan`:
 
-    >>> stats.percentileofscore([], 1)
-    nan
-    >>> stats.percentileofscore([np.nan, 1, 2], [1, 2], nan_policy='omit')
-    array([ 50., 100.])
-    >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
+    >>> stats.percentileofscore([], [1, 2])
     array([nan, nan])
     """
 
