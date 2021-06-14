@@ -7,6 +7,8 @@ Some CMake files are used to create source lists for compilation
 import pathlib
 from datetime import datetime
 import os
+from os.path import join
+
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -94,8 +96,8 @@ def configuration(parent_package='', top_path=None):
         'basiclu',
         sources=basiclu_sources,
         include_dirs=[
-            'src/',
-            'src/ipm/basiclu/include/',
+            'src',
+            join('src', 'ipm', 'basiclu', 'include'),
         ],
         language='c',
         macros=DEFINE_MACROS,
@@ -110,22 +112,19 @@ def configuration(parent_package='', top_path=None):
                      if pathlib.Path(s).parent.name != 'mip']
     ext = config.add_extension(
         '_highs_wrapper',
-        sources=['cython/src/_highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        sources=[join('cython', 'src', '_highs_wrapper.cxx')] + \
+                highs_sources + ipx_sources,
         include_dirs=[
-
             # highs_wrapper
-            'cython/src/',
-            'src/',
-            'src/lp_data/',
-
+            'src',
+            join('cython', 'src'),
+            join('src', 'lp_data'),
             # highs
-            'src/',
-            'src/io/',
-            'src/ipm/ipx/include/',
-
+            join('src', 'io'),
+            join('src', 'ipm', 'ipx', 'include'),
             # IPX
-            'src/ipm/ipx/include/',
-            'src/ipm/basiclu/include/',
+            join('src', 'ipm', 'ipx', 'include'),
+            join('src', 'ipm', 'basiclu', 'include'),
         ],
         language='c++',
         libraries=['basiclu'],
@@ -138,13 +137,13 @@ def configuration(parent_package='', top_path=None):
     # Export constants and enums from HiGHS:
     ext = config.add_extension(
         '_highs_constants',
-        sources=['cython/src/_highs_constants.cxx'],
+        sources=[join('cython', 'src', '_highs_constants.cxx')],
         include_dirs=[
-            'cython/src/',
-            'src/',
-            'src/io/',
-            'src/lp_data/',
-            'src/simplex/',
+            'src',
+            join('cython', 'src'),
+            join('src', 'io'),
+            join('src', 'lp_data'),
+            join('src', 'simplex'),
         ],
         language='c++',
     )
