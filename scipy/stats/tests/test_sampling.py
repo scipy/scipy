@@ -316,6 +316,8 @@ class TestDiscreteAliasUrn:
 
     @pytest.mark.parametrize("distname, params", distdiscrete)
     def test_basic(self, distname, params):
+        if not isinstance(distname, str):
+            pytest.skip("'distname' must be a string.")
         if distname in self.basic_fail_dists:
             msg = ("DAU fails on these probably because of large domains "
                    "and small computation errors in PMF.")

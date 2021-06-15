@@ -104,8 +104,7 @@ IF not NPY_OLD:
 
         return unuran_urng
 ELSE:
-    cdef object global_old_numpy_rng
-
+    ctypedef double (*URNG_FUNCT)(void *) nogil
 
     cdef object get_numpy_rng(object seed = None):
         """
@@ -131,45 +130,25 @@ ELSE:
         return np.random.RandomState(seed)
 
 
-    cdef double next_double(void *state) nogil:
-        with gil:
-            global global_old_numpy_rng
-            return global_old_numpy_rng.uniform()
-
-
-    cdef unur_urng * get_urng(object numpy_rng) except *:
-        """
-        Convert NumPy's RandomState generator into UNU.RAN's uniform random
-        number generator.
-
-        Parameters
-        ----------
-        numpy_rng : object
-            An instance of NumPy's RandomState class. i.e. a NumPy
-            random number generator.
-
-        Returns
-        -------
-        unuran_urng : unur_urng *
-            A UNU.RAN uniform random number generator.
-        """
-        cdef unur_urng *unuran_urng
-        global global_old_numpy_rng
-        global_old_numpy_rng = numpy_rng
-        unuran_urng = unur_urng_new(next_double, NULL)
-        return unuran_urng
-
-
 cdef:
     unur_urng *default_urng = NULL
     unur_urng *default_urng_aux = NULL
     object default_numpy_rng = None
 
+IF NPY_OLD:
+    cdef double _global_next_double(void *state) nogil:
+        with gil:
+            global default_numpy_rng
+            return default_numpy_rng.uniform()
+
 
 cdef object set_default_urng():
     """Sets the default UNU.RAN uniform random number generator"""
+    cdef unur_urng *urng
     global default_urng, default_urng_aux
     global default_numpy_rng
+    if NPY_OLD:
+        global _global_next_double
 
     if default_numpy_rng is None:
         if default_urng != NULL:
@@ -178,11 +157,15 @@ cdef object set_default_urng():
         default_numpy_rng = get_numpy_rng()
 
     try:
-        default_urng = get_urng(default_numpy_rng)
+        IF not NPY_OLD:
+            urng = get_urng(default_numpy_rng)
+        ELSE:
+            urng = unur_urng_new(_global_next_double, NULL)
     except ValueError as e:
         msg = "Failed to initialize the default URNG."
         raise RuntimeError(msg) from e
 
+    default_urng = urng
     default_urng_aux = default_urng
     unur_set_default_urng(default_urng)
     unur_set_default_urng_aux(default_urng_aux)
@@ -337,6 +320,10 @@ cdef class Method:
     cdef object numpy_rng
     cdef object callbacks
     cdef object params
+    IF NPY_OLD:
+        cdef double _next_double(self) nogil:
+            with gil:
+                return self.numpy_rng.uniform()
 
     cdef void _set_rng(self, object seed, unur_par *par,
                        unur_distr *distr) except *:
@@ -357,7 +344,11 @@ cdef class Method:
 
         if seed is not None:
             self.numpy_rng = get_numpy_rng(seed)
-            urng = get_urng(self.numpy_rng)
+            IF not NPY_OLD:
+                urng = get_urng(self.numpy_rng)
+            ELSE:
+                urng = unur_urng_new(<URNG_FUNCT>self._next_double,
+                                     <void *>self)
             unur_set_urng(par, urng)
 
         self.rng = unur_init(par)
