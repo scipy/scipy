@@ -94,10 +94,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     # Check data type
     dtype = A.dtype
-    if np.issubdtype(dtype, int):
+    if np.issubdtype(dtype, np.int64):
         dtype = float
         A = A.astype(dtype)
-        if np.issubdtype(b.dtype, int):
+        if np.issubdtype(b.dtype, np.int64):
             b = b.astype(dtype)
 
     A, M, x, b, postprocess = make_system(A, M, x0, b)
