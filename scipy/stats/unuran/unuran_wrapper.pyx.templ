@@ -761,9 +761,14 @@ cdef class TransformedDensityRejection(Method):
         >>> from scipy.stats import norm
         >>> from math import pi, sqrt, exp
         >>> 
-        >>> pdf = lambda x: 1./sqrt(2*pi) * exp(-0.5 * x**2)
-        >>> dpdf = lambda x: -x/sqrt(2*pi) * exp(-0.5 * x**2)
-        >>> rng = TransformedDensityRejection(pdf, dpdf, seed=123)
+        >>> class MyDist:
+        ...     def pdf(self, x):
+        ...         return 1./sqrt(2*pi) * exp(-0.5 * x**2)
+        ...     def dpdf(self, x):
+        ...         return -x/sqrt(2*pi) * exp(-0.5 * x**2)
+        ... 
+        >>> dist = MyDist()
+        >>> rng = TransformedDensityRejection(dist, seed=123)
         >>> 
         >>> rng.ppf_hat(0.5)
         -0.00018050266342393984
@@ -880,7 +885,6 @@ cdef class DiscreteAliasUrn(Method):
     finite domain can also be passed.
 
     >>> urng = np.random.default_rng()
-    >>> params = 10, 0.2
     >>> class Binomial:
     ...     def __init__(self, n, p):
     ...         self.n = n
@@ -902,7 +906,7 @@ cdef class DiscreteAliasUrn(Method):
     >>> freqs = freqs / np.sum(freqs)
     >>> obs_freqs = np.zeros(11)  # some frequencies may be zero.
     >>> obs_freqs[:freqs.size] = freqs
-    >>> pv = [pmf(i, *params) for i in range(0, 11)]
+    >>> pv = [dist.pmf(i) for i in range(0, 11)]
     >>> # Correct for some numerical error
     >>> pv = np.asarray(pv) / np.sum(pv)
     >>> chisquare(obs_freqs, pv).pvalue
