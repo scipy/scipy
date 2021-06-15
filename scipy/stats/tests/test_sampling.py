@@ -342,7 +342,7 @@ class TestDiscreteAliasUrn:
         freqs = freqs / freqs.sum()
         obs_freqs[:freqs.size] = freqs
         pval = chisquare(obs_freqs, pv).pvalue
-        assert_allclose(pval, 1.0, rtol=1e-3, atol=1e-2)
+        assert pval > 0.1
 
     @pytest.mark.parametrize("pmf, err, msg", bad_pmf_common)
     def test_bad_pmf(self, pmf, err, msg):
@@ -376,7 +376,7 @@ class TestDiscreteAliasUrn:
         obs_freqs = np.zeros_like(pv)
         obs_freqs[: freqs.size] = freqs
         pval = chisquare(obs_freqs, pv).pvalue
-        assert_allclose(pval, 1.0, atol=1e-3)
+        assert pval > 0.1
 
     @pytest.mark.parametrize("pv, msg", bad_pv_common)
     def test_bad_pv(self, pv, msg):
