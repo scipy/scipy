@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from numpy.lib import NumpyVersion
 from scipy.stats import TransformedDensityRejection, DiscreteAliasUrn
 from scipy import stats
@@ -72,10 +72,11 @@ bad_dpdf_common = [
 ]
 
 bad_pmf_common = [
-    # TODO: UNU.RAN fails to validate float inf, nan values returned
-    #       by the PMF and throws an unhelpful "unknown error". The
-    #       correct thing to do here is to calculate the PV ourselves
-    #       and check for inf, nan.
+    # UNU.RAN fails to validate float inf, nan values returned
+    # by the PMF and throws an unhelpful "unknown error". One
+    # helpful thing to do here is to calculate the PV ourselves
+    # and check for inf, nan, if the domain is known and distribution
+    # doesn't have infinite tails.
     (lambda x: np.inf, RuntimeError, r"240 : unknown error"),
     (lambda x: np.nan, RuntimeError, r"240 : unknown error"),
     (lambda x: 0.0, RuntimeError, r"240 : unknown error"),
@@ -344,17 +345,39 @@ class TestDiscreteAliasUrn:
         pval = chisquare(obs_freqs, pv).pvalue
         assert pval > 0.1
 
-    @pytest.mark.parametrize("pmf, err, msg", bad_pmf_common)
+    # Can't use bad_pmf_common here as we evaluate PMF early on to avoid
+    # unhelpful errors from UNU.RAN.
+    bad_pmf = [
+        # inf returned
+        (lambda x: np.inf, ValueError,
+         r"must contain only finite values"),
+        # nan returned
+        (lambda x: np.nan, ValueError,
+         r"must contain only non-nan values"),
+        # all zeros
+        (lambda x: 0.0, ValueError,
+         r"must contain at least one non-zero value"),
+        # Undefined name inside the function
+        (lambda x: foo, NameError,
+         r"name 'foo' is not defined"),
+        # Returning wrong type.
+        (lambda x: [], ValueError,
+         r"setting an array element with a sequence."),
+        # probabilities < 0
+        (lambda x: -x, RuntimeError,
+         r"50 : probability < 0"),
+        # signature of PMF wrong
+        (lambda: 1.0, TypeError,
+         r"takes 0 positional arguments but 1 was given")
+    ]
+
+    @pytest.mark.parametrize("pmf, err, msg", bad_pmf)
     def test_bad_pmf(self, pmf, err, msg):
         class dist:
             pass
         dist.pmf = pmf
         with pytest.raises(err, match=msg):
-            with suppress_warnings() as sup:
-                # A user warning throws by UNU.RAN as PV isn't
-                # available
-                sup.filter(UserWarning)
-                DiscreteAliasUrn(dist=dist, domain=(1, 10))
+            DiscreteAliasUrn(dist=dist, domain=(1, 10))
 
     @pytest.mark.parametrize("pv", [[0.18, 0.02, 0.8],
                                     [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
@@ -391,18 +414,15 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            with suppress_warnings() as sup:
-                # UNU.RAN throws a user warning when PV isn't available.
-                sup.filter(UserWarning)
-                DiscreteAliasUrn(dist=common_discr_dist, domain=domain,
-                                 params=common_discr_dist.params)
+            DiscreteAliasUrn(dist=common_discr_dist, domain=domain,
+                             params=common_discr_dist.params)
 
     def test_bad_urn_factor(self):
         with pytest.warns(UserWarning, match=r"relative urn size < 1."):
             DiscreteAliasUrn([0.5, 0.5], urn_factor=-1)
 
     def test_bad_args(self):
-        msg = (r"At least a `pv` or a `dist` object with a PMF method "
+        msg = (r"Either a `pv` or a `dist` object with a PMF method "
                r"required but none given.")
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn()

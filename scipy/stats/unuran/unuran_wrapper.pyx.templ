@@ -830,23 +830,21 @@ cdef class DiscreteAliasUrn(Method):
     -----
     This method works when either a finite probability vector is available or
     the PMF of the distribution is available. In case a PMF is only available,
-    the support (domain) of the PMF must also be given. It is recommended to
-    first obtain the probability vector be evaluating the PMF at each point
-    in the support and then using the probability vector instead (because this
-    method accepts arbitrarily sized probability vectors but not arbitrarily
-    sized domains).
+    the *finite* support (domain) of the PMF must also be given. It is
+    recommended to first obtain the probability vector by evaluating the PMF
+    at each point in the support and then using it instead.
 
     If a probability vector is given, it must be a 1-dimensional array of
     non-negative floats without any ``inf`` or ``nan`` values. Also, there
     must be at least one non-zero entry otherwise an exception is raised.
 
-    The parameter ``unrfactor`` can be increased for faster generation at the
+    The parameter ``urn_factor`` can be increased for faster generation at the
     cost of increased setup time. This method uses a table for random
-    variate generation. ``unfactor`` controls the size of this table relative
-    to the size of the probability vector (or width of the support, in case a
-    PV is not available). As this table is computed during setup time,
-    increasing this parameter linearly increases the time required to setup.
-    It is recommended to keep this parameter under 2.
+    variate generation. ``urn_factor`` controls the size of this table
+    relative to the size of the probability vector (or width of the support,
+    in case a PV is not available). As this table is computed during setup
+    time, increasing this parameter linearly increases the time required to
+    setup. It is recommended to keep this parameter under 2.
 
     References
     ----------
@@ -887,23 +885,25 @@ cdef class DiscreteAliasUrn(Method):
     distribution. Note that this just gives the correctness of the algorithm
     and not the quality of the samples.
 
-    If a PV is not available, a PMF with finite domain can also be passed.
+    If a PV is not available, an instance of a class with a PMF method and a
+    finite domain can also be passed.
 
-    >>> from math import factorial as f, pow
-    >>> import warnings
     >>> urng = np.random.default_rng()
     >>> params = 10, 0.2
-    >>> pmf = lambda x, n, p : f(n)/(f(x)*f(n-x)) * pow(p, x)*pow(1-p, n-x)
-    >>> domain = 0, 10
-    >>> with warnings.catch_warnings():
-    ...     warnings.simplefilter('ignore')
-    ...     rng = DiscreteAliasUrn(pmf, domain=domain, params=params,
-    ...                            seed=urng)
+    >>> class Binomial:
+    ...     def __init__(self, n, p):
+    ...         self.n = n
+    ...         self.p = p
+    ...     def pmf(self, x):
+    ...         # note that the pmf doesn't need to be normalized.
+    ...         return self.p**x * (1-self.p)**(self.n-x)
     ... 
+    >>> n, p = 10, 0.2
+    >>> dist = Binomial(n, p)
+    >>> domain = 0, n
+    >>> rng = DiscreteAliasUrn(dist=dist, domain=domain, seed=urng)
 
-    Now we have setup the RNG (a warning is thrown when we pass a PMF
-    because it is recommended to calculate the PV using the PMF for each point
-    in the domain). We can sample from the distribution using the `rvs` method
+    Now, we can sample from the distribution using the `rvs` method
     and also measure the goodness-of-fit of the samples:
 
     >>> rvs = rng.rvs(1000)
@@ -931,17 +931,15 @@ cdef class DiscreteAliasUrn(Method):
                   domain=None,
                   urn_factor=1,
                   seed=None):
-        (pv_view, dist, params, domain) = self._validate_args(pv, dist,
-                                                              params, domain)
-        self._init_method(pv_view, dist, params, domain, urn_factor, seed)
+        (pv_view, params, domain) = self._validate_args(pv, dist, params,
+                                                        domain)
+        self._init_method(pv_view, domain, urn_factor, seed)
 
     cdef object _validate_args(self, pv, dist, params, domain):
         cdef double[::1] pv_view
 
-        if pv is None and dist is None:
-            raise ValueError("At least a `pv` or a `dist` object with a PMF "
-                             "method required but none given.")
-        pv_view = _validate_pv(pv)
+        params = tuple(params)
+
         if domain is not None:
             domain = _validate_domain(domain)
             if not np.isfinite(domain).all():
@@ -950,13 +948,27 @@ cdef class DiscreteAliasUrn(Method):
             if dist is not None:
                 raise ValueError("`domain` must be provided if "
                                  "`pv` is not available.")
+        if pv is None:
+            if dist is None:
+                raise ValueError("Either a `pv` or a `dist` object with a "
+                                 "PMF method required but none given.")
+            # we assume the PMF to accept and return floats. So, we need
+            # to vectorize it to call with an array of points in the domain.
+            pmf = np.vectorize(dist.pmf)
+            k = np.arange(domain[0], domain[1]+1)
+            pv = pmf(k, *params)
+            try:
+                pv_view = _validate_pv(pv)
+            except ValueError as err:
+                msg = "PMF returned invalid values: " + err.args[0]
+                raise ValueError(msg) from None
+        else:
+            pv_view = _validate_pv(pv)
 
-        params = tuple(params)
+        return pv_view, params, domain
 
-        return pv_view, dist, params, domain
-
-    cdef int _init_method(self, double[::1] pv_view, dist, params, domain,
-                          urn_factor, seed) except -1:
+    cdef int _init_method(self, double[::1] pv_view, domain, urn_factor,
+                          seed) except -1:
         cdef:
             unur_distr *distr
             unur_par *par
@@ -964,23 +976,16 @@ cdef class DiscreteAliasUrn(Method):
             ccallback_t callback
             unuran_callback_t unur_callback
 
-        if dist is not None:
-            self.callbacks = _unpack_dist(dist, "discr", meths={"pmf"})
-        else:
-            self.callbacks = {}
-        init_unuran_callback(&callback, &unur_callback, self.callbacks,
-                             params)
+        self.callbacks = {}
+        init_unuran_callback(&callback, &unur_callback, self.callbacks, ())
         if setjmp(callback.error_buf) != 0:
             release_unuran_callback(&callback, &unur_callback)
             return -1
 
         distr = unur_distr_discr_new()
 
-        if pv_view is not None:
-            n_pv = len(pv_view)
-            unur_distr_discr_set_pv(distr, &pv_view[0], n_pv)
-        else:
-            _pack_dist(distr, self.callbacks)
+        n_pv = len(pv_view)
+        unur_distr_discr_set_pv(distr, &pv_view[0], n_pv)
 
         if domain is not None:
             unur_distr_discr_set_domain(distr, domain[0], domain[1])
@@ -992,6 +997,6 @@ cdef class DiscreteAliasUrn(Method):
 
         release_unuran_callback(&callback, &unur_callback)
 
-        self.params = params
+        self.params = ()
 
         return 0
