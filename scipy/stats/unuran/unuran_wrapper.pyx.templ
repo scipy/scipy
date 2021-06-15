@@ -278,6 +278,43 @@ cdef void _pack_dist(unur_distr *distr, dict callbacks):
             unur_distr_discr_set_cdf(distr, discr_cdf_thunk)
 
 
+def _validate_domain(domain):
+    if domain is not None:
+        # UNU.RAN doesn't recognize nans in the probability vector
+        # and throws an "unknown error". Hence, check for nans ourselves
+        if np.isnan(domain).any():
+            raise ValueError("`domain` must contain only non-nan values.")
+        # Length of the domain must be exactly 2.
+        if len(domain) != 2:
+            raise ValueError("`domain` must be a length 2 tuple.")
+        # Throw an error here if it can't converted into a tuple.
+        domain = tuple(domain)
+    return domain
+
+
+cdef double[::1] _validate_pv(pv) except *:
+    cdef double[::1] pv_view = None
+    if pv is not None:
+        # Make sure the PV is a contiguous array of doubles.
+        pv = pv_view = np.ascontiguousarray(pv, dtype=np.float64)
+        # Empty arrays not allowed.
+        if pv.size == 0:
+            raise ValueError("`pv` must have at least one element.")
+        # NaNs not recognized by UNU.RAN so throw an error here only.
+        if np.isnan(pv).any():
+            raise ValueError("`pv` must contain only non-nan values.")
+        # inf values not recognized by UNU.RAN so throw an error here only.
+        if not np.isfinite(pv).all():
+            raise ValueError("`pv` must contain only finite values.")
+        # This special case is not handled by UNU.RAN and it just throws
+        # an "unknown error".
+        if (pv == 0).all():
+            raise ValueError("`pv` must contain at least one non-zero "
+                             "value.")
+    # return a contiguous memory view of the PV
+    return pv_view
+
+
 cdef class Method:
     """
     A base class for all the methods.
@@ -600,19 +637,16 @@ cdef class TransformedDensityRejection(Method):
         guide_factor, seed
     ):
         cdef double[::1] cpoints_array = None
-        if domain is not None:
-            if np.isnan(domain).any():
-                raise ValueError("`domain` must contain only non-nan "
-                                 "values.")
-            if len(domain) != 2:
-                raise ValueError("`domain` must be a length 2 tuple.")
-            domain = tuple(domain)
+        domain = _validate_domain(domain)
         if np.isnan(c):
             raise ValueError("`c` must be a non-nan value.")
         if variant not in {"ps", "gw", "ia"}:
             raise ValueError("Invalid option for the `variant`.")
         if not np.isscalar(cpoints):
             cpoints_array = np.ascontiguousarray(cpoints, dtype=np.float64)
+            if len(cpoints_array) == 0:
+                raise ValueError("`cpoints` must either be a scalar or a "
+                                 "non-empty array.")
 
         params = tuple(params)
 
@@ -892,32 +926,16 @@ cdef class DiscreteAliasUrn(Method):
 
     cdef object _validate_args(self, pv, dist, params, domain, urn_factor,
                                seed):
-        cdef double[::1] pv_view = None
+        cdef double[::1] pv_view
 
         if pv is None and dist is None:
             raise ValueError("At least a `pv` or a `dist` object with a PMF "
                              "method required but none given.")
-        if pv is not None:
-            pv = pv_view = np.ascontiguousarray(pv, dtype=np.float64)
-            if pv.ndim > 1:
-                raise ValueError("`pv` must be a one-dimensional vector.")
-            if pv.size == 0:
-                raise ValueError("`pv` must have at least one element.")
-            if np.isnan(pv).any():
-                raise ValueError("`pv` must contain only non-nan values.")
-            if not np.isfinite(pv).all():
-                raise ValueError("`pv` must contain only finite values.")
-            if (pv == 0).all():
-                raise ValueError("`pv` must contain at least one non-zero "
-                                 "value.")
+        pv_view = _validate_pv(pv)
         if domain is not None:
-            if len(domain) != 2:
-                raise ValueError("`domain` must be a length 2 tuple.")
-            if np.isnan(domain).any():
-                raise ValueError("`domain` must contain only non-nan values.")
+            domain = _validate_domain(domain)
             if not np.isfinite(domain).all():
                 raise ValueError("`domain` must be finite.")
-            domain = tuple(domain)
         else:
             if dist is not None:
                 raise ValueError("`domain` must be provided if "

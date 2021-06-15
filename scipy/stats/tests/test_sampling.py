@@ -1,291 +1,363 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.lib import NumpyVersion
 from scipy.stats import TransformedDensityRejection, DiscreteAliasUrn
-import scipy.stats as stats
-from scipy.stats import chisquare
+from scipy import stats
+from scipy.stats import chisquare, cramervonmises
+from scipy.stats._distr_params import distdiscrete
+
+
+# common test data: this data can be shared between all the tests.
+
+
+# Normal distribution shared between all the continuous methods
+class common_cont_dist:
+    # Private methods are used for performance. Public methods do a lot of
+    # validations and expensive numpy operations (like broadcasting), hence,
+    # slowing down some of the methods significantly. We can use private
+    # methods as we know that the data is guaranteed to be inside the domain
+    # and a scalar (so, no masking bad values and broadcasting required).
+    pdf = stats.norm._pdf
+    dpdf = lambda x: -x * stats.norm._pdf(x)
+    cdf = stats.norm._cdf
+
+
+# A binomial distribution to share between all the discrete methods
+class common_discr_dist:
+    params = (10, 0.2)
+    pmf = stats.binom._pmf
+    cdf = stats.binom._cdf
+
+
+all_methods = [
+    ("TransformedDensityRejection", {"dist": common_cont_dist}),
+    ("DiscreteAliasUrn", {"pv": [0.02, 0.18, 0.8]})
+]
+
+
+bad_pdfs_common = [
+    # Negative PDF
+    (lambda x: -x, RuntimeError, r"50 : PDF\(x\) < 0.!"),
+    # Returning wrong type
+    (lambda x: [], TypeError, r"must be real number, not list"),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    # Infinite value returned => Overflow error.
+    (lambda x: np.inf, RuntimeError, r"50 : PDF\(x\) overflow"),
+    # NaN value => internal error in UNU.RAN
+    # Currently, UNU.RAN just returns a "cannot create bounded hat!"
+    # error which is not very useful. So, instead of testing the error
+    # message, we just ensure an error is raised.
+    (lambda x: np.nan, RuntimeError, r"..."),
+    # signature of PDF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+bad_dpdf_common = [
+    # Infinite value returned. For dPDF, UNU.RAN complains that it cannot
+    # create a bounded hat instead of an overflow error.
+    (lambda x: np.inf, RuntimeError, r"51 : cannot create bounded hat"),
+    # NaN value => internal error in UNU.RAN
+    # Currently, UNU.RAN just returns a "cannot create bounded hat!"
+    # error which is not very useful. So, instead of testing the error
+    # message, we just ensure an error is raised.
+    (lambda x: np.nan, RuntimeError, r"..."),
+    # Returning wrong type
+    (lambda x: [], TypeError, r"must be real number, not list"),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    # signature of dPDF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+bad_pmf_common = [
+    # TODO: UNU.RAN fails to validate float inf, nan values returned
+    #       by the PMF and throws an unhelpful "unknown error". The
+    #       correct thing to do here is to calculate the PV ourselves
+    #       and check for inf, nan.
+    (lambda x: np.inf, RuntimeError, r"240 : unknown error"),
+    (lambda x: np.nan, RuntimeError, r"240 : unknown error"),
+    (lambda x: 0.0, RuntimeError, r"240 : unknown error"),
+    # Undefined name inside the function
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    # Returning wrong type
+    (lambda x: [], TypeError, r"must be real number, not list"),
+    # probabilities < 0
+    (lambda x: -x, RuntimeError, r"50 : probability < 0"),
+    # signature of PMF wrong
+    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
+]
+
+bad_pv_common = [
+    ([], r"must have at least one element"),
+    ([[1.0, 0.0]], r"wrong number of dimensions \(expected 1, got 2\)"),
+    ([0.2, 0.4, np.nan, 0.8], r"must contain only non-nan values"),
+    ([0.2, 0.4, np.inf, 0.8], r"must contain only finite values"),
+    ([0.0, 0.0], r"must contain at least one non-zero value"),
+]
+
+
+# size of the domains is incorrect
+bad_sized_domains = [
+    # > 2 elements in the domain
+    ((1, 2, 3), ValueError, r"must be a length 2 tuple"),
+    # empty domain
+    ((), ValueError, r"must be a length 2 tuple")
+]
+
+# domain values are incorrect
+bad_domains = [
+    ((2, 1), RuntimeError, r"left >= right"),
+    ((1, 1), RuntimeError, r"left >= right"),
+]
+
+# infinite and nan values present in domain.
+inf_nan_domains = [
+    # left >= right
+    ((10, 10), RuntimeError, r"left >= right"),
+    ((np.inf, np.inf), RuntimeError, r"left >= right"),
+    ((-np.inf, -np.inf), RuntimeError, r"left >= right"),
+    ((np.inf, -np.inf), RuntimeError, r"left >= right"),
+    # Also include nans in some of the domains.
+    ((-np.inf, np.nan), ValueError, r"only non-nan values"),
+    ((np.nan, np.inf), ValueError, r"only non-nan values")
+]
+
+# `nan` values present in domain. Some distributions don't support
+# infinite tails, so don't mix the nan values with infinities.
+nan_domains = [
+    ((0, np.nan), ValueError, r"only non-nan values"),
+    ((np.nan, np.nan), ValueError, r"only non-nan values")
+]
+
+
+# all the methods should throw errors for nan, bad sized, and bad valued
+# domains.
+@pytest.mark.parametrize("domain, err, msg",
+                         bad_domains + bad_sized_domains + nan_domains)
+@pytest.mark.parametrize("method, kwargs", all_methods)
+def test_bad_domain(domain, err, msg, method, kwargs):
+    Method = getattr(stats, method)
+    with pytest.raises(err, match=msg):
+        Method(**kwargs, domain=domain)
+
+
+@pytest.mark.parametrize("method, kwargs", all_methods)
+def test_seed(method, kwargs):
+    Method = getattr(stats, method)
+
+    # simple seed that works for any version of NumPy
+    seed = 123
+    rng1 = Method(**kwargs, seed=seed)
+    rng2 = Method(**kwargs, seed=seed)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
+
+    # RandomState seed for old numpy
+    if NumpyVersion(np.__version__) < '1.19.0':
+        seed1 = np.random.RandomState(123)
+        seed2 = 123
+        rng1 = Method(**kwargs, seed=seed1)
+        rng2 = Method(**kwargs, seed=seed2)
+        assert_equal(rng1.rvs(100), rng2.rvs(100))
+    else:  # Generator seed for new NumPy
+        seed1 = np.random.default_rng(123)
+        seed2 = np.random.PCG64(123)
+        rng1 = Method(**kwargs, seed=seed1)
+        rng2 = Method(**kwargs, seed=seed2)
+        assert_equal(rng1.rvs(100), rng2.rvs(100))
+
+        # when a RandomState is given, it should take the bitgen_t
+        # member of the class and create a Generator instance.
+        seed1 = np.random.RandomState(np.random.MT19937(123))
+        seed2 = np.random.Generator(np.random.MT19937(123))
+        rng1 = Method(**kwargs, seed=seed1)
+        rng2 = Method(**kwargs, seed=seed2)
+        assert_equal(rng1.rvs(100), rng2.rvs(100))
+
+    # testing with seed sequence
+    seed = [1, 2, 3]
+    rng1 = Method(**kwargs, seed=seed)
+    rng2 = Method(**kwargs, seed=seed)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
 class TestTransformedDensityRejection:
-    @pytest.mark.parametrize(
-        "dist, dpdf, params",
-        [
-            (  # test case in gh-13051
-                stats.norm,
-                lambda x, loc, scale: (
-                    -(x - loc)
-                    / (scale ** 2)
-                    * stats.norm._pdf((x - loc) / scale)
-                ),
-                (0.0, 0.1),
-            ),
-            (stats.expon, lambda x: -stats.expon._pdf(x), ()),
-            (
-                stats.laplace,
-                lambda x: 0
-                if x == 0
-                else (
-                    -stats.laplace._pdf(x)
-                    if x > 0
-                    else stats.laplace._pdf(x)
-                ),
-                (),
-            ),
-        ],
-    )
-    def test_sampling(self, dist, dpdf, params):
-        domain = dist.support(*params)
-        # call the private method to avoid validations and expensive
-        # numpy operations (like broadcasting).
-        pdf = lambda x, loc=0, scale=1: dist._pdf((x - loc) / scale)
+    pdf1 = lambda x: 1-x*x if abs(x) <= 1 else 0
+    pdf2 = lambda x: stats.norm._pdf(x / 0.1)  # test case in gh-13051
+    pdfs = [pdf1, pdf2]
+
+    dpdf1 = lambda x: -2*x if abs(x) <= 1 else 0
+    dpdf2 = lambda x: -x / 0.01 * stats.norm._pdf(x / 0.1)
+    dpdfs = [dpdf1, dpdf2]
+
+    cdf1 = lambda x: 3/4 * (x - x**3/3 + 2/3) if abs(x) <= 1 else 1*(x >= 1)
+    cdf1 = np.vectorize(cdf1)
+    cdf2 = stats.norm(0, 0.1).cdf
+    cdfs = [cdf1, cdf2]
+
+    mv1 = [0., 4./15.]
+    mv2 = [0., 0.01]
+    mvs = [mv1, mv2]
+
+    @pytest.mark.parametrize("pdf, dpdf, mv_ex, cdf",
+                             zip(pdfs, dpdfs, mvs, cdfs))
+    def test_basic(self, pdf, dpdf, mv_ex, cdf):
+        class dist:
+            pass
         dist.pdf = pdf
         dist.dpdf = dpdf
-        rng = TransformedDensityRejection(
-            dist, params=params, domain=domain, seed=42
-        )
-        rvs = rng.rvs(100_000)
-        # test if the first few moments match.
-        mv_expected = dist.stats(*params, moments="mv")
+        rng = TransformedDensityRejection(dist, seed=42)
+        rvs = rng.rvs(100000)
         mv = rvs.mean(), rvs.var()
-        assert_allclose(mv, mv_expected, atol=1e-1)
+        assert_allclose(mv, mv_ex, rtol=1e-7, atol=1e-1)
+        # Cramer Von Mises test for goodness-of-fit
+        rvs = rng.rvs(500)
+        pval = cramervonmises(rvs, cdf).pvalue
+        assert pval > 0.1
 
-    @pytest.mark.parametrize(
-        "bad_pdf, msg",
-        [
-            (lambda x: foo, r"name 'foo' is not defined"),
-            (
-                lambda x, a, b: x + a + b,
-                r"missing 2 required positional arguments: 'a' and 'b'",
-            ),
-            (lambda x: -x, r"50 : PDF\(x\) < 0.!"),
-            (lambda x: x * x, r"51 : hat\(x\) < PDF\(x\)"),
-            (lambda x: None, r"must be real number, not NoneType"),
-            (lambda x: np.inf, r"50 : PDF\(x\) overflow"),
-            (lambda x: np.nan, r"51 : cannot create bounded hat!"),
-            (
-                lambda x: x * x / 2 + 2,
-                r"51 : dTfx0 < dTfx1 \(x0<x1\). PDF not T-concave!",
-            ),
-            (lambda: 1.0, r"takes 0 positional arguments but 1 was given")
-        ],
-    )
-    def test_bad_pdf(self, bad_pdf, msg):
+    # PDF 0 everywhere => bad construction points
+    bad_pdfs = [(lambda x: 0, RuntimeError, r"50 : bad construction points.")]
+    bad_pdfs += bad_pdfs_common
+
+    @pytest.mark.parametrize("pdf, err, msg", bad_pdfs)
+    def test_bad_pdf(self, pdf, err, msg):
         class dist:
-            pdf = bad_pdf
-            dpdf = lambda x: x
+            pass
+        dist.pdf = pdf
+        dist.dpdf = lambda x: 1  # an arbitrary dPDF
+        with pytest.raises(err, match=msg):
+            TransformedDensityRejection(dist)
 
-        with pytest.raises(Exception, match=msg):
+    @pytest.mark.parametrize("dpdf, err, msg", bad_dpdf_common)
+    def test_bad_dpdf(self, dpdf, err, msg):
+        class dist:
+            pass
+        dist.pdf = lambda x: x
+        dist.dpdf = dpdf
+        with pytest.raises(err, match=msg):
             TransformedDensityRejection(dist, domain=(1, 10))
 
-    @pytest.mark.parametrize(
-        "bad_dpdf, msg",
-        [
-            (lambda x: foo, r"name 'foo' is not defined"),
-            (lambda x: x * x, r"51 : hat\(x\) < PDF\(x\)"),
-            (lambda x: None, r"must be real number, not NoneType"),
-            (lambda x: np.inf, r"51 : cannot create bounded hat!"),
-            (lambda x: np.nan, r"51 : cannot create bounded hat!"),
-            (lambda: 1.0, r"takes 0 positional arguments but 1 was given")
-        ],
-    )
-    def test_bad_dpdf(self, bad_dpdf, msg):
-        class dist:
-            pdf = lambda x: x * x / 2
-            dpdf = bad_dpdf
+    # test domains with inf + nan in them. need to write a custom test for
+    # this because not all methods support infinite tails.
+    @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
+    def test_inf_nan_domains(self, domain, err, msg):
+        with pytest.raises(err, match=msg):
+            TransformedDensityRejection(common_cont_dist, domain=domain)
 
-        with pytest.raises(Exception, match=msg):
-            TransformedDensityRejection(dist, domain=(1, 10))
 
-    @pytest.mark.parametrize(
-        "domain", [(0, 0), (1, 0), (np.inf, np.inf), (-np.inf, -np.inf)]
-    )
-    def test_bad_domain(self, domain):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-        with pytest.raises(RuntimeError, match=r"left >= right"):
-            TransformedDensityRejection(dist, domain=domain)
-
-    def test_bad_sized_domain(self):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-        with pytest.raises(ValueError, match=r"must be a length 2 tuple"):
-            TransformedDensityRejection(dist, domain=(1, 2, 3))
-
-    @pytest.mark.parametrize(
-        "domain",
-        [
-            (np.nan, np.nan),
-            (np.inf, np.nan),
-            (np.nan, -np.inf),
-            (np.nan, 0),
-            (-1, np.nan),
-            (0, float("nan")),
-        ],
-    )
-    def test_nan_domain(self, domain):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-
-        with pytest.raises(ValueError, match=r"only non-nan values"):
-            TransformedDensityRejection(dist, domain=domain)
-
-    def test_bad_cpoints(self):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-
-        with pytest.warns(
-            UserWarning, match=r"number of starting points < 0"
-        ):
-            TransformedDensityRejection(dist, domain=(0, 10), cpoints=-10)
-
-        dist.pdf = lambda x: 1 - x * x
-        dist.dpdf = lambda x: -2 * x
-        with pytest.warns(UserWarning, match=r"hat/squeeze ratio too small"):
-            TransformedDensityRejection(dist, domain=(-1, 1), cpoints=1)
+    # TODO: for cpoints < 0, UNU.RAN throws a warning and sets cpoints
+    #       to a default value. This is not consistent with other invalid
+    #       values of cpoints for which it throws errors. Hence, We should
+    #       validate this parameter ourself.
+    @pytest.mark.parametrize("cpoints", [0, 0.1])
+    def test_bad_cpoints_scalar(self, cpoints):
+        with pytest.raises(RuntimeError, match=r"50 : bad construction "
+                                               r"points."):
+            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
     def test_bad_cpoints_array(self):
-        class dist:
-            pdf = lambda x: 1 - x * x
-            dpdf = lambda x: -2 * x
+        # empty array
+        cpoints = []
+        with pytest.raises(ValueError, match=r"`cpoints` must either be a "
+                                             r"scalar or a non-empty array."):
+            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
-        with pytest.warns(
-            UserWarning,
-            match=r"starting points not strictly "
-            r"monotonically increasing",
-        ):
-            rng = TransformedDensityRejection(dist, domain=(-1, 1),
-                                              cpoints=[1, 1, 1, 1, 1, 1])
+        # cpoints not monotonically increasing
+        cpoints = [1, 1, 1, 1, 1, 1]
+        with pytest.warns(UserWarning, match=r"33 : starting points not "
+                                             r"strictly monotonically "
+                                             r"increasing"):
+            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
-        with pytest.raises(RuntimeError, match=r"bad construction points"):
-            with pytest.warns(
-                UserWarning, match=r"starting point out of " r"domain"
-            ):
-                cpoints = [1, 2, 3, 4, 5, 6]
-                rng = TransformedDensityRejection(dist, domain=(-1, 1),
-                                                  cpoints=cpoints)
+        # cpoints containing nans
+        cpoints = [np.nan, np.nan, np.nan]
+        with pytest.raises(RuntimeError, match=r"50 : bad construction "
+                                               r"points."):
+            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
-        with pytest.raises(RuntimeError, match=r"bad construction points"):
-            with pytest.warns(
-                UserWarning, match=r"starting point out of " r"domain"
-            ):
-                cpoints = [np.nan, np.inf, np.nan]
-                rng = TransformedDensityRejection(dist, domain=(-1, 1),
-                                                  cpoints=cpoints)
+        # cpoints out of domain
+        cpoints = [-10, 10]
+        with pytest.warns(UserWarning, match=r"50 : starting point out of "
+                                             r"domain"):
+            TransformedDensityRejection(common_cont_dist, domain=(-3, 3),
+                                        cpoints=cpoints)
 
     def test_bad_c(self):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-
-        # c < -0.5
-        with pytest.raises(
-            RuntimeError, match=r"c < -0.5 not implemented yet"
-        ):
-            TransformedDensityRejection(
-                dist, domain=(0, 10), c=-1.0
-            )
-        with pytest.raises(
-            RuntimeError, match=r"c < -0.5 not implemented yet"
-        ):
-            TransformedDensityRejection(
-                dist, domain=(0, 10), c=-np.inf
-            )
-        #  c > 0
-        with pytest.warns(UserWarning, match=r"c > 0"):
-            TransformedDensityRejection(
-                dist, domain=(0, 10), c=10.0
-            )
-        # c = nan
-        with pytest.raises(ValueError, match=r"must be a non-nan value"):
-            TransformedDensityRejection(
-                dist, domain=(0, 10), c=np.nan
-            )
+        # c < -0.5 => Not Implemented Error
+        msg = r"33 : c < -0.5 not implemented yet"
+        with pytest.raises(RuntimeError, match=msg):
+            TransformedDensityRejection(common_cont_dist, c=-1.)
+        # -0.5 < c < 0. => Warning: Not recommended. Using default
+        msg = (r"33 : -0.5 < c < 0 not recommended. using c = -0.5 "
+                r"instead.")
+        with pytest.warns(UserWarning, match=msg):
+            TransformedDensityRejection(common_cont_dist, c=-0.1)
+        # c > 0. => Warning: Using default
+        msg = r"33 : c > 0"
+        with pytest.warns(UserWarning, match=msg):
+            TransformedDensityRejection(common_cont_dist, c=1.)
+        # nan c
+        msg = r"`c` must be a non-nan value."
+        with pytest.raises(ValueError, match=msg):
+            TransformedDensityRejection(common_cont_dist, c=np.nan)
 
     def test_bad_variant(self):
-        class dist:
-            pdf = lambda x: x
-            dpdf = lambda x: 1
-
-        with pytest.raises(
-            ValueError, match=r"Invalid option for the `variant`"
-        ):
-            TransformedDensityRejection(
-                dist, domain=(0, 10), variant="foo"
-            )
-
-    # TODO: test other parameters
+        msg = r"Invalid option for the `variant`"
+        with pytest.raises(ValueError, match=msg):
+            TransformedDensityRejection(common_cont_dist, variant='foo')
 
 
 class TestDiscreteAliasUrn:
-    @pytest.mark.parametrize(
-        "dist, params",
-        [  # discrete distributions with finite support.
-            (stats.hypergeom, (20, 7, 12)),
-            (stats.nhypergeom, (20, 7, 12)),
-            (stats.binom, (20, 0.3)),
-        ],
-    )
-    def test_sampling_with_pmf(self, dist, params):
-        domain = dist.support(*params)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
-            rng = DiscreteAliasUrn(
-                dist=dist, domain=domain, params=params, seed=123
-            )
-        rvs = rng.rvs(100_000)
+    # DAU fails on these probably because of large domains and small
+    # computation errors in PMF. Mean/SD match but chi-squared test fails.
+    basic_fail_dists = {'nchypergeom_fisher', 'nchypergeom_wallenius'}
+
+    @pytest.mark.parametrize("distname, params", distdiscrete)
+    def test_basic(self, distname, params):
+        if distname in self.basic_fail_dists:
+            msg = ("DAU fails on these probably because of large domains "
+                   "and small computation errors in PMF.")
+            pytest.skip(msg)
+        dist = getattr(stats, distname)
+        dist = dist(*params)
+        domain = dist.support()
+        if not np.isfinite(domain[1] - domain[0]):
+            # DAU only works with finite domain. So, skip the distributions
+            # with infinite tails.
+            pytest.skip("DAU only works with a finite domain.")
+        k = np.arange(domain[0], domain[1]+1)
+        pv = dist.pmf(k)
+        mv_ex = dist.stats('mv')
+        rng = DiscreteAliasUrn(pv, domain=domain, seed=42)
+        rvs = rng.rvs(100000)
         # test if the first few moments match
         mv = rvs.mean(), rvs.var()
-        mv_expected = dist.stats(*params, moments="mv")
-        assert_allclose(mv, mv_expected, atol=1e-1)
-
-        pv = dist.pmf(np.arange(domain[0], domain[1] + 1), *params)
+        assert_allclose(mv, mv_ex, rtol=1e-3, atol=1e-1)
         # correct for some numerical errors
         pv = pv / pv.sum()
-        obs_freqs = np.zeros_like(pv)
         # chi-squared test for goodness-of-fit
+        obs_freqs = np.zeros_like(pv)
         _, freqs = np.unique(rvs, return_counts=True)
         freqs = freqs / freqs.sum()
         obs_freqs[:freqs.size] = freqs
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "divide by zero encountered in "
-                                       "true_divide")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "true_divide")
-            pval = chisquare(obs_freqs, pv).pvalue
-        assert_allclose(pval, 1.0, atol=1e-2)
+        pval = chisquare(obs_freqs, pv).pvalue
+        assert_allclose(pval, 1.0, rtol=1e-3, atol=1e-2)
 
-    @pytest.mark.parametrize(
-        "bad_pmf, msg",
-        [
-            (lambda x: foo, r"name 'foo' is not defined"),
-            (
-                lambda x, a, b: x + a + b,
-                r"missing 2 required positional arguments: 'a' and 'b'",
-            ),
-            (lambda x: -x, r"50 : probability < 0"),
-            (lambda x: None, r"must be real number, not NoneType"),
-            (lambda x: np.inf, r"240 : unknown error"),
-            (lambda x: np.nan, r"240 : unknown error"),
-            (lambda x: 0.0, r"240 : unknown error"),
-            (lambda: 1.0, r"takes 0 positional arguments but 1 was given"),
-        ],
-    )
-    def test_bad_pmf(self, bad_pmf, msg):
+    @pytest.mark.parametrize("pmf, err, msg", bad_pmf_common)
+    def test_bad_pmf(self, pmf, err, msg):
         class dist:
-            pmf = bad_pmf
-
-        with pytest.raises(Exception, match=msg):
+            pass
+        dist.pmf = pmf
+        with pytest.raises(err, match=msg):
             with suppress_warnings() as sup:
+                # A user warning throws by UNU.RAN as PV isn't
+                # available
                 sup.filter(UserWarning)
                 DiscreteAliasUrn(dist=dist, domain=(1, 10))
 
-    @pytest.mark.parametrize(
-        "pv", [[0.18, 0.02, 0.8], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]
-    )
+    @pytest.mark.parametrize("pv", [[0.18, 0.02, 0.8],
+                                    [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
         rng = DiscreteAliasUrn(pv, seed=123)
@@ -306,94 +378,36 @@ class TestDiscreteAliasUrn:
         pval = chisquare(obs_freqs, pv).pvalue
         assert_allclose(pval, 1.0, atol=1e-3)
 
-    @pytest.mark.parametrize(
-        "bad_pv, msg",
-        [
-            ([], r"must have at least one element"),
-            ([[1.0, 0.0]], r"must be a one-dimensional vector"),
-            ([0.2, 0.4, np.nan, 0.8], r"must contain only non-nan values"),
-            ([0.2, 0.4, np.inf, 0.8], r"must contain only finite values"),
-            ([0.0, 0.0], r"must contain at least one non-zero value"),
-        ],
-    )
-    def test_bad_pv(self, bad_pv, msg):
+    @pytest.mark.parametrize("pv, msg", bad_pv_common)
+    def test_bad_pv(self, pv, msg):
         with pytest.raises(ValueError, match=msg):
-            DiscreteAliasUrn(bad_pv, domain=(1, 10))
+            DiscreteAliasUrn(pv)
 
-    @pytest.mark.parametrize("domain", [(0, 0), (1, 0)])
-    def test_bad_domain(self, domain):
-        with pytest.raises(RuntimeError, match=r"left >= right"):
-            class dist:
-                pmf = lambda x: x
+    # DAU doesn't support infinite tails. So, it should throw an error when
+    # inf is present in the domain.
+    inf_domain = [(-np.inf, np.inf), (np.inf, np.inf), (-np.inf, -np.inf),
+                  (0, np.inf), (-np.inf, 0)]
 
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning)
-                DiscreteAliasUrn(dist=dist, domain=domain)
-
-    def test_bad_sized_domain(self):
-        with pytest.raises(ValueError, match=r"must be a length 2 tuple"):
-            DiscreteAliasUrn([0.02, 0.18, 0.8], domain=(1, 2, 3))
-
-    @pytest.mark.parametrize(
-        "domain",
-        [
-            (np.nan, np.nan),
-            (np.inf, np.nan),
-            (np.nan, -np.inf),
-            (np.nan, 0),
-            (-1, np.nan),
-            (0, float("nan")),
-        ],
-    )
-    def test_nan_domain(self, domain):
-        with pytest.raises(
-            ValueError, match=r"must contain only non-nan values"
-        ):
-            class dist:
-                pmf = lambda x: x
-
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning)
-                DiscreteAliasUrn(dist=dist, domain=domain)
-
-    @pytest.mark.parametrize(
-        "domain",
-        [
-            (-np.inf, np.inf),
-            (np.inf, np.inf),
-            (-np.inf, -np.inf),
-            (0, np.inf),
-            (-np.inf, 0),
-        ],
-    )
+    @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
-        class dist:
-                pmf = lambda x: x
-
         with pytest.raises(ValueError, match=r"must be finite"):
             with suppress_warnings() as sup:
+                # UNU.RAN throws a user warning when PV isn't available.
                 sup.filter(UserWarning)
-                DiscreteAliasUrn(dist=dist, domain=domain)
-
-    @pytest.mark.parametrize(
-        "pv",
-        [
-            [0.0],
-            [],
-            [0.0, 0.0, 0.0],
-            [0.0, np.inf],
-            [-np.inf, 0.0],
-            [np.inf, np.inf],
-            [-np.inf, -np.inf],
-            [np.nan],
-            [np.nan, np.inf, -np.inf],
-            [[1.0, 0.0], [0.5, 0.5]],
-        ],
-    )
-    def test_bad_pv(self, pv):
-        with pytest.raises(ValueError):
-            DiscreteAliasUrn(pv)
+                DiscreteAliasUrn(dist=common_discr_dist, domain=domain,
+                                 params=common_discr_dist.params)
 
     def test_bad_urn_factor(self):
         with pytest.warns(UserWarning, match=r"relative urn size < 1."):
             DiscreteAliasUrn([0.5, 0.5], urn_factor=-1)
+
+    def test_bad_args(self):
+        msg = (r"At least a `pv` or a `dist` object with a PMF method "
+               r"required but none given.")
+        with pytest.raises(ValueError, match=msg):
+            DiscreteAliasUrn()
+
+        msg = r"`domain` must be provided if `pv` is not available"
+        with pytest.raises(ValueError, match=msg):
+            DiscreteAliasUrn(dist=common_discr_dist,
+                             params=common_discr_dist.params)
