@@ -103,7 +103,8 @@ def process_pyx(fromfile, tofile, cwd):
 
     try:
         try:
-            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile], cwd=cwd)
+            r = subprocess.call([sys.executable, '-m', 'cython'] + 
+                                flags + ["-o", tofile, fromfile], cwd=cwd)
             if r != 0:
                 raise Exception('Cython failed')
         except OSError as e:
