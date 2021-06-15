@@ -617,28 +617,30 @@ cdef class TransformedDensityRejection(Method):
     ...                                   cpoints=10, variant='ia', seed=urng)
     >>> rvs = rng.rvs(1000)
     """
-    def __cinit__(self, dist, mode=None, center=None, params=(),
-                  domain=None, c=-0.5, cpoints=30, variant="ps",
-                  use_dars=True, max_sqhratio=0.99, max_intervals=100,
-                  use_center=True, use_mode=True, guide_factor=2, seed=None):
-        (dist, mode, center, params, domain, c, cpoints, cpoints_array,
-         variant, use_dars, max_sqhratio, max_intervals, use_center, use_mode,
-         guide_factor, seed) = self._validate_args(
-            dist, mode, center, params, domain, c, cpoints, variant,
-            use_dars, max_sqhratio, max_intervals, use_center, use_mode,
-            guide_factor, seed
-        )
-        self._init_method(
-            dist, mode, center, params, domain, c, cpoints,
-            cpoints_array, variant, use_dars, max_sqhratio, max_intervals,
-            use_center, use_mode, guide_factor, seed
-        )
+    def __cinit__(self,
+                  dist,
+                  mode=None,
+                  center=None,
+                  params=(),
+                  domain=None,
+                  c=-0.5,
+                  cpoints=30,
+                  variant="ps",
+                  use_dars=True,
+                  max_sqhratio=0.99,
+                  max_intervals=100,
+                  use_center=True,
+                  use_mode=True,
+                  guide_factor=2,
+                  seed=None):
+        (params, domain, c, cpoints, cpoints_array,
+         variant) = self._validate_args(params, domain, c, cpoints, variant)
+        self._init_method(dist, mode, center, params, domain, c, cpoints,
+                          cpoints_array, variant, use_dars, max_sqhratio,
+                          max_intervals, use_center, use_mode, guide_factor,
+                          seed)
 
-    cdef object _validate_args(
-        self, dist, mode, center, params, domain, c, cpoints, variant,
-        use_dars, max_sqhratio, max_intervals, use_center, use_mode,
-        guide_factor, seed
-    ):
+    cdef object _validate_args(self, params, domain, c, cpoints, variant):
         cdef double[::1] cpoints_array = None
         domain = _validate_domain(domain)
         if np.isnan(c):
@@ -653,9 +655,7 @@ cdef class TransformedDensityRejection(Method):
 
         params = tuple(params)
 
-        return (dist, mode, center, params, domain, c, cpoints,
-                cpoints_array, variant, use_dars, max_sqhratio,
-                max_intervals, use_center, use_mode, guide_factor, seed)
+        return params, domain, c, cpoints, cpoints_array, variant
 
     cdef int _init_method(self, dist, mode, center, params, domain, c,
                           cpoints, double[::1] cpoints_array, variant,
@@ -924,14 +924,18 @@ cdef class DiscreteAliasUrn(Method):
     This uses a table twice the size of the probability vector to generate
     random variates from the distribution.
     """
-    def __cinit__(self, pv=None, dist=None, params=(), domain=None,
-                  urn_factor=1, seed=None):
-        (pv_view, dist, params, domain, urn_factor, seed
-        ) = self._validate_args(pv, dist, params, domain, urn_factor, seed)
+    def __cinit__(self,
+                  pv=None,
+                  dist=None,
+                  params=(),
+                  domain=None,
+                  urn_factor=1,
+                  seed=None):
+        (pv_view, dist, params, domain) = self._validate_args(pv, dist,
+                                                              params, domain)
         self._init_method(pv_view, dist, params, domain, urn_factor, seed)
 
-    cdef object _validate_args(self, pv, dist, params, domain, urn_factor,
-                               seed):
+    cdef object _validate_args(self, pv, dist, params, domain):
         cdef double[::1] pv_view
 
         if pv is None and dist is None:
@@ -949,7 +953,7 @@ cdef class DiscreteAliasUrn(Method):
 
         params = tuple(params)
 
-        return pv_view, dist, params, domain, urn_factor, seed
+        return pv_view, dist, params, domain
 
     cdef int _init_method(self, double[::1] pv_view, dist, params, domain,
                           urn_factor, seed) except -1:

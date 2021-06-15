@@ -1227,10 +1227,6 @@ cdef extern from "unuran.h" nogil:
 
     UNUR_DISTR* unur_distr_zipf(double* params, int n_params)
 
-    # FILE* unur_set_stream(FILE* new_stream)
-
-    # FILE* unur_get_stream()
-
     int unur_set_debug(UNUR_PAR* parameters, unsigned debug)
 
     int unur_chg_debug(UNUR_GEN* generator, unsigned debug)
