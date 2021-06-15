@@ -373,7 +373,7 @@ cdef class Method:
         Parameters
         ----------
         out : double[::1]
-            A memory view with of size ``size`` to store the result.
+            A memory view of size ``size`` to store the result.
         """
         cdef:
             ccallback_t callback
@@ -404,7 +404,7 @@ cdef class Method:
         Parameters
         ----------
         out : int[::1]
-            A memory view with of size ``size`` to store the result.
+            A memory view of size ``size`` to store the result.
         """
         cdef:
             ccallback_t callback
@@ -432,8 +432,8 @@ cdef class Method:
 
         Parameters
         ----------
-        size : int, optional
-            The shape of samples. Default is None in which case a scalar
+        size : int or tuple, optional
+            The shape of samples. Default is ``None`` in which case a scalar
             sample is returned.
 
         Returns
@@ -490,15 +490,15 @@ cdef class TransformedDensityRejection(Method):
           the PDF should accept a Python float and the parameters and
           return a Python float. It doesn't need to integrate to 1 i.e.
           the PDF doesn't need to be normalized.
-        * 'dpdf': Derivative of the PDF w.r.t the variate. Must have the
-          same signature as the PDF.
+        * 'dpdf': Derivative of the PDF w.r.t x (i.e. the variate). Must
+          have the same signature as the PDF.
 
     mode : float, optional
         Mode of the distribution. It is optional and only required if
         `use_mode` is ``True``.
     center : float, optional
         Center (``loc``) of the distribution. It is optional and only
-        required if `use_center` is ``True``.
+        required if `use_center` is ``True``. Default is 0.
     params : tuple, optional
         Parameters that the PDF and DPDF take. Default is an empty tuple.
     domain : list or tuple of length 2, optional
@@ -507,7 +507,7 @@ cdef class TransformedDensityRejection(Method):
         :math:`(-\infty, \infty)`.
     c : float, optional
         The transformation function. See Notes for the allowed values for
-        this parameter and their interpretation.
+        this parameter and their interpretation. Default is -0.5.
     cpoints : int, optional
         The number of construction points. Default is 30.
     variant : str, optional
@@ -517,6 +517,7 @@ cdef class TransformedDensityRejection(Method):
           * 'gw': GW variant
           * 'ia': IA variant
 
+        See Notes for their explainations.
     use_dars : bool, optional
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
@@ -565,6 +566,8 @@ cdef class TransformedDensityRejection(Method):
     .. [2] Hörmann, Wolfgang. "A rejection technique for sampling from
            T-concave distributions." ACM Transactions on Mathematical
            Software (TOMS) 21.2 (1995): 182-193
+    .. [3] W.R. Gilks and P. Wild (1992). Adaptive rejection sampling for
+           Gibbs sampling, Applied Statistics 41, pp. 337-348.
 
     Examples
     --------
@@ -605,14 +608,14 @@ cdef class TransformedDensityRejection(Method):
     Now, we can use the `rvs` method to generate samples from the
     distribution:
 
-    >>> rvs = rng.rvs(1_000)
+    >>> rvs = rng.rvs(1000)
 
     To use the log transformation with 10 construction points and the
     immediate acceptance variant of the method, do:
 
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), c=0.,
     ...                                   cpoints=10, variant='ia', seed=urng)
-    >>> rvs = rng.rvs(1_000)
+    >>> rvs = rng.rvs(1000)
     """
     def __cinit__(self, dist, mode=None, center=None, params=(),
                   domain=None, c=-0.5, cpoints=30, variant="ps",
@@ -775,7 +778,7 @@ cdef class TransformedDensityRejection(Method):
         -0.00018050266342393984
         >>> norm.ppf(0.5)
         0.0
-        >>> u = np.linspace(0, 1, num=1_000)
+        >>> u = np.linspace(0, 1, num=1000)
         >>> ppf_hat = rng.ppf_hat(u)
         """
         u = np.asarray(u, dtype='d')
@@ -850,6 +853,9 @@ cdef class DiscreteAliasUrn(Method):
     .. [1] UNU.RAN reference manual, Section 5.8.2,
            "DAU - (Discrete) Alias-Urn method",
            http://statmath.wu.ac.at/software/unuran/doc/unuran.html#DAU
+    .. [2] A.J. Walker (1977). An efficient method for generating discrete
+           random variables with general distributions, ACM Trans. Math.
+           Software 3, pp. 253-256.
 
     Examples
     --------
@@ -864,7 +870,7 @@ cdef class DiscreteAliasUrn(Method):
     The RNG has been setup. Now, we can now use the `rvs` method to
     generate samples from the distribution:
 
-    >>> rvs = rng.rvs(size=1_000)
+    >>> rvs = rng.rvs(size=1000)
 
     To verify that the random variates follow the given distribution, we can
     use the chi-squared test (as a measure of goodness-of-fit):
@@ -900,7 +906,7 @@ cdef class DiscreteAliasUrn(Method):
     in the domain). We can sample from the distribution using the `rvs` method
     and also measure the goodness-of-fit of the samples:
 
-    >>> rvs = rng.rvs(1_000)
+    >>> rvs = rng.rvs(1000)
     >>> _, freqs = np.unique(rvs, return_counts=True)
     >>> freqs = freqs / np.sum(freqs)
     >>> obs_freqs = np.zeros(11)  # some frequencies may be zero.
