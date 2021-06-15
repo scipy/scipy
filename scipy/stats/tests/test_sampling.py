@@ -42,7 +42,7 @@ bad_pdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, RuntimeError, r"50 : PDF\(x\) overflow"),
     # NaN value => internal error in UNU.RAN
@@ -66,7 +66,7 @@ bad_dpdf_common = [
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]
     # signature of dPDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -81,7 +81,7 @@ bad_pmf_common = [
     (lambda x: np.nan, RuntimeError, r"240 : unknown error"),
     (lambda x: 0.0, RuntimeError, r"240 : unknown error"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # probabilities < 0
@@ -136,7 +136,7 @@ nan_domains = [
 # all the methods should throw errors for nan, bad sized, and bad valued
 # domains.
 @pytest.mark.parametrize("domain, err, msg",
-                         bad_domains + bad_sized_domains + nan_domains)
+                         bad_domains + bad_sized_domains + nan_domains)  # type: ignore[operator]
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
     Method = getattr(stats, method)
@@ -219,7 +219,7 @@ class TestTransformedDensityRejection:
 
     # PDF 0 everywhere => bad construction points
     bad_pdfs = [(lambda x: 0, RuntimeError, r"50 : bad construction points.")]
-    bad_pdfs += bad_pdfs_common
+    bad_pdfs += bad_pdfs_common  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("pdf, err, msg", bad_pdfs)
     def test_bad_pdf(self, pdf, err, msg):
@@ -358,7 +358,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,
+        (lambda x: foo, NameError,  # type: ignore[name-defined]
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,
