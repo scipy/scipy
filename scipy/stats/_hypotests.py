@@ -1466,6 +1466,16 @@ class TukeyHSDResult:
         self._nobs = _nobs
         self._stand_err = _stand_err
 
+    def __str__(self):
+        s = "Tukey's HSD Pairwise Group Comparisons\n"
+        s += "Comparison  Statistic  p-value\n"
+
+        for i in range(self.pvalue.shape[0]):
+            for j in range(self.pvalue.shape[0]):
+                s += (f"({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                      f" {self.pvalue[i, j]:>10.3f}\n")
+        return s
+
     def confidence_interval(self, confidence_level=.95):
         """Compute the confidence interval for the specified confidence level.
 
@@ -1648,16 +1658,18 @@ def tukey_hsd(*args):
     a significance level of .05 to reject the null hypothesis.
 
     >>> res = tukey_hsd(group0, group1, group2)
-    >>> for ((i, j), p) in np.ndenumerate(res.pvalue):
-    ...     # filter out self comparisons
-    ...     if i != j:
-    ...         print(f"({i} - {j}) {p:.03f}")
-    (0 - 1) 0.014
-    (0 - 2) 0.980
-    (1 - 0) 0.014
-    (1 - 2) 0.020
-    (2 - 0) 0.980
-    (2 - 1) 0.020
+    >>> print(res)
+    Tukey's HSD Pairwise Group Comparisons
+    Comparison  Statistic  p-value
+    (0 - 0)      0.000      1.000
+    (0 - 1)     -4.600      0.014
+    (0 - 2)     -0.260      0.980
+    (1 - 0)      4.600      0.014
+    (1 - 1)      0.000      1.000
+    (1 - 2)      4.340      0.020
+    (2 - 0)      0.260      0.980
+    (2 - 1)     -4.340      0.020
+    (2 - 2)      0.000      1.000
 
     The null hypothesis is that each group has the same mean. The p-value for
     comparisons between ``group0`` and ``group1`` as well as ``group1`` and
