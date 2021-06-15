@@ -116,7 +116,7 @@ def evaluate_spline(const double[::1] t,
     """
 
     cdef int ip, jp, n, a
-    cdef int i, interval
+    cdef int interval
     cdef double xval
 
     # shape checks
