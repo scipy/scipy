@@ -7,20 +7,20 @@ __all__ = ['tfqmr']
 
 
 def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
-          callback=None, atol=None, view=False):
+          callback=None, atol=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         `scipy.sparse.linalg.LinearOperator`.
-    b : {array, matrix}
+    b : {ndarray}
         Right hand side of the linear system. Has shape (N,) or (N,1).
-    x0  : {array, matrix}
+    x0 : {ndarray}
         Starting guess for the solution.
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b-Ax0), atol)``.
@@ -34,7 +34,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}
+    M : {sparse matrix, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
@@ -43,14 +43,14 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
         as `callback(xk)`, where `xk` is the current solution vector.
-    view : bool, optional
-        Specify ``view = True`` to view the convergence, ``view = False`` is
+    show : bool, optional
+        Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.
         Default is `False`
 
     Returns
     -------
-    x : array or matrix
+    x : ndarray
         The converged solution.
     info : int
         Provides convergence information:
@@ -94,10 +94,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     # Check data type
     dtype = A.dtype
-    if dtype == int:
+    if np.issubdtype(dtype, int):
         dtype = float
         A = A.astype(dtype)
-        if b.dtype == int:
+        if np.issubdtype(b.dtype, int):
             b = b.astype(dtype)
 
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -128,10 +128,6 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         return (postprocess(x), 0)
 
     if atol is None:
-        warnings.warn("scipy.sparse.linalg.tfqmr called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol*r0norm``.",
-                      category=DeprecationWarning, stacklevel=2)
         atol = tol * r0norm
     else:
         atol = max(atol, tol*r0norm)
@@ -159,7 +155,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
         # Convergence criteron
         if tau * np.sqrt(iter+1) < atol:
-            if (view):
+            if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
                       "iterations {}".format(iter+1))
             return (postprocess(x), 0)
@@ -176,7 +172,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             u = uNext
             rhoLast = rho
 
-    if (view):
+    if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
               "iterations {}".format(iter+1))
     return (postprocess(x), maxiter)
