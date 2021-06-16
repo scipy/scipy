@@ -97,8 +97,10 @@ def process_pyx(fromfile, tofile, cwd):
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 
-    subprocess.check_call([sys.executable, '-m', 'cython'] + 
-                        flags + ["-o", tofile, fromfile], cwd=cwd)
+    out = subprocess.check_call([sys.executable, '-m', 'cython'] + 
+                        flags + ["-o", tofile, fromfile], cwd=cwd,
+                        universal_newlines=True)
+    print(out)
 
 def process_tempita_pyx(fromfile, tofile, cwd):
     try:
