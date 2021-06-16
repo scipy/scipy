@@ -161,7 +161,7 @@ def test_isf_with_loc(dist, args):
     for loc in re_locs:
         expected = _b + loc, _a - 1 + loc
         res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
-        npt.assert_allclose(expected, res, rtol=1e-14)
+        npt.assert_array_equal(expected, res)
     # test broadcasting behaviour
     re_locs = [np.random.randint(-10, -1, size=(5, 3)),
                np.zeros((5, 3)),
@@ -170,7 +170,7 @@ def test_isf_with_loc(dist, args):
     for loc in re_locs:
         expected = _b + loc, _a - 1 + loc
         res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
-        npt.assert_allclose(expected, res, rtol=1e-14)
+        npt.assert_array_equal(expected, res)
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):
