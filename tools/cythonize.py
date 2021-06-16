@@ -57,68 +57,48 @@ except NameError:
 # Rules
 #
 def process_pyx(fromfile, tofile, cwd):
-    try:
-        from Cython.Compiler.Version import version as cython_version
-        from distutils.version import LooseVersion
+    from Cython.Compiler.Version import version as cython_version
+    from distutils.version import LooseVersion
 
-        # Try to find pyproject.toml
-        pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
-        if not os.path.exists(pyproject_toml):
+    # Try to find pyproject.toml
+    pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
+    if not os.path.exists(pyproject_toml):
+        raise ImportError()
+
+    # Try to find the minimum version from pyproject.toml
+    with open(pyproject_toml) as pt:
+        for line in pt:
+            if "cython" not in line.lower():
+                continue
+            line = ''.join(line.split('=')[1:])  # get rid of "Cython>="
+            if ',<' in line:
+                # There's an upper bound as well
+                split_on = ',<'
+                if ',<=' in line:
+                    split_on = ',<='
+                min_required_version, max_required_version = line.split(split_on)
+                max_required_version, _ = max_required_version.split('"')
+            else:
+                min_required_version, _ = line.split('"')
+
+            break
+        else:
             raise ImportError()
 
-        # Try to find the minimum version from pyproject.toml
-        with open(pyproject_toml) as pt:
-            for line in pt:
-                if "cython" not in line.lower():
-                    continue
-                line = ''.join(line.split('=')[1:])  # get rid of "Cython>="
-                if ',<' in line:
-                    # There's an upper bound as well
-                    split_on = ',<'
-                    if ',<=' in line:
-                        split_on = ',<='
-                    min_required_version, max_required_version = line.split(split_on)
-                    max_required_version, _ = max_required_version.split('"')
-                else:
-                    min_required_version, _ = line.split('"')
-
-                break
-            else:
-                raise ImportError()
-
-        # Note: we only check lower bound, for upper bound we rely on pip
-        # respecting pyproject.toml. Reason: we want to be able to build/test
-        # with more recent Cython locally or on master, upper bound is for
-        # sdist in a release.
-        if LooseVersion(cython_version) < LooseVersion(min_required_version):
-            raise Exception('Building SciPy requires Cython >= {}, found '
-                            '{}'.format(min_required_version, cython_version))
-
-    except ImportError:
-        pass
+    # Note: we only check lower bound, for upper bound we rely on pip
+    # respecting pyproject.toml. Reason: we want to be able to build/test
+    # with more recent Cython locally or on master, upper bound is for
+    # sdist in a release.
+    if LooseVersion(cython_version) < LooseVersion(min_required_version):
+        raise Exception('Building SciPy requires Cython >= {}, found '
+                        '{}'.format(min_required_version, cython_version))
 
     flags = ['--fast-fail', '-3']
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 
-    try:
-        try:
-            r = subprocess.call([sys.executable, '-m', 'cython'] + 
-                                flags + ["-o", tofile, fromfile], cwd=cwd)
-            if r != 0:
-                raise Exception('Cython failed')
-        except OSError as e:
-            # There are ways of installing Cython that don't result in a cython
-            # executable on the path, see gh-2397.
-            r = subprocess.call([sys.executable, '-c',
-                                 'import sys; from Cython.Compiler.Main import '
-                                 'setuptools_main as main; sys.exit(main())'] + flags +
-                                 ["-o", tofile, fromfile],
-                                cwd=cwd)
-            if r != 0:
-                raise Exception("Cython either isn't installed or it failed.") from e
-    except OSError as e:
-        raise OSError('Cython needs to be installed') from e
+    subprocess.check_call([sys.executable, '-m', 'cython'] + 
+                        flags + ["-o", tofile, fromfile], cwd=cwd)
 
 def process_tempita_pyx(fromfile, tofile, cwd):
     try:
