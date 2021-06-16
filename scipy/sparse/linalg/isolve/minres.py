@@ -19,17 +19,17 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real symmetric N-by-N matrix of the linear system
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
     Returns
     -------
-    x : {array, matrix}
+    x : ndarray
         The converged solution.
     info : integer
         Provides convergence information:
@@ -39,7 +39,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     Other Parameters
     ----------------
-    x0  : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution.
     tol : float
         Tolerance to achieve. The algorithm terminates when the relative
@@ -47,7 +47,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}
+    M : {sparse matrix, ndarray, LinearOperator}
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed

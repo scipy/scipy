@@ -187,14 +187,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
-    x0  : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution.
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
@@ -207,7 +207,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}, optional
+    M : {sparse matrix, ndarray, LinearOperator}, optional
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
@@ -241,7 +241,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     Returns
     -------
-    x : array or matrix
+    x : ndarray
         The solution found.
     info : int
         Provides convergence information:
