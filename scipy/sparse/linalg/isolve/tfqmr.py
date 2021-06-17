@@ -130,7 +130,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     if atol is None:
         atol = tol * r0norm
     else:
-        atol = max(atol, tol*r0norm)
+        atol = max(atol, tol * r0norm)
 
     for iter in range(maxiter):
         even = iter%2 == 0
@@ -142,7 +142,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             alpha = rho / vtrstar
             uNext = u - alpha * v
         w -= alpha * uhat
-        d = u + (theta**2/alpha) * eta * d
+        d = u + (theta**2 / alpha) * eta * d
         theta = np.linalg.norm(w) / tau
         c = np.sqrt(1. / (1 + theta**2))
         tau *= theta * c
