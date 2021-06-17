@@ -46,7 +46,7 @@ def _herm(x):
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
-         solver='arpack'):
+         solver='arpack', options=None):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -100,6 +100,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` are supported.
             Default: `'arpack'`.
+    options : dict, optional
+        A dictionary of solver options. All solvers accept the following
+        options:
+
+        tol : float
+            A tolerance which determines when a residual is "close enough" to
+            zero to be considered exactly zero.
 
     Returns
     -------

@@ -88,7 +88,7 @@ Singular values problems:
 
    svds -- Compute k singular values/vectors for a sparse matrix
 
-The `svds` function supports the following methods:
+The `svds` function supports the following solvers:
 
 .. toctree::
 

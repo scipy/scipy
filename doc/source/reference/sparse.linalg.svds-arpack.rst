@@ -1,8 +1,8 @@
 .. _sparse.linalg.svds-arpack:
 
-svds(method='arpack')
+svds(solver='arpack')
 ----------------------------------------
 
-.. scipy-sparse-linalg:function:: scipy.sparse.linalg.svds
-   :impl: scipy.sparse.linalg._svds._svds_arpack_doc
+.. scipy-optimize:function:: scipy.sparse.linalg.svds
+   :impl: scipy.sparse.linalg.eigen._svds._svds_arpack_doc
    :method: arpack
