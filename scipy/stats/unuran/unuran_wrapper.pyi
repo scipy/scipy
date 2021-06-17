@@ -1,22 +1,29 @@
 import numpy as np
-from typing import Union, Any, Protocol, Tuple, List
+from typing import Union, Any, Tuple, List, overload, Callable
+from typing_extensions import Protocol
 import numpy.typing as npt
 
 
 SeedType = Union[np.random.RandomState, np.random.Generator, int,
                  npt.ArrayLike, np.random.SeedSequence]
+ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
 
 
 __all__: List[str]
 
 
 class Method:
-    def rvs(self, size: None | int | tuple = ...) -> np.ndarray: ...
+    @overload
+    def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
+    @overload
+    def rvs(self, size: int | Tuple[int, ...] = ...) -> np.ndarray: ...
 
 
 class TDRDist(Protocol):
-    def pdf(self, x: float, *args) -> float: ...
-    def dpdf(self, x: float, *args) -> float: ...
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def dpdf(self) -> Callable[..., float]: ...
 
 
 class TransformedDensityRejection(Method):
@@ -44,11 +51,15 @@ class TransformedDensityRejection(Method):
     @property
     def squeeze_area(self) -> float: ...
 
-    def ppf_hat(self, u: npt.ArrayLike) -> float | np.ndarray: ...
+    @overload
+    def ppf_hat(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    @overload
+    def ppf_hat(self, u: npt.ArrayLike) -> np.ndarray: ...
 
 
 class DAUDist(Protocol):
-    def pmf(self, k: float, *args) -> float: ...
+    @property
+    def pmf(self) -> Callable[..., float]: ...
 
 class DiscreteAliasUrn(Method):
     def __init__(self,
