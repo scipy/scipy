@@ -529,8 +529,9 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
-    Compute a double integral.
+    Compute a double(deinite) integral.
 
+    Wraps `nquad` to compute double integral.
     Return the double (definite) integral of ``func(y, x)`` from ``x = a..b``
     and ``y = gfun(x)..hfun(x)``.
 
@@ -607,6 +608,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     """
     Compute a triple (definite) integral.
 
+    Wraps `nquad` to compute triple integral.
     Return the triple integral of ``func(z, y, x)`` from ``x = a..b``,
     ``y = gfun(x)..hfun(x)``, and ``z = qfun(x,y)..rfun(x,y)``.
 
@@ -769,7 +771,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     See Also
     --------
     quad : 1-D numerical integration
-    dblquad, tplquad : double and triple integrals
+    dblquad, tplquad : double and triple integrals (wrap `nquad`)
     fixed_quad : fixed-order Gaussian quadrature
     quadrature : adaptive Gaussian quadrature
 
