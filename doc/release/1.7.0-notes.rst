@@ -28,7 +28,7 @@ Highlights of this release
 
 - A new submodule for quasi-Monte Carlo, `scipy.stats.qmc`, was added
 - The documentation design was updated to use the same PyData-Sphinx theme as
-  other NumFOCUS packages like NumPy.
+  NumPy and other ecosystem libraries.
 - We now vendor and leverage the Boost C++ library to enable numerous
   improvements for long-standing weaknesses in `scipy.stats`
 - `scipy.stats` has six new distributions, eight new (or overhauled)
