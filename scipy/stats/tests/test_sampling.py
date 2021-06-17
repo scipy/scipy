@@ -183,6 +183,20 @@ def test_seed(method, kwargs):
     assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
+@pytest.mark.parametrize("size", [None, 0, (0, ), 1, (10, 3), (2, 3, 4, 5),
+                                  (0, 0), (0, 1)])
+def test_rvs_size(size):
+    # As the `rvs` method is present in the base class and shared between
+    # all the classes, we can just test with one of the methods.
+    rng = TransformedDensityRejection(common_cont_dist)
+    if size is None:
+        assert np.isscalar(rng.rvs(size))
+    else:
+        if np.isscalar(size):
+            size = (size, )
+        assert rng.rvs(size).shape == size
+
+
 class TestTransformedDensityRejection:
     pdf1 = lambda x: 1-x*x if abs(x) <= 1 else 0
     pdf2 = lambda x: stats.norm._pdf(x / 0.1)  # test case in gh-13051
