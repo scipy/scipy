@@ -51,72 +51,68 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Partial singular value decomposition of a sparse matrix.
 
     Compute the largest or smallest `k` singular values and corresponding
-    singular vectors of a sparse matrix. The order in which the singular
+    singular vectors of a sparse matrix `A`. The order in which the singular
     values are returned is not guaranteed.
+
+    In the descriptions below, let ``M, N = A.shape``.
 
     Parameters
     ----------
     A : {sparse matrix, LinearOperator}
-        Array to compute the SVD on, of shape (M, N)
-    k : int, optional
-        Number of singular values and vectors to compute.
-        Must be 1 <= k < min(A.shape).
+        Matrix to decompose.
+    k : int, default: 6
+        Number of singular values and singular vectors to compute.
+        Must satisfy ``1 <= k < min(M, N)``.
     ncv : int, optional
-        The number of Lanczos vectors generated
-        ncv must be greater than k+1 and smaller than n;
-        it is recommended that ncv > 2*k
-        Default: ``min(n, max(2*k + 1, 20))``
+        When ``solver='arpack'``, this is the number of Lanczos vectors
+        generated. In this case, the default is ``min(n, max(2*k + 1, 20))``.
+        If specified, must satistify ``k + 1 < ncv < N``; ``ncv > 2*k`` is
+        recommended.
+        When ``solver='lobpcg'``, this parameter is ignored.
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
-    which : str, ['LM' | 'SM'], optional
-        Which `k` singular values to find:
-
-            - 'LM' : largest singular values
-            - 'SM' : smallest singular values
-
-        .. versionadded:: 0.12.0
+    which : {'LM', 'SM'}
+        Which `k` singular values to find: either the largest magnitude ('LM')
+        or smallest magnitude ('SM') singular values.
     v0 : ndarray, optional
-        Starting vector for iteration, of length min(A.shape). Should be an
-        (approximate) left singular vector if N > M and a right singular
-        vector otherwise.
+        When ``solver='arpack'``, this is the starting vector for iteration:
+        an (approximate) left singular vector if ``N > M`` and a right singular
+        vector otherwise. Must be of length ``min(M, N)``.
+        When ``solver='lobpcg'``, this is the starting vector for iteration
+        only if `k` is 1. Otherwise, this parameter is ignored.
         Default: random
-
-        .. versionadded:: 0.12.0
     maxiter : int, optional
-        Maximum number of iterations.
-
-        .. versionadded:: 0.12.0
+        Maximum number of iterations. The precise definition and default value
+        are solver-specific.
     return_singular_vectors : bool or str, optional
-        - True: return singular vectors (True) in addition to singular values.
+        Singular values are always computed and returned; this parameter
+        controls the computation and return of singular vectors.
 
-        .. versionadded:: 0.12.0
+        - True: return singular vectors.
+        - False: do not return singular vectors.
+        - "u": only return the left singular values, without computing the
+          right singular vectors (if ``N > M``).
+        - "vh": only return the right singular values, without computing the
+          left singular vectors (if ``N <= M``).
 
-        - "u": only return the u matrix, without computing vh (if N > M).
-        - "vh": only return the vh matrix, without computing u (if N <= M).
-
-        .. versionadded:: 0.16.0
     solver : str, optional
             The solver used.
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` are supported.
             Default: `'arpack'`.
     options : dict, optional
-        A dictionary of solver options. All solvers accept the following
-        options:
-
-        tol : float
-            A tolerance which determines when a residual is "close enough" to
-            zero to be considered exactly zero.
+        A dictionary of solver-specific options. No solver-specific options
+        are currently supported; this parameter is reserved for future use.
 
     Returns
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
         If `return_singular_vectors` is "vh", this variable is not computed,
-        and None is returned instead.
+        and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
-    vt : ndarray, shape=(k, N)
+    vt : ndarray, shape=(k, n)
         Unitary matrix having right singular vectors as rows.
         If `return_singular_vectors` is "u", this variable is not computed,
         and None is returned instead.
@@ -145,7 +141,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         raise ValueError("which must be either 'LM' or 'SM'.")
 
-    if not (isinstance(A, LinearOperator) or isspmatrix(A) or is_pydata_spmatrix(A)):
+    if (not (isinstance(A, LinearOperator) or isspmatrix(A)
+             or is_pydata_spmatrix(A))):
         A = np.asarray(A)
 
     n, m = A.shape
@@ -228,14 +225,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     if n > m:
         vlarge = eigvec[:, above_cutoff]
-        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
+        ularge = (X_matmat(vlarge) / slarge
+                  if return_singular_vectors != 'vh' else None)
         vhlarge = _herm(vlarge)
     else:
         ularge = eigvec[:, above_cutoff]
-        vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+        vhlarge = (_herm(X_matmat(ularge) / slarge)
+                   if return_singular_vectors != 'u' else None)
 
-    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
-    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+    u = (_augmented_orthonormal_cols(ularge, nsmall)
+         if ularge is not None else None)
+    vh = (_augmented_orthonormal_rows(vhlarge, nsmall)
+          if vhlarge is not None else None)
 
     indexes_sorted = np.argsort(s)
     s = s[indexes_sorted]
