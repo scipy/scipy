@@ -762,9 +762,9 @@ cdef class TransformedDensityRejection(Method):
         >>> 
         >>> class MyDist:
         ...     def pdf(self, x):
-        ...         return 1./sqrt(2*pi) * exp(-0.5 * x**2)
+        ...         return exp(-0.5 * x**2)
         ...     def dpdf(self, x):
-        ...         return -x/sqrt(2*pi) * exp(-0.5 * x**2)
+        ...         return -x * exp(-0.5 * x**2)
         ... 
         >>> dist = MyDist()
         >>> rng = TransformedDensityRejection(dist, seed=123)
