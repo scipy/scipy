@@ -1,15 +1,16 @@
 __all__ = ['svds']
 
+import numpy as np
+
 from .arpack import _arpack
 arpack_int = _arpack.timing.nbx.dtype
 from . import eigsh
+from ._svds_doc import _svds_arpack_doc, _svds_lobpcg_doc
 
-import numpy as np
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse import isspmatrix
 from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
-
 
 def _augmented_orthonormal_cols(x, k):
     # extract the shape of the x array
@@ -46,7 +47,12 @@ def _herm(x):
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
          solver='arpack'):
-    """Compute the largest or smallest k singular values/vectors for a sparse matrix. The order of the singular values is not guaranteed.
+    """
+    Partial singular value decomposition of a sparse matrix.
+
+    Compute the largest or smallest `k` singular values and corresponding
+    singular vectors of a sparse matrix. The order in which the singular
+    values are returned is not guaranteed.
 
     Parameters
     ----------
@@ -90,8 +96,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         .. versionadded:: 0.16.0
     solver : str, optional
-            Eigenvalue solver to use. Should be 'arpack' or 'lobpcg'.
-            Default: 'arpack'
+            The solver used.
+            :ref:`'arpack' <sparse.linalg.svds-arpack>` and
+            :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` are supported.
+            Default: `'arpack'`.
 
     Returns
     -------
