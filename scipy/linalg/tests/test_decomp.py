@@ -34,7 +34,8 @@ from scipy.stats import ortho_group
 
 from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
                    float32, complex64, ravel, sqrt, iscomplex, shape, sort,
-                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril)
+                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril,
+                   fill_diagonal)
 
 from numpy.random import seed, random
 
@@ -910,6 +911,7 @@ class TestEigh:
 
 class TestLU:
     def setup_method(self):
+        # Simple matrices
         self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
         # Those matrices are more robust to detect problems in permutation
@@ -917,7 +919,7 @@ class TestLU:
         self.b = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         self.cb = array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
 
-        # Reectangular matrices
+        # Rectangular matrices
         self.hrect = array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
         self.chrect = 1.j * array([[1, 2, 3, 4],
                                    [5, 6, 7, 8],
@@ -939,7 +941,24 @@ class TestLU:
         pl, u = lu(data, permute_l=1)
         assert_array_almost_equal(pl @ u, data)
 
-    # Simple tests
+    def _test_common_lu_factor(self, data):
+        def piv_to_ind(piv, n):
+            # Convert pivots output by lu_factor/*getrf into permutation
+            ind = np.arange(n)
+            for i, j in enumerate(piv):
+                temp = ind[i]
+                ind[i] = ind[j]
+                ind[j] = temp
+            return ind
+        l_and_u, piv = lu_factor(data)
+        ind = piv_to_ind(piv, data.shape[0])
+        u = np.triu(l_and_u)[:data.shape[1]]
+        l = np.tril(l_and_u,k=-1)[:,:data.shape[0]]
+        fill_diagonal(l,1)
+        assert_array_almost_equal(l@u,data[ind])
+
+    # Simple tests. 
+    # For lu_factor gives a LinAlgWarning because these matrices are singular
     def test_simple(self):
         self._test_common(self.a)
 
@@ -955,24 +974,30 @@ class TestLU:
     # rectangular matrices tests
     def test_hrectangular(self):
         self._test_common(self.hrect)
+        self._test_common_lu_factor(self.hrect)
 
     def test_vrectangular(self):
         self._test_common(self.vrect)
+        self._test_common_lu_factor(self.vrect)
 
     def test_hrectangular_complex(self):
         self._test_common(self.chrect)
+        self._test_common_lu_factor(self.chrect)
 
     def test_vrectangular_complex(self):
         self._test_common(self.cvrect)
+        self._test_common_lu_factor(self.cvrect)
 
     # Bigger matrices
     def test_medium1(self):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.med)
+        self._test_common_lu_factor(self.med)
 
     def test_medium1_complex(self):
         """Check lu decomposition on medium size, rectangular matrix."""
         self._test_common(self.cmed)
+        self._test_common_lu_factor(self.cmed)
 
     def test_check_finite(self):
         p, l, u = lu(self.a, check_finite=False)
