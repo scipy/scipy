@@ -93,8 +93,8 @@ bad_pmf_common = [
 bad_pv_common = [
     ([], r"must have at least one element"),
     ([[1.0, 0.0]], r"wrong number of dimensions \(expected 1, got 2\)"),
-    ([0.2, 0.4, np.nan, 0.8], r"must contain only non-nan values"),
-    ([0.2, 0.4, np.inf, 0.8], r"must contain only finite values"),
+    ([0.2, 0.4, np.nan, 0.8], r"must contain only finite / non-nan values"),
+    ([0.2, 0.4, np.inf, 0.8], r"must contain only finite / non-nan values"),
     ([0.0, 0.0], r"must contain at least one non-zero value"),
 ]
 
@@ -366,10 +366,10 @@ class TestDiscreteAliasUrn:
     bad_pmf = [
         # inf returned
         (lambda x: np.inf, ValueError,
-         r"must contain only finite values"),
+         r"must contain only finite / non-nan values"),
         # nan returned
         (lambda x: np.nan, ValueError,
-         r"must contain only non-nan values"),
+         r"must contain only finite / non-nan values"),
         # all zeros
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),

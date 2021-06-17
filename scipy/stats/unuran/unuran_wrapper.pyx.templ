@@ -283,12 +283,11 @@ cdef double[::1] _validate_pv(pv) except *:
         # Empty arrays not allowed.
         if pv.size == 0:
             raise ValueError("`pv` must have at least one element.")
-        # NaNs not recognized by UNU.RAN so throw an error here only.
-        if np.isnan(pv).any():
-            raise ValueError("`pv` must contain only non-nan values.")
-        # inf values not recognized by UNU.RAN so throw an error here only.
+        # NaNs and infs not recognized by UNU.RAN so throw an error here
+        # only.
         if not np.isfinite(pv).all():
-            raise ValueError("`pv` must contain only finite values.")
+            raise ValueError("`pv` must contain only finite / non-nan "
+                             "values.")
         # This special case is not handled by UNU.RAN and it just throws
         # an "unknown error".
         if (pv == 0).all():
