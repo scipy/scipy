@@ -1,3 +1,4 @@
+import os
 from os.path import join
 
 from numpy.distutils.misc_util import get_info
@@ -77,6 +78,15 @@ def configuration(parent_package='', top_path=None):
         depends=['biasedurn/stocR.h'],
     )
     ext._pre_build_hook = pre_build_hook
+
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        from pythran.dist import PythranExtension
+        ext = PythranExtension(
+            'scipy.stats._count_paths_outside_method_pythran',
+            sources=['scipy/stats/_count_paths_outside_method_pythran.py'],
+            config=['compiler.blas=none']
+            )
+        config.ext_modules.append(ext)
 
     # add boost stats distributions
     config.add_subpackage('_boost')

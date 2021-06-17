@@ -48,7 +48,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
-
+from ._count_paths_outside_method_pythran import _count_paths_outside_method
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -7223,93 +7223,6 @@ def _compute_prob_outside_square(n, h):
         P = p1 * (1.0 - P)
         k -= 1
     return 2 * P
-
-
-def _count_paths_outside_method(m, n, g, h):
-    """Count the number of paths that pass outside the specified diagonal.
-
-    Parameters
-    ----------
-    m : integer
-        m > 0
-    n : integer
-        n > 0
-    g : integer
-        g is greatest common divisor of m and n
-    h : integer
-        0 <= h <= lcm(m,n)
-
-    Returns
-    -------
-    p : float
-        The number of paths that go low.
-        The calculation may overflow - check for a finite answer.
-
-    Raises
-    ------
-    FloatingPointError: Raised if the intermediate computation goes outside
-    the range of a float.
-
-    Notes
-    -----
-    Count the integer lattice paths from (0, 0) to (m, n), which at some
-    point (x, y) along the path, satisfy:
-      m*y <= n*x - h*g
-    The paths make steps of size +1 in either positive x or positive y
-    directions.
-
-    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
-    Hodges, J.L. Jr.,
-    "The Significance Probability of the Smirnov Two-Sample Test,"
-    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
-
-    """
-    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
-    # B(x, y) = #{paths from (0,0) to (x,y) without
-    #             previously crossing the boundary}
-    #         = binom(x, y) - #{paths which already reached the boundary}
-    # Multiply by the number of path extensions going from (x, y) to (m, n)
-    # Sum.
-
-    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
-    if m < n:
-        m, n = n, m
-    mg = m // g
-    ng = n // g
-
-    # Not every x needs to be considered.
-    # xj holds the list of x values to be checked.
-    # Wherever n*x/m + ng*h crosses an integer
-    lxj = n + (mg-h)//mg
-    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
-    # B is an array just holding a few values of B(x,y), the ones needed.
-    # B[j] == B(x_j, j)
-    if lxj == 0:
-        return np.round(special.binom(m + n, n))
-    B = np.zeros(lxj)
-    B[0] = 1
-    # Compute the B(x, y) terms
-    # The binomial coefficient is an integer, but special.binom()
-    # may return a float. Round it to the nearest integer.
-    for j in range(1, lxj):
-        Bj = np.round(special.binom(xj[j] + j, j))
-        if not np.isfinite(Bj):
-            raise FloatingPointError()
-        for i in range(j):
-            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
-            Bj -= bin * B[i]
-        B[j] = Bj
-        if not np.isfinite(Bj):
-            raise FloatingPointError()
-    # Compute the number of path extensions...
-    num_paths = 0
-    for j in range(lxj):
-        bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
-        term = B[j] * bin
-        if not np.isfinite(term):
-            raise FloatingPointError()
-        num_paths += term
-    return np.round(num_paths)
 
 
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
