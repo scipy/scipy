@@ -529,7 +529,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
-    Compute a double(deinite) integral.
+    Compute a double (definite) integral.
 
     Wraps `nquad` to compute double integral.
     Return the double (definite) integral of ``func(y, x)`` from ``x = a..b``
