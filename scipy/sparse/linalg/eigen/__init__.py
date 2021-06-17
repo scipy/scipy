@@ -8,6 +8,7 @@ The submodules of sparse.linalg.eigen:
 """
 from .arpack import *
 from .lobpcg import *
+from ._svds import svds
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
