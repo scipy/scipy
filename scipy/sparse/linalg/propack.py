@@ -78,7 +78,7 @@ class _AProd:
 
 def svdp(A, k, which='LM', irl_mode=False, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
-         delta=None, eta=None, anorm=0, cgs=False, elr=True, blocksize=16,
+         delta=None, eta=None, anorm=0, cgs=False, elr=True,
          min_relgap=0.002, shifts=None, maxiter=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
@@ -102,8 +102,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         If `True`, then compute SVD using IRL (implicitly restarted Lanczos)
         mode.  Default is `False`.
     kmax : int, optional
-        Maximal number of iterations / maximal dimension of Krylov subspace.
-        Default is ``5 * k``.
+        Maximal number of iterations / maximal dimension of the Krylov
+        subspace. Default is ``5 * k``.
     compute_u : bool, optional
         If `True` (default) then compute left singular vectors, `u`.
     compute_v : bool, optional
@@ -131,12 +131,6 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     elr : bool, optional
         If `True` (default), then extended local orthogonality is enforced
         when obtaining singular vectors.
-    blocksize : int, optional
-        If computing `u` or `v` (left and right singular vectors,
-        respectively), `blocksize` controls how large a fraction of the
-        work is done via fast BLAS level 3 operations.  A larger blocksize
-        may lead to faster computation at the expense of greater memory
-        consumption.  `blocksize` must be ``>= 1``.  Default is `16`.
     min_relgap : float, optional
         The smallest relative gap allowed between any shift in IRL mode.
         Default is `0.001`.  Accessed only if ``irl_mode=True``.
@@ -213,7 +207,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     kmax = min(m + 1, n + 1, kmax)
     if kmax < k:
         raise ValueError(
-            f"kmax must be greater than or equal to k: {kmax} < {k}")
+            "kmax must be greater than or equal to k, "
+            f"but kmax ({kmax}) < k ({k})")
 
     # convert python args to fortran args
     jobu = 'y' if compute_u else 'n'
@@ -259,11 +254,17 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
 
     ioption = np.array((int(bool(cgs)), int(bool(elr))), dtype='i')
 
+    # If computing `u` or `v` (left and right singular vectors,
+    # respectively), `blocksize` controls how large a fraction of the
+    # work is done via fast BLAS level 3 operations.  A larger blocksize
+    # may lead to faster computation at the expense of greater memory
+    # consumption.  `blocksize` must be ``>= 1``.  Choosing blocksize
+    # of 16, but docs don't specify; it's almost surely a
+    # power of 2.
+    blocksize = 16
+
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
-    # BLAS-3 blocking size is 16, but docs don't specify; it's almost surely a
-    # power of 2.
-    blocksize = max(2, int(blocksize))
     if compute_u or compute_v:
         lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(3*kmax*kmax + 4*kmax + 4,
                                                        blocksize*max(m, n))

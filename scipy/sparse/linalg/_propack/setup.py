@@ -1,7 +1,4 @@
 from os.path import join
-import pathlib
-from zipfile import ZipFile
-from time import time
 
 
 def configuration(parent_package='', top_path=None):

@@ -796,12 +796,14 @@ def test_svd_linop():
         L = CheckingLinearOperator(A)
 
         for solver in [None, 'arpack', 'lobpcg', 'propack']:
-            U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver))
-            U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver))
+            # TODO: arpack crashes when v0=v0, which="SM"
+            kwargs = {'v0': v0} if solver not in {None, 'arpack'} else {}
+            U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
+                                       **kwargs))
+            U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
+                                       **kwargs))
 
-            if solver != 'propack':
-                # PROPACK's U is variable run-to-run
-                assert_allclose(np.abs(U1), np.abs(U2))
+            assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
             assert_allclose(np.abs(VH1), np.abs(VH2))
             assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),

@@ -53,10 +53,6 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
         u1 = np.roll(u1, k, 1)
         vt1 = np.roll(vt1, k, 0)
         sigma1 = np.roll(sigma1, k)
-    elif which.upper() == 'LM':
-        pass
-    else:
-        raise ValueError(f"which = '{which}' not recognized")
 
     # check that singular values agree
     assert_allclose(sigma1[:k], sigma2, rtol=tol, atol=tol)
