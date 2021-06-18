@@ -1,3 +1,38 @@
+"""
+Implementation of Gauss's hypergeometric function for complex values. This is
+an effort to incrementally translate the Fortran implementation from specfun.f
+into Cython so that it can be maintained more easily and so that it is easier
+to correct defects in the original implementation.
+
+Computation of Gauss's hypergeometric function consists of a patchwork of
+special cases. The goal is to translate the cases into Cython little by little,
+falling back to the Fortran implementation for the cases that are yet to be
+handled. By default, the Fortran original is followed as closely as possible
+except for situations when an improvement is obvious. Attempts are made to
+document the why behind certain decisions made by the original implementation,
+with references to the NIST Digital Library of Mathematical Functions [1] where
+they are appropriate. The review paper by Pearson et al [2] is an excellent
+resource for best practices for numerical computation of hypergeometric
+functions, and the intent is to follow this paper when making improvements to
+and correcting defects in the original implementation.
+
+Author: Albert Steppi
+Distributed under the same license as Scipy.
+
+References
+----------
+[1] NIST Digital Library of Mathematical Functions. http://dlmf.nist.gov/,
+    Release 1.1.1 of 2021-03-15. F. W. J. Olver, A. B. Olde Daalhuis,
+    D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller,
+    B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
+
+[2] Pearson, J.W., Olver, S. & Porter, M.A.
+    "Numerical methods for the computation of the confluent and Gauss
+    hypergeometric functions."
+    Numer Algor 74, 821–866 (2017). https://doi.org/10.1007/s11075-016-0173-0
+"""
+
+
 cimport cython
 from numpy cimport npy_cdouble
 from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
