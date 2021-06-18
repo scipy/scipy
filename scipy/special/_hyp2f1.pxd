@@ -1,6 +1,6 @@
 cimport cython
 from numpy cimport npy_cdouble
-from libc.math cimport fabs, floor, exp, M_LN2, M_PI, pow
+from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
 
 from . cimport sf_error
 from ._cephes cimport Gamma, gammasgn, lgam
@@ -23,8 +23,10 @@ cdef extern from 'specfun_wrappers.h':
         npy_cdouble
     ) nogil
 
+# Small value from Fortran original. This has been empirically verified to
+# produce better precision on average than using machine epsilon (~2.2e-16).
+DEF EPS = 1e-15
 
-DEF EPS = 2.220446049250313e-16
 DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
 DEF LOG_PI_2 = 0.5723649429247001  # log(M_PI) / 2
 
@@ -34,7 +36,7 @@ cdef inline double complex hyp2f1_complex(
         double a, double b, double c, double complex z
 ) nogil:
     cdef:
-        int max_iter
+        int num_terms
         double modulus_z
         double complex result
         bint condition1, condition2
@@ -42,7 +44,7 @@ cdef inline double complex hyp2f1_complex(
     # Special Cases
     # -------------------------------------------------------------------------
     # Diverges when c is a negative integer
-    if c == floor(c) and c < 0:
+    if c == trunc(c) and c < 0:
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
@@ -83,38 +85,42 @@ cdef inline double complex hyp2f1_complex(
             result *= gammasgn(0.5 + 0.5*a)
         return result
     # Reduces to a polynomial when a or b is a negative integer.
-    if a == floor(a) and a < 0:
-        return hyp2f1_series(a, b, c, z, EPS, <int> fabs(a) + 1)
-    if b == floor(b) and b < 0:
-        return hyp2f1_series(a, b, c, z, EPS, <int> fabs(b) + 1)
+    condition1 = a == trunc(a) and a < 0
+    condition2 = b == trunc(b) and b < 0
+    if condition1 or condition2:
+        if condition1:
+            num_terms = <int> fabs(a)
+        if condition2:
+            num_terms = <int> fabs(b)
+        return hyp2f1_series_fixed(a, b, c, z, num_terms)
     # If one of c - a or c - b is a negative integer, reduces to evaluating
     # a polynomial through an Euler hypergeometric transformation
     # (DLMF 15.8.1).
     # hyp2f1(a, b, c, z) = (1 - z)**(c - a - b)*hyp2f1(c - a, c - b, c , z)
-    condition1 = c - a == floor(c - a) and c - a < 0
-    condition2 = c - b == floor(c - b) and c - b < 0
+    condition1 = c - a == trunc(c - a) and c - a < 0
+    condition2 = c - b == trunc(c - b) and c - b < 0
     if condition1 or condition2:
         if condition1:
-            max_iter = <int> fabs(c - a) + 1
+            num_terms = <int> fabs(c - a)
         if condition2:
-            max_iter = <int> fabs(c - b) + 1
+            num_terms = <int> fabs(c - b)
         result = zpow(1 - z, c - a - b)
-        result *= hyp2f1_series(c - a, c - b, c, z, EPS, max_iter)
+        result *= hyp2f1_series_fixed(c - a, c - b, c, z, num_terms)
         return result
-    # |z| < 0, real(z)  >= 0. Use defining Taylor series.
+    # |z| < 0, real(z) >= 0. Use defining Taylor series.
     # --------------------------------------------------------------------------
     # Although the series is convergent in the interior of the unit disk,
     # other methods offer better convergence for |z| >= 0.9. The z/(z-1)
-    # transform offers more rapid convergence for real(z) < 0.
+    # transform offers better convergence for real(z) < 0.
     if modulus_z < 0.9 and z.real >= 0:
         # Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce
-        # magnitude of a and b when this is possible. Calculation of hyp2f1
-        # using series methods becomes inaccurate for larger |a| and |b| due
-        # to slow convergence. In the original Fortran implementation from
-        # specfun this step was incorrectly applied if c - a  < a and
-        # c - b < b without taking  absolute values, hurting precision in some
-        # cases.
-        if fabs(c - a) < fabs(a) and fabs(c - b) < fabs(b):
+        # size of a and b if possible. Convergence slows as a and b grow in
+        # the positive direction. For negative a or b, things are trickier and
+        # its possible that this transformation can hurt precision by making
+        # a or b take negative values that are large in magnitude. We follow
+        # the Fortran original, rather than trying to work out a better
+        # heuristic for when this transformation improves precision.
+        if c - a < a and c - b < b:
             result = zpow(1 - z, c - a - b)
             # Maximum number of terms 1500 comes from Fortran original.
             result *= hyp2f1_series(c - a, c - b, c, z, EPS, 1500)
@@ -137,18 +143,54 @@ cdef inline double complex hyp2f1_series(
         double rtol,
         int max_iter
 ) nogil:
+    """Maclaurin Series for hyp2f1.
+
+    Stops computing when the modulus of the difference between the current
+    value of the series and the previous value is smaller than a tolerance rtol
+    times the modulus of the current value. This stopping criterion is copied
+    from the Fortran original. Returns nan if max_iter is reached before
+    converging.
+    """
     cdef:
         int k
         double complex term = 1 + 0j
         double complex result = 1 + 0j
-        double complex previous = 0 + 0j
-    for k in range(max_iter):
-        term *= z * (a + k) * (b + k) / ((c + k) * (k + 1))
+        double complex previous
+    for k in range(max_iter + 1):
         previous = result
+        # Follows the Fortran original exactly. Do not rewrite with
+        # term *=, this can degrade performance at least on GCC 10.2.0
+        # running on x86_64-linux-gnu.
+        term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         result += term
-        if zabs(result - previous) <= rtol * zabs(result):
+        if zabs(result - previous) <= zabs(result) * rtol:
             break
     else:
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double complex hyp2f1_series_fixed(
+        double a,
+        double b,
+        double c,
+        double complex z,
+        int num_terms
+) nogil:
+    """Maclaurin series for hyp2f1 truncated after a fixed number of terms.
+
+    Used when any of a, b, c - a, or c - a are negative integers and the series
+    reduces to a polynomial. This allows this implementation to follow the
+    Fortran original more exactly. The original does not use early stopping
+    when a tolerance is reached for these cases.
+    """
+    cdef:
+        int k
+        double complex term = 1 + 0j
+        double complex result = 1 + 0j
+    for k in range(num_terms + 1):
+        term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
+        result += term
     return result
