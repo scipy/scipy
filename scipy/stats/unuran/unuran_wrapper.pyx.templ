@@ -175,11 +175,7 @@ cdef object set_default_urng():
 set_default_urng()
 
 
-_cont_dist_meths = {"pdf", "cdf", "dpdf"}
-_discr_dist_meths = {"pmf", "cdf"}
-
-
-def _unpack_dist(dist, dist_type, meths=None, optional_meths=None):
+def _unpack_dist(dist, dist_type, meths, optional_meths=None):
     """
     Get the required methods from a Python class or object.
 
@@ -190,9 +186,8 @@ def _unpack_dist(dist, dist_type, meths=None, optional_meths=None):
     dist_type : str
         Type of the distribution. "cont" for continuous distribution
         and "discr" for discrete distribution.
-    meths : list or set, optional
-        A list or set of methods to get from `dist`. If None, a dictionary
-        containing all the available methods is returned.
+    meths : list or set
+        A list or set of methods to get from `dist`.
     optional_meths : list of set, optional
         A list or set of optional methods to be returned if found. No error
         is raised if some of the methods in this list/set are not found.
@@ -209,30 +204,16 @@ def _unpack_dist(dist, dist_type, meths=None, optional_meths=None):
         are not found.
     """
     callbacks = {}
-    if dist_type == "cont":
-        allmeths = _cont_dist_meths
-    else:
-        allmeths = _discr_dist_meths
-    not_found = []
-    methnames = set(meths) if meths is not None else allmeths
-    for methname in methnames:
-        if hasattr(dist, methname):
-            callbacks[methname] = getattr(dist, methname)
+    for meth in meths:
+        if hasattr(dist, meth):
+            callbacks[meth] = getattr(dist, meth)
         else:
-            not_found.append(methname)
-    if meths is not None and len(not_found) != 0:
-        msg = f"{methnames} required, "
-        msg += f"but didn't find {set(not_found)} "
-        msg += "in the given `dist` object."
-        raise ValueError(msg)
-    elif len(callbacks) == 0:  # no callbacks found => Error
-        msg = "The `dist` object should provide at least one of these "
-        msg += f"methods: {methnames}."
-        raise ValueError(msg)
+            msg = f"`{meth}` required but not found."
+            raise ValueError(msg)
     if optional_meths is not None:
-        for methname in optional_meths:
-            if hasattr(dist, methname):
-                callbacks[methname] = getattr(dist, methname)
+        for meth in optional_meths:
+            if hasattr(dist, meth):
+                callbacks[meth] = getattr(dist, meth)
     return callbacks
 
 
@@ -659,7 +640,7 @@ cdef class TransformedDensityRejection(Method):
             ccallback_t callback
             unuran_callback_t unur_callback
 
-        self.callbacks = _unpack_dist(dist, "cont", meths={"pdf", "dpdf"})
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
         init_unuran_callback(&callback, &unur_callback, self.callbacks,
                              params)
         if setjmp(callback.error_buf) != 0:
@@ -956,6 +937,8 @@ cdef class DiscreteAliasUrn(Method):
             if dist is None:
                 raise ValueError("Either a `pv` or a `dist` object with a "
                                  "PMF method required but none given.")
+            if not hasattr(dist, "pmf"):
+                raise ValueError("`pmf` required but not found.")
             # we assume the PMF to accept and return floats. So, we need
             # to vectorize it to call with an array of points in the domain.
             pmf = np.vectorize(dist.pmf)

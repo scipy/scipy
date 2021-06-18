@@ -345,6 +345,20 @@ class TestTransformedDensityRejection:
         assert_allclose(res, expected, rtol=1e-3, atol=1e-5)
         assert res.shape == expected.shape
 
+    def test_bad_dist(self):
+        # Empty distribution
+        class dist:
+            ...
+        msg = r"`pdf` required but not found."
+        with pytest.raises(ValueError, match=msg):
+            rng = TransformedDensityRejection(dist)
+        # dPDF not present in dist
+        class dist:
+            pdf = lambda x: 1-x*x
+        msg = r"`dpdf` required but not found."
+        with pytest.raises(ValueError, match=msg):
+            rng = TransformedDensityRejection(dist)
+
 
 class TestDiscreteAliasUrn:
     # DAU fails on these probably because of large domains and small
@@ -470,3 +484,12 @@ class TestDiscreteAliasUrn:
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn(dist=common_discr_dist,
                              params=common_discr_dist.params)
+
+    def test_bad_dist(self):
+        # Empty distribution
+        class dist:
+            ...
+        msg = r"`pmf` required but not found"
+              # `pmf` required but not found.
+        with pytest.raises(ValueError, match=msg):
+            DiscreteAliasUrn(dist=dist, domain=(0, 10))
