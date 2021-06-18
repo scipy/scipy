@@ -68,7 +68,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
-class UnivariateSpline(object):
+class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
@@ -83,23 +83,23 @@ class UnivariateSpline(object):
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting.  Must be positive.  If None (default),
-        weights are all equal.
+        Weights for spline fitting.  Must be positive.  If `w` is None,
+        weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        None (default), ``bbox=[x[0], x[-1]]``.
+        `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is `k` = 3, a cubic spline.
+        ``k = 3`` is a cubic spline. Default is 3.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If None (default), ``s = len(w)`` which should be a good value if
+        If `s` is None, ``s = len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
-        If 0, spline will interpolate through all data points.
+        If 0, spline will interpolate through all data points. Default is None.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -109,7 +109,7 @@ class UnivariateSpline(object):
         * if ext=2 or 'raise', raise a ValueError
         * if ext=3 of 'const', return the boundary value.
 
-        The default value is 0.
+        Default is 0.
 
     check_finite : bool, optional
         Whether to check that the input arrays contain only finite numbers.
@@ -175,8 +175,9 @@ class UnivariateSpline(object):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
     >>> plt.plot(x, y, 'ro', ms=5)
 
     Use the default value for the smoothing parameter:
@@ -639,8 +640,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
     >>> spl = InterpolatedUnivariateSpline(x, y)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> xs = np.linspace(-3, 3, 1000)
@@ -762,8 +764,9 @@ class LSQUnivariateSpline(UnivariateSpline):
     --------
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
 
     Fit a smoothing spline with a pre-defined internal knots:
 
@@ -822,7 +825,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 # ############### Bivariate spline ####################
 
-class _BivariateSplineBase(object):
+class _BivariateSplineBase:
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
@@ -899,6 +902,11 @@ class _BivariateSplineBase(object):
         if grid:
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
+
+            if (x.size >= 2) and (not np.all(np.diff(x) >= 0.0)):
+                raise ValueError("x must be strictly increasing when `grid` is True")
+            if (y.size >= 2) and (not np.all(np.diff(y) >= 0.0)):
+                raise ValueError("y must be strictly increasing when `grid` is True")
 
             if dx or dy:
                 z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
@@ -1427,8 +1435,6 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         if theta.size > 0 and (theta.min() < 0. or theta.max() > np.pi):
             raise ValueError("requested theta out of bounds.")
-        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
-            raise ValueError("requested phi out of bounds.")
 
         return _BivariateSplineBase.__call__(self, theta, phi,
                                              dx=dtheta, dy=dphi, grid=grid)
@@ -1586,6 +1592,17 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
 
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
+
 
 class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
@@ -1729,6 +1746,17 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         self.fp = fp
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
+
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
 
 
 _spfit_messages = _surfit_messages.copy()
@@ -1984,3 +2012,12 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = (3, 3)
+        self.v0 = v[0]
+
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)

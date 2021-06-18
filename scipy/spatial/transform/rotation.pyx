@@ -291,7 +291,7 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
-cdef class Rotation(object):
+cdef class Rotation:
     """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
@@ -2146,10 +2146,15 @@ cdef class Rotation(object):
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : int, RandomState instance or None, optional
-            Accepts an integer as a seed for the random generator or a
-            RandomState object. If None (default), uses global `numpy.random`
-            random state.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -2169,13 +2174,13 @@ cdef class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random(random_state=1234).as_euler('zxy', degrees=True)
-        array([-110.5976185 ,   55.32758512,   76.3289269 ])
+        >>> R.random().as_euler('zxy', degrees=True)
+        array([-110.5976185 ,   55.32758512,   76.3289269 ])  # random
 
         Sample a stack of rotations:
 
-        >>> R.random(5, random_state=1234).as_euler('zxy', degrees=True)
-        array([[-110.5976185 ,   55.32758512,   76.3289269 ],
+        >>> R.random(5).as_euler('zxy', degrees=True)
+        array([[-110.5976185 ,   55.32758512,   76.3289269 ],  # random
                [ -91.59132005,  -14.3629884 ,  -93.91933182],
                [  25.23835501,   45.02035145, -121.67867086],
                [ -51.51414184,  -15.29022692, -172.46870023],
@@ -2326,7 +2331,7 @@ cdef class Rotation(object):
             return cls.from_matrix(C), rmsd
 
 
-class Slerp(object):
+class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
     The interpolation between consecutive rotations is performed as a rotation

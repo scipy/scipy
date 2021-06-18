@@ -8,6 +8,7 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_less, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 import scipy.sparse
@@ -299,7 +300,7 @@ bounds = None
 ################
 
 
-class LinprogCommonTests(object):
+class LinprogCommonTests:
     """
     Base class for `linprog` tests. Generally, each test will be performed
     once for every derived class of LinprogCommonTests, each of which will
@@ -1554,6 +1555,8 @@ class LinprogCommonTests(object):
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
+    @pytest.mark.skip(sys.platform == 'darwin',
+                      reason="Failing on some local macOS builds, see gh-13846")
     def test_bug_10466(self):
         """
         Test that autoscale fixes poorly-scaled problem
@@ -1673,6 +1676,80 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
+    def test_marginals(self):
+        # Ensure lagrange multipliers are correct by comparing the derivative
+        # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=0)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+        lb, ub = bounds.T
+
+        # sensitivity w.r.t. b_ub
+        def f_bub(x):
+            return linprog(c, A_ub, x, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        dfdbub = approx_derivative(f_bub, b_ub, method='3-point', f0=res.fun)
+        assert_allclose(res.ineqlin.marginals, dfdbub)
+
+        # sensitivity w.r.t. b_eq
+        def f_beq(x):
+            return linprog(c, A_ub, b_ub, A_eq, x, bounds,
+                           method=self.method).fun
+
+        dfdbeq = approx_derivative(f_beq, b_eq, method='3-point', f0=res.fun)
+        assert_allclose(res.eqlin.marginals, dfdbeq)
+
+        # sensitivity w.r.t. lb
+        def f_lb(x):
+            bounds = np.array([x, ub]).T
+            return linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        with np.errstate(invalid='ignore'):
+            # approx_derivative has trouble where lb is infinite
+            dfdlb = approx_derivative(f_lb, lb, method='3-point', f0=res.fun)
+            dfdlb[~np.isfinite(lb)] = 0
+
+        assert_allclose(res.lower.marginals, dfdlb)
+
+        # sensitivity w.r.t. ub
+        def f_ub(x):
+            bounds = np.array([lb, x]).T
+            return linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        with np.errstate(invalid='ignore'):
+            dfdub = approx_derivative(f_ub, ub, method='3-point', f0=res.fun)
+            dfdub[~np.isfinite(ub)] = 0
+
+        assert_allclose(res.upper.marginals, dfdub)
+
+    def test_dual_feasibility(self):
+        # Ensure solution is dual feasible using marginals
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=42)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+
+        # KKT dual feasibility equation from Theorem 1 from
+        # http://www.personal.psu.edu/cxg286/LPKKT.pdf
+        resid = (-c + A_ub.T @ res.ineqlin.marginals +
+                 A_eq.T @ res.eqlin.marginals +
+                 res.upper.marginals +
+                 res.lower.marginals)
+        assert_allclose(resid, 0, atol=1e-12)
+
+    def test_complementary_slackness(self):
+        # Ensure that the complementary slackness condition is satisfied.
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=42)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+
+        # KKT complementary slackness equation from Theorem 1 from
+        # http://www.personal.psu.edu/cxg286/LPKKT.pdf modified for
+        # non-zero RHS
+        assert np.allclose(res.ineqlin.marginals @ (b_ub - A_ub @ res.x), 0)
+
 
 ################################
 # Simplex Option-Specific Tests#
@@ -1697,7 +1774,7 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexDefault, self).test_bug_8174()
+            super().test_bug_8174()
 
 
 class TestLinprogSimplexBland(LinprogSimplexTests):
@@ -1714,7 +1791,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
             with pytest.warns(OptimizeWarning):
-                super(TestLinprogSimplexBland, self).test_bug_8174()
+                super().test_bug_8174()
 
 
 class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
@@ -1729,7 +1806,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         condition=is_32_bit and is_linux,
         reason='Fails with warning on 32-bit linux')
     def test_bug_5400(self):
-        super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
+        super().test_bug_5400()
 
     def test_bug_6139_low_tol(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
@@ -1738,7 +1815,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         # Without ``presolve`` eliminating such rows the result is incorrect.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError, match='linprog status 4'):
-            return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
+            return super().test_bug_6139()
 
     def test_bug_7237_low_tol(self):
         pytest.skip("Simplex fails on this problem.")
@@ -1748,7 +1825,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
+            super().test_bug_8174()
 
     def test_unbounded_no_nontrivial_constraints_1(self):
         pytest.skip("Tests behavior specific to presolve")
@@ -1778,6 +1855,9 @@ if has_umfpack:
         def test_bug_10466(self):
             pytest.skip("Autoscale doesn't fix everything, and that's OK.")
 
+        def test_network_flow_limited_capacity(self):
+            pytest.skip("Failing due to numerical issues on some platforms.")
+
 
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
@@ -1786,12 +1866,12 @@ class TestLinprogIPSparse(LinprogIPTests):
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
     def test_bug_6139(self):
-        super(TestLinprogIPSparse, self).test_bug_6139()
+        super().test_bug_6139()
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
-        super(TestLinprogIPSparse, self).test_bug_6690()
+        super().test_bug_6690()
 
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
@@ -1836,7 +1916,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
     def test_bug_6139(self):
-        super(TestLinprogIPSparsePresolve, self).test_bug_6139()
+        super().test_bug_6139()
 
     def test_enzo_example_c_with_infeasibility(self):
         pytest.skip('_sparse_presolve=True incompatible with presolve=False')
@@ -1844,10 +1924,10 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
-        super(TestLinprogIPSparsePresolve, self).test_bug_6690()
+        super().test_bug_6690()
 
 
-class TestLinprogIPSpecific(object):
+class TestLinprogIPSpecific:
     method = "interior-point"
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense
@@ -2020,7 +2100,7 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 ###########################
 
 
-class AutoscaleTests(object):
+class AutoscaleTests:
     options = {"autoscale": True}
 
     test_bug_6139 = LinprogCommonTests.test_bug_6139
@@ -2063,7 +2143,7 @@ class TestAutoscaleRS(AutoscaleTests):
 ###########################
 
 
-class RRTests(object):
+class RRTests:
     method = "interior-point"
     LCT = LinprogCommonTests
     # these are a few of the existing tests that have redundancy

@@ -16,6 +16,7 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.optimize import root_scalar
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -388,8 +389,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     rows of an array with shape (2, 25). For this demonstration, we'll
     use random data:
 
-    >>> np.random.seed(42)
-    >>> b = np.random.rand(2, 25)
+    >>> rng = np.random.default_rng()
+    >>> b = rng.random((2, 25))
 
     To compute the frequency response for these two filters with one call
     to `freqz`, we must pass in ``b.T``, because `freqz` expects the first
@@ -4016,6 +4017,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
+_POW10_LOG10 = np.log(10)
+
+def _pow10m1(x):
+    """10 ** x - 1 for x near 0"""
+    return np.expm1(_POW10_LOG10 * x)
+
+
 def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Elliptic (Cauer) filter order selection.
 
@@ -4136,12 +4144,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     nat = min(abs(nat))
 
-    GSTOP = 10 ** (0.1 * gstop)
-    GPASS = 10 ** (0.1 * gpass)
-    arg1 = sqrt((GPASS - 1.0) / (GSTOP - 1.0))
+    arg1_sq = _pow10m1(0.1 * gpass) / _pow10m1(0.1 * gstop)
     arg0 = 1.0 / nat
-    d0 = special.ellipk([arg0 ** 2, 1 - arg0 ** 2])
-    d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
+    d0 = special.ellipk(arg0 ** 2), special.ellipkm1(arg0 ** 2)
+    d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
     ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
 
     if not analog:
@@ -4260,27 +4266,129 @@ def cheb2ap(N, rs):
 
 EPSILON = 2e-16
 
+# number of terms in solving degree equation
+_ELLIPDEG_MMAX = 7
 
-def _vratio(u, ineps, mp):
-    [s, c, d, phi] = special.ellipj(u, mp)
-    ret = abs(ineps - s / c)
-    return ret
+def _ellipdeg(n, m1):
+    """Solve degree equation using nomes
+
+    Given n, m1, solve
+       n * K(m) / K'(m) = K1(m1) / K1'(m1)
+    for m
+
+    See [1], Eq. (49)
+
+    References
+    ----------
+    .. [1] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
+    """
+    K1 = special.ellipk(m1)
+    K1p = special.ellipkm1(m1)
+
+    q1 = np.exp(-np.pi * K1p / K1)
+    q = q1 ** (1/n)
+
+    mnum = np.arange(_ELLIPDEG_MMAX + 1)
+    mden = np.arange(1, _ELLIPDEG_MMAX + 2)
+
+    num = np.sum(q ** (mnum * (mnum+1)))
+    den = 1 + 2 * np.sum(q ** (mden**2))
+
+    return 16 * q * (num / den) ** 4
 
 
-def _kratio(m, k_ratio):
-    m = float(m)
-    if m < 0:
-        m = 0.0
-    if m > 1:
-        m = 1.0
-    if abs(m) > EPSILON and (abs(m) + EPSILON) < 1:
-        k = special.ellipk([m, 1 - m])
-        r = k[0] / k[1] - k_ratio
-    elif abs(m) > EPSILON:
-        r = -k_ratio
-    else:
-        r = 1e20
-    return abs(r)
+# Maximum number of iterations in Landen transformation recursion
+# sequence.  10 is conservative; unit tests pass with 4, Orfanidis
+# (see _arc_jac_cn [1]) suggests 5.
+_ARC_JAC_SN_MAXITER = 10
+
+def _arc_jac_sn(w, m):
+    """Inverse Jacobian elliptic sn
+
+    Solve for z in w = sn(z, m)
+
+    Parameters
+    ----------
+    w - complex scalar
+        argument
+
+    m - scalar
+        modulus; in interval [0, 1]
+
+
+    See [1], Eq. (56)
+
+    References
+    ----------
+    .. [1] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
+
+    """
+
+    def _complement(kx):
+        # (1-k**2) ** 0.5; the expression below 
+        # works for small kx
+        return ((1 - kx) * (1 + kx)) ** 0.5
+
+
+    k = m ** 0.5
+
+    if k > 1:
+        return np.nan
+    elif k == 1:
+        return np.arctanh(w)
+
+    ks = [k]
+    niter = 0
+    while ks[-1] != 0:
+        k_ = ks[-1]
+        k_p = _complement(k_)
+        ks.append((1 - k_p) / (1 + k_p))
+        niter += 1
+        if niter > _ARC_JAC_SN_MAXITER:
+            raise ValueError('Landen transformation not converging')
+
+    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+
+    wns = [w]
+
+    for kn, knext in zip(ks[:-1], ks[1:]):
+        wn = wns[-1]
+        wnext = ( 2 * wn
+                  /
+                 ( (1 + knext) * (1 + _complement(kn * wn)) ) )
+        wns.append(wnext)
+
+    u = 2 / np.pi * np.arcsin(wns[-1])
+
+    z = K * u
+    return z
+
+
+def _arc_jac_sc1(w, m):
+    """Real inverse Jacobian sc, with complementary modulus
+
+    Solve for z in w = sc(z, 1-m)
+
+    w - real scalar
+
+    m - modulus
+
+    From [1], sc(z, m) = -i * sn(i * z, 1 - m)
+
+    References
+    ----------
+    .. [1] https://functions.wolfram.com/EllipticFunctions/JacobiSC/introductions/JacobiPQs/ShowAll.html, 
+       "Representations through other Jacobi functions"
+
+    """
+
+    zcomplex = _arc_jac_sn(1j * w, m)
+    if abs(zcomplex.real) > 1e-14:
+        raise ValueError
+
+    return zcomplex.imag
 
 
 def ellipap(N, rp, rs):
@@ -4301,6 +4409,9 @@ def ellipap(N, rp, rs):
     .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
 
+    .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
+
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
@@ -4309,29 +4420,22 @@ def ellipap(N, rp, rs):
         # Even order filters have DC gain of -rp dB
         return numpy.array([]), numpy.array([]), 10**(-rp/20)
     elif N == 1:
-        p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
+        p = -sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
         z = []
         return asarray(z), asarray(p), k
 
-    eps = numpy.sqrt(10 ** (0.1 * rp) - 1)
-    ck1 = eps / numpy.sqrt(10 ** (0.1 * rs) - 1)
-    ck1p = numpy.sqrt(1 - ck1 * ck1)
-    if ck1p == 1:
+    eps_sq = _pow10m1(0.1 * rp)
+
+    eps = np.sqrt(eps_sq)
+    ck1_sq = eps_sq / _pow10m1(0.1 * rs)
+    if ck1_sq == 0:
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
 
-    val = special.ellipk([ck1 * ck1, ck1p * ck1p])
-    if abs(1 - ck1p * ck1p) < EPSILON:
-        krat = 0
-    else:
-        krat = N * val[0] / val[1]
+    val = special.ellipk(ck1_sq), special.ellipkm1(ck1_sq)
 
-    m = optimize.fmin(_kratio, [0.5], args=(krat,), maxfun=250, maxiter=250,
-                      disp=0)
-    if m < 0 or m > 1:
-        m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
-                               disp=0)
+    m = _ellipdeg(N, ck1_sq)
 
     capk = special.ellipk(m)
 
@@ -4344,8 +4448,7 @@ def ellipap(N, rp, rs):
     z = 1j * z
     z = numpy.concatenate((z, conjugate(z)))
 
-    r = optimize.fmin(_vratio, special.ellipk(m), args=(1. / eps, ck1p * ck1p),
-                      maxfun=250, maxiter=250, disp=0)
+    r = _arc_jac_sc1(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
 
     [sv, cv, dv, phi] = special.ellipj(v0, 1 - m)
@@ -4362,7 +4465,7 @@ def ellipap(N, rp, rs):
 
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt((1 + eps * eps))
+        k = k / numpy.sqrt((1 + eps_sq))
 
     return z, p, k
 

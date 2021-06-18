@@ -179,7 +179,7 @@ def _report_error(info):
         return [stopreason]
 
 
-class Data(object):
+class Data:
     """
     The data to fit.
 
@@ -429,7 +429,7 @@ class RealData(Data):
                 return None
 
 
-class Model(object):
+class Model:
     """
     The Model class stores information about the function you wish to fit.
 
@@ -541,7 +541,7 @@ class Model(object):
             raise AttributeError("'%s' not in metadata" % attr)
 
 
-class Output(object):
+class Output:
     """
     The Output class stores the output of an ODR run.
 
@@ -615,7 +615,7 @@ class Output(object):
                 print('  %s' % r)
 
 
-class ODR(object):
+class ODR:
     """
     The ODR class gathers all information and coordinates the running of the
     main fitting routine.

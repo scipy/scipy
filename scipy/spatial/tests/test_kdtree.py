@@ -1386,7 +1386,7 @@ def test_kdtree_empty_input(kdtree_type, balanced_tree, compact_nodes):
     assert M.shape == (0, 0)
 
 @KDTreeTest
-class _Test_sorted_query_ball_point(object):
+class _Test_sorted_query_ball_point:
     def setup_method(self):
         np.random.seed(1234)
         self.x = np.random.randn(100, 1)

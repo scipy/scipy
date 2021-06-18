@@ -12,7 +12,7 @@ import scipy.ndimage as ndimage
 from . import types
 
 
-class Test_measurements_stats(object):
+class Test_measurements_stats:
     """ndimage.measurements._stats() is a utility used by other functions."""
 
     def test_a(self):
@@ -81,7 +81,7 @@ class Test_measurements_stats(object):
             assert_array_equal(centers, [0.5, 8.0])
 
 
-class Test_measurements_select(object):
+class Test_measurements_select:
     """ndimage.measurements._select() is a utility used by other functions."""
 
     def test_basic(self):

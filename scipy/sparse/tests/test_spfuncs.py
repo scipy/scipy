@@ -8,7 +8,7 @@ from scipy.sparse._sparsetools import (csr_scale_rows, csr_scale_columns,
 from scipy.sparse.sputils import matrix
 
 
-class TestSparseFunctions(object):
+class TestSparseFunctions:
     def test_scale_rows_and_cols(self):
         D = matrix([[1,0,0,2,3],
                     [0,4,0,5,0],

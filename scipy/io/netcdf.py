@@ -37,13 +37,11 @@ __all__ = ['netcdf_file', 'netcdf_variable']
 import warnings
 import weakref
 from operator import mul
-from collections import OrderedDict
 from platform import python_implementation
 
 import mmap as mm
 
 import numpy as np
-from numpy.compat import asbytes, asstr
 from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
@@ -97,7 +95,7 @@ REVERSE = {('b', 1): NC_BYTE,
            ('S', 1): NC_CHAR}
 
 
-class netcdf_file(object):
+class netcdf_file:
     """
     A file object for NetCDF data.
 
@@ -262,8 +260,8 @@ class netcdf_file(object):
         self.version_byte = version
         self.maskandscale = maskandscale
 
-        self.dimensions = OrderedDict()
-        self.variables = OrderedDict()
+        self.dimensions = {}
+        self.variables = {}
 
         self._dims = []
         self._recs = 0
@@ -275,7 +273,7 @@ class netcdf_file(object):
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
             self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = OrderedDict()
+        self._attributes = {}
 
         if mode in 'ra':
             self._read()
@@ -295,7 +293,7 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self.variables = OrderedDict()
+                self.variables = {}
                 if self._mm_buf is not None:
                     ref = weakref.ref(self._mm_buf)
                     self._mm_buf = None
@@ -487,7 +485,7 @@ class netcdf_file(object):
         self._write_att_array(var._attributes)
 
         nc_type = REVERSE[var.typecode(), var.itemsize()]
-        self.fp.write(asbytes(nc_type))
+        self.fp.write(nc_type)
 
         if not var.isrec:
             vsize = var.data.size * var.data.itemsize
@@ -580,7 +578,7 @@ class netcdf_file(object):
 
         values = asarray(values, dtype=dtype_)
 
-        self.fp.write(asbytes(nc_type))
+        self.fp.write(nc_type)
 
         if values.dtype.char == 'S':
             nelems = values.itemsize
@@ -619,7 +617,7 @@ class netcdf_file(object):
         count = self._unpack_int()
 
         for dim in range(count):
-            name = asstr(self._unpack_string())
+            name = self._unpack_string().decode('latin1')
             length = self._unpack_int() or None  # None for record dimension
             self.dimensions[name] = length
             self._dims.append(name)  # preserve order
@@ -634,9 +632,9 @@ class netcdf_file(object):
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
-        attributes = OrderedDict()
+        attributes = {}
         for attr in range(count):
-            name = asstr(self._unpack_string())
+            name = self._unpack_string().decode('latin1')
             attributes[name] = self._read_att_values()
         return attributes
 
@@ -727,7 +725,7 @@ class netcdf_file(object):
                 self.variables[var].__dict__['data'] = rec_array[var]
 
     def _read_var(self):
-        name = asstr(self._unpack_string())
+        name = self._unpack_string().decode('latin1')
         dimensions = []
         shape = []
         dims = self._unpack_int()
@@ -792,7 +790,7 @@ class netcdf_file(object):
     def _pack_string(self, s):
         count = len(s)
         self._pack_int(count)
-        self.fp.write(asbytes(s))
+        self.fp.write(s.encode('latin1'))
         self.fp.write(b'\x00' * (-count % 4))  # pad
 
     def _unpack_string(self):
@@ -802,7 +800,7 @@ class netcdf_file(object):
         return s
 
 
-class netcdf_variable(object):
+class netcdf_variable:
     """
     A data object for netcdf files.
 
@@ -865,7 +863,7 @@ class netcdf_variable(object):
         self.dimensions = dimensions
         self.maskandscale = maskandscale
 
-        self._attributes = attributes or OrderedDict()
+        self._attributes = attributes or {}
         for k, v in self._attributes.items():
             self.__dict__[k] = v
 

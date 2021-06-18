@@ -81,7 +81,7 @@ steps:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib Sphinx==1.7.2
+  - script: pip install matplotlib sphinx==3.1
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'
@@ -172,5 +172,3 @@ steps:
       # Skip running gcov since we have already done it
       ./codecov-upload.sh -X gcov
     displayName: 'Upload coverage information'
-
-
