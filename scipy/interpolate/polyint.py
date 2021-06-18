@@ -70,7 +70,7 @@ class _Interpolator1D:
 
         Notes
         -----
-        Input values `x` must be convertible to `float` values like `int` 
+        Input values `x` must be convertible to `float` values like `int`
         or `float`.
 
         """
@@ -539,12 +539,24 @@ class BarycentricInterpolator(_Interpolator1D):
         self.set_yi(yi)
         self.n = len(self.xi)
 
+        # See page 510 of Berrut and Trefethen 2004 for an explanation of the
+        # capacity scaling and the suggestion of using a random permutation of
+        # the input factors.
+        # At the moment, the permutation is not performed for xi that are
+        # appended later through the add_xi interface. It's not clear to me how
+        # to implement that and it seems that most situations that require
+        # these numerical stability improvements will be able to provide all
+        # the points to the constructor.
+        self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
+        permute = np.random.permutation(self.n)
+        inv_permute = np.zeros(self.n, dtype=np.int32)
+        inv_permute[permute] = np.arange(self.n)
+
         self.wi = np.zeros(self.n)
-        self.wi[0] = 1
-        for j in range(1, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
-        self.wi **= -1
+        for i in range(self.n):
+            dist = self._inv_capacity * (self.xi[i] - self.xi[permute])
+            dist[inv_permute[i]] = 1.0
+            self.wi[i] = 1.0 / np.prod(dist)
 
     def set_yi(self, yi, axis=None):
         """
@@ -586,8 +598,9 @@ class BarycentricInterpolator(_Interpolator1D):
             The y coordinates of the points the polynomial should pass through.
             Should have shape ``(xi.size, R)``; if R > 1 then the polynomial is
             vector-valued.
-            If `yi` is not given, the y values will be supplied later. `yi` should
-            be given if and only if the interpolator has y values specified.
+            If `yi` is not given, the y values will be supplied later. `yi`
+            should be given if and only if the interpolator has y values
+            specified.
 
         """
         if yi is not None:
@@ -606,8 +619,10 @@ class BarycentricInterpolator(_Interpolator1D):
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
         for j in range(old_n, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
+            self.wi[:j] *= self._inv_capacity * (self.xi[j]-self.xi[:j])
+            self.wi[j] = np.multiply.reduce(
+                self._inv_capacity * (self.xi[:j]-self.xi[j])
+            )
         self.wi **= -1
 
     def __call__(self, x):
