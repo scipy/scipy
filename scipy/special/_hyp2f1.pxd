@@ -1,22 +1,23 @@
 """
 Implementation of Gauss's hypergeometric function for complex values. This is
 an effort to incrementally translate the Fortran implementation from specfun.f
-into Cython so that it can be maintained more easily and so that it is easier
-to correct defects in the original implementation.
+into Cython so that it's easier to maintain and it's easier to correct defects
+in the original implementation.
 
-Computation of Gauss's hypergeometric function consists of a patchwork of
+Computation of Gauss's hypergeometric function involves handling a patchwork of
 special cases. The goal is to translate the cases into Cython little by little,
 falling back to the Fortran implementation for the cases that are yet to be
-handled. By default, the Fortran original is followed as closely as possible
+handled. By default the Fortran original is followed as closely as possible
 except for situations when an improvement is obvious. Attempts are made to
 document the why behind certain decisions made by the original implementation,
-with references to the NIST Digital Library of Mathematical Functions [1] where
-they are appropriate. The review paper by Pearson et al [2] is an excellent
-resource for best practices for numerical computation of hypergeometric
-functions, and the intent is to follow this paper when making improvements to
-and correcting defects in the original implementation.
+with references to the NIST Digital Library of Mathematical Functions [1] added
+where they are appropriate. The review paper by Pearson et al [2] is an
+excellent resource for best practices for numerical computation of
+hypergeometric functions, and the intent is to follow this paper when making
+improvements to and correcting defects in the original implementation.
 
 Author: Albert Steppi
+
 Distributed under the same license as Scipy.
 
 References
@@ -58,8 +59,7 @@ cdef extern from 'specfun_wrappers.h':
         npy_cdouble
     ) nogil
 
-# Small value from Fortran original. This has been empirically verified to
-# produce better precision on average than using machine epsilon (~2.2e-16).
+# Small value from the Fortran original.
 DEF EPS = 1e-15
 
 DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
@@ -78,20 +78,20 @@ cdef inline double complex hyp2f1_complex(
     modulus_z = zabs(z)
     # Special Cases
     # -------------------------------------------------------------------------
-    # Diverges when c is a negative integer
+    # Diverges when c is a negative integer.
     if c == trunc(c) and c < 0:
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
-    # Equals 1 at z = 0. Constant function 1 when a = 0 or b = 0.
+    # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
     if modulus_z == 0 or a == 0 or b == 0:
         return 1.0 + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0:
         result = Gamma(c) * Gamma(c - a - b)
         result /= Gamma(c - a) * Gamma(c - b)
-        # If there has been an overflow, try again with logs
+        # Try again with logs if there has been an overflow.
         if zisnan(result) or zisinf(result) or result == 0.0:
             result = exp(
                 lgam(c) - lgam(c - a) +
@@ -110,7 +110,7 @@ cdef inline double complex hyp2f1_complex(
         # gamma(1 + 0.5*a)*gamma(0.5 + 0.5*a) = sqrt(pi)*2**(-a)*gamma(1 + a)
         result = SQRT_PI * pow(2, -a) * Gamma(c)
         result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
-        # If there has been an overflow, try again with logs
+        # Try again with logs if there has been an overflow.
         if zisnan(result) or zisinf(result) or result == 0.0:
             result = exp(
                 LOG_PI_2 + lgam(c) - a * M_LN2 +
@@ -153,7 +153,7 @@ cdef inline double complex hyp2f1_complex(
         # the positive direction. For negative a or b, things are trickier and
         # its possible that this transformation can hurt precision by making
         # a or b take negative values that are large in magnitude. We follow
-        # the Fortran original, rather than trying to work out a better
+        # the Fortran original rather than trying to work out a better
         # heuristic for when this transformation improves precision.
         if c - a < a and c - b < b:
             result = zpow(1 - z, c - a - b)
@@ -181,7 +181,7 @@ cdef inline double complex hyp2f1_series(
     """Maclaurin Series for hyp2f1.
 
     Stops computing when the modulus of the difference between the current
-    value of the series and the previous value is smaller than a tolerance rtol
+    value of the series and the previous value is smaller than tolerance rtol
     times the modulus of the current value. This stopping criterion is copied
     from the Fortran original. Returns nan if max_iter is reached before
     converging.
@@ -194,8 +194,8 @@ cdef inline double complex hyp2f1_series(
     for k in range(max_iter + 1):
         previous = result
         # Follows the Fortran original exactly. Do not rewrite with
-        # term *=, this can degrade performance at least on GCC 10.2.0
-        # running on x86_64-linux-gnu.
+        # term *=, this degrades performance with GCC 10.2.0 running on
+        # x86_64-linux-gnu.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         result += term
         if zabs(result - previous) <= zabs(result) * rtol:
@@ -218,7 +218,7 @@ cdef inline double complex hyp2f1_series_fixed(
 
     Used when any of a, b, c - a, or c - a are negative integers and the series
     reduces to a polynomial. This allows this implementation to follow the
-    Fortran original more exactly. The original does not use early stopping
+    Fortran original more closely. The original does not use early stopping
     when a tolerance is reached for these cases.
     """
     cdef:
@@ -226,6 +226,9 @@ cdef inline double complex hyp2f1_series_fixed(
         double complex term = 1 + 0j
         double complex result = 1 + 0j
     for k in range(num_terms + 1):
+        # Follows the Fortran original exactly. Do not rewrite with
+        # term *=, this degrades performance with GCC 10.2.0 running on
+        # x86_64-linux-gnu.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         result += term
     return result
