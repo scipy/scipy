@@ -285,6 +285,6 @@ class TestHyp2f1:
         """0.9 <= |z| <= 1 and |1 - z| >= 1.
 
         This region is unhandled by of the standard transformations and
-        needs special handling.
+        needs special care.
         """
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
