@@ -72,14 +72,38 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csc_matrix
-    >>> from scipy.sparse.linalg import svds, eigs
-    >>> A = csc_matrix([[1, 0, 0], [5, 0, 2], [0, -1, 0], [0, 0, 3]], dtype=float)
-    >>> u, s, vt = svds(A, k=2)
-    >>> s
-    array([ 2.75193379,  5.6059665 ])
-    >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
-    array([ 5.6059665 ,  2.75193379])
+    Construct a matrix ``A`` from singular values and vectors.
+    >>> from scipy.stats import ortho_group
+    >>> from scipy.sparse import csc_matrix, diags
+    >>> from scipy.sparse.linalg import svds
+    >>> rng = np.random.default_rng()
+    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
+    >>> u = orthogonal[:, :5]         # left singular vectors
+    >>> vT = orthogonal[:, 5:].T      # right singular vectors
+    >>> A = u @ diags(s) @ vT
+
+    With only three singular values/vectors, the SVD approximates the original
+    matrix.
+    >>> u2, s2, vT2 = svds(A, k=3, solver='arpack')
+    >>> A2 = u2 @ np.diag(s2) @ vT2
+    >>> np.allclose(A2, A.todense(), atol=1e-3)
+    True
+
+    With all five singular values/vectors, we can reproduce the original
+    matrix.
+    >>> u3, s3, vT3 = svds(A, k=5, solver='arpack')
+    >>> A3 = u3 @ np.diag(s3) @ vT3
+    >>> np.allclose(A3, A.todense())
+    True
+
+    The singular values match the expected singular values, and the singular
+    values are as expected up to a difference in sign. Consequently, the
+    returned arrays of singular vectors must also be orthogonal.
+    >>> (np.allclose(s3, s) and
+    ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
+    ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    True
     """
     pass
 
@@ -153,13 +177,37 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csc_matrix
-    >>> from scipy.sparse.linalg import svds, eigs
-    >>> A = csc_matrix([[1, 0, 0], [5, 0, 2], [0, -1, 0], [0, 0, 3]], dtype=float)
-    >>> u, s, vt = svds(A, k=2)
-    >>> s
-    array([ 2.75193379,  5.6059665 ])
-    >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
-    array([ 5.6059665 ,  2.75193379])
+    Construct a matrix ``A`` from singular values and vectors.
+    >>> from scipy.stats import ortho_group
+    >>> from scipy.sparse import csc_matrix, diags
+    >>> from scipy.sparse.linalg import svds
+    >>> rng = np.random.default_rng()
+    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
+    >>> u = orthogonal[:, :5]         # left singular vectors
+    >>> vT = orthogonal[:, 5:].T      # right singular vectors
+    >>> A = u @ diags(s) @ vT
+
+    With only three singular values/vectors, the SVD approximates the original
+    matrix.
+    >>> u2, s2, vT2 = svds(A, k=3, solver='lobpcg')
+    >>> A2 = u2 @ np.diag(s2) @ vT2
+    >>> np.allclose(A2, A.todense(), atol=1e-3)
+    True
+
+    With all five singular values/vectors, we can reproduce the original
+    matrix.
+    >>> u3, s3, vT3 = svds(A, k=5, solver='lobpcg')
+    >>> A3 = u3 @ np.diag(s3) @ vT3
+    >>> np.allclose(A3, A.todense())
+    True
+
+    The singular values match the expected singular values, and the singular
+    values are as expected up to a difference in sign. Consequently, the
+    returned arrays of singular vectors must also be orthogonal.
+    >>> (np.allclose(s3, s) and
+    ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
+    ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    True
     """
     pass
