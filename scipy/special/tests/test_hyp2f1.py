@@ -255,6 +255,36 @@ class TestHyp2f1:
             ),
         ]
     )
-    def test_domain1(self, a, b, c, z, expected, rtol):
+    def test_region1(self, a, b, c, z, expected, rtol):
         """|z| < 0.9 and real(z) > 0."""
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize(
+        "a,b,c,z,expected,rtol",
+        [
+            (
+                1.0272592605282642,
+                1.0561196186065624,
+                -0.906685989801748,
+                (0.10526315789473673-0.9473684210526316j),
+                (-3.9995506969395778-8.179533155337996j),
+                1e-12,
+            ),
+            (
+                8.5,
+                4.5,
+                8.077282662161238,
+                (0.3157894736842106+0.9473684210526314j),
+                (-0.11307039404123598-0.443195310438102j),
+                1e-12,
+            ),
+        ]
+    )
+    def test_region4(self, a, b, c, z, expected, rtol):
+        """0.9 <= |z| <= 1 and |1 - z| >= 1.
+
+        This region is unhandled by of the standard transformations and
+        needs special handling.
+        """
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
