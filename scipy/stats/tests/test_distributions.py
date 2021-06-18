@@ -239,6 +239,15 @@ class TestBinom(object):
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
 
+class TestArcsine:
+
+    def test_endpoints(self):
+        # Regression test for gh-13697.  The following calculation
+        # should not generate a warning.
+        p = stats.arcsine.pdf([0, 1])
+        assert_equal(p, [np.inf, np.inf])
+
+
 class TestBernoulli(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -5435,7 +5444,7 @@ class TestNakagami:
 
         def dlogl_dnu(nu, loc, scale):
             return ((-2*nu + 1) * np.sum(1/(samples - loc))
-                   + 2*nu/scale**2 * np.sum(samples - loc))
+                    + 2*nu/scale**2 * np.sum(samples - loc))
 
         def dlogl_dloc(nu, loc, scale):
             return (N * (1 + np.log(nu) - polygamma(0, nu)) +
@@ -5506,6 +5515,7 @@ def test_support_gh13294_regression(distname, args):
         a, b = dist.support(*args)
         assert_equal(a, np.nan)
         assert_equal(b, np.nan)
+
 
 def test_support_broadcasting_gh13294_regression():
     a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])

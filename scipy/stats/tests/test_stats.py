@@ -4455,15 +4455,36 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
+    pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
+    pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
     x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
     assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
+    assert_array_almost_equal(stats.skewtest(x, alternative='less'),
+                              (st_skew, pv_skew_less))
+    assert_array_almost_equal(stats.skewtest(x, alternative='greater'),
+                              (st_skew, pv_skew_greater))
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
+    assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
+                              (st_kurt, pv_kurt_less))
+    assert_array_almost_equal(stats.kurtosistest(x, alternative='greater'),
+                              (st_kurt, pv_kurt_greater))
     check_named_results(stats.kurtosistest(x), attributes)
+
+    # some more intuitive tests for kurtosistest and skewtest.
+    # see gh-13549.
+    # skew parameter is 1 > 0
+    a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
+    pval = stats.skewtest(a1, alternative='greater').pvalue
+    assert_almost_equal(pval, 0.0, decimal=5)
+    # excess kurtosis of laplace is 3 > 0
+    a2 = stats.laplace.rvs(size=10000, random_state=123)
+    pval = stats.kurtosistest(a2, alternative='greater').pvalue
+    assert_almost_equal(pval, 0.0)
 
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
@@ -4484,6 +4505,12 @@ def test_normalitytests():
     with np.errstate(all='ignore'):
         assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
     assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
+                  alternative='less')
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
+                  alternative='greater')
+    assert_raises(ValueError, stats.skewtest, list(range(8)),
+                  alternative='foobar')
 
     x = np.arange(30.)
     x[29] = np.nan
@@ -4496,6 +4523,12 @@ def test_normalitytests():
 
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
+                  alternative='less')
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
+                  alternative='greater')
+    assert_raises(ValueError, stats.kurtosistest, list(range(20)),
+                  alternative='foobar')
 
     with np.errstate(all='ignore'):
         assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
@@ -4514,10 +4547,26 @@ def test_normalitytests():
 
 
 class TestRankSums(object):
-    def test_ranksums_result_attributes(self):
-        res = stats.ranksums(np.arange(5), np.arange(25))
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+
+    np.random.seed(0)
+    x, y = np.random.rand(2, 10)
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_ranksums_result_attributes(self, alternative):
+        # ranksums pval = mannwhitneyu pval w/out continuity or tie correction
+        res1 = stats.ranksums(self.x, self.y,
+                              alternative=alternative).pvalue
+        res2 = stats.mannwhitneyu(self.x, self.y, use_continuity=False,
+                                  alternative=alternative).pvalue
+        assert_allclose(res1, res2)
+
+    def test_ranksums_named_results(self):
+        res = stats.ranksums(self.x, self.y)
+        check_named_results(res, ('statistic', 'pvalue'))
+
+    def test_input_validation(self):
+        with assert_raises(ValueError, match="alternative must be 'less'"):
+            stats.ranksums(self.x, self.y, alternative='foobar')
 
 
 class TestJarqueBera(object):
