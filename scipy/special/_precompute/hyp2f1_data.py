@@ -1,9 +1,8 @@
-"""This script tests scipy's implementation of hyp2f1 against mpmath's
+"""This script tests scipy's implementation of hyp2f1 against mpmath's.
 
-Produces a tab separated values file with 11 columns. The first four contain
-the parameters a, b, c and the argument z. The next two contain |z| and a
-region code for which region of the complex plane belongs to. The regions
-are
+Produces a tab separated values file with 11 columns. The first four columns
+contain the parameters a, b, c and the argument z. The next two contain |z| and
+a region code for which region of the complex plane belongs to. The regions are
 
     1) |z| < 0.9 and real(z) >= 0
     2) |z| < 1 and real(z) < 0
@@ -11,7 +10,7 @@ are
     4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9:
     5) |z| > 1
 
-Parameters a, b, c are taken from a 10 * 10 * 10 grid with values near
+Parameters a, b, c are taken from a 10 * 10 * 10 grid with values at
 
     -16, -8, -4, -2, -1, 1, 2, 4, 8, 16
 
@@ -27,18 +26,18 @@ with random perturbations applied. The following cases are handled.
     8) C integral
 
 The seventh column of the output file is an integer between 1 and 8 specifying
-the parameter group above.
+the parameter group as above.
 
 The argument z is taken from a 20 * 20 grid in the box
     -2 <= real(z) <= 2, -2 <= imag(z) <= 2.
 
 The final four columns have the expected value of hyp2f1 for the given
-parameters and argument calculated with mpmath, the observed value calculated
-with scipy's hyp2f1, the relative error, and the absolute error.
+parameters and argument as calculated with mpmath, the observed value
+calculated with scipy's hyp2f1, the relative error, and the absolute error.
 
 As special cases of hyp2f1 are moved from the original Fortran implementation
-into Cython, this script can be used to ensure that no regressions occur, and
-to point out where improvements are needed in the implementation.
+into Cython, this script can be used to ensure that no regressions occur and
+to point out where improvements are needed.
 
 The generated file is roughly 700MB in size. The script has two arguments;
 a positional argument for specifying the path to the location where the output
@@ -46,7 +45,7 @@ file is to be placed, and an optional argument specifying the number of
 processes to use for parallel execution.
 
 Takes around 40 minutes using an Intel(R) Core(TM) i5-8250U CPU with n_jobs
-set to 8 (utilizing all threads).
+set to 8 (full utilization).
 """
 
 
