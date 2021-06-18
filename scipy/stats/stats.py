@@ -47,7 +47,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions
+from ._hypotests import _all_partitions, _vectorize_hypotest_factory
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here

@@ -1686,6 +1686,10 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+def _shapiro_result_creator(res):
+    return ShapiroResult(res[..., 0], res[..., 1])
+
+
 @_vectorize_hypotest_factory(result_creator=_shapiro_result_creator,
                              default_axis=None, n_samples=1)
 
