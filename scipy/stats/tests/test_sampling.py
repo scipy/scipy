@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
 from scipy.stats import TransformedDensityRejection, DiscreteAliasUrn
 from scipy import stats
@@ -332,8 +332,16 @@ class TestTransformedDensityRejection:
         rng = TransformedDensityRejection(common_cont_dist,
                                           max_sqhratio=0.9999,
                                           max_intervals=10000)
-        res = rng.ppf_hat(u)
-        expected = stats.norm.ppf(u)
+        # Older versions of NumPy throw RuntimeWarnings for comparisons with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+            res = rng.ppf_hat(u)
+            expected = stats.norm.ppf(u)
         assert_allclose(res, expected, rtol=1e-3, atol=1e-5)
         assert res.shape == expected.shape
 
