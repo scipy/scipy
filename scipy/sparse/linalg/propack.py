@@ -146,13 +146,15 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     Returns
     -------
     u : ndarray
-        The top `k` left singular vectors, ``shape == (A.shape[0], 3)``,
-        returned only if ``compute_u=True``.
+        The `k` largest (``which="LM"``) or smallest (``which="SM"``) left
+        singular vectors, ``shape == (A.shape[0], 3)``, returned only if
+        ``compute_u=True``.
     sigma : ndarray
         The top `k` singular values, ``shape == (k,)``
     vt : ndarray
-        The top `k` right singular vectors, ``shape == (3, A.shape[1])``,
-        returned only if ``compute_v=True``.
+        The `k` largest (``which="LM"``) or smallest (``which="SM"``) right
+        singular vectors, ``shape == (3, A.shape[1])``, returned only if
+        ``compute_v=True``.
     sigma_bound : ndarray
         the error bounds on the singular values sigma, returned only if
         ``full_output=True``.
