@@ -13,6 +13,15 @@ import scipy.stats.stats
 from functools import wraps
 
 
+# todo: special case empty along axis (handle inside wrapped function)
+# todo: special case empty not along axis
+# add option to let function treat nans
+# ensure that all special cases occur
+# add multiple axes
+# test 1d, too
+# look more closely into how result_creator is working for CVM
+# make default result_creator
+
 def _remove_nans(samples, paired):
     "Remove nans from pair or unpaired samples"
     # consider usnot copying arrays that don't contain nans
@@ -27,9 +36,9 @@ def _remove_nans(samples, paired):
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
 
-
 def _vectorize_hypotest_factory(result_creator, default_axis=0,
-                                n_samples=1, paired=False):
+                                n_samples=1, paired=False,
+                                result_object=None):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
@@ -53,16 +62,16 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
             if np.all(ndims <= 1):
-                # Addresses nan_policy="propagate"
-                if nan_policy == 'propagate':
-                    return hypotest_fun_in(*samples, *args, **kwds)
-
                 # Addresses nan_policy="raise"
                 contains_nans = []
                 for sample in samples:
                     contains_nan, _ = (
                         scipy.stats.stats._contains_nan(sample, nan_policy))
                     contains_nans.append(contains_nan)
+
+                # Addresses nan_policy="propagate"
+                if nan_policy == 'propagate':
+                    return result_object(np.nan, np.nan)
 
                 # Addresses nan_policy="omit" (doesn't get here otherwise)
                 if any(contains_nans):
@@ -82,19 +91,26 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
                 scipy.stats.stats._contains_nan(x, nan_policy))
 
             # Addresses nan_policy="omit"
-            # Assumes nan_policy="propagate" is handled by hypotest_fun_in
-            def hypotest_fun(x):
-                samples = np.split(x, split_indices)[:n_samp]
-                if nan_policy == 'omit' and contains_nan:
+            if contains_nan and nan_policy == 'omit':
+                def hypotest_fun(x):
+                    samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
-                return hypotest_fun_in(*samples, *args, **kwds)
+                    return hypotest_fun_in(*samples, *args, **kwds)
 
-            if np.all(ndims == 1) is None:
-                return hypotest_fun(x)
+            # Addresses nan_policy="propagate"
+            elif contains_nan and nan_policy == 'propagate':
+                def hypotest_fun(x):
+                    if np.isnan(x).any():
+                        return result_object(np.nan, np.nan)
+                    samples = np.split(x, split_indices)[:n_samp]
+                    return hypotest_fun_in(*samples, *args, **kwds)
+
             else:
-                x = np.moveaxis(x, axis, -1)  # needed by result_creator
-                res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-                return result_creator(res)
+                hypotest_fun = hypotest_fun_in
+
+            x = np.moveaxis(x, axis, -1)  # needed by result_creator
+            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
+            return result_creator(res)
 
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
@@ -110,7 +126,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
 @_vectorize_hypotest_factory(
     result_creator=lambda res: Epps_Singleton_2sampResult(res[..., 0],
                                                           res[..., 1]),
-    n_samples=2)
+    n_samples=2, result_object=Epps_Singleton_2sampResult)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -366,7 +382,8 @@ def _cvm_result_creator(res):
         return res
 
 
-@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=1)
+@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=1,
+                             result_object=CramerVonMisesResult)
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -1385,7 +1402,8 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=2)
+@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=2,
+                             result_object=CramerVonMisesResult)
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 

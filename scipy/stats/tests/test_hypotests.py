@@ -863,7 +863,6 @@ vectorization_nanpolicy_cases = [
     (stats.bartlett, tuple(), dict(), 3, None),
     (stats.levene, tuple(),
      {'center': 'mean', 'proportiontocut': 0.025}, 3, None),
-    (stats.pearsonr, tuple(), dict(), 2, None),
     (stats.ks_2samp, ("less",),
      {"mode": 'asymp'}, 2, None),
     (stats.ranksums, tuple(), dict(), 2, None),
@@ -880,16 +879,33 @@ vectorization_nanpolicy_cases = [
     (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2,
      lambda res: (res.pvalue, res.statistic)),
     ]
+paired_tests = {stats.friedmanchisquare,}
+# bad propagate
+# fligner is weird
+# friedmanchisquare treats nan as inf
+# ks_2samp treats nan as inf
+# ks_2samp treats nan as inf
+# ranksums treats nan as inf
+# ansari treats nan as inf
+# shapiro reports pvalue 1.0 when statistic is nan
+# cramervonmises reports pvalue 1.0 when statistic is nan
+# cramervonmises_2samp treats nan as inf reports pvalue 1.0 when statistic is nan
 
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp", "unpacker"),
                          vectorization_nanpolicy_cases)
-@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit"))
+@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (0, 1))
 def test_hypotest_vectorization(hypotest, args, kwds, nsamp, unpacker,
                                 nan_policy, axis):
-    # test that hypothesis tests using _vectorize_2s_hypotest_factory decorator
+    # test that hypothesis tests using _vectorize_hypotest_factory decorator
     # vectorize as expected
+
+    # need to check that all cases are represented:
+    # * axis slice with no nans
+    # * axis slice with some nans
+    # * axis slice with too few data
+    # * axis slice with all nans
 
     if not unpacker:
         def unpacker(res):
@@ -900,9 +916,13 @@ def test_hypotest_vectorization(hypotest, args, kwds, nsamp, unpacker,
     np.random.seed(1)
     x = np.random.rand(nsamp, m, n)
 
-    if nan_policy == 'omit':
-        nan_mask = np.random.rand(nsamp, m, n) > 0.85
-        x[nan_mask] = np.nan
+    nan_mask = np.random.rand(nsamp, m, n) > 0.85
+    x[nan_mask] = np.nan
+
+    if nan_policy == 'raise':
+        with assert_raises(ValueError, match="The input contains nan values"):
+            hypotest(*x, nan_policy="raise", *args, **kwds)
+        return
 
     # perform test along last axis for each element of second to last axis
     # consider rewriting for arbitrary number of dimensions, though
@@ -911,36 +931,29 @@ def test_hypotest_vectorization(hypotest, args, kwds, nsamp, unpacker,
     statz, ps = np.zeros(output_size), np.zeros(output_size)
     for i in range(output_size):
         xi = x2[:, i, :]
+
         if nan_policy == 'omit':
-            if hypotest == stats.pearsonr:
-                mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]))
-                xi = [xji[mask] for xji in xi]
-            elif hypotest == stats.friedmanchisquare:
+            if hypotest in paired_tests:
                 mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]) | np.isnan(xi[2]))
                 xi = [xji[mask] for xji in xi]
             else:
                 xi = [xji[~np.isnan(xji)] for xji in xi]
-        statz[i], ps[i] = unpacker(hypotest(*xi, *args, **kwds))
+            statz[i], ps[i] = unpacker(hypotest(*xi, *args,
+                                                _no_deco=True, **kwds))
+        elif nan_policy == 'propagate':
+            has_nans = np.sum([np.isnan(xji) for xji in xi])
+            if has_nans:
+                statz[i], ps[i] = np.nan, np.nan
+            else:
+                statz[i], ps[i] = unpacker(hypotest(*xi, *args,
+                                                _no_deco=True, **kwds))
+
     res = unpacker(hypotest(*x, axis=axis, nan_policy=nan_policy,
                             *args, **kwds))
     assert_equal(res[0], statz)
     assert_equal(res[1], ps)
     assert_equal(res[0].dtype, ps.dtype)
     assert_equal(res[1].dtype, ps.dtype)
-
-
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp", "unpacker"),
-                         vectorization_nanpolicy_cases)
-def test_hypotest_nan_raise(hypotest, args, kwds, nsamp, unpacker):
-    m, n = 8, 9
-    np.random.seed(0)
-    x = np.random.rand(nsamp, m, n)
-    nan_mask = np.random.rand(nsamp, m, n) > 0.85
-    x[nan_mask] = np.nan
-
-    with assert_raises(ValueError, match="The input contains nan values"):
-        hypotest(*x, nan_policy="raise", *args, **kwds)
-
 
 # previously,
 # pearsonr raised TypeError calling mean
