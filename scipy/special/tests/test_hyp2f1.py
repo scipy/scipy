@@ -5,6 +5,15 @@ from scipy.special import hyp2f1
 
 
 class TestHyp2f1:
+    """Tests for hyp2f1 for complex values.
+
+    Expected values for test cases computed using mpmath. See
+    scipy.special._precompute.hyp2f1_data. The pytest.mark.parametrize
+    style of specifying test cases is used instead of FuncData from
+    scipy.special._testutils to make it easier to mark individual cases as
+    expected to fail. Expected failures are used to highlight cases where
+    improvements are needed.
+    """
     @pytest.mark.parametrize(
         "a,b,c,expected,rtol",
         [
