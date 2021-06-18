@@ -322,6 +322,21 @@ class TestTransformedDensityRejection:
         with pytest.raises(ValueError, match=msg):
             TransformedDensityRejection(common_cont_dist, variant='foo')
 
+    u = [np.linspace(0, 1, num=1000), [], [[]], [np.nan],
+         [-np.inf, np.nan, np.inf], 0,
+         [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]]
+
+    @pytest.mark.parametrize("u", u)
+    def test_ppf_hat(self, u):
+        # Increase the `max_sqhratio` so the ppf_hat is more accurate.
+        rng = TransformedDensityRejection(common_cont_dist,
+                                          max_sqhratio=0.9999,
+                                          max_intervals=10000)
+        res = rng.ppf_hat(u)
+        expected = stats.norm.ppf(u)
+        assert_allclose(res, expected, rtol=1e-3, atol=1e-5)
+        assert res.shape == expected.shape
+
 
 class TestDiscreteAliasUrn:
     # DAU fails on these probably because of large domains and small

@@ -12,6 +12,7 @@ from scipy._lib.ccallback cimport ccallback_t
 from .unuran cimport *
 
 import numpy as np
+from scipy.stats._distn_infrastructure import argsreduce
 
 
 __all__ = ["TransformedDensityRejection", "DiscreteAliasUrn"]
@@ -778,15 +779,24 @@ cdef class TransformedDensityRejection(Method):
         """
         u = np.asarray(u, dtype='d')
         oshape = u.shape
-        N = np.prod(oshape)
-        cdef double[::1] u_view = u.flatten()
-        cdef double[::1] out = np.empty_like(u_view)
-        if N == 0:
-            return np.asarray(out).reshape(oshape)
-        self._ppf_hat(&u_view[0], &out[0], N)
-        if u.ndim == 0:
-            return out[0]
-        return np.asarray(out).reshape(oshape)
+        u = u.ravel()
+        # UNU.RAN fills in ends of the support when u < 0 or u > 1 while
+        # SciPy fills in nans. Prefer SciPy behaviour.
+        cond0 = 0 <= u
+        cond1 = u <= 1
+        cond2 = cond0 & cond1
+        # UNU.RAN fails to recognize NaNs and seg faults when nans are
+        # present. So, handle nan manually.
+        cond3 = np.isnan(u)
+        goodu = argsreduce(cond2, u)[0]
+        out = np.empty_like(u)
+        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef double[::1] goodout = np.empty_like(u_view)
+        if cond2.any():
+            self._ppf_hat(&u_view[0], &goodout[0], len(goodu))
+        np.place(out, cond2, goodout)
+        np.place(out, ~cond2 | cond3, np.nan)
+        return np.asarray(out).reshape(oshape)[()]
 
 
 cdef class DiscreteAliasUrn(Method):

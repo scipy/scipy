@@ -27,7 +27,7 @@ class TDRDist(Protocol):
 
 
 class TransformedDensityRejection(Method):
-    def __init__(self,
+    def __cinit__(self,
                  dist: TDRDist,
                  mode: None | float = ...,
                  center: None | float = ...,
@@ -62,7 +62,7 @@ class DAUDist(Protocol):
     def pmf(self) -> Callable[..., float]: ...
 
 class DiscreteAliasUrn(Method):
-    def __init__(self,
+    def __cinit__(self,
                  pv: None | npt.ArrayLike = ...,
                  dist: None | DAUDist = ...,
                  params: Tuple[Any, ...] = ...,
