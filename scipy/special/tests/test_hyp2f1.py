@@ -259,6 +259,23 @@ class TestHyp2f1:
         """|z| < 0.9 and real(z) > 0."""
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
+    @pytest.mark.parametrize(
+        "a,b,c,z,expected,rtol",
+        [
+            (
+                2.02764642551431,
+                1.0561196186065624,
+                4.078873014294075,
+                (-0.3157894736842106+0.7368421052631575j),
+                (0.7751915029081136+0.24068493258607315j),
+                1e-15,
+            ),
+        ]
+    )
+    def test_region2(self, a, b, c, z, expected, rtol):
+        """|z| < 1 and real(z) < 0."""
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
     @pytest.mark.xfail
     @pytest.mark.parametrize(
         "a,b,c,z,expected,rtol",
