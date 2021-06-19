@@ -671,6 +671,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     fcalls, func = _wrap_function(func, args)
 
+    x0 = asfarray(x0).flatten()
+
     if adaptive:
         dim = float(len(x0))
         rho = 1
@@ -685,8 +687,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     nonzdelt = 0.05
     zdelt = 0.00025
-
-    x0 = asfarray(x0).flatten()
 
     if bounds is not None:
         lower_bound, upper_bound = bounds.lb, bounds.ub
