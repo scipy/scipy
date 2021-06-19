@@ -146,7 +146,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   /* Call function object --- variable passed to routine.  Extra
           arguments are in another passed variable.
    */
-  if ((result = PyEval_CallObject(func, arglist))==NULL) {
+  if ((result = PyObject_CallObject(func, arglist))==NULL) {
       goto fail;
   }
 
