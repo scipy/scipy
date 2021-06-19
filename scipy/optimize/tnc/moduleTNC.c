@@ -23,8 +23,10 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-static char const rcsid[] =
-  "@(#) $Jeannot: moduleTNC.c,v 1.12 2005/01/28 18:27:31 js Exp $";
+/*
+ * static char const rcsid[] =
+ *   "@(#) $Jeannot: moduleTNC.c,v 1.12 2005/01/28 18:27:31 js Exp $";
+ */
 
 #include "Python.h"
 #include "numpy/arrayobject.h"
