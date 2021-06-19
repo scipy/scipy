@@ -67,7 +67,7 @@ static int function(double x[], double *f, double g[], void *state)
   memcpy(PyArray_DATA(py_x), x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
-  result = PyEval_CallObject(py_state->py_function, arglist);
+  result = PyObject_CallObject(py_state->py_function, arglist);
   Py_DECREF(arglist);
 
   if (result == NULL)
@@ -128,7 +128,7 @@ static void callback(double x[], void *state)
   memcpy(PyArray_DATA(py_x), x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
-  result = PyEval_CallObject(py_state->py_callback, arglist);
+  result = PyObject_CallObject(py_state->py_callback, arglist);
   Py_DECREF(arglist);
   Py_XDECREF(result);
 }
