@@ -30,7 +30,7 @@ References
 [2] Pearson, J.W., Olver, S. & Porter, M.A.
     "Numerical methods for the computation of the confluent and Gauss
     hypergeometric functions."
-    Numer Algor 74, 821–866 (2017). https://doi.org/10.1007/s11075-016-0173-0
+    Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
 """
 
 
