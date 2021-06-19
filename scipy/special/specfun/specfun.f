@@ -5788,19 +5788,25 @@ C
         PI=3.141592653589793D0
         EL=.5772156649015329D0
         IF (L0.OR.L1) THEN
+*     Diverges when C is a negative integer (L0).
+*     Diverges when C < A + B and Real(Z) -> 1 (L1).
            ISFER=3
            RETURN
         ENDIF
         NM=0
         IF (A0.EQ.0.0D0.OR.A.EQ.0.0D0.OR.B.EQ.0.0D0) THEN
+*     Equals 1 at Z = 0. Takes constant value 1 when A is 0 or B is 0.
            ZHF=(1.0D0,0.0D0)
         ELSE IF (Z.EQ.1.0D0.AND.C-A-B.GT.0.0D0) THEN
+*     Gauss's Summation Theorem for Z = 1; C - A - B > 0 (DLMF 15.4.20).
            CALL GAMMA2(C,GC)
            CALL GAMMA2(C-A-B,GCAB)
            CALL GAMMA2(C-A,GCA)
            CALL GAMMA2(C-B,GCB)
            ZHF=GC*GCAB/(GCA*GCB)
         ELSE IF (L2) THEN
+*     Kummer's Theorem for Z = -1; C = 1 + A - B (DLMF 15.4.26).
+*     Simplified through Legendre Duplication (DLMF 5.5.5).
            G0=DSQRT(PI)*2.0D0**(-A)
            CALL GAMMA2(C,G1)
            CALL GAMMA2(1.0D0+A/2.0D0-B,G2)
@@ -5814,6 +5820,9 @@ C
            DO 10 K=1,NM
               ZR=ZR*(A+K-1.0D0)*(B+K-1.0D0)/(K*(C+K-1.0D0))*Z
 10            ZHF=ZHF+ZR
+*     If one of C - A or C - B is a negative integer, reduces to evaluating
+*     a polynomial through an Euler hypergeometric transformation
+*     (DLMF 15.8.1).
         ELSE IF (L5.OR.L6) THEN
            IF (L5) NM=INT(ABS(C-A))
            IF (L6) NM=INT(ABS(C-B))
