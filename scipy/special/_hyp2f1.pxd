@@ -136,13 +136,13 @@ cdef inline double complex hyp2f1_complex(
     if condition1 or condition2:
         if (condition1 and condition2):
             if a > b:
-                num_terms = <int> fabs(a) if a != c else <int> fabs(a) - 1
+                num_terms = <int> fabs(a) - 1
             else:
-                num_terms = <int> fabs(b) if b != c else <int> fabs(b) - 1
+                num_terms = <int> fabs(b) - 1
         elif condition1:
-            num_terms = <int> fabs(a) if a != c else <int> fabs(a) - 1
+            num_terms = <int> fabs(a) - 1
         else:
-            num_terms = <int> fabs(b) if b != c else <int> fabs(b) - 1
+            num_terms = <int> fabs(b) - 1
         return hyp2f1_series_fixed(a, b, c, z, num_terms)
     # If one of c - a or c - b is a negative integer, reduces to evaluating
     # a polynomial through an Euler hypergeometric transformation
