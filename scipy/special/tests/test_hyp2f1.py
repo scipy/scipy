@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.special import hyp2f1
@@ -14,6 +15,25 @@ class TestHyp2f1:
     expected to fail. Expected failures are used to highlight cases where
     improvements are needed.
     """
+    @pytest.mark.parametrize(
+        "a,b,c,z,expected,rtol",
+        [
+            (0.5, 0.2, -10, 0.2 + 0.2j, np.inf + 0j, 0),
+            (0.5, 0.2, -10, 0 + 0j, 1 + 0j, 0),
+            (0.5, 0, -10, 0.2 + 0.2j, 1 + 0j, 0),
+            (
+                0.5,
+                -5,
+                -10,
+                0.2 + 0.2j,
+                (1.0495404166666666+0.05708208333333334j),
+                1e-15
+            ),
+        ],
+    )
+    def test_c_negative_int(self, a, b, c, z, expected, rtol):
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
     @pytest.mark.parametrize(
         "a,b,c,expected,rtol",
         [
