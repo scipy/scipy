@@ -132,7 +132,7 @@ cdef inline double complex hyp2f1_complex(
     # If c is a negative integer, but c is less than or equal to one of
     # a or b which is also a negative integer it appears to be customary
     # to return a finite value by terminating the series just before the
-    # denominator of the coefficients first becomes zero. Technically
+    # numerator of the coefficients first becomes zero. Technically
     # hyp2f1 is still undefined in these cases, and note the limit
     #     c -> -N, a -> -n,  -N < -n of hyp2f1
     # will tend to different values depending on how (c, a) approachs (-N, -n).
