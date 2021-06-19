@@ -78,15 +78,19 @@ cdef inline double complex hyp2f1_complex(
     modulus_z = zabs(z)
     # Special Cases
     # -------------------------------------------------------------------------
-    # Diverges when c is a negative integer.
-    if c == trunc(c) and c < 0:
+    # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
+    if modulus_z == 0 or a == 0 or b == 0:
+        return 1.0 + 0.0j
+    # Diverges when c is a negative integer unless c < a <= 0 or c < b <= 0
+    # or z = 0. Cases z = 0, a = 0, or b = 0 have already been handled. The
+    # original Fortran implementation did not handle the case where c is a
+    # negative integer correctly, returning infinity in all situations.
+    if c == trunc(c) and c < 0 and not ((a == trunc(a) and c < a < 0)
+                                        or (b == trunc(b) and c < b < 0)):
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
-    # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
-    if modulus_z == 0 or a == 0 or b == 0:
-        return 1.0 + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0:
         result = Gamma(c) * Gamma(c - a - b)
