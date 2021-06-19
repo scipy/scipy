@@ -31,6 +31,9 @@ References
     "Numerical methods for the computation of the confluent and Gauss
     hypergeometric functions."
     Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
+
+[3] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
+    Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
 """
 
 
@@ -126,13 +129,22 @@ cdef inline double complex hyp2f1_complex(
     # Reduces to a polynomial when a or b is a negative integer.
     condition1 = a == trunc(a) and a < 0
     condition2 = b == trunc(b) and b < 0
-    # This has become very tricky. If c is a negative integer but c == a,
-    # then the series converges but if we naively calculate the series up
-    # to the term of degree |a|, we get a 0 / 0 for the last term. We need
-    # to stop at the term of degree |a| - 1. A similar consideration applies
-    # if c == b. If a, b, and c are all negative integers with one of a or
-    # b of smaller magnitude than c, we need to pick a or b of smallest
-    # magnitude to determine the stopping point.
+    # If c is a negative integer, but c is less than or equal to one of
+    # a or b which is also a negative integer it appears to be customary
+    # to return a finite value by terminating the series just before the
+    # denominator of the coefficients first becomes zero. Technically
+    # hyp2f1 is still undefined in these cases, and note the limit
+    #     c -> -N, a -> -n,  -N < -n of hyp2f1
+    # will tend to different values depending on how (c, a) approachs (-N, -n).
+    # We follow mpmath here. If all of a, b, c are negative integers with one
+    # of a or c greater than or equal to c, we need to ensure that we terminate
+    # the series at degree the smaller of |a| - 1, or |b| - 1. Otherwise we
+    # will have a 0 / 0 when calculating the series. The logic of the original
+    # Fortran implementation doesn't handle this. For more information on
+    # degenerate cases of Gauss's hypergeometric function see [3] in the
+    # references in the docstring for this module. The case c a negative
+    # integer with one of a or b a negative integer greater than or equal to
+    # c is treated there.
     if condition1 or condition2:
         if (condition1 and condition2):
             if a > b:
