@@ -892,71 +892,111 @@ paired_tests = {stats.friedmanchisquare,}
 # cramervonmises_2samp treats nan as inf reports pvalue 1.0 when statistic is nan
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp", "unpacker"),
+def hypotest_nan_data_generator(n_samples, axis, rng, paired=False):
+    # generate random samples test the response of hypothesis tests to
+    # samples with different (but broadcastable shapes) and various
+    # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
+
+    data = []
+    for i in range(n_samples):
+        m = 3  # number of repetitions for each combination of nan pattern
+        n = 6  # number of distinct nan patterns
+        l = 20 if paired else 20 + i  # number of observations per axis slice
+        x = np.ones((m, n, l)) * np.nan
+
+        for j in range(m):
+            samples = x[j, :, :]
+
+            # case 0: axis-slice with all nans (0 reals)
+            # cases 1-3: axis-slice with 1-3 reals (the rest nans)
+            # case 4: axis-slice with mostly reals
+            # case 5: axis slice with all reals
+            for k, num_reals in enumerate([0, 1, 2, 3, l-2, l]):
+                # for cases 1-3, need paired nansw  to be in the same place
+                indices = rng.permutation(l)[:num_reals]
+                samples[k, indices] = rng.random(size=num_reals)
+
+            # permute the axis-slices just to show that order doesn't matter
+            samples[:] = rng.permutation(samples, axis=0)
+
+        # For multi-sample tests, we want to test broadcasting and we want
+        # to make sure that nan policy works correctly for each nan pattern
+        # for each input. This takes care of both simultaneosly.
+        new_shape = [m] + [1]*n_samples + [l]
+        new_shape[1 + i] = 6
+        x = x.reshape(new_shape)
+
+        x = np.moveaxis(x, -1, axis)
+        data.append(x)
+    return data
+
+
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "unpacker"),
                          vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-@pytest.mark.parametrize(("axis"), (0, 1))
-def test_hypotest_vectorization(hypotest, args, kwds, nsamp, unpacker,
-                                nan_policy, axis):
-    # test that hypothesis tests using _vectorize_hypotest_factory decorator
-    # vectorize as expected
-
-    # need to check that all cases are represented:
-    # * axis slice with no nans
-    # * axis slice with some nans
-    # * axis slice with too few data
-    # * axis slice with all nans
+@pytest.mark.parametrize(("axis"), (0, 1, 2))
+def test_hypotest_vectorization_nd(hypotest, args, kwds, n_samples, unpacker,
+                                   nan_policy, axis):
 
     if not unpacker:
         def unpacker(res):
             return res
 
-    m, n = 8, 9
+    paired = hypotest in paired_tests
 
-    np.random.seed(1)
-    x = np.random.rand(nsamp, m, n)
-
-    nan_mask = np.random.rand(nsamp, m, n) > 0.85
-    x[nan_mask] = np.nan
+    data = hypotest_nan_data_generator(n_samples, axis,
+                                       np.random.default_rng(), paired=paired)
 
     if nan_policy == 'raise':
-        with assert_raises(ValueError, match="The input contains nan values"):
-            hypotest(*x, nan_policy="raise", *args, **kwds)
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
         return
 
-    # perform test along last axis for each element of second to last axis
-    # consider rewriting for arbitrary number of dimensions, though
-    x2 = np.moveaxis(x.copy(), axis+1, -1)
-    output_size = x2.shape[-2]
-    statz, ps = np.zeros(output_size), np.zeros(output_size)
-    for i in range(output_size):
-        xi = x2[:, i, :]
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
+                                *args, **kwds))
 
-        if nan_policy == 'omit':
-            if hypotest in paired_tests:
-                mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]) | np.isnan(xi[2]))
-                xi = [xji[mask] for xji in xi]
-            else:
-                xi = [xji[~np.isnan(xji)] for xji in xi]
-            statz[i], ps[i] = unpacker(hypotest(*xi, *args,
-                                                _no_deco=True, **kwds))
-        elif nan_policy == 'propagate':
-            has_nans = np.sum([np.isnan(xji) for xji in xi])
-            if has_nans:
-                statz[i], ps[i] = np.nan, np.nan
-            else:
-                statz[i], ps[i] = unpacker(hypotest(*xi, *args,
-                                                _no_deco=True, **kwds))
+    data = [np.moveaxis(sample, axis, -1) for sample in data]
+    n_samples = len(data)
+    output_shape = [3] + [6]*n_samples
+    data = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
+            for sample in data]
+    statistics = np.zeros(output_shape)
+    pvalues = np.zeros(output_shape)
 
-    res = unpacker(hypotest(*x, axis=axis, nan_policy=nan_policy,
-                            *args, **kwds))
-    assert_equal(res[0], statz)
-    assert_equal(res[1], ps)
-    assert_equal(res[0].dtype, ps.dtype)
-    assert_equal(res[1].dtype, ps.dtype)
+    def hypotest_1d(data1d):
+        if nan_policy=='propagate':
+            for sample in data1d:
+                if np.any(np.isnan(sample)):
+                    return np.nan, np.nan
+        elif nan_policy=='omit':
+            if not paired:
+                data1d = [sample[~np.isnan(sample)] for sample in data1d]
+            else:
+                nan_mask = np.isnan(data1d[0])
+                for sample in data1d[1:]:
+                    nan_mask = np.logical_or(nan_mask, np.isnan(sample))
+                data1d = [sample[~nan_mask] for sample in data1d]
+        for sample in data1d:
+            if len(sample) == 0:
+                return np.nan, np.nan
+        return unpacker(hypotest(*data1d, *args, _no_deco=True, **kwds))
+
+    for i, _ in np.ndenumerate(statistics):
+        data1d = [sample[i] for sample in data]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res1d = hypotest_1d(data1d)
+        statistics[i] = res1d[0]
+        pvalues[i] = res1d[1]
+
+    assert_equal(res[0], statistics)
+    assert_equal(res[1], pvalues)
+    assert_equal(res[0].dtype, statistics.dtype)
+    assert_equal(res[1].dtype, pvalues.dtype)
+
 
 # previously,
-# pearsonr raised TypeError calling mean
 # ranksums produced garbage 1d, as far as I can tell
 # ansari produced garbage 1d, as far as I can tell
 # brunnermunzel raised ValueError about broadcasting

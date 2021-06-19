@@ -13,14 +13,10 @@ import scipy.stats.stats
 from functools import wraps
 
 
-# todo: special case empty along axis (handle inside wrapped function)
-# todo: special case empty not along axis
-# add option to let function treat nans
-# ensure that all special cases occur
-# add multiple axes
+# todo: special case too few observations along axis (handle inside wrapped function)
+# todo: special case empty array (0 along an axis other than `axis`)
+# add option to let function propagate nans
 # test 1d, too
-# look more closely into how result_creator is working for CVM
-# make default result_creator
 
 def _remove_nans(samples, paired):
     "Remove nans from pair or unpaired samples"
@@ -36,9 +32,18 @@ def _remove_nans(samples, paired):
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
 
+
+def _empty_sample(samples):
+    for sample in samples:
+        if len(sample) == 0:
+            return True
+    return False
+
+
 def _vectorize_hypotest_factory(result_creator, default_axis=0,
                                 n_samples=1, paired=False,
-                                result_object=None):
+                                result_object=None,
+                                _too_few_observations=_empty_sample):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
@@ -70,13 +75,16 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy="propagate"
-                if nan_policy == 'propagate':
+                if any(contains_nans) and nan_policy == 'propagate':
                     return result_object(np.nan, np.nan)
 
-                # Addresses nan_policy="omit" (doesn't get here otherwise)
-                if any(contains_nans):
+                # Addresses nan_policy="omit"
+                if any(contains_nans) and nan_policy == 'omit':
                     # consider passing in contains_nans
                     samples = _remove_nans(samples, paired)
+
+                if _too_few_observations(samples):
+                    return result_object(np.nan, np.nan)
 
                 return hypotest_fun_in(*samples, *args, **kwds)
 
@@ -95,6 +103,8 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
+                    if _too_few_observations(samples):
+                        return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, *args, **kwds)
 
             # Addresses nan_policy="propagate"
