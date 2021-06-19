@@ -81,12 +81,12 @@ cdef inline double complex hyp2f1_complex(
     # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
     if modulus_z == 0 or a == 0 or b == 0:
         return 1.0 + 0.0j
-    # Diverges when c is a negative integer unless c < a <= 0 or c < b <= 0
+    # Diverges when c is a negative integer unless c <= a <= 0 or c <= b <= 0
     # or z = 0. Cases z = 0, a = 0, or b = 0 have already been handled. The
     # original Fortran implementation did not handle the case where c is a
     # negative integer correctly, returning infinity in all situations.
-    if c == trunc(c) and c < 0 and not ((a == trunc(a) and c < a < 0)
-                                        or (b == trunc(b) and c < b < 0)):
+    if c == trunc(c) and c < 0 and not ((a == trunc(a) and c <= a < 0)
+                                        or (b == trunc(b) and c <= b < 0)):
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
@@ -126,11 +126,23 @@ cdef inline double complex hyp2f1_complex(
     # Reduces to a polynomial when a or b is a negative integer.
     condition1 = a == trunc(a) and a < 0
     condition2 = b == trunc(b) and b < 0
+    # This has become very tricky. If c is a negative integer but c == a,
+    # then the series converges but if we naively calculate the series up
+    # to the term of degree |a|, we get a 0 / 0 for the last term. We need
+    # to stop at the term of degree |a| - 1. A similar consideration applies
+    # if c == b. If a, b, and c are all negative integers with one of a or
+    # b of smaller magnitude than c, we need to pick a or b of smallest
+    # magnitude to determine the stopping point.
     if condition1 or condition2:
-        if condition1:
-            num_terms = <int> fabs(a)
-        if condition2:
-            num_terms = <int> fabs(b)
+        if (condition1 and condition2):
+            if a > b:
+                num_terms = <int> fabs(a) if a != c else <int> fabs(a) - 1
+            else:
+                num_terms = <int> fabs(b) if b != c else <int> fabs(b) - 1
+        elif condition1:
+            num_terms = <int> fabs(a) if a != c else <int> fabs(a) - 1
+        else:
+            num_terms = <int> fabs(b) if b != c else <int> fabs(b) - 1
         return hyp2f1_series_fixed(a, b, c, z, num_terms)
     # If one of c - a or c - b is a negative integer, reduces to evaluating
     # a polynomial through an Euler hypergeometric transformation
