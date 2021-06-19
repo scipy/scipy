@@ -36,16 +36,21 @@ def _remove_nans(samples, paired):
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
 
-def _vectorize_hypotest_factory(result_creator, default_axis=0,
+
+def _default_unpacker(res):
+    return res[..., 0], res[..., 1]
+
+
+def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
-                                result_object=None):
+                                result_unpacker=_default_unpacker):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
                                        nan_policy='propagate', _no_deco=False,
                                        **kwds):
 
-            if _no_deco: # for testing, decorator does nothing
+            if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
             # if n_samples is None, all args are samples
@@ -108,9 +113,9 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
             else:
                 hypotest_fun = hypotest_fun_in
 
-            x = np.moveaxis(x, axis, -1)  # needed by result_creator
+            x = np.moveaxis(x, axis, -1)  # needed by `unpacker`
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            return result_creator(res)
+            return result_object(*result_unpacker(res))
 
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
@@ -123,10 +128,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: Epps_Singleton_2sampResult(res[..., 0],
-                                                          res[..., 1]),
-    n_samples=2, result_object=Epps_Singleton_2sampResult)
+@_vectorize_hypotest_factory(Epps_Singleton_2sampResult, n_samples=2)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -373,17 +375,8 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-def _cvm_result_creator(res):
-    try:
-        stat = np.vectorize(lambda res_i: res_i.statistic)(res)
-        p = np.vectorize(lambda res_i: res_i.pvalue)(res)
-        return CramerVonMisesResult(stat, p)
-    except TypeError:
-        return res
-
-
-@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=1,
-                             result_object=CramerVonMisesResult)
+@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=1,
+        result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -1402,8 +1395,8 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=2,
-                             result_object=CramerVonMisesResult)
+@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=2,
+        result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 

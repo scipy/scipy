@@ -1686,15 +1686,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
-def _shapiro_result_creator(res):
-    return ShapiroResult(res[..., 0], res[..., 1])
-
-
-@_vectorize_hypotest_factory(result_creator=_shapiro_result_creator,
-                             default_axis=None, n_samples=1,
-                             result_object=ShapiroResult)
-
-
+@_vectorize_hypotest_factory(ShapiroResult, default_axis=None, n_samples=1)
 def shapiro(x):
     """Perform the Shapiro-Wilk test for normality.
 
@@ -2225,9 +2217,7 @@ class _ABW:
 _abw_state = _ABW()
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: AnsariResult(res[..., 0], res[..., 1]),
-    n_samples=2, result_object=AnsariResult)
+@_vectorize_hypotest_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
@@ -2390,10 +2380,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: BartlettResult(res[..., 0],
-                                              res[..., 1]),
-    n_samples=None, result_object=BartlettResult)
+@_vectorize_hypotest_factory(BartlettResult, n_samples=None)
 def bartlett(*args):
     """Perform Bartlett's test for equal variances.
 
@@ -2496,10 +2483,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: LeveneResult(res[..., 0],
-                                            res[..., 1]),
-    n_samples=None, result_object=LeveneResult)
+@_vectorize_hypotest_factory(LeveneResult, n_samples=None)
 def levene(*args, center='median', proportiontocut=0.05):
     """Perform Levene test for equal variances.
 
@@ -2738,10 +2722,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: FlignerResult(res[..., 0],
-                                             res[..., 1]),
-    n_samples=None, result_object=FlignerResult)
+@_vectorize_hypotest_factory(FlignerResult, n_samples=None)
 def fligner(*args, center='median', proportiontocut=0.05):
     """Perform Fligner-Killeen test for equality of variance.
 
