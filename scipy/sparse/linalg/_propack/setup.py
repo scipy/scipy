@@ -1,4 +1,10 @@
-from os.path import join
+from os.path import join, exists
+
+
+def check_propack_submodule():
+    if not exists(join('PROPACK', 'README')):
+        raise RuntimeError("Missing the `PROPACK` submodule! Run "
+                           "`git submodule update --init` to fix this.")
 
 
 def configuration(parent_package='', top_path=None):
@@ -18,7 +24,7 @@ def configuration(parent_package='', top_path=None):
                      d='double',
                      c='complex8',
                      z='complex16')
-
+    check_propack_submodule()
     for prefix, directory in type_dict.items():
         lapack_lib = f'sp_{prefix}lapack_util'
         propack_lib = f'_{prefix}propack'
