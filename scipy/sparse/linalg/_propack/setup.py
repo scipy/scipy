@@ -1,8 +1,9 @@
-from os.path import join, exists
+from os.path import join
+import pathlib
 
 
 def check_propack_submodule():
-    if not exists(join('PROPACK', 'README')):
+    if not (pathlib.Path(__file__).parent / 'PROPACK/README').exists():
         raise RuntimeError("Missing the `PROPACK` submodule! Run "
                            "`git submodule update --init` to fix this.")
 
