@@ -24,6 +24,7 @@ Note: This documentation is work in progress.
 
    stats/discrete
    stats/continuous
+   stats/sampling
 
 
 Random variables
@@ -199,6 +200,9 @@ seed an internal ``Generator`` object:
 
 For further info, see `NumPy's documentation
 <https://numpy.org/doc/stable/reference/random/index.html>`__.
+
+To learn more about the random number samplers implemented in SciPy, see
+the the :ref:`sampling tutorial <non-uniform-random-number-sampling>`
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
