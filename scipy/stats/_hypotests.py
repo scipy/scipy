@@ -13,19 +13,18 @@ import scipy.stats.stats
 from functools import wraps
 
 
-# todo: special case too few observations along axis (handle inside wrapped function)
 # todo: special case empty array (0 along an axis other than `axis`)
 # add option to let function propagate nans
 # test 1d, too
 
 def _remove_nans(samples, paired):
-    "Remove nans from pair or unpaired samples"
-    # consider usnot copying arrays that don't contain nans
+    "Remove nans from paired or unpaired samples"
+    # potential optimization: don't copy arrays that don't contain nans
     if not paired:
         return [sample[~np.isnan(sample)] for sample in samples]
-        # return [sample[~np.isnan(sample)] if contains_nan else sample
-        #         for sample, contains_nan in zip(samples, contains_nans)]
-    # else
+
+    # for paired samples, we need to remove the whole pair when any part
+    # has a nan
     nans = np.isnan(samples[0])
     for sample in samples[1:]:
         nans = nans | np.isnan(sample)
@@ -33,21 +32,19 @@ def _remove_nans(samples, paired):
     return [sample[not_nans] for sample in samples]
 
 
-def _default_unpacker(res):
-    return res[..., 0], res[..., 1]
-
-
-def _small_sample(samples, too_small=0):
-    for sample in samples:
-        if len(sample) <= too_small:
-            return True
-    return False
-
-
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
-                                result_unpacker=_default_unpacker,
-                                too_small=0):
+                                result_unpacker=None, too_small=0):
+    if result_unpacker is None:
+        def result_unpacker(res):
+            return res[..., 0], res[..., 1]
+
+    def is_too_small(samples):
+        for sample in samples:
+            if len(sample) <= too_small:
+                return True
+        return False
+
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
@@ -87,8 +84,11 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                     # consider passing in contains_nans
                     samples = _remove_nans(samples, paired)
 
-                if _small_sample(samples, too_small):
-                    return result_object(np.nan, np.nan)
+                # ideally, this is what the behavior would be, but some
+                # existing functions raise exceptions, so overriding it
+                # would break backward compatibility.
+                # if is_too_small(samples):
+                #     return result_object(np.nan, np.nan)
 
                 return hypotest_fun_in(*samples, *args, **kwds)
 
@@ -107,7 +107,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
-                    if _small_sample(samples, too_small):
+                    if is_too_small(samples):
                         return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, *args, **kwds)
 
@@ -122,7 +122,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             else:
                 hypotest_fun = hypotest_fun_in
 
-            x = np.moveaxis(x, axis, -1)  # needed by `unpacker`
+            x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
             return result_object(*result_unpacker(res))
 
@@ -137,7 +137,8 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(Epps_Singleton_2sampResult, n_samples=2)
+@_vectorize_hypotest_factory(Epps_Singleton_2sampResult, n_samples=2,
+                             too_small=5)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -384,7 +385,7 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=1,
+@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=1, too_small=1,
         result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
@@ -1404,7 +1405,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=2,
+@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=2, too_small=1,
         result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.

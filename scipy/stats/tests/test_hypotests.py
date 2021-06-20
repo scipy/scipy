@@ -863,8 +863,7 @@ vectorization_nanpolicy_cases = [
     (stats.bartlett, tuple(), dict(), 3, None),
     (stats.levene, tuple(),
      {'center': 'mean', 'proportiontocut': 0.025}, 3, None),
-    (stats.ks_2samp, ("less",),
-     {"mode": 'asymp'}, 2, None),
+    (stats.ks_2samp, ("less",), {"mode": 'asymp'}, 2, None),
     (stats.ranksums, tuple(), dict(), 2, None),
     (stats.ansari, tuple(), dict(), 2, None),
     (stats.brunnermunzel, ("less",),
@@ -892,19 +891,19 @@ paired_tests = {stats.friedmanchisquare,}
 # cramervonmises_2samp treats nan as inf reports pvalue 1.0 when statistic is nan
 
 
-def hypotest_nan_data_generator(n_samples, axis, rng, paired=False):
+def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
+                                paired=False):
     # generate random samples test the response of hypothesis tests to
     # samples with different (but broadcastable shapes) and various
     # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
 
     data = []
     for i in range(n_samples):
-        m = 3  # number of repetitions for each combination of nan pattern
         n = 6  # number of distinct nan patterns
         l = 20 if paired else 20 + i  # number of observations per axis slice
-        x = np.ones((m, n, l)) * np.nan
+        x = np.ones((n_repetitions, n, l)) * np.nan
 
-        for j in range(m):
+        for j in range(n_repetitions):
             samples = x[j, :, :]
 
             # case 0: axis-slice with all nans (0 reals)
@@ -919,10 +918,10 @@ def hypotest_nan_data_generator(n_samples, axis, rng, paired=False):
             # permute the axis-slices just to show that order doesn't matter
             samples[:] = rng.permutation(samples, axis=0)
 
-        # For multi-sample tests, we want to test broadcasting and we want
-        # to make sure that nan policy works correctly for each nan pattern
-        # for each input. This takes care of both simultaneosly.
-        new_shape = [m] + [1]*n_samples + [l]
+        # For multi-sample tests, we want to test broadcasting and check
+        # that nan policy works correctly for each nan pattern for each input.
+        # This takes care of both simultaneosly.
+        new_shape = [n_repetitions] + [1]*n_samples + [l]
         new_shape[1 + i] = 6
         x = x.reshape(new_shape)
 
@@ -933,10 +932,17 @@ def hypotest_nan_data_generator(n_samples, axis, rng, paired=False):
 
 def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                     nan_policy='raise', paired=False,_no_deco=True, **kwds):
-    if nan_policy=='propagate':
+
+    if nan_policy=='raise':
+        for sample in data1d:
+            if np.any(np.isnan(sample)):
+                raise ValueError("The input contains nan values")
+
+    elif nan_policy=='propagate':
         for sample in data1d:
             if np.any(np.isnan(sample)):
                 return np.nan, np.nan
+
     elif nan_policy=='omit':
         if not paired:
             data1d = [sample[~np.isnan(sample)] for sample in data1d]
@@ -945,9 +951,7 @@ def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
             for sample in data1d[1:]:
                 nan_mask = np.logical_or(nan_mask, np.isnan(sample))
             data1d = [sample[~nan_mask] for sample in data1d]
-    for sample in data1d:
-        if len(sample) == 0:
-            return np.nan, np.nan
+
     return unpacker(hypotest(*data1d, *args, _no_deco=True, **kwds))
 
 
@@ -964,8 +968,9 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, unpacker,
 
     paired = hypotest in paired_tests
 
-    data = hypotest_nan_data_generator(n_samples, axis,
-                                       np.random.default_rng(), paired=paired)
+    data = hypotest_nan_data_generator(n_samples, n_repetitions=3, axis=axis,
+                                       rng=np.random.default_rng(0),
+                                       paired=paired)
 
     if nan_policy == 'raise':
         message = 'The input contains nan values'
@@ -992,12 +997,22 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, unpacker,
                 res1d = hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                                         nan_policy=nan_policy, paired=paired,
                                         _no_deco=True, **kwds)
-            except (RuntimeWarning, ValueError) as e:
+            # When there is not enough data in 1D samples, many existing
+            # hypothesis tests raise errors instead of returning nans .
+            # For vectorized calls, we put nans in the corresponding elements
+            # of the output.
+            except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
                 messages = {"Degrees of freedom <= 0 for slice",
                             "x and y should have at least 5 elements",
                             "Data must be at least length 3",
                             "The sample must contain at least two",
-                            "x and y must contain at least two"}
+                            "x and y must contain at least two",
+                            "division by zero",
+                            "Mean of empty slice",
+                            "Data passed to ks_2samp must not be empty",
+                            "Not enough other observations",
+                            "At least one observation is required",
+                            "zero-size array to reduction operation maximum"}
                 if any([str(e).startswith(message) for message in messages]):
                     return np.nan, np.nan
                 else:

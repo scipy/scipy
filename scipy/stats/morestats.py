@@ -1686,7 +1686,8 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(ShapiroResult, default_axis=None, n_samples=1)
+@_vectorize_hypotest_factory(ShapiroResult, default_axis=None, n_samples=1,
+                             too_small=2)
 def shapiro(x):
     """Perform the Shapiro-Wilk test for normality.
 
@@ -2380,7 +2381,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(BartlettResult, n_samples=None)
+@_vectorize_hypotest_factory(BartlettResult, n_samples=None, too_small=1)
 def bartlett(*args):
     """Perform Bartlett's test for equal variances.
 
