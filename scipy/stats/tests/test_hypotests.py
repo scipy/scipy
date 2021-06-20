@@ -931,11 +931,31 @@ def hypotest_nan_data_generator(n_samples, axis, rng, paired=False):
     return data
 
 
+def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
+                    nan_policy='raise', paired=False,_no_deco=True, **kwds):
+    if nan_policy=='propagate':
+        for sample in data1d:
+            if np.any(np.isnan(sample)):
+                return np.nan, np.nan
+    elif nan_policy=='omit':
+        if not paired:
+            data1d = [sample[~np.isnan(sample)] for sample in data1d]
+        else:
+            nan_mask = np.isnan(data1d[0])
+            for sample in data1d[1:]:
+                nan_mask = np.logical_or(nan_mask, np.isnan(sample))
+            data1d = [sample[~nan_mask] for sample in data1d]
+    for sample in data1d:
+        if len(sample) == 0:
+            return np.nan, np.nan
+    return unpacker(hypotest(*data1d, *args, _no_deco=True, **kwds))
+
+
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "unpacker"),
                          vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
-def test_hypotest_vectorization_nd(hypotest, args, kwds, n_samples, unpacker,
+def test_hypotest_vectorization(hypotest, args, kwds, n_samples, unpacker,
                                    nan_policy, axis):
 
     if not unpacker:
@@ -965,28 +985,23 @@ def test_hypotest_vectorization_nd(hypotest, args, kwds, n_samples, unpacker,
     statistics = np.zeros(output_shape)
     pvalues = np.zeros(output_shape)
 
-    def hypotest_1d(data1d):
-        if nan_policy=='propagate':
-            for sample in data1d:
-                if np.any(np.isnan(sample)):
-                    return np.nan, np.nan
-        elif nan_policy=='omit':
-            if not paired:
-                data1d = [sample[~np.isnan(sample)] for sample in data1d]
-            else:
-                nan_mask = np.isnan(data1d[0])
-                for sample in data1d[1:]:
-                    nan_mask = np.logical_or(nan_mask, np.isnan(sample))
-                data1d = [sample[~nan_mask] for sample in data1d]
-        for sample in data1d:
-            if len(sample) == 0:
-                return np.nan, np.nan
-        return unpacker(hypotest(*data1d, *args, _no_deco=True, **kwds))
-
     for i, _ in np.ndenumerate(statistics):
         data1d = [sample[i] for sample in data]
         with np.errstate(divide='ignore', invalid='ignore'):
-            res1d = hypotest_1d(data1d)
+            try:
+                res1d = hypotest_1d_nan(hypotest, data1d, unpacker, *args,
+                                        nan_policy=nan_policy, paired=paired,
+                                        _no_deco=True, **kwds)
+            except (RuntimeWarning, ValueError) as e:
+                messages = {"Degrees of freedom <= 0 for slice",
+                            "x and y should have at least 5 elements",
+                            "Data must be at least length 3",
+                            "The sample must contain at least two",
+                            "x and y must contain at least two"}
+                if any([str(e).startswith(message) for message in messages]):
+                    return np.nan, np.nan
+                else:
+                    raise e
         statistics[i] = res1d[0]
         pvalues[i] = res1d[1]
 
