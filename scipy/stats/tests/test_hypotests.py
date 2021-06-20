@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from itertools import product
+import re
 
 import numpy as np
 import pytest
@@ -62,9 +63,12 @@ class TestEppsSingleton:
     def test_epps_singleton_nonfinite(self):
         # raise error if there are non-finite values
         x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
+        with assert_raises(ValueError, match='x must not contain nonfinite'):
+            epps_singleton_2samp(x, y, nan_policy='raise')
+
         x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
+        with assert_raises(ValueError, match='The input contains nan values'):
+            epps_singleton_2samp(x, y, nan_policy='raise')
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
@@ -855,30 +859,30 @@ class TestSomersD:
 
 
 vectorization_nanpolicy_cases = [
-    # function, args, kwds, number of samples, unpacker function
+    # function, args, kwds, number of samples, paired, unpacker function
     # args, kwds typically aren't needed; just showing that they work
-    (stats.fligner, tuple(), dict(), 4, None),
-    (stats.kruskal, tuple(), dict(), 4, None),
-    (stats.friedmanchisquare, tuple(), dict(), 3, None),
-    (stats.bartlett, tuple(), dict(), 3, None),
+    (stats.fligner, tuple(), dict(), 3, False, None),  # 4 samples is slow
+    (stats.kruskal, tuple(), dict(), 3, False, None),  # 4 samples is slow
+    (stats.friedmanchisquare, tuple(), dict(), 3, True, None),
+    (stats.bartlett, tuple(), dict(), 3, False, None),
     (stats.levene, tuple(),
-     {'center': 'mean', 'proportiontocut': 0.025}, 3, None),
-    (stats.ks_2samp, ("less",), {"mode": 'asymp'}, 2, None),
-    (stats.ranksums, tuple(), dict(), 2, None),
-    (stats.ansari, tuple(), dict(), 2, None),
+     {'center': 'mean', 'proportiontocut': 0.025}, 3, False, None),
+    (stats.ks_2samp, ("less",), {"mode": 'asymp'}, 2, False, None),
+    (stats.ranksums, tuple(), dict(), 2, False, None),
+    (stats.ansari, tuple(), dict(), 2, False, None),
     (stats.brunnermunzel, ("less",),
-     {"distribution": 'normal'}, 2, None),
-    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2, None),
-    (stats.shapiro, tuple(), dict(), 1, None),
-    (stats.jarque_bera, tuple(), dict(), 1, None),
+     {"distribution": 'normal'}, 2, False, None),
+    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2, False, None),
+    (stats.shapiro, tuple(), dict(), 1, False, None),
+    (stats.jarque_bera, tuple(), dict(), 1, False, None),
     (stats.ks_1samp, (ndtr,),
-     {"alternative": "less", "mode": 'asymp'}, 1, None),
-    (stats.cramervonmises, (ndtr,), dict(), 1,
+     {"alternative": "less", "mode": 'asymp'}, 1, False, None),
+    (stats.cramervonmises, (ndtr,), dict(), 1, False,
      lambda res: (res.pvalue, res.statistic)),
-    (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2,
+    (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2, False,
      lambda res: (res.pvalue, res.statistic)),
     ]
-paired_tests = {stats.friedmanchisquare,}
+
 # bad propagate
 # fligner is weird
 # friedmanchisquare treats nan as inf
@@ -931,7 +935,7 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
 
 
 def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
-                    nan_policy='raise', paired=False,_no_deco=True, **kwds):
+                    nan_policy='raise', paired=False, _no_deco=True, **kwds):
 
     if nan_policy=='raise':
         for sample in data1d:
@@ -939,11 +943,16 @@ def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                 raise ValueError("The input contains nan values")
 
     elif nan_policy=='propagate':
+        # For all hypothesis tests tested, returning nans is the right thing.
+        # But many hypothesis tests don't propagate correctly (e.g. they treat
+        # np.nan the same as np.inf, which doesn't make sense when ranks are
+        # involved) so override that behavior here.
         for sample in data1d:
             if np.any(np.isnan(sample)):
                 return np.nan, np.nan
 
     elif nan_policy=='omit':
+        # manually omit nans (or pairs in which at least one element is nan)
         if not paired:
             data1d = [sample[~np.isnan(sample)] for sample in data1d]
         else:
@@ -952,57 +961,67 @@ def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                 nan_mask = np.logical_or(nan_mask, np.isnan(sample))
             data1d = [sample[~nan_mask] for sample in data1d]
 
-    return unpacker(hypotest(*data1d, *args, _no_deco=True, **kwds))
+    return unpacker(hypotest(*data1d, *args, _no_deco=_no_deco, **kwds))
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "unpacker"),
-                         vectorization_nanpolicy_cases)
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
+                          "unpacker"), vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
-def test_hypotest_vectorization(hypotest, args, kwds, n_samples, unpacker,
-                                   nan_policy, axis):
+def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
+                                unpacker, nan_policy, axis):
+    # Tests the 1D and vectorized behavior of hypothesis tests against a
+    # reference implementation (hypotest_1d_nan with np.ndenumerate)
 
+    # Some hypothesis tests return a non-iterable that needs an `unpacker` to
+    # extract the statistic and p-value. For those that don't:
     if not unpacker:
         def unpacker(res):
             return res
 
-    paired = hypotest in paired_tests
-
+    # Generate multi-dimensional test data with all important combinations
+    # of patterns of nans along `axis`
     data = hypotest_nan_data_generator(n_samples, n_repetitions=3, axis=axis,
-                                       rng=np.random.default_rng(0),
-                                       paired=paired)
+                                        rng=np.random.default_rng(0),
+                                        paired=paired)
 
-    if nan_policy == 'raise':
-        message = 'The input contains nan values'
-        with pytest.raises(ValueError, match=message):
-            hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
-        return
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
-                                *args, **kwds))
-
-    data = [np.moveaxis(sample, axis, -1) for sample in data]
-    n_samples = len(data)
+    # To generate reference behavior to compare against, loop over the axis-
+    # slices in data. Make indexing easier by moving `axis` to the end and
+    # broadcasting all samples to the same shape.
+    data_b = [np.moveaxis(sample, axis, -1) for sample in data]
     output_shape = [3] + [6]*n_samples
-    data = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
-            for sample in data]
+    data_b = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
+              for sample in data_b]
     statistics = np.zeros(output_shape)
     pvalues = np.zeros(output_shape)
 
     for i, _ in np.ndenumerate(statistics):
-        data1d = [sample[i] for sample in data]
+        data1d = [sample[i] for sample in data_b]
         with np.errstate(divide='ignore', invalid='ignore'):
             try:
                 res1d = hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                                         nan_policy=nan_policy, paired=paired,
                                         _no_deco=True, **kwds)
+
+                # Eventually we'll check res1d against a single, vectorized
+                # call to the hypothesis test. But also check the bevahior
+                # of a 1d call to the hypothesis test against the reference.
+                res1db = unpacker(hypotest(*data1d, *args,
+                                           nan_policy=nan_policy, **kwds))
+                assert_equal(res1db, res1d)
+
             # When there is not enough data in 1D samples, many existing
             # hypothesis tests raise errors instead of returning nans .
             # For vectorized calls, we put nans in the corresponding elements
             # of the output.
             except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
-                messages = {"Degrees of freedom <= 0 for slice",
+
+                with pytest.raises(type(e), match=re.escape(str(e))):
+                    res1db = unpacker(hypotest(*data1d, *args,
+                                               nan_policy=nan_policy, **kwds))
+
+                messages = {"The input contains nan",  # for nan_policy="raise"
+                            "Degrees of freedom <= 0 for slice",
                             "x and y should have at least 5 elements",
                             "Data must be at least length 3",
                             "The sample must contain at least two",
@@ -1010,20 +1029,33 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, unpacker,
                             "division by zero",
                             "Mean of empty slice",
                             "Data passed to ks_2samp must not be empty",
+                            "Not enough test observations",
                             "Not enough other observations",
                             "At least one observation is required",
                             "zero-size array to reduction operation maximum"}
                 if any([str(e).startswith(message) for message in messages]):
-                    return np.nan, np.nan
+                    res1d = np.nan, np.nan
                 else:
                     raise e
         statistics[i] = res1d[0]
         pvalues[i] = res1d[1]
 
-    assert_equal(res[0], statistics)
-    assert_equal(res[1], pvalues)
-    assert_equal(res[0].dtype, statistics.dtype)
-    assert_equal(res[1].dtype, pvalues.dtype)
+    # Perform a vectorized call to the hypothesis test and compare against
+    # the reference `statistics` and `pvalues`
+    if nan_policy == 'raise':
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
+
+    else:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
+                                    *args, **kwds))
+
+        assert_equal(res[0], statistics)
+        assert_equal(res[1], pvalues)
+        assert_equal(res[0].dtype, statistics.dtype)
+        assert_equal(res[1].dtype, pvalues.dtype)
 
 
 # previously,

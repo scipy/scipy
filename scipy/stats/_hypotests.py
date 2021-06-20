@@ -15,7 +15,8 @@ from functools import wraps
 
 # todo: special case empty array (0 along an axis other than `axis`)
 # add option to let function propagate nans
-# test 1d, too
+# address brunner-munzel issue - if overriding nan_policy, positional arg
+#   needs to be considered
 
 def _remove_nans(samples, paired):
     "Remove nans from paired or unpaired samples"
