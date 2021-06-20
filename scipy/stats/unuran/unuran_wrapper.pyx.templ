@@ -1,6 +1,10 @@
 # cython: language_level=3
 
 
+# As we use a lot of curly brackets, don't use Python format strings here
+# Instead, search for this using the `re` module and replace it with a
+# boolean. As this exact expression never occurs more than once, this should
+# work.
 DEF NPY_OLD = isNPY_OLD
 
 
@@ -18,23 +22,36 @@ from scipy.stats._distn_infrastructure import argsreduce
 __all__ = ["TransformedDensityRejection", "DiscreteAliasUrn"]
 
 
+# Internal API for handling Python callbacks.
+# TODO: maybe, support `LowLevelCallable`s in the future?
 cdef extern from "unuran_callback.h":
+    # callbacks is a dictionary of Python functions with name as their key.
+    # The allowed keys are "pdf", "cdf", "dpdf", or "pmf".
+    # params is a Python tuple containing extra arguments taken by the
+    # callbacks. All the callbacks are expected to have similar signatures.
     ctypedef struct unuran_callback_t:
         PyObject *callbacks
         PyObject *params
 
+    # initialize a callback i.e. fill in the `callback` object and
+    # `unur_callback` object with required callbacks (`fcn_dict`) and
+    # argument list (`extra_args_list`)
     int init_unuran_callback(ccallback_t *callback,
                              unuran_callback_t *unur_callback,
                              fcn_dict, extra_args_list) except -1
+    # release a callback i.e. clean `callback` and `unur_callback` objects
+    # and decrement references if required.
     int release_unuran_callback(ccallback_t *callback,
                                 unuran_callback_t *unur_callback) except -1
 
+    # C thunks for handling callbacks
     double pdf_thunk(double x, const unur_distr *distr) nogil
     double dpdf_thunk(double x, const unur_distr *distr) nogil
     double cont_cdf_thunk(double x, const unur_distr *distr) nogil
     double pmf_thunk(int k, const unur_distr *distr) nogil
     double discr_cdf_thunk(int k, const unur_distr *distr) nogil
 
+    # An error handler to handle errors occuring in UNU.RAN
     void error_handler(const char *objid, const char *file,
                        int line, const char *errortype,
                        int unur_errno, const char *reason) nogil
@@ -48,6 +65,8 @@ cdef void set_error_handler():
 set_error_handler()
 
 
+# TODO: if we are dropping NumPy 1.16, this can be changed to use
+#       the cython API for BitGenerators.
 IF not NPY_OLD:
     from numpy.random cimport bitgen_t
     from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
@@ -131,18 +150,26 @@ ELSE:
         return np.random.RandomState(seed)
 
 
+# UNU.RAN requires us to set a default URNG before we can create
+# distributions/parameters/generators. As the default URNG has been
+# removed from UNU.RAN, set a NumPy BitGenerator as default URNG on
+# import.
+
 cdef:
     unur_urng *default_urng = NULL
     unur_urng *default_urng_aux = NULL
     object default_numpy_rng = None
 
 IF NPY_OLD:
+    # a global function for generating uniform random numbers
+    # using old numpy's python interface.
     cdef double _global_next_double(void *state) nogil:
         with gil:
             global default_numpy_rng
             return default_numpy_rng.uniform()
 
 
+# a function to set the default URNG
 cdef object set_default_urng():
     """Sets the default UNU.RAN uniform random number generator"""
     cdef unur_urng *urng
@@ -151,12 +178,16 @@ cdef object set_default_urng():
     if NPY_OLD:
         global _global_next_double
 
+    # if the NumPy RNG has already been set, no need to initialize
+    # a new one.
     if default_numpy_rng is None:
+        # if the default_urng is not NULL, free it before setting a new one.
         if default_urng != NULL:
             unur_urng_free(default_urng)
             default_urng = NULL
         default_numpy_rng = get_numpy_rng()
 
+    # try to set a default URNG.
     try:
         IF not NPY_OLD:
             urng = get_urng(default_numpy_rng)
@@ -284,17 +315,14 @@ cdef class Method:
     A base class for all the methods.
 
     This class implements the `rvs` method which is common between all the
-    methods. It requires `_method_type` member of the class which indicates
-    whether the method extending this class samples from a continuous or a
-    discrete distribution. It can take on the value "discr" if it samples
-    from a discrete distribution, "cont" otherwise. The extending class must
-    also provide `callbacks` which need to be captured before sampling. In
+    methods. The extending class must set the `callbacks` member of this
+    class with Python callbacks that need to be captured before sampling. In
     case no callbacks need to be captured, an empty dictionary is expected.
     Moreover, `params` must be a tuple containing the extra arguments that
     the `callbacks` take. If none, an empty tuple is expected.
 
     `rng` is the initialized UNU.RAN generator object which can be used to
-    obtain, change, or reinitalize required parameters.
+    obtain, change, or reinitalize required parameters and function.
     """
     cdef unur_gen *rng
     cdef unur_urng *urng
@@ -302,6 +330,9 @@ cdef class Method:
     cdef object callbacks
     cdef object params
     IF NPY_OLD:
+        # define a function for sampling uniform random number for
+        # old version of NumPy. Here, ``self`` is used as the state
+        # of the URNG to obtain the NumPy RNG.
         cdef double _next_double(self) nogil:
             with gil:
                 return self.numpy_rng.uniform()
@@ -328,6 +359,9 @@ cdef class Method:
             IF not NPY_OLD:
                 urng = get_urng(self.numpy_rng)
             ELSE:
+                # use self._next_double to generate uniform random numbers.
+                # Pass ``self`` as the state because it is required to obtain
+                # the NumPy RNG to sample from.
                 urng = unur_urng_new(<URNG_FUNCT>self._next_double,
                                      <void *>self)
             unur_set_urng(par, urng)
