@@ -82,6 +82,7 @@ cdef inline double complex hyp2f1_complex(
     # Special Cases
     # -------------------------------------------------------------------------
     # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
+    # We follow mpmath to return 1 when z is 0 but c is a negative integer.
     if modulus_z == 0 or a == 0 or b == 0:
         return 1.0 + 0.0j
     # Diverges when c is a negative integer unless c <= a <= 0 or c <= b <= 0
