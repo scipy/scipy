@@ -81,16 +81,24 @@ cdef inline double complex hyp2f1_complex(
     modulus_z = zabs(z)
     # Special Cases
     # -------------------------------------------------------------------------
-    # Equals 1 at z = 0. Takes constant value 1 when a = 0 or b = 0.
-    # We follow mpmath to return 1 when z is 0 but c is a negative integer.
-    if modulus_z == 0 or a == 0 or b == 0:
+    # Takes constant value 1 when a = 0 or b = 0, even if c is a non-positive
+    # integer. This follows mpmath.
+    if a == 0 or b == 0:
         return 1.0 + 0.0j
-    # Diverges when c is a negative integer unless c <= a <= 0 or c <= b <= 0
-    # or z = 0. Cases z = 0, a = 0, or b = 0 have already been handled. The
-    # original Fortran implementation did not handle the case where c is a
-    # negative integer correctly, returning infinity in all situations.
-    if c == trunc(c) and c < 0 and not ((a == trunc(a) and c <= a < 0)
-                                        or (b == trunc(b) and c <= b < 0)):
+    # Equals 1 when z is 0, unless c is 0.
+    if modulus_z == 0:
+        if c != 0:
+            return 1.0 + 0.0j
+        else:
+            # Returning real part NAN and imaginary part 0 follows mpmath.
+            return zpack(NPY_NAN, 0)
+    # Diverges when c is a non-positive integer unless a is an integer with c
+    # <= a <= 0 or b is an integer with c <= b <= 0, (or z equals 0 with c !=
+    # 0) Cases z = 0, a = 0, or b = 0 have already been handled. The original
+    # Fortran implementation did not handle the case where c is a negative
+    # integer correctly, returning infinity in all situations.
+    if c == trunc(c) and c <= 0 and not ((a == trunc(a) and c <= a < 0)
+                                         or (b == trunc(b) and c <= b < 0)):
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
