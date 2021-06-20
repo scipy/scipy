@@ -148,8 +148,9 @@ cdef inline double complex hyp2f1_complex(
     # We follow mpmath here. If all of a, b, c are negative integers with one
     # of a or c greater than or equal to c, we need to ensure that we terminate
     # the series at degree the smaller of |a| - 1, or |b| - 1. Otherwise we
-    # will have a 0 / 0 when calculating the series. The logic of the original
-    # Fortran implementation doesn't handle this. For more information on
+    # will have a 0 / 0 when calculating the series. The logic used in the
+    # Fortran implementation doesn't handle this since it always returns
+    # infinity when c is a non-positive integer. For more information on
     # degenerate cases of Gauss's hypergeometric function see [3] in the
     # references in the docstring for this module. The case c a negative
     # integer with one of a or b a negative integer greater than or equal to
@@ -231,8 +232,9 @@ cdef inline double complex hyp2f1_series(
     for k in range(max_iter + 1):
         previous = result
         # Follows the Fortran original exactly. Do not rewrite with
-        # term *=, this degrades performance with GCC 10.2.0 running on
-        # x86_64-linux-gnu.
+        # term *=, this degrades precision at least with GCC 10.2.0 running
+        # on x86_64-linux-gnu. TODO: check assembler output to see what's
+        # going on here.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         result += term
         if zabs(result - previous) <= zabs(result) * rtol:
@@ -264,8 +266,9 @@ cdef inline double complex hyp2f1_series_fixed(
         double complex result = 1 + 0j
     for k in range(num_terms + 1):
         # Follows the Fortran original exactly. Do not rewrite with
-        # term *=, this degrades performance with GCC 10.2.0 running on
-        # x86_64-linux-gnu.
+        # term *=, this degrades precision at least with GCC 10.2.0 running on
+        # x86_64-linux-gnu. TODO: Check assembler output to see what's going on
+        # here.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         result += term
     return result
