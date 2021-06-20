@@ -21,6 +21,9 @@ class TestHyp2f1:
             (0.5, 0.2, -10, 0.2 + 0.2j, np.inf + 0j, 0),
             (0.5, 0.2, -10, 0 + 0j, 1 + 0j, 0),
             (0.5, 0, -10, 0.2 + 0.2j, 1 + 0j, 0),
+            (0.5, 0, 0, 0.2 + 0.2j, 1 + 0j, 0),
+            (0.5, 0.2, 0, 0.2 + 0.2j, np.inf + 0j, 0),
+            (0.5, 0.2, 0, 0 + 0j, np.nan + 0j, 0),
             (
                 0.5,
                 -5,
@@ -55,7 +58,7 @@ class TestHyp2f1:
             ),
         ],
     )
-    def test_c_negative_int(self, a, b, c, z, expected, rtol):
+    def test_c_non_positive_int(self, a, b, c, z, expected, rtol):
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
