@@ -198,37 +198,70 @@ def test_rvs_size(size):
 
 
 class TestTransformedDensityRejection:
-    pdf1 = lambda x: 1-x*x if abs(x) <= 1 else 0
-    pdf2 = lambda x: stats.norm._pdf(x / 0.1)  # test case in gh-13051
-    pdfs = [pdf1, pdf2]
+    # Simple Custom Distribution
+    class dist0:
+        def pdf(self, x):
+            return 3/4 * (1-x*x) if abs(x) <= 1 else 0
+        def dpdf(self, x):
+            return 3/4 * (-2*x) if abs(x) <= 1 else 0
+        def cdf(self, x):
+            return 3/4 * (x - x**3/3 + 2/3) if abs(x) <= 1 else 1*(x >= 1)
 
-    dpdf1 = lambda x: -2*x if abs(x) <= 1 else 0
-    dpdf2 = lambda x: -x / 0.01 * stats.norm._pdf(x / 0.1)
-    dpdfs = [dpdf1, dpdf2]
+    # Standard Normal Distribution
+    class dist1:
+        def pdf(self, x):
+            return stats.norm._pdf(x / 0.1)
+        def dpdf(self, x):
+            return -x / 0.01 * stats.norm._pdf(x / 0.1)
+        def cdf(self, x):
+            return stats.norm._cdf(x / 0.1)
 
-    cdf1 = lambda x: 3/4 * (x - x**3/3 + 2/3) if abs(x) <= 1 else 1*(x >= 1)
-    cdf1 = np.vectorize(cdf1)
-    cdf2 = stats.norm(0, 0.1).cdf
-    cdfs = [cdf1, cdf2]
+    # pdf with piecewise linear function as transformed density
+    # with T = -1/sqrt with shift. Taken from UNU.RAN test suite
+    # (from file t_tdr_ps.c)
+    class dist2:
+        def __init__(self, shift):
+            self.shift = shift
+        def pdf(self, x):
+            x -= self.shift
+            y = 1. / (abs(x) + 1.)
+            return 0.5 * y * y
+        def dpdf(self, x):
+            x -= self.shift
+            y = 1. / (abs(x) + 1.)
+            y = y * y * y
+            return y if (x < 0.) else -y
+        def cdf(self, x):
+            x -= self.shift
+            if x <= 0.:
+                return 0.5 / (1. - x)
+            else:
+                return 1. - 0.5 / (1. + x)
 
-    mv1 = [0., 4./15.]
-    mv2 = [0., 0.01]
-    mvs = [mv1, mv2]
+    dists = [dist0(), dist1(), dist2(0.), dist2(10000.)]
 
-    @pytest.mark.parametrize("pdf, dpdf, mv_ex, cdf",
-                             zip(pdfs, dpdfs, mvs, cdfs))
-    def test_basic(self, pdf, dpdf, mv_ex, cdf):
-        class dist:
-            pass
-        dist.pdf = pdf
-        dist.dpdf = dpdf
-        rng = TransformedDensityRejection(dist, seed=42)
+    mv0 = [0., 4./15.]
+    mv1 = [0., 0.01]
+    mv2 = [0., np.inf]
+    mv3 = [10000., np.inf]
+    mvs = [mv0, mv1, mv2, mv3]
+
+    @pytest.mark.parametrize("dist, mv_ex",
+                             zip(dists, mvs))
+    def test_basic(self, dist, mv_ex):
+        with suppress_warnings() as sup:
+            # filter the warnings thrown by UNU.RAN
+            sup.filter(UserWarning)
+            rng = TransformedDensityRejection(dist, seed=42)
         rvs = rng.rvs(100000)
         mv = rvs.mean(), rvs.var()
-        assert_allclose(mv, mv_ex, rtol=1e-7, atol=1e-1)
+        # test the moments only if the variance is finite
+        if np.isfinite(mv_ex[1]):
+            assert_allclose(mv, mv_ex, rtol=1e-7, atol=1e-1)
         # Cramer Von Mises test for goodness-of-fit
         rvs = rng.rvs(500)
-        pval = cramervonmises(rvs, cdf).pvalue
+        dist.cdf = np.vectorize(dist.cdf)
+        pval = cramervonmises(rvs, dist.cdf).pvalue
         assert pval > 0.1
 
     # PDF 0 everywhere => bad construction points
