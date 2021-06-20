@@ -31,35 +31,20 @@ def configuration(parent_package='', top_path=None):
         lapack_lib = f'sp_{prefix}lapack_util'
         propack_lib = f'_{prefix}propack'
 
-        # Preprocess sources to remove $OMP references
-        for s in base.glob(f'{directory}/**/*.[fF]'):
-            with open(s, 'r') as fp:
-                source = fp.read()
-            rewrite = False  # only rewrite files if we change them
-            if '$OMP' in source:
-                # can't #define dollar signs, so "preprocess" $OMP
-                # statements away here with a text substitution
-                source = source.replace('$OMP', 'substituted_OMP')
-                rewrite = True
-            if '_OPENMP' in source:
-                # cross-platform undef for both extensions and libraries
-                # is non-trivial, so we'll take care of that with a simple
-                # text substituion while we're here
-                source = source.replace('_OPENMP', 'substituted_OPENMP')
-                rewrite = True
-            if rewrite:
-                with open(s, 'w') as fp:
-                    fp.write(source)
-
         lapack_sources = join('PROPACK', directory, 'Lapack_Util', '*.f')
         propack_sources = join('PROPACK', directory, '*.F')
 
-        config.add_library(lapack_lib, sources=lapack_sources)
-        config.add_library(propack_lib, sources=propack_sources)
+        config.add_library(lapack_lib,
+                           sources=lapack_sources,
+                           macros=[('_OPENMP',)])
+        config.add_library(propack_lib,
+                           sources=propack_sources,
+                           macros=[('_OPENMP',)])
         config.add_extension(f'_{prefix}propack',
                              sources=f'{prefix}propack.pyf',
                              libraries=[lapack_lib, propack_lib],
-                             extra_info=lapack_opt)
+                             extra_info=lapack_opt,
+                             undef_macros=['_OPENMP'])
 
     return config
 
