@@ -28,7 +28,7 @@ Highlights of this release
 
 - A new submodule for quasi-Monte Carlo, `scipy.stats.qmc`, was added
 - The documentation design was updated to use the same PyData-Sphinx theme as
-  other NumFOCUS packages like NumPy.
+  NumPy and other ecosystem libraries.
 - We now vendor and leverage the Boost C++ library to enable numerous
   improvements for long-standing weaknesses in `scipy.stats`
 - `scipy.stats` has six new distributions, eight new (or overhauled)
@@ -612,6 +612,7 @@ Issues closed for 1.7.0
 * `#13793 <https://github.com/scipy/scipy/issues/13793>`__: CI: CircleCI doc build failure
 * `#13840 <https://github.com/scipy/scipy/issues/13840>`__: manylinux1 builds are failing because of C99 usage in \`special/_cosine.c\`
 * `#13850 <https://github.com/scipy/scipy/issues/13850>`__: CI: Homebrew is failing due to bintray
+* `#13875 <https://github.com/scipy/scipy/issues/13875>`__: BUG: chi2_contingency with Yates correction
 * `#13878 <https://github.com/scipy/scipy/issues/13878>`__: BUG: \`signal.get_window\` argument handling issue
 * `#13880 <https://github.com/scipy/scipy/issues/13880>`__: Remove all usages of numpy.compat
 * `#13896 <https://github.com/scipy/scipy/issues/13896>`__: Boschloo's Test for More Powerful Hypothesis Testing of 2x2 Contingency...
@@ -628,6 +629,10 @@ Issues closed for 1.7.0
 * `#14048 <https://github.com/scipy/scipy/issues/14048>`__: DOC: missing git submodule information
 * `#14055 <https://github.com/scipy/scipy/issues/14055>`__: linalg.solve: Unclear error when using assume_a='her' with real...
 * `#14093 <https://github.com/scipy/scipy/issues/14093>`__: DOC: Inconsistency in the definition of default values in the...
+* `#14158 <https://github.com/scipy/scipy/issues/14158>`__: TST, BUG: test_rbfinterp.py -- test_interpolation_misfit_1d fails...
+* `#14170 <https://github.com/scipy/scipy/issues/14170>`__: TST: signal submodule test_filtfilt_gust failing on 32-bit amd64...
+* `#14194 <https://github.com/scipy/scipy/issues/14194>`__: MAINT: download-wheels.py missing import
+* `#14199 <https://github.com/scipy/scipy/issues/14199>`__: Generated sources for biasedurn extension are broken in 1.7.0rc1
 
 
 ***********************
@@ -931,6 +936,7 @@ Pull requests for 1.7.0
 * `#13910 <https://github.com/scipy/scipy/pull/13910>`__: DOC: update Readme
 * `#13911 <https://github.com/scipy/scipy/pull/13911>`__: MAINT: use dict built-in rather than OrderedDict
 * `#13920 <https://github.com/scipy/scipy/pull/13920>`__: BUG: Reactivate conda environment in init
+* `#13925 <https://github.com/scipy/scipy/pull/13925>`__: BUG: stats: magnitude of Yates' correction <= abs(observed-expected)...
 * `#13926 <https://github.com/scipy/scipy/pull/13926>`__: DOC: correct return type in disjoint_set.subsets docstring
 * `#13927 <https://github.com/scipy/scipy/pull/13927>`__: DOC/MAINT: Add copyright notice to qmc.primes_from_2_to
 * `#13928 <https://github.com/scipy/scipy/pull/13928>`__: BUG: DOC: signal: fix need argument config and add missing doc...
@@ -1011,9 +1017,19 @@ Pull requests for 1.7.0
 * `#14110 <https://github.com/scipy/scipy/pull/14110>`__: DOC: mailmap update
 * `#14113 <https://github.com/scipy/scipy/pull/14113>`__: ENH: stats: bootstrap: add \`paired\` parameter
 * `#14116 <https://github.com/scipy/scipy/pull/14116>`__: MAINT: fix deprecated Python C API usage in odr
+* `#14118 <https://github.com/scipy/scipy/pull/14118>`__: DOC: 1.7.0 release notes
 * `#14125 <https://github.com/scipy/scipy/pull/14125>`__: DOC: fix typo
 * `#14126 <https://github.com/scipy/scipy/pull/14126>`__: ENH: stats: bootstrap: add \`batch\` parameter to control batch...
 * `#14127 <https://github.com/scipy/scipy/pull/14127>`__: CI: upgrade pip in benchmarks CI run
 * `#14130 <https://github.com/scipy/scipy/pull/14130>`__: BUG: Fix trust-constr report TypeError if verbose is set to 2...
 * `#14133 <https://github.com/scipy/scipy/pull/14133>`__: MAINT: interpolate: raise NotImplementedError not ValueError
 * `#14139 <https://github.com/scipy/scipy/pull/14139>`__: FIX/DOC: lsqr doctests print failure
+* `#14145 <https://github.com/scipy/scipy/pull/14145>`__: MAINT: 1.7.x version pins ("backport")
+* `#14146 <https://github.com/scipy/scipy/pull/14146>`__: MAINT: commit count if no tag
+* `#14164 <https://github.com/scipy/scipy/pull/14164>`__: TST, BUG: fix rbf matrix value
+* `#14166 <https://github.com/scipy/scipy/pull/14166>`__: CI, MAINT: restrictions on pre-release CI
+* `#14171 <https://github.com/scipy/scipy/pull/14171>`__: TST: signal: Bump tolerances for a test of Gustafsson's...
+* `#14175 <https://github.com/scipy/scipy/pull/14175>`__: TST: stats: Loosen tolerance in some binomtest tests.
+* `#14182 <https://github.com/scipy/scipy/pull/14182>`__: MAINT: stats: Update ppcc_plot and ppcc_max docstring.
+* `#14195 <https://github.com/scipy/scipy/pull/14195>`__: MAINT: download-wheels missing import
+* `#14230 <https://github.com/scipy/scipy/pull/14230>`__: REL: stop shipping generated Cython sources in sdist
