@@ -1636,13 +1636,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
 
 
-def _jarque_bera_result_creator(res):
-    return Jarque_beraResult(res[..., 0], res[..., 1])
-
-
-@_vectorize_hypotest_factory(result_creator=_jarque_bera_result_creator,
-                             default_axis=None, n_samples=1,
-                             result_object=Jarque_beraResult)
+@_vectorize_hypotest_factory(Jarque_beraResult, default_axis=None, n_samples=1)
 def jarque_bera(x):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
@@ -6939,9 +6933,7 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: KstestResult(res[..., 0], res[..., 1]),
-    n_samples=1, result_object=KstestResult)
+@_vectorize_hypotest_factory(KstestResult, n_samples=1)
 def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7369,9 +7361,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: KstestResult(res[..., 0], res[..., 1]),
-    n_samples=2, result_object=KstestResult)
+@_vectorize_hypotest_factory(KstestResult, n_samples=2)
 def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7766,10 +7756,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: RanksumsResult(res[..., 0],
-                                              res[..., 1]),
-    n_samples=2, result_object=RanksumsResult)
+@_vectorize_hypotest_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7850,10 +7837,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: KruskalResult(res[..., 0],
-                                             res[..., 1]),
-    n_samples=None, result_object=KruskalResult)
+@_vectorize_hypotest_factory(KruskalResult, n_samples=None)
 def kruskal(*args, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
@@ -7976,10 +7960,8 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: FriedmanchisquareResult(res[..., 0],
-                                                       res[..., 1]),
-    n_samples=None, paired=True, result_object=FriedmanchisquareResult)
+@_vectorize_hypotest_factory(FriedmanchisquareResult, n_samples=None,
+                             paired=True)
 def friedmanchisquare(*args):
     """Compute the Friedman test for repeated measurements.
 
@@ -8049,10 +8031,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(
-    result_creator=lambda res: BrunnerMunzelResult(res[..., 0],
-                                                   res[..., 1]),
-    n_samples=2, result_object=BrunnerMunzelResult)
+@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.
