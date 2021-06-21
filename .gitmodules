@@ -10,3 +10,6 @@
 	shallow = true
 	active = false
 	ignore = all
+[submodule "scipy/_lib/unuran"]
+	path = scipy/_lib/unuran
+	url = https://github.com/tirthasheshpatel/unuran.git

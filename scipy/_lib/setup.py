@@ -10,6 +10,14 @@ def check_boost_submodule():
                            "update --init` to fix this.")
 
 
+def check_unuran_submodule():
+    from scipy._lib._unuran_utils import _unuran_dir
+
+    if not os.path.exists(_unuran_dir(ret_path=True) / 'README.md'):
+        raise RuntimeError("Missing the `unuran` submodule! Run `git submodule "
+                           "update --init` to fix this.")
+
+
 def build_clib_pre_build_hook(cmd, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(cmd.compiler)
@@ -23,6 +31,7 @@ def configuration(parent_package='',top_path=None):
     from scipy._lib._boost_utils import _boost_dir
 
     check_boost_submodule()
+    check_unuran_submodule()
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')

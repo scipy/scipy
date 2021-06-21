@@ -281,8 +281,8 @@ scipy/stats/biasedurn.pyx
 scipy/stats/_sobol.c
 scipy/stats/_qmc_cy.cxx
 scipy/stats/_hypotests_pythran.cpp
-scipy/stats/unuran/unuran_wrapper.pyx
-scipy/stats/unuran/unuran_wrapper.c
+scipy/stats/_unuran/unuran_wrapper.pyx
+scipy/stats/_unuran/unuran_wrapper.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

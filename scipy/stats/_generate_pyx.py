@@ -27,7 +27,7 @@ def make_unuran():
     '''Substitute True/False values for NPY_OLD Cython build variable.'''
     import re
     unuran_base = (
-        pathlib.Path(__file__).parent / 'unuran' / 'unuran_wrapper'
+        pathlib.Path(__file__).parent / '_unuran' / 'unuran_wrapper'
     ).absolute()
     with open(unuran_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
