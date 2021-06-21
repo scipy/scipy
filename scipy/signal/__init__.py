@@ -287,6 +287,7 @@ Spectral analysis
    istft          -- Compute the Inverse Short Time Fourier Transform.
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
+   wigner_ville   -- Compute the the Wigner-Ville distribution.
 
 """
 from . import sigtools, windows
@@ -307,7 +308,7 @@ from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
-from .wigner import *
+from .wigner import wigner_ville
 from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 

@@ -8,9 +8,14 @@ from scipy.fft import fft
 __all__ = ['wvd']
 
 
-def wvd(x, fs=1.0, resolution=1, win_size=None):
+def wigner_ville(x, fs=1.0, resolution=1, window_size=None):
     """
-    Compute the Wigner-Ville distribution.
+    Wigner-Ville distribution.
+
+    The Wigner–Ville distribution is a method of signal analysis that yields
+    (under ideal conditions) the signal energy distributed over time and
+    frequency. It provides the highest temporal vs frequency resolution
+    possible within the limitations of the uncertainty principle.
 
     Parameters
     ----------
@@ -20,8 +25,8 @@ def wvd(x, fs=1.0, resolution=1, win_size=None):
         Sampling frequency of the `x` time series. Defaults to 1.0.
     resolution : int, optional
         Resolution, number of samples between windows. Defaults to 1.
-    win_size : int, optional
-        Window size, length of frequency axis. Defaults to len(x) // 2.
+    window_size : int, optional
+        Window size, length of frequency axis. Defaults to ``len(x) // 2``.
 
     Returns
     -------
@@ -40,7 +45,6 @@ def wvd(x, fs=1.0, resolution=1, win_size=None):
     Examples
     --------
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
     >>> from scipy import signal
 
     Generate a test signal with two superimposed sine wave at 1 Hz and 5 Hz.
@@ -52,7 +56,7 @@ def wvd(x, fs=1.0, resolution=1, win_size=None):
     Compute the Wigner-Ville distribution. Note that the analystic signal is
     supplied to the function.
 
-    >>> t, f, wv = signal.wvd(signal.hilbert(x), f_s)
+    >>> t, f, wv = signal.wigner_ville(signal.hilbert(x), f_s)
 
     Plot the Wigner-Ville distribution with expected cross-terms clearly
     visible at 3 Hz.
@@ -64,17 +68,17 @@ def wvd(x, fs=1.0, resolution=1, win_size=None):
     >>> plt.ylim([0, 6])
     >>> plt.show()
     """
-    if not win_size:
-        win_size = len(x) // 2
+    if not window_size:
+        window_size = len(x) // 2
 
     n_pts = int(np.floor(np.floor(len(x) / resolution) / 2) * 2)
-    odd_win_size = int((np.floor((win_size - 1) / 2) * 2)) + 1
+    odd_win_size = int((np.floor((window_size - 1) / 2) * 2)) + 1
     half_win_size = (odd_win_size + 1) // 2 - 1
     x_padded = np.concatenate((np.zeros(odd_win_size - 1), x, np.zeros(
         odd_win_size - 1)))
 
-    wv = np.zeros((win_size, n_pts), dtype=float)
-    r = np.zeros(win_size, dtype=complex)
+    wv = np.zeros((window_size, n_pts), dtype=float)
+    r = np.zeros(window_size, dtype=complex)
     idx = np.arange(1, half_win_size + 1, dtype=int)
 
     for n in range(0, n_pts // 2):
@@ -85,11 +89,11 @@ def wvd(x, fs=1.0, resolution=1, win_size=None):
         v2 = x_padded[idy + resolution + idx] * np.conj(
             x_padded[idy + resolution - idx])
         r[idx] = v1 + 1j * v2
-        r[win_size - idx] = np.conj(v1) + 1j * np.conj(v2)
-        r_fft = fft(r, win_size)
+        r[window_size - idx] = np.conj(v1) + 1j * np.conj(v2)
+        r_fft = fft(r, window_size)
         wv[:, 2 * n] = np.real(r_fft)
         wv[:, 2 * n + 1] = np.imag(r_fft)
 
     t = np.arange(0, n_pts) * resolution / fs
-    f = np.arange(0, win_size) * (fs / 2) / (win_size - 1)
+    f = np.arange(0, window_size) * (fs / 2) / (window_size - 1)
     return t, f, wv
