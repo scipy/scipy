@@ -13,10 +13,8 @@ import scipy.stats.stats
 from functools import wraps
 
 
-# todo: special case empty array (0 along an axis other than `axis`)
-# add option to let function propagate nans
-# address brunner-munzel issue - if overriding nan_policy, positional arg
-#   needs to be considered
+# change default_rng() in tests? or maybe skip for old numpy
+# benchmark against ttest with nan_policy='omit', propagate
 
 def _remove_nans(samples, paired):
     "Remove nans from paired or unpaired samples"
@@ -31,6 +29,20 @@ def _remove_nans(samples, paired):
         nans = nans | np.isnan(sample)
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
+
+
+def _check_empty_inputs(samples, axis):
+    if not any((sample.size == 0 for sample in samples)):
+        return None
+    ndim = max((sample.ndim for sample in samples))
+    samples = (sample.reshape([1]*(ndim - sample.ndim) + list(sample.shape))
+               for sample in samples)
+    samples = (np.moveaxis(sample, axis, -1)
+               for sample in samples)
+    output_shape = np.broadcast_shapes(*(sample.shape[:-1]
+                                         for sample in samples))
+    output = np.ones(output_shape) * np.nan
+    return output
 
 
 def _vectorize_hypotest_factory(result_object, default_axis=0,
@@ -78,18 +90,21 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
             if np.all(ndims <= 1):
-                # Addresses nan_policy="raise"
+                # Addresses nan_policy == "raise"
                 contains_nans = []
                 for sample in samples:
                     contains_nan, _ = (
                         scipy.stats.stats._contains_nan(sample, nan_policy))
                     contains_nans.append(contains_nan)
 
-                # Addresses nan_policy="propagate"
+                # Addresses nan_policy == "propagate"
+                # Consider adding option to let function propagate nans, but
+                # currently the hypothesis tests this is applied to do not
+                # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
                     return result_object(np.nan, np.nan)
 
-                # Addresses nan_policy="omit"
+                # Addresses nan_policy == "omit"
                 if any(contains_nans) and nan_policy == 'omit':
                     # consider passing in contains_nans
                     samples = _remove_nans(samples, paired)
@@ -102,17 +117,27 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
 
                 return hypotest_fun_in(*samples, *args, **kwds)
 
+            # check for empty input
+            # ideally, move this to the top, but some existing functions raise
+            # exceptions for empty input, so overriding it would break
+            # backward compatibility.
+            empty_output = _check_empty_inputs(samples, axis)
+            if empty_output is not None:
+                statistic = empty_output
+                pvalue = empty_output.copy()
+                return result_object(statistic, pvalue)
+
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
             lengths = np.array([sample.shape[axis] for sample in samples])
             split_indices = np.cumsum(lengths)
             x = scipy.stats.stats._broadcast_concatenate(samples, axis)
 
-            # Addresses nan_policy="raise"
+            # Addresses nan_policy == "raise"
             contains_nan, _ = (
                 scipy.stats.stats._contains_nan(x, nan_policy))
 
-            # Addresses nan_policy="omit"
+            # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
@@ -121,7 +146,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                         return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, *args, **kwds)
 
-            # Addresses nan_policy="propagate"
+            # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
@@ -130,7 +155,9 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                     return hypotest_fun_in(*samples, *args, **kwds)
 
             else:
-                hypotest_fun = hypotest_fun_in
+                def hypotest_fun(x):
+                    samples = np.split(x, split_indices)[:n_samp]
+                    return hypotest_fun_in(*samples, *args, **kwds)
 
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)

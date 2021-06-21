@@ -6250,10 +6250,13 @@ def _calculate_winsorized_variance(a, g, axis):
 
 def _broadcast_concatenate(xs, axis):
     """Concatenate arrays along an axis with broadcasting."""
+    # prepend 1s to array shapes as needed
+    ndim = max([x.ndim for x in xs])
+    xs = [x.reshape([1]*(ndim-x.ndim) + list(x.shape)) for x in xs]
     # move the axis we're concatenating along to the end
     xs = [np.swapaxes(x, axis, -1) for x in xs]
     # determine final shape of all but the last axis
-    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
+    shape = np.broadcast_shapes(*[x.shape[:-1] for x in xs])
     # broadcast along all but the last axis
     xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
     # concatenate along last axis

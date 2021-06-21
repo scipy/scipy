@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from itertools import product
+from itertools import product, combinations_with_replacement
 import re
 
 import numpy as np
@@ -1062,6 +1062,77 @@ def test_hypotest_back_compat_no_axis(hypotest, nsamp):
     res = hypotest(*x)
     res2 = hypotest([xi.ravel() for xi in x])
     assert_equal(res, res2)
+
+
+def test_check_empty_inputs():
+
+    for i in range(5):
+        for combo in combinations_with_replacement([0, 1, 2], i):
+            for axis in range(len(combo)):
+                samples = (np.zeros(combo),)
+                output = stats._hypotests._check_empty_inputs(samples, axis)
+                if output is not None:
+                    with np.testing.suppress_warnings() as sup:
+                        sup.filter(RuntimeWarning, "Mean of empty slice.")
+                        sup.filter(RuntimeWarning, "invalid value encountered")
+                        reference = samples[0].mean(axis=axis)
+                    np.testing.assert_equal(output, reference)
+
+
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
+                          "unpacker"), vectorization_nanpolicy_cases)
+def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
+    # test for correct output shape when at least one input is empty
+
+    def small_data_generator(n_samples, n_dims):
+
+        def small_sample_generator(n_dims):
+            # return all possible "small" arrays in up to n_dim dimensions
+            for i in n_dims:
+                # "small" means with size along dimension either 0 or 1
+                for combo in combinations_with_replacement([0, 1, 2], i):
+                    yield np.zeros(combo)
+
+        # yield all possible combinations of small samples
+        gens = [small_sample_generator(n_dims) for i in range(n_samples)]
+        for i in product(*gens):
+            yield i
+
+    n_dims = [2, 3]
+    for samples in small_data_generator(n_samples, n_dims):
+
+        # this test is only for arrays of zero size
+        if not any((sample.size == 0 for sample in samples)):
+            continue
+
+        max_axis = max((sample.ndim for sample in samples))
+
+        # need to test for all valid values of `axis` parameter, too
+        for axis in range(-max_axis, max_axis):
+
+            try:
+                res = hypotest(*samples, *args, axis=axis, **kwds)
+
+                # After broadcasting, all arrays are the same shape, so
+                # the shape of the output should be the same as a single-
+                # sample statistic. Use np.mean as a reference.
+                concat = stats.stats._broadcast_concatenate(samples, axis)
+                with np.testing.suppress_warnings() as sup:
+                    sup.filter(RuntimeWarning, "Mean of empty slice.")
+                    sup.filter(RuntimeWarning, "invalid value encountered")
+                    expected = np.mean(concat, axis=axis) * np.nan
+
+                assert_equal(res.statistic, expected)
+                assert_equal(res.pvalue, expected)
+
+            except ValueError as e:
+                # incidentally, this also serves as a test of the error
+                # produced when arrays are not broadcastable
+                message = "shape mismatch: objects cannot be broadcast"
+
+                assert str(e).startswith(message)
+                with pytest.raises(type(e), match=re.escape(str(e))):
+                    hypotest(*samples, *args, axis=axis, **kwds)
 
 
 class TestBarnardExact:

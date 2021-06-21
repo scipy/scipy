@@ -4026,7 +4026,7 @@ class Test_ttest_ind_permutations():
     # data for bigger test
     np.random.seed(0)
     rvs1 = stats.norm.rvs(loc=5, scale=10,  # type: ignore
-                          size=500).reshape(100, 5)
+                          size=500).reshape(100, 5).T
     rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
 
     p_d = [0, 0.676]  # desired pvalues
@@ -4042,7 +4042,7 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': 0, "axis": 1}, p_d),
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 0),  # equal variances
-        (rvs1, rvs2, {'axis': 0, 'random_state': 0}, p_d_big),  # bigger test
+        (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
         (a3, b3, {}, 1/3)  # exact test
         ]
 
