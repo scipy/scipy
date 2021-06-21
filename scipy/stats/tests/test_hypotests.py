@@ -4,6 +4,8 @@ from itertools import product, combinations_with_replacement
 import re
 
 import numpy as np
+from numpy.lib import NumpyVersion
+
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
@@ -889,6 +891,9 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
     # generate random samples test the response of hypothesis tests to
     # samples with different (but broadcastable shapes) and various
     # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
+
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Generator `permutation` method doesn't support `axis`")
 
     data = []
     for i in range(n_samples):

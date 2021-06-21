@@ -13,7 +13,6 @@ import scipy.stats.stats
 from functools import wraps
 
 
-# change default_rng() in tests? or maybe skip for old numpy
 # benchmark against ttest with nan_policy='omit', propagate
 
 def _remove_nans(samples, paired):
