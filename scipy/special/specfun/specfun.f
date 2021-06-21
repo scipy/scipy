@@ -5813,6 +5813,7 @@ C
            CALL GAMMA2(0.5D0+0.5D0*A,G3)
            ZHF=G0*G1/(G2*G3)
         ELSE IF (L3.OR.L4) THEN
+*     If one of A or B is a negative integer, series reduces to a polynomial.
            IF (L3) NM=INT(ABS(A))
            IF (L4) NM=INT(ABS(B))
            ZHF=(1.0D0,0.0D0)
@@ -5820,10 +5821,10 @@ C
            DO 10 K=1,NM
               ZR=ZR*(A+K-1.0D0)*(B+K-1.0D0)/(K*(C+K-1.0D0))*Z
 10            ZHF=ZHF+ZR
+        ELSE IF (L5.OR.L6) THEN
 *     If one of C - A or C - B is a negative integer, reduces to evaluating
 *     a polynomial through an Euler hypergeometric transformation
 *     (DLMF 15.8.1).
-        ELSE IF (L5.OR.L6) THEN
            IF (L5) NM=INT(ABS(C-A))
            IF (L6) NM=INT(ABS(C-B))
            ZHF=(1.0D0,0.0D0)
@@ -5942,8 +5943,11 @@ C
 95               ZHF=ZHF+ZC0+ZC1
               ENDIF
            ELSE
+*     |Z| < 0.9, Real(Z) >= 0. Use defining Maclaurin series.
               Z00=(1.0D0,0.0D0)
               IF (C-A.LT.A.AND.C-B.LT.B) THEN
+*     Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce size of
+*     A and B if possible.
                   Z00=(1.0D0-Z)**(C-A-B)
                   A=C-A
                   B=C-B
