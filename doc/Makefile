@@ -89,7 +89,7 @@ doc-dist: html-scipyorg html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist/reference
+	cp -r build/html-scipyorg build/dist
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy-ref.pdf build/dist
