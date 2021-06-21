@@ -35,7 +35,8 @@ def _remove_nans(samples, paired):
 
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
-                                result_unpacker=None, too_small=0):
+                                result_unpacker=None, too_small=0,
+                                nan_policy_position=None):
     if result_unpacker is None:
         def result_unpacker(res):
             return res[..., 0], res[..., 1]
@@ -54,6 +55,14 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
 
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
+
+            if (nan_policy_position is not None
+                    and len(args) > nan_policy_position):
+                # This is for overriding an existing nan_policy implementation.
+                # Consider what to do if both are specified but not the same.
+                # To detect this, should the default value of keyword arg be
+                # None?
+                nan_policy = args[nan_policy_position]
 
             # if n_samples is None, all args are samples
             n_samp = len(args) if n_samples is None else n_samples
@@ -386,7 +395,8 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=1, too_small=1,
+@_vectorize_hypotest_factory(
+        CramerVonMisesResult, n_samples=1, too_small=1,
         result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
@@ -1406,7 +1416,8 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-@_vectorize_hypotest_factory(CramerVonMisesResult, n_samples=2, too_small=1,
+@_vectorize_hypotest_factory(
+        CramerVonMisesResult, n_samples=2, too_small=1,
         result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.

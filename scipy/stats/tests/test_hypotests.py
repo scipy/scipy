@@ -883,17 +883,6 @@ vectorization_nanpolicy_cases = [
      lambda res: (res.pvalue, res.statistic)),
     ]
 
-# bad propagate
-# fligner is weird
-# friedmanchisquare treats nan as inf
-# ks_2samp treats nan as inf
-# ks_2samp treats nan as inf
-# ranksums treats nan as inf
-# ansari treats nan as inf
-# shapiro reports pvalue 1.0 when statistic is nan
-# cramervonmises reports pvalue 1.0 when statistic is nan
-# cramervonmises_2samp treats nan as inf reports pvalue 1.0 when statistic is nan
-
 
 def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
                                 paired=False):
@@ -903,9 +892,9 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
 
     data = []
     for i in range(n_samples):
-        n = 6  # number of distinct nan patterns
-        l = 20 if paired else 20 + i  # number of observations per axis slice
-        x = np.ones((n_repetitions, n, l)) * np.nan
+        n_patterns = 6  # number of distinct nan patterns
+        n_obs = 20 if paired else 20 + i  # observations per axis-slice
+        x = np.ones((n_repetitions, n_patterns, n_obs)) * np.nan
 
         for j in range(n_repetitions):
             samples = x[j, :, :]
@@ -914,10 +903,10 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
             # cases 1-3: axis-slice with 1-3 reals (the rest nans)
             # case 4: axis-slice with mostly reals
             # case 5: axis slice with all reals
-            for k, num_reals in enumerate([0, 1, 2, 3, l-2, l]):
+            for k, n_reals in enumerate([0, 1, 2, 3, n_obs-2, n_obs]):
                 # for cases 1-3, need paired nansw  to be in the same place
-                indices = rng.permutation(l)[:num_reals]
-                samples[k, indices] = rng.random(size=num_reals)
+                indices = rng.permutation(n_obs)[:n_reals]
+                samples[k, indices] = rng.random(size=n_reals)
 
             # permute the axis-slices just to show that order doesn't matter
             samples[:] = rng.permutation(samples, axis=0)
@@ -925,7 +914,7 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
         # For multi-sample tests, we want to test broadcasting and check
         # that nan policy works correctly for each nan pattern for each input.
         # This takes care of both simultaneosly.
-        new_shape = [n_repetitions] + [1]*n_samples + [l]
+        new_shape = [n_repetitions] + [1]*n_samples + [n_obs]
         new_shape[1 + i] = 6
         x = x.reshape(new_shape)
 
@@ -937,12 +926,12 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
 def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                     nan_policy='raise', paired=False, _no_deco=True, **kwds):
 
-    if nan_policy=='raise':
+    if nan_policy == 'raise':
         for sample in data1d:
             if np.any(np.isnan(sample)):
                 raise ValueError("The input contains nan values")
 
-    elif nan_policy=='propagate':
+    elif nan_policy == 'propagate':
         # For all hypothesis tests tested, returning nans is the right thing.
         # But many hypothesis tests don't propagate correctly (e.g. they treat
         # np.nan the same as np.inf, which doesn't make sense when ranks are
@@ -951,7 +940,7 @@ def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
             if np.any(np.isnan(sample)):
                 return np.nan, np.nan
 
-    elif nan_policy=='omit':
+    elif nan_policy == 'omit':
         # manually omit nans (or pairs in which at least one element is nan)
         if not paired:
             data1d = [sample[~np.isnan(sample)] for sample in data1d]
@@ -982,8 +971,8 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
     # Generate multi-dimensional test data with all important combinations
     # of patterns of nans along `axis`
     data = hypotest_nan_data_generator(n_samples, n_repetitions=3, axis=axis,
-                                        rng=np.random.default_rng(0),
-                                        paired=paired)
+                                       rng=np.random.default_rng(0),
+                                       paired=paired)
 
     # To generate reference behavior to compare against, loop over the axis-
     # slices in data. Make indexing easier by moving `axis` to the end and
@@ -1226,6 +1215,7 @@ class TestBoschlooExact:
     """Some tests to show that boschloo_exact() works correctly."""
 
     ATOL = 1e-7
+
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
@@ -1363,6 +1353,7 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
 
 class TestCvm_2samp:
     def test_invalid_input(self):

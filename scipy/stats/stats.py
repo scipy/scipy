@@ -8031,7 +8031,8 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2)
+@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2,
+                             nan_policy_position=4)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.
