@@ -27,6 +27,8 @@
 
 #include "numpy/arrayobject.h"
 
+#include "numpy/ndarraytypes.h"
+
 #ifdef HAVE_BLAS_ILP64
 
 #define F_INT npy_int64
