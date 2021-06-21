@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 from .utils import make_system
 
@@ -24,7 +23,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         Starting guess for the solution.
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b-Ax0), atol)``.
-        The default for `tol` is 1.0e-5
+        The default for `tol` is 1.0e-5.
         The default for `atol` is ``tol * norm(b-Ax0)``.
 
         .. warning::
@@ -34,6 +33,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
+        Default is ``min(10000, ndofs * 10)``, where ``ndofs = A.shape[0]``.
     M : {sparse matrix, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
@@ -46,7 +46,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     show : bool, optional
         Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.
-        Default is `False`
+        Default is `False`.
 
     Returns
     -------
@@ -97,8 +97,8 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     if np.issubdtype(dtype, np.int64):
         dtype = float
         A = A.astype(dtype)
-        if np.issubdtype(b.dtype, np.int64):
-            b = b.astype(dtype)
+    if np.issubdtype(b.dtype, np.int64):
+        b = b.astype(dtype)
 
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
@@ -109,13 +109,13 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     ndofs = A.shape[0]
     if maxiter is None:
-        maxiter = min(10000, ndofs*10)
+        maxiter = min(10000, ndofs * 10)
     if x0 is None:
         x0 = x.copy()
 
     u = r = b - A.matvec(x)
     w = r.copy()
-    # Take rstar as r
+    # Let rstar equals b - Ax0, that is rstar := r = b - Ax0 mathematically
     rstar = r
     v = M.matvec(A.matvec(r))
     uhat = v
@@ -133,7 +133,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         atol = max(atol, tol * r0norm)
 
     for iter in range(maxiter):
-        even = iter%2 == 0
+        even = iter % 2 == 0
         if (even):
             vtrstar = np.inner(rstar.conjugate(), v)
             # Check breakdown
