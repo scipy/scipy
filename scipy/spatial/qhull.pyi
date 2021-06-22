@@ -125,6 +125,8 @@ class ConvexHull(_QhullUser):
     equations: np.ndarray
     coplanar: np.ndarray
     good: None | np.ndarray
+    volume: float
+    area: float
     nsimplex: int
 
     def __init__(
