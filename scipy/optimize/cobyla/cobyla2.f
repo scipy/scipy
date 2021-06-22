@@ -1,9 +1,9 @@
 C------------------------------------------------------------------------ 
 C
       SUBROUTINE COBYLA (CALCFC, N,M,X,RHOBEG,RHOEND,IPRINT,MAXFUN,
-     & W,IACT, DINFO)
+     & W,IACT, DINFO, CALLBACK)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      EXTERNAL CALCFC
+      EXTERNAL CALCFC,CALLBACK
       DIMENSION X(*),W(*),IACT(*), DINFO(*)
 C
 C     This subroutine minimizes an objective function F(X) subject to M
@@ -74,16 +74,16 @@ C
       IWORK=IDX+N
       CALL COBYLB (CALCFC,N,M,MPP,X,RHOBEG,RHOEND,IPRINT,MAXFUN,W(ICON),
      1  W(ISIM),W(ISIMI),W(IDATM),W(IA),W(IVSIG),W(IVETA),W(ISIGB),
-     2  W(IDX),W(IWORK),IACT,DINFO)
+     2  W(IDX),W(IWORK),IACT,DINFO,CALLBACK)
       RETURN
       END
 C------------------------------------------------------------------------------
       SUBROUTINE COBYLB (CALCFC,N,M,MPP,X,RHOBEG,RHOEND,IPRINT,MAXFUN,
-     1  CON,SIM,SIMI,DATMAT,A,VSIG,VETA,SIGBAR,DX,W,IACT,DINFO)
+     1  CON,SIM,SIMI,DATMAT,A,VSIG,VETA,SIGBAR,DX,W,IACT,DINFO,CALLBACK)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION X(*),CON(*),SIM(N,*),SIMI(N,*),DATMAT(MPP,*),
      1  A(N,*),VSIG(*),VETA(*),SIGBAR(*),DX(*),W(*),IACT(*),DINFO(*)
-      EXTERNAL CALCFC
+      EXTERNAL CALCFC,CALLBACK
 C
 C     Set the initial values of some parameters. The last column of SIM holds
 C     the optimal vertex of the current simplex, and the preceding N columns
@@ -147,6 +147,7 @@ C
          PRINT *, '  DX = ', (DX(I),I=1,N)
          PRINT *, '  BEFORE: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
       END IF
+      CALL CALLBACK (N,M,X)
       CALL CALCFC (N,M,X,F,CON)
       IF (IPRINT .EQ. 3) THEN
          PRINT *, '  AFTER: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)

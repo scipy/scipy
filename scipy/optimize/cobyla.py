@@ -36,7 +36,8 @@ def synchronized(func):
 
 @synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
-                rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
+                rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4,
+                callback=None):
     """
     Minimize a function using the Constrained Optimization By Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
@@ -70,6 +71,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         Maximum number of function evaluations.
     catol : float, optional
         Absolute tolerance for constraint violations.
+    callback : callable, optional
+        Called after each iteration, as ``callback(x)``, where ``x`` is the
+        current parameter vector.
 
     Returns
     -------
@@ -165,13 +169,14 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 
     # build constraints
     con = tuple({'type': 'ineq', 'fun': c, 'args': consargs} for c in cons)
-
+    
     # options
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
             'disp': disp,
             'maxiter': maxfun,
-            'catol': catol}
+            'catol': catol,
+            'callback': callback}
 
     sol = _minimize_cobyla(func, x0, args, constraints=con,
                            **opts)
@@ -182,7 +187,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
-                     disp=False, catol=2e-4, **unknown_options):
+                     disp=False, catol=2e-4, callback=None, 
+                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -201,6 +207,9 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         Maximum number of function evaluations.
     catol : float
         Tolerance (absolute) for constraint violations
+    callback : callable, optional
+        Called after each iteration, as ``callback(x)``, where ``x`` is the
+        current parameter vector.
 
     """
     _check_unknown_options(unknown_options)
@@ -255,11 +264,15 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             con[i: i + size] = c['fun'](x, *c['args'])
             i += size
         return f
+    
+    if callback is None:
+        def callback(x):
+            pass
 
     info = np.zeros(4, np.float64)
     xopt, info = _cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
                                   rhoend=rhoend, iprint=iprint, maxfun=maxfun,
-                                  dinfo=info)
+                                  dinfo=info, callback=callback)
 
     if info[3] > catol:
         # Check constraint violation

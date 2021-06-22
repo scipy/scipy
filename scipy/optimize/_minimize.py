@@ -626,7 +626,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         return _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
                              **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, **options)
+        return _minimize_cobyla(fun, x0, args, constraints, callback=callback,
+                                **options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, callback=callback, **options)
