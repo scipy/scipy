@@ -217,12 +217,12 @@ public:
   size_type size() const { return size_; }
 
   const_reference operator[](size_type idx) const {
-    assert(0 < idx && idx < size_);
+    assert(0 <= idx && idx < size_);
     return begin()[idx];
   }
 
   reference operator[](size_type idx) {
-    assert(0 < idx && idx < size_);
+    assert(0 <= idx && idx < size_);
     return begin()[idx];
   }
 };
