@@ -19,42 +19,85 @@ class TestHyp2f1:
         "a,b,c,z,expected,rtol",
         [
             (0.5, 0.2, -10, 0.2 + 0.2j, np.inf + 0j, 0),
-            (0.5, 0.2, -10, 0 + 0j, 1 + 0j, 0),
-            (0.5, 0, -10, 0.2 + 0.2j, 1 + 0j, 0),
-            (0.5, 0, 0, 0.2 + 0.2j, 1 + 0j, 0),
-            (0.5, 0.2, 0, 0.2 + 0.2j, np.inf + 0j, 0),
-            (0.5, 0.2, 0, 0 + 0j, np.nan + 0j, 0),
+            pytest.param(
+                0.5,
+                0.2,
+                -10,
+                0 + 0j,
+                1 + 0j,
+                0,
+                marks=pytest.mark.xfail(reason="gh-7340")
+            ),
+            pytest.param(
+                0.5,
+                0,
+                -10,
+                0.2 + 0.2j,
+                1 + 0j,
+                0,
+                marks=pytest.mark.xfail(reason="gh-7340"),
+            ),
             (
+                0.5,
+                0,
+                0,
+                0.2 + 0.2j,
+                1 + 0j,
+                0,
+            ),
+            pytest.param(
+                0.5,
+                0.2,
+                0,
+                0.2 + 0.2j,
+                np.inf + 0j,
+                0,
+                marks=pytest.mark.xfail(reason="gh-7340"),
+            ),
+            pytest.param(
+                0.5,
+                0.2,
+                0,
+                0 + 0j,
+                np.nan + 0j,
+                0,
+                marks=pytest.mark.xfail(reason="gh-7340"),
+            ),
+            pytest.param(
                 0.5,
                 -5,
                 -10,
                 0.2 + 0.2j,
                 (1.0495404166666666+0.05708208333333334j),
-                1e-15
+                1e-15,
+                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
-            (
+            pytest.param(
                 0.5,
                 -10,
                 -10,
                 0.2 + 0.2j,
                 (1.092966013125+0.13455014673750001j),
-                1e-15
+                1e-15,
+                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
-            (
+            pytest.param(
                 -10,
                 -20,
                 -10,
                 0.2 + 0.2j,
                 (-0.07712512000000005+0.12752814080000005j),
-                1e-13
+                1e-13,
+                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
-            (
+            pytest.param(
                 -1,
                 3.2,
                 -1,
                 0.2 + 0.2j,
                 (1.6400000000000001+0.6400000000000001j),
-                1e-13
+                1e-13,
+                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
         ],
     )
@@ -66,9 +109,23 @@ class TestHyp2f1:
         [
             (0.5, 0.2, 1.5, 1.1496439092239847 + 0j, 1e-15),
             (12.3, 8.0, 20.31, 69280986.75273195 + 0j, 1e-15),
-            (290.2, 321.5, 700.1, 1.3396562400934e117 + 0j, 1e-12),
+            pytest.param(
+                290.2,
+                321.5,
+                700.1,
+                1.3396562400934e117 + 0j,
+                1e-12,
+                marks=pytest.mark.xfail(reason="overflow"),
+            ),
             (-102.1, -20.3, 1.3, 2.7899070752746906e22 + 0j, 1e-15),
-            (-202.6, 60.3, 1.5, -1.3113641413099326e-56 + 0j, 1e-12),
+            pytest.param(
+                -202.6,
+                60.3,
+                1.5,
+                -1.3113641413099326e-56 + 0j,
+                1e-12,
+                marks=pytest.mark.xfail(reason="underflow"),
+            ),
         ],
     )
     def test_unital_argument(self, a, b, c, expected, rtol):
@@ -84,7 +141,13 @@ class TestHyp2f1:
             (0.5, 0.2, 0.9428846409614143 + 0j, 1e-15),
             (12.3, 8.0, -4.845809986595704e-06 + 0j, 1e-15),
             (221.5, 90.2, 2.0490488728377282e-42 + 0j, 1e-7),
-            (-102.1, -20.3, 45143784.46783885 + 0j, 1e-7),
+            pytest.param(
+                -102.1,
+                -20.3,
+                45143784.46783885 + 0j,
+                1e-7,
+                marks=pytest.mark.xfail,
+            ),
         ],
     )
     def test_special_case_z_near_minus_1(self, a, b, expected, rtol):
@@ -290,7 +353,7 @@ class TestHyp2f1:
                 (0.3157894736842106-0.5263157894736843j),
                 (0.9982436200365834+0.002927268199671111j),
                 1e-7,
-                marks=pytest.mark.xfail(reasons='Unhandled parameter values.')
+                marks=pytest.mark.xfail(reason="Poor convergence.")
             ),
             (
                 2.02764642551431,
@@ -323,7 +386,7 @@ class TestHyp2f1:
         """|z| < 1 and real(z) < 0."""
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
-    @pytest.mark.xfail
+    @pytest.mark.xfail(reason="gh-8054")
     @pytest.mark.parametrize(
         "a,b,c,z,expected,rtol",
         [
