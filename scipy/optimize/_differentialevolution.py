@@ -560,7 +560,7 @@ class DifferentialEvolutionSolver:
 
         # we create a wrapped function to allow the use of map (and Pool.map
         # in the future)
-        self.func = _FunctionWrapper(func, args)
+        self.func = _ScalarFunctionWrapper(func, args)
         self.args = args
 
         # convert tuple of lower and upper bounds to limits
@@ -1334,7 +1334,7 @@ class DifferentialEvolutionSolver:
         return idxs
 
 
-class _FunctionWrapper:
+class _ScalarFunctionWrapper:
     """
     Object to wrap user cost function, allowing picklability
     """
@@ -1343,7 +1343,17 @@ class _FunctionWrapper:
         self.args = [] if args is None else args
 
     def __call__(self, x):
-        return self.f(x, *self.args)
+        fx = self.f(np.copy(x), *self.args)
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
 
 
 class _ConstraintWrapper:
