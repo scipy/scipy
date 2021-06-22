@@ -1,5 +1,5 @@
 """
-.. note:
+.. note::
     If you are looking for overrides for NumPy-specific methods, see the
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
