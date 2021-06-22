@@ -265,14 +265,14 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             i += size
         return f
     
-    if callback is None:
-        def callback(x):
-            pass
+    def wrapped_callback(x):
+        if callback is not None:
+            callback(np.copy(x))
 
     info = np.zeros(4, np.float64)
     xopt, info = _cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
                                   rhoend=rhoend, iprint=iprint, maxfun=maxfun,
-                                  dinfo=info, callback=callback)
+                                  dinfo=info, callback=wrapped_callback)
 
     if info[3] > catol:
         # Check constraint violation
