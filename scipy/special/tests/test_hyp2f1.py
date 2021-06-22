@@ -133,6 +133,7 @@ class TestHyp2f1:
 
         Expected answers computed using mpmath.
         """
+        assert c - a - b > 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, 1 + 0j), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
@@ -227,6 +228,7 @@ class TestHyp2f1:
         ]
     )
     def test_a_b_negative_int(self, a, b, c, z, expected, rtol):
+        assert a == int(a) and a < 0 or b == int(b) and b < 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
@@ -272,19 +274,15 @@ class TestHyp2f1:
                 (0.9844377175631795-0.003120587561483841j),
                 1e-10,
             ),
-            (
-                -15.980848054962111,
-                4.5,
-                8.5,
-                (0.5263157894736841-0.5263157894736843j),
-                (-0.008821385280750719+0.0026165583173886836j),
-                1e-13,
-            ),
         ],
     )
     def test_a_b_neg_int_after_euler_hypergeometric_transformation(
         self, a, b, c, z, expected, rtol
     ):
+        assert (  # Tests the test
+            (abs(c - a - int(c - a)) < 1e-15 and c - a < 0) or
+            (abs(c - b - int(c - b)) < 1e-15 and c - b < 0)
+        )
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
@@ -367,6 +365,7 @@ class TestHyp2f1:
     )
     def test_region1(self, a, b, c, z, expected, rtol):
         """|z| < 0.9 and real(z) > 0."""
+        assert abs(z) < 0.9 and z.real > 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
@@ -384,6 +383,7 @@ class TestHyp2f1:
     )
     def test_region2(self, a, b, c, z, expected, rtol):
         """|z| < 1 and real(z) < 0."""
+        assert abs(z) < 1 and z.real < 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.xfail(reason="gh-8054")
@@ -414,4 +414,5 @@ class TestHyp2f1:
         This region is unhandled by of the standard transformations and
         needs special care.
         """
+        assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
