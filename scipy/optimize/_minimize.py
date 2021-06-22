@@ -543,9 +543,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
-    # - callback
-    if (meth in ('cobyla',) and callback is not None):
-        warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
