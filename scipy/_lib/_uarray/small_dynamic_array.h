@@ -222,7 +222,7 @@ public:
   }
 
   reference operator[](size_type idx) {
-    assert(0 < idx && idx < size);
+    assert(0 < idx && idx < size_);
     return begin()[idx];
   }
 };
