@@ -1,14 +1,25 @@
 """Tools based on the Wigner quasiprobability distributions.
 """
 
+from __future__ import annotations
+from typing import Tuple, TYPE_CHECKING
+
 import numpy as np
 from scipy.fft import fft
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
-__all__ = ['wvd']
+
+__all__ = ['wigner_ville']
 
 
-def wigner_ville(x, fs=1.0, resolution=1, window_size=None):
+def wigner_ville(
+        x: npt.ArrayLike,
+        fs: float = 1.0,
+        resolution: int = 1,
+        window_size: None | int = None,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Wigner-Ville distribution.
 
@@ -68,7 +79,8 @@ def wigner_ville(x, fs=1.0, resolution=1, window_size=None):
     >>> plt.ylim([0, 6])
     >>> plt.show()
     """
-    if not window_size:
+    x = np.asarray(x)
+    if window_size is None:
         window_size = len(x) // 2
 
     n_pts = int(np.floor(np.floor(len(x) / resolution) / 2) * 2)
