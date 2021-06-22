@@ -4,7 +4,7 @@ c
 c\Name: dsesrt
 c
 c\Description:
-c  Sort the array X in the order specified by WHICH and optionally 
+c  Sort the array X in the order specified by WHICH and optionally
 c  apply the permutation to the columns of the matrix A.
 c
 c\Usage:
@@ -32,7 +32,7 @@ c  NA      Integer.  (INPUT)
 c          Number of rows of the matrix A.
 c
 c  A      Double precision array of length NA by N.  (INPUT/OUTPUT)
-c         
+c
 c  LDA     Integer.  (INPUT)
 c          Leading dimension of A.
 c
@@ -47,18 +47,18 @@ c     dswap  Level 1 BLAS that swaps the contents of two vectors.
 c
 c\Authors
 c     Danny Sorensen               Phuong Vu
-c     Richard Lehoucq              CRPC / Rice University 
-c     Dept. of Computational &     Houston, Texas 
+c     Richard Lehoucq              CRPC / Rice University
+c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     12/15/93: Version ' 2.1'.
-c               Adapted from the sort routine in LANSO and 
+c               Adapted from the sort routine in LANSO and
 c               the ARPACK code dsortr
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: sesrt.F   SID: 2.3   DATE OF SID: 4/19/96   RELEASE: 2
 c
 c\EndLib
@@ -101,7 +101,7 @@ c     | Executable Statements |
 c     %-----------------------%
 c
       igap = n / 2
-c 
+c
       if (which .eq. 'SA') then
 c
 c        X is sorted into decreasing order of algebraic.
@@ -165,7 +165,7 @@ c
    80       continue
 c
             if (j.lt.0) go to 90
-c           
+c
             if (x(j).gt.x(j+igap)) then
                temp = x(j)
                x(j) = x(j+igap)
@@ -179,7 +179,7 @@ c
    90    continue
          igap = igap / 2
          go to 70
-c 
+c
       else if (which .eq. 'LM') then
 c
 c        X is sorted into increasing order of magnitude.

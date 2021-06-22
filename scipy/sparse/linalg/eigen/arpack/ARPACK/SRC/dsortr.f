@@ -4,7 +4,7 @@ c
 c\Name: dsortr
 c
 c\Description:
-c  Sort the array X1 in the order specified by WHICH and optionally 
+c  Sort the array X1 in the order specified by WHICH and optionally
 c  applies the permutation to the array X2.
 c
 c\Usage:
@@ -39,17 +39,17 @@ c\BeginLib
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
-c     Richard Lehoucq              CRPC / Rice University 
-c     Dept. of Computational &     Houston, Texas 
+c     Richard Lehoucq              CRPC / Rice University
+c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     12/16/93: Version ' 2.1'.
 c               Adapted from the sort routine in LANSO.
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: sortr.F   SID: 2.3   DATE OF SID: 4/19/96   RELEASE: 2
 c
 c\EndLib
@@ -86,7 +86,7 @@ c     | Executable Statements |
 c     %-----------------------%
 c
       igap = n / 2
-c 
+c
       if (which .eq. 'SA') then
 c
 c        X1 is sorted into decreasing order of algebraic.
@@ -158,7 +158,7 @@ c
    80       continue
 c
             if (j.lt.0) go to 90
-c           
+c
             if (x1(j).gt.x1(j+igap)) then
                temp = x1(j)
                x1(j) = x1(j+igap)
@@ -176,7 +176,7 @@ c
    90    continue
          igap = igap / 2
          go to 70
-c 
+c
       else if (which .eq. 'LM') then
 c
 c        X1 is sorted into increasing order of magnitude.
