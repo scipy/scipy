@@ -54,7 +54,6 @@ steps:
     libatlas-base-dev
     liblapack-dev
     gfortran
-    gdb
     libgmp-dev
     libmpfr-dev
     libsuitesparse-dev
@@ -134,8 +133,7 @@ steps:
   displayName: 'Build SciPy'
 - script: |
     set -e
-    cd doc
-    SHELL="/bin/bash" python ../runtests.py -g --shell -- -c "gdb -ex run -ex \"thread apply all bt\" -ex quit --args python -c \"import scipy.fft; scipy.fft.test()\""
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:
