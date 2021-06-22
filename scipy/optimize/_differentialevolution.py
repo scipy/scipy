@@ -1343,7 +1343,7 @@ class _ScalarFunctionWrapper:
         self.args = [] if args is None else args
 
     def __call__(self, x):
-        fx = self.f(np.copy(x), *self.args)
+        fx = self.f(x, *self.args)
         # Make sure the function returns a true scalar
         if not np.isscalar(fx):
             try:
