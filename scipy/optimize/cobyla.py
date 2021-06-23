@@ -37,7 +37,7 @@ def synchronized(func):
 @synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4,
-                callback=None):
+                *, callback=None):
     """
     Minimize a function using the Constrained Optimization By Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
