@@ -29,16 +29,30 @@ class TestCobyla:
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
+        class Callback:
+            def __init__(self):
+                self.n_calls = 0
+                self.last_x = None
+                
+            def __call__(self, x):
+                self.n_cals += 1
+                self.last_x = x
+                
+        callback = Callback()
+            
+        
         # Minimize with method='COBYLA'
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
-                       options=self.opts)
+                       callback=callback, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
         assert_(sol.success, sol.message)
         assert_(sol.maxcv < 1e-5, sol)
         assert_(sol.nfev < 70, sol)
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
+        assert_(sol.nfev == callback.n_calls, sol)
+        assert_(sol.x == callback.last_x, sol)
 
     def test_minimize_constraint_violation(self):
         np.random.seed(1234)

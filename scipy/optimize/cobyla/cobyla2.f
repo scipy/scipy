@@ -134,7 +134,10 @@ C     Make the next call of the user-supplied subroutine CALCFC. These
 C     instructions are also used for calling CALCFC during the iterations of
 C     the algorithm.
 C
-   40 IF (NFVALS .GE. MAXFUN .AND. NFVALS .GT. 0) THEN
+   40 IF (NFVALS .GT. 0) THEN
+         CALL CALLBACK(N,M,X)
+      END IF
+      IF (NFVALS .GE. MAXFUN .AND. NFVALS .GT. 0) THEN
          IF (IPRINT .GE. 1) PRINT 50
    50      FORMAT (/3X,'Return from subroutine COBYLA because the ',
      1        'MAXFUN limit has been reached.')
@@ -147,7 +150,6 @@ C
          PRINT *, '  DX = ', (DX(I),I=1,N)
          PRINT *, '  BEFORE: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
       END IF
-      CALL CALLBACK (N,M,X)
       CALL CALCFC (N,M,X,F,CON)
       IF (IPRINT .EQ. 3) THEN
          PRINT *, '  AFTER: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
