@@ -1,8 +1,14 @@
 import pytest
 import numpy as np
+from collections import namedtuple
 from numpy.testing import assert_allclose
 
 from scipy.special import hyp2f1
+
+Hyp2f1TestCase = namedtuple(
+    "Hyp2f1TestCase",
+    ["a", "b", "c", "z", "expected", "rtol"]
+)
 
 
 class TestHyp2f1:
@@ -16,269 +22,381 @@ class TestHyp2f1:
     improvements are needed.
     """
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (0.5, 0.2, -10, 0.2 + 0.2j, np.inf + 0j, 0),
             pytest.param(
-                0.5,
-                0.2,
-                -10,
-                0 + 0j,
-                1 + 0j,
-                0,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=-10,
+                    z=0.2 + 0.2j,
+                    expected=np.inf + 0j,
+                    rtol=0
+                )
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=-10,
+                    z=0 + 0j,
+                    expected=1 + 0j,
+                    rtol=0
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340")
             ),
             pytest.param(
-                0.5,
-                0,
-                -10,
-                0.2 + 0.2j,
-                1 + 0j,
-                0,
-                marks=pytest.mark.xfail(reason="gh-7340"),
-            ),
-            (
-                0.5,
-                0,
-                0,
-                0.2 + 0.2j,
-                1 + 0j,
-                0,
-            ),
-            pytest.param(
-                0.5,
-                0.2,
-                0,
-                0.2 + 0.2j,
-                np.inf + 0j,
-                0,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0,
+                    c=-10,
+                    z=0.2 + 0.2j,
+                    expected=1 + 0j,
+                    rtol=0
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
-                0.5,
-                0.2,
-                0,
-                0 + 0j,
-                np.nan + 0j,
-                0,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0,
+                    c=0,
+                    z=0.2 + 0.2j,
+                    expected=1 + 0j,
+                    rtol=0,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=0,
+                    z=0.2 + 0.2j,
+                    expected=np.inf + 0j,
+                    rtol=0,
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
-                0.5,
-                -5,
-                -10,
-                0.2 + 0.2j,
-                (1.0495404166666666+0.05708208333333334j),
-                1e-15,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=0,
+                    z=0 + 0j,
+                    expected=np.nan + 0j,
+                    rtol=0,
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
-                0.5,
-                -10,
-                -10,
-                0.2 + 0.2j,
-                (1.092966013125+0.13455014673750001j),
-                1e-15,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=-5,
+                    c=-10,
+                    z=0.2 + 0.2j,
+                    expected=(1.0495404166666666+0.05708208333333334j),
+                    rtol=1e-15,
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
-                -10,
-                -20,
-                -10,
-                0.2 + 0.2j,
-                (-0.07712512000000005+0.12752814080000005j),
-                1e-13,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=-10,
+                    c=-10,
+                    z=0.2 + 0.2j,
+                    expected=(1.092966013125+0.13455014673750001j),
+                    rtol=1e-15,
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
-                -1,
-                3.2,
-                -1,
-                0.2 + 0.2j,
-                (1.6400000000000001+0.6400000000000001j),
-                1e-13,
+                Hyp2f1TestCase(
+                    a=-10,
+                    b=-20,
+                    c=-10,
+                    z=0.2 + 0.2j,
+                    expected=(-0.07712512000000005+0.12752814080000005j),
+                    rtol=1e-13,
+                ),
                 marks=pytest.mark.xfail(reason="gh-7340"),
             ),
-        ],
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-1,
+                    b=3.2,
+                    c=-1,
+                    z=0.2 + 0.2j,
+                    expected=(1.6400000000000001+0.6400000000000001j),
+                    rtol=1e-13,
+                ),
+                marks=pytest.mark.xfail(reason="gh-7340"),
+            ),
+        ]
     )
-    def test_c_non_positive_int(self, a, b, c, z, expected, rtol):
+    def test_c_non_positive_int(self, hyp2f1_test_case):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,c,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (0.5, 0.2, 1.5, 1.1496439092239847 + 0j, 1e-15),
-            (12.3, 8.0, 20.31, 69280986.75273195 + 0j, 1e-15),
             pytest.param(
-                290.2,
-                321.5,
-                700.1,
-                1.3396562400934e117 + 0j,
-                1e-12,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=1.5,
+                    z=1 + 0j,
+                    expected=1.1496439092239847 + 0j,
+                    rtol=1e-15
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=12.3,
+                    b=8.0,
+                    c=20.31,
+                    z=1 + 0j,
+                    expected=69280986.75273195 + 0j,
+                    rtol=1e-15
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=290.2,
+                    b=321.5,
+                    c=700.1,
+                    z=1 + 0j,
+                    rtol=1.3396562400934e117 + 0j,
+                    expected=1e-12,
+                ),
                 marks=pytest.mark.xfail(reason="overflow"),
             ),
-            (-102.1, -20.3, 1.3, 2.7899070752746906e22 + 0j, 1e-15),
             pytest.param(
-                -202.6,
-                60.3,
-                1.5,
-                -1.3113641413099326e-56 + 0j,
-                1e-12,
+                Hyp2f1TestCase(
+                    a=-102.1,
+                    b=-20.3,
+                    c=1.3,
+                    z=1 + 0j,
+                    expected=2.7899070752746906e22 + 0j,
+                    rtol=1e-15
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-202.6,
+                    b=60.3,
+                    c=1.5,
+                    z=1 + 0j,
+                    expected=-1.3113641413099326e-56 + 0j,
+                    rtol=1e-12,
+                ),
                 marks=pytest.mark.xfail(reason="underflow"),
             ),
         ],
     )
-    def test_unital_argument(self, a, b, c, expected, rtol):
+    def test_unital_argument(self, hyp2f1_test_case):
         """Tests for case z = 1, c - a - b > 0.
 
         Expected answers computed using mpmath.
         """
-        assert c - a - b > 0  # Tests the test
-        assert_allclose(hyp2f1(a, b, c, 1 + 0j), expected, rtol=rtol)
+        a, b, c, z, expected, rtol = hyp2f1_test_case
+        assert z == 1 and c - a - b > 0  # Tests the test
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (0.5, 0.2, 0.9428846409614143 + 0j, 1e-15),
-            (12.3, 8.0, -4.845809986595704e-06 + 0j, 1e-15),
-            (221.5, 90.2, 2.0490488728377282e-42 + 0j, 1e-7),
             pytest.param(
-                -102.1,
-                -20.3,
-                45143784.46783885 + 0j,
-                1e-7,
+                Hyp2f1TestCase(
+                    a=0.5,
+                    b=0.2,
+                    c=1.3,
+                    z=-1 + 0j,
+                    expected=0.9428846409614143 + 0j,
+                    rtol=1e-15),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=12.3,
+                    b=8.0,
+                    c=5.300000000000001,
+                    z=-1 + 0j,
+                    expected=-4.845809986595704e-06 + 0j,
+                    rtol=1e-15
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=221.5,
+                    b=90.2,
+                    c=132.3,
+                    z=-1 + 0j,
+                    expected=2.0490488728377282e-42 + 0j,
+                    rtol=1e-7,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-102.1,
+                    b=-20.3,
+                    c=-80.8,
+                    z=-1 + 0j,
+                    expected=45143784.46783885 + 0j,
+                    rtol=1e-7,
+                ),
                 marks=pytest.mark.xfail,
             ),
         ],
     )
-    def test_special_case_z_near_minus_1(self, a, b, expected, rtol):
+    def test_special_case_z_near_minus_1(self, hyp2f1_test_case):
         """Tests for case z ~ -1, c ~ 1 + a - b
 
         Expected answers computed using mpmath.
         """
-        assert_allclose(
-            [
-                hyp2f1(a, b, 1 + a - b, -1 + 0j),
-                hyp2f1(a, b, 1 + a - b, -1 + 2e-16j),
-                hyp2f1(a, b, 1 + a - b, -1 - 2e-16j),
-            ],
-            [expected, expected, expected],
-            rtol=rtol,
-        )
+        a, b, c, z, expected, rtol = hyp2f1_test_case
+        assert abs(1 + a - b - c) < 1e-15 and abs(z + 1) < 1e-15
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (
-                -4,
-                2.02764642551431,
-                1.0561196186065624,
-                (0.9473684210526314-0.10526315789473695j),
-                (0.0031961077109535375-0.0011313924606557173j),
-                1e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-4,
+                    b=2.02764642551431,
+                    c=1.0561196186065624,
+                    z=(0.9473684210526314-0.10526315789473695j),
+                    expected=(0.0031961077109535375-0.0011313924606557173j),
+                    rtol=1e-12,
+                ),
             ),
-            (
-                -8,
-                -7.937789122896016,
-                -15.964218273004214,
-                (2-0.10526315789473695j),
-                (0.005543763196412503-0.0025948879065698306j),
-                5e-13,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-8,
+                    b=-7.937789122896016,
+                    c=-15.964218273004214,
+                    z=(2-0.10526315789473695j),
+                    expected=(0.005543763196412503-0.0025948879065698306j),
+                    rtol=5e-13,
+                ),
             ),
-            (
-                -8,
-                8.095813935368371,
-                4.0013768449590685,
-                (0.9473684210526314-0.10526315789473695j),
-                (-0.0003054674127221263-9.261359291755414e-05j),
-                5e-11,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-8,
+                    b=8.095813935368371,
+                    c=4.0013768449590685,
+                    z=(0.9473684210526314-0.10526315789473695j),
+                    expected=(-0.0003054674127221263-9.261359291755414e-05j),
+                    rtol=5e-11,
+                ),
             ),
-            (
-                -4,
-                -3.956227226099288,
-                -3.9316537064827854,
-                (1.1578947368421053-0.3157894736842106j),
-                (-0.0020809502580892937-0.0041877333232365095j),
-                1e-13,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-4,
+                    b=-3.956227226099288,
+                    c=-3.9316537064827854,
+                    z=(1.1578947368421053-0.3157894736842106j),
+                    expected=(-0.0020809502580892937-0.0041877333232365095j),
+                    rtol=1e-13,
+                ),
             ),
-            (
-                2.02764642551431,
-                -4,
-                2.050308316530781,
-                (0.9473684210526314-0.10526315789473695j),
-                (0.0011282435590058734+0.0002027062303465851j),
-                1e-13,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=-4,
+                    c=2.050308316530781,
+                    z=(0.9473684210526314-0.10526315789473695j),
+                    expected=(0.0011282435590058734+0.0002027062303465851j),
+                    rtol=1e-13,
+                ),
             ),
-            (
-                -7.937789122896016,
-                -8,
-                -15.964218273004214,
-                (1.3684210526315788+0.10526315789473673j),
-                (-9.134907719238265e-05-0.00040219233987390723j),
-                5e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-7.937789122896016,
+                    b=-8,
+                    c=-15.964218273004214,
+                    z=(1.3684210526315788+0.10526315789473673j),
+                    expected=(-9.134907719238265e-05-0.00040219233987390723j),
+                    rtol=5e-12,
+                ),
             ),
-            (
-                4.080187217753502,
-                -4,
-                4.0013768449590685,
-                (0.9473684210526314-0.10526315789473695j),
-                (-0.000519013062087489-0.0005855883076830948j),
-                5e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=4.080187217753502,
+                    b=-4,
+                    c=4.0013768449590685,
+                    z=(0.9473684210526314-0.10526315789473695j),
+                    expected=(-0.000519013062087489-0.0005855883076830948j),
+                    rtol=5e-12,
+                ),
             ),
         ]
     )
-    def test_a_b_negative_int(self, a, b, c, z, expected, rtol):
+    def test_a_b_negative_int(self, hyp2f1_test_case):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert a == int(a) and a < 0 or b == int(b) and b < 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (
-                -0.5,
-                -0.9629749245209605,
-                -15.5,
-                (1.1578947368421053-1.1578947368421053j),
-                (0.9778506962676361+0.044083801141231616j),
-                1e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.5,
+                    b=-0.9629749245209605,
+                    c=-15.5,
+                    z=(1.1578947368421053-1.1578947368421053j),
+                    expected=(0.9778506962676361+0.044083801141231616j),
+                    rtol=1e-12,
+                ),
             ),
-            (
-                8.5,
-                -3.9316537064827854,
-                1.5,
-                (0.9473684210526314-0.10526315789473695j),
-                (4.0793167523167675-10.11694246310966j),
-                5e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=8.5,
+                    b=-3.9316537064827854,
+                    c=1.5,
+                    z=(0.9473684210526314-0.10526315789473695j),
+                    expected=(4.0793167523167675-10.11694246310966j),
+                    rtol=5e-12,
+                ),
             ),
-            (
-                8.5,
-                -0.9629749245209605,
-                2.5,
-                (1.1578947368421053-0.10526315789473695j),
-                (-2.9692999501916915+0.6394599899845594j),
-                5e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=8.5,
+                    b=-0.9629749245209605,
+                    c=2.5,
+                    z=(1.1578947368421053-0.10526315789473695j),
+                    expected=(-2.9692999501916915+0.6394599899845594j),
+                    rtol=5e-12,
+                ),
             ),
-            (
-                -0.5,
-                -0.9629749245209605,
-                -15.5,
-                (1.5789473684210522-1.1578947368421053j),
-                (0.9493076367106102-0.04316852977183447j),
-                5e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.5,
+                    b=-0.9629749245209605,
+                    c=-15.5,
+                    z=(1.5789473684210522-1.1578947368421053j),
+                    expected=(0.9493076367106102-0.04316852977183447j),
+                    rtol=5e-12,
+                ),
             ),
-            (
-                -0.9220024191881196,
-                -0.5,
-                -15.5,
-                (0.5263157894736841+0.10526315789473673j),
-                (0.9844377175631795-0.003120587561483841j),
-                1e-10,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.5,
+                    c=-15.5,
+                    z=(0.5263157894736841+0.10526315789473673j),
+                    expected=(0.9844377175631795-0.003120587561483841j),
+                    rtol=1e-10,
+                ),
             ),
         ],
     )
     def test_a_b_neg_int_after_euler_hypergeometric_transformation(
-        self, a, b, c, z, expected, rtol
+        self, hyp2f1_test_case
     ):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert (  # Tests the test
             (abs(c - a - int(c - a)) < 1e-15 and c - a < 0) or
             (abs(c - b - int(c - b)) < 1e-15 and c - b < 0)
@@ -286,133 +404,160 @@ class TestHyp2f1:
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (
-                -0.9220024191881196,
-                -0.9629749245209605,
-                -15.963511401609862,
-                (0.10526315789473673-0.3157894736842106j),
-                (0.9941449585778349+0.01756335047931358j),
-                1e-14,
-            ),
-            (
-                1.0272592605282642,
-                -0.9629749245209605,
-                -15.963511401609862,
-                (0.5263157894736841+0.5263157894736841j),
-                (1.0388722293372104-0.09549450380041416j),
-                1e-11,
-            ),
-            (
-                2.02764642551431,
-                1.0561196186065624,
-                -7.93846038215665,
-                (0.10526315789473673+0.7368421052631575j),
-                (2.1948378809826434+24.934157235172222j),
-                5e-15,
-            ),
-            (
-                2.02764642551431,
-                16.088264119063613,
-                8.031683612216888,
-                (0.3157894736842106-0.736842105263158j),
-                (-0.4075277891264672-0.06819344579666956j),
-                1e-12,
-            ),
-            (
-                4.080187217753502,
-                2.050308316530781,
-                8.031683612216888,
-                (0.7368421052631575-0.10526315789473695j),
-                (2.833535530740603-0.6925373701408158j),
-                5e-15,
-            ),
-            (
-                2.02764642551431,
-                2.050308316530781,
-                4.078873014294075,
-                (0.10526315789473673-0.3157894736842106j),
-                (1.005347176329683-0.3580736009337313j),
-                5e-16,
-            ),
-            (
-                -0.9220024191881196,
-                -0.9629749245209605,
-                -15.963511401609862,
-                (0.3157894736842106-0.5263157894736843j),
-                (0.9824353641135369+0.029271018868990268j),
-                5e-13,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.9629749245209605,
+                    c=-15.963511401609862,
+                    z=(0.10526315789473673-0.3157894736842106j),
+                    expected=(0.9941449585778349+0.01756335047931358j),
+                    rtol=1e-14,
+                ),
             ),
             pytest.param(
-                -0.9220024191881196,
-                -0.9629749245209605,
-                -159.63511401609862,
-                (0.3157894736842106-0.5263157894736843j),
-                (0.9982436200365834+0.002927268199671111j),
-                1e-7,
+                Hyp2f1TestCase(
+                    a=1.0272592605282642,
+                    b=-0.9629749245209605,
+                    c=-15.963511401609862,
+                    z=(0.5263157894736841+0.5263157894736841j),
+                    expected=(1.0388722293372104-0.09549450380041416j),
+                    rtol=1e-11,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=1.0561196186065624,
+                    c=-7.93846038215665,
+                    z=(0.10526315789473673+0.7368421052631575j),
+                    expected=(2.1948378809826434+24.934157235172222j),
+                    rtol=5e-15,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=16.088264119063613,
+                    c=8.031683612216888,
+                    z=(0.3157894736842106-0.736842105263158j),
+                    expected=(-0.4075277891264672-0.06819344579666956j),
+                    rtol=1e-12,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=4.080187217753502,
+                    b=2.050308316530781,
+                    c=8.031683612216888,
+                    z=(0.7368421052631575-0.10526315789473695j),
+                    expected=(2.833535530740603-0.6925373701408158j),
+                    rtol=5e-15,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=2.050308316530781,
+                    c=4.078873014294075,
+                    z=(0.10526315789473673-0.3157894736842106j),
+                    expected=(1.005347176329683-0.3580736009337313j),
+                    rtol=5e-16,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.9629749245209605,
+                    c=-15.963511401609862,
+                    z=(0.3157894736842106-0.5263157894736843j),
+                    expected=(0.9824353641135369+0.029271018868990268j),
+                    rtol=5e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.9629749245209605,
+                    c=-159.63511401609862,
+                    z=(0.3157894736842106-0.5263157894736843j),
+                    expected=(0.9982436200365834+0.002927268199671111j),
+                    rtol=1e-7,
+                ),
                 marks=pytest.mark.xfail(reason="Poor convergence.")
             ),
-            (
-                2.02764642551431,
-                16.088264119063613,
-                8.031683612216888,
-                (0.5263157894736841-0.5263157894736843j),
-                (-0.6906825165778091+0.8176575137504892j),
-                5e-13,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=16.088264119063613,
+                    c=8.031683612216888,
+                    z=(0.5263157894736841-0.5263157894736843j),
+                    expected=(-0.6906825165778091+0.8176575137504892j),
+                    rtol=5e-13,
+                ),
             ),
         ]
     )
-    def test_region1(self, a, b, c, z, expected, rtol):
-        """|z| < 0.9 and real(z) > 0."""
-        assert abs(z) < 0.9 and z.real > 0  # Tests the test
+    def test_region1(self, hyp2f1_test_case):
+        """|z| < 0.9 and real(z) >= 0."""
+        a, b, c, z, expected, rtol = hyp2f1_test_case
+        assert abs(z) < 0.9 and z.real >= 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (
-                2.02764642551431,
-                1.0561196186065624,
-                4.078873014294075,
-                (-0.3157894736842106+0.7368421052631575j),
-                (0.7751915029081136+0.24068493258607315j),
-                1e-15,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=1.0561196186065624,
+                    c=4.078873014294075,
+                    z=(-0.3157894736842106+0.7368421052631575j),
+                    expected=(0.7751915029081136+0.24068493258607315j),
+                    rtol=1e-15,
+                ),
             ),
         ]
     )
-    def test_region2(self, a, b, c, z, expected, rtol):
+    def test_region2(self, hyp2f1_test_case):
         """|z| < 1 and real(z) < 0."""
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert abs(z) < 1 and z.real < 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.xfail(reason="gh-8054")
     @pytest.mark.parametrize(
-        "a,b,c,z,expected,rtol",
+        "hyp2f1_test_case",
         [
-            (
-                1.0272592605282642,
-                1.0561196186065624,
-                -0.906685989801748,
-                (0.10526315789473673-0.9473684210526316j),
-                (-3.9995506969395778-8.179533155337996j),
-                1e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=1.0272592605282642,
+                    b=1.0561196186065624,
+                    c=-0.906685989801748,
+                    z=(0.10526315789473673-0.9473684210526316j),
+                    expected=(-3.9995506969395778-8.179533155337996j),
+                    rtol=1e-12,
+                ),
             ),
-            (
-                8.5,
-                4.5,
-                8.077282662161238,
-                (0.3157894736842106+0.9473684210526314j),
-                (-0.11307039404123598-0.443195310438102j),
-                1e-12,
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=8.5,
+                    b=4.5,
+                    c=8.077282662161238,
+                    z=(0.3157894736842106+0.9473684210526314j),
+                    expected=(-0.11307039404123598-0.443195310438102j),
+                    rtol=1e-12,
+                ),
             ),
         ]
     )
-    def test_region4(self, a, b, c, z, expected, rtol):
+    def test_region4(self, hyp2f1_test_case):
         """0.9 <= |z| <= 1 and |1 - z| >= 1.
 
         This region is unhandled by of the standard transformations and
         needs special care.
         """
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
