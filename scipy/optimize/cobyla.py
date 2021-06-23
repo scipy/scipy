@@ -169,7 +169,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 
     # build constraints
     con = tuple({'type': 'ineq', 'fun': c, 'args': consargs} for c in cons)
-    
+
     # options
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
