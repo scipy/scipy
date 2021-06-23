@@ -37,4 +37,3 @@ dependencies:
   # Some optional test dependencies
   - mpmath
   - gmpy2
-  - scikit-umfpack
