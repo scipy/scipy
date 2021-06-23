@@ -564,6 +564,7 @@ C
           PRINT 70, NFVALS,F,RESMAX,(X(I),I=1,IPTEM)
           IF (IPTEM .LT. N) PRINT 80, (X(I),I=IPTEMP,N)
       END IF
+      CALL CALLBACK(N,M,X)
       MAXFUN=NFVALS
       DINFO(2)=DBLE(NFVALS)
       DINFO(3)=DBLE(F)
