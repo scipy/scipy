@@ -16,10 +16,11 @@ class TestHyp2f1:
     """Tests for hyp2f1 for complex values.
 
     Expected values for test cases were computed using mpmath. See
-    scipy.special._precompute.hyp2f1_data. The verbose style of specifying
+    `scipy.special._precompute.hyp2f1_data`. The verbose style of specifying
     test cases is used for readability and to make it easier to mark individual
     cases as expected to fail. Expected failures are used to highlight cases
-    where improvements are needed. See scipy.special._precompute.hyp2f1_data
+    where improvements are needed. See
+    `scipy.special._precompute.hyp2f1_data.make_hyp2f1_test_cases`
     for a function to generate the boilerplate for the test cases.
 
     Assertions have been added to each test to ensure that the test cases
