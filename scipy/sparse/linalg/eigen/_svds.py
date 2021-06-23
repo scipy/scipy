@@ -1,16 +1,16 @@
-__all__ = ['svds']
-
 import numpy as np
 
 from .arpack import _arpack
-arpack_int = _arpack.timing.nbx.dtype
 from . import eigsh
-from ._svds_doc import _svds_arpack_doc, _svds_lobpcg_doc
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse import isspmatrix
 from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
+
+arpack_int = _arpack.timing.nbx.dtype
+__all__ = ['svds']
+
 
 def _augmented_orthonormal_cols(x, k):
     # extract the shape of the x array
@@ -58,16 +58,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Parameters
     ----------
-    A : {sparse matrix, LinearOperator}
+    A : sparse matrix or LinearOperator
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
         Must satisfy ``1 <= k < min(M, N)``.
     ncv : int, optional
         When ``solver='arpack'``, this is the number of Lanczos vectors
-        generated. In this case, the default is ``min(n, max(2*k + 1, 20))``.
-        If specified, must satistify ``k + 1 < ncv < N``; ``ncv > 2*k`` is
-        recommended.
+        generated. See :ref:`'arpack' <sparse.linalg.svds-arpack>` for details.
         When ``solver='lobpcg'``, this parameter is ignored.
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
@@ -75,25 +73,23 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Which `k` singular values to find: either the largest magnitude ('LM')
         or smallest magnitude ('SM') singular values.
     v0 : ndarray, optional
-        When ``solver='arpack'``, this is the starting vector for iteration:
-        an (approximate) left singular vector if ``N > M`` and a right singular
-        vector otherwise. Must be of length ``min(M, N)``.
-        When ``solver='lobpcg'``, this is the starting vector for iteration
-        only if `k` is 1. Otherwise, this parameter is ignored.
-        Default: random
+        The starting vector for iteration; see method-specific
+        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>` or
+        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`) for details.
     maxiter : int, optional
-        Maximum number of iterations. The precise definition and default value
-        are solver-specific.
+        Maximum number of iterations; see method-specific
+        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>` or
+        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`) for details.
     return_singular_vectors : bool or str, optional
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
-        - True: return singular vectors.
-        - False: do not return singular vectors.
-        - "u": only return the left singular values, without computing the
+        - ``True``: return singular vectors.
+        - ``False``: do not return singular vectors.
+        - ``"u"``: only return the left singular values, without computing the
           right singular vectors (if ``N > M``).
-        - "vh": only return the right singular values, without computing the
-          left singular vectors (if ``N <= M``).
+        - ``"vh"``: only return the right singular values, without computing
+          the left singular vectors (if ``N <= M``).
 
     solver : str, optional
             The solver used.
@@ -108,20 +104,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is "vh", this variable is not computed,
-        and ``None`` is returned instead.
+        If `return_singular_vectors` is ``"vh"``, this variable is not
+        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
-    vt : ndarray, shape=(k, n)
+    vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is "u", this variable is not computed,
-        and None is returned instead.
-
+        If `return_singular_vectors` is ``"u"``, this variable is not computed,
+        and ``None`` is returned instead.
 
     Notes
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
-    on A.H * A or A * A.H, depending on which one is more efficient.
+    on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
+    efficient.
 
     Examples
     --------
