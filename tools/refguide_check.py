@@ -493,7 +493,7 @@ CHECK_NAMESPACE = {
 def try_convert_namedtuple(got):
     # suppose that "got" is smth like MoodResult(statistic=10, pvalue=0.1).
     # Then convert it to the tuple (10, 0.1), so that can later compare tuples.
-    num = sum(symb == '=' for symb in got)
+    num = got.count('=')
     if num == 0:
         # not a nameduple, bail out
         return got
@@ -626,12 +626,13 @@ class Checker(doctest.OutputChecker):
             # Then convert the latter to the tuple (10, 0.1),
             # and then compare the tuples.
             try:
-
                 got_again = try_convert_namedtuple(got)
                 want_again = try_convert_namedtuple(want)
-                return self.check_output(want_again, got_again, optionflags)
             except Exception:
                 return False
+            else:
+                return self.check_output(want_again, got_again, optionflags)
+
 
         # ... and defer to numpy
         try:
