@@ -35,7 +35,7 @@ class TestCobyla:
                 self.last_x = None
                 
             def __call__(self, x):
-                self.n_cals += 1
+                self.n_calls += 1
                 self.last_x = x
                 
         callback = Callback()
