@@ -561,3 +561,31 @@ class TestHyp2f1:
         a, b, c, z, expected, rtol = hyp2f1_test_case
         assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
+    # Marked as slow so it won't run on continuous integration builds.
+    # This test is not actually that slow, though could become slow in
+    # the future if enough test cases are added.
+    @pytest.mark.slow
+    def test_test_hyp2f1(self):
+        """Test that expected values match what is computed by mpmath."""
+        from scipy.special._precompute.hyp2f1_data import mp_hyp2f1
+        test_methods = [
+            test_method for test_method in dir(self)
+            # Filter dunder methods
+            if not test_method.startswith('__') and
+            # Filter properties and attributes (futureproofing).
+            callable(getattr(self, test_method)) and
+            # Filter methods that shouldn't be included.
+            test_method not in ['_get_test_parameters', 'test_test_hyp2f1']
+        ]
+        for test_method in test_methods:
+            params = self._get_test_parameters(getattr(self, test_method))
+            for a, b, c, z, expected, _ in params:
+                assert_allclose(mp_hyp2f1(a, b, c, z), expected, rtol=2.25e-16)
+
+    def _get_test_parameters(self, test_method):
+        """Get pytest.mark parameters for a test in this class."""
+        return [
+            mark.args[1][0].values[0] for mark in test_method.pytestmark
+            if mark.name == 'parametrize'
+        ]
