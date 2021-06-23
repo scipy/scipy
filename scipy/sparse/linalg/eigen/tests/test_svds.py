@@ -272,8 +272,10 @@ def test_svd_linop():
                 L = CheckingLinearOperator(A)
 
                 for solver in [None, 'arpack', 'lobpcg']:
-                    U1, s1, VH1 = reorder(svds(A, k, which="LM", solver=solver))
-                    U2, s2, VH2 = reorder(svds(L, k, which="LM", solver=solver))
+                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
+                                               solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
+                                               solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
@@ -294,18 +296,22 @@ def test_svds_partial_return():
     vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
     dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
     if dvh > 1e-10:
-        raise AssertionError('right eigenvector matrices differ when using return_singular_vectors parameter')
+        raise AssertionError('right eigenvector matrices differ when using '
+                             'return_singular_vectors parameter')
     if svds(z, 2, return_singular_vectors='vh')[0] is not None:
-        raise AssertionError('left eigenvector matrix was computed when it should not have been')
+        raise AssertionError('left eigenvector matrix was computed when it '
+                             'should not have been')
     # test horizontal matrix
     z = csr_matrix(x.T)
     u_full = svds(z, 2)[0]
     u_partial = svds(z, 2, return_singular_vectors='vh')[0]
     du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
     if du > 1e-10:
-        raise AssertionError('left eigenvector matrices differ when using return_singular_vectors parameter')
+        raise AssertionError('left eigenvector matrices differ when using '
+                             'return_singular_vectors parameter')
     if svds(z, 2, return_singular_vectors='u')[-1] is not None:
-        raise AssertionError('right eigenvector matrix was computed when it should not have been')
+        raise AssertionError('right eigenvector matrix was computed when it '
+                             'should not have been')
 
 
 def test_svds_wrong_eigen_type():
