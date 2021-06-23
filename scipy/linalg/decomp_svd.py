@@ -1,13 +1,20 @@
 """SVD decomposition functions."""
+from __future__ import annotations
+
 import numpy
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
+
+from typing import Tuple, List, TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'higher_order_svd', 'orth',
+           'subspace_angles', 'null_space']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
@@ -277,6 +284,102 @@ def diagsvd(s, M, N):
         return r_[part, zeros((M-N, N), typ)]
     else:
         raise ValueError("Length of s must be M or N.")
+
+
+def higher_order_svd(
+    a: npt.ArrayLike, *, full_tensor: bool = True, check_finite: bool = True
+) -> Tuple[List[numpy.ndarray], numpy.ndarray]:
+    """Higher-order SVD (HOSVD)
+
+    Factorizes the M-D tensor `a` into a list of M matrices ``U_k`` containing
+    the left singular vectors of the unfolded tensor with respect to the
+    ``k``\\ th axis and a core tensor ``S`` such that
+    :math:`a = (U_1, U_2, \\dots, U_M) \\cdot S`.
+
+    Parameters
+    ----------
+    a : array_like
+        Tensor to decompose
+    full_tensor : bool, optional
+        If True (default), ``S`` is of the same shape as the input tensor `a`
+        and all ``U_k`` are of the shape ``(n, n)`` with ``n`` corresponding to
+        the ``k``\\ th axis of ``S``.
+        If False, the shapes of the ``U_k`` are ``(n, m)`` with ``n``
+        corresponding to the size of the ``k``\\ th axis of the input `a` and
+        ``m`` to the maybe reduced size of the ``k``\\ th axis of the core
+        tensor.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    U : list of ndarray
+        List of the unitary matrices ``U_k`` with left singular vectors of the
+        tensor unfolding corresponding to the ``k``\\ th axis.
+        Of shape ``(M, M)`` or ``(M, K)``, depending on `full_tensor`.
+    S : ndarray
+        The core tensor.
+        Of same or reduced shape compared to the input `a`, depending on
+        `full_tensor`.
+
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    svd : Singular value decomposition of a matrix
+
+    References
+    ----------
+    .. [1] Lieven De Lathauwer, Bart De Moor, and Joos Vandewalle (2000)
+           "A Multilinear Singular Value Decomposition"
+           SIAM Journal on Matrix Analysis and Applications,
+           21 (4), pp. 1253-1278. ISSN 1095-7162
+           https://doi.org/10.1137/S0895479896305696
+
+    Examples
+    --------
+    >>> from numpy.random import default_rng
+    >>> from scipy import linalg
+    >>> rng = default_rng()
+    >>> a = rng.random((2, 3, 4, 5))
+    >>> U, S = linalg.higher_order_svd(a)
+    >>> S.shape
+    (2, 3, 4, 5)
+    >>> [i.shape for i in U]
+    [(2, 2), (3, 3), (4, 4), (5, 5)]
+
+    Reconstruct the original tensor:
+
+    >>> a1 = S
+    >>> for i, _ in enumerate(U):
+    ...     a1 = np.tensordot(a1, U[i], (0, 1))
+    >>> np.allclose(a, a1)
+    True
+    """
+    a2 = _asarray_validated(a, check_finite=check_finite)
+
+    core_tensor = a2
+    left_singular_basis = []
+
+    for k in range(a2.ndim):
+        unfold = numpy.reshape(numpy.moveaxis(a2, k, 0), (a2.shape[k], -1))
+        U, _, _ = svd(
+            unfold,
+            full_matrices=full_tensor,
+            check_finite=False,
+        )
+        left_singular_basis.append(U)
+        U_c = U.T.conj()
+        core_tensor = numpy.tensordot(core_tensor, U_c, (0, 1))
+
+    return left_singular_basis, core_tensor
 
 
 # Orthonormal decomposition
