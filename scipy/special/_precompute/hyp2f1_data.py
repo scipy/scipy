@@ -6,8 +6,8 @@ a region code for which region of the complex plane belongs to. The regions are
 
     1) |z| < 0.9 and real(z) >= 0
     2) |z| < 1 and real(z) < 0
-    3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
-    4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9:
+    3) 0.9 <= |z| <= 1 and |1 - z| < 1.0:
+    4) 0.9 <= |z| <= 1 and |1 - z| >= 1.0:
     5) |z| > 1
 
 Parameters a, b, c are taken from a 10 * 10 * 10 grid with values at
@@ -97,9 +97,9 @@ def get_region(z):
         return 1
     elif abs(z) < 1 and z.real < 0:
         return 2
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 0.9:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 1.0:
         return 3
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 0.9:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1.0:
         return 4
     else:
         return 5
