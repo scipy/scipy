@@ -1019,13 +1019,13 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
     Boschloo exact test, we can assert three different null hypotheses :
 
-    - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
 
-    - :math:`H_0 : p_1 \leq p_2` versus :math:`H_1 : p_1 > p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 > p_2`,
       with `alternative` = "greater"
 
-    - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
     Boschloo's exact test uses the p-value of Fisher's exact test as a 
@@ -1143,7 +1143,11 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         raise ValueError(msg)
 
     fisher_stat = pvalues[table[0, 0], table[0, 1]]
-    index_arr = pvalues <= fisher_stat
+
+    # fisher_stat * (1+1e-13) guards us from small numerical error. It is
+    # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
+    # For more throughout explanations, see gh-14178
+    index_arr = pvalues <= fisher_stat * (1+1e-13)
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)
