@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 
 from scipy.special import hyp2f1
 
+
 Hyp2f1TestCase = namedtuple(
     "Hyp2f1TestCase",
     ["a", "b", "c", "z", "expected", "rtol"]
@@ -14,12 +15,18 @@ Hyp2f1TestCase = namedtuple(
 class TestHyp2f1:
     """Tests for hyp2f1 for complex values.
 
-    Expected values for test cases computed using mpmath. See
-    scipy.special._precompute.hyp2f1_data. The pytest.mark.parametrize
-    style of specifying test cases is used instead of FuncData from
-    scipy.special._testutils to make it easier to mark individual cases as
-    expected to fail. Expected failures are used to highlight cases where
-    improvements are needed.
+    Expected values for test cases were computed using mpmath. See
+    scipy.special._precompute.hyp2f1_data. The verbose style of specifying
+    test cases is used for readability and to make it easier to mark individual
+    cases as expected to fail. Expected failures are used to highlight cases
+    where improvements are needed. See scipy.special._precompute.hyp2f1_data
+    for a function to generate the boilerplate for the test cases.
+
+    Assertions have been added to each test to ensure that the test cases
+    match the situations that are intended. A final test `test_test_hyp2f1`
+    checks that the expected values in the test cases actually match what
+    is computed by mpmath. This test is marked slow even though it isn't
+    particularly slow so that it won't run on continuous integration builds.
     """
     @pytest.mark.parametrize(
         "hyp2f1_test_case",
