@@ -80,12 +80,12 @@ class CensoredData:
     `CensoredData`.
 
     For interval-censored data, pass the lower and upper limits of
-    the intervals as one-dimensional arrays to the ``CensoredData``
+    the intervals as one-dimensional arrays to the `CensoredData`
     constuctor.  By using the values `np.inf` and `-np.inf`, left-
     and right-censored data may also be created with the constructor.
 
     For convenience, the class methods ``left_censored`` and
-    ``right_censored`` are provided to create a ``CensoredData``
+    ``right_censored`` are provided to create a `CensoredData`
     instance from a single one-dimensional array of measurements
     and a corresponding boolean array to indicate which measurements
     are censored.
@@ -248,7 +248,7 @@ class CensoredData:
     @classmethod
     def right_censored(cls, x, censored):
         """
-        Create a CensoredData instance of right-censored data.
+        Create a `CensoredData` instance of right-censored data.
 
         Parameters
         ----------
@@ -289,7 +289,7 @@ class CensoredData:
     @classmethod
     def left_censored(cls, x, censored):
         """
-        Create a CensoredData instance of left-censored data.
+        Create a `CensoredData` instance of left-censored data.
 
         Parameters
         ----------
