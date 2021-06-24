@@ -66,7 +66,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ncv : int, optional
         When ``solver='arpack'``, this is the number of Lanczos vectors
         generated. See :ref:`'arpack' <sparse.linalg.svds-arpack>` for details.
-        When ``solver='lobpcg'``, this parameter is ignored.
+        When ``solver='lobpcg'`` or ``solver='propack'``, this parameter is
+        ignored.
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : {'LM', 'SM'}
@@ -74,12 +75,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         or smallest magnitude ('SM') singular values.
     v0 : ndarray, optional
         The starting vector for iteration; see method-specific
-        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>` or
-        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`) for details.
+        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>`,
+        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`), or
+        :ref:`'propack' <sparse.linalg.svds-propack>` for details.
     maxiter : int, optional
         Maximum number of iterations; see method-specific
-        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>` or
-        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`) for details.
+        documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>`,
+        :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`), or
+        :ref:`'propack' <sparse.linalg.svds-propack>` for details.
     return_singular_vectors : bool or str, optional
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
@@ -93,8 +96,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     solver : str, optional
             The solver used.
-            :ref:`'arpack' <sparse.linalg.svds-arpack>` and
-            :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` are supported.
+            :ref:`'arpack' <sparse.linalg.svds-arpack>`,
+            :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`, and
+            :ref:`'propack' <sparse.linalg.svds-propack>` are supported.
             Default: `'arpack'`.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
@@ -231,9 +235,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                  and 'v' in return_singular_vectors)
                 or (isinstance(return_singular_vectors, bool)
                     and return_singular_vectors))
-        return svdp(A, k=k, tol=tol**2, which=which, maxiter=maxiter,
-                    compute_u=jobu, compute_v=jobv, irl_mode=True, kmax=ncv,
-                    v0=v0)
+        return svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
+                    compute_u=jobu, compute_v=jobv, irl_mode=True,
+                    kmax=maxiter, v0=v0)
 
     elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
