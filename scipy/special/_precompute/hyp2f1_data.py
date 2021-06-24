@@ -206,16 +206,19 @@ def main(outpath, n_jobs=1):
     outpath = os.path.realpath(os.path.expanduser(outpath))
 
     random_state = np.random.RandomState(1234)
+    # Parameters a, b, c selected near these values.
     root_params = np.array(
         [-16, -8, -4, -2, -1, 1, 2, 4, 8, 16]
     )
-
+    # Perturbations to apply to root values.
     perturbations = 0.1 * random_state.random_sample(
         size=(3, len(root_params))
     )
 
     params = []
-    # No integer differences
+    # Parameter group 1
+    # -----------------
+    # No integer differences. This has been confirmed for the above seed.
     A = root_params + perturbations[0, :]
     B = root_params + perturbations[1, :]
     C = root_params + perturbations[2, :]
@@ -226,6 +229,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 2
+    # -----------------
     # B - A an integer
     A = root_params + 0.5
     B = root_params + 0.5
@@ -237,6 +242,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 3
+    # -----------------
     # C - A an integer
     A = root_params + 0.5
     B = root_params + perturbations[1, :]
@@ -248,6 +255,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 4
+    # -----------------
     # C - B an integer
     A = root_params + perturbations[0, :]
     B = root_params + 0.5
@@ -259,6 +268,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 5
+    # -----------------
     # C - A - B an integer
     A = root_params + 0.25
     B = root_params + 0.25
@@ -270,6 +281,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 6
+    # -----------------
     # A an integer
     A = root_params
     B = root_params + perturbations[0, :]
@@ -281,6 +294,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 7
+    # -----------------
     # B an integer
     A = root_params + perturbations[0, :]
     B = root_params
@@ -292,6 +307,8 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # Parameter group 8
+    # -----------------
     # C an integer
     A = root_params + perturbations[0, :]
     B = root_params + perturbations[1, :]
@@ -303,10 +320,13 @@ def main(outpath, n_jobs=1):
         )
     )
 
+    # 20 * 20 grid in box with corners -2 - 2j, -2 + 2j, 2 - 2j, 2 + 2j
     X, Y = np.meshgrid(np.linspace(-2, 2, 20), np.linspace(-2, 2, 20))
     Z = X + Y * 1j
     Z = Z.flatten()
 
+    # Evaluate scipy and mpmath's hyp2f1 for all parameter combinations
+    # above against all arguments in the grid Z
     rows = get_results(params, Z, n_jobs=n_jobs)
 
     with open(outpath, "w", newline="") as f:
@@ -320,8 +340,8 @@ def main(outpath, n_jobs=1):
                 "|z|",
                 "region",
                 "parameter_group",
-                "expected",
-                "observed",
+                "expected",  # mpmath's hyp2f1
+                "observed",  # scipy's hyp2f1
                 "relative_error",
                 "absolute_error",
             ]
