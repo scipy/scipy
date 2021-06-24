@@ -3110,7 +3110,6 @@ class genhyperbolic_gen(rv_continuous):
 
     def _cdf(self, x, p, a, b):
 
-        @np.vectorize
         def _cdf_single(x, p, a, b):
             user_data = np.array(
                 [p, a, b], float
@@ -3128,7 +3127,9 @@ class genhyperbolic_gen(rv_continuous):
 
             return t1
 
-        return _cdf_single(x, p, a, b)
+        _cdf_vec = np.vectorize(_cdf_single, otypes=[np.float64])
+
+        return _cdf_vec(x, p, a, b)
 
     def _rvs(self, p, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X  has a
