@@ -352,8 +352,12 @@ def main(outpath, n_jobs=1):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Test hyp2f1 against mpmath on a grid in the complex plane"
-        " over a grid of parameter values."
+        description="Test scipy's hyp2f1 against mpmath's on a grid in the"
+        " complex plane over a grid of parameter values. Saves output to file"
+        " specified in positional argument \"outpath\"."
+        " Caution: Generated output file is roughly 700MB in size. Script"
+        " may take several hours to finish if \"--n_jobs\" is set to 1."
+
     )
     parser.add_argument(
         "outpath", type=str, help="Path to output tsv file."
