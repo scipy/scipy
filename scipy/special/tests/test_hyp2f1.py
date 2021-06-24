@@ -4,6 +4,13 @@ from collections import namedtuple
 from numpy.testing import assert_allclose
 
 from scipy.special import hyp2f1
+from scipy.special._testutils import check_version, MissingModule
+
+
+try:
+    import mpmath
+except ImportError:
+    mpmath = MissingModule("mpmath")
 
 
 Hyp2f1TestCase = namedtuple(
@@ -574,6 +581,7 @@ class TestHyp2f1:
     # This test is not actually that slow, though could become slow in
     # the future if enough test cases are added.
     @pytest.mark.slow
+    @check_version(mpmath, "1.0.0")
     def test_test_hyp2f1(self):
         """Test that expected values match what is computed by mpmath."""
         from scipy.special._precompute.hyp2f1_data import mp_hyp2f1
