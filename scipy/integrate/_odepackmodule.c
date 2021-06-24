@@ -120,7 +120,7 @@ PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
     }
 
     /* Call the Python function. */
-    result = PyEval_CallObject(func, arglist);
+    result = PyObject_CallObject(func, arglist);
     if (result == NULL) {
         goto fail;
     }
