@@ -309,7 +309,7 @@ double quad_thunk(double *x)
             goto done;
         }
 
-        res = PyEval_CallObject(callback->py_function, arglist);
+        res = PyObject_CallObject(callback->py_function, arglist);
         if (res == NULL) {
             error = 1;
             goto done;
