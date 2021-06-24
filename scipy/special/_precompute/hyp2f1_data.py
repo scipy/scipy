@@ -1,5 +1,9 @@
 """This script tests scipy's implementation of hyp2f1 against mpmath's.
 
+Author: Albert Steppi, with credit to Adam Kullberg (FormerPhycisist) for
+the implementation of mp_hyp2f1 below, which modifies mpmath's hyp2f1 to
+return the same branch as scipy's on the standard branch cut.
+
 Produces a tab separated values file with 11 columns. The first four columns
 contain the parameters a, b, c and the argument z. The next two contain |z| and
 a region code for which region of the complex plane belongs to. The regions are
