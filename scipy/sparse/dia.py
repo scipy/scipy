@@ -237,6 +237,32 @@ class dia_matrix(_data_matrix):
 
     sum.__doc__ = spmatrix.sum.__doc__
 
+    def _add_sparse(self, other):
+
+        # Check if other is also of type dia_matrix
+        if not isinstance(other, type(self)):
+            # If other is not of type dia_matrix, default to
+            # converting to csr_matrix, as is done in the _add_sparse
+            # method of parent class spmatrix
+            return self.tocsr()._add_sparse(other)
+
+        # The task is to compute m = self + other
+        # Start by making a copy of self, of the datatype
+        # that should result from adding self and other
+        dtype = np.promote_types(self.dtype, other.dtype)
+        m = self.astype(dtype, copy=True)
+
+        # Then, add all the stored diagonals of other.
+        for d in other.offsets:
+            # Check if the diagonal has already been added.
+            if d in m.offsets:
+                # If the diagonal is already there, we need to take
+                # the sum of the existing and the new
+                m.setdiag(m.diagonal(d) + other.diagonal(d), d)
+            else:
+                m.setdiag(other.diagonal(d), d)
+        return m
+
     def _mul_vector(self, other):
         x = other
 
@@ -276,13 +302,18 @@ class dia_matrix(_data_matrix):
             # allow also longer sequences
             values = values[:n]
 
+        data_rows, data_cols = self.data.shape
         if k in self.offsets:
+            if max_index > data_cols:
+                data = np.zeros((data_rows, max_index), dtype=self.data.dtype)
+                data[:, :data_cols] = self.data
+                self.data = data
             self.data[self.offsets == k, min_index:max_index] = values
         else:
             self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
-            m = max(max_index, self.data.shape[1])
-            data = np.zeros((self.data.shape[0]+1, m), dtype=self.data.dtype)
-            data[:-1,:self.data.shape[1]] = self.data
+            m = max(max_index, data_cols)
+            data = np.zeros((data_rows + 1, m), dtype=self.data.dtype)
+            data[:-1, :data_cols] = self.data
             data[-1, min_index:max_index] = values
             self.data = data
 
@@ -323,10 +354,16 @@ class dia_matrix(_data_matrix):
         if k <= -rows or k >= cols:
             return np.empty(0, dtype=self.data.dtype)
         idx, = np.nonzero(self.offsets == k)
-        first_col, last_col = max(0, k), min(rows + k, cols)
+        first_col = max(0, k)
+        last_col = min(rows + k, cols)
+        result_size = last_col - first_col
         if idx.size == 0:
-            return np.zeros(last_col - first_col, dtype=self.data.dtype)
-        return self.data[idx[0], first_col:last_col]
+            return np.zeros(result_size, dtype=self.data.dtype)
+        result = self.data[idx[0], first_col:last_col]
+        padding = result_size - len(result)
+        if padding > 0:
+            result = np.pad(result, (0, padding), mode='constant')
+        return result
 
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 

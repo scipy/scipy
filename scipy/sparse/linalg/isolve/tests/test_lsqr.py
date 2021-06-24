@@ -1,7 +1,6 @@
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal)
-
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
+import pytest
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg import lsqr
@@ -28,12 +27,25 @@ maxit = None
 
 def test_basic():
     b_copy = b.copy()
-    X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
-    assert_(np.all(b_copy == b))
+    xo, *_ = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
+    assert_array_equal(b_copy, b)
 
     svx = np.linalg.solve(G, b)
-    xo = X[0]
-    assert_(norm(svx - xo) < 1e-5)
+    assert_allclose(xo, svx, atol=tol, rtol=tol)
+
+    # Now the same but with damp > 0.
+    # This is equivalent to solving the extented system:
+    # ( G      ) * x = ( b )
+    # ( damp*I )       ( 0 )
+    damp = 1.5
+    xo, *_ = lsqr(
+        G, b, damp=damp, show=show, atol=tol, btol=tol, iter_lim=maxit)
+
+    Gext = np.r_[G, damp * np.eye(G.shape[1])]
+    bext = np.r_[b, np.zeros(G.shape[1])]
+    svx, *_ = np.linalg.lstsq(Gext, bext, rcond=None)
+    assert_allclose(xo, svx, atol=tol, rtol=tol)
+
 
 def test_gh_2466():
     row = np.array([0, 0])
@@ -67,11 +79,11 @@ def test_well_conditioned_problems():
             solution = output[0]
 
             # Check that we recover the ground truth solution
-            assert_array_almost_equal(solution, beta)
+            assert_allclose(solution, beta)
 
             # Sanity check: compare to the dense array solver
             reference_solution = np.linalg.solve(A_dense, b).ravel()
-            assert_array_almost_equal(solution, reference_solution)
+            assert_allclose(solution, reference_solution)
 
 
 def test_b_shapes():
@@ -79,13 +91,13 @@ def test_b_shapes():
     A = np.array([[1.0, 2.0]])
     b = 3.0
     x = lsqr(A, b)[0]
-    assert_almost_equal(norm(A.dot(x) - b), 0)
+    assert norm(A.dot(x) - b) == pytest.approx(0)
 
     # Test b being a column vector.
     A = np.eye(10)
     b = np.ones((10, 1))
     x = lsqr(A, b)[0]
-    assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
+    assert norm(A.dot(x) - b.ravel()) == pytest.approx(0)
 
 
 def test_initialization():
@@ -94,14 +106,14 @@ def test_initialization():
     x_ref = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
     x0 = np.zeros(x_ref[0].shape)
     x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
-    assert_(np.all(b_copy == b))
-    assert_array_almost_equal(x_ref[0], x[0])
+    assert_array_equal(b_copy, b)
+    assert_allclose(x_ref[0], x[0])
 
     # Test warm-start with single iteration
     x0 = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=1)[0]
     x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
-    assert_array_almost_equal(x_ref[0], x[0])
-    assert_(np.all(b_copy == b))
+    assert_allclose(x_ref[0], x[0])
+    assert_array_equal(b_copy, b)
 
 
 if __name__ == "__main__":
@@ -127,8 +139,8 @@ if __name__ == "__main__":
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % (chio, phio, psio))
     print("Residual norms computed directly:")
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
-                                                          norm(G*xo - b),
-                                                          norm(G.T*(G*xo-b))))
+                                                         norm(G*xo - b),
+                                                         norm(G.T*(G*xo-b))))
     print("Direct solution norms:")
     print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx - b)))
     print("")

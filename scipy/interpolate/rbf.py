@@ -54,10 +54,14 @@ __all__ = ['Rbf']
 
 class Rbf:
     """
-    Rbf(*args)
+    Rbf(*args, **kwargs)
 
     A class for radial basis function interpolation of functions from
     N-D scattered data to an M-D domain.
+
+    .. note::
+        `Rbf` is legacy code, for new usage please use `RBFInterpolator`
+        instead.
 
     Parameters
     ----------
@@ -123,6 +127,10 @@ class Rbf:
     nodes : ndarray
         A 1-D array of node values for the interpolation.
     A : internal property, do not use
+
+    See Also
+    --------
+    RBFInterpolator
 
     Examples
     --------

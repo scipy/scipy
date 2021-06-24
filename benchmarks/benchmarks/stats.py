@@ -40,6 +40,21 @@ class CorrelationFunctions(Benchmark):
     def time_barnard_exact(self, alternative):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
+    def time_boschloo_exact(self, alternative):
+        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+
+
+class ANOVAFunction(Benchmark):
+    def setup(self):
+        rng = np.random.default_rng(12345678)
+        self.a = rng.random((6,3)) * 10
+        self.b = rng.random((6,3)) * 10
+        self.c = rng.random((6,3)) * 10
+    
+    def time_f_oneway(self):
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+
 
 class Kendalltau(Benchmark):
     param_names = ['nan_policy','method','variant']
@@ -50,11 +65,11 @@ class Kendalltau(Benchmark):
     ]
 
     def setup(self, nan_policy, method, variant):
-        np.random.seed(12345678)
+        rng = np.random.default_rng(12345678)
         a = np.arange(200)
-        np.random.shuffle(a)
+        rng.shuffle(a)
         b = np.arange(200)
-        np.random.shuffle(b)
+        rng.shuffle(b)
         self.a = a
         self.b = b
 
@@ -64,10 +79,10 @@ class Kendalltau(Benchmark):
 
 class InferentialStats(Benchmark):
     def setup(self):
-        np.random.seed(12345678)
-        self.a = stats.norm.rvs(loc=5, scale=10, size=500)
-        self.b = stats.norm.rvs(loc=8, scale=10, size=20)
-        self.c = stats.norm.rvs(loc=8, scale=20, size=20)
+        rng = np.random.default_rng(12345678)
+        self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+        self.b = stats.norm.rvs(loc=8, scale=10, size=20, random_state=rng)
+        self.c = stats.norm.rvs(loc=8, scale=20, size=20, random_state=rng)
 
     def time_ttest_ind_same_var(self):
         # test different sized sample with variances
@@ -180,8 +195,8 @@ class Distribution(Benchmark):
     ]
 
     def setup(self, distribution, properties):
-        np.random.seed(12345678)
-        self.x = np.random.rand(100)
+        rng = np.random.default_rng(12345678)
+        self.x = rng.random(100)
 
     def time_distribution(self, distribution, properties):
         if distribution == 'gamma':
@@ -223,8 +238,8 @@ class DescriptiveStats(Benchmark):
     ]
 
     def setup(self, n_levels):
-        np.random.seed(12345678)
-        self.levels = np.random.randint(n_levels, size=(1000, 10))
+        rng = np.random.default_rng(12345678)
+        self.levels = rng.integers(n_levels, size=(1000, 10))
 
     def time_mode(self, n_levels):
         stats.mode(self.levels, axis=0)
@@ -232,10 +247,10 @@ class DescriptiveStats(Benchmark):
 
 class GaussianKDE(Benchmark):
     def setup(self):
-        np.random.seed(12345678)
+        rng = np.random.default_rng(12345678)
         n = 2000
-        m1 = np.random.normal(size=n)
-        m2 = np.random.normal(scale=0.5, size=n)
+        m1 = rng.normal(size=n)
+        m2 = rng.normal(scale=0.5, size=n)
 
         xmin = m1.min()
         xmax = m1.max()
@@ -261,16 +276,16 @@ class GroupSampling(Benchmark):
     params = [[3, 10, 50, 200]]
 
     def setup(self, dim):
-        np.random.seed(12345678)
+        self.rng = np.random.default_rng(12345678)
 
     def time_unitary_group(self, dim):
-        stats.unitary_group.rvs(dim)
+        stats.unitary_group.rvs(dim, random_state=self.rng)
 
     def time_ortho_group(self, dim):
-        stats.ortho_group.rvs(dim)
+        stats.ortho_group.rvs(dim, random_state=self.rng)
 
     def time_special_ortho_group(self, dim):
-        stats.special_ortho_group.rvs(dim)
+        stats.special_ortho_group.rvs(dim, random_state=self.rng)
 
 
 class BinnedStatisticDD(Benchmark):
@@ -278,8 +293,8 @@ class BinnedStatisticDD(Benchmark):
     params = ["count", "sum", "mean", "min", "max", "median", "std", np.std]
 
     def setup(self, statistic):
-        np.random.seed(12345678)
-        self.inp = np.random.rand(9999).reshape(3, 3333) * 200
+        rng = np.random.default_rng(12345678)
+        self.inp = rng.random(9999).reshape(3, 3333) * 200
         self.subbin_x_edges = np.arange(0, 200, dtype=np.float32)
         self.subbin_y_edges = np.arange(0, 200, dtype=np.float64)
         self.ret = stats.binned_statistic_dd(
@@ -360,6 +375,7 @@ class BenchMoment(Benchmark):
     def time_moment(self, order, size):
         stats.moment(self.x, order)
 
+
 class BenchSkewKurtosis(Benchmark):
     params = [
         [1, 2, 3, 8],
@@ -386,9 +402,59 @@ class BenchQMCDiscrepancy(Benchmark):
     ]
 
     def setup(self, method):
-        np.random.seed(1234)
-        sample = np.random.random_sample((1000, 10))
+        rng = np.random.default_rng(1234)
+        sample = rng.random((1000, 10))
         self.sample = sample
 
     def time_discrepancy(self, method):
         disc = stats.qmc.discrepancy(self.sample, method=method)
+
+
+class NumericalInverseHermite(Benchmark):
+
+    param_names = ['distribution']
+    params = [distcont]
+
+    def setup(self, *args):
+        self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
+
+    def time_fni(self, distcase):
+        distname, shapes = distcase
+        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
+
+        if distname in slow_dists or distname in fail_dists:
+            raise NotImplementedError("skipped")
+
+        dist = getattr(stats, distname)(*shapes)
+
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
+            sup.filter(RuntimeWarning, "divide by zero")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            stats.NumericalInverseHermite(dist)
+
+
+class DistanceFunctions(Benchmark):
+    param_names = ['n_size']
+    params = [
+        [10, 4000]
+    ]
+
+    def setup(self, n_size):
+        rng = np.random.default_rng(12345678)
+        self.u_values= rng.random(n_size) * 10
+        self.u_weights = rng.random(n_size) * 10
+        self.v_values = rng.random(n_size // 2) * 10
+        self.v_weights = rng.random(n_size // 2) * 10
+
+    def time_energy_distance(self, n_size):
+        distance = stats.energy_distance(
+                 self.u_values, self.v_values, 
+                 self.u_weights, self.v_weights)
+    
+    def time_wasserstein_distance(self, n_size):
+        distance = stats.wasserstein_distance(
+                 self.u_values, self.v_values, 
+                 self.u_weights, self.v_weights)

@@ -31,12 +31,7 @@ SciPy depend on
 
 * C and Fortran compilers (typically ``gcc`` and ``gfortran``).
 
-* Python header files (typically a package named ``python-dev`` or ``python-devel``)
-
-* The `Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__
-  ahead-of-time compilers are necessary (typically packaged as ``cython``
-  and ``pythran``.  For building recent SciPy, it is possible that you need
-  Cython in a newer version than is available in your distribution.
+* Python header files (typically a package named ``python3-dev`` or ``python3-devel``)
 
 Typically, you will want to install all of the above from packages
 supplied by your Linux distribution, as building them yourself is
@@ -50,7 +45,12 @@ can do
    export ATLAS=/path/to/libatlas.so
    python setup.py ............
 
-If you don't want to any LAPACK, just do "``export LAPACK=``".
+* The `Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__
+  ahead-of-time compilers are also necessary, as is ``pybind11``. It is
+  recommended to install these packages with ``pip`` or ``conda``, because it
+  is possible (even likely) that you need newer versions of these packages than
+  the ones that are available in your Linux distribution.
+
 
 Below, you will find additional installation instructions and advice
 for many major Linux distributions.
@@ -69,7 +69,7 @@ Debian / Ubuntu
 
 To build from source, the following packages are needed::
 
-   sudo apt-get install gcc gfortran python-dev libopenblas-dev liblapack-dev cython
+   sudo apt-get install gcc gfortran python3-dev libopenblas-dev liblapack-dev
 
 To customize which BLAS is used, you can set up a `site.cfg` file. See
 the `site.cfg.example` file in the numpy source for the options you
@@ -108,7 +108,7 @@ Fedora 26
 
 To install scipy build requirements, you can do::
 
-    sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel pythran Cython
+    sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel
 
 
 Intel C compiler and MKL

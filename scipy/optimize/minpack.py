@@ -290,9 +290,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        Should take at least one (possibly length N vector) argument and
-        returns M floating point numbers. It must not return NaNs or
-        fitting might fail.
+        Should take at least one (possibly length ``N`` vector) argument and
+        returns ``M`` floating point numbers. It must not return NaNs or
+        fitting might fail. ``M`` must be greater than or equal to ``N``.
     x0 : ndarray
         The starting estimate for the minimization.
     args : tuple, optional
@@ -411,7 +411,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+        raise TypeError(f"Improper input: func input vector length N={n} must"
+                        f" not exceed func output vector length M={m}")
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
@@ -779,6 +780,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
+        # if ydata.size == 1, this might be used for broadcast.
+        if ydata.size != 1 and n > ydata.size:
+            raise TypeError(f"The number of func parameters={n} must not"
+                            f" exceed the number of data points={ydata.size}")
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)

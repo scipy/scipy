@@ -1,4 +1,4 @@
-from numpy import add_newdoc  # type: ignore[attr-defined]
+from numpy import add_newdoc
 
 add_newdoc('scipy.odr', 'odr',
     """

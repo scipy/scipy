@@ -29,6 +29,7 @@ mle_failing_fits = [
         'vonmises',
         'levy_stable',
         'trapezoid',
+        'studentized_range'
 ]
 
 # The MLE fit method of these distributions doesn't perform well when all
@@ -55,7 +56,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'skewcauchy', 't',
-                   'trapezoid', 'triang', 'tukeylambda']
+                   'trapezoid', 'triang', 'tukeylambda', 'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',

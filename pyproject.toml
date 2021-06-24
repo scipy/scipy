@@ -13,7 +13,7 @@ requires = [
     "setuptools",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
-    "pythran",
+    "pythran>=0.9.11",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -22,17 +22,20 @@ requires = [
 
     # numpy 1.19 was the first minor release to provide aarch64 wheels, but
     # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.6' and platform_machine=='aarch64'",
     "numpy==1.19.2; python_version=='3.7' and platform_machine=='aarch64'",
+    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64'",
+    # aarch64 for py39 is covered by default requirement below
+
+    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
+    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
+    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
 
     # default numpy requirements
-    "numpy==1.16.5; python_version=='3.6' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.16.5; python_version=='3.7' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.17.3; python_version=='3.8' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and platform_python_implementation != 'PyPy'",
+    "numpy==1.16.5; python_version=='3.7' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
 
     # First PyPy versions for which there are numpy wheels
-    "numpy==1.19.0; python_version=='3.6' and platform_python_implementation=='PyPy'",
     "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
 
     # For Python versions which aren't yet officially supported,
