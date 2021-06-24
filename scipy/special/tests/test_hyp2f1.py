@@ -182,8 +182,8 @@ class TestHyp2f1:
                     b=321.5,
                     c=700.1,
                     z=1 + 0j,
-                    rtol=1.3396562400934e117 + 0j,
-                    expected=1e-12,
+                    expected=1.3396562400934e117 + 0j,
+                    rtol=1e-12,
                 ),
                 marks=pytest.mark.xfail(reason="overflow"),
             ),
@@ -602,6 +602,7 @@ class TestHyp2f1:
     def _get_test_parameters(self, test_method):
         """Get pytest.mark parameters for a test in this class."""
         return [
-            mark.args[1][0].values[0] for mark in test_method.pytestmark
+            case.values[0] for mark in test_method.pytestmark
             if mark.name == 'parametrize'
+            for case in mark.args[1]
         ]
