@@ -73,6 +73,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
+
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse import csc_matrix, diags
     >>> from scipy.sparse.linalg import svds
@@ -85,6 +86,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     With only three singular values/vectors, the SVD approximates the original
     matrix.
+
     >>> u2, s2, vT2 = svds(A, k=3, solver='arpack')
     >>> A2 = u2 @ np.diag(s2) @ vT2
     >>> np.allclose(A2, A.todense(), atol=1e-3)
@@ -92,6 +94,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     With all five singular values/vectors, we can reproduce the original
     matrix.
+
     >>> u3, s3, vT3 = svds(A, k=5, solver='arpack')
     >>> A3 = u3 @ np.diag(s3) @ vT3
     >>> np.allclose(A3, A.todense())
@@ -100,6 +103,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The singular values match the expected singular values, and the singular
     values are as expected up to a difference in sign. Consequently, the
     returned arrays of singular vectors must also be orthogonal.
+
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
@@ -179,6 +183,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
+
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse import csc_matrix, diags
     >>> from scipy.sparse.linalg import svds
@@ -191,6 +196,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     With only three singular values/vectors, the SVD approximates the original
     matrix.
+
     >>> u2, s2, vT2 = svds(A, k=3, solver='lobpcg')
     >>> A2 = u2 @ np.diag(s2) @ vT2
     >>> np.allclose(A2, A.todense(), atol=1e-3)
@@ -198,6 +204,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     With all five singular values/vectors, we can reproduce the original
     matrix.
+
     >>> u3, s3, vT3 = svds(A, k=5, solver='lobpcg')
     >>> A3 = u3 @ np.diag(s3) @ vT3
     >>> np.allclose(A3, A.todense())
@@ -206,6 +213,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The singular values match the expected singular values, and the singular
     values are as expected up to a difference in sign. Consequently, the
     returned arrays of singular vectors must also be orthogonal.
+
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
