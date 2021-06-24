@@ -15,3 +15,9 @@ from scipy.stats._boost.nbinom_ufunc import (
     _nbinom_isf, _nbinom_mean, _nbinom_variance,
     _nbinom_skewness, _nbinom_kurtosis_excess,
 )
+
+from scipy.stats._boost.hypergeom_ufunc import (
+    _hypergeom_pdf, _hypergeom_cdf, _hypergeom_sf, _hypergeom_ppf,
+    _hypergeom_isf, _hypergeom_mean, _hypergeom_variance,
+    _hypergeom_skewness, _hypergeom_kurtosis_excess,
+)

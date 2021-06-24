@@ -27,10 +27,10 @@ class Resample(Benchmark):
 class CalculateWindowedFFT(Benchmark):
 
     def setup(self):
-        np.random.seed(5678)
+        rng = np.random.default_rng(5678)
         # Create some long arrays for computation
-        x = np.random.randn(2**20)
-        y = np.random.randn(2**20)
+        x = rng.standard_normal(2**20)
+        y = rng.standard_normal(2**20)
         self.x = x
         self.y = y
 
@@ -58,12 +58,12 @@ class Convolve2D(Benchmark):
     ]
 
     def setup(self, mode, boundary):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
         for ma, na, mb, nb in product((8, 13, 30, 36), repeat=4):
-            a = np.random.randn(ma, na)
-            b = np.random.randn(mb, nb)
+            a = rng.standard_normal((ma, na))
+            b = rng.standard_normal((mb, nb))
             pairs.append((a, b))
         self.pairs = pairs
 
@@ -91,11 +91,11 @@ class FFTConvolve(Benchmark):
     ]
 
     def setup(self, mode, size):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        self.a = np.random.randn(size[0])
-        self.b = np.random.randn(size[1])
+        self.a = rng.standard_normal(size[0])
+        self.b = rng.standard_normal(size[1])
 
     def time_convolve2d(self, mode, size):
         signal.fftconvolve(self.a, self.b, mode=mode)
@@ -110,11 +110,11 @@ class OAConvolve(Benchmark):
     ]
 
     def setup(self, mode, size):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        self.a = np.random.randn(size[0])
-        self.b = np.random.randn(size[1])
+        self.a = rng.standard_normal(size[0])
+        self.b = rng.standard_normal(size[1])
 
     def time_convolve2d(self, mode, size):
         signal.oaconvolve(self.a, self.b, mode=mode)
@@ -127,18 +127,18 @@ class Convolve(Benchmark):
     ]
 
     def setup(self, mode):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = {'1d': [], '2d': []}
         for ma, nb in product((1, 2, 8, 13, 30, 36, 50, 75), repeat=2):
-            a = np.random.randn(ma)
-            b = np.random.randn(nb)
+            a = rng.standard_normal(ma)
+            b = rng.standard_normal(nb)
             pairs['1d'].append((a, b))
 
         for n_image in [256, 512, 1024]:
             for n_kernel in [3, 5, 7]:
-                x = np.random.randn(n_image, n_image)
-                h = np.random.randn(n_kernel, n_kernel)
+                x = rng.standard_normal((n_image, n_image))
+                h = rng.standard_normal((n_kernel, n_kernel))
                 pairs['2d'].append((x, h))
         self.pairs = pairs
 
@@ -200,13 +200,13 @@ class Upfirdn1D(Benchmark):
     ]
 
     def setup(self, up, down):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512, 2048]:
-                h = np.random.randn(nfilt)
-                x = np.random.randn(n)
+                h = rng.standard_normal(nfilt)
+                x = rng.standard_normal(n)
                 pairs.append((h, x))
 
         self.pairs = pairs
@@ -225,13 +225,13 @@ class Upfirdn2D(Benchmark):
     ]
 
     def setup(self, up, down, axis):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512]:
-                h = np.random.randn(nfilt)
-                x = np.random.randn(n, n)
+                h = rng.standard_normal(nfilt)
+                x = rng.standard_normal((n, n))
                 pairs.append((h, x))
 
         self.pairs = pairs

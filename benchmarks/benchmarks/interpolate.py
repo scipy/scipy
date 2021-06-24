@@ -54,10 +54,10 @@ class Leaks(Benchmark):
 class BenchPPoly(Benchmark):
 
     def setup(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         m, k = 55, 3
-        x = np.sort(np.random.random(m+1))
-        c = np.random.random((3, m))
+        x = np.sort(rng.random(m+1))
+        c = rng.random((3, m))
         self.pp = interpolate.PPoly(c, x)
 
         npts = 100

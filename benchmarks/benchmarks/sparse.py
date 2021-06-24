@@ -143,16 +143,16 @@ class Matmul(Benchmark):
         C1 = 10
         C2 = 1000000
 
-        random.seed(0)
+        rng = np.random.default_rng(0)
 
-        i = random.randint(H1, size=C1)
-        j = random.randint(W1, size=C1)
-        data = random.rand(C1)
+        i = rng.integers(H1, size=C1)
+        j = rng.integers(W1, size=C1)
+        data = rng.random(C1)
         self.matrix1 = coo_matrix((data, (i, j)), shape=(H1, W1)).tocsr()
 
-        i = random.randint(H2, size=C2)
-        j = random.randint(W2, size=C2)
-        data = random.rand(C2)
+        i = rng.integers(H2, size=C2)
+        j = rng.integers(W2, size=C2)
+        data = rng.random(C2)
         self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
 
     def time_large(self):

@@ -89,6 +89,13 @@ Singular values problems:
    svds -- Compute k singular values/vectors for a sparse matrix
    svdp -- Compute k singular values/vectors for LinearOperators via PROPACK
 
+The `svds` function supports the following solvers:
+
+.. toctree::
+
+    sparse.linalg.svds-arpack
+    sparse.linalg.svds-lobpcg
+
 Complete or incomplete LU factorizations
 
 .. autosummary::
