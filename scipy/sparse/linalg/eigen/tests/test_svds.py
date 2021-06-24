@@ -11,6 +11,9 @@ from scipy.sparse.linalg import svds
 from scipy.sparse.linalg.eigen.arpack import ArpackNoConvergence
 
 
+# --- Helper Functions / Classes ---
+
+
 def sorted_svd(m, k, which='LM'):
     # Compute svd of a dense matrix m, and return singular vectors/values
     # sorted.
@@ -31,6 +34,49 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
+def _check_svds(A, k, U, s, VH):
+    n, m = A.shape
+
+    # Check shapes.
+    assert_equal(U.shape, (n, k))
+    assert_equal(s.shape, (k,))
+    assert_equal(VH.shape, (k, m))
+
+    # Check that the original matrix can be reconstituted.
+    A_rebuilt = (U*s).dot(VH)
+    assert_equal(A_rebuilt.shape, A.shape)
+    assert_allclose(A_rebuilt, A)
+
+    # Check that U is a semi-orthogonal matrix.
+    UH_U = np.dot(U.T.conj(), U)
+    assert_equal(UH_U.shape, (k, k))
+    assert_allclose(UH_U, np.identity(k), atol=1e-12)
+
+    # Check that V is a semi-orthogonal matrix.
+    VH_V = np.dot(VH, VH.T.conj())
+    assert_equal(VH_V.shape, (k, k))
+    assert_allclose(VH_V, np.identity(k), atol=1e-12)
+
+
+class CheckingLinearOperator(LinearOperator):
+    def __init__(self, A):
+        self.A = A
+        self.dtype = A.dtype
+        self.shape = A.shape
+
+    def _matvec(self, x):
+        assert_equal(max(x.shape), np.size(x))
+        return self.A.dot(x)
+
+    def _rmatvec(self, x):
+        assert_equal(max(x.shape), np.size(x))
+        return self.A.T.conjugate().dot(x)
+
+
+# --- Test Input Validation ---
+# Tests input validation on parameters `k` and `which`
+# Needs better input validation checks for all other parameters
+
 def svd_test_input_check():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
@@ -45,6 +91,99 @@ def svd_test_input_check():
     assert_raises(ValueError, svds, x.T, k=x.shape[0])
     assert_raises(ValueError, svds, x.T, k=x.shape[1])
 
+
+def test_svds_wrong_eigen_type():
+    # Regression test for a github issue.
+    # https://github.com/scipy/scipy/issues/4590
+    # Function was not checking for eigenvalue type and unintended
+    # values could be returned.
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], float)
+    assert_raises(ValueError, svds, x, 1, which='LA')
+
+
+# --- Test Parameters ---
+# tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
+# what they are purported to do. Should also check `ncv` and `tol` somehow.
+
+
+def test_svd_which():
+    # check that the which parameter works as expected
+    x = hilbert(6)
+    for which in ['LM', 'SM']:
+        _, s, _ = sorted_svd(x, 2, which=which)
+        for solver in [None, 'arpack', 'lobpcg', 'propack']:
+            ss = svds(x, 2, which=which, return_singular_vectors=False,
+                      solver=solver)
+            ss.sort()
+            assert_allclose(s, ss, atol=np.sqrt(1e-15))
+
+
+def test_svd_v0():
+    # check that the v0 parameter works as expected
+    x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
+
+    for solver in [None, 'arpack', 'lobpcg', 'propack']:
+        u, s, vh = svds(x, 1, solver=solver)
+        u2, s2, vh2 = svds(x, 1, v0=u[:, 0], solver=solver)
+
+        assert_allclose(s, s2, atol=np.sqrt(1e-15))
+
+
+def test_svd_maxiter():
+    # check that maxiter works as expected
+    x = hilbert(6)
+    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
+    # one iteration
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
+    # but 100 iterations should be more than enough
+    u, s, vt = svds(x, 1, maxiter=100, ncv=3)
+    assert_allclose(s, [1.7], atol=0.5)
+
+
+def test_svd_return():
+    # check that the return_singular_vectors parameter works as expected
+    x = hilbert(6)
+    _, s, _ = sorted_svd(x, 2)
+    ss = svds(x, 2, return_singular_vectors=False)
+    assert_allclose(s, ss)
+
+
+def test_svds_partial_return():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], float)
+    # test vertical matrix
+    z = csr_matrix(x)
+    vh_full = svds(z, 2)[-1]
+    vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
+    dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
+    if dvh > 1e-10:
+        raise AssertionError('right eigenvector matrices differ when using '
+                             'return_singular_vectors parameter')
+    if svds(z, 2, return_singular_vectors='vh')[0] is not None:
+        raise AssertionError('left eigenvector matrix was computed when it '
+                             'should not have been')
+    # test horizontal matrix
+    z = csr_matrix(x.T)
+    u_full = svds(z, 2)[0]
+    u_partial = svds(z, 2, return_singular_vectors='vh')[0]
+    du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
+    if du > 1e-10:
+        raise AssertionError('left eigenvector matrices differ when using '
+                             'return_singular_vectors parameter')
+    if svds(z, 2, return_singular_vectors='u')[-1] is not None:
+        raise AssertionError('right eigenvector matrix was computed when it '
+                             'should not have been')
+
+
+# --- Test Basic Functionality ---
+# Tests the accuracy of each solver for real and complex matrices provided
+# as dense array, sparse matrix, and LinearOperator. Could be written
+# more concisely and use parametrization.
 
 def test_svd_simple_real():
     x = np.array([[1, 2, 3],
@@ -92,137 +231,6 @@ def test_svd_simple_complex():
 
                 assert_array_almost_equal_nulp(
                     m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1575)
-
-
-def test_svd_maxiter():
-    # check that maxiter works as expected
-    x = hilbert(6)
-    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
-    # one iteration
-    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
-    # but 100 iterations should be more than enough
-    u, s, vt = svds(x, 1, maxiter=100, ncv=3)
-    assert_allclose(s, [1.7], atol=0.5)
-
-
-def test_svd_return():
-    # check that the return_singular_vectors parameter works as expected
-    x = hilbert(6)
-    _, s, _ = sorted_svd(x, 2)
-    ss = svds(x, 2, return_singular_vectors=False)
-    assert_allclose(s, ss)
-
-
-def test_svd_which():
-    # check that the which parameter works as expected
-    x = hilbert(6)
-    for which in ['LM', 'SM']:
-        _, s, _ = sorted_svd(x, 2, which=which)
-        for solver in [None, 'arpack', 'lobpcg', 'propack']:
-            ss = svds(x, 2, which=which, return_singular_vectors=False,
-                      solver=solver)
-            ss.sort()
-            assert_allclose(s, ss, atol=np.sqrt(1e-15))
-
-
-def test_svd_v0():
-    # check that the v0 parameter works as expected
-    x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
-
-    for solver in [None, 'arpack', 'lobpcg', 'propack']:
-        u, s, vh = svds(x, 1, solver=solver)
-        u2, s2, vh2 = svds(x, 1, v0=u[:, 0], solver=solver)
-
-        assert_allclose(s, s2, atol=np.sqrt(1e-15))
-
-
-def _check_svds(A, k, U, s, VH):
-    n, m = A.shape
-
-    # Check shapes.
-    assert_equal(U.shape, (n, k))
-    assert_equal(s.shape, (k,))
-    assert_equal(VH.shape, (k, m))
-
-    # Check that the original matrix can be reconstituted.
-    A_rebuilt = (U*s).dot(VH)
-    assert_equal(A_rebuilt.shape, A.shape)
-    assert_allclose(A_rebuilt, A)
-
-    # Check that U is a semi-orthogonal matrix.
-    UH_U = np.dot(U.T.conj(), U)
-    assert_equal(UH_U.shape, (k, k))
-    assert_allclose(UH_U, np.identity(k), atol=1e-12)
-
-    # Check that V is a semi-orthogonal matrix.
-    VH_V = np.dot(VH, VH.T.conj())
-    assert_equal(VH_V.shape, (k, k))
-    assert_allclose(VH_V, np.identity(k), atol=1e-12)
-
-
-def test_svd_LM_ones_matrix():
-    # Check that svds can deal with matrix_rank less than k in LM mode.
-    k = 3
-    for n, m in (6, 5), (5, 5), (5, 6):
-        for t in float, complex:
-            A = np.ones((n, m), dtype=t)
-            for solver in [None, 'arpack', 'lobpcg']:  # propack fails
-                U, s, VH = svds(A, k, solver=solver)
-
-                # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH)
-
-                # Check that the largest singular value is near sqrt(n*m)
-                # and the other singular values have been forced to zero.
-                assert_allclose(np.max(s), np.sqrt(n*m))
-                assert_array_equal(sorted(s)[:-1], 0)
-
-
-def test_svd_LM_zeros_matrix():
-    # Check that svds can deal with matrices containing only zeros.
-    k = 1
-    for n, m in (3, 4), (4, 4), (4, 3):
-        for t in float, complex:
-            A = np.zeros((n, m), dtype=t)
-            for solver in [None, 'arpack', 'lobpcg', 'propack']:
-                U, s, VH = svds(A, k, solver=solver)
-
-                # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH)
-
-                # Check that the singular values are zero.
-                assert_array_equal(s, 0)
-
-
-def test_svd_LM_zeros_matrix_gh_3452():
-    # Regression test for a github issue.
-    # https://github.com/scipy/scipy/issues/3452
-    # Note that for complex dype the size of this matrix is too small for k=1.
-    n, m, k = 4, 2, 1
-    A = np.zeros((n, m))
-    for solver in [None, 'arpack', 'lobpcg', 'propack']:
-        U, s, VH = svds(A, k, solver=solver)
-
-        # Check some generic properties of svd.
-        _check_svds(A, k, U, s, VH)
-
-        # Check that the singular values are zero.
-        assert_array_equal(s, 0)
-
-
-class CheckingLinearOperator(LinearOperator):
-    def __init__(self, A):
-        self.A = A
-        self.dtype = A.dtype
-        self.shape = A.shape
-
-    def _matvec(self, x):
-        assert_equal(max(x.shape), np.size(x))
-        return self.A.dot(x)
-
-    def _rmatvec(self, x):
-        assert_equal(max(x.shape), np.size(x))
-        return self.A.T.conjugate().dot(x)
 
 
 def test_svd_linop():
@@ -292,42 +300,55 @@ def test_svd_linop():
                                     rtol=eps)
 
 
-def test_svds_partial_return():
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
-    # test vertical matrix
-    z = csr_matrix(x)
-    vh_full = svds(z, 2)[-1]
-    vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
-    dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
-    if dvh > 1e-10:
-        raise AssertionError('right eigenvector matrices differ when using '
-                             'return_singular_vectors parameter')
-    if svds(z, 2, return_singular_vectors='vh')[0] is not None:
-        raise AssertionError('left eigenvector matrix was computed when it '
-                             'should not have been')
-    # test horizontal matrix
-    z = csr_matrix(x.T)
-    u_full = svds(z, 2)[0]
-    u_partial = svds(z, 2, return_singular_vectors='vh')[0]
-    du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
-    if du > 1e-10:
-        raise AssertionError('left eigenvector matrices differ when using '
-                             'return_singular_vectors parameter')
-    if svds(z, 2, return_singular_vectors='u')[-1] is not None:
-        raise AssertionError('right eigenvector matrix was computed when it '
-                             'should not have been')
+# --- Test Edge Cases ---
+# Checks a few edge cases. There are obvious ones missing (e.g. empty inpout)
+# but I don't think we need to substantially expand these.
+
+def test_svd_LM_ones_matrix():
+    # Check that svds can deal with matrix_rank less than k in LM mode.
+    k = 3
+    for n, m in (6, 5), (5, 5), (5, 6):
+        for t in float, complex:
+            A = np.ones((n, m), dtype=t)
+            for solver in [None, 'arpack', 'lobpcg']:  # propack fails
+                U, s, VH = svds(A, k, solver=solver)
+
+                # Check some generic properties of svd.
+                _check_svds(A, k, U, s, VH)
+
+                # Check that the largest singular value is near sqrt(n*m)
+                # and the other singular values have been forced to zero.
+                assert_allclose(np.max(s), np.sqrt(n*m))
+                assert_array_equal(sorted(s)[:-1], 0)
 
 
-def test_svds_wrong_eigen_type():
+def test_svd_LM_zeros_matrix():
+    # Check that svds can deal with matrices containing only zeros.
+    k = 1
+    for n, m in (3, 4), (4, 4), (4, 3):
+        for t in float, complex:
+            A = np.zeros((n, m), dtype=t)
+            for solver in [None, 'arpack', 'lobpcg', 'propack']:
+                U, s, VH = svds(A, k, solver=solver)
+
+                # Check some generic properties of svd.
+                _check_svds(A, k, U, s, VH)
+
+                # Check that the singular values are zero.
+                assert_array_equal(s, 0)
+
+
+def test_svd_LM_zeros_matrix_gh_3452():
     # Regression test for a github issue.
-    # https://github.com/scipy/scipy/issues/4590
-    # Function was not checking for eigenvalue type and unintended
-    # values could be returned.
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
-    assert_raises(ValueError, svds, x, 1, which='LA')
+    # https://github.com/scipy/scipy/issues/3452
+    # Note that for complex dype the size of this matrix is too small for k=1.
+    n, m, k = 4, 2, 1
+    A = np.zeros((n, m))
+    for solver in [None, 'arpack', 'lobpcg', 'propack']:
+        U, s, VH = svds(A, k, solver=solver)
+
+        # Check some generic properties of svd.
+        _check_svds(A, k, U, s, VH)
+
+        # Check that the singular values are zero.
+        assert_array_equal(s, 0)
