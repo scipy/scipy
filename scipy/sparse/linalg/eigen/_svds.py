@@ -55,15 +55,22 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
         message = "`A` must not be empty."
         raise ValueError(message)
 
-    if int(k) != k or  k <= 0 or k >= min(A.shape):
-        message = "`k` must be an integer between 1 and np.min(A.shape)."
+    if int(k) != k or not (0 < k < min(A.shape)):
+        message = "`k` must be an integer satisfying `0 < k < min(A.shape)`."
         raise ValueError(message)
     k = int(k)
 
-    solver = str(solver).lower() if solver is not None else solver
+    solver = str(solver).lower() if solver is not None else 'arpack'
     solvers = {"arpack", "lobpcg", "propack", None}
     if solver not in solvers:
         raise ValueError(f"solver must be one of {solvers}.")
+
+    if solver in {"arpack", None} and ncv is not None:
+        if int(ncv) != ncv or not (k < ncv < min(A.shape)):
+            message = ("`ncv` must be an integer satisfying "
+                       "`k < ncv < min(A.shape)`.")
+            raise ValueError(message)
+        ncv = int(ncv)
 
     if which not in {'LM', 'SM'}:
         raise ValueError("`which` must be either 'LM' or 'SM'.")

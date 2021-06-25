@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
@@ -97,17 +99,17 @@ class SVDSCommonTests:
     def test_svds_input_validation_A(self):
         message = "invalid shape"
         with pytest.raises(ValueError, match=message):
-            svds([[[1., 2.], [3., 4.]]], k=1)
+            svds([[[1., 2.], [3., 4.]]], k=1, solver=self.solver)
 
         message = "`A` must not be empty."
         with pytest.raises(ValueError, match=message):
-            svds([[]], k=1)
+            svds([[]], k=1, solver=self.solver)
 
     @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
     def test_svds_input_validation_A2(self, A):
         message = "`A` must be of floating or complex data type."
         with pytest.raises(ValueError, match=message):
-            svds(A, k=1)
+            svds(A, k=1, solver=self.solver)
 
     @pytest.mark.parametrize("k", list(range(-1, 6)) + [1.5, "1"])
     def test_svds_input_validation_k(self, k):
@@ -115,14 +117,14 @@ class SVDSCommonTests:
         A = rng.random((4, 3))
 
         if k in {1, 2}:
-            u, s, vh = svds(A, k=k)
+            u, s, vh = svds(A, k=k, solver=self.solver)
             # partial decomposition, so don't check that u@diag(s)@vh=A;
             # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
         else:
-            message = "`k` must be an integer between 1 and"
+            message = ("`k` must be an integer satisfying")
             with pytest.raises(ValueError, match=message):
-                svds(A, k=k)
+                svds(A, k=k, solver=self.solver)
 
     @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
     def test_svds_wrong_eigen_type(self, which):
@@ -135,20 +137,14 @@ class SVDSCommonTests:
         k = 2
 
         if which in {'LM', 'SM'}:
-            u, s, vh = svds(A, k=k, which=which)
+            u, s, vh = svds(A, k=k, which=which, solver=self.solver)
             # partial decomposition, so don't check that u@diag(s)@vh=A;
             # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh, which,
                         check_usvh_A=False, check_svd=True)
         else:
             with pytest.raises(ValueError, match="`which` must be either"):
-                svds(A, k=k, which=which)
-
-    @pytest.mark.parametrize("solver", ['ekki', object])
-    def test_svds_input_validation_solver(self, solver):
-        message = "solver must be one of"
-        with pytest.raises(ValueError, match=message):
-            svds(np.ones((3, 4)), k=2, solver=solver)
+                svds(A, k=k, which=which, solver=self.solver)
 
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
@@ -395,10 +391,33 @@ class SVDSCommonTests:
 
 # --- Perform tests with each solver ---
 
+class Test_SVDS_once():
+    @pytest.mark.parametrize("solver", ['ekki', object])
+    def test_svds_input_validation_solver(self, solver):
+        message = "solver must be one of"
+        with pytest.raises(ValueError, match=message):
+            svds(np.ones((3, 4)), k=2, solver=solver)
+
+
 class Test_SVDS_ARPACK(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'arpack'
+
+    @pytest.mark.parametrize("ncv", list(range(-1, 8)) + [4.5, "5"])
+    def test_svds_input_validation_ncv(self, ncv):
+        rng = np.random.default_rng(0)
+        A = rng.random((6, 7))
+        k = 3
+        if ncv in {4, 5}:
+            u, s, vh = svds(A, k=k, ncv=ncv, solver=self.solver)
+        # partial decomposition, so don't check that u@diag(s)@vh=A;
+        # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+            _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
+        else:
+            message = ("`ncv` must be an integer satisfying")
+            with pytest.raises(ValueError, match=message):
+                svds(A, k=k, ncv=ncv, solver=self.solver)
 
     def test_svd_maxiter(self):
         # check that maxiter works as expected

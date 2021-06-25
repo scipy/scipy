@@ -21,8 +21,8 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ncv : int, optional
         The number of Lanczos vectors generated.
         The default is ``min(n, max(2*k + 1, 20))``.
-        If specified, must satistify ``k + 1 < ncv < N``; ``ncv > 2*k`` is
-        recommended.
+        If specified, must satistify ``k + 1 < ncv < min(M, N)``; ``ncv > 2*k``
+        is recommended.
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : {'LM', 'SM'}
