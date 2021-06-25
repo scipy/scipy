@@ -144,6 +144,12 @@ class SVDSCommonTests:
             with pytest.raises(ValueError, match="`which` must be either"):
                 svds(A, k=k, which=which)
 
+    @pytest.mark.parametrize("solver", ['ekki', object])
+    def test_svds_input_validation_solver(self, solver):
+        message = "solver must be one of"
+        with pytest.raises(ValueError, match=message):
+            svds(np.ones((3, 4)), k=2, solver=solver)
+
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
     # what they are purported to do. Should also check `ncv` and `tol` somehow.

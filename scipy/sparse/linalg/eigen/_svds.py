@@ -60,6 +60,11 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
         raise ValueError(message)
     k = int(k)
 
+    solver = str(solver).lower() if solver is not None else solver
+    solvers = {"arpack", "lobpcg", "propack", None}
+    if solver not in solvers:
+        raise ValueError(f"solver must be one of {solvers}.")
+
     if which not in {'LM', 'SM'}:
         raise ValueError("`which` must be either 'LM' or 'SM'.")
 
@@ -259,10 +264,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
-
-    else:
-        raise ValueError("solver must be either 'arpack', 'lobpcg', or "
-                         "'propack'.")
 
     # Gramian matrices have real non-negative eigenvalues.
     eigvals = np.maximum(eigvals.real, 0)
