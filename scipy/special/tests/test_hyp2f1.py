@@ -577,13 +577,24 @@ class TestHyp2f1:
         assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
-    # Marked as slow so it won't run on continuous integration builds.
-    # This test is not actually that slow, though could become slow in
-    # the future if enough test cases are added.
+    # Marked as slow so it won't run on by default. This test is not slow.
+    # Including it only increases the running time of the entire suite by
+    # a handful of hundreths of seconds. This test could become slow in the
+    # future if enough test cases are added.
     @pytest.mark.slow
     @check_version(mpmath, "1.0.0")
     def test_test_hyp2f1(self):
-        """Test that expected values match what is computed by mpmath."""
+        """Test that expected values match what is computed by mpmath.
+
+        This gathers the parameters for the test cases out of the pytest marks.
+        The parameters are a, b, c, z, expected, rtol, where expected should
+        be the value of hyp2f1(a, b, c, z) computed with mpmath. The test
+        recomputes hyp2f1(a, b, c, z) using mpmath and verifies that expected
+        actually is the correct value. This allows the data for the tests to
+        live within the test code instead of an external datafile, while
+        avoiding having to compute the results with mpmath during the text,
+        except for when slow tests are being run.
+        """
         from scipy.special._precompute.hyp2f1_data import mp_hyp2f1
         test_methods = [
             test_method for test_method in dir(self)
