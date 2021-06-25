@@ -35,7 +35,10 @@ _ArrayLike0D = Union[
     bytes,
     np.generic,
 ]
-_WeightType = Union[npt.ArrayLike, Tuple[npt.ArrayLike, npt.ArrayLike]]
+_WeightType = Union[
+    npt.ArrayLike,
+    Tuple[Optional[npt.ArrayLike], Optional[npt.ArrayLike]],
+]
 
 class cKDTreeNode:
     @property
@@ -165,7 +168,7 @@ class cKDTree(Generic[_BoxType]):
         other: cKDTree,
         r: _ArrayLike0D,
         p: float = ...,
-        weights: None = ...,
+        weights: None | Tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> int: ...
     @overload
@@ -183,7 +186,7 @@ class cKDTree(Generic[_BoxType]):
         other: cKDTree,
         r: npt.ArrayLike,
         p: float = ...,
-        weights: None = ...,
+        weights: None | Tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> npt.NDArray[np.intp]: ...
     @overload
