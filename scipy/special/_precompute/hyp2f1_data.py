@@ -1,8 +1,19 @@
-"""This script tests scipy's implementation of hyp2f1 against mpmath's.
+"""This script evaluates scipy's implementation of hyp2f1 against mpmath's.
 
 Author: Albert Steppi, with credit to Adam Kullberg (FormerPhycisist) for
 the implementation of mp_hyp2f1 below, which modifies mpmath's hyp2f1 to
 return the same branch as scipy's on the standard branch cut.
+
+This script is long running and generates a large output file. The generated
+file is roughly 700MB in size. It takes around 40 minutes using an Intel(R)
+Core(TM) i5-8250U CPU with n_jobs set to 8 (full utilization). It is only
+meant to be run occasionally. It's output can be analyzed to identify suitable
+test cases and to find parameter and argument regions where hyp2f1 needs to
+be improved.
+
+The script has two arguments; a positional argument for specifying the path to
+the location where the output file is to be placed, and an optional argument
+specifying the number of processes to use for parallel execution.
 
 Produces a tab separated values file with 11 columns. The first four columns
 contain the parameters a, b, c and the argument z. The next two contain |z| and
@@ -42,14 +53,6 @@ calculated with scipy's hyp2f1, the relative error, and the absolute error.
 As special cases of hyp2f1 are moved from the original Fortran implementation
 into Cython, this script can be used to ensure that no regressions occur and
 to point out where improvements are needed.
-
-The generated file is roughly 700MB in size. The script has two arguments;
-a positional argument for specifying the path to the location where the output
-file is to be placed, and an optional argument specifying the number of
-processes to use for parallel execution.
-
-Takes around 40 minutes using an Intel(R) Core(TM) i5-8250U CPU with n_jobs
-set to 8 (full utilization).
 """
 
 
