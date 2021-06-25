@@ -774,7 +774,7 @@ def aslinearoperator(A):
     """Return A as a LinearOperator.
 
     'A' may be any of the following types:
-     - ndarray
+     - array_like
      - matrix
      - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
      - LinearOperator
@@ -799,8 +799,6 @@ def aslinearoperator(A):
         return A
 
     elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
-        if A.ndim > 2:
-            raise ValueError('array must have ndim <= 2')
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
@@ -823,4 +821,9 @@ def aslinearoperator(A):
                                   rmatmat=rmatmat, dtype=dtype)
 
         else:
-            raise TypeError('type not understood')
+            A = np.atleast_2d(np.asarray(A))
+            if not (np.issubdtype(A.dtype, np.number)
+                    or np.issubdtype(A.dtype, np.bool_)):
+                message = f"Linear operations not defined for type {A.dtype}"
+                raise TypeError(message)
+            return MatrixLinearOperator(A)

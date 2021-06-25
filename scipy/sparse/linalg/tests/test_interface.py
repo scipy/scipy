@@ -4,6 +4,8 @@
 from functools import partial
 from itertools import product
 import operator
+import re
+
 import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
@@ -448,3 +450,21 @@ def test_transpose_noconjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
+
+def test_aslinearoperator_input_validation_shape():
+    message = "invalid shape (3, 4, 5) (must be 2-d)"
+    with pytest.raises(ValueError, match=re.escape(message)):
+        interface.aslinearoperator(np.ones((3, 4, 5)))
+
+@pytest.mark.parametrize("A", (["ekki", 'ni'], object, {1: 2}))
+def test_aslinearoperator_input_validation_type(A):
+    message = "Linear operations not defined for type"
+    with pytest.raises(TypeError, match=message):
+        interface.aslinearoperator(A)
+
+@pytest.mark.parametrize("dtype", [int, bool, float, complex])
+def test_aslinearoperator_input_array_like(dtype):
+    A = np.eye(2, dtype=dtype)
+    x = np.ones((2, 1), dtype=dtype)
+    lo = interface.aslinearoperator(A.tolist())
+    assert_equal(lo @ x.tolist(), A @ x)
