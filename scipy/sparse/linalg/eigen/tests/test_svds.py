@@ -35,7 +35,8 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
-def _check_svds(A, k, u, s, vh, check_usvh_A=True, check_svd=False):
+def _check_svds(A, k, u, s, vh, which="LM",
+                check_usvh_A=True, check_svd=False):
     n, m = A.shape
     atol = 1e-12
 
@@ -62,7 +63,7 @@ def _check_svds(A, k, u, s, vh, check_usvh_A=True, check_svd=False):
 
     # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
     if check_svd:
-        u2, s2, vh2 = sorted_svd(A, k)
+        u2, s2, vh2 = sorted_svd(A, k, which)
         assert_allclose(np.abs(u), np.abs(u2), atol=atol)
         assert_allclose(s, s2, atol=atol)
         assert_allclose(np.abs(vh), np.abs(vh2), atol=atol)
@@ -102,20 +103,29 @@ class SVDSCommonTests:
             # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
         else:
-            with pytest.raises(ValueError, match="k must be between 1 and"):
+            with pytest.raises(ValueError, match="`k` must be between 1 and"):
                 svds(A, k=k)
 
 
-    def test_svds_wrong_eigen_type(self):
+    @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki'))
+    def test_svds_wrong_eigen_type(self, which):
         # Regression test for a github issue.
         # https://github.com/scipy/scipy/issues/4590
         # Function was not checking for eigenvalue type and unintended
         # values could be returned.
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1, 0, 2],
-                      [0, 0, 1]], float)
-        assert_raises(ValueError, svds, x, 1, which='LA')
+        rng = np.random.default_rng(0)
+        A = rng.random((4, 3))
+        k = 1
+
+        if which in {'LM', 'SM'}:
+            u, s, vh = svds(A, k=k, which=which)
+            # partial decomposition, so don't check that u@diag(s)@vh=A;
+            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+            _check_svds(A, k, u, s, vh, which,
+                        check_usvh_A=False, check_svd=True)
+        else:
+            with pytest.raises(ValueError, match="`which` must be either"):
+                svds(A, k=k, which=which)
 
 
     # --- Test Parameters ---

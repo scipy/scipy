@@ -168,7 +168,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif which == 'SM':
         largest = False
     else:
-        raise ValueError("which must be either 'LM' or 'SM'.")
+        raise ValueError("`which` must be either 'LM' or 'SM'.")
 
     if not (isinstance(A, LinearOperator) or isspmatrix(A)
             or is_pydata_spmatrix(A)):
@@ -177,7 +177,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     n, m = A.shape
 
     if k <= 0 or k >= min(n, m):
-        raise ValueError("k must be between 1 and np.min(A.shape), k=%d" % k)
+        raise ValueError("`k` must be between 1 and np.min(A.shape)")
 
     if isinstance(A, LinearOperator):
         if n > m:
