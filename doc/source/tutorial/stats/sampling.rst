@@ -88,20 +88,26 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-    >>> import numpy as np
     >>> from scipy.stats import TransformedDensityRejection
+    >>> from math import exp
     >>> 
     >>> class StandardNormal:
-    ...     def pdf(self, x):
-    ...         # note that the normalization contant isn't required
-    ...         return np.exp(-0.5 * x*x)
-    ...     def dpdf(self, x):
-    ...         return -x * np.exp(-0.5 * x*x)
+    ...     def pdf(self, x: float) -> float:
+    ...         # note that the normalization constant isn't required
+    ...         return exp(-0.5 * x*x)
+    ...     def dpdf(self, x: float) -> float:
+    ...         return -x * exp(-0.5 * x*x)
     ... 
     >>> dist = StandardNormal()
     >>> 
     >>> urng = np.random.default_rng(0x6be00a9336fc82258fe73bfa672d3d52)
     >>> rng = TransformedDensityRejection(dist, seed=urng)
+
+As shown in the example, we first initialize a distribution object that
+contains an implementation of the methods required by the generator. In
+our case, we use the :class:`~TransformedDensityRejection` method which
+requires a PDF and its derivative w.r.t. x (i.e. the variate). Note that
+the PDF doesn't need to be vectorized. It should accept and return floats.
 
 .. note:: One can also pass the SciPy distributions as arguments but it can
           be slow due to validations and expensive NumPy operations.
@@ -123,6 +129,16 @@ distribution by calling the ``rvs`` method:
            [ 1.38588147, -1.06629264,  0.54475257],
            [-0.55153436, -0.67281406,  0.01830143],
            [ 1.37709649, -1.33036774,  0.62131967]])
+
+.. note:: Please note the difference between the ``rvs`` method of the
+          distributions present in :mod:`scipy.stats` and the one provided
+          by these generators: The general aim of these generators is to
+          provide a fast generation method in :class:`~rv_continuous`. The
+          tools presented here allow the user to experiment with different
+          methods that can lead to performance improvements in certain
+          situations, e.g., if a large number of samples are needed or if
+          particular shape parameters are used. Also, even if the same URNG
+          (``seed``) is used, the resulting rvs will be different in general.
 
 We can pass a ``domain`` parameter to truncate the distribution:
 
@@ -164,8 +180,8 @@ because the PDF was < 0. i.e. negative. This falls under the type
 Warnings thrown by UNU.RAN also follow the same format.
 
 
-Generators in ``scipy.stats``
------------------------------
+Generators in :mod:`scipy.stats`
+--------------------------------
 .. toctree::
    :maxdepth: 1
 
