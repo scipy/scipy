@@ -92,7 +92,22 @@ class SVDSCommonTests:
 
     solver = None
 
-    # some of these could be moved to run only once, say with solver=None
+    # some of these IV tests could run only once, say with solver=None
+
+    def test_svds_input_validation_A(self):
+        message = "invalid shape"
+        with pytest.raises(ValueError, match=message):
+            svds([[[1., 2.], [3., 4.]]], k=1)
+
+        message = "`A` must not be empty."
+        with pytest.raises(ValueError, match=message):
+            svds([[]], k=1)
+
+    @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
+    def test_svds_input_validation_A2(self, A):
+        message = "`A` must be of floating or complex data type."
+        with pytest.raises(ValueError, match=message):
+            svds(A, k=1)
 
     @pytest.mark.parametrize("k", list(range(-1, 6)) + [1.5, "1"])
     def test_svds_input_validation_k(self, k):
@@ -108,7 +123,6 @@ class SVDSCommonTests:
             message = "`k` must be an integer between 1 and"
             with pytest.raises(ValueError, match=message):
                 svds(A, k=k)
-
 
     @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
     def test_svds_wrong_eigen_type(self, which):
@@ -130,11 +144,9 @@ class SVDSCommonTests:
             with pytest.raises(ValueError, match="`which` must be either"):
                 svds(A, k=k, which=which)
 
-
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
     # what they are purported to do. Should also check `ncv` and `tol` somehow.
-
 
     def test_svd_which(self):
         # check that the which parameter works as expected
@@ -149,7 +161,6 @@ class SVDSCommonTests:
             ss.sort()
             assert_allclose(s, ss, atol=np.sqrt(1e-15))
 
-
     def test_svd_v0(self):
         # check that the v0 parameter works as expected
         solver = self.solver
@@ -161,7 +172,6 @@ class SVDSCommonTests:
 
         assert_allclose(s, s2, atol=np.sqrt(1e-15))
 
-
     def test_svd_return(self):
         # check that the return_singular_vectors parameter works as expected
         solver = self.solver
@@ -170,7 +180,6 @@ class SVDSCommonTests:
         _, s, _ = sorted_svd(x, 2)
         ss = svds(x, 2, solver=solver, return_singular_vectors=False)
         assert_allclose(s, ss)
-
 
     def test_svds_partial_return(self):
         solver = self.solver
@@ -202,7 +211,6 @@ class SVDSCommonTests:
             raise AssertionError('right eigenvector matrix was computed when it '
                                  'should not have been')
 
-
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
     # as dense array, sparse matrix, and LinearOperator. Could be written
@@ -232,7 +240,6 @@ class SVDSCommonTests:
                 assert_array_almost_equal_nulp(
                     m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1116)
 
-
     def test_svd_simple_complex(self):
         solver = self.solver
 
@@ -256,7 +263,6 @@ class SVDSCommonTests:
 
                 assert_array_almost_equal_nulp(
                     m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1575)
-
 
     def test_svd_linop(self):
         solver = self.solver
@@ -323,7 +329,6 @@ class SVDSCommonTests:
                                     np.dot(U2, np.dot(np.diag(s2), VH2)),
                                     rtol=eps)
 
-
     # --- Test Edge Cases ---
     # Checks a few edge cases. There are obvious ones missing (e.g. empty inpout)
     # but I don't think we need to substantially expand these.
@@ -347,7 +352,6 @@ class SVDSCommonTests:
                 assert_allclose(np.max(s), np.sqrt(n*m))
                 assert_array_equal(sorted(s)[:-1], 0)
 
-
     def test_svd_LM_zeros_matrix(self):
         # Check that svds can deal with matrices containing only zeros.
         solver = self.solver
@@ -364,7 +368,6 @@ class SVDSCommonTests:
 
                 # Check that the singular values are zero.
                 assert_array_equal(s, 0)
-
 
     def test_svd_LM_zeros_matrix_gh_3452(self):
         # Regression test for a github issue.

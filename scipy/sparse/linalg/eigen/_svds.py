@@ -3,7 +3,7 @@ import numpy as np
 from .arpack import _arpack  # type: ignore[attr-defined]
 from . import eigsh
 
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg.interface import LinearOperator, aslinearoperator
 from scipy.sparse import isspmatrix
 from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
@@ -46,12 +46,17 @@ def _herm(x):
 
 def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
 
-    if not (isinstance(A, LinearOperator) or isspmatrix(A)
-            or is_pydata_spmatrix(A)):
-        A = np.asarray(A)
+    A = aslinearoperator(A)  # this takes care of some input validation
+    if not (np.issubdtype(A.dtype, np.complexfloating)
+            or np.issubdtype(A.dtype, np.floating)):
+        message = "`A` must be of floating or complex data type."
+        raise ValueError(message)
+    if np.prod(A.shape) == 0:
+        message = "`A` must not be empty."
+        raise ValueError(message)
 
     if int(k) != k or  k <= 0 or k >= min(A.shape):
-        message = "`k` must be an integer between 1 and np.min(A.shape)"
+        message = "`k` must be an integer between 1 and np.min(A.shape)."
         raise ValueError(message)
     k = int(k)
 
@@ -188,29 +193,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     largest = (which == 'LM')
     n, m = A.shape
 
-    if isinstance(A, LinearOperator):
-        if n > m:
-            X_dot = A.matvec
-            X_matmat = A.matmat
-            XH_dot = A.rmatvec
-            XH_mat = A.rmatmat
-        else:
-            X_dot = A.rmatvec
-            X_matmat = A.rmatmat
-            XH_dot = A.matvec
-            XH_mat = A.matmat
-
-            dtype = getattr(A, 'dtype', None)
-            if dtype is None:
-                dtype = A.dot(np.zeros([m, 1])).dtype
-
+    if n > m:
+        X_dot = A.matvec
+        X_matmat = A.matmat
+        XH_dot = A.rmatvec
+        XH_mat = A.rmatmat
     else:
-        if n > m:
-            X_dot = X_matmat = A.dot
-            XH_dot = XH_mat = _herm(A).dot
-        else:
-            XH_dot = XH_mat = A.dot
-            X_dot = X_matmat = _herm(A).dot
+        X_dot = A.rmatvec
+        X_matmat = A.rmatmat
+        XH_dot = A.matvec
+        XH_mat = A.matmat
+
+        dtype = getattr(A, 'dtype', None)
+        if dtype is None:
+            dtype = A.dot(np.zeros([m, 1])).dtype
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
