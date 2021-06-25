@@ -92,7 +92,9 @@ class SVDSCommonTests:
 
     solver = None
 
-    @pytest.mark.parametrize("k", range(-1, 6))
+    # some of these could be moved to run only once, say with solver=None
+
+    @pytest.mark.parametrize("k", list(range(-1, 6)) + [1.5, "1"])
     def test_svds_input_validation_k(self, k):
         rng = np.random.default_rng(0)
         A = rng.random((4, 3))
@@ -103,11 +105,12 @@ class SVDSCommonTests:
             # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
         else:
-            with pytest.raises(ValueError, match="`k` must be between 1 and"):
+            message = "`k` must be an integer between 1 and"
+            with pytest.raises(ValueError, match=message):
                 svds(A, k=k)
 
 
-    @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki'))
+    @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
     def test_svds_wrong_eigen_type(self, which):
         # Regression test for a github issue.
         # https://github.com/scipy/scipy/issues/4590
@@ -115,7 +118,7 @@ class SVDSCommonTests:
         # values could be returned.
         rng = np.random.default_rng(0)
         A = rng.random((4, 3))
-        k = 1
+        k = 2
 
         if which in {'LM', 'SM'}:
             u, s, vh = svds(A, k=k, which=which)

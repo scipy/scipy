@@ -44,6 +44,23 @@ def _herm(x):
     return x.T.conj()
 
 
+def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
+
+    if not (isinstance(A, LinearOperator) or isspmatrix(A)
+            or is_pydata_spmatrix(A)):
+        A = np.asarray(A)
+
+    if int(k) != k or  k <= 0 or k >= min(A.shape):
+        message = "`k` must be an integer between 1 and np.min(A.shape)"
+        raise ValueError(message)
+    k = int(k)
+
+    if which not in {'LM', 'SM'}:
+        raise ValueError("`which` must be either 'LM' or 'SM'.")
+
+    return A, k, ncv, tol, which, v0, maxiter, return_singular, solver
+
+
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
          solver='arpack', options=None):
@@ -163,21 +180,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     """
-    if which == 'LM':
-        largest = True
-    elif which == 'SM':
-        largest = False
-    else:
-        raise ValueError("`which` must be either 'LM' or 'SM'.")
 
-    if not (isinstance(A, LinearOperator) or isspmatrix(A)
-            or is_pydata_spmatrix(A)):
-        A = np.asarray(A)
+    args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
+               solver)
+    A, k, ncv, tol, which, v0, maxiter, return_singular_vectors, solver = args
 
+    largest = (which == 'LM')
     n, m = A.shape
-
-    if k <= 0 or k >= min(n, m):
-        raise ValueError("`k` must be between 1 and np.min(A.shape)")
 
     if isinstance(A, LinearOperator):
         if n > m:
