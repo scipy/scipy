@@ -598,9 +598,9 @@ class TestHyp2f1:
         # hyp2f1 has a branch cut along the real axis from 1 to infinity.
         # Choice of value to return on the branch cut is discretionary.
         # mpmath.hyp2f1 returns a different value on the branch cut from
-        # scipy.special.hyp2f1 is equivalent to mpmath.hyp2f1 except it
-        # returns the same value (with better precision) on the branch cut
-        # as scipy.special.hyp2f1.
+        # scipy.special.hyp2f1. mp_hyp2f1 is equivalent to mpmath.hyp2f1
+        # except it returns the same value (with better precision) on the
+        # branch cut as scipy.special.hyp2f1.
         from scipy.special._precompute.hyp2f1_data import mp_hyp2f1
         test_methods = [
             test_method for test_method in dir(self)
