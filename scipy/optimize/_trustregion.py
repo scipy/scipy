@@ -3,11 +3,26 @@ import math
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, _wrap_function, _status_message,
+from .optimize import (_check_unknown_options, _status_message,
                        OptimizeResult, _prepare_scalar_function)
 from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
 from scipy.optimize._differentiable_functions import FD_METHODS
 __all__ = []
+
+
+def _wrap_function(function, args):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    ncalls = [0]
+    if function is None:
+        return ncalls, None
+
+    def function_wrapper(x, *wrapper_args):
+        ncalls[0] += 1
+        # A copy of x is sent to the user function (gh13740)
+        return function(np.copy(x), *(wrapper_args + args))
+
+    return ncalls, function_wrapper
 
 
 class BaseQuadraticSubproblem:
