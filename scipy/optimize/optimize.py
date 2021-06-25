@@ -451,17 +451,26 @@ def rosen_hess_prod(x, p):
     return Hp
 
 
-def _wrap_function(function, args):
+def _wrap_scalar_function(function, args):
     # wraps a minimizer function to count number of evaluations
     # and to easily provide an args kwd.
-    # A copy of x is sent to the user function (gh13740)
     ncalls = [0]
     if function is None:
         return ncalls, None
 
     def function_wrapper(x, *wrapper_args):
         ncalls[0] += 1
-        return function(np.copy(x), *(wrapper_args + args))
+        # A copy of x is sent to the user function (gh13740)
+        fx = function(np.copy(x), *(wrapper_args + args))
+        # Ideally, we'd like to a have a true scalar returned from f(x). For
+        # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError("The user-provided objective function "
+                                 "must return a scalar value.") from e
+        return fx
 
     return ncalls, function_wrapper
 
@@ -669,7 +678,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
+
+    x0 = asfarray(x0).flatten()
 
     if adaptive:
         dim = float(len(x0))
@@ -685,8 +696,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     nonzdelt = 0.05
     zdelt = 0.00025
-
-    x0 = asfarray(x0).flatten()
 
     if bounds is not None:
         lower_bound, upper_bound = bounds.lb, bounds.ub
@@ -1207,14 +1216,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
-
     k = 0
     N = len(x0)
     I = np.eye(N, dtype=int)
@@ -1527,14 +1528,6 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     old_fval = f(x0)
     gfk = myfprime(x0)
-
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
 
     k = 0
     xk = x0
@@ -2973,7 +2966,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]

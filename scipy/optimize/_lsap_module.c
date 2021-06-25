@@ -39,7 +39,8 @@ calculate_assignment(PyObject* self, PyObject* args)
     PyObject* b = NULL;
     PyObject* result = NULL;
     PyObject* obj_cost = NULL;
-    if (!PyArg_ParseTuple(args, "O", &obj_cost))
+    int maximize = 0;
+    if (!PyArg_ParseTuple(args, "Op", &obj_cost, &maximize))
         return NULL;
 
     PyArrayObject* obj_cont =
@@ -67,7 +68,7 @@ calculate_assignment(PyObject* self, PyObject* args)
         goto cleanup;
 
     int ret = solve_rectangular_linear_sum_assignment(
-      num_rows, num_cols, cost_matrix,
+      num_rows, num_cols, cost_matrix, maximize,
       PyArray_DATA((PyArrayObject*)a),
       PyArray_DATA((PyArrayObject*)b));
     if (ret == RECTANGULAR_LSAP_INFEASIBLE) {

@@ -1124,6 +1124,32 @@ class TestTtest_rel():
             assert_array_equal(t, np.array([np.nan, np.nan]))
             assert_array_equal(p, np.array([np.nan, np.nan]))
 
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
+
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=5, size=25, random_state=42)
+        y = stats.norm.rvs(loc=8, scale=2, size=25, random_state=42)
+
+        t_ex, p_ex = stats.ttest_rel(x, y, alternative=alternative)
+        t, p = mstats.ttest_rel(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        y[1:10] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        y = np.ma.masked_array(y, mask=np.isnan(y))
+        t, p = mstats.ttest_rel(x, y, alternative=alternative)
+        t_ex, p_ex = stats.ttest_rel(x.compressed(), y.compressed(),
+                                     alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -1192,6 +1218,32 @@ class TestTtest_ind():
         assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
                                             equal_var=False), (np.nan, np.nan))
 
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
+
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
+        y = stats.norm.rvs(loc=8, scale=2, size=100, random_state=123)
+
+        t_ex, p_ex = stats.ttest_ind(x, y, alternative=alternative)
+        t, p = mstats.ttest_ind(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        y[80:90] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        y = np.ma.masked_array(y, mask=np.isnan(y))
+        t_ex, p_ex = stats.ttest_ind(x.compressed(), y.compressed(),
+                                     alternative=alternative)
+        t, p = mstats.ttest_ind(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
 
 class TestTtest_1samp():
     def test_vs_nonmasked(self):
@@ -1248,6 +1300,29 @@ class TestTtest_1samp():
             t, p = mstats.ttest_1samp([0, 0, 0], 0)
             assert_(np.isnan(t))
             assert_array_equal(p, (np.nan, np.nan))
+
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_1samp([1, 2, 3], 4, alternative='foo')
+
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
+
+        t_ex, p_ex = stats.ttest_1samp(x, 9, alternative=alternative)
+        t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        t_ex, p_ex = stats.ttest_1samp(x.compressed(), 9,
+                                       alternative=alternative)
+        t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
 
 
 class TestDescribe:
