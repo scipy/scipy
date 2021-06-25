@@ -873,7 +873,7 @@ def test_kdtree_build_modes(kdtree_type):
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
     try:
-        import cPickle as pickle
+        import cPickle as pickle  # type: ignore[import]
     except ImportError:
         import pickle
     np.random.seed(0)
