@@ -822,8 +822,4 @@ def aslinearoperator(A):
 
         else:
             A = np.atleast_2d(np.asarray(A))
-            if not (np.issubdtype(A.dtype, np.number)
-                    or np.issubdtype(A.dtype, np.bool_)):
-                message = f"Linear operations not defined for type {A.dtype}"
-                raise TypeError(message)
             return MatrixLinearOperator(A)
