@@ -3,6 +3,7 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
                            assert_equal, assert_array_equal)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.linalg import hilbert, svd
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
@@ -34,28 +35,37 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
-def _check_svds(A, k, U, s, VH):
+def _check_svds(A, k, u, s, vh, check_usvh_A=True, check_svd=False):
     n, m = A.shape
+    atol = 1e-12
 
     # Check shapes.
-    assert_equal(U.shape, (n, k))
+    assert_equal(u.shape, (n, k))
     assert_equal(s.shape, (k,))
-    assert_equal(VH.shape, (k, m))
+    assert_equal(vh.shape, (k, m))
 
     # Check that the original matrix can be reconstituted.
-    A_rebuilt = (U*s).dot(VH)
+    A_rebuilt = (u*s).dot(vh)
     assert_equal(A_rebuilt.shape, A.shape)
-    assert_allclose(A_rebuilt, A)
+    if check_usvh_A:
+        assert_allclose(A_rebuilt, A)
 
-    # Check that U is a semi-orthogonal matrix.
-    UH_U = np.dot(U.T.conj(), U)
-    assert_equal(UH_U.shape, (k, k))
-    assert_allclose(UH_U, np.identity(k), atol=1e-12)
+    # Check that u is a semi-orthogonal matrix.
+    uh_u = np.dot(u.T.conj(), u)
+    assert_equal(uh_u.shape, (k, k))
+    assert_allclose(uh_u, np.identity(k), atol=atol)
 
     # Check that V is a semi-orthogonal matrix.
-    VH_V = np.dot(VH, VH.T.conj())
-    assert_equal(VH_V.shape, (k, k))
-    assert_allclose(VH_V, np.identity(k), atol=1e-12)
+    vh_v = np.dot(vh, vh.T.conj())
+    assert_equal(vh_v.shape, (k, k))
+    assert_allclose(vh_v, np.identity(k), atol=atol)
+
+    # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+    if check_svd:
+        u2, s2, vh2 = sorted_svd(A, k)
+        assert_allclose(np.abs(u), np.abs(u2), atol=atol)
+        assert_allclose(s, s2, atol=atol)
+        assert_allclose(np.abs(vh), np.abs(vh2), atol=atol)
 
 
 class CheckingLinearOperator(LinearOperator):
@@ -81,19 +91,19 @@ class SVDSCommonTests:
 
     solver = None
 
-    def svd_test_input_check(self):
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1, 0, 2],
-                      [0, 0, 1]], float)
+    @pytest.mark.parametrize("k", range(-1, 6))
+    def test_svds_input_validation_k(self, k):
+        rng = np.random.default_rng(0)
+        A = rng.random((4, 3))
 
-        assert_raises(ValueError, svds, x, k=-1)
-        assert_raises(ValueError, svds, x, k=0)
-        assert_raises(ValueError, svds, x, k=10)
-        assert_raises(ValueError, svds, x, k=x.shape[0])
-        assert_raises(ValueError, svds, x, k=x.shape[1])
-        assert_raises(ValueError, svds, x.T, k=x.shape[0])
-        assert_raises(ValueError, svds, x.T, k=x.shape[1])
+        if k in {1, 2}:
+            u, s, vh = svds(A, k=k)
+            # partial decomposition, so don't check that u@diag(s)@vh=A;
+            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+            _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
+        else:
+            with pytest.raises(ValueError, match="k must be between 1 and"):
+                svds(A, k=k)
 
 
     def test_svds_wrong_eigen_type(self):

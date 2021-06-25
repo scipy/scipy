@@ -177,7 +177,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     n, m = A.shape
 
     if k <= 0 or k >= min(n, m):
-        raise ValueError("k must be between 1 and min(A.shape), k=%d" % k)
+        raise ValueError("k must be between 1 and np.min(A.shape), k=%d" % k)
 
     if isinstance(A, LinearOperator):
         if n > m:
