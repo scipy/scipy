@@ -105,7 +105,7 @@ class SVDSCommonTests:
 
     @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
     def test_svds_input_validation_A2(self, A):
-        message = "`A` must be of floating or complex data type."
+        message = "`A` must be of floating or complex floating data type."
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, solver=self.solver)
 
@@ -141,8 +141,43 @@ class SVDSCommonTests:
             _check_svds(A, k, u, s, vh, which,
                         check_usvh_A=False, check_svd=True)
         else:
-            with pytest.raises(ValueError, match="`which` must be either"):
+            with pytest.raises(ValueError, match="`which` must be in"):
                 svds(A, k=k, which=which, solver=self.solver)
+
+    @pytest.mark.parametrize("transpose", (True, False))
+    @pytest.mark.parametrize("n", range(4, 9))
+    def test_svds_input_validation_v0_1(self, transpose, n):
+        rng = np.random.default_rng(0)
+        A = rng.random((5, 7))
+        v0 = rng.random(n)
+        if transpose:
+            A = A.T
+        k = 2
+        message = "`v0` must have shape"
+        if n != 5:
+            with pytest.raises(ValueError, match=message):
+                svds(A, k=k, v0=v0, solver=self.solver)
+        else:
+            u, s, vh = svds(A, k=k, v0=v0, solver=self.solver)
+            # partial decomposition, so don't check that u@diag(s)@vh=A;
+            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+            _check_svds(A, k, u, s, vh, which="LM",
+                        check_usvh_A=False, check_svd=True)
+
+    def test_svds_input_validation_v0_2(self):
+        A = np.ones((10, 10))
+        v0 = np.ones((1, 10))
+        message = "`v0` must have shape"
+        with pytest.raises(ValueError, match=message):
+            svds(A, k=1, v0=v0, solver=self.solver)
+
+    @pytest.mark.parametrize("v0", ("hi", 1, np.ones(10, dtype=int)))
+    def test_svds_input_validation_v0_3(self, v0):
+        A = np.ones((10, 10))
+        message = "`v0` must be of floating or complex floating data type."
+        with pytest.raises(ValueError, match=message):
+            svds(A, k=1, v0=v0, solver=self.solver)
+
 
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
@@ -218,6 +253,7 @@ class SVDSCommonTests:
 
     def test_svd_simple_real(self):
         solver = self.solver
+        np.random.seed(0)  # set random seed for generating propack v0
 
         x = np.array([[1, 2, 3],
                       [3, 4, 3],
@@ -238,7 +274,7 @@ class SVDSCommonTests:
                 sm_hat = svd_estimate(su, ss, svh)
 
                 assert_array_almost_equal_nulp(
-                    m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1116)
+                    m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1436)
 
     def test_svd_simple_complex(self):
         solver = self.solver
