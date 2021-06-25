@@ -326,14 +326,4 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     if not np.any(v):
         v = np.eye(*v.shape)
 
-    # construct return tuple based on caller's desired output
-    return {
-        (0, 0, 0): sigma,
-        (1, 0, 0): (u[:, :k], sigma),
-        (0, 1, 0): (sigma, v[:, :k].conj().T),
-        (1, 1, 0): (u[:, :k], sigma, v[:, :k].conj().T),
-        (0, 0, 1): (sigma, bnd),
-        (1, 1, 1): (u[:, :k], sigma, v[:, :k].conj().T, bnd),
-        (0, 1, 1): (sigma, v[:, :k].conj().T, bnd),
-        (1, 0, 1): (u[:, :k], sigma, bnd),
-    }[(compute_u, compute_v, full_output)]
+    return u[:, :k], sigma, v[:, :k].conj().T, bnd
