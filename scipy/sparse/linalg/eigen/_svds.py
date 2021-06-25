@@ -227,17 +227,29 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     elif solver == 'propack':
         from scipy.sparse.linalg import svdp
-        jobu = ((isinstance(return_singular_vectors, str)
-                 and 'u' in return_singular_vectors)
-                or (isinstance(return_singular_vectors, bool)
-                    and return_singular_vectors))
-        jobv = ((isinstance(return_singular_vectors, str)
-                 and 'v' in return_singular_vectors)
-                or (isinstance(return_singular_vectors, bool)
-                    and return_singular_vectors))
-        return svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
-                    compute_u=jobu, compute_v=jobv, irl_mode=True,
-                    kmax=maxiter, v0=v0)
+        jobu = n <= m or return_singular_vectors != 'vh'
+        jobv = n > m or return_singular_vectors != 'u'
+        res = svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
+                   compute_u=jobu, compute_v=jobv, irl_mode=True,
+                   kmax=maxiter, v0=v0)
+
+        u, s, vh, _ = res  # but we'll ignore bnd, the last output
+
+        # PROPACK order appears to be largest first. Output order is not
+        # guaranteed, according to documentation, but for ARPACK and LOBPCG
+        # they actually are ordered smallest to largest.
+        s = s[::-1]
+        u = u[:, ::-1]
+        vh = vh[::-1]
+
+        if return_singular_vectors is False:
+            return s
+        elif return_singular_vectors == 'u' and n <= m:
+            return u, s, None
+        elif return_singular_vectors == 'vh' and n >= m:
+            return None, s, vh
+        else:
+            return u, s, vh
 
     elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,

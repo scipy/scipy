@@ -46,7 +46,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     Msp = constructor(M)
 
     u1, sigma1, vt1 = np.linalg.svd(M, full_matrices=False)
-    u2, sigma2, vt2 = svdp(Msp, k=k, which=which, irl_mode=irl_mode, tol=tol)
+    u2, sigma2, vt2, _ = svdp(Msp, k=k, which=which, irl_mode=irl_mode, tol=tol)
 
     # check the which
     if which.upper() == 'SM':
@@ -123,7 +123,7 @@ def test_examples(precision, irl):
     vt_expected = load_uv(folder, precision, "V", irl=irl).T
 
     k = len(s_expected)
-    u, s, vt = svdp(A, k, irl_mode=irl)
+    u, s, vt, _ = svdp(A, k, irl_mode=irl)
 
     assert_allclose(s, s_expected, atol)
     assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
