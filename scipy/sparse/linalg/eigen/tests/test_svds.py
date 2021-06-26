@@ -39,7 +39,7 @@ def svd_estimate(u, s, vh):
 def _check_svds(A, k, u, s, vh, which="LM",
                 check_usvh_A=True, check_svd=False):
     n, m = A.shape
-    atol = 1e-12
+    atol = 1e-10
 
     # Check shapes.
     assert_equal(u.shape, (n, k))
@@ -143,25 +143,14 @@ class SVDSCommonTests:
         with pytest.raises(TypeError, match=message):
             svds(np.eye(10), tol=tol, solver=self.solver)
 
-    @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
+    @pytest.mark.parametrize("which", ('LA', 'SA', 'ekki', 0))
     def test_svds_input_validation_which(self, which):
         # Regression test for a github issue.
         # https://github.com/scipy/scipy/issues/4590
         # Function was not checking for eigenvalue type and unintended
         # values could be returned.
-        rng = np.random.default_rng(0)
-        A = rng.random((4, 3))
-        k = 2
-
-        if which in {'LM', 'SM'}:
-            u, s, vh = svds(A, k=k, which=which, solver=self.solver)
-            # partial decomposition, so don't check that u@diag(s)@vh=A;
-            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
-            _check_svds(A, k, u, s, vh, which,
-                        check_usvh_A=False, check_svd=True)
-        else:
-            with pytest.raises(ValueError, match="`which` must be in"):
-                svds(A, k=k, which=which, solver=self.solver)
+        with pytest.raises(ValueError, match="`which` must be in"):
+            svds(np.eye(10), which=which, solver=self.solver)
 
     @pytest.mark.parametrize("transpose", (True, False))
     @pytest.mark.parametrize("n", range(4, 9))
@@ -221,16 +210,21 @@ class SVDSCommonTests:
             svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver)
 
     # --- Test Parameters ---
-    # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
-    # what they are purported to do. Should also check `ncv` and `tol` somehow.
 
-    @pytest.mark.parametrize("k", [1, 2])
-    def test_svds_parameter_k(self, k):
+    @pytest.mark.parametrize("k", [3, 5])
+    @pytest.mark.parametrize("which", ["LM", "SM"])
+    def test_svds_parameter_k_which(self, k, which):
+        # check that the `k` parameter sets the number of eigenvalues/
+        # eigenvectors returned.
+        # Also check that the `which` parameter sets whether the largest or
+        # smallest eigenvalues are returned
         rng = np.random.default_rng(0)
-        A = rng.random((4, 3))
-        u, s, vh = svds(A, k=k, solver=self.solver)
-        _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
+        A = rng.random((10, 10))
+        u, s, vh = svds(A, k=k, which=which, solver=self.solver)
+        _check_svds(A, k, u, s, vh, which=which,
+                    check_usvh_A=False, check_svd=True)
 
+    # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
         # check the effect of the `tol` parameter on solver accuracy by solving
         # the same problem with varying `tol` and comparing the eigenvalues
@@ -264,22 +258,8 @@ class SVDSCommonTests:
             assert error < accuracy
             assert error > accuracy/10
 
-
-    def test_svd_which(self):
-        # check that the which parameter works as expected
-        solver = self.solver
-
-        x = hilbert(6)
-        for which in ['LM', 'SM']:
-            _, s, _ = sorted_svd(x, 2, which=which)
-
-            ss = svds(x, 2, which=which, return_singular_vectors=False,
-                      solver=solver)
-            ss.sort()
-            assert_allclose(s, ss, atol=np.sqrt(1e-15))
-
     def test_svd_v0(self):
-        # check that the v0 parameter works as expected
+        # check that the `v0` parameter works as expected
         solver = self.solver
 
         x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
