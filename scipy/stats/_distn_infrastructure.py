@@ -1486,7 +1486,7 @@ class rv_generic:
         args, loc, scale = self._parse_args(*args, **kwargs)
         arrs = np.broadcast_arrays(*args, loc, scale)
         args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
-        cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        cond = self._argcheck(*args) & (scale > 0) & ~np.isnan(loc)
         _a, _b = self._get_support(*args)
         # another `broadcast_arrays` call is required because
         # `_get_support` doesn't respect the shape of input
