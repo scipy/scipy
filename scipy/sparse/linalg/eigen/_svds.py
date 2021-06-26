@@ -101,6 +101,12 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
             message = "`v0` must have shape `(min(A.shape),)`."
             raise ValueError(message)
 
+    # input validation/standardization for `maxiter`
+    if maxiter is not None and (int(maxiter) != maxiter or maxiter <= 0):
+        message = "`maxiter` must be a non-negative integer."
+        raise ValueError(message)
+    maxiter = int(maxiter) if maxiter is not None else maxiter
+
     return A, k, ncv, tol, which, v0, maxiter, return_singular, solver
 
 

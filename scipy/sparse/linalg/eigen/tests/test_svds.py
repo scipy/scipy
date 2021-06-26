@@ -150,7 +150,7 @@ class SVDSCommonTests:
             svds(np.eye(10), tol=tol, solver=self.solver)
 
     @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
-    def test_svds_wrong_eigen_type(self, which):
+    def test_svds_input_validation_which(self, which):
         # Regression test for a github issue.
         # https://github.com/scipy/scipy/issues/4590
         # Function was not checking for eigenvalue type and unintended
@@ -203,6 +203,22 @@ class SVDSCommonTests:
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, v0=v0, solver=self.solver)
 
+    @pytest.mark.parametrize("maxiter", (-1, 0, 5.5))
+    def test_svds_input_validation_maxiter_1(self, maxiter):
+        message = ("`maxiter` must be a non-negative integer.")
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), maxiter=maxiter, solver=self.solver)
+
+    def test_svds_input_validation_maxiter_2(self):
+        # I think the stack trace is reasonable when `k` can't be converted
+        # to an int.
+        message = "int() argument must be a"
+        with pytest.raises(TypeError, match=re.escape(message)):
+            svds(np.eye(10), maxiter=[], solver=self.solver)
+
+        message = "invalid literal for int()"
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), maxiter="hi", solver=self.solver)
 
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
