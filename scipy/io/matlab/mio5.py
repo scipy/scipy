@@ -310,7 +310,7 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name.decode('latin1')
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
                 warnings.warn('Duplicate variable name "%s" in stream'
                               ' - replacing previous with new\n'
@@ -358,7 +358,7 @@ class MatFile5Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name.decode('latin1')
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -429,7 +429,7 @@ def varmats_from_mat(file_obj):
     while not rdr.end_of_stream():
         start_position = next_position
         hdr, next_position = rdr.read_var_header()
-        name = hdr.name.decode('latin1')
+        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
         # Read raw variable string
         file_obj.seek(start_position)
         byte_count = next_position - start_position

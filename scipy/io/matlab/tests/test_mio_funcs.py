@@ -16,7 +16,7 @@ def read_minimat_vars(rdr):
     i = 0
     while not rdr.end_of_stream():
         hdr, next_position = rdr.read_var_header()
-        name = hdr.name.decode('latin1')
+        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
         if name == '':
             name = 'var_%d' % i
             i += 1
