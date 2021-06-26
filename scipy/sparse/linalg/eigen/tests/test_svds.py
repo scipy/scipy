@@ -231,6 +231,40 @@ class SVDSCommonTests:
         u, s, vh = svds(A, k=k, solver=self.solver)
         _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
 
+    def test_svds_parameter_tol(self):
+        # check the effect of the `tol` parameter on solver accuracy by solving
+        # the same problem with varying `tol` and comparing the eigenvalues
+        # against ground truth computed
+        n = 100  # matrix size
+        k = 3    # number of eigenvalues to check
+
+        # generate a random, sparse-ish matrix
+        # effect isn't apparent for matrices that are too small
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+        A[A > .1] = 0
+        A = A @ A.T
+
+        _, s, _ = svd(A)  # calculate ground truth
+
+        # calculate the error as a function of `tol`
+        A = csc_matrix(A)
+        def err(tol):
+            _, s2, _ = svds(A, k=k, v0=np.ones(n), solver=self.solver, tol=tol)
+            return np.linalg.norm((s2 - s[k-1::-1])/s[k-1::-1])
+
+        tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
+        # for 'arpack' and 'propack', accuracies make discrete steps
+        accuracies = {'propack': [1e-14, 1e-13, 1e-5],
+                      'arpack': [1e-15, 1e-10, 1e-10],
+                      'lobpcg': [1e-11, 1e-3, 10]}
+
+        for tol, accuracy in zip(tols, accuracies[self.solver]):
+            error = err(tol)
+            assert error < accuracy
+            assert error > accuracy/10
+
+
     def test_svd_which(self):
         # check that the which parameter works as expected
         solver = self.solver
@@ -480,11 +514,11 @@ class Test_SVDS_once():
         with pytest.raises(ValueError, match=message):
             svds(np.ones((3, 4)), k=2, solver=solver)
 
-
 class Test_SVDS_ARPACK(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'arpack'
+
 
     @pytest.mark.parametrize("ncv", list(range(-1, 8)) + [4.5, "5"])
     def test_svds_input_validation_ncv_1(self, ncv):
