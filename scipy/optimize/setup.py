@@ -95,7 +95,7 @@ def configuration(parent_package='', top_path=None):
 
     sources = ['DIRserial.f', 'DIRect.f', 'DIRsubrout.f', 'direct.pyf']
     ext = config.add_extension('_direct', sources=[
-        join('_direct_lib', x) for x in sources], **numpy_nodepr_api)
+        join('_direct', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
     config.add_data_files('__nnls.pyi')

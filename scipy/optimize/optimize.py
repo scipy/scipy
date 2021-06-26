@@ -3512,6 +3512,7 @@ def show_options(solver=None, method=None, disp=True):
             ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
+            ('direct', 'scipy.optimize.direct._minimize_direct'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
             ('trust-ncg',
              'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
