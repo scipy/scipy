@@ -1,0 +1,58 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+
+python module direct__user__routines
+    interface direct_user_interface
+        subroutine fcn(n,x,f,flag,iidata,iisize,ddata,idsize,cdata,icsize) ! in :direct:DIRect.f:direct:unknown_interface
+            double precision dimension(n) :: x
+            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
+            integer, intent(out) :: flag
+            double precision, intent(out) :: f
+            integer dimension(iisize) :: iidata
+            integer optional,check(len(iidata)>=iisize),depend(iidata) :: iisize=len(iidata)
+            double precision dimension(idsize) :: ddata
+            integer optional,check(len(ddata)>=idsize),depend(ddata) :: idsize=len(ddata)
+            byte dimension(icsize,40),intent(c) :: cdata
+            integer optional,check(shape(cdata,0)==icsize),depend(cdata) :: icsize=shape(cdata,0)
+        end subroutine fcn
+    end interface direct_user_interface
+end python module direct__user__routines
+
+
+python module _direct ! in 
+    interface  ! in :direct
+        subroutine direct(fcn,x,n,eps,maxf,maxt,fmin,l,u,algmethod,ierror,logfilename,fglobal,fglper,volper,sigmaper,iidata,iisize,ddata,idsize,cdata,icsize,disp) ! in :direct:DIRect.f
+			use direct__user__routines
+            external fcn
+            double precision dimension(n), intent(out) :: x
+            integer optional,check(len(l)>=n),depend(l) :: n=len(l)
+            double precision :: eps
+            integer :: maxf
+            integer :: maxt
+            double precision, intent(out) :: fmin
+            double precision dimension(n) :: l
+            double precision dimension(n),depend(n) :: u
+            integer :: algmethod
+            integer :: disp
+            integer, intent(out) :: ierror
+            character*(*) intent(in) :: logfilename
+            double precision :: fglobal
+            double precision :: fglper
+            double precision :: volper
+            double precision :: sigmaper
+            integer dimension(iisize) :: iidata
+            integer optional,check(len(iidata)>=iisize),depend(iidata) :: iisize=len(iidata)
+            double precision dimension(idsize) :: ddata
+            integer optional,check(len(ddata)>=idsize),depend(ddata) :: idsize=len(ddata)
+            byte dimension(icsize,40),intent(c) :: cdata
+            integer optional,check(shape(cdata,0)==icsize),depend(cdata) :: icsize=shape(cdata,0)
+            integer :: algmethod
+            integer :: jones
+            common /directcontrol/ jones
+        end subroutine direct
+    end interface 
+end python module _direct
+
+! This file was auto-generated with f2py (version:2_7996).
+! See http://cens.ioc.ee/projects/f2py2e/
