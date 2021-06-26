@@ -604,12 +604,11 @@ class TestHyp2f1:
         from scipy.special._precompute.hyp2f1_data import mp_hyp2f1
         test_methods = [
             test_method for test_method in dir(self)
-            # Filter dunder methods
-            if not test_method.startswith('__') and
+            if test_method.startswith('test') and
             # Filter properties and attributes (futureproofing).
             callable(getattr(self, test_method)) and
-            # Filter methods that shouldn't be included.
-            test_method not in ['_get_test_parameters', 'test_test_hyp2f1']
+            # Filter out this test
+            test_method != 'test_test_hyp2f1'
         ]
         for test_method in test_methods:
             params = self._get_test_parameters(getattr(self, test_method))
