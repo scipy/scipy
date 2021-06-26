@@ -14,7 +14,7 @@ greek_letters = set(chr(cp) for cp in chain(
     range(0x03b1, 0x3c2), range(0x3c3, 0x03c9 + 1),  # small
     range(0x0391, 0x03a2), range(0x03a3, 0x03a9 + 1))  # large
 )
-allowed = (set(['®', 'é', 'ó', 'ö', '∫', '≠']) |
+allowed = (set(['®', 'é', 'ê', 'ó', 'ö', 'ü', '∫', '≠', '≥']) |
            box_drawing_chars |
            greek_letters)
 

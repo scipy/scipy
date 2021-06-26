@@ -4,7 +4,6 @@ import sys
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
@@ -73,7 +72,7 @@ mclass_info = {
     }
 
 
-class VarHeader4(object):
+class VarHeader4:
     # Mat4 variables never logical or global
     is_logical = False
     is_global = False
@@ -91,7 +90,7 @@ class VarHeader4(object):
         self.is_complex = is_complex
 
 
-class VarReader4(object):
+class VarReader4:
     ''' Class to read matlab 4 variables '''
 
     def __init__(self, file_reader):
@@ -306,7 +305,7 @@ class MatFile4Reader(MatFileReader):
     %(matstream_arg)s
     %(load_args)s
         '''
-        super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
+        super().__init__(mat_stream, *args, **kwargs)
         self._matrix_reader = None
 
     def guess_byte_order(self):
@@ -389,7 +388,7 @@ class MatFile4Reader(MatFileReader):
         mdict = {}
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = hdr.name.decode('latin1')
             if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
@@ -409,7 +408,7 @@ class MatFile4Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = hdr.name.decode('latin1')
             shape = self._matrix_reader.shape_from_header(hdr)
             info = mclass_info.get(hdr.mclass, 'unknown')
             vars.append((name, shape, info))
@@ -442,7 +441,7 @@ def arr_to_2d(arr, oned_as='row'):
     return arr.reshape(dims)
 
 
-class VarWriter4(object):
+class VarWriter4:
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
         self.oned_as = file_writer.oned_as
@@ -483,7 +482,8 @@ class VarWriter4(object):
         header['imagf'] = imagf
         header['namlen'] = len(name) + 1
         self.write_bytes(header)
-        self.write_string(asbytes(name + '\0'))
+        data = name + '\0'
+        self.write_string(data.encode('latin1'))
 
     def write(self, arr, name):
         ''' Write matrix `arr`, with name `name`
@@ -580,7 +580,7 @@ class VarWriter4(object):
         self.write_bytes(ijv)
 
 
-class MatFile4Writer(object):
+class MatFile4Writer:
     ''' Class for writing matlab 4 format files '''
     def __init__(self, file_stream, oned_as=None):
         self.file_stream = file_stream

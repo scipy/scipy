@@ -59,7 +59,8 @@ map_coordinate(double in, npy_intp len, int mode)
                 npy_intp sz2 = 2 * len;
                 if (in < -sz2)
                     in = sz2 * (npy_intp)(-in / sz2) + in;
-                in = in < -len ? in + sz2 : -in - 1;
+                // -1e-15 check to avoid possibility that: (-in - 1) == -1
+                in = in < -len ? in + sz2 : (in > -1e-15 ? 1e-15 : -in) - 1;
             }
             break;
         case NI_EXTEND_WRAP:
@@ -640,7 +641,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
 int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                  PyArrayObject* shift_ar, PyArrayObject *output,
-                 int order, int mode, double cval, int nprepad)
+                 int order, int mode, double cval, int nprepad, int grid_mode)
 {
     char *po, *pi;
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
@@ -770,7 +771,16 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             if (shifts)
                 cc += shift;
             if (zooms)
-                cc *= zoom;
+            {
+                if (grid_mode)
+                {
+                    cc += 0.5;
+                    cc *= zoom;
+                    cc -= 0.5;
+                } else {
+                    cc *= zoom;
+                }
+            }
             cc += (double)nprepad;
             if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
                 /* if the input coordinate is outside the borders, map it: */

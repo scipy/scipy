@@ -23,7 +23,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
@@ -54,7 +54,8 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -76,7 +77,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
@@ -107,7 +108,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -130,7 +132,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
@@ -161,7 +163,8 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -183,7 +186,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
@@ -214,7 +217,8 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
 

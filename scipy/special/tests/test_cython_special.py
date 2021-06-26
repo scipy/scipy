@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import List, Tuple, Callable, Optional
+
 import pytest
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings
@@ -19,7 +22,7 @@ CYTHON_SIGNATURE_MAP = {
     'F': 'float complex',
     'D': 'double complex',
     'G': 'long double complex',
-    'i':'int',
+    'i': 'int',
     'l': 'long'
 }
 
@@ -37,7 +40,7 @@ TEST_POINTS = {
 }
 
 
-PARAMS = [
+PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
@@ -86,8 +89,8 @@ PARAMS = [
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
     (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
     (special.erfi, cython_special.erfi, ('d', 'D'), None),
-    (special.erfinv, cython_special.erfinv, ('d'), None),
-    (special.erfcinv, cython_special.erfcinv, ('d'), None),
+    (special.erfinv, cython_special.erfinv, ('d',), None),
+    (special.erfcinv, cython_special.erfcinv, ('d',), None),
     (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
     (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),
      'd and l differ for negative int'),
@@ -183,6 +186,7 @@ PARAMS = [
     (special.kve, cython_special.kve, ('dd', 'dD'), None),
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
     (special.lpmv, cython_special.lpmv, ('ddd',), None),
@@ -262,6 +266,7 @@ PARAMS = [
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
     (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
+    (special.wright_bessel, cython_special.wright_bessel, ('ddd',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
     (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
@@ -279,7 +284,7 @@ IDS = [x[0].__name__ for x in PARAMS]
 
 
 def _generate_test_points(typecodes):
-    axes = tuple(map(lambda x: TEST_POINTS[x], typecodes))
+    axes = tuple(TEST_POINTS[x] for x in typecodes)
     pts = list(product(*axes))
     return pts
 
@@ -293,7 +298,7 @@ def test_cython_api_completeness():
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)

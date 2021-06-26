@@ -24,6 +24,55 @@ add_newdoc("_sf_error_test_function",
     Private function; do not use.
     """)
 
+
+add_newdoc("_cosine_cdf",
+    """
+    _cosine_cdf(x)
+
+    Cumulative distribution function (CDF) of the cosine distribution::
+
+                 {             0,              x < -pi
+        cdf(x) = { (pi + x + sin(x))/(2*pi),   -pi <= x <= pi
+                 {             1,              x > pi
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        The cosine distribution CDF evaluated at `x`.
+
+    """)
+
+add_newdoc("_cosine_invcdf",
+    """
+    _cosine_invcdf(p)
+
+    Inverse of the cumulative distribution function (CDF) of the cosine
+    distribution.
+
+    The CDF of the cosine distribution is::
+
+        cdf(x) = (pi + x + sin(x))/(2*pi)
+
+    This function computes the inverse of cdf(x).
+
+    Parameters
+    ----------
+    p : array_like
+        `p` must contain real numbers in the interval ``0 <= p <= 1``.
+        `nan` is returned for values of `p` outside the interval [0, 1].
+
+    Returns
+    -------
+    float
+        The inverse of the cosine distribution CDF evaluated at `p`.
+
+    """)
+
 add_newdoc("sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
@@ -354,7 +403,7 @@ add_newdoc("airye",
     Returns
     -------
     eAi, eAip, eBi, eBip : array_like
-        Exponentially scaled Airy functions eAi and eBi, and their derivatives 
+        Exponentially scaled Airy functions eAi and eBi, and their derivatives
         eAip and eBip
 
     Notes
@@ -370,11 +419,11 @@ add_newdoc("airye",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-           
+
     Examples
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
-    
+
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -386,9 +435,9 @@ add_newdoc("airye",
     ...     ax[ind].legend(data[2])
     ...     ax[ind].grid(True)
     >>> plt.show()
-    
+
     We can compute these using usual non-scaled Airy functions by:
-    
+
     >>> from scipy.special import airy
     >>> Ai, Aip, Bi, Bip = airy(z)
     >>> np.allclose(eAi, Ai * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
@@ -399,16 +448,16 @@ add_newdoc("airye",
     True
     >>> np.allclose(eBip, Bip * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
     True
-    
-    Comparing non-scaled and exponentially scaled ones, the usual non-scaled 
+
+    Comparing non-scaled and exponentially scaled ones, the usual non-scaled
     function quickly underflows for large values, whereas the exponentially
     scaled function does not.
-    
+
     >>> airy(200)
     (0.0, 0.0, nan, nan)
     >>> airye(200)
     (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
-    
+
     """)
 
 add_newdoc("bdtr",
@@ -2962,7 +3011,6 @@ add_newdoc("eval_legendre",
 
     Evaluate the first-order Legendre polynomial between -1 and 1
 
-    >>> import numpy as np
     >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
     >>> eval_legendre(1, X)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
@@ -6448,12 +6496,12 @@ add_newdoc("kolmogorov",
     the target distribution, a Normal(0, 1) distribution.
 
     >>> from scipy.stats import norm, laplace
+    >>> rng = np.random.default_rng()
     >>> n = 1000
-    >>> np.random.seed(seed=233423)
     >>> lap01 = laplace(0, 1)
-    >>> x = np.sort(lap01.rvs(n))
+    >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (-0.083073685397609842, 1.3676426568399822)
+    (-0.05841730131499543, 1.3968109101997568)
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -6464,13 +6512,13 @@ add_newdoc("kolmogorov",
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
-    Dn=0.058286, sqrt(n)*Dn=1.843153
+    Dn=0.043363, sqrt(n)*Dn=1.371265
     >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
     For a sample of size n drawn from a N(0, 1) distribution:
-     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
-     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
     Plot the Empirical CDF against the target N(0, 1) CDF.
 
@@ -8340,6 +8388,17 @@ add_newdoc("psi",
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
 
+    Examples
+    --------
+    >>> from scipy.special import psi
+    >>> z = 3 + 4j
+    >>> psi(z)
+    (1.55035981733341+1.0105022091860445j)
+
+    Verify psi(z) = psi(z + 1) - 1/z:
+
+    >>> psi(z + 1) - 1/z
+    (1.55035981733341+1.0105022091860445j)
     """)
 
 add_newdoc("radian",
@@ -8733,37 +8792,37 @@ add_newdoc("smirnov",
     a target N(0, 1) CDF.
 
     >>> from scipy.stats import norm
+    >>> rng = np.random.default_rng()
     >>> n = 5
     >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
-    >>> np.random.seed(seed=233423)  # Set the seed for reproducibility
-    >>> x = np.sort(gendist.rvs(size=n))
+    >>> x = np.sort(gendist.rvs(size=n, random_state=rng))
     >>> x
-    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
+    array([-1.3922078 , -0.13526532,  0.1371477 ,  0.18981686,  1.81948167])
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
+    array([0.08192974, 0.44620105, 0.55454297, 0.57527368, 0.96558101])
     # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
     >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> np.set_printoptions(precision=3)
     >>> cols
-    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
-           [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
-           [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
-           [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
-           [  3.089e+00,   1.000e+00,   9.990e-01,   1.990e-01,   1.005e-03]])
+    array([[-1.392,  0.2  ,  0.082,  0.082,  0.118],
+           [-0.135,  0.4  ,  0.446,  0.246, -0.046],
+           [ 0.137,  0.6  ,  0.555,  0.155,  0.045],
+           [ 0.19 ,  0.8  ,  0.575, -0.025,  0.225],
+           [ 1.819,  1.   ,  0.966,  0.166,  0.034]])
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
     >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.563278, Dn+=0.001005
+    Dn-=0.246201, Dn+=0.224726
     >>> probs = smirnov(n, Dnpm)
     >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
     ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
     ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
-     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
+     Smirnov n=5: Prob(Dn- >= 0.246201) = 0.4713
+     Smirnov n=5: Prob(Dn+ >= 0.224726) = 0.5243
 
     Plot the Empirical CDF against the target N(0, 1) CDF
 
@@ -8841,7 +8900,7 @@ add_newdoc("spence",
     It is defined to be
 
     .. math::
-      \int_0^z \frac{\log(t)}{1 - t}dt
+      \int_1^z \frac{\log(t)}{1 - t}dt
 
     for complex :math:`z`, where the contour of integration is taken
     to avoid the branch cut of the logarithm. Spence's function is
@@ -9547,4 +9606,100 @@ add_newdoc("owens_t",
 add_newdoc("_factorial",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("wright_bessel",
+    r"""
+    wright_bessel(a, b, x)
+
+    Wright's generalized Bessel function.
+
+    Wright's generalized Bessel function is an entire function and defined as
+
+    .. math:: \Phi(a, b; x) = \sum_{k=0}^\infty \frac{x^k}{k! \Gamma(a k + b)}
+
+    See also [1].
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+
+    Notes
+    -----
+    Due to the compexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    Examples
+    --------
+    >>> from scipy.special import wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> wright_bessel(a, b-1, x)
+    4.5314465939443025
+
+    Now, let us verify the relation
+
+    .. math:: \Phi(a, b-1; x) = a x \Phi(a, b+a; x) + (b-1) \Phi(a, b; x)
+
+    >>> a * x * wright_bessel(a, b+a, x) + (b-1) * wright_bessel(a, b, x)
+    4.5314465939443025
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 10.46.
+           https://dlmf.nist.gov/10.46.E1
+    """)
+
+
+add_newdoc("ndtri_exp",
+    r"""
+    ndtri_exp(y)
+
+    Inverse of `log_ndtr` vs x. Allows for greater precision than
+    `ndtri` composed with `numpy.exp` for very small values of y and for
+    y close to 0.
+
+    Parameters
+    ----------
+    y : array_like of float
+
+    Returns
+    -------
+    scalar or ndarray
+        Inverse of the log CDF of the standard normal distribution, evaluated
+        at y.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    `ndtri_exp` agrees with the naive implementation when the latter does
+    not suffer from underflow.
+
+    >>> sc.ndtri_exp(-1)
+    -0.33747496376420244
+    >>> sc.ndtri(np.exp(-1))
+    -0.33747496376420244
+
+    For extreme values of y, the naive approach fails
+
+    >>> sc.ndtri(np.exp(-800))
+    -inf
+    >>> sc.ndtri(np.exp(-1e-20))
+    inf
+
+    whereas `ndtri_exp` is still able to compute the result to high precision.
+
+    >>> sc.ndtri_exp(-800)
+    -39.88469483825668
+    >>> sc.ndtri_exp(-1e-20)
+    9.262340089798409
+
+    See Also
+    --------
+    log_ndtr, ndtri, ndtr
     """)

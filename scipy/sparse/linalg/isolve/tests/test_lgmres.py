@@ -46,7 +46,7 @@ def do_solve(**kw):
     return x0, count_0
 
 
-class TestLGMRES(object):
+class TestLGMRES:
     def test_preconditioner(self):
         # Check that preconditioning works
         pc = splu(Am.tocsc())
