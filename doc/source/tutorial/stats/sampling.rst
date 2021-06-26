@@ -130,15 +130,18 @@ distribution by calling the ``rvs`` method:
            [-0.55153436, -0.67281406,  0.01830143],
            [ 1.37709649, -1.33036774,  0.62131967]])
 
-.. note:: Please note the difference between the ``rvs`` method of the
+.. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
-          by these generators: The general aim of these generators is to
-          provide a fast generation method in :class:`~rv_continuous`. The
-          tools presented here allow the user to experiment with different
-          methods that can lead to performance improvements in certain
-          situations, e.g., if a large number of samples are needed or if
-          particular shape parameters are used. Also, even if the same URNG
-          (``seed``) is used, the resulting rvs will be different in general.
+          by these generators. In general, the aim of the generation
+          methods implemented in :class:`~rv_continuous` is to provide
+          generators that work reasonably well for common use cases, e.g.
+          to generate small samples using different shape parameters or to
+          generate large samples for a fixed shape parameter. Depending on
+          the goal, specialized methods can lead to a substantial speedup.
+          For example, at the cost of a rather expensive setup step, very
+          fast generation can be achieved for large samples and a fixed
+          shape parameter. Also, even if the same URNG (``seed``) is used,
+          the resulting rvs will be different in general.
 
 We can pass a ``domain`` parameter to truncate the distribution:
 

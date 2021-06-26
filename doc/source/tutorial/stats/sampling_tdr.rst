@@ -82,8 +82,10 @@ to see how well the generator fits the given distribution. These are:
 * 'sqhratio': (area below squeeze) / (area below hat) for the generator. It
   is a number between 0 and 1. Closer to 1 means that the hat and the squeeze
   functions tightly envelop the distribution and fewer PDF evaluations are
-  required to generate samples. By default, it is kept above 0.99 but that
-  can be changed by passing a ``max_sqhratio`` parameter.
+  required to generate samples. The expected number of evaluations of the
+  density is bounded by ``(1/sqhratio) - 1`` per sample. By default, it is
+  kept above 0.99 but that can be changed by passing a ``max_sqhratio``
+  parameter.
 * 'hat_area': area below the hat for the generator.
 * 'squeeze_area': area below the squeeze for the generator.
 
