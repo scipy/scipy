@@ -30,7 +30,7 @@ algorithm can be found in Gablonsky's `thesis <http://repository.lib.ncsu.edu/ir
 from __future__ import print_function
 import numpy as np
 try:
-    from .direct import direct
+    from ._direct import direct
 except ImportError:
     print('Fortran code not compiled, module not functional')
     direct = None
