@@ -546,6 +546,9 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), ncv="hi", solver=self.solver)
 
+    # I can't see a robust relationship between `ncv` and relevant outputs
+    # (e.g. accuracy, time), so no test of the parameter.
+
     def test_svd_maxiter(self):
         # check that maxiter works as expected
         x = hilbert(6)
