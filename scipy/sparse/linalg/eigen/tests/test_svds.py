@@ -220,6 +220,12 @@ class SVDSCommonTests:
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), maxiter="hi", solver=self.solver)
 
+    @pytest.mark.parametrize("rsv", ('ekki', 10))
+    def test_svds_input_validation_return_singular_vectors(self, rsv):
+        message = "`return_singular_vectors` must be in"
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver)
+
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
     # what they are purported to do. Should also check `ncv` and `tol` somehow.

@@ -86,7 +86,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
     # input validation/standardization for `which`
     which = str(which).upper()
     whichs = {'LM', 'SM'}
-    if which not in {'LM', 'SM'}:
+    if which not in whichs:
         raise ValueError(f"`which` must be in {whichs}.")
 
     # input validation/standardization for `v0`
@@ -106,6 +106,12 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
         message = "`maxiter` must be a non-negative integer."
         raise ValueError(message)
     maxiter = int(maxiter) if maxiter is not None else maxiter
+
+    # input validation/standardization for `return_singular_vectors`
+    # not going to be flexible with this; too complicated for little gain
+    rs_options = {True, False, "vh", "u"}
+    if return_singular not in rs_options:
+        raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
     return A, k, ncv, tol, which, v0, maxiter, return_singular, solver
 
