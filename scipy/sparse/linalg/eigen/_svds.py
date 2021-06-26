@@ -77,6 +77,12 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
             raise ValueError(message)
         ncv = int(ncv)
 
+    # input validation/standardization for `tol`
+    if tol < 0 or not np.isfinite(tol):
+        message = "`tol` must be a non-negative floating point value."
+        raise ValueError(message)
+    tol = float(tol)
+
     # input validation/standardization for `which`
     which = str(which).upper()
     whichs = {'LM', 'SM'}
@@ -92,7 +98,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
                         "data type.")
             raise ValueError(message)
         if v0.shape != (min(A.shape),):
-            message = ("`v0` must have shape `(min(A.shape),)`.")
+            message = "`v0` must have shape `(min(A.shape),)`."
             raise ValueError(message)
 
     return A, k, ncv, tol, which, v0, maxiter, return_singular, solver

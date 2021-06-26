@@ -1,3 +1,4 @@
+import re
 import numpy as np
 
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
@@ -94,7 +95,7 @@ class SVDSCommonTests:
 
     # some of these IV tests could run only once, say with solver=None
 
-    def test_svds_input_validation_A(self):
+    def test_svds_input_validation_A_1(self):
         message = "invalid shape"
         with pytest.raises(ValueError, match=message):
             svds([[[1., 2.], [3., 4.]]], k=1, solver=self.solver)
@@ -104,13 +105,13 @@ class SVDSCommonTests:
             svds([[]], k=1, solver=self.solver)
 
     @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
-    def test_svds_input_validation_A2(self, A):
+    def test_svds_input_validation_A_2(self, A):
         message = "`A` must be of floating or complex floating data type."
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, solver=self.solver)
 
     @pytest.mark.parametrize("k", list(range(-1, 6)) + [1.5, "1"])
-    def test_svds_input_validation_k(self, k):
+    def test_svds_input_validation_k_1(self, k):
         rng = np.random.default_rng(0)
         A = rng.random((4, 3))
 
@@ -123,6 +124,30 @@ class SVDSCommonTests:
             message = ("`k` must be an integer satisfying")
             with pytest.raises(ValueError, match=message):
                 svds(A, k=k, solver=self.solver)
+
+    def test_svds_input_validation_k_2(self):
+        # I think the stack trace is reasonable when `k` can't be converted
+        # to an int.
+        message = "int() argument must be a"
+        with pytest.raises(TypeError, match=re.escape(message)):
+            svds(np.eye(10), k=[], solver=self.solver)
+
+        message = "invalid literal for int()"
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), k="hi", solver=self.solver)
+
+    @pytest.mark.parametrize("tol", (-1, np.inf, np.nan))
+    def test_svds_input_validation_tol_1(self, tol):
+        message = "`tol` must be a non-negative floating point value."
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), tol=tol, solver=self.solver)
+
+    @pytest.mark.parametrize("tol", ([], 'hi'))
+    def test_svds_input_validation_tol_2(self, tol):
+        # I think the stack trace is reasonable here
+        message = "'<' not supported between instances"
+        with pytest.raises(TypeError, match=message):
+            svds(np.eye(10), tol=tol, solver=self.solver)
 
     @pytest.mark.parametrize("which", ('LM', 'SM', 'LA', 'SA', 'ekki', 0))
     def test_svds_wrong_eigen_type(self, which):
@@ -439,7 +464,7 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         self.solver = 'arpack'
 
     @pytest.mark.parametrize("ncv", list(range(-1, 8)) + [4.5, "5"])
-    def test_svds_input_validation_ncv(self, ncv):
+    def test_svds_input_validation_ncv_1(self, ncv):
         rng = np.random.default_rng(0)
         A = rng.random((6, 7))
         k = 3
@@ -452,6 +477,17 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
             message = ("`ncv` must be an integer satisfying")
             with pytest.raises(ValueError, match=message):
                 svds(A, k=k, ncv=ncv, solver=self.solver)
+
+    def test_svds_input_validation_ncv_2(self):
+        # I think the stack trace is reasonable when `ncv` can't be converted
+        # to an int.
+        message = "int() argument must be a"
+        with pytest.raises(TypeError, match=re.escape(message)):
+            svds(np.eye(10), ncv=[], solver=self.solver)
+
+        message = "invalid literal for int()"
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), ncv="hi", solver=self.solver)
 
     def test_svd_maxiter(self):
         # check that maxiter works as expected
