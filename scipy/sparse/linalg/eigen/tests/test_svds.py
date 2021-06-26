@@ -110,20 +110,14 @@ class SVDSCommonTests:
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, solver=self.solver)
 
-    @pytest.mark.parametrize("k", list(range(-1, 6)) + [1.5, "1"])
+    @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
     def test_svds_input_validation_k_1(self, k):
         rng = np.random.default_rng(0)
         A = rng.random((4, 3))
 
-        if k in {1, 2}:
-            u, s, vh = svds(A, k=k, solver=self.solver)
-            # partial decomposition, so don't check that u@diag(s)@vh=A;
-            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
-            _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
-        else:
-            message = ("`k` must be an integer satisfying")
-            with pytest.raises(ValueError, match=message):
-                svds(A, k=k, solver=self.solver)
+        message = ("`k` must be an integer satisfying")
+        with pytest.raises(ValueError, match=message):
+            svds(A, k=k, solver=self.solver)
 
     def test_svds_input_validation_k_2(self):
         # I think the stack trace is reasonable when `k` can't be converted
@@ -229,6 +223,13 @@ class SVDSCommonTests:
     # --- Test Parameters ---
     # tests that `which`, `v0`, `maxiter`, and `return_singular_vectors` do
     # what they are purported to do. Should also check `ncv` and `tol` somehow.
+
+    @pytest.mark.parametrize("k", [1, 2])
+    def test_svds_parameter_k(self, k):
+        rng = np.random.default_rng(0)
+        A = rng.random((4, 3))
+        u, s, vh = svds(A, k=k, solver=self.solver)
+        _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
 
     def test_svd_which(self):
         # check that the which parameter works as expected
