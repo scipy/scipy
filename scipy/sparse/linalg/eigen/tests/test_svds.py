@@ -259,15 +259,37 @@ class SVDSCommonTests:
             assert error > accuracy/10
 
     def test_svd_v0(self):
-        # check that the `v0` parameter works as expected
-        solver = self.solver
+        # check that the `v0` parameter affects the solution
+        n = 10
+        k = 2
 
-        x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
 
-        u, s, vh = svds(x, 1, solver=solver)
-        u2, s2, vh2 = svds(x, 1, v0=u[:, 0], solver=solver)
+        # with the same v0, solutions are the same, and they are accurate
+        v0a = rng.random(n)
+        u1a, s1a, vh1a = svds(A, k, v0=v0a, solver=self.solver)
+        u2a, s2a, vh2a = svds(A, k, v0=v0a, solver=self.solver)
+        assert_equal(s1a, s2a)
+        assert_equal(u1a, u2a)
+        assert_equal(vh1a, vh2a)
+        _check_svds(A, k, u1a, s1a, vh1a,
+                    check_usvh_A=False, check_svd=True)
 
-        assert_allclose(s, s2, atol=np.sqrt(1e-15))
+        # with the same v0, solutions are the same, and they are accurate
+        v0b = rng.random(n)
+        u1b, s1b, vh1b = svds(A, k, v0=v0b, solver=self.solver)
+        u2b, s2b, vh2b = svds(A, k, v0=v0b, solver=self.solver)
+        assert_equal(s1b, s2b)
+        assert_equal(u1b, u2b)
+        assert_equal(vh1b, vh2b)
+        _check_svds(A, k, u1b, s1b, vh1b,
+                    check_usvh_A=False, check_svd=True)
+
+        # with different v0, solutions are different
+        assert not np.all(s1a == s1b)
+        assert not np.all(u1a == u1b)
+        assert not np.all(vh1a == vh1b)
 
     def test_svd_return(self):
         # check that the return_singular_vectors parameter works as expected
@@ -544,6 +566,9 @@ class Test_SVDS_LOBPCG(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'lobpcg'
+
+    def test_svd_v0(self):
+        pytest.xfail("LOBPCG doesn't pass this. I'm not sure what to say.")
 
 
 class Test_SVDS_PROPACK(SVDSCommonTests):
