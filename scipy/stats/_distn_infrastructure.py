@@ -1272,14 +1272,14 @@ class rv_generic:
         """
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
-        shapes, loc, scale = args[:-2], args[-2], args[-1]
+        *shapes, loc, scale = args
 
         i0 = np.logical_and(self._argcheck(*shapes), scale > 0)
         i1 = np.logical_and(i0, loc == 0)
         i2 = np.logical_and(i0, loc != 0)
 
         args = argsreduce(i0, *shapes, loc, scale)
-        shapes, loc, scale = args[:-2], args[-2], args[-1]
+        *shapes, loc, scale = args
 
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
