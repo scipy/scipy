@@ -264,6 +264,7 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         statistics at this time.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -271,8 +272,6 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
-        Pseudorandom number generator state used to generate resamples.
 
     Returns
     -------

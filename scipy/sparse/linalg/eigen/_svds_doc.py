@@ -1,7 +1,7 @@
 
 def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='arpack'):
+                     solver='arpack', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using ARPACK.
 
@@ -52,6 +52,16 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -116,7 +126,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='lobpcg'):
+                     solver='lobpcg', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using LOBPCG.
 
@@ -164,6 +174,16 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -228,7 +248,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='propack'):
+                     solver='propack', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using PROPACK.
 
@@ -277,6 +297,16 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------

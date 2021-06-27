@@ -16,6 +16,8 @@ PROPACK source is BSD licensed, and available at
 __all__ = ['svdp']
 
 import numpy as np
+
+from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
@@ -79,7 +81,7 @@ class _AProd:
 def svdp(A, k, which='LM', irl_mode=False, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True,
-         min_relgap=0.002, shifts=None, maxiter=None):
+         min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
@@ -142,6 +144,16 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     maxiter : int, optional
         Maximum number of restarts in IRL mode.  Default is `1000`.
         Accessed only if ``irl_mode=True``.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -174,6 +186,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
      [ 0.  1.  0.]
      [ 0.  0.  1.]]
     """
+
+    random_state = check_random_state(random_state)
 
     which = which.upper()
     if which not in {'LM', 'SM'}:
@@ -224,9 +238,9 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     # a random starting vector: the random seed cannot be controlled in that
     # case, so we'll instead use numpy to generate a random vector
     if v0 is None:
-        u[:, 0] = np.random.random(m)
+        u[:, 0] = random_state.uniform(size=m)
         if np.iscomplexobj(np.empty(0, dtype=typ)):  # complex type
-            u[:, 0] += 1j * np.random.random(m)
+            u[:, 0] += 1j * random_state.uniform(size=m)
     else:
         try:
             u[:, 0] = v0

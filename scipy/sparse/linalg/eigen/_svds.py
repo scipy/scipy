@@ -3,9 +3,8 @@ import numpy as np
 from .arpack import _arpack  # type: ignore[attr-defined]
 from . import eigsh
 
+from scipy._lib._util import check_random_state
 from scipy.sparse.linalg.interface import LinearOperator, aslinearoperator
-from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 
 arpack_int = _arpack.timing.nbx.dtype
@@ -44,7 +43,8 @@ def _herm(x):
     return x.T.conj()
 
 
-def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
+def _iv(A, k, ncv, tol, which, v0, maxiter,
+        return_singular, solver, random_state):
 
     # input validation/standardization for `A`
     A = aslinearoperator(A)  # this takes care of some input validation
@@ -115,12 +115,15 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
     if return_singular not in rs_options:
         raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
-    return A, k, ncv, tol, which, v0, maxiter, return_singular, solver
+    random_state = check_random_state(random_state)
+
+    return (A, k, ncv, tol, which, v0, maxiter,
+            return_singular, solver, random_state)
 
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
-         solver='arpack', options=None):
+         solver='arpack', random_state=None, options=None):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -174,6 +177,17 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`, and
             :ref:`'propack' <sparse.linalg.svds-propack>` are supported.
             Default: `'arpack'`.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -239,8 +253,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     """
 
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
-               solver)
-    A, k, ncv, tol, which, v0, maxiter, return_singular_vectors, solver = args
+               solver, random_state)
+    (A, k, ncv, tol, which, v0, maxiter,
+     return_singular_vectors, solver, random_state) = args
 
     largest = (which == 'LM')
     n, m = A.shape
@@ -288,7 +303,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         jobv = n > m or return_singular_vectors != 'u'
         res = svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
                    compute_u=jobu, compute_v=jobv, irl_mode=True,
-                   kmax=maxiter, v0=v0)
+                   kmax=maxiter, v0=v0, random_state=random_state)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 

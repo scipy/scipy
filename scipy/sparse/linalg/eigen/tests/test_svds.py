@@ -264,9 +264,10 @@ class SVDSCommonTests:
         A = rng.random((n, n))
 
         # with the same v0, solutions are the same, and they are accurate
+        # v0 takes precedence over random_state
         v0a = rng.random(n)
-        u1a, s1a, vh1a = svds(A, k, v0=v0a, solver=self.solver)
-        u2a, s2a, vh2a = svds(A, k, v0=v0a, solver=self.solver)
+        u1a, s1a, vh1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
+        u2a, s2a, vh2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
         assert_equal(s1a, s2a)
         assert_equal(u1a, u2a)
         assert_equal(vh1a, vh2a)
@@ -275,8 +276,8 @@ class SVDSCommonTests:
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
-        u1b, s1b, vh1b = svds(A, k, v0=v0b, solver=self.solver)
-        u2b, s2b, vh2b = svds(A, k, v0=v0b, solver=self.solver)
+        u1b, s1b, vh1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
+        u2b, s2b, vh2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
         assert_equal(s1b, s2b)
         assert_equal(u1b, u2b)
         assert_equal(vh1b, vh2b)
@@ -319,29 +320,29 @@ class SVDSCommonTests:
         # check that the return_singular_vectors parameter works as expected
         rng = np.random.default_rng(0)
         A = rng.random(shape)
-        k = 3
+        k = 2
         M, N = shape
         u, s, vh = sorted_svd(A, k)
 
         if rsv is False:
             s2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver)
+                      solver=self.solver, random_state=rng)
             assert_allclose(s2, s)
         elif rsv == 'u' and N >= M:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver)
+                               solver=self.solver, random_state=rng)
             assert_allclose(np.abs(u2), np.abs(u))
             assert_allclose(s2, s)
             assert vh2 is None
         elif rsv == 'vh' and N < M:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver)
+                               solver=self.solver, random_state=rng)
             assert u2 is None
             assert_allclose(s2, s)
             assert_allclose(np.abs(vh2), np.abs(vh))
         else:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                              solver=self.solver)
+                              solver=self.solver, random_state=rng)
             assert_allclose(np.abs(u2), np.abs(u))
             assert_allclose(s2, s)
             assert_allclose(np.abs(vh2), np.abs(vh))
@@ -581,3 +582,38 @@ class Test_SVDS_PROPACK(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'propack'
+
+    def test_svd_random_state(self):
+        # check that the `v0` parameter affects the solution
+        n = 10
+        k = 2
+
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+
+        # with the same random_state, solutions are the same and accurate
+        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=0)
+        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=0)
+        assert_equal(s1a, s2a)
+        assert_equal(u1a, u2a)
+        assert_equal(vh1a, vh2a)
+        _check_svds(A, k, u1a, s1a, vh1a,
+                    check_usvh_A=False, check_svd=True)
+
+        # with the same random_state, solutions are the same and accurate
+        u1b, s1b, vh1b = svds(A, k, solver=self.solver, random_state=1)
+        u2b, s2b, vh2b = svds(A, k, solver=self.solver, random_state=1)
+        assert_equal(s1b, s2b)
+        assert_equal(u1b, u2b)
+        assert_equal(vh1b, vh2b)
+        _check_svds(A, k, u1b, s1b, vh1b,
+                    check_usvh_A=False, check_svd=True)
+
+        # with different random_state, solutions are different
+        message = "Arrays are not equal"
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(s1a, s1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(u1a, u1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(vh1a, vh1b)
