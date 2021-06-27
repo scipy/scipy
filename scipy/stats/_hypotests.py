@@ -9,7 +9,7 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
-from ._hypotests_pythran import _Q_pythran, _P_pythran, _a_ij_Aij_Dij2_pythran
+from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
@@ -405,15 +405,15 @@ def _tau_b(A):
         return np.nan, np.nan
 
     NA = A.sum()
-    PA = _P_pythran(A)
-    QA = _Q_pythran(A)
+    PA = _P(A)
+    QA = _Q(A)
     Sri2 = (A.sum(axis=1)**2).sum()
     Scj2 = (A.sum(axis=0)**2).sum()
     denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
 
     tau = (PA-QA)/(denominator)**0.5
 
-    numerator = 4*(_a_ij_Aij_Dij2_pythran(A) - (PA - QA)**2 / NA)
+    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
     s02_tau_b = numerator/denominator
     if s02_tau_b == 0:  # Avoid divide by zero
         return tau, 0
@@ -433,13 +433,13 @@ def _somers_d(A):
 
     NA = A.sum()
     NA2 = NA**2
-    PA = _P_pythran(A)
-    QA = _Q_pythran(A)
+    PA = _P(A)
+    QA = _Q(A)
     Sri2 = (A.sum(axis=1)**2).sum()
 
     d = (PA - QA)/(NA2 - Sri2)
 
-    S = _a_ij_Aij_Dij2_pythran(A) - (PA-QA)**2/NA
+    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
     if S == 0:  # Avoid divide by zero
         return d, 0
     Z = (PA - QA)/(4*(S))**0.5
