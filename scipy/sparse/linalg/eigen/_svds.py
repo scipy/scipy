@@ -301,7 +301,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             return s
         elif return_singular_vectors == 'u' and n <= m:
             return u, s, None
-        elif return_singular_vectors == 'vh' and n >= m:
+        elif return_singular_vectors == 'vh' and n > m:
             return None, s, vh
         else:
             return u, s, vh

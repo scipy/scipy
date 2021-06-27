@@ -291,44 +291,38 @@ class SVDSCommonTests:
         assert not np.all(u1a == u1b)
         assert not np.all(vh1a == vh1b)
 
-    def test_svd_return(self):
+    @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
+    @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
+    def test_svd_return_singular_vectors(self, rsv, shape):
         # check that the return_singular_vectors parameter works as expected
-        solver = self.solver
+        rng = np.random.default_rng(0)
+        A = rng.random(shape)
+        k = 3
+        M, N = shape
+        u, s, vh = sorted_svd(A, k)
 
-        x = hilbert(6)
-        _, s, _ = sorted_svd(x, 2)
-        ss = svds(x, 2, solver=solver, return_singular_vectors=False)
-        assert_allclose(s, ss)
-
-    def test_svds_partial_return(self):
-        solver = self.solver
-
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1, 0, 2],
-                      [0, 0, 1]], float)
-        # test vertical matrix
-        z = csr_matrix(x)
-        vh_full = svds(z, 2, solver=solver)[-1]
-        vh_partial = svds(z, 2, return_singular_vectors='vh', solver=solver)[-1]
-        dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
-        if dvh > 1e-10:
-            raise AssertionError('right eigenvector matrices differ when using '
-                                 'return_singular_vectors parameter')
-        if svds(z, 2, return_singular_vectors='vh', solver=solver)[0] is not None:
-            raise AssertionError('left eigenvector matrix was computed when it '
-                                 'should not have been')
-        # test horizontal matrix
-        z = csr_matrix(x.T)
-        u_full = svds(z, 2, solver=solver)[0]
-        u_partial = svds(z, 2, return_singular_vectors='vh', solver=solver)[0]
-        du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
-        if du > 1e-10:
-            raise AssertionError('left eigenvector matrices differ when using '
-                                 'return_singular_vectors parameter')
-        if svds(z, 2, return_singular_vectors='u', solver=solver)[-1] is not None:
-            raise AssertionError('right eigenvector matrix was computed when it '
-                                 'should not have been')
+        if rsv is False:
+            s2 = svds(A, k, return_singular_vectors=rsv,
+                               solver=self.solver)
+            assert_allclose(s2, s)
+        elif rsv == 'u' and N >= M:
+            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                               solver=self.solver)
+            assert_allclose(np.abs(u2), np.abs(u))
+            assert_allclose(s2, s)
+            assert vh2 is None
+        elif rsv == 'vh' and N < M:
+            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                               solver=self.solver)
+            assert u2 is None
+            assert_allclose(s2, s)
+            assert_allclose(np.abs(vh2), np.abs(vh))
+        else:
+            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                              solver=self.solver)
+            assert_allclose(np.abs(u2), np.abs(u))
+            assert_allclose(s2, s)
+            assert_allclose(np.abs(vh2), np.abs(vh))
 
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
