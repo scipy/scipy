@@ -97,8 +97,10 @@ def _iv(A, k, ncv, tol, which, v0, maxiter, return_singular, solver):
             message =  ("`v0` must be of floating or complex floating "
                         "data type.")
             raise ValueError(message)
-        if v0.shape != (min(A.shape),):
-            message = "`v0` must have shape `(min(A.shape),)`."
+
+        shape = (A.shape[0],) if solver == 'propack' else (min(A.shape),)
+        if v0.shape != shape:
+            message = "`v0` must have shape {shape}."
             raise ValueError(message)
 
     # input validation/standardization for `maxiter`

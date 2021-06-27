@@ -162,15 +162,12 @@ class SVDSCommonTests:
             A = A.T
         k = 2
         message = "`v0` must have shape"
-        if n != 5:
+
+        required_length = (A.shape[0] if self.solver == 'propack'
+                           else min(A.shape))
+        if n != required_length:
             with pytest.raises(ValueError, match=message):
                 svds(A, k=k, v0=v0, solver=self.solver)
-        else:
-            u, s, vh = svds(A, k=k, v0=v0, solver=self.solver)
-            # partial decomposition, so don't check that u@diag(s)@vh=A;
-            # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
-            _check_svds(A, k, u, s, vh, which="LM",
-                        check_usvh_A=False, check_svd=True)
 
     def test_svds_input_validation_v0_2(self):
         A = np.ones((10, 10))
