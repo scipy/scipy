@@ -293,6 +293,41 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(vh1a, vh1b)
 
+    def test_svd_random_state(self):
+        # check that the `v0` parameter affects the solution
+        n = 10
+        k = 2
+
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+
+        # with the same random_state, solutions are the same and accurate
+        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=3)
+        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=3)
+        assert_equal(s1a, s2a)
+        assert_equal(u1a, u2a)
+        assert_equal(vh1a, vh2a)
+        # _check_svds(A, k, u1a, s1a, vh1a,
+        #             check_usvh_A=False, check_svd=True)
+
+        # with the same random_state, solutions are the same and accurate
+        u1b, s1b, vh1b = svds(A, k, solver=self.solver, random_state=1)
+        u2b, s2b, vh2b = svds(A, k, solver=self.solver, random_state=1)
+        assert_equal(s1b, s2b)
+        assert_equal(u1b, u2b)
+        assert_equal(vh1b, vh2b)
+        _check_svds(A, k, u1b, s1b, vh1b,
+                    check_usvh_A=False, check_svd=True)
+
+        # with different random_state, solutions are different
+        message = "Arrays are not equal"
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(s1a, s1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(u1a, u1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(vh1a, vh1b)
+
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
         # solution after 1 iteration, but should with default `maxiter`
@@ -574,46 +609,8 @@ class Test_SVDS_LOBPCG(SVDSCommonTests):
     def setup_method(self):
         self.solver = 'lobpcg'
 
-    def test_svd_v0(self):
-        pytest.xfail("LOBPCG doesn't pass this. I'm not sure what to say.")
-
 
 class Test_SVDS_PROPACK(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'propack'
-
-    def test_svd_random_state(self):
-        # check that the `v0` parameter affects the solution
-        n = 10
-        k = 2
-
-        rng = np.random.default_rng(0)
-        A = rng.random((n, n))
-
-        # with the same random_state, solutions are the same and accurate
-        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=0)
-        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=0)
-        assert_equal(s1a, s2a)
-        assert_equal(u1a, u2a)
-        assert_equal(vh1a, vh2a)
-        _check_svds(A, k, u1a, s1a, vh1a,
-                    check_usvh_A=False, check_svd=True)
-
-        # with the same random_state, solutions are the same and accurate
-        u1b, s1b, vh1b = svds(A, k, solver=self.solver, random_state=1)
-        u2b, s2b, vh2b = svds(A, k, solver=self.solver, random_state=1)
-        assert_equal(s1b, s2b)
-        assert_equal(u1b, u2b)
-        assert_equal(vh1b, vh2b)
-        _check_svds(A, k, u1b, s1b, vh1b,
-                    check_usvh_A=False, check_svd=True)
-
-        # with different random_state, solutions are different
-        message = "Arrays are not equal"
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(s1a, s1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(u1a, u1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(vh1a, vh1b)

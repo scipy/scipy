@@ -11,7 +11,7 @@ arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
 
 
-def _augmented_orthonormal_cols(x, k):
+def _augmented_orthonormal_cols(x, k, random_state):
     # extract the shape of the x array
     n, m = x.shape
     # create the expanded array and copy x into it
@@ -20,9 +20,9 @@ def _augmented_orthonormal_cols(x, k):
     # do some modified gram schmidt to add k random orthonormal vectors
     for i in range(k):
         # sample a random initial vector
-        v = np.random.randn(n)
+        v = random_state.standard_normal(size=n)
         if np.iscomplexobj(x):
-            v = v + 1j*np.random.randn(n)
+            v = v + 1j*random_state.standard_normal(size=n)
         # subtract projections onto the existing unit length vectors
         for j in range(m+i):
             u = y[:, j]
@@ -35,8 +35,8 @@ def _augmented_orthonormal_cols(x, k):
     return y
 
 
-def _augmented_orthonormal_rows(x, k):
-    return _augmented_orthonormal_cols(x.T, k).T
+def _augmented_orthonormal_rows(x, k, random_state):
+    return _augmented_orthonormal_cols(x.T, k, random_state).T
 
 
 def _herm(x):
@@ -187,7 +187,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -251,6 +250,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     """
+    rs_was_None = random_state is None  # avoid changing v0 for arpack/lobpcg
 
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
@@ -292,10 +292,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            X = np.random.RandomState(52).randn(min(A.shape), k)
+            if rs_was_None:
+                X = np.random.RandomState(52).randn(min(A.shape), k)
+            else:
+                X = random_state.uniform(size=(min(A.shape), k))
 
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest)
+                                 largest=largest, )
 
     elif solver == 'propack':
         from scipy.sparse.linalg import svdp
@@ -324,6 +327,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             return u, s, vh
 
     elif solver == 'arpack' or solver is None:
+        if v0 is None and not rs_was_None:
+            v0 = random_state.uniform(size=(min(A.shape),))
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
@@ -357,9 +362,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         vhlarge = (_herm(X_matmat(ularge) / slarge)
                    if return_singular_vectors != 'u' else None)
 
-    u = (_augmented_orthonormal_cols(ularge, nsmall)
+    u = (_augmented_orthonormal_cols(ularge, nsmall, random_state)
          if ularge is not None else None)
-    vh = (_augmented_orthonormal_rows(vhlarge, nsmall)
+    vh = (_augmented_orthonormal_rows(vhlarge, nsmall, random_state)
           if vhlarge is not None else None)
 
     indexes_sorted = np.argsort(s)
