@@ -257,8 +257,6 @@ _kolmogi(double psf, double pcdf)
     double x, t;
     double xmin = 0;
     double xmax = NPY_INFINITY;
-    double fmin = 1 - psf;
-    double fmax = pcdf - 1;
     int iterations;
     double a = xmin, b = xmax;
 
