@@ -287,9 +287,13 @@ class SVDSCommonTests:
                     check_usvh_A=False, check_svd=True)
 
         # with different v0, solutions are different
-        assert not np.all(s1a == s1b)
-        assert not np.all(u1a == u1b)
-        assert not np.all(vh1a == vh1b)
+        message = "Arrays are not equal"
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(s1a, s1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(u1a, u1b)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(vh1a, vh1b)
 
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
