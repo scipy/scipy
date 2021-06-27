@@ -291,6 +291,27 @@ class SVDSCommonTests:
         assert not np.all(u1a == u1b)
         assert not np.all(vh1a == vh1b)
 
+    def test_svd_maxiter(self):
+        # check that maxiter works as expected: should not return accurate
+        # solution after 1 iteration, but should with default `maxiter`
+        A = hilbert(6)
+        k = 1
+        u, s, vh = sorted_svd(A, k)
+
+        if self.solver == 'arpack':
+            message = "ARPACK error -1: No convergence"
+            with pytest.raises(ArpackNoConvergence, match=message):
+                svds(A, k, ncv=3, maxiter=1, solver=self.solver)
+        else:
+            message = "Not equal to tolerance"
+            with pytest.raises(AssertionError, match=message):
+                u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
+                assert_allclose(np.abs(u2), np.abs(u))
+
+        u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
+        _check_svds(A, k, u, s, vh,
+                    check_usvh_A=False, check_svd=True)
+
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
     def test_svd_return_singular_vectors(self, rsv, shape):
@@ -542,19 +563,9 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), ncv="hi", solver=self.solver)
 
+
     # I can't see a robust relationship between `ncv` and relevant outputs
     # (e.g. accuracy, time), so no test of the parameter.
-
-    def test_svd_maxiter(self):
-        # check that maxiter works as expected
-        x = hilbert(6)
-        # ARPACK shouldn't converge on such an ill-conditioned matrix with just
-        # one iteration
-        assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
-        # but 100 iterations should be more than enough
-        u, s, vt = svds(x, 1, maxiter=100, ncv=3)
-        assert_allclose(s, [1.7], atol=0.5)
-
 
 class Test_SVDS_LOBPCG(SVDSCommonTests):
 
