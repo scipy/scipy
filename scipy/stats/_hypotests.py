@@ -9,6 +9,7 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+from ._hypotests_pythran import _Q_pythran, _P_pythran, _a_ij_Aij_Dij2_pythran
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
@@ -395,51 +396,6 @@ def _get_wilcoxon_distr(n):
     return np.array(cnt, dtype=int)
 
 
-def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
-
-
-def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
-
-
-def _P(A):
-    """Twice the number of concordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
-    return count
-
-
-def _Q(A):
-    """Twice the number of discordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
-    return count
-
-
-def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See [2] section 4: Modified ASEs to test the null hypothesis...
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
-    return count
-
-
 def _tau_b(A):
     """Calculate Kendall's tau-b and p-value from contingency table."""
     # See [2] 2.2 and 4.2
@@ -449,15 +405,15 @@ def _tau_b(A):
         return np.nan, np.nan
 
     NA = A.sum()
-    PA = _P(A)
-    QA = _Q(A)
+    PA = _P_pythran(A)
+    QA = _Q_pythran(A)
     Sri2 = (A.sum(axis=1)**2).sum()
     Scj2 = (A.sum(axis=0)**2).sum()
     denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
 
     tau = (PA-QA)/(denominator)**0.5
 
-    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
+    numerator = 4*(_a_ij_Aij_Dij2_pythran(A) - (PA - QA)**2 / NA)
     s02_tau_b = numerator/denominator
     if s02_tau_b == 0:  # Avoid divide by zero
         return tau, 0
@@ -477,13 +433,13 @@ def _somers_d(A):
 
     NA = A.sum()
     NA2 = NA**2
-    PA = _P(A)
-    QA = _Q(A)
+    PA = _P_pythran(A)
+    QA = _Q_pythran(A)
     Sri2 = (A.sum(axis=1)**2).sum()
 
     d = (PA - QA)/(NA2 - Sri2)
 
-    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
+    S = _a_ij_Aij_Dij2_pythran(A) - (PA-QA)**2/NA
     if S == 0:  # Avoid divide by zero
         return d, 0
     Z = (PA - QA)/(4*(S))**0.5
