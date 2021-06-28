@@ -542,8 +542,8 @@ class SVDSCommonTests:
                                     rtol=eps)
 
     # --- Test Edge Cases ---
-    # Checks a few edge cases. There are obvious ones missing (e.g. empty inpout)
-    # but I don't think we need to substantially expand these.
+    # Checks a few edge cases. There are obvious ones missing (e.g. empty
+    # input but I don't think we need to substantially expand these.
 
     def test_svd_LM_ones_matrix(self):
         # Check that svds can deal with matrix_rank less than k in LM mode.
@@ -656,3 +656,10 @@ class Test_SVDS_PROPACK(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'propack'
+
+    def test_svd_LM_ones_matrix(self):
+        message = ("PROPACK does not return orthonormal singular vectors "
+                   "associated with zero singular values.")
+        # There are some other issues with this matrix of all ones, e.g.
+        # `which='sm'` and `k=1` returns the largest singular value
+        pytest.xfail(message)
