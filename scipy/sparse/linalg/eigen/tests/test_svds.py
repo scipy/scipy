@@ -37,8 +37,8 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
-def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=True,
-                check_svd=False, atol=1e-10, rtol=1e-7):
+def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
+                check_svd=True, atol=1e-10, rtol=1e-7):
     n, m = A.shape
 
     # Check shapes.
@@ -223,9 +223,8 @@ class SVDSCommonTests:
         # smallest eigenvalues are returned
         rng = np.random.default_rng(0)
         A = rng.random((10, 10))
-        u, s, vh = svds(A, k=k, which=which, solver=self.solver)
-        _check_svds(A, k, u, s, vh, which=which,
-                    check_usvh_A=False, check_svd=True)
+        res = svds(A, k=k, which=which, solver=self.solver)
+        _check_svds(A, k, *res, which=which)
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
@@ -276,32 +275,22 @@ class SVDSCommonTests:
         # with the same v0, solutions are the same, and they are accurate
         # v0 takes precedence over random_state
         v0a = rng.random(n)
-        u1a, s1a, vh1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
-        u2a, s2a, vh2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
-        assert_equal(s1a, s2a)
-        assert_equal(u1a, u2a)
-        assert_equal(vh1a, vh2a)
-        _check_svds(A, k, u1a, s1a, vh1a,
-                    check_usvh_A=False, check_svd=True)
+        res1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
+        res2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
+        assert_equal(res1a, res2a)
+        _check_svds(A, k, *res1a)
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
-        u1b, s1b, vh1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
-        u2b, s2b, vh2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
-        assert_equal(s1b, s2b)
-        assert_equal(u1b, u2b)
-        assert_equal(vh1b, vh2b)
-        _check_svds(A, k, u1b, s1b, vh1b,
-                    check_usvh_A=False, check_svd=True)
+        res1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
+        res2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
+        assert_equal(res1b, res2b)
+        _check_svds(A, k, *res1b)
 
         # with different v0, solutions can be numerically different
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
-            assert_equal(s1a, s1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(u1a, u1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(vh1a, vh1b)
+            assert_equal(res1a, res1b)
 
     def test_svd_random_state(self):
         # check that the `random_state` parameter affects the solution
@@ -316,31 +305,21 @@ class SVDSCommonTests:
         A = rng.random((n, n))
 
         # with the same random_state, solutions are the same and accurate
-        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=0)
-        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=0)
-        assert_equal(s1a, s2a)
-        assert_equal(u1a, u2a)
-        assert_equal(vh1a, vh2a)
-        _check_svds(A, k, u1a, s1a, vh1a,
-                    check_usvh_A=False, check_svd=True)
+        res1a = svds(A, k, solver=self.solver, random_state=0)
+        res2a = svds(A, k, solver=self.solver, random_state=0)
+        assert_equal(res1a, res2a)
+        _check_svds(A, k, *res1a)
 
         # with the same random_state, solutions are the same and accurate
-        u1b, s1b, vh1b = svds(A, k, solver=self.solver, random_state=1)
-        u2b, s2b, vh2b = svds(A, k, solver=self.solver, random_state=1)
-        assert_equal(s1b, s2b)
-        assert_equal(u1b, u2b)
-        assert_equal(vh1b, vh2b)
-        _check_svds(A, k, u1b, s1b, vh1b,
-                    check_usvh_A=False, check_svd=True)
+        res1b = svds(A, k, solver=self.solver, random_state=1)
+        res2b = svds(A, k, solver=self.solver, random_state=1)
+        assert_equal(res1b, res2b)
+        _check_svds(A, k, *res1b)
 
         # with different random_state, solutions can be numerically different
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
-            assert_equal(s1a, s1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(u1a, u1b)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(vh1a, vh1b)
+            assert_equal(res1a, res1b)
 
     @pytest.mark.parametrize("random_state", (0, 1,
                                               np.random.RandomState(0),
@@ -355,15 +334,11 @@ class SVDSCommonTests:
         random_state_2 = copy.deepcopy(random_state)
 
         # with the same random_state, solutions are the same and accurate
-        u1a, s1a, vh1a = svds(A, k, solver=self.solver,
-                              random_state=random_state)
-        u2a, s2a, vh2a = svds(A, k, solver=self.solver,
-                              random_state=random_state_2)
-        assert_equal(s1a, s2a)
-        assert_equal(u1a, u2a)
-        assert_equal(vh1a, vh2a)
-        _check_svds(A, k, u1a, s1a, vh1a,
-                    check_usvh_A=False, check_svd=True)
+        res1a = svds(A, k, solver=self.solver, random_state=random_state)
+        res2a = svds(A, k, solver=self.solver, random_state=random_state_2)
+        assert_equal(res1a, res2a)
+
+        _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("random_state", (None,
                                               np.random.RandomState(0),
@@ -377,23 +352,15 @@ class SVDSCommonTests:
 
         # random_state in different state produces accurate - but not
         # not necessarily identical - results
-        u1a, s1a, vh1a = svds(A, k, solver=self.solver,
-                              random_state=random_state)
-        u2a, s2a, vh2a = svds(A, k, solver=self.solver,
-                              random_state=random_state)
+        res1a = svds(A, k, solver=self.solver, random_state=random_state)
+        res2a = svds(A, k, solver=self.solver, random_state=random_state)
 
-        _check_svds(A, k, u1a, s1a, vh1a,
-                    check_usvh_A=False, check_svd=True)
-        _check_svds(A, k, u2a, s2a, vh2a,
-                    check_usvh_A=False, check_svd=True)
+        _check_svds(A, k, *res1a)
+        _check_svds(A, k, *res2a)
 
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
-            assert_equal(s1a, s2a)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(u1a, u2a)
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(vh1a, vh2a)
+            assert_equal(res1a, res2a)
 
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
@@ -413,8 +380,7 @@ class SVDSCommonTests:
                 assert_allclose(np.abs(u2), np.abs(u))
 
         u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
-        _check_svds(A, k, u, s, vh,
-                    check_usvh_A=False, check_svd=True)
+        _check_svds(A, k, u, s, vh)
 
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
@@ -584,7 +550,7 @@ class SVDSCommonTests:
                 U, s, VH = svds(A, k, solver=solver)
 
                 # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH)
+                _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
                 # Check that the largest singular value is near sqrt(n*m)
                 # and the other singular values have been forced to zero.
@@ -603,7 +569,7 @@ class SVDSCommonTests:
                 U, s, VH = svds(A, k, solver=solver)
 
                 # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH)
+                _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
                 # Check that the singular values are zero.
                 assert_array_equal(s, 0)
@@ -620,7 +586,7 @@ class SVDSCommonTests:
         U, s, VH = svds(A, k, solver=solver)
 
         # Check some generic properties of svd.
-        _check_svds(A, k, U, s, VH)
+        _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the singular values are zero.
         assert_array_equal(s, 0)
@@ -650,7 +616,7 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
             u, s, vh = svds(A, k=k, ncv=ncv, solver=self.solver)
         # partial decomposition, so don't check that u@diag(s)@vh=A;
         # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
-            _check_svds(A, k, u, s, vh, check_usvh_A=False, check_svd=True)
+            _check_svds(A, k, u, s, vh)
         else:
             message = ("`ncv` must be an integer satisfying")
             with pytest.raises(ValueError, match=message):
