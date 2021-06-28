@@ -36,16 +36,18 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed;
         default is ``min(M, N) * 10``.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular values and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular values and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='arpack'``.
@@ -67,14 +69,10 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -158,16 +156,18 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Default: random
     maxiter : int, default: 20
         Maximum number of iterations.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular values and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular values and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='lobpcg'``.
@@ -189,14 +189,10 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -281,16 +277,18 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     maxiter : int, optional
         Maximum number of iterations / maximal dimension of the Krylov
         subspace. Default is ``5 * k``.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular values and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular values and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='propack'``.
@@ -312,14 +310,10 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----

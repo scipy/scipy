@@ -400,13 +400,13 @@ class SVDSCommonTests:
             s2 = svds(A, k, return_singular_vectors=rsv,
                       solver=self.solver, random_state=rng)
             assert_allclose(s2, s)
-        elif rsv == 'u' and N >= M:
+        elif rsv == 'u' and M <= N:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                solver=self.solver, random_state=rng)
             assert_allclose(np.abs(u2), np.abs(u))
             assert_allclose(s2, s)
             assert vh2 is None
-        elif rsv == 'vh' and N < M:
+        elif rsv == 'vh' and M > N:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                solver=self.solver, random_state=rng)
             assert u2 is None

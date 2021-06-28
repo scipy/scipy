@@ -197,14 +197,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
