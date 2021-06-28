@@ -115,6 +115,12 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         A = rng.random((4, 3))
 
+        # propack can do complete SVD
+        if self.solver == 'propack' and k == 3:
+            res = svds(A, k=k, solver=self.solver)
+            _check_svds(A, k, *res, check_usvh_A=True, check_svd=True)
+            return
+
         message = ("`k` must be an integer satisfying")
         with pytest.raises(ValueError, match=message):
             svds(A, k=k, solver=self.solver)
@@ -223,8 +229,8 @@ class SVDSCommonTests:
         # smallest eigenvalues are returned
         rng = np.random.default_rng(0)
         A = rng.random((10, 10))
-        res = svds(A, k=k, which=which, solver=self.solver)
-        _check_svds(A, k, *res, which=which)
+        res = svds(A, k=k, which=which, solver=self.solver, random_state=0)
+        _check_svds(A, k, *res, which=which, atol=2e-10)
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
@@ -337,7 +343,6 @@ class SVDSCommonTests:
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state_2)
         assert_equal(res1a, res2a)
-
         _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("random_state", (None,
@@ -354,7 +359,6 @@ class SVDSCommonTests:
         # not necessarily identical - results
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state)
-
         _check_svds(A, k, *res1a)
         _check_svds(A, k, *res2a)
 

@@ -46,6 +46,13 @@ def _herm(x):
 def _iv(A, k, ncv, tol, which, v0, maxiter,
         return_singular, solver, random_state):
 
+    # input validation/standardization for `solver`
+    # out of order because it's needed for other parameters
+    solver = str(solver).lower()
+    solvers = {"arpack", "lobpcg", "propack"}
+    if solver not in solvers:
+        raise ValueError(f"solver must be one of {solvers}.")
+
     # input validation/standardization for `A`
     A = aslinearoperator(A)  # this takes care of some input validation
     if not (np.issubdtype(A.dtype, np.complexfloating)
@@ -57,17 +64,11 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         raise ValueError(message)
 
     # input validation/standardization for `k`
-    if int(k) != k or not (0 < k < min(A.shape)):
+    kmax = min(A.shape) if solver == 'propack' else min(A.shape) - 1
+    if int(k) != k or not (0 < k <= kmax):
         message = "`k` must be an integer satisfying `0 < k < min(A.shape)`."
         raise ValueError(message)
     k = int(k)
-
-    # input validation/standardization for `solver`
-    # out of order because it's needed for `ncv`
-    solver = str(solver).lower()
-    solvers = {"arpack", "lobpcg", "propack"}
-    if solver not in solvers:
-        raise ValueError(f"solver must be one of {solvers}.")
 
     # input validation/standardization for `ncv`
     if solver == "arpack" and ncv is not None:
