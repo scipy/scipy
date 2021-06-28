@@ -36,10 +36,9 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
-def _check_svds(A, k, u, s, vh, which="LM",
-                check_usvh_A=True, check_svd=False):
+def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=True,
+                check_svd=False, atol=1e-10, rtol=1e-7):
     n, m = A.shape
-    atol = 1e-10
 
     # Check shapes.
     assert_equal(u.shape, (n, k))
@@ -50,24 +49,24 @@ def _check_svds(A, k, u, s, vh, which="LM",
     A_rebuilt = (u*s).dot(vh)
     assert_equal(A_rebuilt.shape, A.shape)
     if check_usvh_A:
-        assert_allclose(A_rebuilt, A)
+        assert_allclose(A_rebuilt, A, atol=atol, rtol=rtol)
 
     # Check that u is a semi-orthogonal matrix.
     uh_u = np.dot(u.T.conj(), u)
     assert_equal(uh_u.shape, (k, k))
-    assert_allclose(uh_u, np.identity(k), atol=atol)
+    assert_allclose(uh_u, np.identity(k), atol=atol, rtol=rtol)
 
     # Check that V is a semi-orthogonal matrix.
     vh_v = np.dot(vh, vh.T.conj())
     assert_equal(vh_v.shape, (k, k))
-    assert_allclose(vh_v, np.identity(k), atol=atol)
+    assert_allclose(vh_v, np.identity(k), atol=atol, rtol=rtol)
 
     # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
     if check_svd:
         u2, s2, vh2 = sorted_svd(A, k, which)
-        assert_allclose(np.abs(u), np.abs(u2), atol=atol)
-        assert_allclose(s, s2, atol=atol)
-        assert_allclose(np.abs(vh), np.abs(vh2), atol=atol)
+        assert_allclose(np.abs(u), np.abs(u2), atol=atol, rtol=rtol)
+        assert_allclose(s, s2, atol=atol, rtol=rtol)
+        assert_allclose(np.abs(vh), np.abs(vh2), atol=atol, rtol=rtol)
 
 
 class CheckingLinearOperator(LinearOperator):
@@ -257,8 +256,12 @@ class SVDSCommonTests:
 
     def test_svd_v0(self):
         # check that the `v0` parameter affects the solution
-        n = 10
-        k = 2
+        n = 100
+        k = 1
+        # If k != 1, LOBPCG needs more initial vectors, which are generated
+        # with random_state, so it does not pass w/ k >= 2.
+        # For some other values of `n`, the AssertionErrors are not raised
+        # with different v0s, which is reasonable.
 
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
@@ -284,7 +287,7 @@ class SVDSCommonTests:
         _check_svds(A, k, u1b, s1b, vh1b,
                     check_usvh_A=False, check_svd=True)
 
-        # with different v0, solutions are different
+        # with different v0, solutions can be numerically different
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
             assert_equal(s1a, s1b)
@@ -294,21 +297,25 @@ class SVDSCommonTests:
             assert_equal(vh1a, vh1b)
 
     def test_svd_random_state(self):
-        # check that the `v0` parameter affects the solution
-        n = 10
-        k = 2
+        # check that the `random_state` parameter affects the solution
+        # Admittedly, `n` and `k` are chosen so that all solver pass all
+        # these checks. That's a tall order, since LOBPCG doesn't want to
+        # achieve the desired accuracy and ARPACK often returns the same
+        # singular values/vectors for different v0.
+        n = 100
+        k = 1
 
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
 
         # with the same random_state, solutions are the same and accurate
-        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=3)
-        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=3)
+        u1a, s1a, vh1a = svds(A, k, solver=self.solver, random_state=0)
+        u2a, s2a, vh2a = svds(A, k, solver=self.solver, random_state=0)
         assert_equal(s1a, s2a)
         assert_equal(u1a, u2a)
         assert_equal(vh1a, vh2a)
-        # _check_svds(A, k, u1a, s1a, vh1a,
-        #             check_usvh_A=False, check_svd=True)
+        _check_svds(A, k, u1a, s1a, vh1a,
+                    check_usvh_A=False, check_svd=True)
 
         # with the same random_state, solutions are the same and accurate
         u1b, s1b, vh1b = svds(A, k, solver=self.solver, random_state=1)
@@ -319,7 +326,7 @@ class SVDSCommonTests:
         _check_svds(A, k, u1b, s1b, vh1b,
                     check_usvh_A=False, check_svd=True)
 
-        # with different random_state, solutions are different
+        # with different random_state, solutions can be numerically different
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
             assert_equal(s1a, s1b)
