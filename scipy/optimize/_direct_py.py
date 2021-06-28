@@ -30,11 +30,11 @@ algorithm can be found in Gablonsky's `thesis <http://repository.lib.ncsu.edu/ir
 from __future__ import print_function
 import numpy as np
 from ._direct import direct
-from optimize import OptimizeResult
+from .optimize import OptimizeResult
 
 ERROR_MESSAGES = (
     'u[i] < l[i] for some i',
-    'maxf is too large',
+    'maxfun is too large',
     'Initialization failed',
     'There was an error in the creation of the sample points',
     'An error occured while the function was sampled',
@@ -42,23 +42,16 @@ ERROR_MESSAGES = (
 )
 
 SUCCESS_MESSAGES = (
-    'Number of function evaluations done is larger then maxf',
-    'Number of iterations is equal to maxT',
+    'Number of function evaluations done is larger then maxfun',
+    'Number of iterations is equal to maxiter',
     'The best function value found is within fglper of the (known) global optimum',
     'The volume of the hyperrectangle with best function value found is below volper',
     'The volume of the hyperrectangle with best function value found is smaller then volper'
 )
 
 def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
-             eps=1e-4,
-             maxf=20000,
-             maxT=6000,
-             method=0,
-             fglobal=-1e100,
-             fglper=0.01,
-             volper=-1.0,
-             sigmaper=-1.0
-             ):
+                     eps=1e-4, maxfun=20000, maxiter=6000, method=0,
+                     fglobal=-1e100, fglper=0.01, volper=-1.0, sigmaper=-1.0):
     r"""
 
     Solve an optimization problem using the DIRECT (Dividing Rectangles) algorithm.
@@ -85,15 +78,15 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
     bounds : array_like, optional
             ``(min, max)`` pairs for each element in ``x``, defining
             the bounds on that parameter.
-    nvar: int, optional
+    nvar : int, optional
         Dimensionality of x (only needed if `bounds` is not defined)
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal interval is chosen.
-    maxf : int, optional
+    maxfun : int, optional
         Approximate upper bound on objective function evaluations.
         Maximal allowed value is 90000 see documentation of Fortran library.
-    maxT : int, optional
+    maxiter : int, optional
         Maximum number of iterations.
         Maximal allowed value is 6000 see documentation of Fortran library.
     method : integer, optional
@@ -160,24 +153,22 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
     # Call the DIRECT algorithm
     #
     x, fun, ierror = direct(
-                        _objective_wrap,
-                        eps,
-                        maxf,
-                        maxT,
-                        l,
-                        u,
+                        _objective_wrap, eps,
+                        maxfun, maxiter,
+                        l, u,
                         method,
                         'dummylogfile', 
-                        fglobal,
-                        fglper,
-                        volper,
-                        sigmaper,
-                        iidata,
-                        ddata,
-                        cdata,
+                        fglobal, fglper,
+                        volper, sigmaper,
+                        iidata, ddata, cdata,
                         disp
                         )
 
-    return OptimizeResult(x=x,fun=fun, status=ierror, success=ierror>0,
-                          message=SUCCESS_MESSAGES[ierror-1] if ierror>0 else ERROR_MESSAGES[abs(ierror)-1])
+    if ierror > 0:
+        message = SUCCESS_MESSAGES[ierror-1]
+    else:
+        message = ERROR_MESSAGES[abs(ierror)-1]
+
+    return OptimizeResult(x=x, fun=fun, status=ierror, success=ierror > 0,
+                          message=message)
 

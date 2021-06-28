@@ -31,6 +31,7 @@ from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
+from ._direct_py import _minimize_direct
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
@@ -38,11 +39,12 @@ from ._differentiable_functions import FD_METHODS
 
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
-                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov',
+                    'direct']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
-def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
+def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
@@ -57,7 +59,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``x`` is an 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
-    x0 : ndarray, shape (n,)
+    x0 : ndarray, shape (n,), needed for all but 'direct' method
         Initial guess. Array of real elements of size (n,),
         where 'n' is the number of independent variables.
     args : tuple, optional
@@ -493,6 +495,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
+    if x0 is None and method != 'direct':
+        raise ValueError("Initial guess required for {} "
+                         "optimization method".format(method))
     x0 = np.asarray(x0)
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
@@ -646,6 +651,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
+    elif meth == 'direct':
+        return _minimize_direct(fun, bounds)
     else:
         raise ValueError('Unknown solver %s' % method)
 
