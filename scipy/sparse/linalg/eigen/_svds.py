@@ -140,7 +140,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= kmax``, where ``kmax=min(M, N)`` for
+        ``solver='propack'`` and ``kmax=min(M, N) - 1`` otherwise.
     ncv : int, optional
         When ``solver='arpack'``, this is the number of Lanczos vectors
         generated. See :ref:`'arpack' <sparse.linalg.svds-arpack>` for details.

@@ -17,7 +17,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= min(M, N) - 1``.
     ncv : int, optional
         The number of Lanczos vectors generated.
         The default is ``min(n, max(2*k + 1, 20))``.
@@ -142,7 +142,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= min(M, N) - 1``.
     ncv : int, optional
         Ignored.
     tol : float, optional
