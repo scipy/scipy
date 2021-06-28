@@ -1,4 +1,5 @@
 import re
+import copy
 import numpy as np
 
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
@@ -205,6 +206,12 @@ class SVDSCommonTests:
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver)
 
+    @pytest.mark.parametrize("random_state", ('ekki', 3.14159, []))
+    def test_svds_input_validation_random_state(self, random_state):
+        message = "cannot be used to seed a"
+        with pytest.raises(ValueError, match=message):
+            svds(np.eye(10), random_state=random_state, solver=self.solver)
+
     # --- Test Parameters ---
 
     @pytest.mark.parametrize("k", [3, 5])
@@ -334,6 +341,59 @@ class SVDSCommonTests:
             assert_equal(u1a, u1b)
         with pytest.raises(AssertionError, match=message):
             assert_equal(vh1a, vh1b)
+
+    @pytest.mark.parametrize("random_state", (0, 1,
+                                              np.random.RandomState(0),
+                                              np.random.default_rng(0)))
+    def test_svd_random_state_2(self, random_state):
+        n = 100
+        k = 1
+
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+
+        random_state_2 = copy.deepcopy(random_state)
+
+        # with the same random_state, solutions are the same and accurate
+        u1a, s1a, vh1a = svds(A, k, solver=self.solver,
+                              random_state=random_state)
+        u2a, s2a, vh2a = svds(A, k, solver=self.solver,
+                              random_state=random_state_2)
+        assert_equal(s1a, s2a)
+        assert_equal(u1a, u2a)
+        assert_equal(vh1a, vh2a)
+        _check_svds(A, k, u1a, s1a, vh1a,
+                    check_usvh_A=False, check_svd=True)
+
+    @pytest.mark.parametrize("random_state", (None,
+                                              np.random.RandomState(0),
+                                              np.random.default_rng(0)))
+    def test_svd_random_state_3(self, random_state):
+        n = 100
+        k = 5
+
+        rng = np.random.default_rng(0)
+        A = rng.random((n, n))
+
+        # random_state in different state produces accurate - but not
+        # not necessarily identical - results
+        u1a, s1a, vh1a = svds(A, k, solver=self.solver,
+                              random_state=random_state)
+        u2a, s2a, vh2a = svds(A, k, solver=self.solver,
+                              random_state=random_state)
+
+        _check_svds(A, k, u1a, s1a, vh1a,
+                    check_usvh_A=False, check_svd=True)
+        _check_svds(A, k, u2a, s2a, vh2a,
+                    check_usvh_A=False, check_svd=True)
+
+        message = "Arrays are not equal"
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(s1a, s2a)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(u1a, u2a)
+        with pytest.raises(AssertionError, match=message):
+            assert_equal(vh1a, vh2a)
 
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
@@ -616,6 +676,8 @@ class Test_SVDS_LOBPCG(SVDSCommonTests):
     def setup_method(self):
         self.solver = 'lobpcg'
 
+    def test_svd_random_state_3(self):
+        pytest.xfail("LOBPCG is having trouble with accuracy.")
 
 class Test_SVDS_PROPACK(SVDSCommonTests):
 
