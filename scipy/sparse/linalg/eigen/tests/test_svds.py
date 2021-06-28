@@ -9,7 +9,7 @@ import pytest
 
 from scipy.linalg import hilbert, svd
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg.eigen.arpack import ArpackNoConvergence
 
@@ -424,57 +424,35 @@ class SVDSCommonTests:
 
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
-    # as dense array, sparse matrix, and LinearOperator. Could be written
-    # more concisely and use parametrization.
+    # as list, dense array, sparse matrix, and LinearOperator.
 
-    def test_svd_simple_real(self):
-        solver = self.solver
-        np.random.seed(0)  # set random seed for generating propack v0
+    A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
+    A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1, 0, 2],
-                      [0, 0, 1]], float)
-        y = np.array([[1, 2, 3, 8],
-                      [3, 4, 3, 5],
-                      [1, 0, 2, 3],
-                      [0, 0, 1, 0]], float)
-        z = csc_matrix(x)
+    @pytest.mark.parametrize('A', (A1, A2))
+    @pytest.mark.parametrize('k', range(1, 5))
+    @pytest.mark.parametrize('real', (True, False))
+    @pytest.mark.parametrize('transpose', (False, True))
+    @pytest.mark.parametrize('lo_type', (None, np.asarray, csc_matrix,
+                                        aslinearoperator))
+    def test_svd_simple(self, A, k, real, transpose, lo_type):
 
-        for m in [x.T, x, y, z, z.T]:
-            for k in range(1, min(m.shape)):
-                u, s, vh = sorted_svd(m, k)
-                su, ss, svh = svds(m, k, solver=solver)
+        A = np.asarray(A)
+        A = np.real(A) if real else A
+        A = A.T if transpose else A
+        A2 = lo_type(A) if lo_type else A.tolist()
 
-                m_hat = svd_estimate(u, s, vh)
-                sm_hat = svd_estimate(su, ss, svh)
+        # could check for the appropriate errors, but that is tested above
+        if k > min(A.shape):
+            pytest.skip("`k` cannot be greater than `min(A.shape)`")
+        if self.solver != 'propack' and k >= min(A.shape):
+            pytest.skip("Only PROPACK supports complete SVD")
+        if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
+            pytest.skip("ARPACK has additional restriction for complex dtype")
 
-                assert_array_almost_equal_nulp(
-                    m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1436)
+        u, s, vh = svds(A2, k, solver=self.solver)
+        _check_svds(A, k, u, s, vh)
 
-    def test_svd_simple_complex(self):
-        solver = self.solver
-
-        x = np.array([[1, 2, 3],
-                      [3, 4, 3],
-                      [1 + 1j, 0, 2],
-                      [0, 0, 1]], complex)
-        y = np.array([[1, 2, 3, 8 + 5j],
-                      [3 - 2j, 4, 3, 5],
-                      [1, 0, 2, 3],
-                      [0, 0, 1, 0]], complex)
-        z = csc_matrix(x)
-
-        for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
-            for k in range(1, min(m.shape) - 1):
-                u, s, vh = sorted_svd(m, k)
-                su, ss, svh = svds(m, k, solver=solver)
-
-                m_hat = svd_estimate(u, s, vh)
-                sm_hat = svd_estimate(su, ss, svh)
-
-                assert_array_almost_equal_nulp(
-                    m_hat, sm_hat, nulp=1000 if solver != 'propack' else 1575)
 
     def test_svd_linop(self):
         solver = self.solver
