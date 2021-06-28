@@ -545,46 +545,45 @@ class SVDSCommonTests:
     # Checks a few edge cases. There are obvious ones missing (e.g. empty
     # input but I don't think we need to substantially expand these.
 
-    def test_svd_LM_ones_matrix(self):
+    @pytest.mark.parametrize("shape", ((6, 5), (5, 5), (5, 6)))
+    @pytest.mark.parametrize("dtype", (float, complex))
+    def test_svd_LM_ones_matrix(self, shape, dtype):
         # Check that svds can deal with matrix_rank less than k in LM mode.
-        solver = self.solver
-
         k = 3
-        for n, m in (6, 5), (5, 5), (5, 6):
-            for t in float, complex:
-                A = np.ones((n, m), dtype=t)
+        n, m = shape
+        A = np.ones((n, m), dtype=dtype)
 
-                U, s, VH = svds(A, k, solver=solver)
+        U, s, VH = svds(A, k, solver=self.solver)
 
-                # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
+        # Check some generic properties of svd.
+        _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
-                # Check that the largest singular value is near sqrt(n*m)
-                # and the other singular values have been forced to zero.
-                assert_allclose(np.max(s), np.sqrt(n*m))
-                assert_array_equal(sorted(s)[:-1], 0)
+        # Check that the largest singular value is near sqrt(n*m)
+        # and the other singular values have been forced to zero.
+        assert_allclose(np.max(s), np.sqrt(n*m))
+        assert_array_equal(sorted(s)[:-1], 0)
 
-    def test_svd_LM_zeros_matrix(self):
+    @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3)))
+    @pytest.mark.parametrize("dtype", (float, complex))
+    def test_svd_LM_zeros_matrix(self, shape, dtype):
         # Check that svds can deal with matrices containing only zeros.
-        solver = self.solver
-
         k = 1
-        for n, m in (3, 4), (4, 4), (4, 3):
-            for t in float, complex:
-                A = np.zeros((n, m), dtype=t)
+        n, m = shape
+        A = np.zeros((n, m), dtype=dtype)
 
-                U, s, VH = svds(A, k, solver=solver)
+        U, s, VH = svds(A, k, solver=self.solver)
 
-                # Check some generic properties of svd.
-                _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
+        # Check some generic properties of svd.
+        _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
-                # Check that the singular values are zero.
-                assert_array_equal(s, 0)
+        # Check that the singular values are zero.
+        assert_array_equal(s, 0)
 
     def test_svd_LM_zeros_matrix_gh_3452(self):
         # Regression test for a github issue.
         # https://github.com/scipy/scipy/issues/3452
-        # Note that for complex dype the size of this matrix is too small for k=1.
+        # Note that for complex dtype the size of this matrix is too small for
+        # k=1.
         solver = self.solver
 
         n, m, k = 4, 2, 1
