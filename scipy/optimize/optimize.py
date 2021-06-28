@@ -976,12 +976,31 @@ def check_grad(func, grad, x0, *args, **kwargs):
     2.9802322387695312e-08
 
     """
+    x0 = np.asarray(x0)
     step = kwargs.pop('epsilon', _epsilon)
+    random_projection = kwargs.pop('random_projection', False)
     if kwargs:
         raise ValueError("Unknown keyword arguments: %r" %
                          (list(kwargs.keys()),))
-    return sqrt(sum((grad(x0, *args) -
-                     approx_fprime(x0, func, step, *args))**2))
+    
+    def g(w, *args):
+        func, x0, v = args[0:3]
+        return func(x0 + w*v, *args[3:])
+
+    if random_projection:
+        v = np.random.rand(*x0.shape)
+        _args = (func, x0, v) + args
+        _func = g
+        vars = np.zeros((1,))
+        analytical_grad = np.dot(grad(x0, *args), v)
+    else:
+        _args = args
+        _func = func
+        vars = x0
+        analytical_grad = grad(x0, *args)
+
+    return sqrt(sum((analytical_grad -
+                     approx_fprime(vars, _func, step, *_args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
