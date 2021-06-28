@@ -66,12 +66,12 @@
         }                                                               \
         else {                                                          \
             NPY_BEGIN_ALLOW_THREADS;                                    \
-            XA = (const type *)XA_->data;                               \
-            XB = (const type *)XB_->data;                               \
-            dm = (double *)dm_->data;                                   \
-            mA = XA_->dimensions[0];                                    \
-            mB = XB_->dimensions[0];                                    \
-            n = XA_->dimensions[1];                                     \
+            XA = (const type *)PyArray_DATA(XA_);                               \
+            XB = (const type *)PyArray_DATA(XB_);                               \
+            dm = (double *)PyArray_DATA(dm_);                                   \
+            mA = PyArray_DIMS(XA_)[0];                                    \
+            mB = PyArray_DIMS(XB_)[0];                                    \
+            n = PyArray_DIMS(XA_)[1];                                     \
             cdist_ ## name ## _ ## type(XA, XB, dm, mA, mB, n);         \
             NPY_END_ALLOW_THREADS;                                      \
         }                                                               \
@@ -113,13 +113,13 @@ static PyObject *cdist_hamming_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    w = (const double*)w_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    w = (const double*)PyArray_DATA(w_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     cdist_hamming_double(XA, XB, dm, mA, mB, n, w);
     NPY_END_ALLOW_THREADS;
   }
@@ -144,13 +144,13 @@ static PyObject *cdist_hamming_char_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const char*)XA_->data;
-    XB = (const char*)XB_->data;
-    w = (const double*)w_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const char*)PyArray_DATA(XA_);
+    XB = (const char*)PyArray_DATA(XB_);
+    w = (const double*)PyArray_DATA(w_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     cdist_hamming_char(XA, XB, dm, mA, mB, n, w);
     NPY_END_ALLOW_THREADS;
   }
@@ -174,12 +174,12 @@ static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
   else {
     NPY_BEGIN_THREADS_DEF;
     NPY_BEGIN_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
 
     status = cdist_cosine(XA, XB, dm, mA, mB, n);
     NPY_END_THREADS;
@@ -207,13 +207,13 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   else {
     NPY_BEGIN_THREADS_DEF;
     NPY_BEGIN_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    covinv = (const double*)covinv_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    covinv = (const double*)PyArray_DATA(covinv_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
 
     status = cdist_mahalanobis(XA, XB, dm, mA, mB, n, covinv);
     NPY_END_THREADS;
@@ -241,12 +241,12 @@ static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     cdist_minkowski(XA, XB, dm, mA, mB, n, p);
     NPY_END_ALLOW_THREADS;
   }
@@ -269,13 +269,13 @@ static PyObject *cdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    var = (double*)var_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    dm = (double*)PyArray_DATA(dm_);
+    var = (double*)PyArray_DATA(var_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
 
     cdist_seuclidean(XA, XB, var, dm, mA, mB, n);
     NPY_END_ALLOW_THREADS;
@@ -300,13 +300,13 @@ static PyObject *cdist_weighted_chebyshev_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    w = (const double*)w_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    w = (const double*)PyArray_DATA(w_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     cdist_weighted_chebyshev(XA, XB, dm, mA, mB, n, w);
     NPY_END_ALLOW_THREADS;
   }
@@ -333,13 +333,13 @@ static PyObject *cdist_old_weighted_minkowski_double_wrap(
   else {
     int res;
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    w = (const double*)w_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    w = (const double*)PyArray_DATA(w_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     res = cdist_old_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
     NPY_END_ALLOW_THREADS;
 
@@ -369,13 +369,13 @@ static PyObject *cdist_weighted_minkowski_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    w = (const double*)w_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+    XA = (const double*)PyArray_DATA(XA_);
+    XB = (const double*)PyArray_DATA(XB_);
+    w = (const double*)PyArray_DATA(w_);
+    dm = (double*)PyArray_DATA(dm_);
+    mA = PyArray_DIMS(XA_)[0];
+    mB = PyArray_DIMS(XB_)[0];
+    n = PyArray_DIMS(XA_)[1];
     cdist_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
     NPY_END_ALLOW_THREADS;
   }
@@ -398,10 +398,10 @@ static PyObject *cdist_weighted_minkowski_double_wrap(
         }                                                               \
         else {                                                          \
             NPY_BEGIN_ALLOW_THREADS;                                    \
-            X = (const type *)X_->data;                                 \
-            dm = (double *)dm_->data;                                   \
-            m = X_->dimensions[0];                                      \
-            n = X_->dimensions[1];                                      \
+            X = (const type *)PyArray_DATA(X_);                                 \
+            dm = (double *)PyArray_DATA(dm_);                                   \
+            m = PyArray_DIMS(X_)[0];                                      \
+            n = PyArray_DIMS(X_)[1];                                      \
             pdist_ ## name ## _ ## type(X, dm, m, n);                   \
             NPY_END_ALLOW_THREADS;                                      \
         }                                                               \
@@ -443,11 +443,11 @@ static PyObject *pdist_hamming_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    w = (const double*)w_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (const double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    w = (const double*)PyArray_DATA(w_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_hamming_double(X, dm, m, n, w);
     NPY_END_ALLOW_THREADS;
@@ -473,11 +473,11 @@ static PyObject *pdist_hamming_char_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (const char*)X_->data;
-    dm = (double*)dm_->data;
-    w = (const double*)w_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (const char*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    w = (const double*)PyArray_DATA(w_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_hamming_char(X, dm, m, n, w);
     NPY_END_ALLOW_THREADS;
@@ -502,10 +502,10 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
   else {
     NPY_BEGIN_THREADS_DEF;
     NPY_BEGIN_THREADS;
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (const double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
     
     status = pdist_cosine(X, dm, m, n);
     NPY_END_THREADS;
@@ -533,11 +533,11 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   else {
     NPY_BEGIN_THREADS_DEF;
     NPY_BEGIN_THREADS;
-    X = (const double*)X_->data;
-    covinv = (const double*)covinv_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (const double*)PyArray_DATA(X_);
+    covinv = (const double*)PyArray_DATA(covinv_);
+    dm = (double*)PyArray_DATA(dm_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     status = pdist_mahalanobis(X, dm, m, n, covinv);
     NPY_END_THREADS;
@@ -564,10 +564,10 @@ static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_minkowski(X, dm, m, n, p);
     NPY_END_ALLOW_THREADS;
@@ -592,11 +592,11 @@ static PyObject *pdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
-    dm = (double*)dm_->data;
-    var = (double*)var_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    var = (double*)PyArray_DATA(var_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_seuclidean(X, var, dm, m, n);
     NPY_END_ALLOW_THREADS;
@@ -620,11 +620,11 @@ static PyObject *pdist_weighted_chebyshev_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
-    dm = (double*)dm_->data;
-    w = (double*)w_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    w = (double*)PyArray_DATA(w_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_weighted_chebyshev(X, dm, m, n, w);
     NPY_END_ALLOW_THREADS;
@@ -651,11 +651,11 @@ static PyObject *pdist_old_weighted_minkowski_double_wrap(
   else {
     int res;
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
-    dm = (double*)dm_->data;
-    w = (double*)w_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    w = (double*)PyArray_DATA(w_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     res = pdist_old_weighted_minkowski(X, dm, m, n, p, w);
     NPY_END_ALLOW_THREADS;
@@ -684,11 +684,11 @@ static PyObject *pdist_weighted_minkowski_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
-    dm = (double*)dm_->data;
-    w = (double*)w_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+    X = (double*)PyArray_DATA(X_);
+    dm = (double*)PyArray_DATA(dm_);
+    w = (double*)PyArray_DATA(w_);
+    m = PyArray_DIMS(X_)[0];
+    n = PyArray_DIMS(X_)[1];
 
     pdist_weighted_minkowski(X, dm, m, n, p, w);
     NPY_END_ALLOW_THREADS;
@@ -707,14 +707,14 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
     return 0;
   }
   NPY_BEGIN_ALLOW_THREADS;
-  n = M_->dimensions[0];
-  elsize = M_->descr->elsize;
+  n = PyArray_DIMS(M_)[0];
+  elsize = PyArray_DESCR(M_)->elsize;
   if (elsize == 8) {
     dist_to_squareform_from_vector_double(
-        (double*)M_->data, (const double*)v_->data, n);
+        (double*)PyArray_DATA(M_), (const double*)PyArray_DATA(v_), n);
   } else {
     dist_to_squareform_from_vector_generic(
-        (char*)M_->data, (const char*)v_->data, n, elsize);
+        (char*)PyArray_DATA(M_), (const char*)PyArray_DATA(v_), n, elsize);
   }
   NPY_END_ALLOW_THREADS;
   return Py_BuildValue("");
@@ -733,10 +733,10 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    M = (const char*)M_->data;
-    v = (char*)v_->data;
-    n = M_->dimensions[0];
-    s = M_->descr->elsize;
+    M = (const char*)PyArray_DATA(M_);
+    v = (char*)PyArray_DATA(v_);
+    n = PyArray_DIMS(M_)[0];
+    s = PyArray_DESCR(M_)->elsize;
     dist_to_vector_from_squareform(M, v, n, s);
     NPY_END_ALLOW_THREADS;
   }
