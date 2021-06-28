@@ -300,9 +300,8 @@ stages:
         clang-cl.exe --version
       displayName: 'clang-cl version'
     - powershell: |
-        # wheels appear to use mingw64 version 6.3.0, but 6.4.0
-        # is the closest match available from choco package manager
-        choco install -y mingw --forcex86 --force --version=6.4.0
+        # wheels appear to use mingw64 version 8.1.0
+        choco install -y mingw --forcex86 --force --version=8.1.0
       displayName: 'Install 32-bit mingw for 32-bit builds'
       condition: and(succeeded(), eq(variables['BITS'], 32))
     - script: >-
