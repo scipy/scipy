@@ -162,16 +162,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>`,
         :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`), or
         :ref:`'propack' <sparse.linalg.svds-propack>` for details.
-    return_singular_vectors : bool or str, optional
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
+
+        If ``solver='propack'``, the option is respected regardless of the
+        matrix shape.
 
     solver : str, optional
             The solver used.
@@ -304,8 +309,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     elif solver == 'propack':
         from scipy.sparse.linalg import svdp
-        jobu = n <= m or return_singular_vectors != 'vh'
-        jobv = n > m or return_singular_vectors != 'u'
+        jobu = return_singular_vectors in {True, 'u'}
+        jobv = return_singular_vectors in {True, 'vh'}
         res = svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
                    compute_u=jobu, compute_v=jobv, irl_mode=True,
                    kmax=maxiter, v0=v0, random_state=random_state)
@@ -319,14 +324,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         u = u[:, ::-1]
         vh = vh[::-1]
 
-        if return_singular_vectors is False:
-            return s
-        elif return_singular_vectors == 'u' and n <= m:
-            return u, s, None
-        elif return_singular_vectors == 'vh' and n > m:
-            return None, s, vh
-        else:
+        u = u if jobu else None
+        vh = vh if jobv else None
+
+        if return_singular_vectors:
             return u, s, vh
+        else:
+            return s
 
     elif solver == 'arpack' or solver is None:
         if v0 is None and not rs_was_None:

@@ -42,10 +42,10 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: if ``M <= N``, compute only the left singular values and
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
           return ``None`` for the right singular vectors. Otherwise, compute
           all singular vectors.
-        - ``"vh"``: if ``M > N``, compute only the right singular values and
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
           return ``None` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
@@ -166,10 +166,10 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: if ``M <= N``, compute only the left singular values and
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
           return ``None`` for the right singular vectors. Otherwise, compute
           all singular vectors.
-        - ``"vh"``: if ``M > N``, compute only the right singular values and
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
           return ``None` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
@@ -291,12 +291,10 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: if ``M <= N``, compute only the left singular values and
-          return ``None`` for the right singular vectors. Otherwise, compute
-          all singular vectors.
-        - ``"vh"``: if ``M > N``, compute only the right singular values and
-          return ``None` for the left singular vectors. Otherwise, compute
-          all singular vectors.
+        - ``"u"``: compute only the left singular vectors; return ``None`` for
+          the right singular vectors.
+        - ``"vh"``: compute only the right singular vectors; return ``None``
+          for the left singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='propack'``.
