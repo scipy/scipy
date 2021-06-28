@@ -29,15 +29,8 @@ algorithm can be found in Gablonsky's `thesis <http://repository.lib.ncsu.edu/ir
 
 from __future__ import print_function
 import numpy as np
-try:
-    from ._direct import direct
-except ImportError:
-    print('Fortran code not compiled, module not functional')
-    direct = None
-
-
-__version_info__ = ('1', '1')
-__version__ = '.'.join(__version_info__)
+from ._direct import direct
+from optimize import OptimizeResult
 
 ERROR_MESSAGES = (
     'u[i] < l[i] for some i',
@@ -56,70 +49,18 @@ SUCCESS_MESSAGES = (
     'The volume of the hyperrectangle with best function value found is smaller then volper'
 )
 
-# Class for returning the result of an optimization algorithm (copied from
-# scipy.optimize)
-class OptimizeResult(dict):
-    r""" Represents the optimization result.
-
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimization.
-    success : bool
-        Whether or not the optimizer exited successfully.
-    status : int
-        Termination status of the optimizer. Its value depends on the
-        underlying solver. Refer to `message` for details.
-    message : str
-        Description of the cause of the termination.
-    fun, jac, hess, hess_inv : ndarray
-        Values of objective function, Jacobian, Hessian or its inverse (if
-        available). The Hessians may be approximations, see the documentation
-        of the function in question.
-    nfev, njev, nhev : int
-        Number of evaluations of the objective functions and of its
-        Jacobian and Hessian.
-    nit : int
-        Number of iterations performed by the optimizer.
-    maxcv : float
-        The maximum constraint violation.
-
-    Notes
-    -----
-    There may be additional attributes not listed above depending of the
-    specific solver. Since this class is essentially a subclass of dict
-    with attribute accessors, one can see which attributes are available
-    using the `keys()` method.
-    """
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __repr__(self):
-        if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in self.items()])
-        else:
-            return self.__class__.__name__ + "()"
-
 def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
              eps=1e-4,
              maxf=20000,
              maxT=6000,
-             algmethod=0,
+             method=0,
              fglobal=-1e100,
              fglper=0.01,
              volper=-1.0,
-             sigmaper=-1.0,
-             **kwargs
+             sigmaper=-1.0
              ):
     r"""
+
     Solve an optimization problem using the DIRECT (Dividing Rectangles) algorithm.
     It can be used to solve general nonlinear programming problems of the form:
 
@@ -141,57 +82,41 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
     func : objective function
         called as `func(x, *args)`; does not need to be defined everywhere,
         raise an Exception where function is not defined
-    
-    bounds : array-like
+    bounds : array_like, optional
             ``(min, max)`` pairs for each element in ``x``, defining
             the bounds on that parameter.
-
-    nvar: integer
+    nvar: int, optional
         Dimensionality of x (only needed if `bounds` is not defined)
-        
-    eps : float
+    eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal interval is chosen.
-
-    maxf : integer
+    maxf : int, optional
         Approximate upper bound on objective function evaluations.
-        
-        .. note::
-        
-            Maximal allowed value is 90000 see documentation of Fortran library.
-    
-    maxT : integer
+        Maximal allowed value is 90000 see documentation of Fortran library.
+    maxT : int, optional
         Maximum number of iterations.
-        
-        .. note::
-        
-            Maximal allowed value is 6000 see documentation of Fortran library.
-        
-    algmethod : integer
+        Maximal allowed value is 6000 see documentation of Fortran library.
+    method : integer, optional
         Whether to use the original or modified DIRECT algorithm. Possible values:
         
-        * ``algmethod=0`` - use the original DIRECT algorithm
-        * ``algmethod=1`` - use the modified DIRECT-l algorithm
-    
-    fglobal : float
+        * ``method=0`` - use the original DIRECT algorithm
+        * ``method=1`` - use the modified DIRECT-l algorithm
+    fglobal : float, optional
         Function value of the global optimum. If this value is not known set this
         to a very large negative value.
-        
-    fglper : float
+    fglper : float, optional
         Terminate the optimization when the percent error satisfies:
         
         .. math::
 
             100*(f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
-        
-    volper : float
+    volper : float, optional
         Terminate the optimization once the volume of a hyperrectangle is less
         than volper percent of the original hyperrectangel.
-        
-    sigmaper : float
+    sigmaper : float, optional
         Terminate the optimization once the measure of the hyperrectangle is less
         than sigmaper.
-    
+
     Returns
     -------
     res : OptimizeResult
@@ -200,7 +125,6 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
-
     """
     
     if bounds is None:
@@ -242,7 +166,7 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
                         maxT,
                         l,
                         u,
-                        algmethod,
+                        method,
                         'dummylogfile', 
                         fglobal,
                         fglper,
