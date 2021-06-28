@@ -6,6 +6,10 @@ from numpy.testing import assert_allclose, assert_raises
 
 from scipy.sparse.linalg.propack import svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
+from scipy.sparse.linalg._propack.creadhb import (
+    readhb as creadhb, readhb_hdr as creadhb_hdr)
+from scipy.sparse.linalg._propack.zreadhb import (
+    readhb as zreadhb, readhb_hdr as zreadhb_hdr)
 
 
 TOLS = {
@@ -98,9 +102,9 @@ def load_coord(folder, precision, file=None):
     elif precision in {'complex8', 'complex16'}:
         # Harwell-Boeing Exchange Format
         if precision == 'complex8':
-            from scipy.sparse.linalg._propack.creadhb import readhb, readhb_hdr
+            readhb_hdr, readhb = creadhb_hdr, creadhb
         else:
-            from scipy.sparse.linalg._propack.zreadhb import readhb, readhb_hdr
+            readhb_hdr, readhb = zreadhb_hdr, zreadhb
         nc, nz = readhb_hdr(path)
         values = np.empty(nz, dtype=dtype)
         colptr = np.empty(nc+1, dtype=np.int32)
