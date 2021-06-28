@@ -106,7 +106,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
     # input validation/standardization for `maxiter`
     if maxiter is not None and (int(maxiter) != maxiter or maxiter <= 0):
-        message = "`maxiter` must be a non-negative integer."
+        message = "`maxiter` must be a positive integer."
         raise ValueError(message)
     maxiter = int(maxiter) if maxiter is not None else maxiter
 

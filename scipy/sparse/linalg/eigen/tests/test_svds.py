@@ -191,7 +191,7 @@ class SVDSCommonTests:
 
     @pytest.mark.parametrize("maxiter", (-1, 0, 5.5))
     def test_svds_input_validation_maxiter_1(self, maxiter):
-        message = ("`maxiter` must be a non-negative integer.")
+        message = ("`maxiter` must be a positive integer.")
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), maxiter=maxiter, solver=self.solver)
 
@@ -431,6 +431,7 @@ class SVDSCommonTests:
 
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
+    # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
     @pytest.mark.parametrize('real', (True, False))
     @pytest.mark.parametrize('transpose', (False, True))
     @pytest.mark.parametrize('lo_type', (None, np.asarray, csc_matrix,
