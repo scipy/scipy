@@ -521,8 +521,7 @@ class SVDSCommonTests:
                                     rtol=eps)
 
     # --- Test Edge Cases ---
-    # Checks a few edge cases. There are obvious ones missing (e.g. empty
-    # input but I don't think we need to substantially expand these.
+    # Checks a few edge cases.
 
     @pytest.mark.parametrize("shape", ((6, 5), (5, 5), (5, 6)))
     @pytest.mark.parametrize("dtype", (float, complex))
@@ -542,13 +541,20 @@ class SVDSCommonTests:
         assert_allclose(np.max(s), np.sqrt(n*m))
         assert_array_equal(sorted(s)[:-1], 0)
 
-    @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3)))
+    @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
     def test_svd_LM_zeros_matrix(self, shape, dtype):
-        # Check that svds can deal with matrices containing only zeros.
+        # Check that svds can deal with matrices containing only zeros;
+        # see https://github.com/scipy/scipy/issues/3452/
+        # shape = (4, 2) is included because it is the particular case
+        # reported in the issue
         k = 1
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
+
+        if (self.solver == 'arpack' and dtype is complex
+                and k == min(A.shape) - 1):
+            pytest.skip("ARPACK has additional restriction for complex dtype")
 
         U, s, VH = svds(A, k, solver=self.solver)
 
@@ -557,25 +563,6 @@ class SVDSCommonTests:
 
         # Check that the singular values are zero.
         assert_array_equal(s, 0)
-
-    def test_svd_LM_zeros_matrix_gh_3452(self):
-        # Regression test for a github issue.
-        # https://github.com/scipy/scipy/issues/3452
-        # Note that for complex dtype the size of this matrix is too small for
-        # k=1.
-        solver = self.solver
-
-        n, m, k = 4, 2, 1
-        A = np.zeros((n, m))
-
-        U, s, VH = svds(A, k, solver=solver)
-
-        # Check some generic properties of svd.
-        _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
-
-        # Check that the singular values are zero.
-        assert_array_equal(s, 0)
-
 
 # --- Perform tests with each solver ---
 
