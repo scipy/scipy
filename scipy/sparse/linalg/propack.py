@@ -78,7 +78,7 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-def svdp(A, k, which='LM', irl_mode=False, kmax=None,
+def svdp(A, k, which='LM', irl_mode=True, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True,
          min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
@@ -102,7 +102,7 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         values by default.
     irl_mode : bool, optional
         If `True`, then compute SVD using IRL (implicitly restarted Lanczos)
-        mode.  Default is `False`.
+        mode.  Default is `True`.
     kmax : int, optional
         Maximal number of iterations / maximal dimension of the Krylov
         subspace. Default is ``5 * k``.
@@ -303,7 +303,7 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         works = work, zwork, iwork
     else:
         works = work, iwork
-        
+
     if irl_mode:
         u, sigma, bnd, v, info = lansvd_irl(_which_converter[which], jobu,
                                             jobv, m, n, shifts, k, maxiter,

@@ -142,3 +142,15 @@ def test_shifts(shifts, dtype):
             svdp(A, k, shifts=shifts, irl_mode=True)
     else:
         svdp(A, k, shifts=shifts, irl_mode=True)
+
+
+@pytest.mark.xfail()
+def test_shifts_accuracy():
+    np.random.seed(0)
+    n, k = 70, 10
+    A = np.random.random((n, n)).astype(np.double)
+    u1, s1, vt1, _ = svdp(A, k, shifts=None, which='SM', irl_mode=True)
+    u2, s2, vt2, _ = svdp(A, k, shifts=32, which='SM', irl_mode=True)
+    # shifts <= 32 doesn't agree with shifts > 32
+    # Does agree when which='LM' instead of 'SM'
+    assert_allclose(s1, s2)
