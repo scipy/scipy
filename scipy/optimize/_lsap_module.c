@@ -44,10 +44,16 @@ calculate_assignment(PyObject* self, PyObject* args)
         return NULL;
 
     PyArrayObject* obj_cont =
-      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
+      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 0, 0);
     if (!obj_cont) {
-        PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         return NULL;
+    }
+
+    if (PyArray_NDIM(obj_cont) != 2) {
+        PyErr_Format(PyExc_ValueError,
+                     "expected a matrix (2-D array), got a %d array",
+                     PyArray_NDIM(obj_cont));
+        goto cleanup;
     }
 
     double* cost_matrix = (double*)PyArray_DATA(obj_cont);
