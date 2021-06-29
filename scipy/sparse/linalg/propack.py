@@ -300,30 +300,18 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         # Use the same length Julia's wrapper uses
         # see https://github.com/JuliaSmoothOptimizers/PROPACK.jl/
         zwork = np.empty(m + n + 32*m, dtype=typ)
-
-        if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
-                                                jobu, jobv, m, n,
-                                                shifts, k, maxiter, aprod,
-                                                u, v, tol, work, zwork,
-                                                iwork, doption, ioption,
-                                                dparm, iparm)
-        else:
-            u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v,
-                                            tol, work, zwork, iwork, doption,
+        works = work, zwork, iwork
+    else:
+        works = work, iwork
+        
+    if irl_mode:
+        u, sigma, bnd, v, info = lansvd_irl(_which_converter[which], jobu,
+                                            jobv, m, n, shifts, k, maxiter,
+                                            aprod, u, v, tol, *works, doption,
                                             ioption, dparm, iparm)
     else:
-        if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
-                                                jobu, jobv, m, n,
-                                                shifts, k, maxiter, aprod,
-                                                u, v, tol, work, iwork,
-                                                doption, ioption, dparm,
-                                                iparm)
-        else:
-            u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v,
-                                            tol, work, iwork, doption,
-                                            ioption, dparm, iparm)
+        u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v, tol,
+                                        *works, doption, ioption, dparm, iparm)
 
     if info > 0:
         raise LinAlgError(
