@@ -20,7 +20,7 @@ python module direct__user__routines
 end python module direct__user__routines
 
 
-python module _direct ! in 
+python module _directmodule ! in 
     interface  ! in :direct
         subroutine direct(fcn,x,n,eps,maxf,maxt,fmin,l,u,algmethod,ierror,logfilename,fglobal,fglper,volper,sigmaper,iidata,iisize,ddata,idsize,cdata,icsize,disp) ! in :direct:DIRect.f
 			use direct__user__routines
@@ -52,7 +52,7 @@ python module _direct ! in
             common /directcontrol/ jones
         end subroutine direct
     end interface 
-end python module _direct
+end python module _directmodule
 
 ! This file was auto-generated with f2py (version:2_7996).
 ! See http://cens.ioc.ee/projects/f2py2e/

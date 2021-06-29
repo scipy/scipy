@@ -200,8 +200,8 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
-scipy/optimize/_direct/_direct-f2pywrappers.f
-scipy/optimize/_direct/_directmodule.c
+scipy/optimize/_direct/_directmodule-f2pywrappers.f
+scipy/optimize/_direct/_directmodulemodule.c
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c

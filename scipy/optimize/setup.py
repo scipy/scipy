@@ -94,7 +94,7 @@ def configuration(parent_package='', top_path=None):
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
     sources = ['DIRserial.f', 'DIRect.f', 'DIRsubrout.f', 'direct.pyf']
-    ext = config.add_extension('_direct', sources=[
+    ext = config.add_extension('_directmodule', sources=[
         join('_direct', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
