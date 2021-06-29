@@ -35,7 +35,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper
+from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -953,6 +953,24 @@ def check_grad(func, grad, x0, *args, **kwargs):
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
         ``sqrt(np.finfo(float).eps)``, which is approximately 1.49e-08.
+    random_projection : bool, optional
+        If set to ``True``, then gradients along a random vector 
+        are used to check `grad` against forward difference approximation 
+        using `func`. By default it is ``False``.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Specify `seed` for reproducing the return value from this function. 
+        The random numbers generated with this seed affect the random vector
+        along which gradients are computed to check ``grad``. If you supply `seed`
+        without setting `random_projection` to ``True`` then a ``ValueError``
+        will be raised.
 
     Returns
     -------
@@ -974,13 +992,18 @@ def check_grad(func, grad, x0, *args, **kwargs):
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
+    >>> check_grad(func, grad, [1.5, -1.5], 
+    ...             random_projection=True, seed=0)
+    4.616277715641104e-08
 
     """
     x0 = np.asarray(x0)
     step = kwargs.pop('epsilon', _epsilon)
     random_projection = kwargs.pop('random_projection', False)
+    if random_projection:
+        random_state = check_random_state(kwargs.pop('seed', None))
     if kwargs:
-        raise ValueError("Unknown keyword arguments: %r" %
+        raise ValueError("Unexpected keyword arguments: %r" %
                          (list(kwargs.keys()),))
     
     def g(w, *args):
@@ -988,7 +1011,8 @@ def check_grad(func, grad, x0, *args, **kwargs):
         return func(x0 + w*v, *args[3:])
 
     if random_projection:
-        v = np.random.rand(*x0.shape)
+        v = random_state.randint(-1, 2, x0.shape)
+        v[v == 0] = -1
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
