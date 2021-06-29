@@ -27,9 +27,8 @@ algorithm can be found in Gablonsky's `thesis <http://repository.lib.ncsu.edu/ir
 .. codeauthor:: Andreas Mayer <andimscience@gmail.com>, Amit Aides <amitibo@tx.technion.ac.il>
 """
 
-from __future__ import print_function
 import numpy as np
-from ._direct import direct
+from ._directmodule import direct
 from .optimize import OptimizeResult
 
 ERROR_MESSAGES = (
@@ -45,8 +44,8 @@ SUCCESS_MESSAGES = (
     "Number of function evaluations done is larger then maxfun",
     "Number of iterations is equal to maxiter",
     "The best function value found is within fglper of the (known) global optimum",
-    "The volume of the hyperrectangle with best function value found is below volper",
-    "The volume of the hyperrectangle with best function value found is smaller then volper",
+    "The volume of the hyper-rectangle with best function value found is below volper",
+    "The volume of the hyper-rectangle with best function value found is smaller then volper",
 )
 
 
@@ -59,7 +58,7 @@ def _minimize_direct(
     eps=1e-4,
     maxfun=20000,
     maxiter=6000,
-    method=0,
+    locally_biased=False,
     fglobal=-1e100,
     fglper=0.01,
     volper=-1.0,
@@ -102,11 +101,11 @@ def _minimize_direct(
     maxiter : int, optional
         Maximum number of iterations.
         Maximal allowed value is 6000 see documentation of Fortran library.
-    method : integer, optional
+    locally_biased : bool, optional
         Whether to use the original or modified DIRECT algorithm. Possible values:
 
-        * ``method=0`` - use the original DIRECT algorithm
-        * ``method=1`` - use the modified DIRECT-l algorithm
+        * ``locally_based=False`` - use the original DIRECT algorithm
+        * ``locally_biased=True`` - use the modified DIRECT-l algorithm
     fglobal : float, optional
         Function value of the global optimum. If this value is not known set this
         to a very large negative value.
@@ -119,7 +118,7 @@ def _minimize_direct(
     volper : float, optional
         Terminate the optimization once the volume of a hyperrectangle is less
         than volper percent of the original hyperrectangel.
-    sigmaper : float, optional
+    sigma_per : float, optional
         Terminate the optimization once the measure of the hyperrectangle is less
         than sigmaper.
 
@@ -172,7 +171,7 @@ def _minimize_direct(
         maxiter,
         l,
         u,
-        method,
+        locally_biased,
         "dummylogfile",
         fglobal,
         fglper,
