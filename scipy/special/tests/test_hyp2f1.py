@@ -59,14 +59,14 @@ class TestHyp2f1:
     test cases is used for readability and to make it easier to mark individual
     cases as expected to fail. Expected failures are used to highlight cases
     where improvements are needed. See
-    `scipy.special._precompute.hyp2f1_data.make_hyp2f1_test_cases`
-    for a function to generate the boilerplate for the test cases.
+    `scipy.special._precompute.hyp2f1_data.make_hyp2f1_test_cases` for a
+    function to generate the boilerplate for the test cases.
 
-    Assertions have been added to each test to ensure that the test cases
-    match the situations that are intended. A final test `test_test_hyp2f1`
-    checks that the expected values in the test cases actually match what
-    is computed by mpmath. This test is marked slow even though it isn't
-    particularly slow so that it won't run on continuous integration builds.
+    Assertions have been added to each test to ensure that the test cases match
+    the situations that are intended. A final test `test_test_hyp2f1` checks
+    that the expected values in the test cases actually match what is computed
+    by mpmath. This test is marked slow even though it isn't particularly slow
+    so that it won't run by default on continuous integration builds.
     """
     @pytest.mark.parametrize(
         "hyp2f1_test_case",
@@ -609,7 +609,7 @@ class TestHyp2f1:
         assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
-    # Marked as slow so it won't run on by default. This test is not slow.
+    # Marked as slow so it won't run by default. This test is not slow.
     # Including it only increases the running time of the entire suite by
     # a handful of hundreths of seconds. This test could become slow in the
     # future if enough test cases are added.
@@ -624,7 +624,7 @@ class TestHyp2f1:
         recomputes hyp2f1(a, b, c, z) using mpmath and verifies that expected
         actually is the correct value. This allows the data for the tests to
         live within the test code instead of an external datafile, while
-        avoiding having to compute the results with mpmath during the text,
+        avoiding having to compute the results with mpmath during the test,
         except for when slow tests are being run.
         """
         test_methods = [
