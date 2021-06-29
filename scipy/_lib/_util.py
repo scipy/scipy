@@ -14,7 +14,8 @@ from typing import (
     Union,
     TYPE_CHECKING,
     TypeVar,
-    Callable
+    Callable,
+    cast,
 )
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -299,8 +300,9 @@ def _asarray_validated(
     if not mask_ok:
         if np.ma.isMaskedArray(a):
             raise ValueError('masked arrays are not supported')
-    toarray: Callable[..., np.ndarray] = (
-        np.asarray_chkfinite if check_finite else np.asarray
+    toarray = cast(
+        Callable[..., np.ndarray],
+        np.asarray_chkfinite if check_finite else np.asarray,
     )
     a = toarray(a)
     if not objects_ok:
