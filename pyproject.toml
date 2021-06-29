@@ -112,3 +112,34 @@ documentation = "https://docs.scipy.org/doc/scipy/reference/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+atomic = true
+include_trailing_comma = true
+lines_after_imports = 2
+lines_between_types = 1
+use_parentheses = true
+src_paths = ["scipy", "tests"]
+filter_files = true
+known_first_party = "scipy"
+
+[tool.black]
+line-length = 88
+target_version = ['py37', 'py38', 'py39']
+experimental_string_processing = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs         # exclude a few common directories in the
+  | \.git          # root of the project
+  | \.mypy_cache
+  | examples
+  | build
+  | dist
+  | doc/source/tutorial
+  | doc/build
+  | benchmarks/env
+)/
+'''
