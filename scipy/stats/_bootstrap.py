@@ -189,6 +189,21 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             method, random_state)
 
 
+class BootstrapManager:
+    def __init__(self, n_resamples, batch_nominal):
+        self.theta_hat_b = []
+        self.iter = range(0, n_resamples, batch_nominal)
+
+    def __iter__(self):
+        return iter(self.iter)
+
+    def update(self, new_values):
+        self.theta_hat_b.append(new_values)
+
+    def finish(self):
+        return np.concatenate(self.theta_hat_b, axis=-1)
+
+
 fields = ['confidence_interval', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
@@ -421,11 +436,11 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     data, statistic, vectorized, paired, axis = args[:5]
     confidence_level, n_resamples, batch, method, random_state = args[5:]
 
-    theta_hat_b = []
 
     batch_nominal = batch or n_resamples
 
-    for k in range(0, n_resamples, batch_nominal):
+    bootman = BootstrapManager(n_resamples, batch_nominal)
+    for k in bootman:
         batch_actual = min(batch_nominal, n_resamples-k)
         # Generate resamples
         resampled_data = []
@@ -435,8 +450,8 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
             resampled_data.append(resample)
 
         # Compute bootstrap distribution of statistic
-        theta_hat_b.append(statistic(*resampled_data, axis=-1))
-    theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
+        bootman.update(statistic(*resampled_data, axis=-1))
+    theta_hat_b = bootman.finish()
 
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
