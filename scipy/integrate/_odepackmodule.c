@@ -700,9 +700,14 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
         tout_ptr = tout + k;
         /* Use tcrit if relevant */
-        if (itask == 4 && *tout_ptr > *(tcrit + crit_ind)) {
-            crit_ind++;
-            rwork[0] = *(tcrit+crit_ind);
+        if (itask == 4) {
+            if (!tcrit) {
+                PYERR(odepack_error, "Internal error - tcrit must be defined!");
+            }
+            if (*tout_ptr > *(tcrit + crit_ind)) {
+                crit_ind++;
+                rwork[0] = *(tcrit+crit_ind);
+            }
         }
         if (crit_ind >= numcrit) {
             itask = 1;  /* No more critical values */
