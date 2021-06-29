@@ -363,13 +363,13 @@ def higher_order_svd(
     >>> np.allclose(a, a1)
     True
     """
-    a2 = _asarray_validated(a, check_finite=check_finite)
+    a = _asarray_validated(a, check_finite=check_finite)
 
-    core_tensor = a2
+    core_tensor = a
     left_singular_basis = []
 
-    for k in range(a2.ndim):
-        unfold = numpy.reshape(numpy.moveaxis(a2, k, 0), (a2.shape[k], -1))
+    for k in range(a.ndim):
+        unfold = numpy.reshape(numpy.moveaxis(a, k, 0), (a.shape[k], -1))
         U, _, _ = svd(
             unfold,
             full_matrices=full_tensor,
