@@ -33,25 +33,38 @@ from ._direct import direct
 from .optimize import OptimizeResult
 
 ERROR_MESSAGES = (
-    'u[i] < l[i] for some i',
-    'maxfun is too large',
-    'Initialization failed',
-    'There was an error in the creation of the sample points',
-    'An error occured while the function was sampled',
-    'Maximum number of levels has been reached.',
+    "u[i] < l[i] for some i",
+    "maxfun is too large",
+    "Initialization failed",
+    "There was an error in the creation of the sample points",
+    "An error occured while the function was sampled",
+    "Maximum number of levels has been reached.",
 )
 
 SUCCESS_MESSAGES = (
-    'Number of function evaluations done is larger then maxfun',
-    'Number of iterations is equal to maxiter',
-    'The best function value found is within fglper of the (known) global optimum',
-    'The volume of the hyperrectangle with best function value found is below volper',
-    'The volume of the hyperrectangle with best function value found is smaller then volper'
+    "Number of function evaluations done is larger then maxfun",
+    "Number of iterations is equal to maxiter",
+    "The best function value found is within fglper of the (known) global optimum",
+    "The volume of the hyperrectangle with best function value found is below volper",
+    "The volume of the hyperrectangle with best function value found is smaller then volper",
 )
 
-def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
-                     eps=1e-4, maxfun=20000, maxiter=6000, method=0,
-                     fglobal=-1e100, fglper=0.01, volper=-1.0, sigmaper=-1.0):
+
+def _minimize_direct(
+    func,
+    bounds=None,
+    nvar=None,
+    args=(),
+    disp=False,
+    eps=1e-4,
+    maxfun=20000,
+    maxiter=6000,
+    method=0,
+    fglobal=-1e100,
+    fglper=0.01,
+    volper=-1.0,
+    sigmaper=-1.0,
+):
     r"""
 
     Solve an optimization problem using the DIRECT (Dividing Rectangles) algorithm.
@@ -66,7 +79,7 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
     .. math::
 
            x_L \leq  x  \leq x_U
-    
+
     Where :math:`x` are the optimization variables (with upper and lower
     bounds), :math:`f(x)` is the objective function.
 
@@ -91,7 +104,7 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
         Maximal allowed value is 6000 see documentation of Fortran library.
     method : integer, optional
         Whether to use the original or modified DIRECT algorithm. Possible values:
-        
+
         * ``method=0`` - use the original DIRECT algorithm
         * ``method=1`` - use the modified DIRECT-l algorithm
     fglobal : float, optional
@@ -99,7 +112,7 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
         to a very large negative value.
     fglper : float, optional
         Terminate the optimization when the percent error satisfies:
-        
+
         .. math::
 
             100*(f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
@@ -119,14 +132,14 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
     """
-    
+
     if bounds is None:
         l = np.zeros(nvar, dtype=np.float64)
         u = np.ones(nvar, dtype=np.float64)
     else:
         bounds = np.asarray(bounds)
-        l = bounds[:, 0] 
-        u = bounds[:, 1] 
+        l = bounds[:, 0]
+        u = bounds[:, 1]
 
     def _objective_wrap(x, iidata, ddata, cdata, n, iisize, idsize, icsize):
         r"""
@@ -153,22 +166,29 @@ def _minimize_direct(func, bounds=None, nvar=None, args=(), disp=False,
     # Call the DIRECT algorithm
     #
     x, fun, ierror = direct(
-                        _objective_wrap, eps,
-                        maxfun, maxiter,
-                        l, u,
-                        method,
-                        'dummylogfile', 
-                        fglobal, fglper,
-                        volper, sigmaper,
-                        iidata, ddata, cdata,
-                        disp
-                        )
+        _objective_wrap,
+        eps,
+        maxfun,
+        maxiter,
+        l,
+        u,
+        method,
+        "dummylogfile",
+        fglobal,
+        fglper,
+        volper,
+        sigmaper,
+        iidata,
+        ddata,
+        cdata,
+        disp,
+    )
 
     if ierror > 0:
-        message = SUCCESS_MESSAGES[ierror-1]
+        message = SUCCESS_MESSAGES[ierror - 1]
     else:
-        message = ERROR_MESSAGES[abs(ierror)-1]
+        message = ERROR_MESSAGES[abs(ierror) - 1]
 
-    return OptimizeResult(x=x, fun=fun, status=ierror, success=ierror > 0,
-                          message=message)
-
+    return OptimizeResult(
+        x=x, fun=fun, status=ierror, success=ierror > 0, message=message
+    )
