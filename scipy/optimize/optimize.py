@@ -994,7 +994,7 @@ def check_grad(func, grad, x0, *args, **kwargs):
     2.9802322387695312e-08
     >>> check_grad(func, grad, [1.5, -1.5], 
     ...             random_projection=True, seed=0)
-    4.616277715641104e-08
+    2.9802322387695312e-08
 
     """
     x0 = np.asarray(x0)
