@@ -65,12 +65,10 @@ def test_check_grad():
     def der_x_sinx(x):
         return np.sin(x) + x*np.cos(x)
 
-    rng = np.random.default_rng(seed=1234)
-
-    x0 = rng.normal(size=(16,))
+    x0 = np.arange(0, 2, 0.2)
 
     r = optimize.check_grad(x_sinx, der_x_sinx, x0,
-                            random_projection=True, seed=rng)
+                            random_projection=True, seed=1234)
     assert_almost_equal(r, 0)
 
 
