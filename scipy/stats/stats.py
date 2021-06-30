@@ -202,6 +202,8 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
     (5, 3)
     """
+    # consider generalized version:
+    # _hypotests._broadcast_array_shapes_with_dropped_axis
     shp1 = _shape_with_dropped_axis(a, axis)
     shp2 = _shape_with_dropped_axis(b, axis)
     try:

@@ -1133,7 +1133,7 @@ def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
             except ValueError as e:
                 # incidentally, this also serves as a test of the error
                 # produced when arrays are not broadcastable
-                message = "shape mismatch: objects cannot be broadcast"
+                message = "Array shapes are incompatible for broadcasting."
 
                 assert str(e).startswith(message)
                 with pytest.raises(type(e), match=re.escape(str(e))):
