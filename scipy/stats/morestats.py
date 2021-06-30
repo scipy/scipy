@@ -1783,10 +1783,6 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
                                                'significance_level'))
 
 
-def _anderson_result_creator(res):
-    return AndersonResult(res[..., 0], res[..., 1])
-
-
 def anderson(x, dist='norm'):
     """Anderson-Darling test for data coming from a particular distribution.
 

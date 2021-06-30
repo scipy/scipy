@@ -888,8 +888,8 @@ vectorization_nanpolicy_cases = [
 
 def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
                                 paired=False):
-    # generate random samples test the response of hypothesis tests to
-    # samples with different (but broadcastable shapes) and various
+    # generate random samples to check the response of hypothesis tests to
+    # samples with different (but broadcastable) shapes and various
     # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
 
     if NumpyVersion(np.__version__) < '1.18.0':
@@ -906,7 +906,7 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
 
             # case 0: axis-slice with all nans (0 reals)
             # cases 1-3: axis-slice with 1-3 reals (the rest nans)
-            # case 4: axis-slice with mostly reals
+            # case 4: axis-slice with mostly (all but two) reals
             # case 5: axis slice with all reals
             for k, n_reals in enumerate([0, 1, 2, 3, n_obs-2, n_obs]):
                 # for cases 1-3, need paired nansw  to be in the same place
@@ -997,9 +997,11 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
                                         nan_policy=nan_policy, paired=paired,
                                         _no_deco=True, **kwds)
 
-                # Eventually we'll check res1d against a single, vectorized
-                # call to the hypothesis test. But also check the bevahior
-                # of a 1d call to the hypothesis test against the reference.
+                # Eventually we'll check the results of a single, vectorized
+                # call of `hypotest` against the arrays `statistics` and
+                # `pvalues` populated using the reference `hypotest_1d_nan`.
+                # But while we're at it, check the results of a 1D call to
+                # `hypotest` against the reference `hypotest_1d_nan`.
                 res1db = unpacker(hypotest(*data1d, *args,
                                            nan_policy=nan_policy, **kwds))
                 assert_equal(res1db, res1d)
@@ -1010,10 +1012,17 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
             # of the output.
             except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
 
+                # whatever it is, make sure same error is raised by both
+                # `hypotest_1d_nan` and `hypotest`
                 with pytest.raises(type(e), match=re.escape(str(e))):
-                    res1db = unpacker(hypotest(*data1d, *args,
-                                               nan_policy=nan_policy, **kwds))
+                    hypotest_1d_nan(hypotest, data1d, unpacker, *args,
+                                    nan_policy=nan_policy, paired=paired,
+                                    _no_deco=True, **kwds)
+                with pytest.raises(type(e), match=re.escape(str(e))):
+                    hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
 
+                # If the message is one of those expected, put nans in
+                # appropriate places of `statistics` and `pvalues`
                 messages = {"The input contains nan",  # for nan_policy="raise"
                             "Degrees of freedom <= 0 for slice",
                             "x and y should have at least 5 elements",
@@ -1034,8 +1043,9 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
         statistics[i] = res1d[0]
         pvalues[i] = res1d[1]
 
-    # Perform a vectorized call to the hypothesis test and compare against
-    # the reference `statistics` and `pvalues`
+    # Perform a vectorized call to the hypothesis test.
+    # If `nan_policy == 'raise'`, check that it raises the appropriate error.
+    # If not, compare against the output against `statistics` and `pvalues`
     if nan_policy == 'raise':
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
@@ -1052,25 +1062,37 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
         assert_equal(res[1].dtype, pvalues.dtype)
 
 
-# previously,
-# ranksums produced garbage 1d, as far as I can tell
-# ansari produced garbage 1d, as far as I can tell
-# brunnermunzel raised ValueError about broadcasting
+# previously, with 2D input:
+# ranksums produced garbage 1d output, as far as I can tell
+# ansari produced garbage 1d output, as far as I can tell
+# brunnermunzel raised a ValueError about broadcasting
 # epps_singleton_2samp raised error that sample must be 1d
+# For all these tests, we can change the default behavior for 2D input. In
+# these cases, the default value of `axis` will be 0.
+# The default of `jarque_bera` and `shapiro`, however, was to ravel the samples
+# then perform the test. This makes some sense, so we should probably maintain
+# the default behavior by making `axis=None` the default. This is a test for
+# that behavior.
 @pytest.mark.parametrize(("hypotest", "nsamp"),
                          [(stats.jarque_bera, 1),
                           (stats.shapiro, 1)])
 def test_hypotest_back_compat_no_axis(hypotest, nsamp):
     m, n = 8, 9
-    np.random.seed(0)
-    x = np.random.rand(nsamp, m, n)
+    rng = np.random.default_rng(0)
+    x = rng.random((nsamp, m, n))
     res = hypotest(*x)
     res2 = hypotest([xi.ravel() for xi in x])
     assert_equal(res, res2)
 
 
 def test_check_empty_inputs():
-
+    # Test that _check_empty_inputs is doing its job, at least for single-
+    # sample inputs. (Multi-sample functionality is tested below.)
+    # If the input sample is not empty, it should return None.
+    # If the input sample is empty, it should return an array of NaNs or an
+    # empty array of appropriate shape. np.mean is used as a reference for the
+    # output because, like the statistics calculated by these functions,
+    # it works along and "consumes" `axis` but preserves the other axes.
     for i in range(5):
         for combo in combinations_with_replacement([0, 1, 2], i):
             for axis in range(len(combo)):
@@ -1082,6 +1104,39 @@ def test_check_empty_inputs():
                         sup.filter(RuntimeWarning, "invalid value encountered")
                         reference = samples[0].mean(axis=axis)
                     np.testing.assert_equal(output, reference)
+
+
+def _check_arrays_broadcastable(arrays, axis):
+    # https://numpy.org/doc/stable/user/basics.broadcasting.html
+    # "When operating on two arrays, NumPy compares their shapes element-wise.
+    # It starts with the trailing (i.e. rightmost) dimensions and works its
+    # way left.
+    # Two dimensions are compatible when
+    # 1. they are equal, or
+    # 2. one of them is 1
+    # ...
+    # Arrays do not need to have the same number of dimensions."
+    # (Clarification: if the arrays are compatible according to the criteria
+    #  above and an array runs out of dimensions, it is still compatible.)
+    # Below, we follow the rules above except ignoring `axis`
+
+    n_dims = max([arr.ndim for arr in arrays])
+    if axis is not None:
+        # convert to negative axis
+        axis = (-n_dims + axis) if axis >= 0 else axis
+
+    for dim in range(1, n_dims+1):  # we'll index from -1 to -n_dims, inclusive
+        if -dim == axis:
+            continue  # ignore lengths along `axis`
+
+        dim_lengths = set()
+        for arr in arrays:
+            if dim <= arr.ndim and arr.shape[-dim] != 1:
+                dim_lengths.add(arr.shape[-dim])
+
+        if len(dim_lengths) > 1:
+            return False
+    return True
 
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
@@ -1116,8 +1171,6 @@ def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
         for axis in range(-max_axis, max_axis):
 
             try:
-                res = hypotest(*samples, *args, axis=axis, **kwds)
-
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
@@ -1127,16 +1180,21 @@ def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
                     sup.filter(RuntimeWarning, "invalid value encountered")
                     expected = np.mean(concat, axis=axis) * np.nan
 
+                res = hypotest(*samples, *args, axis=axis, **kwds)
+
                 assert_equal(res.statistic, expected)
                 assert_equal(res.pvalue, expected)
 
-            except ValueError as e:
-                # incidentally, this also serves as a test of the error
-                # produced when arrays are not broadcastable
-                message = "Array shapes are incompatible for broadcasting."
+            except ValueError:
+                # confirm that the arrays truly are not broadcastable
+                assert not _check_arrays_broadcastable(samples, axis)
 
-                assert str(e).startswith(message)
-                with pytest.raises(type(e), match=re.escape(str(e))):
+                # confirm that _both_ `_broadcast_concatenate` and `hypotest`
+                # produce this information.
+                message = "Array shapes are incompatible for broadcasting."
+                with pytest.raises(ValueError, match=message):
+                    stats.stats._broadcast_concatenate(samples, axis)
+                with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
 
 

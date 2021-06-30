@@ -31,8 +31,14 @@ def _remove_nans(samples, paired):
 
 
 def _check_empty_inputs(samples, axis):
+    """
+    Check for empty sample; return appropriate output for a vectorized hypotest
+    """
+    # if none of the samples are empty, we need to perform the test
     if not any((sample.size == 0 for sample in samples)):
         return None
+    # otherwise, the statistic and p-value will be either empty arrays or
+    # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = scipy.stats.stats._broadcast_array_shapes(samples, axis)
     output = np.ones(output_shape) * np.nan
     return output
