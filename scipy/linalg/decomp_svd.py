@@ -345,9 +345,8 @@ def higher_order_svd(
 
     Examples
     --------
-    >>> from numpy.random import default_rng
     >>> from scipy import linalg
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> a = rng.random((2, 3, 4, 5))
     >>> U, S = linalg.higher_order_svd(a)
     >>> S.shape
