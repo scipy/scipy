@@ -88,3 +88,15 @@ cdef class MessageStream:
         if not self._removed:
             stdio.remove(self._filename)
             self._removed = 1
+
+    def __dealloc__(self):
+        if self.handle != NULL:
+            stdio.fclose(self.handle)
+            self.handle = NULL
+
+        if self._memstream_ptr != NULL:
+            stdlib.free(self._memstream_ptr)
+            self._memstream_ptr = NULL
+
+        if not self._removed:
+            stdio.remove(self._filename)
