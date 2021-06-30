@@ -892,9 +892,6 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
     # samples with different (but broadcastable) shapes and various
     # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
 
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Generator `permutation` method doesn't support `axis`")
-
     data = []
     for i in range(n_samples):
         n_patterns = 6  # number of distinct nan patterns
@@ -973,11 +970,15 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
         def unpacker(res):
             return res
 
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Generator `permutation` method doesn't support `axis`")
+    rng = np.random.default_rng(0)
+
+
     # Generate multi-dimensional test data with all important combinations
     # of patterns of nans along `axis`
     data = hypotest_nan_data_generator(n_samples, n_repetitions=3, axis=axis,
-                                       rng=np.random.default_rng(0),
-                                       paired=paired)
+                                       rng=rng, paired=paired)
 
     # To generate reference behavior to compare against, loop over the axis-
     # slices in data. Make indexing easier by moving `axis` to the end and
@@ -1078,6 +1079,10 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
                           (stats.shapiro, 1)])
 def test_hypotest_back_compat_no_axis(hypotest, nsamp):
     m, n = 8, 9
+
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Avoid test failures due to old version of NumPy")
+
     rng = np.random.default_rng(0)
     x = rng.random((nsamp, m, n))
     res = hypotest(*x)
