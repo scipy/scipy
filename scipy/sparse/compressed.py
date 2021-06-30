@@ -713,8 +713,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape)
 
-        indices = np.arange(start, stop, step)
-        row_nnz = self.indptr[indices + 1] - self.indptr[indices]
+        # Work out what slices are needed for `row_nnz`
+        start2 = None if start == -1 else start
+        stop2 = None if stop == -1 else stop
+        start3 = None if start2 is None else start2 + 1
+        stop3 = None if stop2 is None else stop2 + 1
+
+        row_nnz = self.indptr[start3:stop3:step] - self.indptr[start2:stop2:step]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
