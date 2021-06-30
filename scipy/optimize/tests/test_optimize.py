@@ -59,16 +59,18 @@ def test_check_grad():
                                 random_projection=True, seed=1234) - 0)
     assert_(r > 1e-7)
 
-    def neg_reduce(x):
-        return -x.sum()
+    def x_sinx(x):
+        return (x*np.sin(x)).sum()
 
-    def der_neg_reduce(x):
-        return -np.ones(x.shape)
+    def der_x_sinx(x):
+        return np.sin(x) + x*np.cos(x)
 
-    x0 = np.arange(1000)
+    rng = np.random.default_rng(seed=1234)
 
-    r = optimize.check_grad(neg_reduce, der_neg_reduce, x0,
-                            random_projection=True, seed=1234)
+    x0 = rng.normal(size=(16,))
+
+    r = optimize.check_grad(x_sinx, der_x_sinx, x0,
+                            random_projection=True, seed=rng)
     assert_almost_equal(r, 0)
 
 

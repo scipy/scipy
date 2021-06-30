@@ -935,7 +935,8 @@ def approx_fprime(xk, f, epsilon, *args):
                              args=args, f0=f0)
 
 
-def check_grad(func, grad, x0, *args, **kwargs):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, 
+                random_projection=False, seed=None):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -968,9 +969,7 @@ def check_grad(func, grad, x0, *args, **kwargs):
         that instance is used.
         Specify `seed` for reproducing the return value from this function. 
         The random numbers generated with this seed affect the random vector
-        along which gradients are computed to check ``grad``. If you supply `seed`
-        without setting `random_projection` to ``True`` then a ``ValueError``
-        will be raised.
+        along which gradients are computed to check ``grad``.
 
     Returns
     -------
@@ -998,22 +997,15 @@ def check_grad(func, grad, x0, *args, **kwargs):
     2.9802322387695312e-08
 
     """
+    step = epsilon
     x0 = np.asarray(x0)
-    step = kwargs.pop('epsilon', _epsilon)
-    random_projection = kwargs.pop('random_projection', False)
-    if random_projection:
-        random_state = check_random_state(kwargs.pop('seed', None))
-    if kwargs:
-        raise ValueError("Unexpected keyword arguments: %r" %
-                         (list(kwargs.keys()),))
     
-    def g(w, *args):
-        func, x0, v = args[0:3]
-        return func(x0 + w*v, *args[3:])
+    def g(w, func, x0, v, *args):
+        return func(x0 + w*v, *args)
 
     if random_projection:
-        v = rng_integers(random_state, 0, 2, size=x0.shape)
-        v[v == 0] = -1
+        random_state = check_random_state(seed)
+        v = random_state.normal(0, 1, size=(x0.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
