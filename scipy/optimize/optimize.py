@@ -35,7 +35,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper, check_random_state
+from scipy._lib._util import MapWrapper, check_random_state, rng_integers
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
