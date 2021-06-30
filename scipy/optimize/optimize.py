@@ -992,8 +992,9 @@ def check_grad(func, grad, x0, *args, **kwargs):
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
+    >>> rng = np.random.default_rng()
     >>> check_grad(func, grad, [1.5, -1.5], 
-    ...             random_projection=True, seed=0)
+    ...             random_projection=True, seed=rng)
     2.9802322387695312e-08
 
     """
@@ -1011,7 +1012,7 @@ def check_grad(func, grad, x0, *args, **kwargs):
         return func(x0 + w*v, *args[3:])
 
     if random_projection:
-        v = random_state.randint(-1, 2, x0.shape)
+        v = random_state.binomial(1, 0.5, x0.shape)
         v[v == 0] = -1
         _args = (func, x0, v) + args
         _func = g
