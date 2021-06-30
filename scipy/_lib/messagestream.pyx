@@ -40,7 +40,7 @@ cdef class MessageStream:
         if stdio.remove(self._filename) == 0:
             self._removed = 1
 
-    def __del__(self):
+    def __dealloc__(self):
         self.close()
 
     def get(self):
@@ -76,7 +76,7 @@ cdef class MessageStream:
     def clear(self):
         stdio.rewind(self.handle)
 
-    def close(self):
+    cpdef close(self):
         if self.handle != NULL:
             stdio.fclose(self.handle)
             self.handle = NULL
@@ -88,15 +88,3 @@ cdef class MessageStream:
         if not self._removed:
             stdio.remove(self._filename)
             self._removed = 1
-
-    def __dealloc__(self):
-        if self.handle != NULL:
-            stdio.fclose(self.handle)
-            self.handle = NULL
-
-        if self._memstream_ptr != NULL:
-            stdlib.free(self._memstream_ptr)
-            self._memstream_ptr = NULL
-
-        if not self._removed:
-            stdio.remove(self._filename)
