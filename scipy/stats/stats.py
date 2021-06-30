@@ -6224,7 +6224,7 @@ def _broadcast_concatenate(xs, axis):
     # move the axis we're concatenating along to the end
     xs = [np.swapaxes(x, axis, -1) for x in xs]
     # determine final shape of all but the last axis
-    shape = np.broadcast_shapes(*[x.shape[:-1] for x in xs])
+    shape = _broadcast_array_shapes(xs, axis=-1)
     # broadcast along all but the last axis
     xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
     # concatenate along last axis
