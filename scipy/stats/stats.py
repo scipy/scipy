@@ -138,80 +138,46 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
-def _shape_with_dropped_axis(a, axis):
+def _broadcast_array_shapes(arrays, axis=None):
     """
-    Given an array `a` and an integer `axis`, return the shape
-    of `a` with the `axis` dimension removed.
+    Broadcast shapes of arrays, dropping specified axes
 
-    Examples
-    --------
-    >>> a = np.zeros((3, 5, 2))
-    >>> _shape_with_dropped_axis(a, 1)
-    (3, 2)
-
-    """
-    shp = list(a.shape)
-    try:
-        del shp[axis]
-    except IndexError:
-        raise np.AxisError(axis, a.ndim) from None
-    return tuple(shp)
-
-
-def _broadcast_shapes(shape1, shape2):
-    """
-    Given two shapes (i.e. tuples of integers), return the shape
-    that would result from broadcasting two arrays with the given
-    shapes.
-
-    Examples
-    --------
-    >>> _broadcast_shapes((2, 1), (4, 1, 3))
-    (4, 2, 3)
-    """
-    d = len(shape1) - len(shape2)
-    if d <= 0:
-        shp1 = (1,)*(-d) + shape1
-        shp2 = shape2
-    else:
-        shp1 = shape1
-        shp2 = (1,)*d + shape2
-    shape = []
-    for n1, n2 in zip(shp1, shp2):
-        if n1 == 1:
-            n = n2
-        elif n2 == 1 or n1 == n2:
-            n = n1
-        else:
-            raise ValueError(f'shapes {shape1} and {shape2} could not be '
-                             'broadcast together')
-        shape.append(n)
-    return tuple(shape)
-
-
-def _broadcast_shapes_with_dropped_axis(a, b, axis):
-    """
-    Given two arrays `a` and `b` and an integer `axis`, find the
-    shape of the broadcast result after dropping `axis` from the
-    shapes of `a` and `b`.
+    Given a sequence of arrays `arrays` and an integer or tuple `axis`, find
+    the shape of the broadcast result after consuming/dropping `axis`.
+    In other words, return output shape of a typical hypothesis test on
+    `arrays` vectorized along `axis`.
 
     Examples
     --------
     >>> a = np.zeros((5, 2, 1))
-    >>> b = np.zeros((1, 9, 3))
-    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
+    >>> b = np.zeros((9, 3))
+    >>> _broadcast_array_shapes((a, b), 1)
     (5, 3)
     """
-    # consider generalized version:
-    # _hypotests._broadcast_array_shapes_with_dropped_axis
-    shp1 = _shape_with_dropped_axis(a, axis)
-    shp2 = _shape_with_dropped_axis(b, axis)
-    try:
-        shp = _broadcast_shapes(shp1, shp2)
-    except ValueError:
-        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
-                         'broadcast together') from None
-    return shp
+    # Note that here, `axis=None` means do not consume/drop any axes - _not_
+    # ravel arrays before broadcasting.
+    shapes = [arr.shape for arr in arrays]
+    return _broadcast_shapes(shapes, axis)
+
+
+def _broadcast_shapes(shapes, axis=None):
+    """
+    Broadcast shapes, dropping specified axes
+
+    Same as _broadcast_array_shapes, but given a sequence
+    of array shapes `shapes` instead of the arrays themselves.
+    """
+    n_dims = max([len(shape) for shape in shapes])
+    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
+    for row, shape in zip(new_shapes, shapes):
+        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+    if axis is not None:
+        new_shapes = np.delete(new_shapes, axis, axis=1)
+    new_shape = np.max(new_shapes, axis=0)
+    new_shape *= new_shapes.all(axis=0)
+    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    return tuple(new_shape)
 
 
 def gmean(a, axis=0, dtype=None, weights=None):
@@ -5906,7 +5872,7 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     Ttest_indResult(statistic=nan, pvalue=nan)
 
     """
-    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
+    shp = _broadcast_array_shapes((a, b), axis)
     if len(shp) == 0:
         t = np.nan
         p = np.nan
@@ -6724,7 +6690,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     if f_exp is not None:
         f_exp = np.asanyarray(f_exp)
-        bshape = _broadcast_shapes(f_obs_float.shape, f_exp.shape)
+        bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = _m_broadcast_to(f_obs_float, bshape)
         f_exp = _m_broadcast_to(f_exp, bshape)
         rtol = 1e-8  # to pass existing tests

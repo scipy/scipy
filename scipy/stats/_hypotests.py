@@ -30,27 +30,10 @@ def _remove_nans(samples, paired):
     return [sample[not_nans] for sample in samples]
 
 
-def _broadcast_array_shapes_with_dropped_axis(arrays, axis=None):
-    "Broadcast shapes of arrays, dropping specified axes"
-    # Returns output shape of n-sample hypothesis tests vectorized along axis.
-    # Here, axis=None means consider all axes (_not_ ravel shapes).
-    n_dims = max([array.ndim for array in arrays])
-    new_shapes = np.ones((len(arrays), n_dims), dtype=int)
-    for row, array in zip(new_shapes, arrays):
-        row[-array.ndim:] = array.shape
-    if axis is not None:
-        new_shapes = np.delete(new_shapes, axis, axis=1)
-    new_shape = np.max(new_shapes, axis=0)
-    new_shape *= new_shapes.all(axis=0)
-    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
-        raise ValueError("Array shapes are incompatible for broadcasting.")
-    return new_shape
-
-
 def _check_empty_inputs(samples, axis):
     if not any((sample.size == 0 for sample in samples)):
         return None
-    output_shape = _broadcast_array_shapes_with_dropped_axis(samples, axis)
+    output_shape = scipy.stats.stats._broadcast_array_shapes(samples, axis)
     output = np.ones(output_shape) * np.nan
     return output
 
