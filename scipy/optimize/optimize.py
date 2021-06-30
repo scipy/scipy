@@ -1012,7 +1012,7 @@ def check_grad(func, grad, x0, *args, **kwargs):
         return func(x0 + w*v, *args[3:])
 
     if random_projection:
-        v = random_state.binomial(1, 0.5, x0.shape)
+        v = rng_integers(random_state, 0, 2, size=x0.shape)
         v[v == 0] = -1
         _args = (func, x0, v) + args
         _func = g
