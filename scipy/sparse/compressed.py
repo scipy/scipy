@@ -715,13 +715,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Work out what slices are needed for `row_nnz`
         # start,stop can be -1, only if step is negative
+        start0, stop0 = start, stop
         if stop == -1 and start >= 0:
-            idx0 = slice(start, None, step)
-        else:
-            idx0 = slice(start, stop, step)
-        idx1 = slice(start + 1, stop + 1, step)
+            stop0 = None
+        start1, stop1 = start + 1, stop + 1
 
-        row_nnz = self.indptr[idx1] - self.indptr[idx0]
+        row_nnz = self.indptr[start1:stop1:step] - \
+            self.indptr[start0:stop0:step]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
