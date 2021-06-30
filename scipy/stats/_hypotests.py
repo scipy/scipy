@@ -13,8 +13,7 @@ import scipy.stats.stats
 from functools import wraps
 
 
-# benchmark against ttest with nan_policy='omit', propagate
-
+# TODO: add support for `axis` tuples
 def _remove_nans(samples, paired):
     "Remove nans from paired or unpaired samples"
     # potential optimization: don't copy arrays that don't contain nans
@@ -47,7 +46,7 @@ def _check_empty_inputs(samples, axis):
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
                                 result_unpacker=None, too_small=0,
-                                nan_policy_position=None):
+                                nan_policy_position=None, vectorized=False):
     if result_unpacker is None:
         def result_unpacker(res):
             return res[..., 0], res[..., 1]
@@ -136,6 +135,9 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             contains_nan, _ = (
                 scipy.stats.stats._contains_nan(x, nan_policy))
 
+            if vectorized and not contains_nan:
+                return hypotest_fun_in(*samples, *args, axis=axis, **kwds)
+
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
                 def hypotest_fun(x):
@@ -161,7 +163,6 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
             return result_object(*result_unpacker(res))
-
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
 

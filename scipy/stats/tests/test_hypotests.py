@@ -883,6 +883,7 @@ vectorization_nanpolicy_cases = [
      lambda res: (res.pvalue, res.statistic)),
     (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2, False,
      lambda res: (res.pvalue, res.statistic)),
+    (stats.gmean, tuple(), dict(), 1, False, lambda x: (x,)),
     ]
 
 
@@ -1005,7 +1006,9 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
                 # `hypotest` against the reference `hypotest_1d_nan`.
                 res1db = unpacker(hypotest(*data1d, *args,
                                            nan_policy=nan_policy, **kwds))
-                assert_equal(res1db, res1d)
+                assert_equal(res1db[0], res1d[0])
+                if len(res1db) == 2:
+                    assert_equal(res1db[1], res1d[1])
 
             # When there is not enough data in 1D samples, many existing
             # hypothesis tests raise errors instead of returning nans .
@@ -1042,7 +1045,8 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
                 else:
                     raise e
         statistics[i] = res1d[0]
-        pvalues[i] = res1d[1]
+        if len(res1d) == 2:
+            pvalues[i] = res1d[1]
 
     # Perform a vectorized call to the hypothesis test.
     # If `nan_policy == 'raise'`, check that it raises the appropriate error.
@@ -1058,9 +1062,10 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
                                     *args, **kwds))
 
         assert_equal(res[0], statistics)
-        assert_equal(res[1], pvalues)
         assert_equal(res[0].dtype, statistics.dtype)
-        assert_equal(res[1].dtype, pvalues.dtype)
+        if len(res) == 2:
+            assert_equal(res[1], pvalues)
+            assert_equal(res[1].dtype, pvalues.dtype)
 
 
 # previously, with 2D input:
@@ -1187,8 +1192,11 @@ def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
 
                 res = hypotest(*samples, *args, axis=axis, **kwds)
 
-                assert_equal(res.statistic, expected)
-                assert_equal(res.pvalue, expected)
+                if hasattr(res, 'statistic'):
+                    assert_equal(res.statistic, expected)
+                    assert_equal(res.pvalue, expected)
+                else:
+                    assert_equal(res, expected)
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable

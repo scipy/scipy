@@ -180,6 +180,9 @@ def _broadcast_shapes(shapes, axis=None):
     return tuple(new_shape)
 
 
+@_vectorize_hypotest_factory(
+        lambda x, y=None: x, n_samples=1, too_small=0,
+        result_unpacker=lambda x: (x,), vectorized=True)
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
