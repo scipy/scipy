@@ -88,7 +88,7 @@ static lu_int lu_realloc_obj(struct basiclu_object *obj)
     return status;
 }
 
-/* 
+/*
  * isvalid() - test if @obj is an allocated BASICLU object
  */
 static lu_int isvalid(struct basiclu_object *obj)

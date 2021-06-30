@@ -45,7 +45,6 @@ class cKDTreeNode:
     def data_points(self) -> npt.NDArray[np.float64]: ...
     @property
     def indices(self) -> npt.NDArray[np.intp]: ...
-
     # These are read-only attributes in cython, which behave like properties
     @property
     def level(self) -> int: ...
@@ -75,7 +74,6 @@ class cKDTree(Generic[_BoxType]):
     def size(self) -> int: ...
     @property
     def tree(self) -> cKDTreeNode: ...
-
     # These are read-only attributes in cython, which behave like properties
     @property
     def data(self) -> npt.NDArray[np.float64]: ...
@@ -87,7 +85,6 @@ class cKDTree(Generic[_BoxType]):
     def indices(self) -> npt.NDArray[np.float64]: ...
     @property
     def boxsize(self) -> _BoxType: ...
-
     # NOTE: In practice `__init__` is used as constructor, not `__new__`.
     # The latter gives us more flexibility in setting the generic parameter
     # though.
@@ -111,7 +108,6 @@ class cKDTree(Generic[_BoxType]):
         balanced_tree: bool = ...,
         boxsize: npt.ArrayLike = ...,
     ) -> cKDTree[npt.NDArray[np.float64]]: ...
-
     # TODO: returns a 2-tuple of scalars if `x.ndim == 1` and `k == 1`,
     # returns a 2-tuple of arrays otherwise
     def query(
@@ -123,7 +119,6 @@ class cKDTree(Generic[_BoxType]):
         distance_upper_bound: float = ...,
         workers: Optional[int] = ...,
     ) -> Tuple[Any, Any]: ...
-
     # TODO: returns a list scalars if `x.ndim <= 1`,
     # returns an object array of lists otherwise
     def query_ball_point(
@@ -134,9 +129,8 @@ class cKDTree(Generic[_BoxType]):
         eps: float = ...,
         workers: Optional[int] = ...,
         return_sorted: Optional[bool] = ...,
-        return_length: bool = ...
+        return_length: bool = ...,
     ) -> Any: ...
-
     def query_ball_tree(
         self,
         other: cKDTree,
@@ -144,7 +138,6 @@ class cKDTree(Generic[_BoxType]):
         p: float,
         eps: float = ...,
     ) -> List[List[int]]: ...
-
     @overload
     def query_pairs(  # type: ignore[misc]
         self,
@@ -161,7 +154,6 @@ class cKDTree(Generic[_BoxType]):
         eps: float = ...,
         output_type: Literal["ndarray"] = ...,
     ) -> npt.NDArray[np.intp]: ...
-
     @overload
     def count_neighbors(  # type: ignore[misc]
         self,
@@ -198,7 +190,6 @@ class cKDTree(Generic[_BoxType]):
         weights: _WeightType = ...,
         cumulative: bool = ...,
     ) -> npt.NDArray[np.float64]: ...
-
     @overload
     def sparse_distance_matrix(  # type: ignore[misc]
         self,

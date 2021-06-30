@@ -120,7 +120,7 @@ ALL_TYPENUMS = ['UBYTE', 'BYTE', 'USHORT', 'SHORT', 'UINT', 'INT',
                 'ULONG', 'LONG', 'ULONGLONG', 'LONGLONG',
                 'FLOAT', 'DOUBLE', 'LONGDOUBLE',
                 'CFLOAT', 'CDOUBLE', 'CLONGDOUBLE']
-                
+
 CMPLX_FSUFS = ['cfloat', 'cdouble', 'clongdouble']
 
 }}

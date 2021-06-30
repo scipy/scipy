@@ -25,10 +25,11 @@ class _data_matrix(spmatrix):
 
     def _set_dtype(self, newtype):
         self.data.dtype = newtype
+
     dtype = property(fget=_get_dtype, fset=_set_dtype)
 
     def _deduped_data(self):
-        if hasattr(self, 'sum_duplicates'):
+        if hasattr(self, "sum_duplicates"):
             self.sum_duplicates()
         return self.data
 
@@ -45,9 +46,10 @@ class _data_matrix(spmatrix):
         return self._with_data(self.data.imag)
 
     def __neg__(self):
-        if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+        if self.dtype.kind == "b":
+            raise NotImplementedError(
+                "negating a sparse boolean matrix is not supported"
+            )
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -65,12 +67,13 @@ class _data_matrix(spmatrix):
         else:
             return NotImplemented
 
-    def astype(self, dtype, casting='unsafe', copy=True):
+    def astype(self, dtype, casting="unsafe", copy=True):
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
             return self._with_data(
                 self._deduped_data().astype(dtype, casting=casting, copy=copy),
-                copy=copy)
+                copy=copy,
+            )
         elif copy:
             return self.copy()
         else:
@@ -133,8 +136,10 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise %s.\n\n"
-                          "See `numpy.%s` for more information." % (name, name))
+        method.__doc__ = "Element-wise %s.\n\nSee `numpy.%s` for more information." % (
+            name,
+            name,
+        )
         method.__name__ = name
 
         return method
@@ -178,17 +183,23 @@ class _minmax_mixin:
         value = np.compress(mask, value)
 
         from . import coo_matrix
+
         if axis == 0:
-            return coo_matrix((value, (np.zeros(len(value)), major_index)),
-                              dtype=self.dtype, shape=(1, M))
+            return coo_matrix(
+                (value, (np.zeros(len(value)), major_index)),
+                dtype=self.dtype,
+                shape=(1, M),
+            )
         else:
-            return coo_matrix((value, (major_index, np.zeros(len(value)))),
-                              dtype=self.dtype, shape=(M, 1))
+            return coo_matrix(
+                (value, (major_index, np.zeros(len(value)))),
+                dtype=self.dtype,
+                shape=(M, 1),
+            )
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'out' parameter."))
+            raise ValueError("Sparse matrices do not support an 'out' parameter.")
 
         validateaxis(axis)
 
@@ -214,8 +225,7 @@ class _minmax_mixin:
 
     def _arg_min_or_max_axis(self, axis, op, compare):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Can't apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -228,9 +238,9 @@ class _minmax_mixin:
         ret_size, line_size = mat._swap(mat.shape)
         ret = np.zeros(ret_size, dtype=int)
 
-        nz_lines, = np.nonzero(np.diff(mat.indptr))
+        (nz_lines,) = np.nonzero(np.diff(mat.indptr))
         for i in nz_lines:
-            p, q = mat.indptr[i:i + 2]
+            p, q = mat.indptr[i : i + 2]
             data = mat.data[p:q]
             indices = mat.indices[p:q]
             am = op(data)
@@ -251,15 +261,13 @@ class _minmax_mixin:
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                             "an 'out' parameter.")
+            raise ValueError("Sparse matrices do not support an 'out' parameter.")
 
         validateaxis(axis)
 
         if axis is None:
             if 0 in self.shape:
-                raise ValueError("Can't apply the operation to "
-                                 "an empty matrix.")
+                raise ValueError("Can't apply the operation to an empty matrix.")
 
             if self.nnz == 0:
                 return 0
@@ -273,7 +281,7 @@ class _minmax_mixin:
                 if compare(m, zero):
                     # cast to Python int to avoid overflow
                     # and RuntimeError
-                    return int(mat.row[am])*mat.shape[1] + int(mat.col[am])
+                    return int(mat.row[am]) * mat.shape[1] + int(mat.col[am])
                 else:
                     size = np.prod(mat.shape)
                     if size == mat.nnz:

@@ -77,7 +77,7 @@ c     data mcheps(1),mcheps(2) / "104400000000, "000000000000 /
 c     data minmag(1),minmag(2) / "000400000000, "000000000000 /
 c     data maxmag(1),maxmag(2) / "377777777777, "377777777777 /
 c
-c     Machine constants for the PDP-11. 
+c     Machine constants for the PDP-11.
 c
 c     data mcheps(1),mcheps(2) /   9472,      0 /
 c     data mcheps(3),mcheps(4) /      0,      0 /

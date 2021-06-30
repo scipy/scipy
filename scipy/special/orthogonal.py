@@ -76,55 +76,88 @@ References
 
 # SciPy imports.
 import numpy as np
-from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
-                   hstack, arccos, arange)
+from numpy import exp, inf, pi, sqrt, floor, sin, cos, around, hstack, arccos, arange
 from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
 from . import _ufuncs
 from . import _ufuncs as cephes
+
 _gam = cephes.gamma
 from . import specfun
 
-_polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
-             'jacobi', 'laguerre', 'genlaguerre', 'hermite',
-             'hermitenorm', 'gegenbauer', 'sh_legendre', 'sh_chebyt',
-             'sh_chebyu', 'sh_jacobi']
+_polyfuns = [
+    "legendre",
+    "chebyt",
+    "chebyu",
+    "chebyc",
+    "chebys",
+    "jacobi",
+    "laguerre",
+    "genlaguerre",
+    "hermite",
+    "hermitenorm",
+    "gegenbauer",
+    "sh_legendre",
+    "sh_chebyt",
+    "sh_chebyu",
+    "sh_jacobi",
+]
 
 # Correspondence between new and old names of root functions
-_rootfuns_map = {'roots_legendre': 'p_roots',
-               'roots_chebyt': 't_roots',
-               'roots_chebyu': 'u_roots',
-               'roots_chebyc': 'c_roots',
-               'roots_chebys': 's_roots',
-               'roots_jacobi': 'j_roots',
-               'roots_laguerre': 'l_roots',
-               'roots_genlaguerre': 'la_roots',
-               'roots_hermite': 'h_roots',
-               'roots_hermitenorm': 'he_roots',
-               'roots_gegenbauer': 'cg_roots',
-               'roots_sh_legendre': 'ps_roots',
-               'roots_sh_chebyt': 'ts_roots',
-               'roots_sh_chebyu': 'us_roots',
-               'roots_sh_jacobi': 'js_roots'}
+_rootfuns_map = {
+    "roots_legendre": "p_roots",
+    "roots_chebyt": "t_roots",
+    "roots_chebyu": "u_roots",
+    "roots_chebyc": "c_roots",
+    "roots_chebys": "s_roots",
+    "roots_jacobi": "j_roots",
+    "roots_laguerre": "l_roots",
+    "roots_genlaguerre": "la_roots",
+    "roots_hermite": "h_roots",
+    "roots_hermitenorm": "he_roots",
+    "roots_gegenbauer": "cg_roots",
+    "roots_sh_legendre": "ps_roots",
+    "roots_sh_chebyt": "ts_roots",
+    "roots_sh_chebyu": "us_roots",
+    "roots_sh_jacobi": "js_roots",
+}
 
-_evalfuns = ['eval_legendre', 'eval_chebyt', 'eval_chebyu',
-             'eval_chebyc', 'eval_chebys', 'eval_jacobi',
-             'eval_laguerre', 'eval_genlaguerre', 'eval_hermite',
-             'eval_hermitenorm', 'eval_gegenbauer',
-             'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
-             'eval_sh_jacobi']
+_evalfuns = [
+    "eval_legendre",
+    "eval_chebyt",
+    "eval_chebyu",
+    "eval_chebyc",
+    "eval_chebys",
+    "eval_jacobi",
+    "eval_laguerre",
+    "eval_genlaguerre",
+    "eval_hermite",
+    "eval_hermitenorm",
+    "eval_gegenbauer",
+    "eval_sh_legendre",
+    "eval_sh_chebyt",
+    "eval_sh_chebyu",
+    "eval_sh_jacobi",
+]
 
-__all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + ['poch', 'binom']
+__all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + ["poch", "binom"]
 
 
 class orthopoly1d(np.poly1d):
-
-    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None,
-                 limits=None, monic=False, eval_func=None):
-        equiv_weights = [weights[k] / wfunc(roots[k]) for
-                         k in range(len(roots))]
+    def __init__(
+        self,
+        roots,
+        weights=None,
+        hn=1.0,
+        kn=1.0,
+        wfunc=None,
+        limits=None,
+        monic=False,
+        eval_func=None,
+    ):
+        equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
         mu = sqrt(hn)
         if monic:
             evf = eval_func
@@ -178,18 +211,18 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
-    k = np.arange(n, dtype='d')
+    k = np.arange(n, dtype="d")
     c = np.zeros((2, n))
-    c[0,1:] = bn_func(k[1:])
-    c[1,:] = an_func(k)
+    c[0, 1:] = bn_func(k[1:])
+    c[1, :] = an_func(k)
     x = linalg.eigvals_banded(c, overwrite_a_band=True)
 
     # improve roots by one application of Newton's method
     y = f(n, x)
     dy = df(n, x)
-    x -= y/dy
+    x -= y / dy
 
-    fm = f(n-1, x)
+    fm = f(n - 1, x)
     fm /= np.abs(fm).max()
     dy /= np.abs(dy).max()
     w = 1.0 / (fm * dy)
@@ -204,6 +237,7 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
         return x, w, mu0
     else:
         return x, w
+
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 
@@ -260,23 +294,29 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if alpha == 0.0 and beta == 0.0:
         return roots_legendre(m, mu)
     if alpha == beta:
-        return roots_gegenbauer(m, alpha+0.5, mu)
+        return roots_gegenbauer(m, alpha + 0.5, mu)
 
-    mu0 = 2.0**(alpha+beta+1)*cephes.beta(alpha+1, beta+1)
+    mu0 = 2.0 ** (alpha + beta + 1) * cephes.beta(alpha + 1, beta + 1)
     a = alpha
     b = beta
     if a + b == 0.0:
-        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b), 0.0)
+        an_func = lambda k: np.where(k == 0, (b - a) / (2 + a + b), 0.0)
     else:
-        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b),
-                  (b*b - a*a) / ((2.0*k+a+b)*(2.0*k+a+b+2)))
+        an_func = lambda k: np.where(
+            k == 0,
+            (b - a) / (2 + a + b),
+            (b * b - a * a) / ((2.0 * k + a + b) * (2.0 * k + a + b + 2)),
+        )
 
-    bn_func = lambda k: 2.0 / (2.0*k+a+b)*np.sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
-              * np.where(k == 1, 1.0, np.sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
+    bn_func = (
+        lambda k: 2.0
+        / (2.0 * k + a + b)
+        * np.sqrt((k + a) * (k + b) / (2 * k + a + b + 1))
+        * np.where(k == 1, 1.0, np.sqrt(k * (k + a + b) / (2.0 * k + a + b - 1)))
+    )
 
     f = lambda n, x: cephes.eval_jacobi(n, a, b, x)
-    df = lambda n, x: 0.5 * (n + a + b + 1) \
-                      * cephes.eval_jacobi(n-1, a+1, b+1, x)
+    df = lambda n, x: 0.5 * (n + a + b + 1) * cephes.eval_jacobi(n - 1, a + 1, b + 1, x)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -321,19 +361,22 @@ def jacobi(n, alpha, beta, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: (1 - x)**alpha * (1 + x)**beta
+    wfunc = lambda x: (1 - x) ** alpha * (1 + x) ** beta
     if n == 0:
-        return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
-                           eval_func=np.ones_like)
+        return orthopoly1d(
+            [], [], 1.0, 1.0, wfunc, (-1, 1), monic, eval_func=np.ones_like
+        )
     x, w, mu = roots_jacobi(n, alpha, beta, mu=True)
     ab1 = alpha + beta + 1.0
-    hn = 2**ab1 / (2 * n + ab1) * _gam(n + alpha + 1)
+    hn = 2 ** ab1 / (2 * n + ab1) * _gam(n + alpha + 1)
     hn *= _gam(n + beta + 1.0) / _gam(n + 1) / _gam(n + ab1)
-    kn = _gam(2 * n + ab1) / 2.0**n / _gam(n + 1) / _gam(n + ab1)
+    kn = _gam(2 * n + ab1) / 2.0 ** n / _gam(n + 1) / _gam(n + ab1)
     # here kn = coefficient on x^n term
-    p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic,
-                    lambda x: eval_jacobi(n, alpha, beta, x))
+    p = orthopoly1d(
+        x, w, hn, kn, wfunc, (-1, 1), monic, lambda x: eval_jacobi(n, alpha, beta, x)
+    )
     return p
+
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
 
@@ -381,17 +424,20 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     """
-    if (p1-q1) <= -1 or q1 <= 0:
-        raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
-    x, w, m = roots_jacobi(n, p1-q1, q1-1, True)
+    if (p1 - q1) <= -1 or q1 <= 0:
+        raise ValueError(
+            "(p - q) must be greater than -1, and q must be greater than 0."
+        )
+    x, w, m = roots_jacobi(n, p1 - q1, q1 - 1, True)
     x = (x + 1) / 2
-    scale = 2.0**p1
+    scale = 2.0 ** p1
     w /= scale
     m /= scale
     if mu:
         return x, w, m
     else:
         return x, w
+
 
 def sh_jacobi(n, p, q, monic=False):
     r"""Shifted Jacobi polynomial.
@@ -432,19 +478,29 @@ def sh_jacobi(n, p, q, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: (1.0 - x)**(p - q) * (x)**(q - 1.)
+    wfunc = lambda x: (1.0 - x) ** (p - q) * (x) ** (q - 1.0)
     if n == 0:
-        return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
-                           eval_func=np.ones_like)
+        return orthopoly1d(
+            [], [], 1.0, 1.0, wfunc, (-1, 1), monic, eval_func=np.ones_like
+        )
     n1 = n
     x, w = roots_sh_jacobi(n1, p, q)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
-    hn /= (2 * n + p) * (_gam(2 * n + p)**2)
+    hn /= (2 * n + p) * (_gam(2 * n + p) ** 2)
     # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
     kn = 1.0
-    pp = orthopoly1d(x, w, hn, kn, wfunc=wfunc, limits=(0, 1), monic=monic,
-                     eval_func=lambda x: eval_sh_jacobi(n, p, q, x))
+    pp = orthopoly1d(
+        x,
+        w,
+        hn,
+        kn,
+        wfunc=wfunc,
+        limits=(0, 1),
+        monic=monic,
+        eval_func=lambda x: eval_sh_jacobi(n, p, q, x),
+    )
     return pp
+
 
 # Generalized Laguerre               L^(alpha)_n(x)
 
@@ -499,8 +555,8 @@ def roots_genlaguerre(n, alpha, mu=False):
     mu0 = cephes.gamma(alpha + 1)
 
     if m == 1:
-        x = np.array([alpha+1.0], 'd')
-        w = np.array([mu0], 'd')
+        x = np.array([alpha + 1.0], "d")
+        w = np.array([mu0], "d")
         if mu:
             return x, w, mu0
         else:
@@ -509,8 +565,13 @@ def roots_genlaguerre(n, alpha, mu=False):
     an_func = lambda k: 2 * k + alpha + 1
     bn_func = lambda k: -np.sqrt(k * (k + alpha))
     f = lambda n, x: cephes.eval_genlaguerre(n, alpha, x)
-    df = lambda n, x: (n*cephes.eval_genlaguerre(n, alpha, x)
-                     - (n + alpha)*cephes.eval_genlaguerre(n-1, alpha, x))/x
+    df = (
+        lambda n, x: (
+            n * cephes.eval_genlaguerre(n, alpha, x)
+            - (n + alpha) * cephes.eval_genlaguerre(n - 1, alpha, x)
+        )
+        / x
+    )
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -566,14 +627,16 @@ def genlaguerre(n, alpha, monic=False):
     else:
         n1 = n
     x, w = roots_genlaguerre(n1, alpha)
-    wfunc = lambda x: exp(-x) * x**alpha
+    wfunc = lambda x: exp(-x) * x ** alpha
     if n == 0:
         x, w = [], []
     hn = _gam(n + alpha + 1) / _gam(n + 1)
-    kn = (-1)**n / _gam(n + 1)
-    p = orthopoly1d(x, w, hn, kn, wfunc, (0, inf), monic,
-                    lambda x: eval_genlaguerre(n, alpha, x))
+    kn = (-1) ** n / _gam(n + 1)
+    p = orthopoly1d(
+        x, w, hn, kn, wfunc, (0, inf), monic, lambda x: eval_genlaguerre(n, alpha, x)
+    )
     return p
+
 
 # Laguerre                      L_n(x)
 
@@ -660,10 +723,12 @@ def laguerre(n, monic=False):
     if n == 0:
         x, w = [], []
     hn = 1.0
-    kn = (-1)**n / _gam(n + 1)
-    p = orthopoly1d(x, w, hn, kn, lambda x: exp(-x), (0, inf), monic,
-                    lambda x: eval_laguerre(n, x))
+    kn = (-1) ** n / _gam(n + 1)
+    p = orthopoly1d(
+        x, w, hn, kn, lambda x: exp(-x), (0, inf), monic, lambda x: eval_laguerre(n, x)
+    )
     return p
+
 
 # Hermite  1                         H_n(x)
 
@@ -737,10 +802,10 @@ def roots_hermite(n, mu=False):
 
     mu0 = np.sqrt(np.pi)
     if n <= 150:
-        an_func = lambda k: 0.0*k
-        bn_func = lambda k: np.sqrt(k/2.0)
+        an_func = lambda k: 0.0 * k
+        bn_func = lambda k: np.sqrt(k / 2.0)
         f = cephes.eval_hermite
-        df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
+        df = lambda n, x: 2.0 * n * cephes.eval_hermite(n - 1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -777,12 +842,16 @@ def _compute_tauk(n, k, maxit=5):
     roots_hermite_asy
     """
     a = n % 2 - 0.5
-    c = (4.0*floor(n/2.0) - 4.0*k + 3.0)*pi / (4.0*floor(n/2.0) + 2.0*a + 2.0)
+    c = (
+        (4.0 * floor(n / 2.0) - 4.0 * k + 3.0)
+        * pi
+        / (4.0 * floor(n / 2.0) + 2.0 * a + 2.0)
+    )
     f = lambda x: x - sin(x) - c
     df = lambda x: 1.0 - cos(x)
-    xi = 0.5*pi
+    xi = 0.5 * pi
     for i in range(maxit):
-        xi = xi - f(xi)/df(xi)
+        xi = xi - f(xi) / df(xi)
     return xi
 
 
@@ -813,11 +882,13 @@ def _initial_nodes_a(n, k):
     roots_hermite_asy
     """
     tauk = _compute_tauk(n, k)
-    sigk = cos(0.5*tauk)**2
+    sigk = cos(0.5 * tauk) ** 2
     a = n % 2 - 0.5
-    nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
+    nu = 4.0 * floor(n / 2.0) + 2.0 * a + 2.0
     # Initial approximation of Hermite roots (square)
-    xksq = nu*sigk - 1.0/(3.0*nu) * (5.0/(4.0*(1.0-sigk)**2) - 1.0/(1.0-sigk) - 0.25)
+    xksq = nu * sigk - 1.0 / (3.0 * nu) * (
+        5.0 / (4.0 * (1.0 - sigk) ** 2) - 1.0 / (1.0 - sigk) - 0.25
+    )
     return xksq
 
 
@@ -848,16 +919,22 @@ def _initial_nodes_b(n, k):
     roots_hermite_asy
     """
     a = n % 2 - 0.5
-    nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
+    nu = 4.0 * floor(n / 2.0) + 2.0 * a + 2.0
     # Airy roots by approximation
     ak = specfun.airyzo(k.max(), 1)[0][::-1]
     # Initial approximation of Hermite roots (square)
-    xksq = (nu +
-            2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
-            1.0/5.0 * 2.0**(4.0/3.0) * ak**2 * nu**(-1.0/3.0) +
-            (9.0/140.0 - 12.0/175.0 * ak**3) * nu**(-1.0) +
-            (16.0/1575.0 * ak + 92.0/7875.0 * ak**4) * 2.0**(2.0/3.0) * nu**(-5.0/3.0) -
-            (15152.0/3031875.0 * ak**5 + 1088.0/121275.0 * ak**2) * 2.0**(1.0/3.0) * nu**(-7.0/3.0))
+    xksq = (
+        nu
+        + 2.0 ** (2.0 / 3.0) * ak * nu ** (1.0 / 3.0)
+        + 1.0 / 5.0 * 2.0 ** (4.0 / 3.0) * ak ** 2 * nu ** (-1.0 / 3.0)
+        + (9.0 / 140.0 - 12.0 / 175.0 * ak ** 3) * nu ** (-1.0)
+        + (16.0 / 1575.0 * ak + 92.0 / 7875.0 * ak ** 4)
+        * 2.0 ** (2.0 / 3.0)
+        * nu ** (-5.0 / 3.0)
+        - (15152.0 / 3031875.0 * ak ** 5 + 1088.0 / 121275.0 * ak ** 2)
+        * 2.0 ** (1.0 / 3.0)
+        * nu ** (-7.0 / 3.0)
+    )
     return xksq
 
 
@@ -885,13 +962,13 @@ def _initial_nodes(n):
     """
     # Turnover point
     # linear polynomial fit to error of 10, 25, 40, ..., 1000 point rules
-    fit = 0.49082003*n - 4.37859653
+    fit = 0.49082003 * n - 4.37859653
     turnover = around(fit).astype(int)
     # Compute all approximations
-    ia = arange(1, int(floor(n*0.5)+1))
+    ia = arange(1, int(floor(n * 0.5) + 1))
     ib = ia[::-1]
-    xasq = _initial_nodes_a(n, ia[:turnover+1])
-    xbsq = _initial_nodes_b(n, ib[turnover+1:])
+    xasq = _initial_nodes_a(n, ia[: turnover + 1])
+    xbsq = _initial_nodes_b(n, ib[turnover + 1 :])
     # Combine
     iv = sqrt(hstack([xasq, xbsq]))
     # Central node is always zero
@@ -937,13 +1014,13 @@ def _pbcf(n, theta):
     st = sin(theta)
     ct = cos(theta)
     # https://dlmf.nist.gov/12.10#vii
-    mu = 2.0*n + 1.0
+    mu = 2.0 * n + 1.0
     # https://dlmf.nist.gov/12.10#E23
-    eta = 0.5*theta - 0.5*st*ct
+    eta = 0.5 * theta - 0.5 * st * ct
     # https://dlmf.nist.gov/12.10#E39
-    zeta = -(3.0*eta/2.0) ** (2.0/3.0)
+    zeta = -((3.0 * eta / 2.0) ** (2.0 / 3.0))
     # https://dlmf.nist.gov/12.10#E40
-    phi = (-zeta / st**2) ** (0.25)
+    phi = (-zeta / st ** 2) ** (0.25)
     # Coefficients
     # https://dlmf.nist.gov/12.10#E43
     a0 = 1.0
@@ -961,52 +1038,136 @@ def _pbcf(n, theta):
     # Polynomials
     # https://dlmf.nist.gov/12.10#E9
     # https://dlmf.nist.gov/12.10#E10
-    ctp = ct ** arange(16).reshape((-1,1))
+    ctp = ct ** arange(16).reshape((-1, 1))
     u0 = 1.0
-    u1 = (1.0*ctp[3,:] - 6.0*ct) / 24.0
-    u2 = (-9.0*ctp[4,:] + 249.0*ctp[2,:] + 145.0) / 1152.0
-    u3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 28287.0*ctp[5,:] - 151995.0*ctp[3,:] - 259290.0*ct) / 414720.0
-    u4 = (72756.0*ctp[10,:] - 321339.0*ctp[8,:] - 154982.0*ctp[6,:] + 50938215.0*ctp[4,:] + 122602962.0*ctp[2,:] + 12773113.0) / 39813120.0
-    u5 = (82393456.0*ctp[15,:] - 617950920.0*ctp[13,:] + 1994971575.0*ctp[11,:] - 3630137104.0*ctp[9,:] + 4433574213.0*ctp[7,:]
-          - 37370295816.0*ctp[5,:] - 119582875013.0*ctp[3,:] - 34009066266.0*ct) / 6688604160.0
+    u1 = (1.0 * ctp[3, :] - 6.0 * ct) / 24.0
+    u2 = (-9.0 * ctp[4, :] + 249.0 * ctp[2, :] + 145.0) / 1152.0
+    u3 = (
+        -4042.0 * ctp[9, :]
+        + 18189.0 * ctp[7, :]
+        - 28287.0 * ctp[5, :]
+        - 151995.0 * ctp[3, :]
+        - 259290.0 * ct
+    ) / 414720.0
+    u4 = (
+        72756.0 * ctp[10, :]
+        - 321339.0 * ctp[8, :]
+        - 154982.0 * ctp[6, :]
+        + 50938215.0 * ctp[4, :]
+        + 122602962.0 * ctp[2, :]
+        + 12773113.0
+    ) / 39813120.0
+    u5 = (
+        82393456.0 * ctp[15, :]
+        - 617950920.0 * ctp[13, :]
+        + 1994971575.0 * ctp[11, :]
+        - 3630137104.0 * ctp[9, :]
+        + 4433574213.0 * ctp[7, :]
+        - 37370295816.0 * ctp[5, :]
+        - 119582875013.0 * ctp[3, :]
+        - 34009066266.0 * ct
+    ) / 6688604160.0
     v0 = 1.0
-    v1 = (1.0*ctp[3,:] + 6.0*ct) / 24.0
-    v2 = (15.0*ctp[4,:] - 327.0*ctp[2,:] - 143.0) / 1152.0
-    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:] + 238425.0*ctp[3,:] + 259290.0*ct) / 414720.0
-    v4 = (-121260.0*ctp[10,:] + 551733.0*ctp[8,:] - 151958.0*ctp[6,:] - 57484425.0*ctp[4,:] - 132752238.0*ctp[2,:] - 12118727) / 39813120.0
-    v5 = (82393456.0*ctp[15,:] - 617950920.0*ctp[13,:] + 2025529095.0*ctp[11,:] - 3750839308.0*ctp[9,:] + 3832454253.0*ctp[7,:]
-          + 35213253348.0*ctp[5,:] + 130919230435.0*ctp[3,:] + 34009066266*ct) / 6688604160.0
+    v1 = (1.0 * ctp[3, :] + 6.0 * ct) / 24.0
+    v2 = (15.0 * ctp[4, :] - 327.0 * ctp[2, :] - 143.0) / 1152.0
+    v3 = (
+        -4042.0 * ctp[9, :]
+        + 18189.0 * ctp[7, :]
+        - 36387.0 * ctp[5, :]
+        + 238425.0 * ctp[3, :]
+        + 259290.0 * ct
+    ) / 414720.0
+    v4 = (
+        -121260.0 * ctp[10, :]
+        + 551733.0 * ctp[8, :]
+        - 151958.0 * ctp[6, :]
+        - 57484425.0 * ctp[4, :]
+        - 132752238.0 * ctp[2, :]
+        - 12118727
+    ) / 39813120.0
+    v5 = (
+        82393456.0 * ctp[15, :]
+        - 617950920.0 * ctp[13, :]
+        + 2025529095.0 * ctp[11, :]
+        - 3750839308.0 * ctp[9, :]
+        + 3832454253.0 * ctp[7, :]
+        + 35213253348.0 * ctp[5, :]
+        + 130919230435.0 * ctp[3, :]
+        + 34009066266 * ct
+    ) / 6688604160.0
     # Airy Evaluation (Bi and Bip unused)
-    Ai, Aip, Bi, Bip = airy(mu**(4.0/6.0) * zeta)
+    Ai, Aip, Bi, Bip = airy(mu ** (4.0 / 6.0) * zeta)
     # Prefactor for U
-    P = 2.0*sqrt(pi) * mu**(1.0/6.0) * phi
+    P = 2.0 * sqrt(pi) * mu ** (1.0 / 6.0) * phi
     # Terms for U
     # https://dlmf.nist.gov/12.10#E42
-    phip = phi ** arange(6, 31, 6).reshape((-1,1))
-    A0 = b0*u0
-    A1 = (b2*u0 + phip[0,:]*b1*u1 + phip[1,:]*b0*u2) / zeta**3
-    A2 = (b4*u0 + phip[0,:]*b3*u1 + phip[1,:]*b2*u2 + phip[2,:]*b1*u3 + phip[3,:]*b0*u4) / zeta**6
-    B0 = -(a1*u0 + phip[0,:]*a0*u1) / zeta**2
-    B1 = -(a3*u0 + phip[0,:]*a2*u1 + phip[1,:]*a1*u2 + phip[2,:]*a0*u3) / zeta**5
-    B2 = -(a5*u0 + phip[0,:]*a4*u1 + phip[1,:]*a3*u2 + phip[2,:]*a2*u3 + phip[3,:]*a1*u4 + phip[4,:]*a0*u5) / zeta**8
+    phip = phi ** arange(6, 31, 6).reshape((-1, 1))
+    A0 = b0 * u0
+    A1 = (b2 * u0 + phip[0, :] * b1 * u1 + phip[1, :] * b0 * u2) / zeta ** 3
+    A2 = (
+        b4 * u0
+        + phip[0, :] * b3 * u1
+        + phip[1, :] * b2 * u2
+        + phip[2, :] * b1 * u3
+        + phip[3, :] * b0 * u4
+    ) / zeta ** 6
+    B0 = -(a1 * u0 + phip[0, :] * a0 * u1) / zeta ** 2
+    B1 = (
+        -(a3 * u0 + phip[0, :] * a2 * u1 + phip[1, :] * a1 * u2 + phip[2, :] * a0 * u3)
+        / zeta ** 5
+    )
+    B2 = (
+        -(
+            a5 * u0
+            + phip[0, :] * a4 * u1
+            + phip[1, :] * a3 * u2
+            + phip[2, :] * a2 * u3
+            + phip[3, :] * a1 * u4
+            + phip[4, :] * a0 * u5
+        )
+        / zeta ** 8
+    )
     # U
     # https://dlmf.nist.gov/12.10#E35
-    U = P * (Ai * (A0 + A1/mu**2.0 + A2/mu**4.0) +
-             Aip * (B0 + B1/mu**2.0 + B2/mu**4.0) / mu**(8.0/6.0))
+    U = P * (
+        Ai * (A0 + A1 / mu ** 2.0 + A2 / mu ** 4.0)
+        + Aip * (B0 + B1 / mu ** 2.0 + B2 / mu ** 4.0) / mu ** (8.0 / 6.0)
+    )
     # Prefactor for derivative of U
-    Pd = sqrt(2.0*pi) * mu**(2.0/6.0) / phi
+    Pd = sqrt(2.0 * pi) * mu ** (2.0 / 6.0) / phi
     # Terms for derivative of U
     # https://dlmf.nist.gov/12.10#E46
-    C0 = -(b1*v0 + phip[0,:]*b0*v1) / zeta
-    C1 = -(b3*v0 + phip[0,:]*b2*v1 + phip[1,:]*b1*v2 + phip[2,:]*b0*v3) / zeta**4
-    C2 = -(b5*v0 + phip[0,:]*b4*v1 + phip[1,:]*b3*v2 + phip[2,:]*b2*v3 + phip[3,:]*b1*v4 + phip[4,:]*b0*v5) / zeta**7
-    D0 = a0*v0
-    D1 = (a2*v0 + phip[0,:]*a1*v1 + phip[1,:]*a0*v2) / zeta**3
-    D2 = (a4*v0 + phip[0,:]*a3*v1 + phip[1,:]*a2*v2 + phip[2,:]*a1*v3 + phip[3,:]*a0*v4) / zeta**6
+    C0 = -(b1 * v0 + phip[0, :] * b0 * v1) / zeta
+    C1 = (
+        -(b3 * v0 + phip[0, :] * b2 * v1 + phip[1, :] * b1 * v2 + phip[2, :] * b0 * v3)
+        / zeta ** 4
+    )
+    C2 = (
+        -(
+            b5 * v0
+            + phip[0, :] * b4 * v1
+            + phip[1, :] * b3 * v2
+            + phip[2, :] * b2 * v3
+            + phip[3, :] * b1 * v4
+            + phip[4, :] * b0 * v5
+        )
+        / zeta ** 7
+    )
+    D0 = a0 * v0
+    D1 = (a2 * v0 + phip[0, :] * a1 * v1 + phip[1, :] * a0 * v2) / zeta ** 3
+    D2 = (
+        a4 * v0
+        + phip[0, :] * a3 * v1
+        + phip[1, :] * a2 * v2
+        + phip[2, :] * a1 * v3
+        + phip[3, :] * a0 * v4
+    ) / zeta ** 6
     # Derivative of U
     # https://dlmf.nist.gov/12.10#E36
-    Ud = Pd * (Ai * (C0 + C1/mu**2.0 + C2/mu**4.0) / mu**(4.0/6.0) +
-               Aip * (D0 + D1/mu**2.0 + D2/mu**4.0))
+    Ud = Pd * (
+        Ai * (C0 + C1 / mu ** 2.0 + C2 / mu ** 4.0) / mu ** (4.0 / 6.0)
+        + Aip * (D0 + D1 / mu ** 2.0 + D2 / mu ** 4.0)
+    )
     return U, Ud
 
 
@@ -1037,7 +1198,7 @@ def _newton(n, x_initial, maxit=5):
     roots_hermite_asy
     """
     # Variable transformation
-    mu = sqrt(2.0*n + 1.0)
+    mu = sqrt(2.0 * n + 1.0)
     t = x_initial / mu
     theta = arccos(t)
     # Newton iteration
@@ -1053,7 +1214,7 @@ def _newton(n, x_initial, maxit=5):
     if n % 2 == 1:
         x[0] = 0.0
     # Compute weights
-    w = exp(-x**2) / (2.0*ud**2)
+    w = exp(-(x ** 2)) / (2.0 * ud ** 2)
     return x, w
 
 
@@ -1174,11 +1335,13 @@ def hermite(n, monic=False):
     wfunc = lambda x: exp(-x * x)
     if n == 0:
         x, w = [], []
-    hn = 2**n * _gam(n + 1) * sqrt(pi)
-    kn = 2**n
-    p = orthopoly1d(x, w, hn, kn, wfunc, (-inf, inf), monic,
-                    lambda x: eval_hermite(n, x))
+    hn = 2 ** n * _gam(n + 1) * sqrt(pi)
+    kn = 2 ** n
+    p = orthopoly1d(
+        x, w, hn, kn, wfunc, (-inf, inf), monic, lambda x: eval_hermite(n, x)
+    )
     return p
+
 
 # Hermite  2                         He_n(x)
 
@@ -1239,12 +1402,12 @@ def roots_hermitenorm(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(2.0*np.pi)
+    mu0 = np.sqrt(2.0 * np.pi)
     if n <= 150:
-        an_func = lambda k: 0.0*k
+        an_func = lambda k: 0.0 * k
         bn_func = lambda k: np.sqrt(k)
         f = cephes.eval_hermitenorm
-        df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
+        df = lambda n, x: n * cephes.eval_hermitenorm(n - 1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -1301,9 +1464,18 @@ def hermitenorm(n, monic=False):
         x, w = [], []
     hn = sqrt(2 * pi) * _gam(n + 1)
     kn = 1.0
-    p = orthopoly1d(x, w, hn, kn, wfunc=wfunc, limits=(-inf, inf), monic=monic,
-                    eval_func=lambda x: eval_hermitenorm(n, x))
+    p = orthopoly1d(
+        x,
+        w,
+        hn,
+        kn,
+        wfunc=wfunc,
+        limits=(-inf, inf),
+        monic=monic,
+        eval_func=lambda x: eval_hermitenorm(n, x),
+    )
     return p
+
 
 # The remainder of the polynomials can be derived from the ones above.
 
@@ -1365,11 +1537,14 @@ def roots_gegenbauer(n, alpha, mu=False):
 
     mu0 = np.sqrt(np.pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
     an_func = lambda k: 0.0 * k
-    bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
-                        / (4 * (k + alpha) * (k + alpha - 1)))
+    bn_func = lambda k: np.sqrt(
+        k * (k + 2 * alpha - 1) / (4 * (k + alpha) * (k + alpha - 1))
+    )
     f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
-    df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
-         + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x**2)
+    df = lambda n, x: (
+        -n * x * cephes.eval_gegenbauer(n, alpha, x)
+        + (n + 2 * alpha - 1) * cephes.eval_gegenbauer(n - 1, alpha, x)
+    ) / (1 - x ** 2)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -1441,11 +1616,16 @@ def gegenbauer(n, alpha, monic=False):
     if monic:
         return base
     #  Abrahmowitz and Stegan 22.5.20
-    factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
-              _gam(2*alpha) / _gam(alpha + 0.5 + n))
+    factor = (
+        _gam(2 * alpha + n)
+        * _gam(alpha + 0.5)
+        / _gam(2 * alpha)
+        / _gam(alpha + 0.5 + n)
+    )
     base._scale(factor)
-    base.__dict__['_eval_func'] = lambda x: eval_gegenbauer(float(n), alpha, x)
+    base.__dict__["_eval_func"] = lambda x: eval_gegenbauer(float(n), alpha, x)
     return base
+
 
 # Chebyshev of the first kind: T_n(x) =
 #     n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
@@ -1494,9 +1674,9 @@ def roots_chebyt(n, mu=False):
     """
     m = int(n)
     if n < 1 or n != m:
-        raise ValueError('n must be a positive integer.')
-    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2*m))
-    w = np.full_like(x, pi/m)
+        raise ValueError("n must be a positive integer.")
+    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2 * m))
+    w = np.full_like(x, pi / m)
     if mu:
         return x, w, pi
     else:
@@ -1541,15 +1721,16 @@ def chebyt(n, monic=False):
 
     wfunc = lambda x: 1.0 / sqrt(1 - x * x)
     if n == 0:
-        return orthopoly1d([], [], pi, 1.0, wfunc, (-1, 1), monic,
-                           lambda x: eval_chebyt(n, x))
+        return orthopoly1d(
+            [], [], pi, 1.0, wfunc, (-1, 1), monic, lambda x: eval_chebyt(n, x)
+        )
     n1 = n
     x, w, mu = roots_chebyt(n1, mu=True)
     hn = pi / 2
-    kn = 2**(n - 1)
-    p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic,
-                    lambda x: eval_chebyt(n, x))
+    kn = 2 ** (n - 1)
+    p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic, lambda x: eval_chebyt(n, x))
     return p
+
 
 # Chebyshev of the second kind
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
@@ -1596,10 +1777,10 @@ def roots_chebyu(n, mu=False):
     """
     m = int(n)
     if n < 1 or n != m:
-        raise ValueError('n must be a positive integer.')
+        raise ValueError("n must be a positive integer.")
     t = np.arange(m, 0, -1) * pi / (m + 1)
     x = np.cos(t)
-    w = pi * np.sin(t)**2 / (m + 1)
+    w = pi * np.sin(t) ** 2 / (m + 1)
     if mu:
         return x, w, pi / 2
     else:
@@ -1646,6 +1827,7 @@ def chebyu(n, monic=False):
     factor = sqrt(pi) / 2.0 * _gam(n + 2) / _gam(n + 1.5)
     base._scale(factor)
     return base
+
 
 # Chebyshev of the first kind        C_n(x)
 
@@ -1745,13 +1927,20 @@ def chebyc(n, monic=False):
         x, w = [], []
     hn = 4 * pi * ((n == 0) + 1)
     kn = 1.0
-    p = orthopoly1d(x, w, hn, kn,
-                    wfunc=lambda x: 1.0 / sqrt(1 - x * x / 4.0),
-                    limits=(-2, 2), monic=monic)
+    p = orthopoly1d(
+        x,
+        w,
+        hn,
+        kn,
+        wfunc=lambda x: 1.0 / sqrt(1 - x * x / 4.0),
+        limits=(-2, 2),
+        monic=monic,
+    )
     if not monic:
         p._scale(2.0 / p(2))
-        p.__dict__['_eval_func'] = lambda x: eval_chebyc(n, x)
+        p.__dict__["_eval_func"] = lambda x: eval_chebyc(n, x)
     return p
+
 
 # Chebyshev of the second kind       S_n(x)
 
@@ -1851,14 +2040,15 @@ def chebys(n, monic=False):
         x, w = [], []
     hn = pi
     kn = 1.0
-    p = orthopoly1d(x, w, hn, kn,
-                    wfunc=lambda x: sqrt(1 - x * x / 4.0),
-                    limits=(-2, 2), monic=monic)
+    p = orthopoly1d(
+        x, w, hn, kn, wfunc=lambda x: sqrt(1 - x * x / 4.0), limits=(-2, 2), monic=monic
+    )
     if not monic:
         factor = (n + 1.0) / p(2)
         p._scale(factor)
-        p.__dict__['_eval_func'] = lambda x: eval_chebys(n, x)
+        p.__dict__["_eval_func"] = lambda x: eval_chebys(n, x)
     return p
+
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
 
@@ -1935,7 +2125,7 @@ def sh_chebyt(n, monic=False):
     if monic:
         return base
     if n > 0:
-        factor = 4**n / 2.0
+        factor = 4 ** n / 2.0
     else:
         factor = 1.0
     base._scale(factor)
@@ -2020,9 +2210,10 @@ def sh_chebyu(n, monic=False):
     base = sh_jacobi(n, 2.0, 1.5, monic=monic)
     if monic:
         return base
-    factor = 4**n
+    factor = 4 ** n
     base._scale(factor)
     return base
+
 
 # Legendre
 
@@ -2074,8 +2265,9 @@ def roots_legendre(n, mu=False):
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
     f = cephes.eval_legendre
-    df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
-                     + n*cephes.eval_legendre(n-1, x))/(1-x**2)
+    df = lambda n, x: (
+        -n * x * cephes.eval_legendre(n, x) + n * cephes.eval_legendre(n - 1, x)
+    ) / (1 - x ** 2)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -2128,10 +2320,19 @@ def legendre(n, monic=False):
     if n == 0:
         x, w = [], []
     hn = 2.0 / (2 * n + 1)
-    kn = _gam(2 * n + 1) / _gam(n + 1)**2 / 2.0**n
-    p = orthopoly1d(x, w, hn, kn, wfunc=lambda x: 1.0, limits=(-1, 1),
-                    monic=monic, eval_func=lambda x: eval_legendre(n, x))
+    kn = _gam(2 * n + 1) / _gam(n + 1) ** 2 / 2.0 ** n
+    p = orthopoly1d(
+        x,
+        w,
+        hn,
+        kn,
+        wfunc=lambda x: 1.0,
+        limits=(-1, 1),
+        monic=monic,
+        eval_func=lambda x: eval_legendre(n, x),
+    )
     return p
+
 
 # Shifted Legendre              P^*_n(x)
 
@@ -2182,6 +2383,7 @@ def roots_sh_legendre(n, mu=False):
     else:
         return x, w
 
+
 def sh_legendre(n, monic=False):
     r"""Shifted Legendre polynomial.
 
@@ -2212,13 +2414,22 @@ def sh_legendre(n, monic=False):
 
     wfunc = lambda x: 0.0 * x + 1.0
     if n == 0:
-        return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
-                           lambda x: eval_sh_legendre(n, x))
+        return orthopoly1d(
+            [], [], 1.0, 1.0, wfunc, (0, 1), monic, lambda x: eval_sh_legendre(n, x)
+        )
     x, w = roots_sh_legendre(n)
     hn = 1.0 / (2 * n + 1.0)
-    kn = _gam(2 * n + 1) / _gam(n + 1)**2
-    p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,
-                    eval_func=lambda x: eval_sh_legendre(n, x))
+    kn = _gam(2 * n + 1) / _gam(n + 1) ** 2
+    p = orthopoly1d(
+        x,
+        w,
+        hn,
+        kn,
+        wfunc,
+        limits=(0, 1),
+        monic=monic,
+        eval_func=lambda x: eval_sh_legendre(n, x),
+    )
     return p
 
 
@@ -2233,11 +2444,24 @@ poch = cephes.poch
 # eval_chebyu, eval_sh_chebyt and eval_sh_chebyu: These functions are not
 # used in orthogonal.py, they are not in _rootfuns_map, but their names
 # do appear in _evalfuns, so they must be kept.
-from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
-                      eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
-                      eval_sh_chebyt, eval_sh_chebyu, eval_legendre,
-                      eval_sh_legendre, eval_genlaguerre, eval_laguerre,
-                      eval_hermite, eval_hermitenorm)
+from ._ufuncs import (
+    binom,
+    eval_jacobi,
+    eval_sh_jacobi,
+    eval_gegenbauer,
+    eval_chebyt,
+    eval_chebyu,
+    eval_chebys,
+    eval_chebyc,
+    eval_sh_chebyt,
+    eval_sh_chebyu,
+    eval_legendre,
+    eval_sh_legendre,
+    eval_genlaguerre,
+    eval_laguerre,
+    eval_hermite,
+    eval_hermitenorm,
+)
 
 # Make the old root function names an alias for the new ones
 _modattrs = globals()

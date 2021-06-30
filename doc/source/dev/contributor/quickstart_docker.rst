@@ -6,7 +6,7 @@
 Development environment quickstart guide (Docker)
 =================================================
 
-This document describes how to use a Docker container for your SciPy 
+This document describes how to use a Docker container for your SciPy
 development environment.
 These instructions should be considered a work in progress.
 
@@ -25,9 +25,9 @@ operating system. According to the `Docker website`_:
  software will always run the same, regardless of the host infrastructure.
 
 Docker makes setting up a development environment easy and reliable: we
-provide a Docker image with suitable compilers and Scipy's build-time 
-dependencies. 
-You can then use the Docker engine to execute the image as a container,  
+provide a Docker image with suitable compilers and Scipy's build-time
+dependencies.
+You can then use the Docker engine to execute the image as a container,
 add the latest development version of SciPy, and build SciPy.
 
 There are Docker hosts for several OS's including:
@@ -48,7 +48,7 @@ SciPy source code on your computer. That way, you'll be able to access the
 same files both from your native operating system and within the container.
 
 .. note::
-   
+
    Below we will use *terminal window* as a
    collective term that includes the Windows Command Prompt.
 
@@ -90,11 +90,11 @@ container do not persist after you close it.
    SciPy Docker container by entering the following command in a terminal
    window::
 
-      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> 
-   
+      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag>
+
    If you are using Windows cmd, you may run the following command instead::
 
-      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag> 
+      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag>
 
    This command starts (``run``) an interactive (``-it``) Docker container
    named ``scipy-dev`` (based on Ubuntu focal) from the ``scipy``
@@ -128,7 +128,7 @@ container do not persist after you close it.
    in the SciPy root directory to call it. ``build_ext`` is a command
    defined in ``setup.py``, and ``--inplace`` is an option we’ll use to
    ensure that the compiling happens in the SciPy directory you already
-   have rather than some other folder on your computer. 
+   have rather than some other folder on your computer.
 
 #. Test the build by entering::
 
@@ -160,7 +160,7 @@ If you would like to contribute changes to the SciPy project, please see
 :ref:`development-workflow`.
 
 The Docker image contains all the compilers and dependencies needed for you
-to work on SciPy. Similar to the :ref:`quickstart-ubuntu`,the Docker image uses 
+to work on SciPy. Similar to the :ref:`quickstart-ubuntu`,the Docker image uses
 the  `Anaconda Distribution of Python`_ to manage the development environment.
 
 .. _here: https://docs.docker.com/get-started/

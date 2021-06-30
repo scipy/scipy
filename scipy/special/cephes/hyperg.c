@@ -50,7 +50,7 @@
  * self-estimated relative error is greater than 1.0e-12.
  *
  */
-
+
 /*                                                     hyperg.c */
 
 
@@ -277,7 +277,7 @@ double *err;
     *err = acanc;
     return (asum);
 }
-
+
 /*                                                     hyp2f0()        */
 
 double hyp2f0(a, b, x, type, err)

@@ -44,4 +44,3 @@ Pull requests for 1.5.1
 * `#12410 <https://github.com/scipy/scipy/pull/12410>`__: CI: Run the Azure Windows Python36 32bit tests with mode 'fast'
 * `#12421 <https://github.com/scipy/scipy/pull/12421>`__: Fix regression in scipy 1.5.0 in dendogram when labels is a numpy...
 * `#12462 <https://github.com/scipy/scipy/pull/12462>`__: MAINT: move distributor_init import after __config__ import
-

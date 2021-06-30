@@ -1,6 +1,6 @@
 * -*- fortran -*-
 *     GetBreak
-      <rt=real,double precision,real,double precision> 
+      <rt=real,double precision,real,double precision>
      $     FUNCTION <_c>GETBREAK()
 *
 *     Get breakdown parameter tolerance; for the test routine,
@@ -16,6 +16,3 @@
 *
       END
 *     END FUNCTION <_c>GETBREAK
-
-
-

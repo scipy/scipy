@@ -86,7 +86,7 @@
  * gdtrc domain         x < 0            0.0
  *
  */
-
+
 /*                                                     gdtr()  */
 
 

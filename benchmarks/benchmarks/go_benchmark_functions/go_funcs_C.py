@@ -1,7 +1,22 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from numpy import (abs, asarray, cos, exp, floor, pi, sign, sin, sqrt, sum,
-                   size, tril, isnan, atleast_2d, repeat)
+from numpy import (
+    abs,
+    asarray,
+    cos,
+    exp,
+    floor,
+    pi,
+    sign,
+    sin,
+    sqrt,
+    sum,
+    size,
+    tril,
+    isnan,
+    atleast_2d,
+    repeat,
+)
 from numpy.testing import assert_almost_equal
 
 from .go_benchmark import Benchmark
@@ -35,10 +50,12 @@ class CarromTable(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
-        self.global_optimum = [(9.646157266348881, 9.646134286497169),
-                               (-9.646157266348881, 9.646134286497169),
-                               (9.646157266348881, -9.646134286497169),
-                               (-9.646157266348881, -9.646134286497169)]
+        self.global_optimum = [
+            (9.646157266348881, 9.646134286497169),
+            (-9.646157266348881, 9.646134286497169),
+            (9.646157266348881, -9.646134286497169),
+            (-9.646157266348881, -9.646134286497169),
+        ]
         self.fglob = -24.15681551650653
 
     def fun(self, x, *args):
@@ -46,7 +63,7 @@ class CarromTable(Benchmark):
 
         u = cos(x[0]) * cos(x[1])
         v = sqrt(x[0] ** 2 + x[1] ** 2)
-        return -((u * exp(abs(1 - v / pi))) ** 2) / 30.
+        return -((u * exp(abs(1 - v / pi))) ** 2) / 30.0
 
 
 class Chichinadze(Benchmark):
@@ -91,9 +108,14 @@ class Chichinadze(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (x[0] ** 2 - 12 * x[0] + 11 + 10 * cos(pi * x[0] / 2)
-                + 8 * sin(5 * pi * x[0] / 2)
-                - 1.0 / sqrt(5) * exp(-((x[1] - 0.5) ** 2) / 2))
+        return (
+            x[0] ** 2
+            - 12 * x[0]
+            + 11
+            + 10 * cos(pi * x[0] / 2)
+            + 8 * sin(5 * pi * x[0] / 2)
+            - 1.0 / sqrt(5) * exp(-((x[1] - 0.5) ** 2) / 2)
+        )
 
 
 class Cigar(Benchmark):
@@ -120,8 +142,7 @@ class Cigar(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-100.0] * self.N,
-                                [100.0] * self.N))
+        self._bounds = list(zip([-100.0] * self.N, [100.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -182,26 +203,47 @@ class Cola(Benchmark):
     def __init__(self, dimensions=17):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = [[0.0, 4.0]] + list(zip([-4.0] * (self.N - 1),
-                                               [4.0] * (self.N - 1)))
+        self._bounds = [[0.0, 4.0]] + list(
+            zip([-4.0] * (self.N - 1), [4.0] * (self.N - 1))
+        )
 
-        self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791,
-                                -0.8796, 0.204651, -3.28414, 0.851188,
-                                -3.46245, 2.53245, -0.895246, 1.40992,
-                                -3.07367, 1.96257, -2.97872, -0.807849,
-                                -1.68978]]
+        self.global_optimum = [
+            [
+                0.651906,
+                1.30194,
+                0.099242,
+                -0.883791,
+                -0.8796,
+                0.204651,
+                -3.28414,
+                0.851188,
+                -3.46245,
+                2.53245,
+                -0.895246,
+                1.40992,
+                -3.07367,
+                1.96257,
+                -2.97872,
+                -0.807849,
+                -1.68978,
+            ]
+        ]
         self.fglob = 11.7464
 
-        self.d = asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [1.27, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [1.69, 1.43, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [2.04, 2.35, 2.43, 0, 0, 0, 0, 0, 0, 0],
-                 [3.09, 3.18, 3.26, 2.85, 0, 0, 0, 0, 0, 0],
-                 [3.20, 3.22, 3.27, 2.88, 1.55, 0, 0, 0, 0, 0],
-                 [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0, 0, 0, 0],
-                 [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0, 0, 0],
-                 [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
-                 [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97, 0.]])
+        self.d = asarray(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1.27, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1.69, 1.43, 0, 0, 0, 0, 0, 0, 0, 0],
+                [2.04, 2.35, 2.43, 0, 0, 0, 0, 0, 0, 0],
+                [3.09, 3.18, 3.26, 2.85, 0, 0, 0, 0, 0, 0],
+                [3.20, 3.22, 3.27, 2.88, 1.55, 0, 0, 0, 0, 0],
+                [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0, 0, 0, 0],
+                [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0, 0, 0],
+                [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
+                [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97, 0.0],
+            ]
+        )
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -258,11 +300,14 @@ class Colville(Benchmark):
     def fun(self, x, *args):
 
         self.nfev += 1
-        return (100 * (x[0] - x[1] ** 2) ** 2
-                + (1 - x[0]) ** 2 + (1 - x[2]) ** 2
-                + 90 * (x[3] - x[2] ** 2) ** 2
-                + 10.1 * ((x[1] - 1) ** 2 + (x[3] - 1) ** 2)
-                + 19.8 * (x[1] - 1) * (x[3] - 1))
+        return (
+            100 * (x[0] - x[1] ** 2) ** 2
+            + (1 - x[0]) ** 2
+            + (1 - x[2]) ** 2
+            + 90 * (x[3] - x[2] ** 2) ** 2
+            + 10.1 * ((x[1] - 1) ** 2 + (x[3] - 1) ** 2)
+            + 19.8 * (x[1] - 1) * (x[3] - 1)
+        )
 
 
 class Corana(Benchmark):
@@ -306,7 +351,7 @@ class Corana(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        d = [1., 1000., 10., 100.]
+        d = [1.0, 1000.0, 10.0, 100.0]
         r = 0
         for j in range(4):
             zj = floor(abs(x[j] / 0.2) + 0.49999) * sign(x[j]) * 0.2
@@ -351,7 +396,7 @@ class CosineMixture(Benchmark):
         self.change_dimensionality = True
         self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
-        self.global_optimum = [[-1. for _ in range(self.N)]]
+        self.global_optimum = [[-1.0 for _ in range(self.N)]]
         self.fglob = -0.9 * self.N
 
     def fun(self, x, *args):
@@ -389,18 +434,23 @@ class CrossInTray(Benchmark):
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
-        self.global_optimum = [(1.349406685353340, 1.349406608602084),
-                               (-1.349406685353340, 1.349406608602084),
-                               (1.349406685353340, -1.349406608602084),
-                               (-1.349406685353340, -1.349406608602084)]
+        self.global_optimum = [
+            (1.349406685353340, 1.349406608602084),
+            (-1.349406685353340, 1.349406608602084),
+            (1.349406685353340, -1.349406608602084),
+            (-1.349406685353340, -1.349406608602084),
+        ]
         self.fglob = -2.062611870822739
 
     def fun(self, x, *args):
 
         self.nfev += 1
-        return (-0.0001 * (abs(sin(x[0]) * sin(x[1])
-                           * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
-                           + 1) ** (0.1))
+        return -0.0001 * (
+            abs(
+                sin(x[0]) * sin(x[1]) * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))
+            )
+            + 1
+        ) ** (0.1)
 
 
 class CrossLegTable(Benchmark):
@@ -432,7 +482,7 @@ class CrossLegTable(Benchmark):
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
-        self.global_optimum = [[0., 0.]]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = -1.0
 
     def fun(self, x, *args):
@@ -440,7 +490,7 @@ class CrossLegTable(Benchmark):
 
         u = 100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi
         v = sin(x[0]) * sin(x[1])
-        return -(abs(v * exp(abs(u))) + 1) ** (-0.1)
+        return -((abs(v * exp(abs(u))) + 1) ** (-0.1))
 
 
 class CrownedCross(Benchmark):
@@ -532,7 +582,7 @@ class Csendes(Benchmark):
         if isnan(val):
             return True
         try:
-            assert_almost_equal(val, 0., 4)
+            assert_almost_equal(val, 0.0, 4)
             return True
         except AssertionError:
             return False

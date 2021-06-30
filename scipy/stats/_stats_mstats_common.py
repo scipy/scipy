@@ -4,16 +4,17 @@ from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 
 
-__all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
+__all__ = ["_find_repeats", "linregress", "theilslopes", "siegelslopes"]
 
 # This is not a namedtuple for backwards compatibility. See PR #12983
-LinregressResult = _make_tuple_bunch('LinregressResult',
-                                     ['slope', 'intercept', 'rvalue',
-                                      'pvalue', 'stderr'],
-                                     extra_field_names=['intercept_stderr'])
+LinregressResult = _make_tuple_bunch(
+    "LinregressResult",
+    ["slope", "intercept", "rvalue", "pvalue", "stderr"],
+    extra_field_names=["intercept_stderr"],
+)
 
 
-def linregress(x, y=None, alternative='two-sided'):
+def linregress(x, y=None, alternative="two-sided"):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -135,9 +136,11 @@ def linregress(x, y=None, alternative='two-sided'):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            raise ValueError("If only `x` is given as input, it has to "
-                             "be of shape (2, N) or (N, 2); provided shape "
-                             f"was {x.shape}.")
+            raise ValueError(
+                "If only `x` is given as input, it has to "
+                "be of shape (2, N) or (N, 2); provided shape "
+                f"was {x.shape}."
+            )
     else:
         x = np.asarray(x)
         y = np.asarray(y)
@@ -168,7 +171,7 @@ def linregress(x, y=None, alternative='two-sided'):
             r = -1.0
 
     slope = ssxym / ssxm
-    intercept = ymean - slope*xmean
+    intercept = ymean - slope * xmean
     if n == 2:
         # handle case when only two points are passed in
         if y[0] == y[1]:
@@ -181,21 +184,26 @@ def linregress(x, y=None, alternative='two-sided'):
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
-        t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+        t = r * np.sqrt(df / ((1.0 - r + TINY) * (1.0 + r + TINY)))
         t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
 
-        slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        slope_stderr = np.sqrt((1 - r ** 2) * ssym / ssxm / df)
 
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )
         #        = ssx - sx*sx
         #        = mean( x^2 ) - mean(x)^2
-        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
+        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean ** 2)
 
-    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
-                            pvalue=prob, stderr=slope_stderr,
-                            intercept_stderr=intercept_stderr)
+    return LinregressResult(
+        slope=slope,
+        intercept=intercept,
+        rvalue=r,
+        pvalue=prob,
+        stderr=slope_stderr,
+        intercept_stderr=intercept_stderr,
+    )
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -289,8 +297,7 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" %
-                             (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -301,22 +308,28 @@ def theilslopes(y, x=None, alpha=0.95):
     medinter = np.median(y) - medslope * np.median(x)
     # Now compute confidence intervals
     if alpha > 0.5:
-        alpha = 1. - alpha
+        alpha = 1.0 - alpha
 
-    z = distributions.norm.ppf(alpha / 2.)
+    z = distributions.norm.ppf(alpha / 2.0)
     # This implements (2.6) from Sen (1968)
     _, nxreps = _find_repeats(x)
     _, nyreps = _find_repeats(y)
-    nt = len(slopes)       # N in Sen (1968)
-    ny = len(y)            # n in Sen (1968)
+    nt = len(slopes)  # N in Sen (1968)
+    ny = len(y)  # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
-    sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
-                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
-                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
+    sigsq = (
+        1
+        / 18.0
+        * (
+            ny * (ny - 1) * (2 * ny + 5)
+            - sum(k * (k - 1) * (2 * k + 5) for k in nxreps)
+            - sum(k * (k - 1) * (2 * k + 5) for k in nyreps)
+        )
+    )
     # Find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
-    Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
-    Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+    Ru = min(int(np.round((nt - z * sigma) / 2.0)), len(slopes) - 1)
+    Rl = max(int(np.round((nt + z * sigma) / 2.0)) - 1, 0)
     delta = slopes[[Rl, Ru]]
     return medslope, medinter, delta[0], delta[1]
 
@@ -426,7 +439,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     >>> plt.show()
 
     """
-    if method not in ['hierarchical', 'separate']:
+    if method not in ["hierarchical", "separate"]:
         raise ValueError("method can only be 'hierarchical' or 'separate'")
     y = np.asarray(y).ravel()
     if x is None:
@@ -434,8 +447,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" %
-                             (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
 
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y
@@ -446,8 +458,8 @@ def siegelslopes(y, x=None, method="hierarchical"):
         slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
         medslope_j = np.median(slopes_j)
         slopes.append(medslope_j)
-        if method == 'separate':
-            z = y*x[j] - y[j]*x
+        if method == "separate":
+            z = y * x[j] - y[j] * x
             medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
             intercepts.append(medintercept_j)
 
@@ -455,6 +467,6 @@ def siegelslopes(y, x=None, method="hierarchical"):
     if method == "separate":
         medinter = np.median(np.asarray(intercepts))
     else:
-        medinter = np.median(y - medslope*x)
+        medinter = np.median(y - medslope * x)
 
     return medslope, medinter

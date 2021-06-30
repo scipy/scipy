@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -29,23 +29,23 @@ extern int input_error(char *, int *);
 /*! \brief
 
  <pre>
-    Purpose   
-    =======   
+    Purpose
+    =======
 
     sp_ienv() is inquired to choose machine-dependent parameters for the
-    local environment. See ISPEC for a description of the parameters.   
+    local environment. See ISPEC for a description of the parameters.
 
-    This version provides a set of parameters which should give good,   
-    but not optimal, performance on many of the currently available   
-    computers.  Users are encouraged to modify this subroutine to set   
-    the tuning parameters for their particular machine using the option   
-    and problem size information in the arguments.   
+    This version provides a set of parameters which should give good,
+    but not optimal, performance on many of the currently available
+    computers.  Users are encouraged to modify this subroutine to set
+    the tuning parameters for their particular machine using the option
+    and problem size information in the arguments.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
     ISPEC   (input) int
-            Specifies the parameter to be returned as the value of SP_IENV.   
+            Specifies the parameter to be returned as the value of SP_IENV.
             = 1: the panel size w; a panel consists of w consecutive
 	         columns of matrix A in the process of Gaussian elimination.
 		 The best value depends on machine's cache characters.
@@ -58,12 +58,12 @@ extern int input_error(char *, int *);
 	    = 5: the minimum column dimension for 2-D blocking to be used;
 	    = 6: the estimated fills factor for L and U, compared with A;
 	    = 7: the maximum size for a supernode in ILU.
-	    
+
    (SP_IENV) (output) int
-            >= 0: the value of the parameter specified by ISPEC   
-            < 0:  if SP_IENV = -k, the k-th argument had an illegal value. 
-  
-    ===================================================================== 
+            >= 0: the value of the parameter specified by ISPEC
+            < 0:  if SP_IENV = -k, the k-th argument had an illegal value.
+
+    =====================================================================
 </pre>
 */
 int
@@ -87,4 +87,3 @@ sp_ienv(int ispec)
     return 0;
 
 } /* sp_ienv_ */
-

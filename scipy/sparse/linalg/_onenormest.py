@@ -5,7 +5,7 @@ import numpy as np
 from scipy.sparse.linalg import aslinearoperator
 
 
-__all__ = ['onenormest']
+__all__ = ["onenormest"]
 
 
 def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
@@ -83,7 +83,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     # Check the input.
     A = aslinearoperator(A)
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected the operator to act like a square matrix')
+        raise ValueError("expected the operator to act like a square matrix")
 
     # If the operator size is small compared to t,
     # then it is easier to compute the exact norm.
@@ -92,12 +92,14 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     if t >= n:
         A_explicit = np.asarray(aslinearoperator(A).matmat(np.identity(n)))
         if A_explicit.shape != (n, n):
-            raise Exception('internal error: ',
-                    'unexpected shape ' + str(A_explicit.shape))
+            raise Exception(
+                "internal error: ", "unexpected shape " + str(A_explicit.shape)
+            )
         col_abs_sums = abs(A_explicit).sum(axis=0)
-        if col_abs_sums.shape != (n, ):
-            raise Exception('internal error: ',
-                    'unexpected shape ' + str(col_abs_sums.shape))
+        if col_abs_sums.shape != (n,):
+            raise Exception(
+                "internal error: ", "unexpected shape " + str(col_abs_sums.shape)
+            )
         argmax_j = np.argmax(col_abs_sums)
         v = elementary_vector(n, argmax_j)
         w = A_explicit[:, argmax_j]
@@ -122,7 +124,7 @@ def _blocked_elementwise(func):
     Decorator for an elementwise function, to apply it blockwise along
     first dimension, to avoid excessive memory usage in temporaries.
     """
-    block_size = 2**20
+    block_size = 2 ** 20
 
     def wrapper(x):
         if x.shape[0] < block_size:
@@ -133,8 +135,9 @@ def _blocked_elementwise(func):
             y[:block_size] = y0
             del y0
             for j in range(block_size, x.shape[0], block_size):
-                y[j:j+block_size] = func(x[j:j+block_size])
+                y[j : j + block_size] = func(x[j : j + block_size])
             return y
+
     return wrapper
 
 
@@ -161,10 +164,10 @@ def _max_abs_axis1(X):
 
 
 def _sum_abs_axis0(X):
-    block_size = 2**20
+    block_size = 2 ** 20
     r = None
     for j in range(0, X.shape[0], block_size):
-        y = np.sum(np.abs(X[j:j+block_size]), axis=0)
+        y = np.sum(np.abs(X[j : j + block_size]), axis=0)
         if r is None:
             r = y
         else:
@@ -183,7 +186,7 @@ def vectors_are_parallel(v, w):
     # Entries are required to be in {-1, 1},
     # which guarantees that the magnitudes of the vectors are identical.
     if v.ndim != 1 or v.shape != w.shape:
-        raise ValueError('expected conformant vectors with entries in {-1,1}')
+        raise ValueError("expected conformant vectors with entries in {-1,1}")
     n = v.shape[0]
     return np.dot(v, w) == n
 
@@ -210,7 +213,7 @@ def column_needs_resampling(i, X, Y=None):
 
 
 def resample_column(i, X):
-    X[:, i] = np.random.randint(0, 2, size=X.shape[0])*2 - 1
+    X[:, i] = np.random.randint(0, 2, size=X.shape[0]) * 2 - 1
 
 
 def less_than_or_close(a, b):
@@ -263,7 +266,7 @@ def _algorithm_2_2(A, AT, t):
     # Initialize the X block with columns of unit 1-norm.
     X = np.ones((n, t))
     if t > 1:
-        X[:, 1:] = np.random.randint(0, 2, size=(n, t-1))*2 - 1
+        X[:, 1:] = np.random.randint(0, 2, size=(n, t - 1)) * 2 - 1
     X /= float(n)
 
     # Iteratively improve the lower bounds.
@@ -301,15 +304,15 @@ def _algorithm_2_2(A, AT, t):
         # Check invariant (2.2).
         if k >= 2:
             if not less_than_or_close(g_prev[0], h_prev[0]):
-                raise Exception('invariant (2.2) is violated')
+                raise Exception("invariant (2.2) is violated")
             if not less_than_or_close(h_prev[0], g[0]):
-                raise Exception('invariant (2.2) is violated')
+                raise Exception("invariant (2.2) is violated")
 
         # Check invariant (2.3).
         if k >= 3:
             for j in range(t):
                 if not less_than_or_close(g[j], g_prev[j]):
-                    raise Exception('invariant (2.3) is violated')
+                    raise Exception("invariant (2.3) is violated")
 
         # Update for the next iteration.
         g_prev = g
@@ -364,12 +367,12 @@ def _onenormest_core(A, AT, t, itmax):
     A_linear_operator = aslinearoperator(A)
     AT_linear_operator = aslinearoperator(AT)
     if itmax < 2:
-        raise ValueError('at least two iterations are required')
+        raise ValueError("at least two iterations are required")
     if t < 1:
-        raise ValueError('at least one column is required')
+        raise ValueError("at least one column is required")
     n = A.shape[0]
     if t >= n:
-        raise ValueError('t should be smaller than the order of A')
+        raise ValueError("t should be smaller than the order of A")
     # Track the number of big*small matrix multiplications
     # and the number of resamplings.
     nmults = 0
@@ -444,7 +447,7 @@ def _onenormest_core(A, AT, t, itmax):
         #
         # Later on, we will need at most t+len(ind_hist) largest
         # entries, so drop the rest
-        ind = np.argsort(h)[::-1][:t+len(ind_hist)].copy()
+        ind = np.argsort(h)[::-1][: t + len(ind_hist)].copy()
         del h
         if t > 1:
             # (5)

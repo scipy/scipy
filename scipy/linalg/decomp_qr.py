@@ -5,7 +5,7 @@ import numpy
 from .lapack import get_lapack_funcs
 from .misc import _datacopied
 
-__all__ = ['qr', 'qr_multiply', 'rq']
+__all__ = ["qr", "qr_multiply", "rq"]
 
 
 def safecall(f, name, *args, **kwargs):
@@ -13,18 +13,20 @@ def safecall(f, name, *args, **kwargs):
     error return values"""
     lwork = kwargs.get("lwork", None)
     if lwork in (None, -1):
-        kwargs['lwork'] = -1
+        kwargs["lwork"] = -1
         ret = f(*args, **kwargs)
-        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int_)
+        kwargs["lwork"] = ret[-2][0].real.astype(numpy.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
-        raise ValueError("illegal value in %dth argument of internal %s"
-                         % (-ret[-1], name))
+        raise ValueError(
+            "illegal value in %dth argument of internal %s" % (-ret[-1], name)
+        )
     return ret[:-2]
 
 
-def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
-       check_finite=True):
+def qr(
+    a, overwrite_a=False, lwork=None, mode="full", pivoting=False, check_finite=True
+):
     """
     Compute QR decomposition of a matrix.
 
@@ -119,9 +121,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
-    if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
-        raise ValueError("Mode argument should be one of ['full', 'r',"
-                         "'economic', 'raw']")
+    if mode not in ["full", "qr", "r", "economic", "raw"]:
+        raise ValueError(
+            "Mode argument should be one of ['full', 'r','economic', 'raw']"
+        )
 
     if check_finite:
         a1 = numpy.asarray_chkfinite(a)
@@ -133,15 +136,14 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if pivoting:
-        geqp3, = get_lapack_funcs(('geqp3',), (a1,))
+        (geqp3,) = get_lapack_funcs(("geqp3",), (a1,))
         qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=overwrite_a)
         jpvt -= 1  # geqp3 returns a 1-based index array, so subtract 1
     else:
-        geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-        qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
-                           overwrite_a=overwrite_a)
+        (geqrf,) = get_lapack_funcs(("geqrf",), (a1,))
+        qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork, overwrite_a=overwrite_a)
 
-    if mode not in ['economic', 'raw'] or M < N:
+    if mode not in ["economic", "raw"] or M < N:
         R = numpy.triu(qr)
     else:
         R = numpy.triu(qr[:N, :])
@@ -149,33 +151,43 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     if pivoting:
         Rj = R, jpvt
     else:
-        Rj = R,
+        Rj = (R,)
 
-    if mode == 'r':
+    if mode == "r":
         return Rj
-    elif mode == 'raw':
+    elif mode == "raw":
         return ((qr, tau),) + Rj
 
-    gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
+    (gor_un_gqr,) = get_lapack_funcs(("orgqr",), (qr,))
 
     if M < N:
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau,
-                      lwork=lwork, overwrite_a=1)
-    elif mode == 'economic':
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork,
-                      overwrite_a=1)
+        (Q,) = safecall(
+            gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau, lwork=lwork, overwrite_a=1
+        )
+    elif mode == "economic":
+        (Q,) = safecall(
+            gor_un_gqr, "gorgqr/gungqr", qr, tau, lwork=lwork, overwrite_a=1
+        )
     else:
         t = qr.dtype.char
         qqr = numpy.empty((M, M), dtype=t)
         qqr[:, :N] = qr
-        Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork,
-                      overwrite_a=1)
+        (Q,) = safecall(
+            gor_un_gqr, "gorgqr/gungqr", qqr, tau, lwork=lwork, overwrite_a=1
+        )
 
     return (Q,) + Rj
 
 
-def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
-                overwrite_a=False, overwrite_c=False):
+def qr_multiply(
+    a,
+    c,
+    mode="right",
+    pivoting=False,
+    conjugate=False,
+    overwrite_a=False,
+    overwrite_c=False,
+):
     """
     Calculate the QR decomposition and multiply Q with a matrix.
 
@@ -249,9 +261,10 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     True
 
     """
-    if mode not in ['left', 'right']:
-        raise ValueError("Mode argument can only be 'left' or 'right' but "
-                         "not '{}'".format(mode))
+    if mode not in ["left", "right"]:
+        raise ValueError(
+            "Mode argument can only be 'left' or 'right' but not '{}'".format(mode)
+        )
     c = numpy.asarray_chkfinite(c)
     if c.ndim < 2:
         onedim = True
@@ -264,25 +277,31 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     a = numpy.atleast_2d(numpy.asarray(a))  # chkfinite done in qr
     M, N = a.shape
 
-    if mode == 'left':
-        if c.shape[0] != min(M, N + overwrite_c*(M-N)):
-            raise ValueError('Array shapes are not compatible for Q @ c'
-                             ' operation: {} vs {}'.format(a.shape, c.shape))
+    if mode == "left":
+        if c.shape[0] != min(M, N + overwrite_c * (M - N)):
+            raise ValueError(
+                "Array shapes are not compatible for Q @ c operation: {} vs {}".format(
+                    a.shape, c.shape
+                )
+            )
     else:
         if M != c.shape[1]:
-            raise ValueError('Array shapes are not compatible for c @ Q'
-                             ' operation: {} vs {}'.format(c.shape, a.shape))
+            raise ValueError(
+                "Array shapes are not compatible for c @ Q operation: {} vs {}".format(
+                    c.shape, a.shape
+                )
+            )
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
 
-    gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
-    if gor_un_mqr.typecode in ('s', 'd'):
+    (gor_un_mqr,) = get_lapack_funcs(("ormqr",), (Q,))
+    if gor_un_mqr.typecode in ("s", "d"):
         trans = "T"
     else:
         trans = "C"
 
-    Q = Q[:, :min(M, N)]
+    Q = Q[:, : min(M, N)]
     if M > N and mode == "left" and not overwrite_c:
         if conjugate:
             cc = numpy.zeros((c.shape[1], M), dtype=c.dtype, order="F")
@@ -309,19 +328,20 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             lr = "L"
         else:
             lr = "R"
-    cQ, = safecall(gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc,
-                   overwrite_c=overwrite_c)
+    (cQ,) = safecall(
+        gor_un_mqr, "gormqr/gunmqr", lr, trans, Q, tau, cc, overwrite_c=overwrite_c
+    )
     if trans != "N":
         cQ = cQ.T
     if mode == "right":
-        cQ = cQ[:, :min(M, N)]
+        cQ = cQ[:, : min(M, N)]
     if onedim:
         cQ = cQ.ravel()
 
     return (cQ,) + raw[1:]
 
 
-def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
+def rq(a, overwrite_a=False, lwork=None, mode="full", check_finite=True):
     """
     Compute RQ decomposition of a matrix.
 
@@ -385,42 +405,43 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     ((6, 6), (6, 9))
 
     """
-    if mode not in ['full', 'r', 'economic']:
-        raise ValueError(
-                 "Mode argument should be one of ['full', 'r', 'economic']")
+    if mode not in ["full", "r", "economic"]:
+        raise ValueError("Mode argument should be one of ['full', 'r', 'economic']")
 
     if check_finite:
         a1 = numpy.asarray_chkfinite(a)
     else:
         a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError("expected matrix")
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    gerqf, = get_lapack_funcs(('gerqf',), (a1,))
-    rq, tau = safecall(gerqf, 'gerqf', a1, lwork=lwork,
-                       overwrite_a=overwrite_a)
-    if not mode == 'economic' or N < M:
-        R = numpy.triu(rq, N-M)
+    (gerqf,) = get_lapack_funcs(("gerqf",), (a1,))
+    rq, tau = safecall(gerqf, "gerqf", a1, lwork=lwork, overwrite_a=overwrite_a)
+    if not mode == "economic" or N < M:
+        R = numpy.triu(rq, N - M)
     else:
         R = numpy.triu(rq[-M:, -M:])
 
-    if mode == 'r':
+    if mode == "r":
         return R
 
-    gor_un_grq, = get_lapack_funcs(('orgrq',), (rq,))
+    (gor_un_grq,) = get_lapack_funcs(("orgrq",), (rq,))
 
     if N < M:
-        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq[-N:], tau, lwork=lwork,
-                      overwrite_a=1)
-    elif mode == 'economic':
-        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq, tau, lwork=lwork,
-                      overwrite_a=1)
+        (Q,) = safecall(
+            gor_un_grq, "gorgrq/gungrq", rq[-N:], tau, lwork=lwork, overwrite_a=1
+        )
+    elif mode == "economic":
+        (Q,) = safecall(
+            gor_un_grq, "gorgrq/gungrq", rq, tau, lwork=lwork, overwrite_a=1
+        )
     else:
         rq1 = numpy.empty((N, N), dtype=rq.dtype)
         rq1[-M:] = rq
-        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq1, tau, lwork=lwork,
-                      overwrite_a=1)
+        (Q,) = safecall(
+            gor_un_grq, "gorgrq/gungrq", rq1, tau, lwork=lwork, overwrite_a=1
+        )
 
     return R, Q

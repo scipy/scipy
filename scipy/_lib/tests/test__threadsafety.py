@@ -30,8 +30,7 @@ def test_parallel_threads():
         except Exception:
             exceptions_raised.append(traceback.format_exc(2))
 
-    threads = [threading.Thread(target=lambda k=k: worker(k))
-               for k in range(3)]
+    threads = [threading.Thread(target=lambda k=k: worker(k)) for k in range(3)]
     for t in threads:
         t.start()
     for t in threads:

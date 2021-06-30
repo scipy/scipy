@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['geometric_slerp']
+__all__ = ["geometric_slerp"]
 
 import warnings
 
@@ -28,10 +28,7 @@ def _geometric_slerp(start, end, t):
     return start * c[:, np.newaxis] + end * s[:, np.newaxis]
 
 
-def geometric_slerp(start,
-                    end,
-                    t,
-                    tol=1e-7):
+def geometric_slerp(start, end, t, tol=1e-7):
     """
     Geometric spherical linear interpolation.
 
@@ -172,28 +169,25 @@ def geometric_slerp(start,
     end = np.asarray(end, dtype=np.float64)
 
     if start.ndim != 1 or end.ndim != 1:
-        raise ValueError("Start and end coordinates "
-                         "must be one-dimensional")
+        raise ValueError("Start and end coordinates must be one-dimensional")
 
     if start.size != end.size:
-        raise ValueError("The dimensions of start and "
-                         "end must match (have same size)")
+        raise ValueError("The dimensions of start and end must match (have same size)")
 
     if start.size < 2 or end.size < 2:
-        raise ValueError("The start and end coordinates must "
-                         "both be in at least two-dimensional "
-                         "space")
+        raise ValueError(
+            "The start and end coordinates must "
+            "both be in at least two-dimensional "
+            "space"
+        )
 
     if np.array_equal(start, end):
         return [start] * np.asarray(t).size
 
     # for points that violate equation for n-sphere
     for coord in [start, end]:
-        if not np.allclose(np.linalg.norm(coord), 1.0,
-                           rtol=1e-9,
-                           atol=0):
-            raise ValueError("start and end are not"
-                             " on a unit n-sphere")
+        if not np.allclose(np.linalg.norm(coord), 1.0, rtol=1e-9, atol=0):
+            raise ValueError("start and end are not on a unit n-sphere")
 
     if not isinstance(tol, float):
         raise ValueError("tol must be a float")
@@ -205,9 +199,11 @@ def geometric_slerp(start,
     # diameter of 2 within tolerance means antipodes, which is a problem
     # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
     if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
-        warnings.warn("start and end are antipodes"
-                      " using the specified tolerance;"
-                      " this may cause ambiguous slerp paths")
+        warnings.warn(
+            "start and end are antipodes"
+            " using the specified tolerance;"
+            " this may cause ambiguous slerp paths"
+        )
 
     t = np.asarray(t, dtype=np.float64)
 
@@ -218,10 +214,6 @@ def geometric_slerp(start,
         raise ValueError("interpolation parameter must be in [0, 1]")
 
     if t.ndim == 0:
-        return _geometric_slerp(start,
-                                end,
-                                np.atleast_1d(t)).ravel()
+        return _geometric_slerp(start, end, np.atleast_1d(t)).ravel()
     else:
-        return _geometric_slerp(start,
-                                end,
-                                t)
+        return _geometric_slerp(start, end, t)

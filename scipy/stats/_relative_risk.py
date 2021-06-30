@@ -1,4 +1,3 @@
-
 import operator
 from dataclasses import dataclass
 import numpy as np
@@ -7,7 +6,7 @@ from ._common import ConfidenceInterval
 
 
 def _validate_int(n, bound, name):
-    msg = f'{name} must be an integer not less than {bound}, but got {n!r}'
+    msg = f"{name} must be an integer not less than {bound}, but got {n!r}"
     try:
         n = operator.index(n)
     except TypeError:
@@ -91,8 +90,7 @@ class RelativeRiskResult:
         ConfidenceInterval(low=1.1261564003469628, high=5.549850800541033)
         """
         if not 0 <= confidence_level <= 1:
-            raise ValueError('confidence_level must be in the interval '
-                             '[0, 1].')
+            raise ValueError("confidence_level must be in the interval [0, 1].")
 
         # Handle edge cases where either exposed_cases or control_cases
         # is zero.  We follow the convention of the R function riskratio
@@ -108,18 +106,22 @@ class RelativeRiskResult:
             return ConfidenceInterval(low=np.nan, high=np.inf)
 
         alpha = 1 - confidence_level
-        z = ndtri(1 - alpha/2)
+        z = ndtri(1 - alpha / 2)
         rr = self.relative_risk
 
         # Estimate of the variance of log(rr) is
         # var(log(rr)) = 1/exposed_cases - 1/exposed_total +
         #                1/control_cases - 1/control_total
         # and the standard error is the square root of that.
-        se = np.sqrt(1/self.exposed_cases - 1/self.exposed_total +
-                     1/self.control_cases - 1/self.control_total)
-        delta = z*se
-        katz_lo = rr*np.exp(-delta)
-        katz_hi = rr*np.exp(delta)
+        se = np.sqrt(
+            1 / self.exposed_cases
+            - 1 / self.exposed_total
+            + 1 / self.control_cases
+            - 1 / self.control_total
+        )
+        delta = z * se
+        katz_lo = rr * np.exp(-delta)
+        katz_hi = rr * np.exp(delta)
         return ConfidenceInterval(low=katz_lo, high=katz_hi)
 
 
@@ -236,9 +238,9 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     control_total = _validate_int(control_total, 1, "control_total")
 
     if exposed_cases > exposed_total:
-        raise ValueError('exposed_cases must not exceed exposed_total.')
+        raise ValueError("exposed_cases must not exceed exposed_total.")
     if control_cases > control_total:
-        raise ValueError('control_cases must not exceed control_total.')
+        raise ValueError("control_cases must not exceed control_total.")
 
     if exposed_cases == 0 and control_cases == 0:
         # relative risk is 0/0.
@@ -253,8 +255,10 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
         p1 = exposed_cases / exposed_total
         p2 = control_cases / control_total
         rr = p1 / p2
-    return RelativeRiskResult(relative_risk=rr,
-                              exposed_cases=exposed_cases,
-                              exposed_total=exposed_total,
-                              control_cases=control_cases,
-                              control_total=control_total)
+    return RelativeRiskResult(
+        relative_risk=rr,
+        exposed_cases=exposed_cases,
+        exposed_total=exposed_total,
+        control_cases=control_cases,
+        control_total=control_total,
+    )

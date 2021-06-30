@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -43,7 +43,7 @@ zcopy_to_ucol(
 	      GlobalLU_t *Glu      /* modified */
 	      )
 {
-/* 
+/*
  * Gather from SPA dense[*] to global ucol[*].
  */
     int ksub, krep, ksupno;
@@ -66,7 +66,7 @@ zcopy_to_ucol(
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;
-    
+
     jsupno = supno[jcol];
     nextu  = xusub[jcol];
     k = nseg - 1;
@@ -92,7 +92,7 @@ zcopy_to_ucol(
 		    usub = Glu->usub;
 		    lsub = Glu->lsub;
 		}
-		
+
 		for (i = 0; i < segsze; i++) {
 		    irow = lsub[isub];
 		    usub[nextu] = perm_r[irow];
@@ -100,7 +100,7 @@ zcopy_to_ucol(
 		    dense[irow] = zero;
 		    nextu++;
 		    isub++;
-		} 
+		}
 
 	    }
 

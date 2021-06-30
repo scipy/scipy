@@ -9,13 +9,14 @@ from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 from .decomp import eigvals
 
-__all__ = ['schur', 'rsf2csf']
+__all__ = ["schur", "rsf2csf"]
 
-_double_precision = ['i', 'l', 'd']
+_double_precision = ["i", "l", "d"]
 
 
-def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
-          check_finite=True):
+def schur(
+    a, output="real", lwork=None, overwrite_a=False, sort=None, check_finite=True
+):
     """
     Compute Schur decomposition of a matrix.
 
@@ -113,24 +114,24 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     1
 
     """
-    if output not in ['real', 'complex', 'r', 'c']:
+    if output not in ["real", "complex", "r", "c"]:
         raise ValueError("argument must be 'real', or 'complex'")
     if check_finite:
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
-        raise ValueError('expected square matrix')
+        raise ValueError("expected square matrix")
     typ = a1.dtype.char
-    if output in ['complex', 'c'] and typ not in ['F', 'D']:
+    if output in ["complex", "c"] and typ not in ["F", "D"]:
         if typ in _double_precision:
-            a1 = a1.astype('D')
-            typ = 'D'
+            a1 = a1.astype("D")
+            typ = "D"
         else:
-            a1 = a1.astype('F')
-            typ = 'F'
+            a1 = a1.astype("F")
+            typ = "F"
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    gees, = get_lapack_funcs(('gees',), (a1,))
+    (gees,) = get_lapack_funcs(("gees",), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
@@ -143,29 +144,31 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         sort_t = 1
         if callable(sort):
             sfunction = sort
-        elif sort == 'lhp':
+        elif sort == "lhp":
             sfunction = lambda x: (x.real < 0.0)
-        elif sort == 'rhp':
+        elif sort == "rhp":
             sfunction = lambda x: (x.real >= 0.0)
-        elif sort == 'iuc':
+        elif sort == "iuc":
             sfunction = lambda x: (abs(x) <= 1.0)
-        elif sort == 'ouc':
+        elif sort == "ouc":
             sfunction = lambda x: (abs(x) > 1.0)
         else:
-            raise ValueError("'sort' parameter must either be 'None', or a "
-                             "callable, or one of ('lhp','rhp','iuc','ouc')")
+            raise ValueError(
+                "'sort' parameter must either be 'None', or a "
+                "callable, or one of ('lhp','rhp','iuc','ouc')"
+            )
 
-    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a,
-                  sort_t=sort_t)
+    result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a, sort_t=sort_t)
 
     info = result[-1]
     if info < 0:
-        raise ValueError('illegal value in {}-th argument of internal gees'
-                         ''.format(-info))
+        raise ValueError(
+            "illegal value in {}-th argument of internal gees".format(-info)
+        )
     elif info == a1.shape[0] + 1:
-        raise LinAlgError('Eigenvalues could not be separated for reordering.')
+        raise LinAlgError("Eigenvalues could not be separated for reordering.")
     elif info == a1.shape[0] + 2:
-        raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
+        raise LinAlgError("Leading eigenvalues do not satisfy sort condition.")
     elif info > 0:
         raise LinAlgError("Schur form not found. Possibly ill-conditioned.")
 
@@ -178,10 +181,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 eps = numpy.finfo(float).eps
 feps = numpy.finfo(single).eps
 
-_array_kind = {'b': 0, 'h': 0, 'B': 0, 'i': 0, 'l': 0,
-               'f': 0, 'd': 0, 'F': 1, 'D': 1}
-_array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
-_array_type = [['f', 'd'], ['F', 'D']]
+_array_kind = {"b": 0, "h": 0, "B": 0, "i": 0, "l": 0, "f": 0, "d": 0, "F": 1, "D": 1}
+_array_precision = {"i": 1, "l": 1, "f": 0, "d": 1, "F": 0, "D": 1}
+_array_type = [["f", "d"], ["F", "D"]]
 
 
 def _commonType(*arrays):
@@ -267,26 +269,27 @@ def rsf2csf(T, Z, check_finite=True):
 
     for ind, X in enumerate([Z, T]):
         if X.ndim != 2 or X.shape[0] != X.shape[1]:
-            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+            raise ValueError("Input '{}' must be square.".format("ZT"[ind]))
 
     if T.shape[0] != Z.shape[0]:
-        raise ValueError("Input array shapes must match: Z: {} vs. T: {}"
-                         "".format(Z.shape, T.shape))
+        raise ValueError(
+            "Input array shapes must match: Z: {} vs. T: {}".format(Z.shape, T.shape)
+        )
     N = T.shape[0]
-    t = _commonType(Z, T, array([3.0], 'F'))
+    t = _commonType(Z, T, array([3.0], "F"))
     Z, T = _castCopy(t, Z, T)
 
-    for m in range(N-1, 0, -1):
-        if abs(T[m, m-1]) > eps*(abs(T[m-1, m-1]) + abs(T[m, m])):
-            mu = eigvals(T[m-1:m+1, m-1:m+1]) - T[m, m]
-            r = norm([mu[0], T[m, m-1]])
+    for m in range(N - 1, 0, -1):
+        if abs(T[m, m - 1]) > eps * (abs(T[m - 1, m - 1]) + abs(T[m, m])):
+            mu = eigvals(T[m - 1 : m + 1, m - 1 : m + 1]) - T[m, m]
+            r = norm([mu[0], T[m, m - 1]])
             c = mu[0] / r
-            s = T[m, m-1] / r
+            s = T[m, m - 1] / r
             G = array([[c.conj(), s], [-s, c]], dtype=t)
 
-            T[m-1:m+1, m-1:] = G.dot(T[m-1:m+1, m-1:])
-            T[:m+1, m-1:m+1] = T[:m+1, m-1:m+1].dot(G.conj().T)
-            Z[:, m-1:m+1] = Z[:, m-1:m+1].dot(G.conj().T)
+            T[m - 1 : m + 1, m - 1 :] = G.dot(T[m - 1 : m + 1, m - 1 :])
+            T[: m + 1, m - 1 : m + 1] = T[: m + 1, m - 1 : m + 1].dot(G.conj().T)
+            Z[:, m - 1 : m + 1] = Z[:, m - 1 : m + 1].dot(G.conj().T)
 
-        T[m, m-1] = 0.0
+        T[m, m - 1] = 0.0
     return T, Z

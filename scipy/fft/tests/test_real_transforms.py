@@ -1,4 +1,3 @@
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
@@ -16,7 +15,7 @@ from scipy import fftpack
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 10, 16])
 @pytest.mark.parametrize("axis", [0, 1])
-@pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
 def test_identity_1d(forward, backward, type, n, axis, norm):
     # Test the identity f^-1(f(x)) == x
     x = np.random.rand(n, n)
@@ -28,20 +27,20 @@ def test_identity_1d(forward, backward, type, n, axis, norm):
     pad = [(0, 0)] * 2
     pad[axis] = (0, 4)
 
-    y2 = np.pad(y, pad, mode='edge')
+    y2 = np.pad(y, pad, mode="edge")
     z2 = backward(y2, type, n, axis, norm)
     assert_allclose(z2, x)
 
 
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
-@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
-                                   np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "dtype", [np.float16, np.float32, np.float64, np.complex64, np.complex128]
+)
 @pytest.mark.parametrize("axis", [0, 1])
-@pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
 @pytest.mark.parametrize("overwrite_x", [True, False])
-def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
-                               overwrite_x):
+def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm, overwrite_x):
     # Test the identity f^-1(f(x)) == x
     x = np.random.rand(7, 8)
     x_orig = x.copy()
@@ -59,19 +58,21 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
 
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
-@pytest.mark.parametrize("shape, axes",
-                         [
-                             ((4, 4), 0),
-                             ((4, 4), 1),
-                             ((4, 4), None),
-                             ((4, 4), (0, 1)),
-                             ((10, 12), None),
-                             ((10, 12), (0, 1)),
-                             ((4, 5, 6), None),
-                             ((4, 5, 6), 1),
-                             ((4, 5, 6), (0, 2)),
-                         ])
-@pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
+@pytest.mark.parametrize(
+    "shape, axes",
+    [
+        ((4, 4), 0),
+        ((4, 4), 1),
+        ((4, 4), None),
+        ((4, 4), (0, 1)),
+        ((10, 12), None),
+        ((10, 12), (0, 1)),
+        ((4, 5, 6), None),
+        ((4, 5, 6), 1),
+        ((4, 5, 6), (0, 2)),
+    ],
+)
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
 def test_identity_nd(forward, backward, type, shape, axes, norm):
     # Test the identity f^-1(f(x)) == x
 
@@ -95,25 +96,29 @@ def test_identity_nd(forward, backward, type, shape, axes, norm):
         for a in axes:
             pad[a] = (0, 4)
 
-    y2 = np.pad(y, pad, mode='edge')
+    y2 = np.pad(y, pad, mode="edge")
     z2 = backward(y2, type, shape, axes, norm)
     assert_allclose(z2, x)
 
 
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
-@pytest.mark.parametrize("shape, axes",
-                         [
-                             ((4, 5), 0),
-                             ((4, 5), 1),
-                             ((4, 5), None),
-                         ])
-@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
-                                   np.complex64, np.complex128])
-@pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
+@pytest.mark.parametrize(
+    "shape, axes",
+    [
+        ((4, 5), 0),
+        ((4, 5), 1),
+        ((4, 5), None),
+    ],
+)
+@pytest.mark.parametrize(
+    "dtype", [np.float16, np.float32, np.float64, np.complex64, np.complex128]
+)
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
 @pytest.mark.parametrize("overwrite_x", [False, True])
-def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
-                               norm, overwrite_x):
+def test_identity_nd_overwrite(
+    forward, backward, type, shape, axes, dtype, norm, overwrite_x
+):
     # Test the identity f^-1(f(x)) == x
 
     x = np.random.random(shape).astype(dtype)
@@ -133,9 +138,9 @@ def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
         assert_array_equal(y, y_orig)
 
 
-@pytest.mark.parametrize("func", ['dct', 'dst', 'dctn', 'dstn'])
+@pytest.mark.parametrize("func", ["dct", "dst", "dctn", "dstn"])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
-@pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
 def test_fftpack_equivalience(func, type, norm):
     x = np.random.rand(8, 16)
     fft_res = getattr(fft, func)(x, type, norm=norm)

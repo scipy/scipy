@@ -7,11 +7,11 @@ import inspect
 
 
 class TestGoBenchmarkFunctions:
-
     def setup_method(self):
         bench_members = inspect.getmembers(gbf, inspect.isclass)
-        self.benchmark_functions = {it[0]:it[1] for it in bench_members if
-                                    issubclass(it[1], gbf.Benchmark)}
+        self.benchmark_functions = {
+            it[0]: it[1] for it in bench_members if issubclass(it[1], gbf.Benchmark)
+        }
 
     def teardown_method(self):
         pass
@@ -22,16 +22,14 @@ class TestGoBenchmarkFunctions:
         for name, klass in self.benchmark_functions.items():
             # LennardJones is filtered here because there are many global
             # optimima that give the same minimum energy
-            if (name in ['Benchmark', 'LennardJones'] or
-                 name.startswith('Problem')):
+            if name in ["Benchmark", "LennardJones"] or name.startswith("Problem"):
                 continue
 
             f = klass()
 
-            if name in ['Damavandi', 'Csendes']:
-                with np.errstate(divide='ignore', invalid='ignore'):
-                    print(name, f.fun(np.asarray(f.global_optimum[0])),
-                          f.fglob)
+            if name in ["Damavandi", "Csendes"]:
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    print(name, f.fun(np.asarray(f.global_optimum[0])), f.fglob)
                     assert np.isnan(f.fun(np.asarray(f.global_optimum[0])))
                     continue
 
@@ -41,7 +39,7 @@ class TestGoBenchmarkFunctions:
     def test_solution_exists(self):
         # Every benchmark function should have a minimum energy
         for name, klass in self.benchmark_functions.items():
-            if name == 'Benchmark':
+            if name == "Benchmark":
                 continue
 
             f = klass()
@@ -52,7 +50,7 @@ class TestGoBenchmarkFunctions:
         # In Python 2 zip returns a list which is subscriptable
         # In Python 3 zip returns a zip object, which is not subscriptable
         for name, klass in self.benchmark_functions.items():
-            if (name == 'Benchmark' or name.startswith('Problem')):
+            if name == "Benchmark" or name.startswith("Problem"):
                 continue
 
             f = klass()
@@ -60,7 +58,7 @@ class TestGoBenchmarkFunctions:
 
     def test_redimension(self):
         # check that problems can be redimensioned, use LJ for this.
-        LJ = self.benchmark_functions['LennardJones']
+        LJ = self.benchmark_functions["LennardJones"]
         L = LJ()
         L.change_dimensions(10)
 

@@ -7,86 +7,98 @@ def icosahedral(cls):
     a = 0.5
     b = 0.5 / phi
     c = phi / 2
-    g2 = np.array([[+a, +b, +c, 0],
-                   [+a, +b, -c, 0],
-                   [+a, +c, 0, +b],
-                   [+a, +c, 0, -b],
-                   [+a, -b, +c, 0],
-                   [+a, -b, -c, 0],
-                   [+a, -c, 0, +b],
-                   [+a, -c, 0, -b],
-                   [+a, 0, +b, +c],
-                   [+a, 0, +b, -c],
-                   [+a, 0, -b, +c],
-                   [+a, 0, -b, -c],
-                   [+b, +a, 0, +c],
-                   [+b, +a, 0, -c],
-                   [+b, +c, +a, 0],
-                   [+b, +c, -a, 0],
-                   [+b, -a, 0, +c],
-                   [+b, -a, 0, -c],
-                   [+b, -c, +a, 0],
-                   [+b, -c, -a, 0],
-                   [+b, 0, +c, +a],
-                   [+b, 0, +c, -a],
-                   [+b, 0, -c, +a],
-                   [+b, 0, -c, -a],
-                   [+c, +a, +b, 0],
-                   [+c, +a, -b, 0],
-                   [+c, +b, 0, +a],
-                   [+c, +b, 0, -a],
-                   [+c, -a, +b, 0],
-                   [+c, -a, -b, 0],
-                   [+c, -b, 0, +a],
-                   [+c, -b, 0, -a],
-                   [+c, 0, +a, +b],
-                   [+c, 0, +a, -b],
-                   [+c, 0, -a, +b],
-                   [+c, 0, -a, -b],
-                   [0, +a, +c, +b],
-                   [0, +a, +c, -b],
-                   [0, +a, -c, +b],
-                   [0, +a, -c, -b],
-                   [0, +b, +a, +c],
-                   [0, +b, +a, -c],
-                   [0, +b, -a, +c],
-                   [0, +b, -a, -c],
-                   [0, +c, +b, +a],
-                   [0, +c, +b, -a],
-                   [0, +c, -b, +a],
-                   [0, +c, -b, -a]])
+    g2 = np.array(
+        [
+            [+a, +b, +c, 0],
+            [+a, +b, -c, 0],
+            [+a, +c, 0, +b],
+            [+a, +c, 0, -b],
+            [+a, -b, +c, 0],
+            [+a, -b, -c, 0],
+            [+a, -c, 0, +b],
+            [+a, -c, 0, -b],
+            [+a, 0, +b, +c],
+            [+a, 0, +b, -c],
+            [+a, 0, -b, +c],
+            [+a, 0, -b, -c],
+            [+b, +a, 0, +c],
+            [+b, +a, 0, -c],
+            [+b, +c, +a, 0],
+            [+b, +c, -a, 0],
+            [+b, -a, 0, +c],
+            [+b, -a, 0, -c],
+            [+b, -c, +a, 0],
+            [+b, -c, -a, 0],
+            [+b, 0, +c, +a],
+            [+b, 0, +c, -a],
+            [+b, 0, -c, +a],
+            [+b, 0, -c, -a],
+            [+c, +a, +b, 0],
+            [+c, +a, -b, 0],
+            [+c, +b, 0, +a],
+            [+c, +b, 0, -a],
+            [+c, -a, +b, 0],
+            [+c, -a, -b, 0],
+            [+c, -b, 0, +a],
+            [+c, -b, 0, -a],
+            [+c, 0, +a, +b],
+            [+c, 0, +a, -b],
+            [+c, 0, -a, +b],
+            [+c, 0, -a, -b],
+            [0, +a, +c, +b],
+            [0, +a, +c, -b],
+            [0, +a, -c, +b],
+            [0, +a, -c, -b],
+            [0, +b, +a, +c],
+            [0, +b, +a, -c],
+            [0, +b, -a, +c],
+            [0, +b, -a, -c],
+            [0, +c, +b, +a],
+            [0, +c, +b, -a],
+            [0, +c, -b, +a],
+            [0, +c, -b, -a],
+        ]
+    )
     return cls.from_quat(np.concatenate((g1, g2)))
 
 
 def octahedral(cls):
     g1 = tetrahedral(cls).as_quat()
     c = np.sqrt(2) / 2
-    g2 = np.array([[+c, 0, 0, +c],
-                   [0, +c, 0, +c],
-                   [0, 0, +c, +c],
-                   [0, 0, -c, +c],
-                   [0, -c, 0, +c],
-                   [-c, 0, 0, +c],
-                   [0, +c, +c, 0],
-                   [0, -c, +c, 0],
-                   [+c, 0, +c, 0],
-                   [-c, 0, +c, 0],
-                   [+c, +c, 0, 0],
-                   [-c, +c, 0, 0]])
+    g2 = np.array(
+        [
+            [+c, 0, 0, +c],
+            [0, +c, 0, +c],
+            [0, 0, +c, +c],
+            [0, 0, -c, +c],
+            [0, -c, 0, +c],
+            [-c, 0, 0, +c],
+            [0, +c, +c, 0],
+            [0, -c, +c, 0],
+            [+c, 0, +c, 0],
+            [-c, 0, +c, 0],
+            [+c, +c, 0, 0],
+            [-c, +c, 0, 0],
+        ]
+    )
     return cls.from_quat(np.concatenate((g1, g2)))
 
 
 def tetrahedral(cls):
     g1 = np.eye(4)
     c = 0.5
-    g2 = np.array([[c, -c, -c, +c],
-                   [c, -c, +c, +c],
-                   [c, +c, -c, +c],
-                   [c, +c, +c, +c],
-                   [c, -c, -c, -c],
-                   [c, -c, +c, -c],
-                   [c, +c, -c, -c],
-                   [c, +c, +c, -c]])
+    g2 = np.array(
+        [
+            [c, -c, -c, +c],
+            [c, -c, +c, +c],
+            [c, +c, -c, +c],
+            [c, +c, +c, +c],
+            [c, -c, -c, -c],
+            [c, -c, +c, -c],
+            [c, +c, -c, -c],
+            [c, +c, +c, -c],
+        ]
+    )
     return cls.from_quat(np.concatenate((g1, g2)))
 
 
@@ -105,18 +117,18 @@ def cyclic(cls, n, axis=2):
     return cls.from_rotvec(np.roll(rv, axis, axis=1))
 
 
-def create_group(cls, group, axis='Z'):
+def create_group(cls, group, axis="Z"):
     if not isinstance(group, str):
         raise ValueError("`group` argument must be a string")
 
-    permitted_axes = ['x', 'y', 'z', 'X', 'Y', 'Z']
+    permitted_axes = ["x", "y", "z", "X", "Y", "Z"]
     if axis not in permitted_axes:
         raise ValueError("`axis` must be one of " + ", ".join(permitted_axes))
 
-    if group in ['I', 'O', 'T']:
+    if group in ["I", "O", "T"]:
         symbol = group
         order = 1
-    elif group[:1] in ['C', 'D'] and group[1:].isdigit():
+    elif group[:1] in ["C", "D"] and group[1:].isdigit():
         symbol = group[:1]
         order = int(group[1:])
     else:
@@ -125,16 +137,16 @@ def create_group(cls, group, axis='Z'):
     if order < 1:
         raise ValueError("Group order must be positive")
 
-    axis = 'xyz'.index(axis.lower())
-    if symbol == 'I':
+    axis = "xyz".index(axis.lower())
+    if symbol == "I":
         return icosahedral(cls)
-    elif symbol == 'O':
+    elif symbol == "O":
         return octahedral(cls)
-    elif symbol == 'T':
+    elif symbol == "T":
         return tetrahedral(cls)
-    elif symbol == 'D':
+    elif symbol == "D":
         return dicyclic(cls, order, axis=axis)
-    elif symbol == 'C':
+    elif symbol == "C":
         return cyclic(cls, order, axis=axis)
     else:
         assert False

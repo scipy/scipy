@@ -50,10 +50,10 @@ def _angular_rate_to_rotvec_dot_matrix(rotvecs):
 
     mask = norm > 1e-4
     nm = norm[mask]
-    k[mask] = (1 - 0.5 * nm / np.tan(0.5 * nm)) / nm**2
+    k[mask] = (1 - 0.5 * nm / np.tan(0.5 * nm)) / nm ** 2
     mask = ~mask
     nm = norm[mask]
-    k[mask] = 1/12 + 1/720 * nm**2
+    k[mask] = 1 / 12 + 1 / 720 * nm ** 2
 
     skew = _create_skew_matrix(rotvecs)
 
@@ -139,9 +139,9 @@ def _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot):
 
     mask = ~mask
     nm = norm[mask]
-    k1[mask] = 1/12 - nm ** 2 / 180
-    k2[mask] = -1/60 + nm ** 2 / 12604
-    k3[mask] = 1/6 - nm ** 2 / 120
+    k1[mask] = 1 / 12 - nm ** 2 / 180
+    k2[mask] = -1 / 60 + nm ** 2 / 12604
+    k3[mask] = 1 / 6 - nm ** 2 / 120
 
     dp = dp[:, None]
     k1 = k1[:, None]
@@ -166,7 +166,8 @@ def _compute_angular_rate(rotvecs, rotvecs_dot):
     ndarray, shape (n, 3)
     """
     return _matrix_vector_product_of_stacks(
-        _rotvec_dot_to_angular_rate_matrix(rotvecs), rotvecs_dot)
+        _rotvec_dot_to_angular_rate_matrix(rotvecs), rotvecs_dot
+    )
 
 
 def _compute_angular_acceleration(rotvecs, rotvecs_dot, rotvecs_dot_dot):
@@ -185,8 +186,9 @@ def _compute_angular_acceleration(rotvecs, rotvecs_dot, rotvecs_dot_dot):
     -------
     ndarray, shape (n, 3)
     """
-    return (_compute_angular_rate(rotvecs, rotvecs_dot_dot) +
-            _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot))
+    return _compute_angular_rate(
+        rotvecs, rotvecs_dot_dot
+    ) + _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot)
 
 
 def _create_block_3_diagonal_matrix(A, B, d):
@@ -323,6 +325,7 @@ class RotationSpline:
     >>> plt.title("Angular acceleration")
     >>> plt.show()
     """
+
     # Parameters for the solver for angular rate.
     MAX_ITER = 10
     TOL = 1e-9
@@ -335,17 +338,18 @@ class RotationSpline:
         M = _create_block_3_diagonal_matrix(
             2 * A_inv[1:-1] / dt[1:-1, None, None],
             2 * A[1:-1] / dt[1:-1, None, None],
-            4 * (1 / dt[:-1] + 1 / dt[1:]))
+            4 * (1 / dt[:-1] + 1 / dt[1:]),
+        )
 
-        b0 = 6 * (rotvecs[:-1] * dt[:-1, None] ** -2 +
-                  rotvecs[1:] * dt[1:, None] ** -2)
+        b0 = 6 * (rotvecs[:-1] * dt[:-1, None] ** -2 + rotvecs[1:] * dt[1:, None] ** -2)
         b0[0] -= 2 / dt[0] * A_inv[0].dot(angular_rate_first)
         b0[-1] -= 2 / dt[-1] * A[-1].dot(angular_rates[-1])
 
         for iteration in range(self.MAX_ITER):
             rotvecs_dot = _matrix_vector_product_of_stacks(A, angular_rates)
             delta_beta = _angular_acceleration_nonlinear_term(
-                rotvecs[:-1], rotvecs_dot[:-1])
+                rotvecs[:-1], rotvecs_dot[:-1]
+            )
             b = b0 - delta_beta
             angular_rates_new = solve_banded((5, 5), M, b.ravel())
             angular_rates_new = angular_rates_new.reshape((-1, 3))
@@ -374,15 +378,17 @@ class RotationSpline:
             raise ValueError("`times` must be 1-dimensional.")
 
         if len(times) != len(rotations):
-            raise ValueError("Expected number of rotations to be equal to "
-                             "number of timestamps given, got {} rotations "
-                             "and {} timestamps."
-                             .format(len(rotations), len(times)))
+            raise ValueError(
+                "Expected number of rotations to be equal to "
+                "number of timestamps given, got {} rotations "
+                "and {} timestamps.".format(len(rotations), len(times))
+            )
 
         dt = np.diff(times)
         if np.any(dt <= 0):
-            raise ValueError("Values in `times` must be in a strictly "
-                             "increasing order.")
+            raise ValueError(
+                "Values in `times` must be in a strictly increasing order."
+            )
 
         rotvecs = (rotations[:-1].inv() * rotations[1:]).as_rotvec()
         angular_rates = rotvecs / dt[:, None]
@@ -391,14 +397,13 @@ class RotationSpline:
             rotvecs_dot = angular_rates
         else:
             angular_rates, rotvecs_dot = self._solve_for_angular_rates(
-                dt, angular_rates, rotvecs)
+                dt, angular_rates, rotvecs
+            )
 
         dt = dt[:, None]
         coeff = np.empty((4, len(times) - 1, 3))
-        coeff[0] = (-2 * rotvecs + dt * angular_rates
-                    + dt * rotvecs_dot) / dt ** 3
-        coeff[1] = (3 * rotvecs - 2 * dt * angular_rates
-                    - dt * rotvecs_dot) / dt ** 2
+        coeff[0] = (-2 * rotvecs + dt * angular_rates + dt * rotvecs_dot) / dt ** 3
+        coeff[1] = (3 * rotvecs - 2 * dt * angular_rates - dt * rotvecs_dot) / dt ** 2
         coeff[2] = angular_rates
         coeff[3] = 0
 
@@ -436,7 +441,7 @@ class RotationSpline:
 
         rotvecs = self.interpolator(times)
         if order == 0:
-            index = np.searchsorted(self.times, times, side='right')
+            index = np.searchsorted(self.times, times, side="right")
             index -= 1
             index[index < 0] = 0
             n_segments = len(self.times) - 1
@@ -448,8 +453,9 @@ class RotationSpline:
         elif order == 2:
             rotvecs_dot = self.interpolator(times, 1)
             rotvecs_dot_dot = self.interpolator(times, 2)
-            result = _compute_angular_acceleration(rotvecs, rotvecs_dot,
-                                                   rotvecs_dot_dot)
+            result = _compute_angular_acceleration(
+                rotvecs, rotvecs_dot, rotvecs_dot_dot
+            )
         else:
             assert False
 

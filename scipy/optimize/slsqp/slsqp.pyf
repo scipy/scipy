@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module _slsqp ! in 
+python module _slsqp ! in
     interface  ! in :slsqp
         subroutine slsqp(m,meq,la,n,x,xl,xu,f,c,g,a,acc,iter,mode,w,l_w,jw,l_jw,alpha,f0,gs,h1,h2,h3,h4,t,t0,tol,iexact,incons,ireset,itermx,line,n1,n2,n3) ! in :slsqp:slsqp_optmz.f
             integer :: m
@@ -41,7 +41,7 @@ python module _slsqp ! in
             integer, intent(inout) :: n2
             integer, intent(inout) :: n3
         end subroutine slsqp
-    end interface 
+    end interface
 end python module slsqp
 
 ! This file was auto-generated with f2py (version:2).

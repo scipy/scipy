@@ -230,4 +230,3 @@ query_pairs(const ckdtree *self,
 
     return 0;
 }
-

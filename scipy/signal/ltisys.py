@@ -27,30 +27,59 @@ import warnings
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
-                            freqz_zpk)
-from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+from .filter_design import tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk, freqz_zpk
+from .lti_conversion import tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk, cont2discrete
 
 import numpy
 import numpy as np
-from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
-                   dot, transpose, ones, zeros_like, linspace, nan_to_num)
+from numpy import (
+    real,
+    atleast_1d,
+    atleast_2d,
+    squeeze,
+    asarray,
+    zeros,
+    dot,
+    transpose,
+    ones,
+    zeros_like,
+    linspace,
+    nan_to_num,
+)
 import copy
 
-__all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
-           'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
-           'dfreqresp', 'dbode']
+__all__ = [
+    "lti",
+    "dlti",
+    "TransferFunction",
+    "ZerosPolesGain",
+    "StateSpace",
+    "lsim",
+    "lsim2",
+    "impulse",
+    "impulse2",
+    "step",
+    "step2",
+    "bode",
+    "freqresp",
+    "place_poles",
+    "dlsim",
+    "dstep",
+    "dimpulse",
+    "dfreqresp",
+    "dbode",
+]
 
 
 class LinearTimeInvariant:
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
         if cls is LinearTimeInvariant:
-            raise NotImplementedError('The LinearTimeInvariant class is not '
-                                      'meant to be used directly, use `lti` '
-                                      'or `dlti` instead.')
+            raise NotImplementedError(
+                "The LinearTimeInvariant class is not "
+                "meant to be used directly, use `lti` "
+                "or `dlti` instead."
+            )
         return super(LinearTimeInvariant, cls).__new__(cls)
 
     def __init__(self):
@@ -75,7 +104,7 @@ class LinearTimeInvariant:
         if self.dt is None:
             return {}
         else:
-            return {'dt': self.dt}
+            return {"dt": self.dt}
 
     @property
     def zeros(self):
@@ -202,22 +231,26 @@ class lti(LinearTimeInvariant):
     )
 
     """
+
     def __new__(cls, *system):
         """Create an instance of the appropriate subclass."""
         if cls is lti:
             N = len(system)
             if N == 2:
                 return TransferFunctionContinuous.__new__(
-                    TransferFunctionContinuous, *system)
+                    TransferFunctionContinuous, *system
+                )
             elif N == 3:
                 return ZerosPolesGainContinuous.__new__(
-                    ZerosPolesGainContinuous, *system)
+                    ZerosPolesGainContinuous, *system
+                )
             elif N == 4:
-                return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system)
+                return StateSpaceContinuous.__new__(StateSpaceContinuous, *system)
             else:
-                raise ValueError("`system` needs to be an instance of `lti` "
-                                 "or have 2, 3 or 4 arguments.")
+                raise ValueError(
+                    "`system` needs to be an instance of `lti` "
+                    "or have 2, 3 or 4 arguments."
+                )
         # __new__ was called from a subclass, let it call its own functions
         return super(lti, cls).__new__(cls)
 
@@ -284,7 +317,7 @@ class lti(LinearTimeInvariant):
         """
         return freqresp(self, w=w, n=n)
 
-    def to_discrete(self, dt, method='zoh', alpha=None):
+    def to_discrete(self, dt, method="zoh", alpha=None):
         """Return a discretized version of the current system.
 
         Parameters: See `cont2discrete` for details.
@@ -293,8 +326,9 @@ class lti(LinearTimeInvariant):
         -------
         sys: instance of `dlti`
         """
-        raise NotImplementedError('to_discrete is not implemented for this '
-                                  'system class.')
+        raise NotImplementedError(
+            "to_discrete is not implemented for this system class."
+        )
 
 
 class dlti(LinearTimeInvariant):
@@ -386,22 +420,26 @@ class dlti(LinearTimeInvariant):
     )
 
     """
+
     def __new__(cls, *system, **kwargs):
         """Create an instance of the appropriate subclass."""
         if cls is dlti:
             N = len(system)
             if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system, **kwargs)
+                    TransferFunctionDiscrete, *system, **kwargs
+                )
             elif N == 3:
-                return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system, **kwargs)
+                return ZerosPolesGainDiscrete.__new__(
+                    ZerosPolesGainDiscrete, *system, **kwargs
+                )
             elif N == 4:
-                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
-                                                  **kwargs)
+                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system, **kwargs)
             else:
-                raise ValueError("`system` needs to be an instance of `dlti` "
-                                 "or have 2, 3 or 4 arguments.")
+                raise ValueError(
+                    "`system` needs to be an instance of `dlti` "
+                    "or have 2, 3 or 4 arguments."
+                )
         # __new__ was called from a subclass, let it call its own functions
         return super(dlti, cls).__new__(cls)
 
@@ -411,7 +449,7 @@ class dlti(LinearTimeInvariant):
 
         The heavy lifting is done by the subclasses.
         """
-        dt = kwargs.pop('dt', True)
+        dt = kwargs.pop("dt", True)
         super().__init__(*system, **kwargs)
 
         self.dt = dt
@@ -564,6 +602,7 @@ class TransferFunction(LinearTimeInvariant):
     )
 
     """
+
     def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of lti."""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -571,16 +610,14 @@ class TransferFunction(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is TransferFunction:
-            if kwargs.get('dt') is None:
+            if kwargs.get("dt") is None:
                 return TransferFunctionContinuous.__new__(
-                    TransferFunctionContinuous,
-                    *system,
-                    **kwargs)
+                    TransferFunctionContinuous, *system, **kwargs
+                )
             else:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete,
-                    *system,
-                    **kwargs)
+                    TransferFunctionDiscrete, *system, **kwargs
+                )
 
         # No special conversion needed
         return super(TransferFunction, cls).__new__(cls)
@@ -601,12 +638,12 @@ class TransferFunction(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{0}(\n{1},\n{2},\ndt: {3}\n)'.format(
+        return "{0}(\n{1},\n{2},\ndt: {3}\n)".format(
             self.__class__.__name__,
             repr(self.num),
             repr(self.den),
             repr(self.dt),
-            )
+        )
 
     @property
     def num(self):
@@ -668,8 +705,7 @@ class TransferFunction(LinearTimeInvariant):
             Zeros, poles, gain representation of the current system
 
         """
-        return ZerosPolesGain(*tf2zpk(self.num, self.den),
-                              **self._dt_dict)
+        return ZerosPolesGain(*tf2zpk(self.num, self.den), **self._dt_dict)
 
     def to_ss(self):
         """
@@ -681,8 +717,7 @@ class TransferFunction(LinearTimeInvariant):
             State space model of the current system
 
         """
-        return StateSpace(*tf2ss(self.num, self.den),
-                          **self._dt_dict)
+        return StateSpace(*tf2ss(self.num, self.den), **self._dt_dict)
 
     @staticmethod
     def _z_to_zinv(num, den):
@@ -794,7 +829,8 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
-    def to_discrete(self, dt, method='zoh', alpha=None):
+
+    def to_discrete(self, dt, method="zoh", alpha=None):
         """
         Returns the discretized `TransferFunction` system.
 
@@ -804,11 +840,10 @@ class TransferFunctionContinuous(TransferFunction, lti):
         -------
         sys: instance of `dlti` and `StateSpace`
         """
-        return TransferFunction(*cont2discrete((self.num, self.den),
-                                               dt,
-                                               method=method,
-                                               alpha=alpha)[:-1],
-                                dt=dt)
+        return TransferFunction(
+            *cont2discrete((self.num, self.den), dt, method=method, alpha=alpha)[:-1],
+            dt=dt,
+        )
 
 
 class TransferFunctionDiscrete(TransferFunction, dlti):
@@ -945,6 +980,7 @@ class ZerosPolesGain(LinearTimeInvariant):
     )
 
     """
+
     def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -952,17 +988,14 @@ class ZerosPolesGain(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is ZerosPolesGain:
-            if kwargs.get('dt') is None:
+            if kwargs.get("dt") is None:
                 return ZerosPolesGainContinuous.__new__(
-                    ZerosPolesGainContinuous,
-                    *system,
-                    **kwargs)
+                    ZerosPolesGainContinuous, *system, **kwargs
+                )
             else:
                 return ZerosPolesGainDiscrete.__new__(
-                    ZerosPolesGainDiscrete,
-                    *system,
-                    **kwargs
-                    )
+                    ZerosPolesGainDiscrete, *system, **kwargs
+                )
 
         # No special conversion needed
         return super(ZerosPolesGain, cls).__new__(cls)
@@ -983,13 +1016,13 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)'.format(
+        return "{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)".format(
             self.__class__.__name__,
             repr(self.zeros),
             repr(self.poles),
             repr(self.gain),
             repr(self.dt),
-            )
+        )
 
     @property
     def zeros(self):
@@ -1049,8 +1082,9 @@ class ZerosPolesGain(LinearTimeInvariant):
             Transfer function of the current system
 
         """
-        return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain),
-                                **self._dt_dict)
+        return TransferFunction(
+            *zpk2tf(self.zeros, self.poles, self.gain), **self._dt_dict
+        )
 
     def to_zpk(self):
         """
@@ -1074,8 +1108,7 @@ class ZerosPolesGain(LinearTimeInvariant):
             State space model of the current system
 
         """
-        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain),
-                          **self._dt_dict)
+        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain), **self._dt_dict)
 
 
 class ZerosPolesGainContinuous(ZerosPolesGain, lti):
@@ -1129,7 +1162,8 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
-    def to_discrete(self, dt, method='zoh', alpha=None):
+
+    def to_discrete(self, dt, method="zoh", alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
 
@@ -1140,11 +1174,11 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
         sys: instance of `dlti` and `ZerosPolesGain`
         """
         return ZerosPolesGain(
-            *cont2discrete((self.zeros, self.poles, self.gain),
-                           dt,
-                           method=method,
-                           alpha=alpha)[:-1],
-            dt=dt)
+            *cont2discrete(
+                (self.zeros, self.poles, self.gain), dt, method=method, alpha=alpha
+            )[:-1],
+            dt=dt,
+        )
 
 
 class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
@@ -1320,12 +1354,12 @@ class StateSpace(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `dlti`
         if cls is StateSpace:
-            if kwargs.get('dt') is None:
-                return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system, **kwargs)
+            if kwargs.get("dt") is None:
+                return StateSpaceContinuous.__new__(
+                    StateSpaceContinuous, *system, **kwargs
+                )
             else:
-                return StateSpaceDiscrete.__new__(StateSpaceDiscrete,
-                                                  *system, **kwargs)
+                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system, **kwargs)
 
         # No special conversion needed
         return super(StateSpace, cls).__new__(cls)
@@ -1348,18 +1382,19 @@ class StateSpace(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)'.format(
+        return "{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)".format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
             repr(self.C),
             repr(self.D),
             repr(self.dt),
-            )
+        )
 
     def _check_binop_other(self, other):
-        return isinstance(other, (StateSpace, np.ndarray, float, complex,
-                                  np.number, int))
+        return isinstance(
+            other, (StateSpace, np.ndarray, float, complex, np.number, int)
+        )
 
     def __mul__(self, other):
         """
@@ -1385,7 +1420,7 @@ class StateSpace(LinearTimeInvariant):
                 return NotImplemented
 
             if self.dt != other.dt:
-                raise TypeError('Cannot multiply systems with different `dt`.')
+                raise TypeError("Cannot multiply systems with different `dt`.")
 
             n1 = self.A.shape[0]
             n2 = other.A.shape[0]
@@ -1401,8 +1436,12 @@ class StateSpace(LinearTimeInvariant):
             # [x2'] = [0  A2    ] [x2] + [B2   ] u2
             #                    [x1]
             #  y2   = [C1 D1*C2] [x2] + D1*D2 u2
-            a = np.vstack((np.hstack((self.A, np.dot(self.B, other.C))),
-                           np.hstack((zeros((n2, n1)), other.A))))
+            a = np.vstack(
+                (
+                    np.hstack((self.A, np.dot(self.B, other.C))),
+                    np.hstack((zeros((n2, n1)), other.A)),
+                )
+            )
             b = np.vstack((np.dot(self.B, other.D), other.B))
             c = np.hstack((self.C, np.dot(self.D, other.C)))
             d = np.dot(self.D, other.D)
@@ -1415,11 +1454,13 @@ class StateSpace(LinearTimeInvariant):
             d = np.dot(self.D, other)
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
-        return StateSpace(np.asarray(a, dtype=common_dtype),
-                          np.asarray(b, dtype=common_dtype),
-                          np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype),
-                          **self._dt_dict)
+        return StateSpace(
+            np.asarray(a, dtype=common_dtype),
+            np.asarray(b, dtype=common_dtype),
+            np.asarray(c, dtype=common_dtype),
+            np.asarray(d, dtype=common_dtype),
+            **self._dt_dict,
+        )
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1433,11 +1474,13 @@ class StateSpace(LinearTimeInvariant):
         d = np.dot(other, self.D)
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
-        return StateSpace(np.asarray(a, dtype=common_dtype),
-                          np.asarray(b, dtype=common_dtype),
-                          np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype),
-                          **self._dt_dict)
+        return StateSpace(
+            np.asarray(a, dtype=common_dtype),
+            np.asarray(b, dtype=common_dtype),
+            np.asarray(c, dtype=common_dtype),
+            np.asarray(d, dtype=common_dtype),
+            **self._dt_dict,
+        )
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
@@ -1453,11 +1496,10 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
-                raise TypeError('Cannot add {} and {}'.format(type(self),
-                                                              type(other)))
+                raise TypeError("Cannot add {} and {}".format(type(self), type(other)))
 
             if self.dt != other.dt:
-                raise TypeError('Cannot add systems with different `dt`.')
+                raise TypeError("Cannot add systems with different `dt`.")
             # Interconnection of systems
             # x1' = A1 x1 + B1 u
             # y1  = C1 x1 + D1 u
@@ -1483,16 +1525,19 @@ class StateSpace(LinearTimeInvariant):
                 c = self.C
                 d = self.D + other
             else:
-                raise ValueError("Cannot add systems with incompatible "
-                                 "dimensions ({} and {})"
-                                 .format(self.D.shape, other.shape))
+                raise ValueError(
+                    "Cannot add systems with incompatible "
+                    "dimensions ({} and {})".format(self.D.shape, other.shape)
+                )
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
-        return StateSpace(np.asarray(a, dtype=common_dtype),
-                          np.asarray(b, dtype=common_dtype),
-                          np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype),
-                          **self._dt_dict)
+        return StateSpace(
+            np.asarray(a, dtype=common_dtype),
+            np.asarray(b, dtype=common_dtype),
+            np.asarray(c, dtype=common_dtype),
+            np.asarray(d, dtype=common_dtype),
+            **self._dt_dict,
+        )
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
@@ -1524,7 +1569,7 @@ class StateSpace(LinearTimeInvariant):
             # It's ambiguous what this means, so disallow it
             raise ValueError("Cannot divide StateSpace by non-scalar numpy arrays")
 
-        return self.__mul__(1/other)
+        return self.__mul__(1 / other)
 
     @property
     def A(self):
@@ -1594,8 +1639,9 @@ class StateSpace(LinearTimeInvariant):
             Transfer function of the current system
 
         """
-        return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D,
-                                       **kwargs), **self._dt_dict)
+        return TransferFunction(
+            *ss2tf(self._A, self._B, self._C, self._D, **kwargs), **self._dt_dict
+        )
 
     def to_zpk(self, **kwargs):
         """
@@ -1612,8 +1658,9 @@ class StateSpace(LinearTimeInvariant):
             Zeros, poles, gain representation of the current system
 
         """
-        return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D,
-                                      **kwargs), **self._dt_dict)
+        return ZerosPolesGain(
+            *ss2zpk(self._A, self._B, self._C, self._D, **kwargs), **self._dt_dict
+        )
 
     def to_ss(self):
         """
@@ -1683,7 +1730,8 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
-    def to_discrete(self, dt, method='zoh', alpha=None):
+
+    def to_discrete(self, dt, method="zoh", alpha=None):
         """
         Returns the discretized `StateSpace` system.
 
@@ -1693,11 +1741,12 @@ class StateSpaceContinuous(StateSpace, lti):
         -------
         sys: instance of `dlti` and `StateSpace`
         """
-        return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
-                                         dt,
-                                         method=method,
-                                         alpha=alpha)[:-1],
-                          dt=dt)
+        return StateSpace(
+            *cont2discrete(
+                (self.A, self.B, self.C, self.D), dt, method=method, alpha=alpha
+            )[:-1],
+            dt=dt,
+        )
 
 
 class StateSpaceDiscrete(StateSpace, dlti):
@@ -1884,8 +1933,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('lsim2 can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("lsim2 can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
 
@@ -1911,27 +1959,30 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
             U = U.reshape(-1, 1)
         sU = U.shape
         if sU[0] != len(T):
-            raise ValueError("U must have the same number of rows "
-                             "as elements in T.")
+            raise ValueError("U must have the same number of rows as elements in T.")
 
         if sU[1] != sys.inputs:
-            raise ValueError("The number of inputs in U (%d) is not "
-                             "compatible with the number of system "
-                             "inputs (%d)" % (sU[1], sys.inputs))
+            raise ValueError(
+                "The number of inputs in U (%d) is not "
+                "compatible with the number of system "
+                "inputs (%d)" % (sU[1], sys.inputs)
+            )
         # Create a callable that uses linear interpolation to
         # calculate the input at any time.
-        ufunc = interpolate.interp1d(T, U, kind='linear',
-                                     axis=0, bounds_error=False)
+        ufunc = interpolate.interp1d(T, U, kind="linear", axis=0, bounds_error=False)
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
             return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
+
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
+
         def fprime(x, t, sys):
             """The vector field of the linear system."""
             return dot(sys.A, x)
+
         xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
         yout = dot(sys.C, transpose(xout))
 
@@ -2062,8 +2113,7 @@ def lsim(system, U, T, X0=None, interp=True):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('lsim can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("lsim can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
     T = atleast_1d(T)
@@ -2087,9 +2137,7 @@ def lsim(system, U, T, X0=None, interp=True):
     else:
         raise ValueError("Initial time must be nonnegative")
 
-    no_input = (U is None or
-                (isinstance(U, (int, float)) and U == 0.) or
-                not np.any(U))
+    no_input = U is None or (isinstance(U, (int, float)) and U == 0.0) or not np.any(U)
 
     if n_steps == 1:
         yout = squeeze(dot(xout, transpose(C)))
@@ -2099,8 +2147,11 @@ def lsim(system, U, T, X0=None, interp=True):
 
     dt = T[1] - T[0]
     if not np.allclose((T[1:] - T[:-1]) / dt, 1.0):
-        warnings.warn("Non-uniform timesteps are deprecated. Results may be "
-                      "slow and/or inaccurate.", DeprecationWarning)
+        warnings.warn(
+            "Non-uniform timesteps are deprecated. Results may be "
+            "slow and/or inaccurate.",
+            DeprecationWarning,
+        )
         return lsim2(system, U, T, X0)
 
     if no_input:
@@ -2108,7 +2159,7 @@ def lsim(system, U, T, X0=None, interp=True):
         # take transpose because state is a row vector
         expAT_dt = linalg.expm(transpose(A) * dt)
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], expAT_dt)
+            xout[i] = dot(xout[i - 1], expAT_dt)
         yout = squeeze(dot(xout, transpose(C)))
         return T, squeeze(yout), squeeze(xout)
 
@@ -2118,8 +2169,7 @@ def lsim(system, U, T, X0=None, interp=True):
         U = U[:, np.newaxis]
 
     if U.shape[0] != n_steps:
-        raise ValueError("U must have the same number of rows "
-                         "as elements in T.")
+        raise ValueError("U must have the same number of rows as elements in T.")
 
     if U.shape[1] != n_inputs:
         raise ValueError("System does not define that many inputs.")
@@ -2133,14 +2183,15 @@ def lsim(system, U, T, X0=None, interp=True):
         # Solution is
         #   [ x(dt) ]       [ A*dt   B*dt ] [ x0 ]
         #   [ u(dt) ] = exp [  0     0    ] [ u0 ]
-        M = np.vstack([np.hstack([A * dt, B * dt]),
-                       np.zeros((n_inputs, n_states + n_inputs))])
+        M = np.vstack(
+            [np.hstack([A * dt, B * dt]), np.zeros((n_inputs, n_states + n_inputs))]
+        )
         # transpose everything because the state and input are row vectors
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
+            xout[i] = dot(xout[i - 1], Ad) + dot(U[i - 1], Bd)
     else:
         # Linear interpolation between steps
         # Algorithm: to integrate from time 0 to time dt, with linear
@@ -2152,19 +2203,23 @@ def lsim(system, U, T, X0=None, interp=True):
         #   [ x(dt) ]       [ A*dt  B*dt  0 ] [  x0   ]
         #   [ u(dt) ] = exp [  0     0    I ] [  u0   ]
         #   [u1 - u0]       [  0     0    0 ] [u1 - u0]
-        M = np.vstack([np.hstack([A * dt, B * dt,
-                                  np.zeros((n_states, n_inputs))]),
-                       np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
-                                  np.identity(n_inputs)]),
-                       np.zeros((n_inputs, n_states + 2 * n_inputs))])
+        M = np.vstack(
+            [
+                np.hstack([A * dt, B * dt, np.zeros((n_states, n_inputs))]),
+                np.hstack(
+                    [np.zeros((n_inputs, n_states + n_inputs)), np.identity(n_inputs)]
+                ),
+                np.zeros((n_inputs, n_states + 2 * n_inputs)),
+            ]
+        )
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
-        Bd1 = expMT[n_states+n_inputs:, :n_states]
-        Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
+        Bd1 = expMT[n_states + n_inputs :, :n_states]
+        Bd0 = expMT[n_states : n_states + n_inputs, :n_states] - Bd1
         for i in range(1, n_steps):
-            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
+            xout[i] = dot(xout[i - 1], Ad) + dot(U[i - 1], Bd0) + dot(U[i], Bd1)
 
-    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
+    yout = squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D)))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -2251,8 +2306,7 @@ def impulse(system, X0=None, T=None, N=None):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('impulse can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("impulse can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
     if X0 is None:
@@ -2266,7 +2320,7 @@ def impulse(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
 
-    _, h, _ = lsim(sys, 0., T, X, interp=False)
+    _, h, _ = lsim(sys, 0.0, T, X, interp=False)
     return T, h
 
 
@@ -2338,8 +2392,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('impulse2 can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("impulse2 can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
     B = sys.B
@@ -2415,8 +2468,7 @@ def step(system, X0=None, T=None, N=None):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('step can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("step can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
     if N is None:
@@ -2496,8 +2548,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
-        raise AttributeError('step2 can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("step2 can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_ss()
     if N is None:
@@ -2635,14 +2686,14 @@ def freqresp(system, w=None, n=10000):
         else:
             sys = system._as_zpk()
     elif isinstance(system, dlti):
-        raise AttributeError('freqresp can only be used with continuous-time '
-                             'systems.')
+        raise AttributeError("freqresp can only be used with continuous-time systems.")
     else:
         sys = lti(*system)._as_zpk()
 
     if sys.inputs != 1 or sys.outputs != 1:
-        raise ValueError("freqresp() requires a SISO (single input, single "
-                         "output) system.")
+        raise ValueError(
+            "freqresp() requires a SISO (single input, single output) system."
+        )
 
     if w is not None:
         worN = w
@@ -2687,19 +2738,23 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
     if A.shape[0] != A.shape[1]:
         raise ValueError("A must be square")
     if len(poles) > A.shape[0]:
-        raise ValueError("maximum number of poles is %d but you asked for %d" %
-                         (A.shape[0], len(poles)))
+        raise ValueError(
+            "maximum number of poles is %d but you asked for %d"
+            % (A.shape[0], len(poles))
+        )
     if len(poles) < A.shape[0]:
-        raise ValueError("number of poles is %d but you should provide %d" %
-                         (len(poles), A.shape[0]))
+        raise ValueError(
+            "number of poles is %d but you should provide %d" % (len(poles), A.shape[0])
+        )
     r = np.linalg.matrix_rank(B)
     for p in poles:
         if sum(p == poles) > r:
-            raise ValueError("at least one of the requested pole is repeated "
-                             "more than rank(B) times")
+            raise ValueError(
+                "at least one of the requested pole is repeated more than rank(B) times"
+            )
     # Choose update method
     update_loop = _YT_loop
-    if method not in ('KNV0','YT'):
+    if method not in ("KNV0", "YT"):
         raise ValueError("The method keyword must be one of 'YT' or 'KNV0'")
 
     if method == "KNV0":
@@ -2770,7 +2825,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     # a better choice ?)
 
     if not np.allclose(yj, 0):
-        xj = yj/np.linalg.norm(yj)
+        xj = yj / np.linalg.norm(yj)
         transfer_matrix[:, j] = xj
 
         # KNV does not support complex poles, using YT technique the two lines
@@ -2794,8 +2849,7 @@ def _YT_real(ker_pole, Q, transfer_matrix, i, j):
     v = Q[:, -1, np.newaxis]
 
     # step 2 page 19
-    m = np.dot(np.dot(ker_pole[i].T, np.dot(u, v.T) -
-        np.dot(v, u.T)), ker_pole[j])
+    m = np.dot(np.dot(ker_pole[i].T, np.dot(u, v.T) - np.dot(v, u.T)), ker_pole[j])
 
     # step 3 page 19
     um, sm, vm = np.linalg.svd(m)
@@ -2806,48 +2860,40 @@ def _YT_real(ker_pole, Q, transfer_matrix, i, j):
 
     # what follows is a rough python translation of the formulas
     # in section 6.2 page 20 (step 4)
-    transfer_matrix_j_mo_transfer_matrix_j = np.vstack((
-            transfer_matrix[:, i, np.newaxis],
-            transfer_matrix[:, j, np.newaxis]))
+    transfer_matrix_j_mo_transfer_matrix_j = np.vstack(
+        (transfer_matrix[:, i, np.newaxis], transfer_matrix[:, j, np.newaxis])
+    )
 
     if not np.allclose(sm[0], sm[1]):
         ker_pole_imo_mu1 = np.dot(ker_pole[i], mu1)
         ker_pole_i_nu1 = np.dot(ker_pole[j], nu1)
         ker_pole_mu_nu = np.vstack((ker_pole_imo_mu1, ker_pole_i_nu1))
     else:
-        ker_pole_ij = np.vstack((
-                                np.hstack((ker_pole[i],
-                                           np.zeros(ker_pole[i].shape))),
-                                np.hstack((np.zeros(ker_pole[j].shape),
-                                                    ker_pole[j]))
-                                ))
-        mu_nu_matrix = np.vstack(
-            (np.hstack((mu1, mu2)), np.hstack((nu1, nu2)))
+        ker_pole_ij = np.vstack(
+            (
+                np.hstack((ker_pole[i], np.zeros(ker_pole[i].shape))),
+                np.hstack((np.zeros(ker_pole[j].shape), ker_pole[j])),
             )
+        )
+        mu_nu_matrix = np.vstack((np.hstack((mu1, mu2)), np.hstack((nu1, nu2))))
         ker_pole_mu_nu = np.dot(ker_pole_ij, mu_nu_matrix)
-    transfer_matrix_ij = np.dot(np.dot(ker_pole_mu_nu, ker_pole_mu_nu.T),
-                             transfer_matrix_j_mo_transfer_matrix_j)
+    transfer_matrix_ij = np.dot(
+        np.dot(ker_pole_mu_nu, ker_pole_mu_nu.T), transfer_matrix_j_mo_transfer_matrix_j
+    )
     if not np.allclose(transfer_matrix_ij, 0):
-        transfer_matrix_ij = (np.sqrt(2)*transfer_matrix_ij /
-                              np.linalg.norm(transfer_matrix_ij))
-        transfer_matrix[:, i] = transfer_matrix_ij[
-            :transfer_matrix[:, i].shape[0], 0
-            ]
-        transfer_matrix[:, j] = transfer_matrix_ij[
-            transfer_matrix[:, i].shape[0]:, 0
-            ]
+        transfer_matrix_ij = (
+            np.sqrt(2) * transfer_matrix_ij / np.linalg.norm(transfer_matrix_ij)
+        )
+        transfer_matrix[:, i] = transfer_matrix_ij[: transfer_matrix[:, i].shape[0], 0]
+        transfer_matrix[:, j] = transfer_matrix_ij[transfer_matrix[:, i].shape[0] :, 0]
     else:
         # As in knv0 if transfer_matrix_j_mo_transfer_matrix_j is orthogonal to
         # Vect{ker_pole_mu_nu} assign transfer_matrixi/transfer_matrix_j to
         # ker_pole_mu_nu and iterate. As we are looking for a vector in
         # Vect{Matker_pole_MU_NU} (see section 6.1 page 19) this might help
         # (that's a guess, not a claim !)
-        transfer_matrix[:, i] = ker_pole_mu_nu[
-            :transfer_matrix[:, i].shape[0], 0
-            ]
-        transfer_matrix[:, j] = ker_pole_mu_nu[
-            transfer_matrix[:, i].shape[0]:, 0
-            ]
+        transfer_matrix[:, i] = ker_pole_mu_nu[: transfer_matrix[:, i].shape[0], 0]
+        transfer_matrix[:, j] = ker_pole_mu_nu[transfer_matrix[:, i].shape[0] :, 0]
 
 
 def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
@@ -2855,14 +2901,18 @@ def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
     Applies algorithm from YT section 6.2 page 20 related to complex pairs
     """
     # step 1 page 20
-    ur = np.sqrt(2)*Q[:, -2, np.newaxis]
-    ui = np.sqrt(2)*Q[:, -1, np.newaxis]
-    u = ur + 1j*ui
+    ur = np.sqrt(2) * Q[:, -2, np.newaxis]
+    ui = np.sqrt(2) * Q[:, -1, np.newaxis]
+    u = ur + 1j * ui
 
     # step 2 page 20
     ker_pole_ij = ker_pole[i]
-    m = np.dot(np.dot(np.conj(ker_pole_ij.T), np.dot(u, np.conj(u).T) -
-               np.dot(np.conj(u), u.T)), ker_pole_ij)
+    m = np.dot(
+        np.dot(
+            np.conj(ker_pole_ij.T), np.dot(u, np.conj(u).T) - np.dot(np.conj(u), u.T)
+        ),
+        ker_pole_ij,
+    )
 
     # step 3 page 20
     e_val, e_vec = np.linalg.eig(m)
@@ -2878,21 +2928,20 @@ def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
     # transfer_matrix[i]=real(transfer_matrix_i) and
     # transfer_matrix[j]=imag(transfer_matrix_i)
     transfer_matrix_j_mo_transfer_matrix_j = (
-        transfer_matrix[:, i, np.newaxis] +
-        1j*transfer_matrix[:, j, np.newaxis]
-        )
-    if not np.allclose(np.abs(e_val[e_val_idx[-1]]),
-                              np.abs(e_val[e_val_idx[-2]])):
+        transfer_matrix[:, i, np.newaxis] + 1j * transfer_matrix[:, j, np.newaxis]
+    )
+    if not np.allclose(np.abs(e_val[e_val_idx[-1]]), np.abs(e_val[e_val_idx[-2]])):
         ker_pole_mu = np.dot(ker_pole_ij, mu1)
     else:
         mu1_mu2_matrix = np.hstack((mu1, mu2))
         ker_pole_mu = np.dot(ker_pole_ij, mu1_mu2_matrix)
-    transfer_matrix_i_j = np.dot(np.dot(ker_pole_mu, np.conj(ker_pole_mu.T)),
-                              transfer_matrix_j_mo_transfer_matrix_j)
+    transfer_matrix_i_j = np.dot(
+        np.dot(ker_pole_mu, np.conj(ker_pole_mu.T)),
+        transfer_matrix_j_mo_transfer_matrix_j,
+    )
 
     if not np.allclose(transfer_matrix_i_j, 0):
-        transfer_matrix_i_j = (transfer_matrix_i_j /
-            np.linalg.norm(transfer_matrix_i_j))
+        transfer_matrix_i_j = transfer_matrix_i_j / np.linalg.norm(transfer_matrix_i_j)
         transfer_matrix[:, i] = np.real(transfer_matrix_i_j[:, 0])
         transfer_matrix[:, j] = np.imag(transfer_matrix_i_j[:, 0])
     else:
@@ -2921,48 +2970,48 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     # is not very clean. The paper is unclear about what should be done when
     # there is only one real pole => use KNV0 on this real pole seem to work
     if nb_real > 0:
-        #update the biggest real pole with the smallest one
+        # update the biggest real pole with the smallest one
         update_order = [[nb_real], [1]]
     else:
-        update_order = [[],[]]
+        update_order = [[], []]
 
-    r_comp = np.arange(nb_real+1, len(poles)+1, 2)
+    r_comp = np.arange(nb_real + 1, len(poles) + 1, 2)
     # step 1.a
-    r_p = np.arange(1, hnb+nb_real % 2)
-    update_order[0].extend(2*r_p)
-    update_order[1].extend(2*r_p+1)
+    r_p = np.arange(1, hnb + nb_real % 2)
+    update_order[0].extend(2 * r_p)
+    update_order[1].extend(2 * r_p + 1)
     # step 1.b
     update_order[0].extend(r_comp)
-    update_order[1].extend(r_comp+1)
+    update_order[1].extend(r_comp + 1)
     # step 1.c
-    r_p = np.arange(1, hnb+1)
-    update_order[0].extend(2*r_p-1)
-    update_order[1].extend(2*r_p)
+    r_p = np.arange(1, hnb + 1)
+    update_order[0].extend(2 * r_p - 1)
+    update_order[1].extend(2 * r_p)
     # step 1.d
     if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
-    update_order[1].extend(r_comp+1)
+    update_order[1].extend(r_comp + 1)
     # step 2.a
-    r_j = np.arange(2, hnb+nb_real % 2)
+    r_j = np.arange(2, hnb + nb_real % 2)
     for j in r_j:
-        for i in range(1, hnb+1):
+        for i in range(1, hnb + 1):
             update_order[0].append(i)
-            update_order[1].append(i+j)
+            update_order[1].append(i + j)
     # step 2.b
     if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
-    update_order[1].extend(r_comp+1)
+    update_order[1].extend(r_comp + 1)
     # step 2.c
-    r_j = np.arange(2, hnb+nb_real % 2)
+    r_j = np.arange(2, hnb + nb_real % 2)
     for j in r_j:
-        for i in range(hnb+1, nb_real+1):
-            idx_1 = i+j
+        for i in range(hnb + 1, nb_real + 1):
+            idx_1 = i + j
             if idx_1 > nb_real:
-                idx_1 = i+j-nb_real
+                idx_1 = i + j - nb_real
             update_order[0].append(i)
             update_order[1].append(idx_1)
     # step 2.d
@@ -2970,19 +3019,19 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
-    update_order[1].extend(r_comp+1)
+    update_order[1].extend(r_comp + 1)
     # step 3.a
-    for i in range(1, hnb+1):
+    for i in range(1, hnb + 1):
         update_order[0].append(i)
-        update_order[1].append(i+hnb)
+        update_order[1].append(i + hnb)
     # step 3.b
     if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
-    update_order[1].extend(r_comp+1)
+    update_order[1].extend(r_comp + 1)
 
-    update_order = np.array(update_order).T-1
+    update_order = np.array(update_order).T - 1
     stop = False
     nb_try = 0
     while nb_try < maxiter and not stop:
@@ -2993,30 +3042,31 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                 assert np.isreal(poles[i]), "calling KNV on a complex pole"
                 _KNV0(B, ker_pole, transfer_matrix, i, poles)
             else:
-                transfer_matrix_not_i_j = np.delete(transfer_matrix, (i, j),
-                                                    axis=1)
+                transfer_matrix_not_i_j = np.delete(transfer_matrix, (i, j), axis=1)
                 # after merge of gh-4249 great speed improvements could be
                 # achieved using QR updates instead of full QR in the line below
 
-                #to debug with numpy qr uncomment the line below
-                #Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
+                # to debug with numpy qr uncomment the line below
+                # Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
                 Q, _ = s_qr(transfer_matrix_not_i_j, mode="full")
 
                 if np.isreal(poles[i]):
-                    assert np.isreal(poles[j]), "mixing real and complex " + \
-                        "in YT_real" + str(poles)
+                    assert np.isreal(poles[j]), (
+                        "mixing real and complex " + "in YT_real" + str(poles)
+                    )
                     _YT_real(ker_pole, Q, transfer_matrix, i, j)
                 else:
-                    assert ~np.isreal(poles[i]), "mixing real and complex " + \
-                        "in YT_real" + str(poles)
+                    assert ~np.isreal(poles[i]), (
+                        "mixing real and complex " + "in YT_real" + str(poles)
+                    )
                     _YT_complex(ker_pole, Q, transfer_matrix, i, j)
 
-        det_transfer_matrix = np.max((np.sqrt(np.spacing(1)),
-                                  np.abs(np.linalg.det(transfer_matrix))))
+        det_transfer_matrix = np.max(
+            (np.sqrt(np.spacing(1)), np.abs(np.linalg.det(transfer_matrix)))
+        )
         cur_rtol = np.abs(
-            (det_transfer_matrix -
-             det_transfer_matrixb) /
-            det_transfer_matrix)
+            (det_transfer_matrix - det_transfer_matrixb) / det_transfer_matrix
+        )
         if cur_rtol < rtol and det_transfer_matrix > np.sqrt(np.spacing(1)):
             # Convergence test from YT page 21
             stop = True
@@ -3038,10 +3088,12 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         for j in range(B.shape[0]):
             _KNV0(B, ker_pole, transfer_matrix, j, poles)
 
-        det_transfer_matrix = np.max((np.sqrt(np.spacing(1)),
-                                  np.abs(np.linalg.det(transfer_matrix))))
-        cur_rtol = np.abs((det_transfer_matrix - det_transfer_matrixb) /
-                       det_transfer_matrix)
+        det_transfer_matrix = np.max(
+            (np.sqrt(np.spacing(1)), np.abs(np.linalg.det(transfer_matrix)))
+        )
+        cur_rtol = np.abs(
+            (det_transfer_matrix - det_transfer_matrixb) / det_transfer_matrix
+        )
         if cur_rtol < rtol and det_transfer_matrix > np.sqrt(np.spacing(1)):
             # Convergence test from YT page 21
             stop = True
@@ -3273,12 +3325,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             p = poles[idx]
             diag_poles[idx, idx] = np.real(p)
             if ~np.isreal(p):
-                diag_poles[idx, idx+1] = -np.imag(p)
-                diag_poles[idx+1, idx+1] = np.real(p)
-                diag_poles[idx+1, idx] = np.imag(p)
+                diag_poles[idx, idx + 1] = -np.imag(p)
+                diag_poles[idx + 1, idx + 1] = np.real(p)
+                diag_poles[idx + 1, idx] = np.imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = np.linalg.lstsq(B, diag_poles-A, rcond=-1)[0]
+        gain_matrix = np.linalg.lstsq(B, diag_poles - A, rcond=-1)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = np.nan
         nb_iter = np.nan
@@ -3296,7 +3348,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             if skip_conjugate:
                 skip_conjugate = False
                 continue
-            pole_space_j = np.dot(u1.T, A-poles[j]*np.eye(B.shape[0])).T
+            pole_space_j = np.dot(u1.T, A - poles[j] * np.eye(B.shape[0])).T
 
             # after QR Q=Q0|Q1
             # only Q0 is used to reconstruct  the qr'ed (dot Q, R) matrix.
@@ -3308,7 +3360,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             # Q, _ = np.linalg.qr(pole_space_j, mode="complete")
             Q, _ = s_qr(pole_space_j, mode="full")
 
-            ker_pole_j = Q[:, pole_space_j.shape[1]:]
+            ker_pole_j = Q[:, pole_space_j.shape[1] :]
 
             # We want to select one vector in ker_pole_j to build the transfer
             # matrix, however qr returns sometimes vectors with zeros on the
@@ -3327,11 +3379,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             # ker_pole_j.shape[1]>1) for sure won't have a zero there.
 
             transfer_matrix_j = np.sum(ker_pole_j, axis=1)[:, np.newaxis]
-            transfer_matrix_j = (transfer_matrix_j /
-                                 np.linalg.norm(transfer_matrix_j))
+            transfer_matrix_j = transfer_matrix_j / np.linalg.norm(transfer_matrix_j)
             if ~np.isreal(poles[j]):  # complex pole
-                transfer_matrix_j = np.hstack([np.real(transfer_matrix_j),
-                                               np.imag(transfer_matrix_j)])
+                transfer_matrix_j = np.hstack(
+                    [np.real(transfer_matrix_j), np.imag(transfer_matrix_j)]
+                )
                 ker_pole.extend([ker_pole_j, ker_pole_j])
 
                 # Skip next pole as it is the conjugate
@@ -3345,16 +3397,17 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 transfer_matrix = np.hstack((transfer_matrix, transfer_matrix_j))
 
         if rankB > 1:  # otherwise there is nothing we can optimize
-            stop, cur_rtol, nb_iter = update_loop(ker_pole, transfer_matrix,
-                                                  poles, B, maxiter, rtol)
+            stop, cur_rtol, nb_iter = update_loop(
+                ker_pole, transfer_matrix, poles, B, maxiter, rtol
+            )
             if not stop and rtol > 0:
                 # if rtol<=0 the user has probably done that on purpose,
                 # don't annoy him
                 err_msg = (
                     "Convergence was not reached after maxiter iterations.\n"
-                    "You asked for a relative tolerance of %f we got %f" %
-                    (rtol, cur_rtol)
-                    )
+                    "You asked for a relative tolerance of %f we got %f"
+                    % (rtol, cur_rtol)
+                )
                 warnings.warn(err_msg)
 
         # reconstruct transfer_matrix to match complex conjugate pairs,
@@ -3362,26 +3415,29 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         # Re(Complex_pole), Im(Complex_pole) now and will be Re-Im/Re+Im after
         transfer_matrix = transfer_matrix.astype(complex)
         idx = 0
-        while idx < poles.shape[0]-1:
+        while idx < poles.shape[0] - 1:
             if ~np.isreal(poles[idx]):
                 rel = transfer_matrix[:, idx].copy()
-                img = transfer_matrix[:, idx+1]
+                img = transfer_matrix[:, idx + 1]
                 # rel will be an array referencing a column of transfer_matrix
                 # if we don't copy() it will changer after the next line and
                 # and the line after will not yield the correct value
-                transfer_matrix[:, idx] = rel-1j*img
-                transfer_matrix[:, idx+1] = rel+1j*img
+                transfer_matrix[:, idx] = rel - 1j * img
+                transfer_matrix[:, idx + 1] = rel + 1j * img
                 idx += 1  # skip next one
             idx += 1
 
         try:
-            m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
-                                                          transfer_matrix.T)).T
-            gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
+            m = np.linalg.solve(
+                transfer_matrix.T, np.dot(np.diag(poles), transfer_matrix.T)
+            ).T
+            gain_matrix = np.linalg.solve(z, np.dot(u0.T, m - A))
         except np.linalg.LinAlgError as e:
-            raise ValueError("The poles you've chosen can't be placed. "
-                             "Check the controllability matrix and try "
-                             "another set of poles") from e
+            raise ValueError(
+                "The poles you've chosen can't be placed. "
+                "Check the controllability matrix and try "
+                "another set of poles"
+            ) from e
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix
@@ -3392,7 +3448,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback.gain_matrix = gain_matrix
     full_state_feedback.computed_poles = _order_complex_poles(
         np.linalg.eig(A - np.dot(B, gain_matrix))[0]
-        )
+    )
     full_state_feedback.requested_poles = poles
     full_state_feedback.X = transfer_matrix
     full_state_feedback.rtol = cur_rtol
@@ -3458,8 +3514,7 @@ def dlsim(system, u, t=None, x0=None):
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, lti):
-        raise AttributeError('dlsim can only be used with discrete-time dlti '
-                             'systems.')
+        raise AttributeError("dlsim can only be used with discrete-time dlti systems.")
     elif not isinstance(system, dlti):
         system = dlti(*system[:-1], dt=system[-1])
 
@@ -3502,14 +3557,13 @@ def dlsim(system, u, t=None, x0=None):
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout[i+1, :] = (np.dot(system.A, xout[i, :]) +
-                        np.dot(system.B, u_dt[i, :]))
-        yout[i, :] = (np.dot(system.C, xout[i, :]) +
-                      np.dot(system.D, u_dt[i, :]))
+        xout[i + 1, :] = np.dot(system.A, xout[i, :]) + np.dot(system.B, u_dt[i, :])
+        yout[i, :] = np.dot(system.C, xout[i, :]) + np.dot(system.D, u_dt[i, :])
 
     # Last point
-    yout[out_samples-1, :] = (np.dot(system.C, xout[out_samples-1, :]) +
-                              np.dot(system.D, u_dt[out_samples-1, :]))
+    yout[out_samples - 1, :] = np.dot(system.C, xout[out_samples - 1, :]) + np.dot(
+        system.D, u_dt[out_samples - 1, :]
+    )
 
     if is_ss_input:
         return tout, yout, xout
@@ -3569,8 +3623,9 @@ def dimpulse(system, x0=None, t=None, n=None):
     if isinstance(system, dlti):
         system = system._as_ss()
     elif isinstance(system, lti):
-        raise AttributeError('dimpulse can only be used with discrete-time '
-                             'dlti systems.')
+        raise AttributeError(
+            "dimpulse can only be used with discrete-time dlti systems."
+        )
     else:
         system = dlti(*system[:-1], dt=system[-1])._as_ss()
 
@@ -3654,8 +3709,7 @@ def dstep(system, x0=None, t=None, n=None):
     if isinstance(system, dlti):
         system = system._as_ss()
     elif isinstance(system, lti):
-        raise AttributeError('dstep can only be used with discrete-time dlti '
-                             'systems.')
+        raise AttributeError("dstep can only be used with discrete-time dlti systems.")
     else:
         system = dlti(*system[:-1], dt=system[-1])._as_ss()
 
@@ -3754,8 +3808,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     """
     if not isinstance(system, dlti):
         if isinstance(system, lti):
-            raise AttributeError('dfreqresp can only be used with '
-                                 'discrete-time systems.')
+            raise AttributeError(
+                "dfreqresp can only be used with discrete-time systems."
+            )
 
         system = dlti(*system[:-1], dt=system[-1])
 
@@ -3764,11 +3819,12 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         system = system._as_tf()
 
     if not isinstance(system, (TransferFunction, ZerosPolesGain)):
-        raise ValueError('Unknown system type')
+        raise ValueError("Unknown system type")
 
     if system.inputs != 1 or system.outputs != 1:
-        raise ValueError("dfreqresp requires a SISO (single input, single "
-                         "output) system.")
+        raise ValueError(
+            "dfreqresp requires a SISO (single input, single output) system."
+        )
 
     if w is not None:
         worN = w
@@ -3782,8 +3838,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         w, h = freqz(num, den, worN=worN, whole=whole)
 
     elif isinstance(system, ZerosPolesGain):
-        w, h = freqz_zpk(system.zeros, system.poles, system.gain, worN=worN,
-                         whole=whole)
+        w, h = freqz_zpk(
+            system.zeros, system.poles, system.gain, worN=worN, whole=whole
+        )
 
     return w, h
 

@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module mvn ! in 
+python module mvn ! in
     interface  ! in :mvn
         subroutine mvnun(d,n,lower,upper,means,covar,maxpts,abseps,releps,value,inform) ! in :mvn:mvndst.f
             integer intent(hide) :: d=shape(means,0)
@@ -47,7 +47,7 @@ python module mvn ! in
             integer :: ivls
             common /dkblck/ ivls
         end subroutine mvndst
-    end interface 
+    end interface
 end python module mvn
 
 ! This file was auto-generated with f2py (version:2.39.235_1752).

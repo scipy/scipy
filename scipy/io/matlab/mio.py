@@ -9,11 +9,11 @@ from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
 from .mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
+__all__ = ["mat_reader_factory", "loadmat", "savemat", "whosmat"]
 
 
 @contextmanager
-def _open_file_context(file_like, appendmat, mode='rb'):
+def _open_file_context(file_like, appendmat, mode="rb"):
     f, opened = _open_file(file_like, appendmat, mode)
     try:
         yield f
@@ -22,16 +22,16 @@ def _open_file_context(file_like, appendmat, mode='rb'):
             f.close()
 
 
-def _open_file(file_like, appendmat, mode='rb'):
+def _open_file(file_like, appendmat, mode="rb"):
     """
     Open `file_like` and return as file-like object. First, check if object is
     already file-like; if so, return it as-is. Otherwise, try to pass it
     to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
     append '.mat' and try again.
     """
-    reqs = {'read'} if set(mode) & set('r+') else set()
-    if set(mode) & set('wax+'):
-        reqs.add('write')
+    reqs = {"read"} if set(mode) & set("r+") else set()
+    if set(mode) & set("wax+"):
+        reqs.add("write")
     if reqs.issubset(dir(file_like)):
         return file_like, False
 
@@ -40,13 +40,11 @@ def _open_file(file_like, appendmat, mode='rb'):
     except IOError as e:
         # Probably "not found"
         if isinstance(file_like, str):
-            if appendmat and not file_like.endswith('.mat'):
-                file_like += '.mat'
+            if appendmat and not file_like.endswith(".mat"):
+                file_like += ".mat"
             return open(file_like, mode), True
         else:
-            raise IOError(
-                'Reader needs file name or open file-like object'
-            ) from e
+            raise IOError("Reader needs file name or open file-like object") from e
 
 
 @docfiller
@@ -77,9 +75,9 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     elif mjv == 1:
         return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
-        raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
+        raise NotImplementedError("Please use HDF reader for matlab v7.3 files")
     else:
-        raise TypeError('Did not recognize version %s' % mjv)
+        raise TypeError("Did not recognize version %s" % mjv)
 
 
 @docfiller
@@ -220,7 +218,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
         3.14159265+3.14159265j])
     """
-    variable_names = kwargs.pop('variable_names', None)
+    variable_names = kwargs.pop("variable_names", None)
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
@@ -234,12 +232,15 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
 
 @docfiller
-def savemat(file_name, mdict,
-            appendmat=True,
-            format='5',
-            long_field_names=False,
-            do_compression=False,
-            oned_as='row'):
+def savemat(
+    file_name,
+    mdict,
+    appendmat=True,
+    format="5",
+    long_field_names=False,
+    do_compression=False,
+    oned_as="row",
+):
     """
     Save a dictionary of names and arrays into a MATLAB-style .mat file.
 
@@ -282,17 +283,21 @@ def savemat(file_name, mdict,
     'label': 'experiment'}
     >>> savemat("matlab_matrix.mat", mdic)
     """
-    with _open_file_context(file_name, appendmat, 'wb') as file_stream:
-        if format == '4':
+    with _open_file_context(file_name, appendmat, "wb") as file_stream:
+        if format == "4":
             if long_field_names:
-                raise ValueError("Long field names are not available for version 4 files")
+                raise ValueError(
+                    "Long field names are not available for version 4 files"
+                )
             MW = MatFile4Writer(file_stream, oned_as)
-        elif format == '5':
-            MW = MatFile5Writer(file_stream,
-                                do_compression=do_compression,
-                                unicode_strings=True,
-                                long_field_names=long_field_names,
-                                oned_as=oned_as)
+        elif format == "5":
+            MW = MatFile5Writer(
+                file_stream,
+                do_compression=do_compression,
+                unicode_strings=True,
+                long_field_names=long_field_names,
+                oned_as=oned_as,
+            )
         else:
             raise ValueError("Format should be '4' or '5'")
         MW.put_variables(mdict)

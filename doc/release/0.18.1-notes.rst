@@ -45,4 +45,3 @@ Pull requests for 0.18.1
 - `#6543 <https://github.com/scipy/scipy/pull/6543>`__: fix the regression in circmean
 - `#6545 <https://github.com/scipy/scipy/pull/6545>`__: Revert gh-5938, restore ks_2samp
 - `#6557 <https://github.com/scipy/scipy/pull/6557>`__: Backports for 0.18.1
-

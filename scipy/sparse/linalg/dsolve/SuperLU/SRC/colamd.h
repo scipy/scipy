@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -11,7 +11,7 @@ at the top-level directory.
 /*! @file colamd.h
     \brief Colamd prototypes and definitions
 
-	<pre> 
+	<pre>
     ==========================================================================
     === colamd/symamd prototypes and definitions =============================
     ==========================================================================
@@ -47,7 +47,7 @@ at the top-level directory.
 	this program, provided that the Copyright, this License, and the
 	Availability of the original version is retained on all copies and made
 	accessible to the end-user of any code or package that includes COLAMD
-	or any modified version of COLAMD. 
+	or any modified version of COLAMD.
 
     Availability:
 
@@ -93,7 +93,7 @@ at the top-level directory.
 /* stats [3]: colamd status:  zero OK, > 0 warning or notice, < 0 error */
 #define COLAMD_STATUS 3
 
-/* stats [4..6]: error info, or info on jumbled columns */ 
+/* stats [4..6]: error info, or info on jumbled columns */
 #define COLAMD_INFO1 4
 #define COLAMD_INFO2 5
 #define COLAMD_INFO3 6

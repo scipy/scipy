@@ -42,7 +42,7 @@
  * ndtri domain       x > 1        NPY_NAN
  *
  */
-
+
 
 /*
  * Cephes Math Library Release 2.1:  January, 1989

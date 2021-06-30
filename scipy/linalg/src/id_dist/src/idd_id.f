@@ -31,7 +31,7 @@ c
         subroutine iddp_id(eps,m,n,a,krank,list,rnorms)
 c
 c       computes the ID of a, i.e., lists in list the indices
-c       of krank columns of a such that 
+c       of krank columns of a such that
 c
 c       a(j,list(k))  =  a(j,list(k))
 c
@@ -142,7 +142,7 @@ c
         subroutine iddr_id(m,n,a,krank,list,rnorms)
 c
 c       computes the ID of a, i.e., lists in list the indices
-c       of krank columns of a such that 
+c       of krank columns of a such that
 c
 c       a(j,list(k))  =  a(j,list(k))
 c

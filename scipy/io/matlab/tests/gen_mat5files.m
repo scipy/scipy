@@ -27,7 +27,7 @@ a(1,:) = 1:5;
 % 2D matrix
 save_matfile('testmatrix', a);
 
-% minus number - tests signed int 
+% minus number - tests signed int
 save_matfile('testminus', -1);
 
 % single character
@@ -92,7 +92,7 @@ if str2num(mlv) > 7  % function added 7.0.1
   fclose(fid);
   save_matfile('testunicode', native2unicode(from_japan, 'utf-8'));
 end
-  
+
 % func
 if str2num(mlv) > 7  % function pointers added recently
   func = @afunc;

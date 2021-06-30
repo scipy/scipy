@@ -58,7 +58,7 @@
  * A "singularity" message is printed on overflow or
  * in cases not addressed (such as x < -1).
  */
-
+
 /*                                                      hyp2f1  */
 
 

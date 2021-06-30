@@ -1,7 +1,11 @@
 import numpy as np
 
-from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
-                           assert_equal, assert_array_equal)
+from numpy.testing import (
+    assert_allclose,
+    assert_array_almost_equal_nulp,
+    assert_equal,
+    assert_array_equal,
+)
 from pytest import raises as assert_raises
 
 from scipy.linalg import hilbert, svd
@@ -11,15 +15,15 @@ from scipy.sparse.linalg import svds
 from scipy.sparse.linalg.eigen.arpack import ArpackNoConvergence
 
 
-def sorted_svd(m, k, which='LM'):
+def sorted_svd(m, k, which="LM"):
     # Compute svd of a dense matrix m, and return singular vectors/values
     # sorted.
     if isspmatrix(m):
         m = m.todense()
     u, s, vh = svd(m)
-    if which == 'LM':
+    if which == "LM":
         ii = np.argsort(s)[-k:]
-    elif which == 'SM':
+    elif which == "SM":
         ii = np.argsort(s)[:k]
     else:
         raise ValueError("unknown which=%r" % (which,))
@@ -32,10 +36,7 @@ def svd_estimate(u, s, vh):
 
 
 def svd_test_input_check():
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
+    x = np.array([[1, 2, 3], [3, 4, 3], [1, 0, 2], [0, 0, 1]], float)
 
     assert_raises(ValueError, svds, x, k=-1)
     assert_raises(ValueError, svds, x, k=0)
@@ -47,17 +48,11 @@ def svd_test_input_check():
 
 
 def test_svd_simple_real():
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
-    y = np.array([[1, 2, 3, 8],
-                  [3, 4, 3, 5],
-                  [1, 0, 2, 3],
-                  [0, 0, 1, 0]], float)
+    x = np.array([[1, 2, 3], [3, 4, 3], [1, 0, 2], [0, 0, 1]], float)
+    y = np.array([[1, 2, 3, 8], [3, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]], float)
     z = csc_matrix(x)
 
-    for solver in [None, 'arpack', 'lobpcg']:
+    for solver in [None, "arpack", "lobpcg"]:
         for m in [x.T, x, y, z, z.T]:
             for k in range(1, min(m.shape)):
                 u, s, vh = sorted_svd(m, k)
@@ -70,17 +65,13 @@ def test_svd_simple_real():
 
 
 def test_svd_simple_complex():
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1 + 1j, 0, 2],
-                  [0, 0, 1]], complex)
-    y = np.array([[1, 2, 3, 8 + 5j],
-                  [3 - 2j, 4, 3, 5],
-                  [1, 0, 2, 3],
-                  [0, 0, 1, 0]], complex)
+    x = np.array([[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]], complex)
+    y = np.array(
+        [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]], complex
+    )
     z = csc_matrix(x)
 
-    for solver in [None, 'arpack', 'lobpcg']:
+    for solver in [None, "arpack", "lobpcg"]:
         for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
             for k in range(1, min(m.shape) - 1):
                 u, s, vh = sorted_svd(m, k)
@@ -114,11 +105,10 @@ def test_svd_return():
 def test_svd_which():
     # check that the which parameter works as expected
     x = hilbert(6)
-    for which in ['LM', 'SM']:
+    for which in ["LM", "SM"]:
         _, s, _ = sorted_svd(x, 2, which=which)
-        for solver in [None, 'arpack', 'lobpcg']:
-            ss = svds(x, 2, which=which, return_singular_vectors=False,
-                      solver=solver)
+        for solver in [None, "arpack", "lobpcg"]:
+            ss = svds(x, 2, which=which, return_singular_vectors=False, solver=solver)
             ss.sort()
             assert_allclose(s, ss, atol=np.sqrt(1e-15))
 
@@ -127,7 +117,7 @@ def test_svd_v0():
     # check that the v0 parameter works as expected
     x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
 
-    for solver in [None, 'arpack', 'lobpcg']:
+    for solver in [None, "arpack", "lobpcg"]:
         u, s, vh = svds(x, 1, solver=solver)
         u2, s2, vh2 = svds(x, 1, v0=u[:, 0], solver=solver)
 
@@ -143,7 +133,7 @@ def _check_svds(A, k, U, s, VH):
     assert_equal(VH.shape, (k, m))
 
     # Check that the original matrix can be reconstituted.
-    A_rebuilt = (U*s).dot(VH)
+    A_rebuilt = (U * s).dot(VH)
     assert_equal(A_rebuilt.shape, A.shape)
     assert_allclose(A_rebuilt, A)
 
@@ -164,7 +154,7 @@ def test_svd_LM_ones_matrix():
     for n, m in (6, 5), (5, 5), (5, 6):
         for t in float, complex:
             A = np.ones((n, m), dtype=t)
-            for solver in [None, 'arpack', 'lobpcg']:
+            for solver in [None, "arpack", "lobpcg"]:
                 U, s, VH = svds(A, k, solver=solver)
 
                 # Check some generic properties of svd.
@@ -172,7 +162,7 @@ def test_svd_LM_ones_matrix():
 
                 # Check that the largest singular value is near sqrt(n*m)
                 # and the other singular values have been forced to zero.
-                assert_allclose(np.max(s), np.sqrt(n*m))
+                assert_allclose(np.max(s), np.sqrt(n * m))
                 assert_array_equal(sorted(s)[:-1], 0)
 
 
@@ -182,7 +172,7 @@ def test_svd_LM_zeros_matrix():
     for n, m in (3, 4), (4, 4), (4, 3):
         for t in float, complex:
             A = np.zeros((n, m), dtype=t)
-            for solver in [None, 'arpack', 'lobpcg']:
+            for solver in [None, "arpack", "lobpcg"]:
                 U, s, VH = svds(A, k, solver=solver)
 
                 # Check some generic properties of svd.
@@ -198,7 +188,7 @@ def test_svd_LM_zeros_matrix_gh_3452():
     # Note that for complex dype the size of this matrix is too small for k=1.
     n, m, k = 4, 2, 1
     A = np.zeros((n, m))
-    for solver in [None, 'arpack', 'lobpcg']:
+    for solver in [None, "arpack", "lobpcg"]:
         U, s, VH = svds(A, k, solver=solver)
 
         # Check some generic properties of svd.
@@ -224,9 +214,7 @@ class CheckingLinearOperator(LinearOperator):
 
 
 def test_svd_linop():
-    nmks = [(6, 7, 3),
-            (9, 5, 4),
-            (10, 8, 5)]
+    nmks = [(6, 7, 3), (9, 5, 4), (10, 8, 5)]
 
     def reorder(args):
         U, s, VH = args
@@ -240,29 +228,33 @@ def test_svd_linop():
 
         v0 = np.ones(min(A.shape))
 
-        for solver in [None, 'arpack', 'lobpcg']:
+        for solver in [None, "arpack", "lobpcg"]:
             U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver))
             U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
             assert_allclose(np.abs(VH1), np.abs(VH2))
-            assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                            np.dot(U2, np.dot(np.diag(s2), VH2)))
+            assert_allclose(
+                np.dot(U1, np.dot(np.diag(s1), VH1)),
+                np.dot(U2, np.dot(np.diag(s2), VH2)),
+            )
 
         # Try again with which="SM".
         A = np.random.RandomState(1909).randn(n, m)
         L = CheckingLinearOperator(A)
 
-        for solver in [None, 'arpack', 'lobpcg']:
+        for solver in [None, "arpack", "lobpcg"]:
             U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver))
             U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
             assert_allclose(np.abs(VH1), np.abs(VH2))
-            assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                            np.dot(U2, np.dot(np.diag(s2), VH2)))
+            assert_allclose(
+                np.dot(U1, np.dot(np.diag(s1), VH1)),
+                np.dot(U2, np.dot(np.diag(s2), VH2)),
+            )
 
         if k < min(n, m) - 1:
             # Complex input and explicit which="LM".
@@ -271,47 +263,50 @@ def test_svd_linop():
                 A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                 L = CheckingLinearOperator(A)
 
-                for solver in [None, 'arpack', 'lobpcg']:
-                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                               solver=solver))
-                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                               solver=solver))
+                for solver in [None, "arpack", "lobpcg"]:
+                    U1, s1, VH1 = reorder(svds(A, k, which="LM", solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, which="LM", solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
                     assert_allclose(np.abs(VH1), np.abs(VH2), rtol=eps)
-                    assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                                    np.dot(U2, np.dot(np.diag(s2), VH2)),
-                                    rtol=eps)
+                    assert_allclose(
+                        np.dot(U1, np.dot(np.diag(s1), VH1)),
+                        np.dot(U2, np.dot(np.diag(s2), VH2)),
+                        rtol=eps,
+                    )
 
 
 def test_svds_partial_return():
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
+    x = np.array([[1, 2, 3], [3, 4, 3], [1, 0, 2], [0, 0, 1]], float)
     # test vertical matrix
     z = csr_matrix(x)
     vh_full = svds(z, 2)[-1]
-    vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
+    vh_partial = svds(z, 2, return_singular_vectors="vh")[-1]
     dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
     if dvh > 1e-10:
-        raise AssertionError('right eigenvector matrices differ when using '
-                             'return_singular_vectors parameter')
-    if svds(z, 2, return_singular_vectors='vh')[0] is not None:
-        raise AssertionError('left eigenvector matrix was computed when it '
-                             'should not have been')
+        raise AssertionError(
+            "right eigenvector matrices differ when using "
+            "return_singular_vectors parameter"
+        )
+    if svds(z, 2, return_singular_vectors="vh")[0] is not None:
+        raise AssertionError(
+            "left eigenvector matrix was computed when it should not have been"
+        )
     # test horizontal matrix
     z = csr_matrix(x.T)
     u_full = svds(z, 2)[0]
-    u_partial = svds(z, 2, return_singular_vectors='vh')[0]
+    u_partial = svds(z, 2, return_singular_vectors="vh")[0]
     du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
     if du > 1e-10:
-        raise AssertionError('left eigenvector matrices differ when using '
-                             'return_singular_vectors parameter')
-    if svds(z, 2, return_singular_vectors='u')[-1] is not None:
-        raise AssertionError('right eigenvector matrix was computed when it '
-                             'should not have been')
+        raise AssertionError(
+            "left eigenvector matrices differ when using "
+            "return_singular_vectors parameter"
+        )
+    if svds(z, 2, return_singular_vectors="u")[-1] is not None:
+        raise AssertionError(
+            "right eigenvector matrix was computed when it should not have been"
+        )
 
 
 def test_svds_wrong_eigen_type():
@@ -319,8 +314,5 @@ def test_svds_wrong_eigen_type():
     # https://github.com/scipy/scipy/issues/4590
     # Function was not checking for eigenvalue type and unintended
     # values could be returned.
-    x = np.array([[1, 2, 3],
-                  [3, 4, 3],
-                  [1, 0, 2],
-                  [0, 0, 1]], float)
-    assert_raises(ValueError, svds, x, 1, which='LA')
+    x = np.array([[1, 2, 3], [3, 4, 3], [1, 0, 2], [0, 0, 1]], float)
+    assert_raises(ValueError, svds, x, 1, which="LA")

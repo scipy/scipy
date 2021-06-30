@@ -224,11 +224,11 @@ private:
     //     BARRIER_LB   0 < xl < inf, xu = inf, zl > 0, zu = 0.
     //                  The variable is moved by the barrier solver. It has a
     //                  finite lower bound and an infinite upper bound.
-    //    
+    //
     //     BARRIER_UB   xl = inf, 0 < xu < inf, zl = 0, zu > 0.
     //                  The variable is moved by the barrier solver. It has an
     //                  infinite lower bound and a finite upper bound.
-    //    
+    //
     //     BARRIER_BOXED 0 < xl < inf, 0 < xu < inf, zl > 0, zu > 0.
     //                   The variable is moved by the barrier solver. It has a
     //                   finite lower bound and a finite upper bound.
@@ -243,7 +243,7 @@ private:
     //     FREE         xl = inf, xu = inf, zl = 0, zu = 0.
     //                  The variable is moved by the barrier solver. It has no
     //                  finite bound.
-    //    
+    //
     //     IMPLIED_LB   xl = inf, xu = inf, zl >= 0, zu >= 0
     //                  The variable has a finite lb but is treated as free by
     //                  the barrier solver. (The ub may or may not be finite.)
@@ -251,7 +251,7 @@ private:
     //                  from dual feasibility.
     //                  Evaluate() subtracts (zl-zu) from the cost coefficient
     //                  when computing the primal objective value.
-    //    
+    //
     //     IMPLIED_UB   xl = inf, xu = inf, zl >= 0, zu >= 0
     //                  The variable has a finite ub but is treated as free by
     //                  the barrier solver. (The lb may or may not be finite.)
@@ -259,7 +259,7 @@ private:
     //                  from dual feasibility.
     //                  Evaluate() subtracts (zl-zu) from the cost coefficient
     //                  when computing the primal objective value.
-    //    
+    //
     //     IMPLIED_EQ   xl = inf, xu = inf, zl = 0, zu = 0
     //                  The variable has lb == ub but is treated as free by
     //                  the barrier solver. After termination we set x = lb

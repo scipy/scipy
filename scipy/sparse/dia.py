@@ -2,14 +2,22 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dia_matrix', 'isspmatrix_dia']
+__all__ = ["dia_matrix", "isspmatrix_dia"]
 
 import numpy as np
 
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
-from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                      get_sum_dtype, validateaxis, check_shape, matrix)
+from .sputils import (
+    isshape,
+    upcast_char,
+    getdtype,
+    get_index_dtype,
+    get_sum_dtype,
+    validateaxis,
+    check_shape,
+    matrix,
+)
 from ._sparsetools import dia_matvec
 
 
@@ -84,7 +92,8 @@ class dia_matrix(_data_matrix):
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
     """
-    format = 'dia'
+
+    format = "dia"
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -108,7 +117,7 @@ class dia_matrix(_data_matrix):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
                 self._shape = check_shape(arg1)
-                self.data = np.zeros((0,0), getdtype(dtype, default=float))
+                self.data = np.zeros((0, 0), getdtype(dtype, default=float))
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
@@ -116,23 +125,29 @@ class dia_matrix(_data_matrix):
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
                 except Exception as e:
-                    raise ValueError('unrecognized form for dia_matrix constructor') from e
+                    raise ValueError(
+                        "unrecognized form for dia_matrix constructor"
+                    ) from e
                 else:
                     if shape is None:
-                        raise ValueError('expected a shape argument')
+                        raise ValueError("expected a shape argument")
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=get_index_dtype(maxval=max(shape)),
-                                                          copy=copy))
+                    self.offsets = np.atleast_1d(
+                        np.array(
+                            arg1[1], dtype=get_index_dtype(maxval=max(shape)), copy=copy
+                        )
+                    )
                     self._shape = check_shape(shape)
         else:
-            #must be dense, convert to COO first, then to DIA
+            # must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError(
+                    "unrecognized form for %s_matrix constructor" % self.format
+                ) from e
             from .coo import coo_matrix
+
             A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
@@ -141,37 +156,39 @@ class dia_matrix(_data_matrix):
         if dtype is not None:
             self.data = self.data.astype(dtype)
 
-        #check format
+        # check format
         if self.offsets.ndim != 1:
-            raise ValueError('offsets array must have rank 1')
+            raise ValueError("offsets array must have rank 1")
 
         if self.data.ndim != 2:
-            raise ValueError('data array must have rank 2')
+            raise ValueError("data array must have rank 2")
 
         if self.data.shape[0] != len(self.offsets):
-            raise ValueError('number of diagonals (%d) '
-                    'does not match the number of offsets (%d)'
-                    % (self.data.shape[0], len(self.offsets)))
+            raise ValueError(
+                "number of diagonals (%d) does not match the number of offsets (%d)"
+                % (self.data.shape[0], len(self.offsets))
+            )
 
         if len(np.unique(self.offsets)) != len(self.offsets):
-            raise ValueError('offset array contains duplicate values')
+            raise ValueError("offset array contains duplicate values")
 
     def __repr__(self):
         format = _formats[self.getformat()][1]
-        return "<%dx%d sparse matrix of type '%s'\n" \
-               "\twith %d stored elements (%d diagonals) in %s format>" % \
-               (self.shape + (self.dtype.type, self.nnz, self.data.shape[0],
-                              format))
+        return (
+            "<%dx%d sparse matrix of type '%s'\n"
+            "\twith %d stored elements (%d diagonals) in %s format>"
+            % (self.shape + (self.dtype.type, self.nnz, self.data.shape[0], format))
+        )
 
     def _data_mask(self):
         """Returns a mask of the same shape as self.data, where
         mask[i,j] is True when data[i,j] corresponds to a stored element."""
         num_rows, num_cols = self.shape
         offset_inds = np.arange(self.data.shape[1])
-        row = offset_inds - self.offsets[:,None]
-        mask = (row >= 0)
-        mask &= (row < num_rows)
-        mask &= (offset_inds < num_cols)
+        row = offset_inds - self.offsets[:, None]
+        mask = row >= 0
+        mask &= row < num_rows
+        mask &= offset_inds < num_cols
         return mask
 
     def count_nonzero(self):
@@ -180,15 +197,16 @@ class dia_matrix(_data_matrix):
 
     def getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
-                                      "for DIA format")
-        M,N = self.shape
+            raise NotImplementedError(
+                "getnnz over an axis is not implemented for DIA format"
+            )
+        M, N = self.shape
         nnz = 0
         for k in self.offsets:
             if k > 0:
-                nnz += min(M,N-k)
+                nnz += min(M, N - k)
             else:
-                nnz += min(M+k,N)
+                nnz += min(M + k, N)
         return int(nnz)
 
     getnnz.__doc__ = spmatrix.getnnz.__doc__
@@ -211,14 +229,22 @@ class dia_matrix(_data_matrix):
                 res = x
             else:
                 res = np.zeros(num_cols, dtype=x.dtype)
-                res[:x.shape[0]] = x
+                res[: x.shape[0]] = x
             ret = matrix(res, dtype=res_dtype)
 
         else:
             row_sums = np.zeros(num_rows, dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
-            dia_matvec(num_rows, num_cols, len(self.offsets),
-                       self.data.shape[1], self.offsets, self.data, one, row_sums)
+            dia_matvec(
+                num_rows,
+                num_cols,
+                len(self.offsets),
+                self.data.shape[1],
+                self.offsets,
+                self.data,
+                one,
+                row_sums,
+            )
 
             row_sums = matrix(row_sums)
 
@@ -266,19 +292,20 @@ class dia_matrix(_data_matrix):
     def _mul_vector(self, other):
         x = other
 
-        y = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
-                                                       x.dtype.char))
+        y = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char, x.dtype.char))
 
         L = self.data.shape[1]
 
-        M,N = self.shape
+        M, N = self.shape
 
-        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel())
+        dia_matvec(
+            M, N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel()
+        )
 
         return y
 
     def _mul_multimatrix(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
+        return np.hstack([self._mul_vector(col).reshape(-1, 1) for col in other.T])
 
     def _setdiag(self, values, k=0):
         M, N = self.shape
@@ -327,9 +354,11 @@ class dia_matrix(_data_matrix):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+            raise ValueError(
+                "Sparse matrices do not support "
+                "an 'axes' parameter because swapping "
+                "dimensions is the only logical permutation."
+            )
 
         num_rows, num_cols = self.shape
         max_dim = max(self.shape)
@@ -340,12 +369,15 @@ class dia_matrix(_data_matrix):
         # re-align the data matrix
         r = np.arange(len(offsets), dtype=np.intc)[:, None]
         c = np.arange(num_rows, dtype=np.intc) - (offsets % max_dim)[:, None]
-        pad_amount = max(0, max_dim-self.data.shape[1])
-        data = np.hstack((self.data, np.zeros((self.data.shape[0], pad_amount),
-                                              dtype=self.data.dtype)))
+        pad_amount = max(0, max_dim - self.data.shape[1])
+        data = np.hstack(
+            (
+                self.data,
+                np.zeros((self.data.shape[0], pad_amount), dtype=self.data.dtype),
+            )
+        )
         data = data[r, c]
-        return dia_matrix((data, offsets), shape=(
-            num_cols, num_rows), copy=copy)
+        return dia_matrix((data, offsets), shape=(num_cols, num_rows), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -353,7 +385,7 @@ class dia_matrix(_data_matrix):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
             return np.empty(0, dtype=self.data.dtype)
-        idx, = np.nonzero(self.offsets == k)
+        (idx,) = np.nonzero(self.offsets == k)
         first_col = max(0, k)
         last_col = min(rows + k, cols)
         result_size = last_col - first_col
@@ -362,13 +394,14 @@ class dia_matrix(_data_matrix):
         result = self.data[idx[0], first_col:last_col]
         padding = result_size - len(result)
         if padding > 0:
-            result = np.pad(result, (0, padding), mode='constant')
+            result = np.pad(result, (0, padding), mode="constant")
         return result
 
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     def tocsc(self, copy=False):
         from .csc import csc_matrix
+
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
 
@@ -376,20 +409,19 @@ class dia_matrix(_data_matrix):
         num_offsets, offset_len = self.data.shape
         offset_inds = np.arange(offset_len)
 
-        row = offset_inds - self.offsets[:,None]
-        mask = (row >= 0)
-        mask &= (row < num_rows)
-        mask &= (offset_inds < num_cols)
-        mask &= (self.data != 0)
+        row = offset_inds - self.offsets[:, None]
+        mask = row >= 0
+        mask &= row < num_rows
+        mask &= offset_inds < num_cols
+        mask &= self.data != 0
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         indptr = np.zeros(num_cols + 1, dtype=idx_dtype)
-        indptr[1:offset_len+1] = np.cumsum(mask.sum(axis=0))
-        indptr[offset_len+1:] = indptr[offset_len]
+        indptr[1 : offset_len + 1] = np.cumsum(mask.sum(axis=0))
+        indptr[offset_len + 1 :] = indptr[offset_len]
         indices = row.T[mask.T].astype(idx_dtype, copy=False)
         data = self.data.T[mask.T]
-        return csc_matrix((data, indices, indptr), shape=self.shape,
-                          dtype=self.dtype)
+        return csc_matrix((data, indices, indptr), shape=self.shape, dtype=self.dtype)
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
@@ -398,17 +430,18 @@ class dia_matrix(_data_matrix):
         num_offsets, offset_len = self.data.shape
         offset_inds = np.arange(offset_len)
 
-        row = offset_inds - self.offsets[:,None]
-        mask = (row >= 0)
-        mask &= (row < num_rows)
-        mask &= (offset_inds < num_cols)
-        mask &= (self.data != 0)
+        row = offset_inds - self.offsets[:, None]
+        mask = row >= 0
+        mask &= row < num_rows
+        mask &= offset_inds < num_cols
+        mask &= self.data != 0
         row = row[mask]
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
         data = self.data[mask]
 
         from .coo import coo_matrix
-        A = coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype)
+
+        A = coo_matrix((data, (row, col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -422,7 +455,7 @@ class dia_matrix(_data_matrix):
         if copy:
             return dia_matrix((data, self.offsets.copy()), shape=self.shape)
         else:
-            return dia_matrix((data,self.offsets), shape=self.shape)
+            return dia_matrix((data, self.offsets), shape=self.shape)
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -430,11 +463,13 @@ class dia_matrix(_data_matrix):
         # we do not need to handle the case of expanding N
         self.data = self.data[:, :N]
 
-        if (M > self.shape[0] and
-                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
+        if M > self.shape[0] and np.any(
+            self.offsets + self.shape[0] < self.data.shape[1]
+        ):
             # explicitly clear values that were previously hidden
-            mask = (self.offsets[:, None] + self.shape[0] <=
-                    np.arange(self.data.shape[1]))
+            mask = self.offsets[:, None] + self.shape[0] <= np.arange(
+                self.data.shape[1]
+            )
             self.data[mask] = 0
 
         self._shape = shape

@@ -10,9 +10,15 @@ import pytest
 from pytest import raises as assert_raises, deprecated_call
 
 import scipy
-from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
-                              getfullargspec_no_self, FullArgSpec,
-                              rng_integers, _validate_int)
+from scipy._lib._util import (
+    _aligned_zeros,
+    check_random_state,
+    MapWrapper,
+    getfullargspec_no_self,
+    FullArgSpec,
+    rng_integers,
+    _validate_int,
+)
 
 
 def test__aligned_zeros():
@@ -23,8 +29,8 @@ def test__aligned_zeros():
         x = _aligned_zeros(shape, dtype, order, align=align)
         if align is None:
             align = np.dtype(dtype).alignment
-        assert_equal(x.__array_interface__['data'][0] % align, 0)
-        if hasattr(shape, '__len__'):
+        assert_equal(x.__array_interface__["data"][0] % align, 0)
+        if hasattr(shape, "__len__"):
             assert_equal(x.shape, shape, err_msg)
         else:
             assert_equal(x.shape, (shape,), err_msg)
@@ -61,8 +67,8 @@ def test_check_random_state():
     assert_equal(type(rsi), np.random.RandomState)
     rsi = check_random_state(None)
     assert_equal(type(rsi), np.random.RandomState)
-    assert_raises(ValueError, check_random_state, 'a')
-    if hasattr(np.random, 'Generator'):
+    assert_raises(ValueError, check_random_state, "a")
+    if hasattr(np.random, "Generator"):
         # np.random.Generator is only available in NumPy >= 1.17
         rg = np.random.Generator(np.random.PCG64())
         rsi = check_random_state(rg)
@@ -72,11 +78,11 @@ def test_check_random_state():
 def test_getfullargspec_no_self():
     p = MapWrapper(1)
     argspec = getfullargspec_no_self(p.__init__)
-    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [],
-                                      None, {}))
+    assert_equal(argspec, FullArgSpec(["pool"], None, None, (1,), [], None, {}))
     argspec = getfullargspec_no_self(p.__call__)
-    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None,
-                                      [], None, {}))
+    assert_equal(
+        argspec, FullArgSpec(["func", "iterable"], None, None, None, [], None, {})
+    )
 
     class _rv_generic:
         def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
@@ -84,12 +90,16 @@ def test_getfullargspec_no_self():
 
     rv_obj = _rv_generic()
     argspec = getfullargspec_no_self(rv_obj._rvs)
-    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs',
-                                      (2, 3), ['size'], {'size': None}, {}))
+    assert_equal(
+        argspec,
+        FullArgSpec(
+            ["a", "b", "c"], "args", "kwargs", (2, 3), ["size"], {"size": None}, {}
+        ),
+    )
 
 
 def test_mapwrapper_serial():
-    in_arg = np.arange(10.)
+    in_arg = np.arange(10.0)
     out_arg = np.sin(in_arg)
 
     p = MapWrapper(1)
@@ -109,7 +119,7 @@ def test_pool():
 
 
 def test_mapwrapper_parallel():
-    in_arg = np.arange(10.)
+    in_arg = np.arange(10.0)
     out_arg = np.sin(in_arg)
 
     with MapWrapper(2) as p:
@@ -141,27 +151,26 @@ def test_mapwrapper_parallel():
 
 
 # get our custom ones and a few from the "import *" cases
-@pytest.mark.parametrize(
-    'key', ('ifft', 'diag', 'arccos', 'randn', 'rand', 'array'))
+@pytest.mark.parametrize("key", ("ifft", "diag", "arccos", "randn", "rand", "array"))
 def test_numpy_deprecation(key):
     """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('ifft', 'diag', 'arccos'):
-        arg = [1.0, 0.]
-    elif key == 'finfo':
+    if key in ("ifft", "diag", "arccos"):
+        arg = [1.0, 0.0]
+    elif key == "finfo":
         arg = float
     else:
         arg = 2
     func = getattr(scipy, key)
-    match = r'scipy\.%s is deprecated.*2\.0\.0' % key
+    match = r"scipy\.%s is deprecated.*2\.0\.0" % key
     with deprecated_call(match=match) as dep:
         func(arg)  # deprecated
     # in case we catch more than one dep warning
     fnames = [os.path.splitext(d.filename)[0] for d in dep.list]
     basenames = [os.path.basename(fname) for fname in fnames]
-    assert 'test__util' in basenames
-    if key in ('rand', 'randn'):
+    assert "test__util" in basenames
+    if key in ("rand", "randn"):
         root = np.random
-    elif key == 'ifft':
+    elif key == "ifft":
         root = np.fft
     else:
         root = np
@@ -195,25 +204,25 @@ def test_rng_integers():
     arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
     assert np.max(arr) == 5
     assert np.min(arr) == 2
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are inclusive of high point
     arr = rng_integers(rng, low=5, size=100, endpoint=True)
     assert np.max(arr) == 5
     assert np.min(arr) == 0
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are exclusive of high point
     arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
     assert np.max(arr) == 4
     assert np.min(arr) == 2
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are exclusive of high point
     arr = rng_integers(rng, low=5, size=100, endpoint=False)
     assert np.max(arr) == 4
     assert np.min(arr) == 0
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # now try with np.random.Generator
     try:
@@ -225,40 +234,38 @@ def test_rng_integers():
     arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
     assert np.max(arr) == 5
     assert np.min(arr) == 2
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are inclusive of high point
     arr = rng_integers(rng, low=5, size=100, endpoint=True)
     assert np.max(arr) == 5
     assert np.min(arr) == 0
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are exclusive of high point
     arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
     assert np.max(arr) == 4
     assert np.min(arr) == 2
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
     # test that numbers are exclusive of high point
     arr = rng_integers(rng, low=5, size=100, endpoint=False)
     assert np.max(arr) == 4
     assert np.min(arr) == 0
-    assert arr.shape == (100, )
+    assert arr.shape == (100,)
 
 
 class TestValidateInt:
-
-    @pytest.mark.parametrize('n', [4, np.uint8(4), np.int16(4), np.array(4)])
+    @pytest.mark.parametrize("n", [4, np.uint8(4), np.int16(4), np.array(4)])
     def test_validate_int(self, n):
-        n = _validate_int(n, 'n')
+        n = _validate_int(n, "n")
         assert n == 4
 
-    @pytest.mark.parametrize('n', [4.0, np.array([4]), Fraction(4, 1)])
+    @pytest.mark.parametrize("n", [4.0, np.array([4]), Fraction(4, 1)])
     def test_validate_int_bad(self, n):
-        with pytest.raises(TypeError, match='n must be an integer'):
-            _validate_int(n, 'n')
+        with pytest.raises(TypeError, match="n must be an integer"):
+            _validate_int(n, "n")
 
     def test_validate_int_below_min(self):
-        with pytest.raises(ValueError, match='n must be an integer not '
-                                             'less than 0'):
-            _validate_int(-1, 'n', 0)
+        with pytest.raises(ValueError, match="n must be an integer not less than 0"):
+            _validate_int(-1, "n", 0)

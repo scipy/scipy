@@ -2,7 +2,7 @@ import numpy as np
 from scipy.linalg import svd
 
 
-__all__ = ['polar']
+__all__ = ["polar"]
 
 
 def polar(a, side="right"):
@@ -93,7 +93,7 @@ def polar(a, side="right"):
            [ -1.26363763e-16,   1.00000000e+00]])
 
     """
-    if side not in ['right', 'left']:
+    if side not in ["right", "left"]:
         raise ValueError("`side` must be either 'right' or 'left'")
     a = np.asarray(a)
     if a.ndim != 2:
@@ -101,7 +101,7 @@ def polar(a, side="right"):
 
     w, s, vh = svd(a, full_matrices=False)
     u = w.dot(vh)
-    if side == 'right':
+    if side == "right":
         # a = up
         p = (vh.T.conj() * s).dot(vh)
     else:

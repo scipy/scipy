@@ -20,10 +20,11 @@ calculating statistics on clusters, cutting linkages
 to generate flat clusters, and visualizing clusters with dendrograms.
 
 """
-__all__ = ['vq', 'hierarchy']
+__all__ = ["vq", "hierarchy"]
 
 from . import vq, hierarchy
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

@@ -4,7 +4,7 @@ from numpy.testing import assert_equal, assert_allclose
 
 
 def test_zeta():
-    assert_allclose(sc.zeta(2,2), np.pi**2/6 - 1, rtol=1e-12)
+    assert_allclose(sc.zeta(2, 2), np.pi ** 2 / 6 - 1, rtol=1e-12)
 
 
 def test_zetac():
@@ -39,11 +39,11 @@ def test_riemann_zeta_special_cases():
     # Riemann zeta is zero add negative even integers.
     assert_equal(sc.zeta([-2, -4, -6, -8, -10]), 0)
 
-    assert_allclose(sc.zeta(2), np.pi**2/6, rtol=1e-12)
-    assert_allclose(sc.zeta(4), np.pi**4/90, rtol=1e-12)
+    assert_allclose(sc.zeta(2), np.pi ** 2 / 6, rtol=1e-12)
+    assert_allclose(sc.zeta(4), np.pi ** 4 / 90, rtol=1e-12)
 
 
 def test_riemann_zeta_avoid_overflow():
     s = -260.00000000001
-    desired = -5.6966307844402683127e+297  # Computed with Mpmath
+    desired = -5.6966307844402683127e297  # Computed with Mpmath
     assert_allclose(sc.zeta(s), desired, atol=0, rtol=5e-14)

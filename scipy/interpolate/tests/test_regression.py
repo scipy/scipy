@@ -6,9 +6,9 @@ from numpy.testing import assert_almost_equal
 class TestRegression:
     def test_spalde_scalar_input(self):
         """Ticket #629"""
-        x = np.linspace(0,10)
-        y = x**3
+        x = np.linspace(0, 10)
+        y = x ** 3
         tck = interp.splrep(x, y, k=3, t=[5])
         res = interp.spalde(np.float64(1), tck)
-        des = np.array([1., 3., 6., 6.])
+        des = np.array([1.0, 3.0, 6.0, 6.0])
         assert_almost_equal(res, des)

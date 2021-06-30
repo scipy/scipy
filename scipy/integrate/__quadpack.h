@@ -93,7 +93,7 @@ static PyObject *quadpack_error;
   #endif
 #endif
 
- 
+
 typedef double quadpack_f_t(double *);
 
 void DQAGSE(quadpack_f_t f, double *a, double *b, double *epsabs, double *epsrel, F_INT *limit, double *result,

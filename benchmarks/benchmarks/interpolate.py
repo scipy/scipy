@@ -35,16 +35,18 @@ class Leaks(Benchmark):
                 for method in ['nearest', 'linear', 'cubic']:
                     griddata(points, values, (grid_x, grid_y), method=method)
 
-            """ % dict(repeat=repeat)
+            """ % dict(
+                repeat=repeat
+            )
 
             _, peak_mem = run_monitored(code)
             peak_mems.append(peak_mem)
 
         corr, p = spearmanr(repeats, peak_mems)
         if p < 0.05:
-            print("*"*79)
+            print("*" * 79)
             print("PROBABLE MEMORY LEAK")
-            print("*"*79)
+            print("*" * 79)
         else:
             print("PROBABLY NO MEMORY LEAK")
 
@@ -52,11 +54,10 @@ class Leaks(Benchmark):
 
 
 class BenchPPoly(Benchmark):
-
     def setup(self):
         rng = np.random.default_rng(1234)
         m, k = 55, 3
-        x = np.sort(rng.random(m+1))
+        x = np.sort(rng.random(m + 1))
         c = rng.random((3, m))
         self.pp = interpolate.PPoly(c, x)
 
@@ -68,34 +69,38 @@ class BenchPPoly(Benchmark):
 
 
 class GridData(Benchmark):
-    param_names = ['n_grids', 'method']
-    params = [
-        [10j, 100j, 1000j],
-        ['nearest', 'linear', 'cubic']
-    ]
+    param_names = ["n_grids", "method"]
+    params = [[10j, 100j, 1000j], ["nearest", "linear", "cubic"]]
 
     def setup(self, n_grids, method):
-        self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+        self.func = (
+            lambda x, y: x
+            * (1 - x)
+            * np.cos(4 * np.pi * x)
+            * np.sin(4 * np.pi * y ** 2) ** 2
+        )
         self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]
         self.points = np.random.rand(1000, 2)
         self.values = self.func(self.points[:, 0], self.points[:, 1])
 
     def time_evaluation(self, n_grids, method):
-        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y), method=method)
+        interpolate.griddata(
+            self.points, self.values, (self.grid_x, self.grid_y), method=method
+        )
 
 
 class Interpolate1d(Benchmark):
-    param_names = ['n_samples', 'method']
+    param_names = ["n_samples", "method"]
     params = [
         [10, 50, 100, 1000, 10000],
-        ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'],
+        ["linear", "nearest", "zero", "slinear", "quadratic", "cubic"],
     ]
 
     def setup(self, n_samples, method):
         self.x = np.arange(n_samples)
-        self.y = np.exp(-self.x/3.0)
+        self.y = np.exp(-self.x / 3.0)
         self.interpolator = interpolate.interp1d(self.x, self.y, kind=method)
-        self.xp = np.linspace(self.x[0], self.x[-1], 4*n_samples)
+        self.xp = np.linspace(self.x[0], self.x[-1], 4 * n_samples)
 
     def time_interpolate(self, n_samples, method):
         """Time the construction overhead."""
@@ -107,37 +112,45 @@ class Interpolate1d(Benchmark):
 
 
 class Interpolate2d(Benchmark):
-    param_names = ['n_samples', 'method']
+    param_names = ["n_samples", "method"]
     params = [
         [10, 50, 100],
-        ['linear', 'cubic', 'quintic'],
+        ["linear", "cubic", "quintic"],
     ]
 
     def setup(self, n_samples, method):
-        r_samples = n_samples / 2.
+        r_samples = n_samples / 2.0
         self.x = np.arange(-r_samples, r_samples, 0.25)
         self.y = np.arange(-r_samples, r_samples, 0.25)
         self.xx, self.yy = np.meshgrid(self.x, self.y)
-        self.z = np.sin(self.xx**2+self.yy**2)
+        self.z = np.sin(self.xx ** 2 + self.yy ** 2)
 
     def time_interpolate(self, n_samples, method):
         interpolate.interp2d(self.x, self.y, self.z, kind=method)
 
 
 class Rbf(Benchmark):
-    param_names = ['n_samples', 'function']
+    param_names = ["n_samples", "function"]
     params = [
         [10, 50, 100],
-        ['multiquadric', 'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate']
+        [
+            "multiquadric",
+            "inverse",
+            "gaussian",
+            "linear",
+            "cubic",
+            "quintic",
+            "thin_plate",
+        ],
     ]
 
     def setup(self, n_samples, function):
         self.x = np.arange(n_samples)
         self.y = np.sin(self.x)
-        r_samples = n_samples / 2.
+        r_samples = n_samples / 2.0
         self.X = np.arange(-r_samples, r_samples, 0.25)
         self.Y = np.arange(-r_samples, r_samples, 0.25)
-        self.z = np.exp(-self.X**2-self.Y**2)
+        self.z = np.exp(-self.X ** 2 - self.Y ** 2)
 
     def time_rbf_1d(self, n_samples, function):
         interpolate.Rbf(self.x, self.y, function=function)
@@ -147,42 +160,43 @@ class Rbf(Benchmark):
 
 
 class RBFInterpolator(Benchmark):
-    param_names = ['neighbors', 'n_samples', 'kernel']
+    param_names = ["neighbors", "n_samples", "kernel"]
     params = [
         [None, 50],
         [10, 100, 1000],
-        ['linear', 'thin_plate_spline', 'cubic', 'quintic', 'multiquadric',
-         'inverse_multiquadric', 'inverse_quadratic', 'gaussian']
+        [
+            "linear",
+            "thin_plate_spline",
+            "cubic",
+            "quintic",
+            "multiquadric",
+            "inverse_multiquadric",
+            "inverse_quadratic",
+            "gaussian",
+        ],
     ]
 
     def setup(self, neighbors, n_samples, kernel):
         rng = np.random.RandomState(0)
         self.y = rng.uniform(-1, 1, (n_samples, 2))
         self.x = rng.uniform(-1, 1, (n_samples, 2))
-        self.d = np.sum(self.y, axis=1)*np.exp(-6*np.sum(self.y**2, axis=1))
+        self.d = np.sum(self.y, axis=1) * np.exp(-6 * np.sum(self.y ** 2, axis=1))
 
     def time_rbf_interpolator(self, neighbors, n_samples, kernel):
         interp = interpolate.RBFInterpolator(
-            self.y,
-            self.d,
-            neighbors=neighbors,
-            epsilon=5.0,
-            kernel=kernel
-            )
+            self.y, self.d, neighbors=neighbors, epsilon=5.0, kernel=kernel
+        )
         interp(self.x)
 
 
 class UnivariateSpline(Benchmark):
-    param_names = ['n_samples', 'degree']
-    params = [
-        [10, 50, 100],
-        [3, 4, 5]
-    ]
+    param_names = ["n_samples", "degree"]
+    params = [[10, 50, 100], [3, 4, 5]]
 
     def setup(self, n_samples, degree):
-        r_samples = n_samples / 2.
+        r_samples = n_samples / 2.0
         self.x = np.arange(-r_samples, r_samples, 0.25)
-        self.y = np.exp(-self.x**2) + 0.1 * np.random.randn(*self.x.shape)
+        self.y = np.exp(-self.x ** 2) + 0.1 * np.random.randn(*self.x.shape)
 
     def time_univariate_spline(self, n_samples, degree):
         interpolate.UnivariateSpline(self.x, self.y, k=degree)
@@ -194,10 +208,9 @@ class BivariateSpline(Benchmark):
     'http://scipy-user.10969.n7.nabble.com/BivariateSpline-examples\
     -and-my-crashing-python-td14801.html'
     """
-    param_names = ['n_samples']
-    params = [
-        [10, 20, 30]
-    ]
+
+    param_names = ["n_samples"]
+    params = [[10, 20, 30]]
 
     def setup(self, n_samples):
         x = np.arange(0, n_samples, 0.5)
@@ -205,14 +218,14 @@ class BivariateSpline(Benchmark):
         x, y = np.meshgrid(x, y)
         x = x.ravel()
         y = y.ravel()
-        xmin = x.min()-1
-        xmax = x.max()+1
-        ymin = y.min()-1
-        ymax = y.max()+1
+        xmin = x.min() - 1
+        xmax = x.max() + 1
+        ymin = y.min() - 1
+        ymax = y.max() + 1
         s = 1.1
-        self.yknots = np.linspace(ymin+s, ymax-s, 10)
-        self.xknots = np.linspace(xmin+s, xmax-s, 10)
-        self.z = np.sin(x) + 0.1*np.random.normal(size=x.shape)
+        self.yknots = np.linspace(ymin + s, ymax - s, 10)
+        self.xknots = np.linspace(xmin + s, xmax - s, 10)
+        self.z = np.sin(x) + 0.1 * np.random.normal(size=x.shape)
         self.x = x
         self.y = y
 
@@ -220,26 +233,26 @@ class BivariateSpline(Benchmark):
         interpolate.SmoothBivariateSpline(self.x, self.y, self.z)
 
     def time_lsq_bivariate_spline(self, n_samples):
-        interpolate.LSQBivariateSpline(self.x, self.y, self.z, self.xknots.flat, self.yknots.flat)
+        interpolate.LSQBivariateSpline(
+            self.x, self.y, self.z, self.xknots.flat, self.yknots.flat
+        )
 
 
 class Interpolate(Benchmark):
     """
     Linear Interpolate in scipy and numpy
     """
-    param_names = ['n_samples', 'module']
-    params = [
-        [10, 50, 100],
-        ['numpy', 'scipy']
-    ]
+
+    param_names = ["n_samples", "module"]
+    params = [[10, 50, 100], ["numpy", "scipy"]]
 
     def setup(self, n_samples, module):
         self.x = np.arange(n_samples)
-        self.y = np.exp(-self.x/3.0)
+        self.y = np.exp(-self.x / 3.0)
         self.z = np.random.normal(size=self.x.shape)
 
     def time_interpolate(self, n_samples, module):
-        if module == 'scipy':
+        if module == "scipy":
             interpolate.interp1d(self.x, self.y, kind="linear")
         else:
             np.interp(self.z, self.x, self.y)

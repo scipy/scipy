@@ -56,7 +56,7 @@ class Damavandi(Benchmark):
         if np.isnan(val):
             return True
         try:
-            assert_almost_equal(val, 0., 4)
+            assert_almost_equal(val, 0.0, 4)
             return True
         except AssertionError:
             return False
@@ -181,10 +181,10 @@ class Decanomial(Benchmark):
         self.nfev += 1
 
         val = x[1] ** 4 + 12 * x[1] ** 3 + 54 * x[1] ** 2 + 108 * x[1] + 81.0
-        val2 = x[0] ** 10. - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7
+        val2 = x[0] ** 10.0 - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7
         val2 += 3360 * x[0] ** 6 - 8064 * x[0] ** 5 + 13340 * x[0] ** 4
-        val2 += - 15360 * x[0] ** 3 + 11520 * x[0] ** 2 - 5120 * x[0] + 2624
-        return 0.001 * (abs(val) + abs(val2)) ** 2.
+        val2 += -15360 * x[0] ** 3 + 11520 * x[0] ** 2 - 5120 * x[0] + 2624
+        return 0.001 * (abs(val) + abs(val2)) ** 2.0
 
 
 class Deceptive(Benchmark):
@@ -247,7 +247,7 @@ class Deceptive(Benchmark):
         alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
         beta = 2.0
 
-        g = zeros((self.N, ))
+        g = zeros((self.N,))
 
         for i in range(self.N):
             if x[i] <= 0.0:
@@ -263,7 +263,7 @@ class Deceptive(Benchmark):
             else:
                 g[i] = x[i] - 1.0
 
-        return -((1.0 / self.N) * sum(g)) ** beta
+        return -(((1.0 / self.N) * sum(g)) ** beta)
 
 
 class DeckkersAarts(Benchmark):
@@ -302,8 +302,12 @@ class DeckkersAarts(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-        return (1.e5 * x[0] ** 2 + x[1] ** 2 - (x[0] ** 2 + x[1] ** 2) ** 2
-                + 1.e-5 * (x[0] ** 2 + x[1] ** 2) ** 4)
+        return (
+            1.0e5 * x[0] ** 2
+            + x[1] ** 2
+            - (x[0] ** 2 + x[1] ** 2) ** 2
+            + 1.0e-5 * (x[0] ** 2 + x[1] ** 2) ** 4
+        )
 
 
 class DeflectedCorrugatedSpring(Benchmark):
@@ -350,8 +354,7 @@ class DeflectedCorrugatedSpring(Benchmark):
         self.nfev += 1
         K, alpha = 5.0, 5.0
 
-        return (-cos(K * sqrt(sum((x - alpha) ** 2)))
-                + 0.1 * sum((x - alpha) ** 2))
+        return -cos(K * sqrt(sum((x - alpha) ** 2))) + 0.1 * sum((x - alpha) ** 2)
 
 
 class DeVilliersGlasser01(Benchmark):
@@ -439,11 +442,15 @@ class DeVilliersGlasser02(Benchmark):
         self.nfev += 1
 
         t = 0.1 * arange(16)
-        y = (53.81 * 1.27 ** t * tanh(3.012 * t + sin(2.13 * t))
-             * cos(exp(0.507) * t))
+        y = 53.81 * 1.27 ** t * tanh(3.012 * t + sin(2.13 * t)) * cos(exp(0.507) * t)
 
-        return sum((x[0] * (x[1] ** t) * tanh(x[2] * t + sin(x[3] * t))
-                   * cos(t * exp(x[4])) - y) ** 2.0)
+        return sum(
+            (
+                x[0] * (x[1] ** t) * tanh(x[2] * t + sin(x[3] * t)) * cos(t * exp(x[4]))
+                - y
+            )
+            ** 2.0
+        )
 
 
 class DixonPrice(Benchmark):
@@ -478,8 +485,9 @@ class DixonPrice(Benchmark):
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
-        self.global_optimum = [[2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
-                               for i in range(1, self.N + 1)]]
+        self.global_optimum = [
+            [2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i) for i in range(1, self.N + 1)]
+        ]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -518,19 +526,24 @@ class Dolan(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-100.0] * self.N,
-                                [100.0] * self.N))
+        self._bounds = list(zip([-100.0] * self.N, [100.0] * self.N))
 
-        self.global_optimum = [[-74.10522498, 44.33511286, 6.21069214,
-                               18.42772233, -16.5839403]]
+        self.global_optimum = [
+            [-74.10522498, 44.33511286, 6.21069214, 18.42772233, -16.5839403]
+        ]
         self.fglob = 0
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (abs((x[0] + 1.7 * x[1]) * sin(x[0]) - 1.5 * x[2]
-                - 0.1 * x[3] * cos(x[3] + x[4] - x[0]) + 0.2 * x[4] ** 2
-                - x[1] - 1))
+        return abs(
+            (x[0] + 1.7 * x[1]) * sin(x[0])
+            - 1.5 * x[2]
+            - 0.1 * x[3] * cos(x[3] + x[4] - x[0])
+            + 0.2 * x[4] ** 2
+            - x[1]
+            - 1
+        )
 
 
 class DropWave(Benchmark):

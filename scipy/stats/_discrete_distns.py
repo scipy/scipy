@@ -13,12 +13,19 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (
-    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape)
+    rv_discrete,
+    _ncx2_pdf,
+    _ncx2_cdf,
+    get_distribution_names,
+    _check_shape,
+)
 import scipy.stats._boost as _boost
-from .biasedurn import (_PyFishersNCHypergeometric,
-                        _PyWalleniusNCHypergeometric,
-                        _PyStochasticLib3)
+from .biasedurn import (
+    _PyFishersNCHypergeometric,
+    _PyWalleniusNCHypergeometric,
+    _PyStochasticLib3,
+)
+
 
 class binom_gen(rv_discrete):
     r"""A binomial discrete random variable.
@@ -48,6 +55,7 @@ class binom_gen(rv_discrete):
     hypergeom, nbinom, nhypergeom
 
     """
+
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.binomial(n, p, size)
 
@@ -59,8 +67,8 @@ class binom_gen(rv_discrete):
 
     def _logpmf(self, x, n, p):
         k = floor(x)
-        combiln = (gamln(n+1) - (gamln(k+1) + gamln(n-k+1)))
-        return combiln + special.xlogy(k, p) + special.xlog1py(n-k, -p)
+        combiln = gamln(n + 1) - (gamln(k + 1) + gamln(n - k + 1))
+        return combiln + special.xlogy(k, p) + special.xlog1py(n - k, -p)
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
@@ -76,27 +84,27 @@ class binom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._binom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._binom_ppf(q, n, p)
 
-    def _stats(self, n, p, moments='mv'):
+    def _stats(self, n, p, moments="mv"):
         mu = _boost._binom_mean(n, p)
         var = _boost._binom_variance(n, p)
         g1, g2 = None, None
-        if 's' in moments:
+        if "s" in moments:
             g1 = _boost._binom_skewness(n, p)
-        if 'k' in moments:
+        if "k" in moments:
             g2 = _boost._binom_kurtosis_excess(n, p)
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
-        k = np.r_[0:n + 1]
+        k = np.r_[0 : n + 1]
         vals = self._pmf(k, n, p)
         return np.sum(entr(vals), axis=0)
 
 
-binom = binom_gen(name='binom')
+binom = binom_gen(name="binom")
 
 
 class bernoulli_gen(binom_gen):
@@ -124,6 +132,7 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
+
     def _rvs(self, p, size=None, random_state=None):
         return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
 
@@ -149,8 +158,8 @@ class bernoulli_gen(binom_gen):
         return binom._sf(x, 1, p)
 
     def _isf(self, x, p):
-        return binom._isf(x, 1, p)        
-    
+        return binom._isf(x, 1, p)
+
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
 
@@ -158,10 +167,10 @@ class bernoulli_gen(binom_gen):
         return binom._stats(1, p)
 
     def _entropy(self, p):
-        return entr(p) + entr(1-p)
+        return entr(p) + entr(1 - p)
 
 
-bernoulli = bernoulli_gen(b=1, name='bernoulli')
+bernoulli = bernoulli_gen(b=1, name="bernoulli")
 
 
 class betabinom_gen(rv_discrete):
@@ -219,30 +228,30 @@ class betabinom_gen(rv_discrete):
     def _pmf(self, x, n, a, b):
         return exp(self._logpmf(x, n, a, b))
 
-    def _stats(self, n, a, b, moments='mv'):
+    def _stats(self, n, a, b, moments="mv"):
         e_p = a / (a + b)
         e_q = 1 - e_p
         mu = n * e_p
         var = n * (a + b + n) * e_p * e_q / (a + b + 1)
         g1, g2 = None, None
-        if 's' in moments:
+        if "s" in moments:
             g1 = 1.0 / sqrt(var)
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
-        if 'k' in moments:
+        if "k" in moments:
             g2 = a + b
-            g2 *= (a + b - 1 + 6 * n)
+            g2 *= a + b - 1 + 6 * n
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
             g2 -= 3 * e_p * b * n * (6 - n)
             g2 -= 18 * e_p * e_q * n ** 2
             g2 *= (a + b) ** 2 * (1 + a + b)
-            g2 /= (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
+            g2 /= n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n)
             g2 -= 3
         return mu, var, g1, g2
 
 
-betabinom = betabinom_gen(name='betabinom')
+betabinom = betabinom_gen(name="betabinom")
 
 
 class nbinom_gen(rv_discrete):
@@ -296,6 +305,7 @@ class nbinom_gen(rv_discrete):
     hypergeom, binom, nhypergeom
 
     """
+
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.negative_binomial(n, p, size)
 
@@ -307,8 +317,8 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_pdf(x, n, p)
 
     def _logpmf(self, x, n, p):
-        coeff = gamln(n+x) - gamln(x+1) - gamln(n)
-        return coeff + n*log(p) + special.xlog1py(x, -p)
+        coeff = gamln(n + x) - gamln(x + 1) - gamln(n)
+        return coeff + n * log(p) + special.xlog1py(x, -p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
@@ -325,7 +335,7 @@ class nbinom_gen(rv_discrete):
         def f2(k, n, p):
             return np.log(cdf)
 
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
     def _sf(self, x, n, p):
@@ -334,12 +344,12 @@ class nbinom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._nbinom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        return(
+        return (
             _boost._nbinom_mean(n, p),
             _boost._nbinom_variance(n, p),
             _boost._nbinom_skewness(n, p),
@@ -347,7 +357,7 @@ class nbinom_gen(rv_discrete):
         )
 
 
-nbinom = nbinom_gen(name='nbinom')
+nbinom = nbinom_gen(name="nbinom")
 
 
 class geom_gen(rv_discrete):
@@ -378,6 +388,7 @@ class geom_gen(rv_discrete):
     %(example)s
 
     """
+
     def _rvs(self, p, size=None, random_state=None):
         return random_state.geometric(p, size=size)
 
@@ -385,37 +396,37 @@ class geom_gen(rv_discrete):
         return (p <= 1) & (p > 0)
 
     def _pmf(self, k, p):
-        return np.power(1-p, k-1) * p
+        return np.power(1 - p, k - 1) * p
 
     def _logpmf(self, k, p):
         return special.xlog1py(k - 1, -p) + log(p)
 
     def _cdf(self, x, p):
         k = floor(x)
-        return -expm1(log1p(-p)*k)
+        return -expm1(log1p(-p) * k)
 
     def _sf(self, x, p):
         return np.exp(self._logsf(x, p))
 
     def _logsf(self, x, p):
         k = floor(x)
-        return k*log1p(-p)
+        return k * log1p(-p)
 
     def _ppf(self, q, p):
         vals = ceil(log1p(-q) / log1p(-p))
-        temp = self._cdf(vals-1, p)
-        return np.where((temp >= q) & (vals > 0), vals-1, vals)
+        temp = self._cdf(vals - 1, p)
+        return np.where((temp >= q) & (vals > 0), vals - 1, vals)
 
     def _stats(self, p):
-        mu = 1.0/p
-        qr = 1.0-p
+        mu = 1.0 / p
+        qr = 1.0 - p
         var = qr / p / p
-        g1 = (2.0-p) / sqrt(qr)
-        g2 = np.polyval([1, -6, 6], p)/(1.0-p)
+        g1 = (2.0 - p) / sqrt(qr)
+        g2 = np.polyval([1, -6, 6], p) / (1.0 - p)
         return mu, var, g1, g2
 
 
-geom = geom_gen(a=1, name='geom', longname="A geometric")
+geom = geom_gen(a=1, name="geom", longname="A geometric")
 
 
 class hypergeom_gen(rv_discrete):
@@ -484,11 +495,12 @@ class hypergeom_gen(rv_discrete):
     nhypergeom, binom, nbinom
 
     """
+
     def _rvs(self, M, n, N, size=None, random_state=None):
-        return random_state.hypergeometric(n, M-n, N, size=size)
+        return random_state.hypergeometric(n, M - n, N, size=size)
 
     def _get_support(self, M, n, N):
-        return np.maximum(N-(M-n), 0), np.minimum(n, N)
+        return np.maximum(N - (M - n), 0), np.minimum(n, N)
 
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
@@ -498,9 +510,14 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
-                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
-                  betaln(tot+1, 1))
+        result = (
+            betaln(good + 1, 1)
+            + betaln(bad + 1, 1)
+            + betaln(tot - N + 1, N + 1)
+            - betaln(k + 1, good - k + 1)
+            - betaln(N - k + 1, bad - N + k + 1)
+            - betaln(tot + 1, 1)
+        )
         return result
 
     def _pmf(self, k, M, n, N):
@@ -510,15 +527,15 @@ class hypergeom_gen(rv_discrete):
         return _boost._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
-        M, n, N = 1. * M, 1. * n, 1. * N
+        M, n, N = 1.0 * M, 1.0 * n, 1.0 * N
         m = M - n
 
         # Boost kurtosis_excess doesn't return the same as the value
         # computed here.
-        g2 = M * (M + 1) - 6. * N * (M - N) - 6. * n * m
+        g2 = M * (M + 1) - 6.0 * N * (M - N) - 6.0 * n * m
         g2 *= (M - 1) * M * M
-        g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
-        g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
+        g2 += 6.0 * n * N * (M - N) * m * (5.0 * M - 6)
+        g2 /= n * N * (M - N) * m * (M - 2.0) * (M - 3.0)
         return (
             _boost._hypergeom_mean(n, N, M),
             _boost._hypergeom_variance(n, N, M),
@@ -527,7 +544,7 @@ class hypergeom_gen(rv_discrete):
         )
 
     def _entropy(self, M, n, N):
-        k = np.r_[N - (M - n):min(n, N) + 1]
+        k = np.r_[N - (M - n) : min(n, N) + 1]
         vals = self.pmf(k, M, n, N)
         return np.sum(entr(vals), axis=0)
 
@@ -559,7 +576,7 @@ class hypergeom_gen(rv_discrete):
         return np.asarray(res)
 
 
-hypergeom = hypergeom_gen(name='hypergeom')
+hypergeom = hypergeom_gen(name="hypergeom")
 
 
 class nhypergeom_gen(rv_discrete):
@@ -666,18 +683,17 @@ class nhypergeom_gen(rv_discrete):
         return 0, n
 
     def _argcheck(self, M, n, r):
-        cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
+        cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M - n)
         return cond
 
     def _rvs(self, M, n, r, size=None, random_state=None):
-
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, r, size, random_state):
             # invert cdf by calculating all values in support, scalar M, n, r
             a, b = self.support(M, n, r)
-            ks = np.arange(a, b+1)
+            ks = np.arange(a, b + 1)
             cdf = self.cdf(ks, M, n, r)
-            ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
+            ppf = interp1d(cdf, ks, kind="next", fill_value="extrapolate")
             rvs = ppf(random_state.uniform(size=size)).astype(int)
             if size is None:
                 return rvs.item()
@@ -686,13 +702,20 @@ class nhypergeom_gen(rv_discrete):
         return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
-        cond = ((r == 0) & (k == 0))
-        result = _lazywhere(~cond, (k, M, n, r),
-                            lambda k, M, n, r:
-                                (-betaln(k+1, r) + betaln(k+r, 1) -
-                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
-                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
-                            fillvalue=0.0)
+        cond = (r == 0) & (k == 0)
+        result = _lazywhere(
+            ~cond,
+            (k, M, n, r),
+            lambda k, M, n, r: (
+                -betaln(k + 1, r)
+                + betaln(k + r, 1)
+                - betaln(n - k + 1, M - r - n + 1)
+                + betaln(M - r - k + 1, 1)
+                + betaln(n + 1, M - n + 1)
+                - betaln(M + 1, 1)
+            ),
+            fillvalue=0.0,
+        )
         return result
 
     def _pmf(self, k, M, n, r):
@@ -703,10 +726,10 @@ class nhypergeom_gen(rv_discrete):
     def _stats(self, M, n, r):
         # Promote the datatype to at least float
         # mu = rn / (M-n+1)
-        M, n, r = 1.*M, 1.*n, 1.*r
-        mu = r*n / (M-n+1)
+        M, n, r = 1.0 * M, 1.0 * n, 1.0 * r
+        mu = r * n / (M - n + 1)
 
-        var = r*(M+1)*n / ((M-n+1)*(M-n+2)) * (1 - r / (M-n+1))
+        var = r * (M + 1) * n / ((M - n + 1) * (M - n + 2)) * (1 - r / (M - n + 1))
 
         # The skew and kurtosis are mathematically
         # intractable so return `None`. See [2]_.
@@ -714,7 +737,7 @@ class nhypergeom_gen(rv_discrete):
         return mu, var, g1, g2
 
 
-nhypergeom = nhypergeom_gen(name='nhypergeom')
+nhypergeom = nhypergeom_gen(name="nhypergeom")
 
 
 # FIXME: Fails _cdfvec
@@ -742,6 +765,7 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
+
     def _rvs(self, p, size=None, random_state=None):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
@@ -757,20 +781,23 @@ class logser_gen(rv_discrete):
     def _stats(self, p):
         r = special.log1p(-p)
         mu = p / (p - 1.0) / r
-        mu2p = -p / r / (p - 1.0)**2
-        var = mu2p - mu*mu
-        mu3p = -p / r * (1.0+p) / (1.0 - p)**3
-        mu3 = mu3p - 3*mu*mu2p + 2*mu**3
+        mu2p = -p / r / (p - 1.0) ** 2
+        var = mu2p - mu * mu
+        mu3p = -p / r * (1.0 + p) / (1.0 - p) ** 3
+        mu3 = mu3p - 3 * mu * mu2p + 2 * mu ** 3
         g1 = mu3 / np.power(var, 1.5)
 
-        mu4p = -p / r * (
-            1.0 / (p-1)**2 - 6*p / (p - 1)**3 + 6*p*p / (p-1)**4)
-        mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-        g2 = mu4 / var**2 - 3.0
+        mu4p = (
+            -p
+            / r
+            * (1.0 / (p - 1) ** 2 - 6 * p / (p - 1) ** 3 + 6 * p * p / (p - 1) ** 4)
+        )
+        mu4 = mu4p - 4 * mu3p * mu + 6 * mu2p * mu * mu - 3 * mu ** 4
+        g2 = mu4 / var ** 2 - 3.0
         return mu, var, g1, g2
 
 
-logser = logser_gen(a=1, name='logser', longname='A logarithmic')
+logser = logser_gen(a=1, name="logser", longname="A logarithmic")
 
 
 class poisson_gen(rv_discrete):
@@ -831,12 +858,12 @@ class poisson_gen(rv_discrete):
         var = mu
         tmp = np.asarray(mu)
         mu_nonzero = tmp > 0
-        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
-        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
+        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0 / x), np.inf)
+        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0 / x, np.inf)
         return mu, var, g1, g2
 
 
-poisson = poisson_gen(name="poisson", longname='A Poisson')
+poisson = poisson_gen(name="poisson", longname="A Poisson")
 
 
 class planck_gen(rv_discrete):
@@ -867,26 +894,27 @@ class planck_gen(rv_discrete):
     %(example)s
 
     """
+
     def _argcheck(self, lambda_):
         return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        return -expm1(-lambda_)*exp(-lambda_*k)
+        return -expm1(-lambda_) * exp(-lambda_ * k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
-        return -expm1(-lambda_*(k+1))
+        return -expm1(-lambda_ * (k + 1))
 
     def _sf(self, x, lambda_):
         return exp(self._logsf(x, lambda_))
 
     def _logsf(self, x, lambda_):
         k = floor(x)
-        return -lambda_*(k+1)
+        return -lambda_ * (k + 1)
 
     def _ppf(self, q, lambda_):
-        vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(*(self._get_support(lambda_)))
+        vals = ceil(-1.0 / lambda_ * log1p(-q) - 1)
+        vals1 = (vals - 1).clip(*(self._get_support(lambda_)))
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
@@ -896,18 +924,18 @@ class planck_gen(rv_discrete):
         return random_state.geometric(p, size=size) - 1.0
 
     def _stats(self, lambda_):
-        mu = 1/expm1(lambda_)
-        var = exp(-lambda_)/(expm1(-lambda_))**2
-        g1 = 2*cosh(lambda_/2.0)
-        g2 = 4+2*cosh(lambda_)
+        mu = 1 / expm1(lambda_)
+        var = exp(-lambda_) / (expm1(-lambda_)) ** 2
+        g1 = 2 * cosh(lambda_ / 2.0)
+        g2 = 4 + 2 * cosh(lambda_)
         return mu, var, g1, g2
 
     def _entropy(self, lambda_):
         C = -expm1(-lambda_)
-        return lambda_*exp(-lambda_)/C - log(C)
+        return lambda_ * exp(-lambda_) / C - log(C)
 
 
-planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name="planck", longname="A discrete exponential ")
 
 
 class boltzmann_gen(rv_discrete):
@@ -932,6 +960,7 @@ class boltzmann_gen(rv_discrete):
     %(example)s
 
     """
+
     def _argcheck(self, lambda_, N):
         return (lambda_ > 0) & (N > 0)
 
@@ -941,36 +970,37 @@ class boltzmann_gen(rv_discrete):
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
         #               (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
-        fact = (1-exp(-lambda_))/(1-exp(-lambda_*N))
-        return fact*exp(-lambda_*k)
+        fact = (1 - exp(-lambda_)) / (1 - exp(-lambda_ * N))
+        return fact * exp(-lambda_ * k)
 
     def _cdf(self, x, lambda_, N):
         k = floor(x)
-        return (1-exp(-lambda_*(k+1)))/(1-exp(-lambda_*N))
+        return (1 - exp(-lambda_ * (k + 1))) / (1 - exp(-lambda_ * N))
 
     def _ppf(self, q, lambda_, N):
-        qnew = q*(1-exp(-lambda_*N))
-        vals = ceil(-1.0/lambda_ * log(1-qnew)-1)
-        vals1 = (vals-1).clip(0.0, np.inf)
+        qnew = q * (1 - exp(-lambda_ * N))
+        vals = ceil(-1.0 / lambda_ * log(1 - qnew) - 1)
+        vals1 = (vals - 1).clip(0.0, np.inf)
         temp = self._cdf(vals1, lambda_, N)
         return np.where(temp >= q, vals1, vals)
 
     def _stats(self, lambda_, N):
         z = exp(-lambda_)
-        zN = exp(-lambda_*N)
-        mu = z/(1.0-z)-N*zN/(1-zN)
-        var = z/(1.0-z)**2 - N*N*zN/(1-zN)**2
-        trm = (1-zN)/(1-z)
-        trm2 = (z*trm**2 - N*N*zN)
-        g1 = z*(1+z)*trm**3 - N**3*zN*(1+zN)
-        g1 = g1 / trm2**(1.5)
-        g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
+        zN = exp(-lambda_ * N)
+        mu = z / (1.0 - z) - N * zN / (1 - zN)
+        var = z / (1.0 - z) ** 2 - N * N * zN / (1 - zN) ** 2
+        trm = (1 - zN) / (1 - z)
+        trm2 = z * trm ** 2 - N * N * zN
+        g1 = z * (1 + z) * trm ** 3 - N ** 3 * zN * (1 + zN)
+        g1 = g1 / trm2 ** (1.5)
+        g2 = z * (1 + 4 * z + z * z) * trm ** 4 - N ** 4 * zN * (1 + 4 * zN + zN * zN)
         g2 = g2 / trm2 / trm2
         return mu, var, g1, g2
 
 
-boltzmann = boltzmann_gen(name='boltzmann', a=0,
-                          longname='A truncated discrete exponential ')
+boltzmann = boltzmann_gen(
+    name="boltzmann", a=0, longname="A truncated discrete exponential "
+)
 
 
 class randint_gen(rv_discrete):
@@ -996,20 +1026,21 @@ class randint_gen(rv_discrete):
     %(example)s
 
     """
+
     def _argcheck(self, low, high):
-        return (high > low)
+        return high > low
 
     def _get_support(self, low, high):
-        return low, high-1
+        return low, high - 1
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
         p = np.ones_like(k) / (high - low)
-        return np.where((k >= low) & (k < high), p, 0.)
+        return np.where((k >= low) & (k < high), p, 0.0)
 
     def _cdf(self, x, low, high):
         k = floor(x)
-        return (k - low + 1.) / (high - low)
+        return (k - low + 1.0) / (high - low)
 
     def _ppf(self, q, low, high):
         vals = ceil(q * (high - low) + low) - 1
@@ -1021,9 +1052,9 @@ class randint_gen(rv_discrete):
         m2, m1 = np.asarray(high), np.asarray(low)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
-        var = (d*d - 1) / 12.0
+        var = (d * d - 1) / 12.0
         g1 = 0.0
-        g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
+        g2 = -6.0 / 5.0 * (d * d + 1.0) / (d * d - 1.0)
         return mu, var, g1, g2
 
     def _rvs(self, low, high, size=None, random_state=None):
@@ -1039,16 +1070,14 @@ class randint_gen(rv_discrete):
             # randint without needing to pass it a `size` argument.
             low = np.broadcast_to(low, size)
             high = np.broadcast_to(high, size)
-        randint = np.vectorize(partial(rng_integers, random_state),
-                               otypes=[np.int_])
+        randint = np.vectorize(partial(rng_integers, random_state), otypes=[np.int_])
         return randint(low, high)
 
     def _entropy(self, low, high):
         return log(high - low)
 
 
-randint = randint_gen(name='randint', longname='A discrete uniform '
-                      '(random integer)')
+randint = randint_gen(name="randint", longname="A discrete uniform (random integer)")
 
 
 # FIXME: problems sampling.
@@ -1094,6 +1123,7 @@ class zipf_gen(rv_discrete):
     True
 
     """
+
     def _rvs(self, a, size=None, random_state=None):
         return random_state.zipf(a, size=size)
 
@@ -1102,23 +1132,25 @@ class zipf_gen(rv_discrete):
 
     def _pmf(self, k, a):
         # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
-        Pk = 1.0 / special.zeta(a, 1) / k**a
+        Pk = 1.0 / special.zeta(a, 1) / k ** a
         return Pk
 
     def _munp(self, n, a):
         return _lazywhere(
-            a > n + 1, (a, n),
+            a > n + 1,
+            (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
-            np.inf)
+            np.inf,
+        )
 
 
-zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
+zipf = zipf_gen(a=1, name="zipf", longname="A Zipf")
 
 
 def _gen_harmonic_gt1(n, a):
     """Generalized harmonic number, a > 1"""
     # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    return zeta(a, 1) - zeta(a, n+1)
+    return zeta(a, 1) - zeta(a, n + 1)
 
 
 def _gen_harmonic_leq1(n, a):
@@ -1130,15 +1162,14 @@ def _gen_harmonic_leq1(n, a):
     # add terms of harmonic series; starting from smallest to avoid roundoff
     for i in np.arange(n_max, 0, -1, dtype=float):
         mask = i <= n  # don't add terms after nth
-        out[mask] += 1/i**a[mask]
+        out[mask] += 1 / i ** a[mask]
     return out
 
 
 def _gen_harmonic(n, a):
     """Generalized harmonic number"""
     n, a = np.broadcast_arrays(n, a)
-    return _lazywhere(a > 1, (n, a),
-                      f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
+    return _lazywhere(a > 1, (n, a), f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
 
 
 class zipfian_gen(rv_discrete):
@@ -1186,6 +1217,7 @@ class zipfian_gen(rv_discrete):
     True
 
     """
+
     def _argcheck(self, a, n):
         # we need np.asarray here because moment (maybe others) don't convert
         return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
@@ -1194,35 +1226,43 @@ class zipfian_gen(rv_discrete):
         return 1, n
 
     def _pmf(self, k, a, n):
-        return 1.0 / _gen_harmonic(n, a) / k**a
+        return 1.0 / _gen_harmonic(n, a) / k ** a
 
     def _cdf(self, k, a, n):
-        return  _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
         k = k + 1  # # to match SciPy convention
         # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
-                / (k**a*_gen_harmonic(n, a)))
+        return (k ** a * (_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1) / (
+            k ** a * _gen_harmonic(n, a)
+        )
 
     def _stats(self, a, n):
         # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
         Hna = _gen_harmonic(n, a)
-        Hna1 = _gen_harmonic(n, a-1)
-        Hna2 = _gen_harmonic(n, a-2)
-        Hna3 = _gen_harmonic(n, a-3)
-        Hna4 = _gen_harmonic(n, a-4)
-        mu1 = Hna1/Hna
-        mu2n = (Hna2*Hna - Hna1**2)
-        mu2d = Hna**2
+        Hna1 = _gen_harmonic(n, a - 1)
+        Hna2 = _gen_harmonic(n, a - 2)
+        Hna3 = _gen_harmonic(n, a - 3)
+        Hna4 = _gen_harmonic(n, a - 4)
+        mu1 = Hna1 / Hna
+        mu2n = Hna2 * Hna - Hna1 ** 2
+        mu2d = Hna ** 2
         mu2 = mu2n / mu2d
-        g1 = (Hna3/Hna - 3*Hna1*Hna2/Hna**2 + 2*Hna1**3/Hna**3)/mu2**(3/2)
-        g2 = (Hna**3*Hna4 - 4*Hna**2*Hna1*Hna3 + 6*Hna*Hna1**2*Hna2
-              - 3*Hna1**4) / mu2n**2
+        g1 = (
+            Hna3 / Hna - 3 * Hna1 * Hna2 / Hna ** 2 + 2 * Hna1 ** 3 / Hna ** 3
+        ) / mu2 ** (3 / 2)
+        g2 = (
+            Hna ** 3 * Hna4
+            - 4 * Hna ** 2 * Hna1 * Hna3
+            + 6 * Hna * Hna1 ** 2 * Hna2
+            - 3 * Hna1 ** 4
+        ) / mu2n ** 2
         g2 -= 3
         return mu1, mu2, g1, g2
 
-zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
+
+zipfian = zipfian_gen(a=1, name="zipfian", longname="A Zipfian")
 
 
 class dlaplace_gen(rv_discrete):
@@ -1247,32 +1287,37 @@ class dlaplace_gen(rv_discrete):
     %(example)s
 
     """
+
     def _pmf(self, k, a):
         # dlaplace.pmf(k) = tanh(a/2) * exp(-a*abs(k))
-        return tanh(a/2.0) * exp(-a * abs(k))
+        return tanh(a / 2.0) * exp(-a * abs(k))
 
     def _cdf(self, x, a):
         k = floor(x)
         f = lambda k, a: 1.0 - exp(-a * k) / (exp(a) + 1)
-        f2 = lambda k, a: exp(a * (k+1)) / (exp(a) + 1)
+        f2 = lambda k, a: exp(a * (k + 1)) / (exp(a) + 1)
         return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
-        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)),
-                             log(q*const) / a - 1,
-                             -log((1-q) * const) / a))
+        vals = ceil(
+            np.where(
+                q < 1.0 / (1 + exp(-a)),
+                log(q * const) / a - 1,
+                -log((1 - q) * const) / a,
+            )
+        )
         vals1 = vals - 1
         return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
     def _stats(self, a):
         ea = exp(a)
-        mu2 = 2.*ea/(ea-1.)**2
-        mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
-        return 0., mu2, 0., mu4/mu2**2 - 3.
+        mu2 = 2.0 * ea / (ea - 1.0) ** 2
+        mu4 = 2.0 * ea * (ea ** 2 + 10.0 * ea + 1.0) / (ea - 1.0) ** 4
+        return 0.0, mu2, 0.0, mu4 / mu2 ** 2 - 3.0
 
     def _entropy(self, a):
-        return a / sinh(a) - log(tanh(a/2.0))
+        return a / sinh(a) - log(tanh(a / 2.0))
 
     def _rvs(self, a, size=None, random_state=None):
         # The discrete Laplace is equivalent to the two-sided geometric
@@ -1296,8 +1341,7 @@ class dlaplace_gen(rv_discrete):
         return x - y
 
 
-dlaplace = dlaplace_gen(a=-np.inf,
-                        name='dlaplace', longname='A discrete Laplacian')
+dlaplace = dlaplace_gen(a=-np.inf, name="dlaplace", longname="A discrete Laplacian")
 
 
 class skellam_gen(rv_discrete):
@@ -1330,34 +1374,38 @@ class skellam_gen(rv_discrete):
     %(example)s
 
     """
+
     def _rvs(self, mu1, mu2, size=None, random_state=None):
         n = size
-        return (random_state.poisson(mu1, n) -
-                random_state.poisson(mu2, n))
+        return random_state.poisson(mu1, n) - random_state.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+        px = np.where(
+            x < 0,
+            _ncx2_pdf(2 * mu2, 2 * (1 - x), 2 * mu1) * 2,
+            _ncx2_pdf(2 * mu1, 2 * (1 + x), 2 * mu2) * 2,
+        )
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        px = np.where(
+            x < 0,
+            _ncx2_cdf(2 * mu2, -2 * x, 2 * mu1),
+            1 - _ncx2_cdf(2 * mu1, 2 * (x + 1), 2 * mu2),
+        )
         return px
 
     def _stats(self, mu1, mu2):
         mean = mu1 - mu2
         var = mu1 + mu2
-        g1 = mean / sqrt((var)**3)
+        g1 = mean / sqrt((var) ** 3)
         g2 = 1 / var
         return mean, var, g1, g2
 
 
-skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
+skellam = skellam_gen(a=-np.inf, name="skellam", longname="A Skellam")
 
 
 class yulesimon_gen(rv_discrete):
@@ -1394,6 +1442,7 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
+
     def _rvs(self, alpha, size=None, random_state=None):
         E1 = random_state.standard_exponential(size)
         E2 = random_state.standard_exponential(size)
@@ -1404,7 +1453,7 @@ class yulesimon_gen(rv_discrete):
         return alpha * special.beta(x, alpha + 1)
 
     def _argcheck(self, alpha):
-        return (alpha > 0)
+        return alpha > 0
 
     def _logpmf(self, x, alpha):
         return log(alpha) + special.betaln(x, alpha + 1)
@@ -1420,22 +1469,27 @@ class yulesimon_gen(rv_discrete):
 
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
-        mu2 = np.where(alpha > 2,
-                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
-                np.inf)
+        mu2 = np.where(
+            alpha > 2, alpha ** 2 / ((alpha - 2.0) * (alpha - 1) ** 2), np.inf
+        )
         mu2 = np.where(alpha <= 1, np.nan, mu2)
-        g1 = np.where(alpha > 3,
-                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
-                np.inf)
+        g1 = np.where(
+            alpha > 3,
+            sqrt(alpha - 2) * (alpha + 1) ** 2 / (alpha * (alpha - 3)),
+            np.inf,
+        )
         g1 = np.where(alpha <= 2, np.nan, g1)
-        g2 = np.where(alpha > 4,
-                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
-                        (alpha - 4) * (alpha - 3)), np.inf)
+        g2 = np.where(
+            alpha > 4,
+            (alpha + 3)
+            + (alpha ** 3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3)),
+            np.inf,
+        )
         g2 = np.where(alpha <= 2, np.nan, g2)
         return mu, mu2, g1, g2
 
 
-yulesimon = yulesimon_gen(name='yulesimon', a=1)
+yulesimon = yulesimon_gen(name="yulesimon", a=1)
 
 
 def _vectorize_rvs_over_shapes(_rvs1):
@@ -1469,10 +1523,12 @@ def _vectorize_rvs_over_shapes(_rvs1):
         for i in np.ndindex(*size[~_rvs1_indices]):
             # arg can be squeezed because singleton dimensions will be
             # associated with _rvs1_size, not arg_shape per _check_shape
-            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
-                           _rvs1_size, random_state)
+            out[i] = _rvs1(
+                *[np.squeeze(arg)[i] for arg in args], _rvs1_size, random_state
+            )
 
         return np.moveaxis(out, j0, j1)  # move axes back before returning
+
     return _rvs
 
 
@@ -1494,7 +1550,10 @@ class _nchypergeom_gen(rv_discrete):
         return x_min, x_max
 
     def _argcheck(self, M, n, N, odds):
-        M, n = np.asarray(M), np.asarray(n),
+        M, n = (
+            np.asarray(M),
+            np.asarray(n),
+        )
         N, odds = np.asarray(N), np.asarray(odds)
         cond1 = (M.astype(int) == M) & (M >= 0)
         cond2 = (n.astype(int) == n) & (n >= 0)
@@ -1505,7 +1564,6 @@ class _nchypergeom_gen(rv_discrete):
         return cond1 & cond2 & cond3 & cond4 & cond5 & cond6
 
     def _rvs(self, M, n, N, odds, size=None, random_state=None):
-
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, N, odds, size, random_state):
             length = np.prod(size)
@@ -1518,7 +1576,6 @@ class _nchypergeom_gen(rv_discrete):
         return _rvs1(M, n, N, odds, size=size, random_state=random_state)
 
     def _pmf(self, x, M, n, N, odds):
-
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
             urn = self.dist(N, n, M, odds, 1e-12)
@@ -1527,14 +1584,12 @@ class _nchypergeom_gen(rv_discrete):
         return _pmf1(x, M, n, N, odds)
 
     def _stats(self, M, n, N, odds, moments):
-
         @np.vectorize
         def _moments1(M, n, N, odds):
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 
-        m, v = _moments1(M, n, N, odds) if ("m" in moments
-                                            or "v" in moments) else None
+        m, v = _moments1(M, n, N, odds) if ("m" in moments or "v" in moments) else None
         s, k = None, None
         return m, v, s, k
 
@@ -1618,8 +1673,8 @@ class nchypergeom_fisher_gen(_nchypergeom_gen):
 
 
 nchypergeom_fisher = nchypergeom_fisher_gen(
-    name='nchypergeom_fisher',
-    longname="A Fisher's noncentral hypergeometric")
+    name="nchypergeom_fisher", longname="A Fisher's noncentral hypergeometric"
+)
 
 
 class nchypergeom_wallenius_gen(_nchypergeom_gen):
@@ -1701,8 +1756,8 @@ class nchypergeom_wallenius_gen(_nchypergeom_gen):
 
 
 nchypergeom_wallenius = nchypergeom_wallenius_gen(
-    name='nchypergeom_wallenius',
-    longname="A Wallenius' noncentral hypergeometric")
+    name="nchypergeom_wallenius", longname="A Wallenius' noncentral hypergeometric"
+)
 
 
 # Collect names of classes and objects in this module.

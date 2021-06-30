@@ -882,7 +882,7 @@ fitpack_insert(PyObject *dummy, PyObject*args)
      *     for _ in range(n, nest):
      *         t, c = INSERT(t, c)
      *     return t, c
-     * 
+     *
      * We need to ensure that input and output buffers given to INSERT routine
      * do not point to same memory, which is not allowed by Fortran. For this,
      * we use temporary storage, and cycle between it and the output buffers.

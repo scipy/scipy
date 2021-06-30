@@ -35,10 +35,25 @@ from . import _ni_label
 from . import _nd_image
 from . import morphology
 
-__all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
-           'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
-           'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift', 'sum_labels']
+__all__ = [
+    "label",
+    "find_objects",
+    "labeled_comprehension",
+    "sum",
+    "mean",
+    "variance",
+    "standard_deviation",
+    "minimum",
+    "maximum",
+    "median",
+    "minimum_position",
+    "maximum_position",
+    "extrema",
+    "center_of_mass",
+    "histogram",
+    "watershed_ift",
+    "sum_labels",
+]
 
 
 def label(input, structure=None, output=None):
@@ -175,20 +190,20 @@ def label(input, structure=None, output=None):
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+        raise TypeError("Complex type not supported")
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
-        raise RuntimeError('structure and input must have equal rank')
+        raise RuntimeError("structure and input must have equal rank")
     for ii in structure.shape:
         if ii != 3:
-            raise ValueError('structure dimensions must be equal to 3')
+            raise ValueError("structure dimensions must be equal to 3")
 
     # Use 32 bits if it's large enough for this image.
     # _ni_label.label() needs two entries for background and
     # foreground tracking
-    need_64bits = input.size >= (2**31 - 2)
+    need_64bits = input.size >= (2 ** 31 - 2)
 
     if isinstance(output, numpy.ndarray):
         if output.shape != input.shape:
@@ -225,9 +240,7 @@ def label(input, structure=None, output=None):
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
             # refuse to return bad results
-            raise RuntimeError(
-                "insufficient bit-depth in requested output type"
-            ) from e
+            raise RuntimeError("insufficient bit-depth in requested output type") from e
 
     if caller_provided_output:
         # result was written in-place
@@ -297,7 +310,7 @@ def find_objects(input, max_label=0):
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+        raise TypeError("Complex type not supported")
 
     if max_label < 1:
         max_label = input.max()
@@ -305,7 +318,9 @@ def find_objects(input, max_label=0):
     return _nd_image.find_objects(input, max_label)
 
 
-def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
+def labeled_comprehension(
+    input, labels, index, func, out_dtype, default, pass_positions=False
+):
     """
     Roughly equivalent to [func(input[labels == i]) for i in index].
 
@@ -391,8 +406,10 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     try:
         input, labels = numpy.broadcast_arrays(input, labels)
     except ValueError as e:
-        raise ValueError("input and labels must have the same shape "
-                            "(excepting dimensions with width 1)") from e
+        raise ValueError(
+            "input and labels must have the same shape "
+            "(excepting dimensions with width 1)"
+        ) from e
 
     if index is None:
         if not pass_positions:
@@ -402,9 +419,10 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     index = numpy.atleast_1d(index)
     if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
-        raise ValueError("Cannot convert index values from <%s> to <%s> "
-                            "(labels' type) without loss of precision" %
-                            (index.dtype, labels.dtype))
+        raise ValueError(
+            "Cannot convert index values from <%s> to <%s> "
+            "(labels' type) without loss of precision" % (index.dtype, labels.dtype)
+        )
 
     index = index.astype(labels.dtype)
 
@@ -435,8 +453,8 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
         # Find boundaries for each stretch of constant labels
         # This could be faster, but we already paid N log N to sort labels.
-        lo = numpy.searchsorted(labels, sorted_index, side='left')
-        hi = numpy.searchsorted(labels, sorted_index, side='right')
+        lo = numpy.searchsorted(labels, sorted_index, side="left")
+        hi = numpy.searchsorted(labels, sorted_index, side="right")
 
         for i, l, h in zip(range(nidx), lo, hi):
             if l == h:
@@ -461,8 +479,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 def _safely_castable_to_int(dt):
     """Test whether the NumPy data type `dt` can be safely cast to an int."""
     int_size = np.dtype(int).itemsize
-    safe = ((np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or
-            (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
+    safe = (np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or (
+        np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size
+    )
     return safe
 
 
@@ -497,6 +516,7 @@ def _stats(input, labels=None, index=None, centered=False):
         This is only returned if `centered` is True.
 
     """
+
     def single_group(vals):
         if centered:
             vals_c = vals - vals.mean()
@@ -523,16 +543,20 @@ def _stats(input, labels=None, index=None, centered=False):
         means = sums / counts
         centered_input = input - means[labels]
         # bincount expects 1-D inputs, so we ravel the arguments.
-        bc = numpy.bincount(labels.ravel(),
-                              weights=(centered_input *
-                                       centered_input.conjugate()).ravel())
+        bc = numpy.bincount(
+            labels.ravel(),
+            weights=(centered_input * centered_input.conjugate()).ravel(),
+        )
         return bc
 
     # Remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
 
-    if (not _safely_castable_to_int(labels.dtype) or
-            labels.min() < 0 or labels.max() > labels.size):
+    if (
+        not _safely_castable_to_int(labels.dtype)
+        or labels.min() < 0
+        or labels.max() > labels.size
+    ):
         # Use numpy.unique to generate the label indices.  `new_labels` will
         # be 1-D, but it should be interpreted as the flattened N-D array of
         # label indices.
@@ -547,7 +571,7 @@ def _stats(input, labels=None, index=None, centered=False):
         idxs = numpy.searchsorted(unique_labels, index)
         # make all of idxs valid
         idxs[idxs >= unique_labels.size] = 0
-        found = (unique_labels[idxs] == index)
+        found = unique_labels[idxs] == index
     else:
         # labels are an integer type allowed by bincount, and there aren't too
         # many, so call bincount directly.
@@ -787,9 +811,16 @@ def standard_deviation(input, labels=None, index=None):
     return numpy.sqrt(variance(input, labels, index))
 
 
-def _select(input, labels=None, index=None, find_min=False, find_max=False,
-            find_min_positions=False, find_max_positions=False,
-            find_median=False):
+def _select(
+    input,
+    labels=None,
+    index=None,
+    find_min=False,
+    find_max=False,
+    find_min_positions=False,
+    find_max_positions=False,
+    find_median=False,
+):
     """Returns min, max, or both, plus their positions (if requested), and
     median."""
 
@@ -821,14 +852,14 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     input, labels = numpy.broadcast_arrays(input, labels)
 
     if index is None:
-        mask = (labels > 0)
+        mask = labels > 0
         masked_positions = None
         if find_positions:
             masked_positions = positions[mask]
         return single_group(input[mask], masked_positions)
 
     if numpy.isscalar(index):
-        mask = (labels == index)
+        mask = labels == index
         masked_positions = None
         if find_positions:
             masked_positions = positions[mask]
@@ -836,21 +867,24 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
-    if (not _safely_castable_to_int(labels.dtype) or
-            labels.min() < 0 or labels.max() > labels.size):
+    if (
+        not _safely_castable_to_int(labels.dtype)
+        or labels.min() < 0
+        or labels.max() > labels.size
+    ):
         # remap labels, and indexes
         unique_labels, labels = numpy.unique(labels, return_inverse=True)
         idxs = numpy.searchsorted(unique_labels, index)
 
         # make all of idxs valid
         idxs[idxs >= unique_labels.size] = 0
-        found = (unique_labels[idxs] == index)
+        found = unique_labels[idxs] == index
     else:
         # labels are an integer type, and there aren't too many
         idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
-    idxs[~ found] = labels.max() + 1
+    idxs[~found] = labels.max() + 1
 
     if find_median:
         order = numpy.lexsort((input.ravel(), labels.ravel()))
@@ -893,10 +927,11 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         step = (hi - lo) // 2
         lo += step
         hi -= step
-        if (np.issubdtype(input.dtype, np.integer)
-                or np.issubdtype(input.dtype, np.bool_)):
+        if np.issubdtype(input.dtype, np.integer) or np.issubdtype(
+            input.dtype, np.bool_
+        ):
             # avoid integer overflow or boolean addition (gh-12836)
-            result += [(input[lo].astype('d') + input[hi].astype('d')) / 2.0]
+            result += [(input[lo].astype("d") + input[hi].astype("d")) / 2.0]
         else:
             result += [(input[lo] + input[hi]) / 2.0]
 
@@ -1324,19 +1359,30 @@ def extrema(input, labels=None, index=None):
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-    minimums, min_positions, maximums, max_positions = _select(input, labels,
-                                                               index,
-                                                               find_min=True,
-                                                               find_max=True,
-                                                               find_min_positions=True,
-                                                               find_max_positions=True)
+    minimums, min_positions, maximums, max_positions = _select(
+        input,
+        labels,
+        index,
+        find_min=True,
+        find_max=True,
+        find_min_positions=True,
+        find_max_positions=True,
+    )
 
     if numpy.isscalar(minimums):
-        return (minimums, maximums, tuple((min_positions // dim_prod) % dims),
-                tuple((max_positions // dim_prod) % dims))
+        return (
+            minimums,
+            maximums,
+            tuple((min_positions // dim_prod) % dims),
+            tuple((max_positions // dim_prod) % dims),
+        )
 
-    min_positions = [tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims]
-    max_positions = [tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims]
+    min_positions = [
+        tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims
+    ]
+    max_positions = [
+        tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims
+    ]
 
     return minimums, maximums, min_positions, max_positions
 
@@ -1404,8 +1450,10 @@ def center_of_mass(input, labels=None, index=None):
     normalizer = sum(input, labels, index)
     grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
 
-    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer
-               for dir in range(input.ndim)]
+    results = [
+        sum(input * grids[dir].astype(float), labels, index) / normalizer
+        for dir in range(input.ndim)
+    ]
 
     if numpy.isscalar(results[0]):
         return tuple(results)
@@ -1470,8 +1518,9 @@ def histogram(input, min, max, bins, labels=None, index=None):
     def _hist(vals):
         return numpy.histogram(vals, _bins)[0]
 
-    return labeled_comprehension(input, labels, index, _hist, object, None,
-                                 pass_positions=False)
+    return labeled_comprehension(
+        input, labels, index, _hist, object, None, pass_positions=False
+    )
 
 
 def watershed_ift(input, markers, structure=None, output=None):
@@ -1507,38 +1556,40 @@ def watershed_ift(input, markers, structure=None, output=None):
     """
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
-        raise TypeError('only 8 and 16 unsigned inputs are supported')
+        raise TypeError("only 8 and 16 unsigned inputs are supported")
 
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
-        raise RuntimeError('structure and input must have equal rank')
+        raise RuntimeError("structure and input must have equal rank")
     for ii in structure.shape:
         if ii != 3:
-            raise RuntimeError('structure dimensions must be equal to 3')
+            raise RuntimeError("structure dimensions must be equal to 3")
 
     if not structure.flags.contiguous:
         structure = structure.copy()
     markers = numpy.asarray(markers)
     if input.shape != markers.shape:
-        raise RuntimeError('input and markers must have equal shape')
+        raise RuntimeError("input and markers must have equal shape")
 
-    integral_types = [numpy.int0,
-                      numpy.int8,
-                      numpy.int16,
-                      numpy.int32,
-                      numpy.int_,
-                      numpy.int64,
-                      numpy.intc,
-                      numpy.intp]
+    integral_types = [
+        numpy.int0,
+        numpy.int8,
+        numpy.int16,
+        numpy.int32,
+        numpy.int_,
+        numpy.int64,
+        numpy.intc,
+        numpy.intp,
+    ]
 
     if markers.dtype.type not in integral_types:
-        raise RuntimeError('marker should be of integer type')
+        raise RuntimeError("marker should be of integer type")
 
     if isinstance(output, numpy.ndarray):
         if output.dtype.type not in integral_types:
-            raise RuntimeError('output should be of integer type')
+            raise RuntimeError("output should be of integer type")
     else:
         output = markers.dtype
 

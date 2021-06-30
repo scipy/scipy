@@ -27,12 +27,21 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of iterations is exceeded.",
     1: "The first-order optimality measure is less than `tol`.",
     2: "The relative change of the cost function is less than `tol`.",
-    3: "The unconstrained solution is optimal."
+    3: "The unconstrained solution is optimal.",
 }
 
 
-def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
-               lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
+def lsq_linear(
+    A,
+    b,
+    bounds=(-np.inf, np.inf),
+    method="trf",
+    tol=1e-10,
+    lsq_solver=None,
+    lsmr_tol=None,
+    max_iter=None,
+    verbose=0,
+):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -212,10 +221,10 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
     first-order optimality 4.66e-08.
     """
-    if method not in ['trf', 'bvls']:
+    if method not in ["trf", "bvls"]:
         raise ValueError("`method` must be 'trf' or 'bvls'")
 
-    if lsq_solver not in [None, 'exact', 'lsmr']:
+    if lsq_solver not in [None, "exact", "lsmr"]:
         raise ValueError("`solver` must be None, 'exact' or 'lsmr'.")
 
     if verbose not in [0, 1, 2]:
@@ -226,23 +235,24 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     elif not isinstance(A, LinearOperator):
         A = np.atleast_2d(np.asarray(A))
 
-    if method == 'bvls':
-        if lsq_solver == 'lsmr':
-            raise ValueError("method='bvls' can't be used with "
-                             "lsq_solver='lsmr'")
+    if method == "bvls":
+        if lsq_solver == "lsmr":
+            raise ValueError("method='bvls' can't be used with lsq_solver='lsmr'")
 
         if not isinstance(A, np.ndarray):
-            raise ValueError("method='bvls' can't be used with `A` being "
-                             "sparse or LinearOperator.")
+            raise ValueError(
+                "method='bvls' can't be used with `A` being sparse or LinearOperator."
+            )
 
     if lsq_solver is None:
         if isinstance(A, np.ndarray):
-            lsq_solver = 'exact'
+            lsq_solver = "exact"
         else:
-            lsq_solver = 'lsmr'
-    elif lsq_solver == 'exact' and not isinstance(A, np.ndarray):
-        raise ValueError("`exact` solver can't be used when `A` is "
-                         "sparse or LinearOperator.")
+            lsq_solver = "lsmr"
+    elif lsq_solver == "exact" and not isinstance(A, np.ndarray):
+        raise ValueError(
+            "`exact` solver can't be used when `A` is sparse or LinearOperator."
+        )
 
     if len(A.shape) != 2:  # No ndim for LinearOperator.
         raise ValueError("`A` must have at most 2 dimensions.")
@@ -268,12 +278,13 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("Bounds have wrong shape.")
 
     if np.any(lb >= ub):
-        raise ValueError("Each lower bound must be strictly less than each "
-                         "upper bound.")
+        raise ValueError(
+            "Each lower bound must be strictly less than each upper bound."
+        )
 
-    if lsq_solver == 'exact':
+    if lsq_solver == "exact":
         x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
-    elif lsq_solver == 'lsmr':
+    elif lsq_solver == "lsmr":
         x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
 
     if in_bounds(x_lsq, lb, ub):
@@ -286,18 +297,29 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         if verbose > 0:
             print(termination_message)
-            print("Final cost {0:.4e}, first-order optimality {1:.2e}"
-                  .format(cost, g_norm))
+            print(
+                "Final cost {0:.4e}, first-order optimality {1:.2e}".format(
+                    cost, g_norm
+                )
+            )
 
         return OptimizeResult(
-            x=x_lsq, fun=r, cost=cost, optimality=g_norm,
-            active_mask=np.zeros(n), nit=0, status=termination_status,
-            message=termination_message, success=True)
+            x=x_lsq,
+            fun=r,
+            cost=cost,
+            optimality=g_norm,
+            active_mask=np.zeros(n),
+            nit=0,
+            status=termination_status,
+            message=termination_message,
+            success=True,
+        )
 
-    if method == 'trf':
-        res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         max_iter, verbose)
-    elif method == 'bvls':
+    if method == "trf":
+        res = trf_linear(
+            A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter, verbose
+        )
+    elif method == "bvls":
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
     res.message = TERMINATION_MESSAGES[res.status]
@@ -305,9 +327,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations {0}, initial cost {1:.4e}, "
-              "final cost {2:.4e}, first-order optimality {3:.2e}."
-              .format(res.nit, res.initial_cost, res.cost, res.optimality))
+        print(
+            "Number of iterations {0}, initial cost {1:.4e}, "
+            "final cost {2:.4e}, first-order optimality {3:.2e}.".format(
+                res.nit, res.initial_cost, res.cost, res.optimality
+            )
+        )
 
     del res.initial_cost
 

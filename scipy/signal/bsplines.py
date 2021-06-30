@@ -1,7 +1,27 @@
-from numpy import (logical_and, asarray, pi, zeros_like,
-                   piecewise, array, arctan2, tan, zeros, arange, floor)
-from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
-                              less_equal, greater_equal)
+from numpy import (
+    logical_and,
+    asarray,
+    pi,
+    zeros_like,
+    piecewise,
+    array,
+    arctan2,
+    tan,
+    zeros,
+    arange,
+    floor,
+)
+from numpy.core.umath import (
+    sqrt,
+    exp,
+    greater,
+    less,
+    cos,
+    add,
+    sin,
+    less_equal,
+    greater_equal,
+)
 
 # From splinemodule.c
 from .spline import cspline2d, sepfir2d
@@ -9,8 +29,17 @@ from .spline import cspline2d, sepfir2d
 from scipy.special import comb
 from scipy._lib._util import float_factorial
 
-__all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
-           'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
+__all__ = [
+    "spline_filter",
+    "bspline",
+    "gauss_spline",
+    "cubic",
+    "quadratic",
+    "cspline1d",
+    "qspline1d",
+    "cspline1d_eval",
+    "qspline1d_eval",
+]
 
 
 def spline_filter(Iin, lmbda=5.0):
@@ -51,15 +80,15 @@ def spline_filter(Iin, lmbda=5.0):
 
     """
     intype = Iin.dtype.char
-    hcol = array([1.0, 4.0, 1.0], 'f') / 6.0
-    if intype in ['F', 'D']:
-        Iin = Iin.astype('F')
+    hcol = array([1.0, 4.0, 1.0], "f") / 6.0
+    if intype in ["F", "D"]:
+        Iin = Iin.astype("F")
         ckr = cspline2d(Iin.real, lmbda)
         cki = cspline2d(Iin.imag, lmbda)
         outr = sepfir2d(ckr, hcol, hcol)
         outi = sepfir2d(cki, hcol, hcol)
         out = (outr + 1j * outi).astype(intype)
-    elif intype in ['f', 'd']:
+    elif intype in ["f", "d"]:
         ckr = cspline2d(Iin, lmbda)
         out = sepfir2d(ckr, hcol, hcol)
         out = out.astype(intype)
@@ -89,13 +118,11 @@ def _bspline_piecefunctions(order):
 
     def condfuncgen(num, val1, val2):
         if num == 0:
-            return lambda x: logical_and(less_equal(x, val1),
-                                         greater_equal(x, val2))
+            return lambda x: logical_and(less_equal(x, val1), greater_equal(x, val2))
         elif num == 2:
             return lambda x: less_equal(x, val2)
         else:
-            return lambda x: logical_and(less(x, val1),
-                                         greater_equal(x, val2))
+            return lambda x: logical_and(less(x, val1), greater_equal(x, val2))
 
     last = order // 2 + 2
     if order % 2:
@@ -119,10 +146,12 @@ def _bspline_piecefunctions(order):
 
     def piecefuncgen(num):
         Mk = order // 2 - num
-        if (Mk < 0):
+        if Mk < 0:
             return 0  # final function is 0
-        coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
-                  for k in range(Mk + 1)]
+        coeffs = [
+            (1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
+            for k in range(Mk + 1)
+        ]
         shifts = [-bound - k for k in range(Mk + 1)]
 
         def thefunc(x):
@@ -130,6 +159,7 @@ def _bspline_piecefunctions(order):
             for k in range(Mk + 1):
                 res += coeffs[k] * (x + shifts[k]) ** order
             return res
+
         return thefunc
 
     funclist = [piecefuncgen(k) for k in range(last)]
@@ -238,7 +268,7 @@ def gauss_spline(x, n):
     """
     x = asarray(x)
     signsq = (n + 1) / 12.0
-    return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
+    return 1 / sqrt(2 * pi * signsq) * exp(-(x ** 2) / 2 / signsq)
 
 
 def cubic(x):
@@ -354,13 +384,17 @@ def _coeff_smooth(lam):
 
 
 def _hc(k, cs, rho, omega):
-    return (cs / sin(omega) * (rho ** k) * sin(omega * (k + 1)) *
-            greater(k, -1))
+    return cs / sin(omega) * (rho ** k) * sin(omega * (k + 1)) * greater(k, -1)
 
 
 def _hs(k, cs, rho, omega):
-    c0 = (cs * cs * (1 + rho * rho) / (1 - rho * rho) /
-          (1 - 2 * rho * rho * cos(2 * omega) + rho ** 4))
+    c0 = (
+        cs
+        * cs
+        * (1 + rho * rho)
+        / (1 - rho * rho)
+        / (1 - 2 * rho * rho * cos(2 * omega) + rho ** 4)
+    )
     gamma = (1 - rho * rho) / (1 + rho * rho) / tan(omega)
     ak = abs(k)
     return c0 * rho ** ak * (cos(omega * ak) + gamma * sin(omega * ak))
@@ -372,27 +406,32 @@ def _cubic_smooth_coeff(signal, lamb):
     K = len(signal)
     yp = zeros((K,), signal.dtype.char)
     k = arange(K)
-    yp[0] = (_hc(0, cs, rho, omega) * signal[0] +
-             add.reduce(_hc(k + 1, cs, rho, omega) * signal))
+    yp[0] = _hc(0, cs, rho, omega) * signal[0] + add.reduce(
+        _hc(k + 1, cs, rho, omega) * signal
+    )
 
-    yp[1] = (_hc(0, cs, rho, omega) * signal[0] +
-             _hc(1, cs, rho, omega) * signal[1] +
-             add.reduce(_hc(k + 2, cs, rho, omega) * signal))
+    yp[1] = (
+        _hc(0, cs, rho, omega) * signal[0]
+        + _hc(1, cs, rho, omega) * signal[1]
+        + add.reduce(_hc(k + 2, cs, rho, omega) * signal)
+    )
 
     for n in range(2, K):
-        yp[n] = (cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] -
-                 rho * rho * yp[n - 2])
+        yp[n] = (
+            cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] - rho * rho * yp[n - 2]
+        )
 
     y = zeros((K,), signal.dtype.char)
 
-    y[K - 1] = add.reduce((_hs(k, cs, rho, omega) +
-                           _hs(k + 1, cs, rho, omega)) * signal[::-1])
-    y[K - 2] = add.reduce((_hs(k - 1, cs, rho, omega) +
-                           _hs(k + 2, cs, rho, omega)) * signal[::-1])
+    y[K - 1] = add.reduce(
+        (_hs(k, cs, rho, omega) + _hs(k + 1, cs, rho, omega)) * signal[::-1]
+    )
+    y[K - 2] = add.reduce(
+        (_hs(k - 1, cs, rho, omega) + _hs(k + 2, cs, rho, omega)) * signal[::-1]
+    )
 
     for n in range(K - 3, -1, -1):
-        y[n] = (cs * yp[n] + 2 * rho * cos(omega) * y[n + 1] -
-                rho * rho * y[n + 2])
+        y[n] = cs * yp[n] + 2 * rho * cos(omega) * y[n + 1] - rho * rho * y[n + 2]
 
     return y
 

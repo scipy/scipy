@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
-    'lint_diff.ini',
+    "lint_diff.ini",
 )
 
 
@@ -17,19 +17,12 @@ def rev_list(branch, num_commits):
 
     """
     res = subprocess.run(
-        [
-            'git',
-            'rev-list',
-            '--max-count',
-            f'{num_commits}',
-            '--first-parent',
-            branch
-        ],
+        ["git", "rev-list", "--max-count", f"{num_commits}", "--first-parent", branch],
         stdout=subprocess.PIPE,
-        encoding='utf-8',
+        encoding="utf-8",
     )
     res.check_returncode()
-    return res.stdout.rstrip('\n').split('\n')
+    return res.stdout.rstrip("\n").split("\n")
 
 
 def find_branch_point(branch):
@@ -40,7 +33,7 @@ def find_branch_point(branch):
     https://stackoverflow.com/questions/1527234/finding-a-branch-point-with-git#4991675
 
     """
-    branch_commits = rev_list('HEAD', 1000)
+    branch_commits = rev_list("HEAD", 1000)
     master_commits = set(rev_list(branch, 1000))
     for branch_commit in branch_commits:
         if branch_commit in master_commits:
@@ -48,16 +41,15 @@ def find_branch_point(branch):
 
     # If a branch split off over 1000 commits ago we will fail to find
     # the ancestor.
-    raise RuntimeError(
-        'Failed to find a common ancestor in the last 1000 commits')
+    raise RuntimeError("Failed to find a common ancestor in the last 1000 commits")
 
 
 def find_diff(sha):
     """Find the diff since the given sha."""
     res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha, '--', '*.py'],
+        ["git", "diff", "--unified=0", sha, "--", "*.py"],
         stdout=subprocess.PIPE,
-        encoding='utf-8',
+        encoding="utf-8",
     )
     res.check_returncode()
     return res.stdout
@@ -66,18 +58,19 @@ def find_diff(sha):
 def run_pycodestyle(diff):
     """Run pycodestyle on the given diff."""
     res = subprocess.run(
-        ['pycodestyle', '--diff', '--config', CONFIG],
+        ["pycodestyle", "--diff", "--config", CONFIG],
         input=diff,
         stdout=subprocess.PIPE,
-        encoding='utf-8',
+        encoding="utf-8",
     )
     return res.returncode, res.stdout
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--branch", type=str, default='master',
-                        help="The branch to diff against")
+    parser.add_argument(
+        "--branch", type=str, default="master", help="The branch to diff against"
+    )
     args = parser.parse_args()
 
     branch_point = find_branch_point(args.branch)
@@ -88,5 +81,5 @@ def main():
     sys.exit(rc)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

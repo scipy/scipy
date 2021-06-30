@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -11,26 +11,26 @@ at the top-level directory.
 
 /*! @file slu_ddefs.h
  * \brief Header file for real operations
- * 
- * <pre> 
+ *
+ * <pre>
  * -- SuperLU routine (version 4.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November, 2010
- * 
+ *
  * Global data structures used in LU factorization -
- * 
+ *
  *   nsuper: #supernodes = nsuper + 1, numbered [0, nsuper].
  *   (xsup,supno): supno[i] is the supernode no to which i belongs;
  *	xsup(s) points to the beginning of the s-th supernode.
  *	e.g.   supno 0 1 2 2 3 3 3 4 4 4 4 4   (n=12)
  *	        xsup 0 1 2 4 7 12
- *	Note: dfs will be performed on supernode rep. relative to the new 
+ *	Note: dfs will be performed on supernode rep. relative to the new
  *	      row pivoting ordering
  *
  *   (xlsub,lsub): lsub[*] contains the compressed subscript of
  *	rectangular supernodes; xlsub[j] points to the starting
- *	location of the j-th column in lsub[*]. Note that xlsub 
+ *	location of the j-th column in lsub[*]. Note that xlsub
  *	is indexed by column.
  *	Storage: original row subscripts
  *
@@ -141,7 +141,7 @@ extern void
 dCreate_Dense_Matrix(SuperMatrix *, int, int, double *, int,
 		     Stype_t, Dtype_t, Mtype_t);
 extern void
-dCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, double *, 
+dCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, double *,
 		         int *, int *, int *, int *, int *,
 			 Stype_t, Dtype_t, Mtype_t);
 extern void
@@ -153,7 +153,7 @@ extern void    fixupL (const int, const int *, GlobalLU_t *);
 
 extern void    dallocateA (int, int, double **, int **, int **);
 extern void    dgstrf (superlu_options_t*, SuperMatrix*,
-                       int, int, int*, void *, int, int *, int *, 
+                       int, int, int*, void *, int, int *, int *,
                        SuperMatrix *, SuperMatrix *, GlobalLU_t *,
 		       SuperLUStat_t*, int *);
 extern int     dsnode_dfs (const int, const int, const int *, const int *,
@@ -172,8 +172,8 @@ extern int     dcolumn_bmod (const int, const int, double *,
 			   double *, int *, int *, int,
                            GlobalLU_t *, SuperLUStat_t*);
 extern int     dcopy_to_ucol (int, int, int *, int *, int *,
-                              double *, GlobalLU_t *);         
-extern int     dpivotL (const int, const double, int *, int *, 
+                              double *, GlobalLU_t *);
+extern int     dpivotL (const int, const double, int *, int *,
                          int *, int *, int *, GlobalLU_t *, SuperLUStat_t*);
 extern void    dpruneL (const int, const int *, const int, const int,
 			  const int *, const int *, int *, GlobalLU_t *);
@@ -204,7 +204,7 @@ extern int     ilu_dpivotL (const int, const double, int *, int *, int, int *,
 			    int *, int *, int *, double, milu_t,
                             double, GlobalLU_t *, SuperLUStat_t*);
 extern int     ilu_ddrop_row (superlu_options_t *, int, int, double,
-                              int, int *, double *, GlobalLU_t *, 
+                              int, int *, double *, GlobalLU_t *,
                               double *, double *, int);
 
 
@@ -214,12 +214,12 @@ extern void    dgsequ (SuperMatrix *, double *, double *, double *,
 			double *, double *, int *);
 extern void    dlaqgs (SuperMatrix *, double *, double *, double,
                         double, double, char *);
-extern void    dgscon (char *, SuperMatrix *, SuperMatrix *, 
+extern void    dgscon (char *, SuperMatrix *, SuperMatrix *,
 		         double, double *, SuperLUStat_t*, int *);
-extern double   dPivotGrowth(int, SuperMatrix *, int *, 
+extern double   dPivotGrowth(int, SuperMatrix *, int *,
                             SuperMatrix *, SuperMatrix *);
 extern void    dgsrfs (trans_t, SuperMatrix *, SuperMatrix *,
-                       SuperMatrix *, int *, int *, char *, double *, 
+                       SuperMatrix *, int *, int *, char *, double *,
                        double *, SuperMatrix *, SuperMatrix *,
                        double *, double *, SuperLUStat_t*, int *);
 
@@ -229,7 +229,7 @@ extern int     sp_dgemv (char *, double, SuperMatrix *, double *,
 			int, double, double *, int);
 
 extern int     sp_dgemm (char *, char *, int, int, int, double,
-			SuperMatrix *, double *, int, double, 
+			SuperMatrix *, double *, int, double,
 			double *, int);
 extern         double dmach(char *);   /* from C99 standard, in float.h */
 
@@ -284,4 +284,3 @@ extern int dgemv_(char *, int *, int *, double *, double *a, int *,
 #endif
 
 #endif /* __SUPERLU_dSP_DEFS */
-

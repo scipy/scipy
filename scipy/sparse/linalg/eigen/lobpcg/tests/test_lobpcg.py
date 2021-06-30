@@ -4,8 +4,12 @@ import itertools
 import platform
 
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less)
+from numpy.testing import (
+    assert_almost_equal,
+    assert_equal,
+    assert_allclose,
+    assert_array_less,
+)
 
 import pytest
 
@@ -16,19 +20,24 @@ from scipy.sparse import spdiags, diags, eye
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
+
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
     fixed-free elastic rod vibration model.
     """
     L = 1.0
-    le = L/n
+    le = L / n
     rho = 7.85e3
-    S = 1.e-4
+    S = 1.0e-4
     E = 2.1e11
-    mass = rho*S*le/6.
-    k = E*S/le
-    A = k*(diag(r_[2.*ones(n-1), 1])-diag(ones(n-1), 1)-diag(ones(n-1), -1))
-    B = mass*(diag(r_[4.*ones(n-1), 2])+diag(ones(n-1), 1)+diag(ones(n-1), -1))
+    mass = rho * S * le / 6.0
+    k = E * S / le
+    A = k * (
+        diag(r_[2.0 * ones(n - 1), 1]) - diag(ones(n - 1), 1) - diag(ones(n - 1), -1)
+    )
+    B = mass * (
+        diag(r_[4.0 * ones(n - 1), 2]) + diag(ones(n - 1), 1) + diag(ones(n - 1), -1)
+    )
     return A, B
 
 
@@ -37,17 +46,16 @@ def MikotaPair(n):
     problem. The Mikota pair acts as a nice test since the eigenvalues are the
     squares of the integers n, n=1,2,...
     """
-    x = np.arange(1, n+1)
-    B = diag(1./x)
-    y = np.arange(n-1, 0, -1)
-    z = np.arange(2*n-1, 0, -2)
-    A = diag(z)-diag(y, -1)-diag(y, 1)
+    x = np.arange(1, n + 1)
+    B = diag(1.0 / x)
+    y = np.arange(n - 1, 0, -1)
+    z = np.arange(2 * n - 1, 0, -2)
+    A = diag(z) - diag(y, -1) - diag(y, 1)
     return A, B
 
 
 def compare_solutions(A, B, m):
-    """Check eig vs. lobpcg consistency.
-    """
+    """Check eig vs. lobpcg consistency."""
     n = A.shape[0]
     np.random.seed(0)
     V = rand(n, m)
@@ -56,7 +64,7 @@ def compare_solutions(A, B, m):
     eigvals.sort()
     w, _ = eig(A, b=B)
     w.sort()
-    assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
+    assert_almost_equal(w[: int(m / 2)], eigvals[: int(m / 2)], decimal=2)
 
 
 def test_Small():
@@ -77,8 +85,7 @@ def test_MikotaPair():
 
 
 def test_regression():
-    """Check the eigenvalue of the identity matrix is one.
-    """
+    """Check the eigenvalue of the identity matrix is one."""
     # https://mail.python.org/pipermail/scipy-user/2010-October/026944.html
     n = 10
     X = np.ones((n, 1))
@@ -88,8 +95,7 @@ def test_regression():
 
 
 def test_diagonal():
-    """Check for diagonal matrices.
-    """
+    """Check for diagonal matrices."""
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
     # required to reproduce arpack bug
@@ -108,12 +114,12 @@ def test_diagonal():
     # where (c, v) is a generalized eigenpair,
     # and where we choose A to be the diagonal matrix whose entries are 1..n
     # and where B is chosen to be the identity matrix.
-    vals = np.arange(1, n+1, dtype=float)
+    vals = np.arange(1, n + 1, dtype=float)
     A = diags([vals], [0], (n, n))
     B = eye(n)
 
     # Let the preconditioner M be the inverse of A.
-    M = diags([1./vals], [0], (n, n))
+    M = diags([1.0 / vals], [0], (n, n))
 
     # Pick random initial vectors.
     X = np.random.rand(n, m)
@@ -125,21 +131,19 @@ def test_diagonal():
 
     eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
 
-    assert_allclose(eigvals, np.arange(1+m_excluded, 1+m_excluded+m))
+    assert_allclose(eigvals, np.arange(1 + m_excluded, 1 + m_excluded + m))
     _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
 
 
 def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
-    """Check if the eigenvalue residual is small.
-    """
+    """Check if the eigenvalue residual is small."""
     mult_wV = np.multiply(w, V)
     dot_MV = M.dot(V)
     assert_allclose(mult_wV, dot_MV, rtol=rtol, atol=atol)
 
 
 def _check_fiedler(n, p):
-    """Check the Fiedler vector computation.
-    """
+    """Check the Fiedler vector computation."""
     # This is not necessarily the recommended way to find the Fiedler vector.
     np.random.seed(1234)
     col = np.zeros(n)
@@ -151,7 +155,7 @@ def _check_fiedler(n, p):
     # http://www.cs.yale.edu/homes/spielman/561/2009/lect02-09.pdf
     tmp = np.pi * np.arange(n) / n
     analytic_w = 2 * (1 - np.cos(tmp))
-    analytic_V = np.cos(np.outer(np.arange(n) + 1/2, tmp))
+    analytic_V = np.cos(np.outer(np.arange(n) + 1 / 2, tmp))
     _check_eigen(L, analytic_w, analytic_V)
     # Compute the full eigendecomposition using eigh.
     eigh_w, eigh_V = eigh(L)
@@ -178,7 +182,7 @@ def _check_fiedler(n, p):
     assert_allclose(np.sort(lobpcg_w), analytic_w[-p:])
 
     # Look for the Fiedler vector using good but not exactly correct guesses.
-    fiedler_guess = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
+    fiedler_guess = np.concatenate((np.ones(n // 2), -np.ones(n - n // 2)))
     X = np.vstack((np.ones(n), fiedler_guess)).T
     lobpcg_w, _ = lobpcg(L, X, largest=False)
     # Mathematically, the smaller eigenvalue should be zero
@@ -188,22 +192,19 @@ def _check_fiedler(n, p):
 
 
 def test_fiedler_small_8():
-    """Check the dense workaround path for small matrices.
-    """
+    """Check the dense workaround path for small matrices."""
     # This triggers the dense path because 8 < 2*5.
     _check_fiedler(8, 2)
 
 
 def test_fiedler_large_12():
-    """Check the dense workaround path avoided for non-small matrices.
-    """
+    """Check the dense workaround path avoided for non-small matrices."""
     # This does not trigger the dense path, because 2*5 <= 12.
     _check_fiedler(12, 2)
 
 
 def test_hermitian():
-    """Check complex-value Hermitian cases.
-    """
+    """Check complex-value Hermitian cases."""
     np.random.seed(1234)
 
     sizes = [3, 10, 50]
@@ -214,7 +215,7 @@ def test_hermitian():
         if k > size:
             continue
 
-        H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+        H = np.random.rand(size, size) + 1.0j * np.random.rand(size, size)
         H = 10 * np.eye(size) + H + H.T.conj()
 
         X = np.random.rand(size, k)
@@ -224,16 +225,19 @@ def test_hermitian():
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+            B = np.random.rand(size, size) + 1.0j * np.random.rand(size, size)
             B = 10 * np.eye(size) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
             # Check eigenvector
-            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
-                            / np.linalg.norm(H.dot(vx)),
-                            0, atol=5e-4, rtol=0)
+            assert_allclose(
+                np.linalg.norm(H.dot(vx) - B.dot(vx) * wx) / np.linalg.norm(H.dot(vx)),
+                0,
+                atol=5e-4,
+                rtol=0,
+            )
 
             # Compare eigenvalues
             j = np.argmin(abs(w0 - wx))
@@ -241,11 +245,10 @@ def test_hermitian():
 
 
 # The n=5 case tests the alternative small matrix code path that uses eigh().
-@pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
+@pytest.mark.parametrize("n, atol", [(20, 1e-3), (5, 1e-8)])
 def test_eigs_consistency(n, atol):
-    """Check eigs vs. lobpcg consistency.
-    """
-    vals = np.arange(1, n+1, dtype=np.float64)
+    """Check eigs vs. lobpcg consistency."""
+    vals = np.arange(1, n + 1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     np.random.seed(345678)
     X = np.random.rand(n, 2)
@@ -257,23 +260,19 @@ def test_eigs_consistency(n, atol):
 
 
 def test_verbosity(tmpdir):
-    """Check that nonzero verbosity level code runs.
-    """
+    """Check that nonzero verbosity level code runs."""
     A, B = ElasticRod(100)
     n = A.shape[0]
     m = 20
     np.random.seed(0)
     V = rand(n, m)
     X = orth(V)
-    _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                  verbosityLevel=9)
+    _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False, verbosityLevel=9)
 
 
-@pytest.mark.xfail(platform.machine() == 'ppc64le',
-                   reason="fails on ppc64le")
+@pytest.mark.xfail(platform.machine() == "ppc64le", reason="fails on ppc64le")
 def test_tolerance_float32():
-    """Check lobpcg for attainable tolerance in float32.
-    """
+    """Check lobpcg for attainable tolerance in float32."""
     np.random.seed(1234)
     n = 50
     m = 3
@@ -287,8 +286,7 @@ def test_tolerance_float32():
 
 
 def test_random_initial_float32():
-    """Check lobpcg in float32 for specific initial.
-    """
+    """Check lobpcg in float32 for specific initial."""
     np.random.seed(3)
     n = 50
     m = 4
@@ -315,13 +313,12 @@ def test_maxit_None():
     X = np.random.randn(n, m)
     X = X.astype(np.float32)
     _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 20+2)
+    assert_allclose(np.shape(l_h)[0], 20 + 2)
 
 
 @pytest.mark.slow
 def test_diagonal_data_types():
-    """Check lobpcg for diagonal matrices for all matrix types.
-    """
+    """Check lobpcg for diagonal matrices for all matrix types."""
     np.random.seed(1234)
     n = 40
     m = 4
@@ -330,7 +327,7 @@ def test_diagonal_data_types():
     # and where we choose A  and B to be diagonal.
     vals = np.arange(1, n + 1)
 
-    list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    list_sparse_format = ["bsr", "coo", "csc", "csr", "dia", "dok", "lil"]
     sparse_formats = len(list_sparse_format)
     for s_f_i, s_f in enumerate(list_sparse_format):
 
@@ -345,36 +342,39 @@ def test_diagonal_data_types():
         listB = [Bf64, Bs64]
 
         # Define the preconditioner function as LinearOperator.
-        Ms64 = diags([1./vals], [0], (n, n), format=s_f)
+        Ms64 = diags([1.0 / vals], [0], (n, n), format=s_f)
 
         def Ms64precond(x):
             return Ms64 @ x
-        Ms64precondLO = LinearOperator(matvec=Ms64precond,
-                                    matmat=Ms64precond,
-                                    shape=(n, n), dtype=float)
+
+        Ms64precondLO = LinearOperator(
+            matvec=Ms64precond, matmat=Ms64precond, shape=(n, n), dtype=float
+        )
         Mf64 = Ms64.toarray()
 
         def Mf64precond(x):
             return Mf64 @ x
-        Mf64precondLO = LinearOperator(matvec=Mf64precond,
-                                    matmat=Mf64precond,
-                                    shape=(n, n), dtype=float)
+
+        Mf64precondLO = LinearOperator(
+            matvec=Mf64precond, matmat=Mf64precond, shape=(n, n), dtype=float
+        )
         Ms32 = Ms64.astype(np.float32)
 
         def Ms32precond(x):
             return Ms32 @ x
-        Ms32precondLO = LinearOperator(matvec=Ms32precond,
-                                    matmat=Ms32precond,
-                                    shape=(n, n), dtype=np.float32)
+
+        Ms32precondLO = LinearOperator(
+            matvec=Ms32precond, matmat=Ms32precond, shape=(n, n), dtype=np.float32
+        )
         Mf32 = Ms32.toarray()
 
         def Mf32precond(x):
             return Mf32 @ x
-        Mf32precondLO = LinearOperator(matvec=Mf32precond,
-                                    matmat=Mf32precond,
-                                    shape=(n, n), dtype=np.float32)
-        listM = [None, Ms64precondLO, Mf64precondLO,
-                 Ms32precondLO, Mf32precondLO]
+
+        Mf32precondLO = LinearOperator(
+            matvec=Mf32precond, matmat=Mf32precond, shape=(n, n), dtype=np.float32
+        )
+        listM = [None, Ms64precondLO, Mf64precondLO, Ms32precondLO, Mf32precondLO]
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
@@ -396,10 +396,10 @@ def test_diagonal_data_types():
         # for one additional sparse format. this takes 2/7=30% as long as
         # testing all configurations for all sparse formats.
         if s_f_i > 0:
-            tests = tests[s_f_i - 1::sparse_formats-1]
+            tests = tests[s_f_i - 1 :: sparse_formats - 1]
 
         for A, B, M, X, Y in tests:
-            eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
-                                maxiter=100, largest=False)
-            assert_allclose(eigvals,
-                            np.arange(1 + m_excluded, 1 + m_excluded + m))
+            eigvals, _ = lobpcg(
+                A, X, B=B, M=M, Y=Y, tol=1e-4, maxiter=100, largest=False
+            )
+            assert_allclose(eigvals, np.arange(1 + m_excluded, 1 + m_excluded + m))

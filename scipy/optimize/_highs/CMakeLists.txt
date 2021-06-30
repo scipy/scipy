@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 11)
 ### Require out-of-source builds
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
 if(EXISTS "${LOC_PATH}")
-    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). 
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file).
     Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
@@ -24,11 +24,11 @@ if(OpenMP_CXX_FOUND)
     set(OPENMP ON)
 endif()
 
-# Fast build: No interfaces (apart from c); No ipx; New (short) ctest instances, 
-# static library and exe without PIC. Used for gradually updating the CMake 
+# Fast build: No interfaces (apart from c); No ipx; New (short) ctest instances,
+# static library and exe without PIC. Used for gradually updating the CMake
 # targets build and install / export.
 
-# Note: Not ON by default. Still need to fix the exe generation dir: rename from 
+# Note: Not ON by default. Still need to fix the exe generation dir: rename from
 # app/ to bin/
 option(EXP "Experimental mode: run unit tests with doctest." OFF)
 option(FAST_BUILD "Fast build: only build static lib and exe and quick test." OFF)
@@ -113,7 +113,7 @@ if (HIGHS_COVERAGE)
   if (WIN32)
     message(FATAL_ERROR "Error: code coverage analysis is only available under Linux for now.")
   endif ()
-  
+
   find_program(GCOV_PATH gcov)
   find_program(LCOV_PATH lcov)
   find_program(GENHTML_PATH genhtml)
@@ -121,15 +121,15 @@ if (HIGHS_COVERAGE)
   if (NOT GCOV_PATH)
     message(FATAL_ERROR "gcov not found! Please install lcov and gcov. Aborting...")
   endif ()
-  
+
   if (NOT LCOV_PATH)
     message(FATAL_ERROR "lcov not found! Please install lcov and gcov. Aborting...")
   endif ()
-  
+
   if (NOT GENHTML_PATH)
     message(FATAL_ERROR "genhtml not found! Please install lcov and gcov. Aborting...")
   endif ()
-  
+
   # Capturing lcov counters and generating report
   if (NOT CI)
     add_custom_target(coverage
@@ -303,7 +303,7 @@ message(STATUS "FAST BUILD set to on.
  Note: The HiGHS team is preparing for our first official release. If you
        experience any issues please let us know via email or on GitHub.")
 
-# todo: remove patch once release is official. 
+# todo: remove patch once release is official.
 # add here to avoid compile errors.
 set(HIGHS_VERSION_PATCH 0)
 configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_BINARY_DIR}/HConfig.h)
@@ -314,7 +314,7 @@ add_subdirectory(src)
 # No changes in app/ apart from a relative path
 add_subdirectory(app)
 
-# check/ not added here, instead define fewer tests: 
+# check/ not added here, instead define fewer tests:
 # build, 3 feas, 1 infeas, 1 unbounded. 1 parallel, 1 no presolve
 enable_testing()
 
@@ -352,7 +352,7 @@ set(infeasibleInstances
 
 set(unboundedInstances
      "gas11\;         unbounded")
-     
+
 # define settings
 set(settings
     ""
@@ -410,7 +410,7 @@ foreach(setting ${settings})
     add_instance_tests(optionsInstances "Optimal" ${setting})
 endforeach()
 
-if (EXP) 
+if (EXP)
     add_executable(doctest)
     #target_sources(doctest PRIVATE check/doctest/TestPresolveColumnSingletons.cpp)
     target_sources(doctest PRIVATE check/doctest/TestPresolveIssue.cpp)
@@ -424,7 +424,7 @@ endif()
 endif()
 
 # Modern CMake link in FAST_BUILD mode
-# All uses of target_link_libraries with a target must be either 
+# All uses of target_link_libraries with a target must be either
 # all-keyword or all-plain.
 if (OPENMP)
     if (FAST_BUILD)
@@ -440,4 +440,3 @@ endif()
 # # Only needed if it defines a target like a main executable. For methods stick
 # # to header-only.
 # add_subdirectory(dev_presolve)
-

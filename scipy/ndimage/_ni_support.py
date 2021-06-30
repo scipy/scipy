@@ -34,24 +34,23 @@ import numpy
 
 
 def _extend_mode_to_code(mode):
-    """Convert an extension mode to the corresponding integer code.
-    """
-    if mode == 'nearest':
+    """Convert an extension mode to the corresponding integer code."""
+    if mode == "nearest":
         return 0
-    elif mode == 'wrap':
+    elif mode == "wrap":
         return 1
-    elif mode in ['reflect', 'grid-mirror']:
+    elif mode in ["reflect", "grid-mirror"]:
         return 2
-    elif mode == 'mirror':
+    elif mode == "mirror":
         return 3
-    elif mode == 'constant':
+    elif mode == "constant":
         return 4
-    elif mode == 'grid-wrap':
+    elif mode == "grid-wrap":
         return 5
-    elif mode == 'grid-constant':
+    elif mode == "grid-constant":
         return 6
     else:
-        raise RuntimeError('boundary mode not supported')
+        raise RuntimeError("boundary mode not supported")
 
 
 def _normalize_sequence(input, rank):
@@ -81,17 +80,17 @@ def _get_output(output, input, shape=None, complex_output=False):
             output = numpy.zeros(shape, dtype=complex_type)
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
-        if complex_output and numpy.dtype(output).kind != 'c':
+        if complex_output and numpy.dtype(output).kind != "c":
             warnings.warn("promoting specified output dtype to complex")
             output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
         output = numpy.sctypeDict[output]
-        if complex_output and numpy.dtype(output).kind != 'c':
+        if complex_output and numpy.dtype(output).kind != "c":
             raise RuntimeError("output must have complex dtype")
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
-    elif complex_output and output.dtype.kind != 'c':
+    elif complex_output and output.dtype.kind != "c":
         raise RuntimeError("output must have complex dtype")
     return output

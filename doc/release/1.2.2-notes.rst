@@ -36,4 +36,4 @@ Pull requests for 1.2.2
 * `#9991 <https://github.com/scipy/scipy/pull/9991>`__: BUG: Avoid inplace modification of input array in newton
 * `#9788 <https://github.com/scipy/scipy/pull/9788>`__: TST, BUG: f2py-related issues with NumPy < 1.14.0
 * `#9749 <https://github.com/scipy/scipy/pull/9749>`__: BUG: MapWrapper.__exit__ should terminate
-* `#10141 <https://github.com/scipy/scipy/pull/10141>`__: Update description for nnz on csc.py 
+* `#10141 <https://github.com/scipy/scipy/pull/10141>`__: Update description for nnz on csc.py

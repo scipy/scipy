@@ -851,4 +851,3 @@ void qh_errexit_rbox(qhT *qh, int exitcode)
 {
     longjmp(qh->rbox_errexit, exitcode);
 } /* qh_errexit_rbox */
-

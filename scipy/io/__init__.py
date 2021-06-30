@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""
+"""
 ==================================
 Input and output (:mod:`scipy.io`)
 ==================================
@@ -106,8 +106,9 @@ from .mmio import mminfo, mmread, mmwrite
 from .idl import readsav
 from .harwell_boeing import hb_read, hb_write
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

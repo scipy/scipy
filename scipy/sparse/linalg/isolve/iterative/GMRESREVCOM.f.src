@@ -1,6 +1,6 @@
 *  -*- fortran -*-
       SUBROUTINE <_c>GMRESREVCOM(N, B, X, RESTRT, WORK, LDW, WORK2,
-     $                  LDW2, ITER, RESID, INFO, NDX1, NDX2, SCLR1, 
+     $                  LDW2, ITER, RESID, INFO, NDX1, NDX2, SCLR1,
      $                  SCLR2, IJOB, TOL)
 *
 *  -- Iterative template routine --
@@ -33,10 +33,10 @@
 *  Arguments
 *  =========
 *
-*  N       (input) INTEGER. 
+*  N       (input) INTEGER.
 *          On entry, the dimension of the matrix.
 *          Unchanged on exit.
-* 
+*
 *  B       (input) DOUBLE PRECISION array, dimension N.
 *          On entry, right hand side vector B.
 *          Unchanged on exit.
@@ -49,7 +49,7 @@
 *          of memory required for matrix WORK2.
 *
 *  WORK    (workspace) DOUBLE PRECISION array, dimension (LDW,6+restrt).
-*          Note that if the initial guess is the zero vector, then 
+*          Note that if the initial guess is the zero vector, then
 *          storing the initial residual is not necessary.
 *
 *  LDW     (input) INTEGER
@@ -80,7 +80,7 @@
 *            -5: Erroneous NDX1/NDX2 in INIT call.
 *            -6: Erroneous RLBL.
 *
-*  NDX1    (input/output) INTEGER. 
+*  NDX1    (input/output) INTEGER.
 *  NDX2    On entry in INIT call contain indices required by interface
 *          level for stopping test.
 *          All other times, used as output, to indicate indices into
@@ -90,10 +90,10 @@
 *  SCLR2   Used to pass the scalars used in MATVEC. Scalars are reqd because
 *          original routines use dgemv.
 *
-*  IJOB    (input/output) INTEGER. 
+*  IJOB    (input/output) INTEGER.
 *          Used to communicate job code between the two levels.
 *
-*  TOL     (input) DOUBLE PRECISION. 
+*  TOL     (input) DOUBLE PRECISION.
 *          On input, the allowable absolute error tolerance
 *          for the preconditioned residual.
 *  ============================================================
@@ -306,7 +306,7 @@
  5       CONTINUE
 *****************
 *
-*           Construct I-th column of H so that it is orthnormal to 
+*           Construct I-th column of H so that it is orthnormal to
 *           the previous I-1 columns.
 *
             CALL <_c>ORTHOH( I, N, WORK2( 1,I+H-1 ), WORK( 1,V ), LDW,
@@ -481,7 +481,7 @@
 *
       DO 10 J = 1, I-1
          CALL <_c>ROTVEC(H( J ), H( J+1 ), GIVENS( J,1 ), GIVENS( J,2 ))
-*        TEMP     =  GIVENS( J,1 ) * H( J ) + GIVENS( J,2 ) * H( J+1 ) 
+*        TEMP     =  GIVENS( J,1 ) * H( J ) + GIVENS( J,2 ) * H( J+1 )
 *        H( J+1 ) = -GIVENS( J,2 ) * H( J ) + GIVENS( J,1 ) * H( J+1 )
 *        H( J ) = TEMP
  10   CONTINUE
@@ -569,8 +569,8 @@
 *
       IMPLICIT NONE
       <_t>   A, B, C, S, TEMP, ZERO, ONE
-      PARAMETER  ( 
-     $     ZERO = 0.0, 
+      PARAMETER  (
+     $     ZERO = 0.0,
      $     ONE = 1.0 )
 *
       IF ( ABS( B ).EQ.ZERO ) THEN
@@ -633,4 +633,3 @@
 *
       END
 *     END SUBROUTINE <_c>ELEMVEC
-

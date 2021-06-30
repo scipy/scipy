@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -139,10 +139,10 @@ ilu_dpanel_dfs(
 	     * has been explored, update repfnz[*]
 	     */
 	    else {
-		
+
 		krep = xsup[supno[kperm]+1] - 1;
 		myfnz = repfnz_col[krep];
-		
+
 #ifdef CHK_DFS
 		printf("krep %d, myfnz %d, perm_r[%d] %d\n", krep, myfnz, krow, kperm);
 #endif
@@ -186,7 +186,7 @@ ilu_dpanel_dfs(
 				 *   been explored, update its repfnz[*]
 				 */
 				else {
-				    
+
 				    chrep = xsup[supno[chperm]+1] - 1;
 				    myfnz = repfnz_col[chrep];
 #ifdef CHK_DFS
@@ -244,7 +244,7 @@ ilu_dpanel_dfs(
 		    } while ( kpar != EMPTY ); /* do-while - until empty stack */
 
 		} /* else */
-		
+
 	    } /* else */
 
 	} /* for each nonz in A[*,jj] */

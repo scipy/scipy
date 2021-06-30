@@ -1,5 +1,16 @@
-__all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
-           'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
+__all__ = [
+    "splrep",
+    "splprep",
+    "splev",
+    "splint",
+    "sproot",
+    "spalde",
+    "bisplrep",
+    "bisplev",
+    "insert",
+    "splder",
+    "splantider",
+]
 
 import warnings
 
@@ -11,8 +22,21 @@ from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
 
 
-def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
-            full_output=0, nest=None, per=0, quiet=1):
+def splprep(
+    x,
+    w=None,
+    u=None,
+    ub=None,
+    ue=None,
+    k=3,
+    task=0,
+    s=None,
+    t=None,
+    full_output=0,
+    nest=None,
+    per=0,
+    quiet=1,
+):
     """
     Find the B-spline representation of an N-D curve.
 
@@ -152,13 +176,24 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> plt.show()
 
     """
-    res = _impl.splprep(x, w, u, ub, ue, k, task, s, t, full_output, nest, per,
-                        quiet)
+    res = _impl.splprep(x, w, u, ub, ue, k, task, s, t, full_output, nest, per, quiet)
     return res
 
 
-def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
-           full_output=0, per=0, quiet=1):
+def splrep(
+    x,
+    y,
+    w=None,
+    xb=None,
+    xe=None,
+    k=3,
+    task=0,
+    s=None,
+    t=None,
+    full_output=0,
+    per=0,
+    quiet=1,
+):
     """
     Find the B-spline representation of a 1-D curve.
 
@@ -358,16 +393,21 @@ def splev(x, tck, der=0, ext=0):
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
-            mesg = ("Calling splev() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.__call__(x) instead.")
+            mesg = (
+                "Calling splev() with BSpline objects with c.ndim > 1 is "
+                "not recommended. Use BSpline.__call__(x) instead."
+            )
             warnings.warn(mesg, DeprecationWarning)
 
         # remap the out-of-bounds behavior
         try:
-            extrapolate = {0: True, }[ext]
+            extrapolate = {
+                0: True,
+            }[ext]
         except KeyError as e:
-            raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext) from e
+            raise ValueError(
+                "Extrapolation mode %s is not supported by BSpline." % ext
+            ) from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
@@ -426,13 +466,17 @@ def splint(a, b, tck, full_output=0):
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
-            mesg = ("Calling splint() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.integrate() instead.")
+            mesg = (
+                "Calling splint() with BSpline objects with c.ndim > 1 is "
+                "not recommended. Use BSpline.integrate() instead."
+            )
             warnings.warn(mesg, DeprecationWarning)
 
         if full_output != 0:
-            mesg = ("full_output = %s is not supported. Proceeding as if "
-                    "full_output = 0" % full_output)
+            mesg = (
+                "full_output = %s is not supported. Proceeding as if full_output = 0"
+                % full_output
+            )
 
         return tck.integrate(a, b, extrapolate=False)
     else:
@@ -490,8 +534,10 @@ def sproot(tck, mest=10):
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
-            mesg = ("Calling sproot() with BSpline objects with c.ndim > 1 is "
-                    "not recommended.")
+            mesg = (
+                "Calling sproot() with BSpline objects with c.ndim > 1 is "
+                "not recommended."
+            )
             warnings.warn(mesg, DeprecationWarning)
 
         t, c, k = tck.tck

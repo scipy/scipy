@@ -2,7 +2,10 @@
 import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
-    VectorFunction, LinearVectorFunction, IdentityVectorFunction)
+    VectorFunction,
+    LinearVectorFunction,
+    IdentityVectorFunction,
+)
 from .optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
@@ -103,9 +106,18 @@ class NonlinearConstraint:
     >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
 
     """
-    def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
-                 keep_feasible=False, finite_diff_rel_step=None,
-                 finite_diff_jac_sparsity=None):
+
+    def __init__(
+        self,
+        fun,
+        lb,
+        ub,
+        jac="2-point",
+        hess=BFGS(),
+        keep_feasible=False,
+        finite_diff_rel_step=None,
+        finite_diff_jac_sparsity=None,
+    ):
         self.fun = fun
         self.lb = lb
         self.ub = ub
@@ -147,6 +159,7 @@ class LinearConstraint:
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
     """
+
     def __init__(self, A, lb, ub, keep_feasible=False):
         self.A = A
         self.lb = lb
@@ -179,6 +192,7 @@ class Bounds:
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
     """
+
     def __init__(self, lb, ub, keep_feasible=False):
         self.lb = np.asarray(lb)
         self.ub = np.asarray(ub)
@@ -227,14 +241,21 @@ class PreparedConstraint:
          Array indicating which components must be kept feasible with a size
          equal to the number of the constraints.
     """
-    def __init__(self, constraint, x0, sparse_jacobian=None,
-                 finite_diff_bounds=(-np.inf, np.inf)):
+
+    def __init__(
+        self, constraint, x0, sparse_jacobian=None, finite_diff_bounds=(-np.inf, np.inf)
+    ):
         if isinstance(constraint, NonlinearConstraint):
-            fun = VectorFunction(constraint.fun, x0,
-                                 constraint.jac, constraint.hess,
-                                 constraint.finite_diff_rel_step,
-                                 constraint.finite_diff_jac_sparsity,
-                                 finite_diff_bounds, sparse_jacobian)
+            fun = VectorFunction(
+                constraint.fun,
+                x0,
+                constraint.jac,
+                constraint.hess,
+                constraint.finite_diff_rel_step,
+                constraint.finite_diff_jac_sparsity,
+                finite_diff_bounds,
+                sparse_jacobian,
+            )
         elif isinstance(constraint, LinearConstraint):
             fun = LinearVectorFunction(constraint.A, x0, sparse_jacobian)
         elif isinstance(constraint, Bounds):
@@ -259,9 +280,11 @@ class PreparedConstraint:
         mask = keep_feasible & (lb != ub)
         f0 = fun.f
         if np.any(f0[mask] < lb[mask]) or np.any(f0[mask] > ub[mask]):
-            raise ValueError("`x0` is infeasible with respect to some "
-                             "inequality constraint with `keep_feasible` "
-                             "set to True.")
+            raise ValueError(
+                "`x0` is infeasible with respect to some "
+                "inequality constraint with `keep_feasible` "
+                "set to True."
+            )
 
         self.fun = fun
         self.bounds = (lb, ub)
@@ -326,10 +349,8 @@ def old_bound_to_new(bounds):
 
     # Convert occurrences of None to -inf or inf, and replace occurrences of
     # any numpy array x with x.item(). Then wrap the results in numpy arrays.
-    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf
-                   for x in lb])
-    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf
-                   for x in ub])
+    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf for x in lb])
+    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf for x in ub])
 
     return lb, ub
 
@@ -349,13 +370,18 @@ def new_constraint_to_old(con, x0):
     Converts new-style constraint objects to old-style constraint dictionaries.
     """
     if isinstance(con, NonlinearConstraint):
-        if (con.finite_diff_jac_sparsity is not None or
-                con.finite_diff_rel_step is not None or
-                not isinstance(con.hess, BFGS) or  # misses user specified BFGS
-                con.keep_feasible):
-            warn("Constraint options `finite_diff_jac_sparsity`, "
-                 "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
-                 "are ignored by this method.", OptimizeWarning)
+        if (
+            con.finite_diff_jac_sparsity is not None
+            or con.finite_diff_rel_step is not None
+            or not isinstance(con.hess, BFGS)
+            or con.keep_feasible  # misses user specified BFGS
+        ):
+            warn(
+                "Constraint options `finite_diff_jac_sparsity`, "
+                "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
+                "are ignored by this method.",
+                OptimizeWarning,
+            )
 
         fun = con.fun
         if callable(con.jac):
@@ -365,8 +391,10 @@ def new_constraint_to_old(con, x0):
 
     else:  # LinearConstraint
         if con.keep_feasible:
-            warn("Constraint option `keep_feasible` is ignored by this "
-                 "method.", OptimizeWarning)
+            warn(
+                "Constraint option `keep_feasible` is ignored by this method.",
+                OptimizeWarning,
+            )
 
         A = con.A
         if issparse(A):
@@ -385,38 +413,48 @@ def new_constraint_to_old(con, x0):
     i_unbounded = np.logical_and(lb == -np.inf, ub == np.inf)
 
     if np.any(i_unbounded):
-        warn("At least one constraint is unbounded above and below. Such "
-             "constraints are ignored.", OptimizeWarning)
+        warn(
+            "At least one constraint is unbounded above and below. Such "
+            "constraints are ignored.",
+            OptimizeWarning,
+        )
 
     ceq = []
     if np.any(i_eq):
+
         def f_eq(x):
             y = np.array(fun(x)).flatten()
             return y[i_eq] - lb[i_eq]
+
         ceq = [{"type": "eq", "fun": f_eq}]
 
         if jac is not None:
+
             def j_eq(x):
                 dy = jac(x)
                 if issparse(dy):
                     dy = dy.todense()
                 dy = np.atleast_2d(dy)
                 return dy[i_eq, :]
+
             ceq[0]["jac"] = j_eq
 
     cineq = []
     n_bound_below = np.sum(i_bound_below)
     n_bound_above = np.sum(i_bound_above)
     if n_bound_below + n_bound_above:
+
         def f_ineq(x):
             y = np.zeros(n_bound_below + n_bound_above)
             y_all = np.array(fun(x)).flatten()
             y[:n_bound_below] = y_all[i_bound_below] - lb[i_bound_below]
             y[n_bound_below:] = -(y_all[i_bound_above] - ub[i_bound_above])
             return y
+
         cineq = [{"type": "ineq", "fun": f_ineq}]
 
         if jac is not None:
+
             def j_ineq(x):
                 dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
                 dy_all = jac(x)
@@ -426,15 +464,19 @@ def new_constraint_to_old(con, x0):
                 dy[:n_bound_below, :] = dy_all[i_bound_below]
                 dy[n_bound_below:, :] = -dy_all[i_bound_above]
                 return dy
+
             cineq[0]["jac"] = j_ineq
 
     old_constraints = ceq + cineq
 
     if len(old_constraints) > 1:
-        warn("Equality and inequality constraints are specified in the same "
-             "element of the constraint list. For efficient use with this "
-             "method, equality and inequality constraints should be specified "
-             "in separate elements of the constraint list. ", OptimizeWarning)
+        warn(
+            "Equality and inequality constraints are specified in the same "
+            "element of the constraint list. For efficient use with this "
+            "method, equality and inequality constraints should be specified "
+            "in separate elements of the constraint list. ",
+            OptimizeWarning,
+        )
     return old_constraints
 
 
@@ -444,36 +486,34 @@ def old_constraint_to_new(ic, con):
     """
     # check type
     try:
-        ctype = con['type'].lower()
+        ctype = con["type"].lower()
     except KeyError as e:
-        raise KeyError('Constraint %d has no type defined.' % ic) from e
+        raise KeyError("Constraint %d has no type defined." % ic) from e
     except TypeError as e:
-        raise TypeError(
-            'Constraints must be a sequence of dictionaries.'
-        ) from e
+        raise TypeError("Constraints must be a sequence of dictionaries.") from e
     except AttributeError as e:
         raise TypeError("Constraint's type must be a string.") from e
     else:
-        if ctype not in ['eq', 'ineq']:
-            raise ValueError("Unknown constraint type '%s'." % con['type'])
-    if 'fun' not in con:
-        raise ValueError('Constraint %d has no function defined.' % ic)
+        if ctype not in ["eq", "ineq"]:
+            raise ValueError("Unknown constraint type '%s'." % con["type"])
+    if "fun" not in con:
+        raise ValueError("Constraint %d has no function defined." % ic)
 
     lb = 0
-    if ctype == 'eq':
+    if ctype == "eq":
         ub = 0
     else:
         ub = np.inf
 
-    jac = '2-point'
-    if 'args' in con:
-        args = con['args']
-        fun = lambda x: con['fun'](x, *args)
-        if 'jac' in con:
-            jac = lambda x: con['jac'](x, *args)
+    jac = "2-point"
+    if "args" in con:
+        args = con["args"]
+        fun = lambda x: con["fun"](x, *args)
+        if "jac" in con:
+            jac = lambda x: con["jac"](x, *args)
     else:
-        fun = con['fun']
-        if 'jac' in con:
-            jac = con['jac']
+        fun = con["fun"]
+        if "jac" in con:
+            jac = con["jac"]
 
     return NonlinearConstraint(fun, lb, ub, jac)

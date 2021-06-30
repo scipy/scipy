@@ -10,9 +10,9 @@ with safe_import():
         from scipy.misc import factorial  # old
 
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 #                 UNIVARIATE SINGLE-OBJECTIVE PROBLEMS
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 class Problem02(Benchmark):
 
     """
@@ -209,7 +209,7 @@ class Problem06(Benchmark):
         self.nfev += 1
 
         x = x[0]
-        return -(x + sin(x)) * exp(-x ** 2.0)
+        return -(x + sin(x)) * exp(-(x ** 2.0))
 
 
 class Problem07(Benchmark):
@@ -487,7 +487,7 @@ class Problem13(Benchmark):
         self.nfev += 1
 
         x = x[0]
-        return -x ** (2.0 / 3.0) - (1.0 - x ** 2) ** (1.0 / 3.0)
+        return -(x ** (2.0 / 3.0)) - (1.0 - x ** 2) ** (1.0 / 3.0)
 
 
 class Problem14(Benchmark):
@@ -565,7 +565,7 @@ class Problem15(Benchmark):
         self.nfev += 1
 
         x = x[0]
-        return -(-x ** 2.0 + 5 * x - 6) / (x ** 2 + 1)
+        return -(-(x ** 2.0) + 5 * x - 6) / (x ** 2 + 1)
 
 
 class Problem18(Benchmark):
@@ -648,7 +648,7 @@ class Problem20(Benchmark):
         self.nfev += 1
 
         x = x[0]
-        return -(x - sin(x)) * exp(-x ** 2.0)
+        return -(x - sin(x)) * exp(-(x ** 2.0))
 
 
 class Problem21(Benchmark):

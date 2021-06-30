@@ -25,6 +25,7 @@ class TestPdtr:
         val = sc.pdtr(-1.1, 1.0)
         assert np.isnan(val)
 
+
 class TestPdtrc:
     def test_value(self):
         val = sc.pdtrc(0, 1)

@@ -7,17 +7,17 @@ from scipy.special._precompute.utils import lagrange_inversion
 try:
     import sympy  # type: ignore[import]
 except ImportError:
-    sympy = MissingModule('sympy')
+    sympy = MissingModule("sympy")
 
 try:
     import mpmath as mp
 except ImportError:
-    mp = MissingModule('mpmath')
+    mp = MissingModule("mpmath")
 
 
 @pytest.mark.slow
-@check_version(sympy, '0.7')
-@check_version(mp, '0.19')
+@check_version(sympy, "0.7")
+@check_version(mp, "0.19")
 class TestInversion:
     @pytest.mark.xfail_on_32bit("rtol only 2e-9, see gh-6938")
     def test_log(self):

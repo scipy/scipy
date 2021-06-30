@@ -7,7 +7,7 @@ This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
 import warnings
 import numpy as np
 
-__all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
+__all__ = ["FortranFile", "FortranEOFError", "FortranFormattingError"]
 
 
 class FortranEOFError(TypeError, IOError):
@@ -18,6 +18,7 @@ class FortranEOFError(TypeError, IOError):
     ended) so users might have ``except TypeError:``.
 
     """
+
     pass
 
 
@@ -27,6 +28,7 @@ class FortranFormattingError(TypeError, IOError):
     Descends from TypeError for backward compatibility.
 
     """
+
     pass
 
 
@@ -105,21 +107,22 @@ class FortranFile:
         end do
 
     """
-    def __init__(self, filename, mode='r', header_dtype=np.uint32):
+
+    def __init__(self, filename, mode="r", header_dtype=np.uint32):
         if header_dtype is None:
-            raise ValueError('Must specify dtype')
+            raise ValueError("Must specify dtype")
 
         header_dtype = np.dtype(header_dtype)
-        if header_dtype.kind != 'u':
+        if header_dtype.kind != "u":
             warnings.warn("Given a dtype which is not unsigned.")
 
-        if mode not in 'rw' or len(mode) != 1:
-            raise ValueError('mode must be either r or w')
+        if mode not in "rw" or len(mode) != 1:
+            raise ValueError("mode must be either r or w")
 
-        if hasattr(filename, 'seek'):
+        if hasattr(filename, "seek"):
             self._fp = filename
         else:
-            self._fp = open(filename, '%sb' % mode)
+            self._fp = open(filename, "%sb" % mode)
 
         self._header_dtype = header_dtype
 
@@ -129,8 +132,7 @@ class FortranFile:
         if (not b) and eof_ok:
             raise FortranEOFError("End of file occurred at end of record")
         elif len(b) < n:
-            raise FortranFormattingError(
-                "End of file in the middle of the record size")
+            raise FortranFormattingError("End of file in the middle of the record size")
         return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
 
     def write_record(self, *items):
@@ -240,14 +242,16 @@ class FortranFile:
         read_ints
 
         """
-        dtype = kwargs.pop('dtype', None)
+        dtype = kwargs.pop("dtype", None)
         if kwargs:
-            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
+            raise ValueError(
+                "Unknown keyword arguments {}".format(tuple(kwargs.keys()))
+            )
 
         if dtype is not None:
             dtypes = dtypes + (dtype,)
         elif not dtypes:
-            raise ValueError('Must specify at least one dtype')
+            raise ValueError("Must specify at least one dtype")
 
         first_size = self._read_size(eof_ok=True)
 
@@ -256,22 +260,25 @@ class FortranFile:
 
         num_blocks, remainder = divmod(first_size, block_size)
         if remainder != 0:
-            raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtypes given ({1}).'.format(first_size, block_size))
+            raise ValueError(
+                "Size obtained ({0}) is not a multiple of the "
+                "dtypes given ({1}).".format(first_size, block_size)
+            )
 
         if len(dtypes) != 1 and first_size != block_size:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({0}) does not match with the expected '
-                             'size ({1}) of multi-item record'.format(first_size, block_size))
+            raise ValueError(
+                "Size obtained ({0}) does not match with the expected "
+                "size ({1}) of multi-item record".format(first_size, block_size)
+            )
 
         data = []
         for dtype in dtypes:
             r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
             if len(r) != num_blocks:
-                raise FortranFormattingError(
-                    "End of file in the middle of a record")
+                raise FortranFormattingError("End of file in the middle of a record")
             if dtype.shape != ():
                 # Squeeze outmost block dimension for array items
                 if num_blocks == 1:
@@ -282,8 +289,10 @@ class FortranFile:
 
         second_size = self._read_size()
         if first_size != second_size:
-            raise IOError('Sizes do not agree in the header and footer for '
-                          'this record - check header dtype')
+            raise IOError(
+                "Sizes do not agree in the header and footer for "
+                "this record - check header dtype"
+            )
 
         # Unpack result
         if len(dtypes) == 1:
@@ -291,7 +300,7 @@ class FortranFile:
         else:
             return tuple(data)
 
-    def read_ints(self, dtype='i4'):
+    def read_ints(self, dtype="i4"):
         """
         Reads a record of a given type from the file, defaulting to an integer
         type (``INTEGER*4`` in Fortran).
@@ -314,7 +323,7 @@ class FortranFile:
         """
         return self.read_record(dtype)
 
-    def read_reals(self, dtype='f8'):
+    def read_reals(self, dtype="f8"):
         """
         Reads a record of a given type from the file, defaulting to a floating
         point number (``real*8`` in Fortran).

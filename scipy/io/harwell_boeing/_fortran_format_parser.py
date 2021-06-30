@@ -162,7 +162,7 @@ class ExpFormat:
 
     @property
     def python_format(self):
-        return "%" + str(self.width-1) + "." + str(self.significand) + "E"
+        return "%" + str(self.width - 1) + "." + str(self.significand) + "E"
 
 
 class Token:
@@ -199,8 +199,10 @@ class Tokenizer:
                 else:
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
-            raise SyntaxError("Unknown character at position %d (%s)"
-                              % (self.curpos, self.data[curpos]))
+            raise SyntaxError(
+                "Unknown character at position %d (%s)"
+                % (self.curpos, self.data[curpos])
+            )
 
 
 # Grammar for fortran format:
@@ -227,6 +229,7 @@ class FortranFormatParser:
     Only ExpFormat (exponential format for floating values) and IntFormat
     (integer format) for now.
     """
+
     def __init__(self):
         self.tokenizer = Tokenizer()
 
@@ -259,11 +262,15 @@ class FortranFormatParser:
 
     def _parse_format(self, tokens):
         if not tokens[0].type == "LPAR":
-            raise SyntaxError("Expected left parenthesis at position "
-                              "%d (got '%s')" % (0, tokens[0].value))
+            raise SyntaxError(
+                "Expected left parenthesis at position %d (got '%s')"
+                % (0, tokens[0].value)
+            )
         elif not tokens[-1].type == "RPAR":
-            raise SyntaxError("Expected right parenthesis at position "
-                              "%d (got '%s')" % (len(tokens), tokens[-1].value))
+            raise SyntaxError(
+                "Expected right parenthesis at position %d (got '%s')"
+                % (len(tokens), tokens[-1].value)
+            )
 
         tokens = tokens[1:-1]
         types = [t.type for t in tokens]

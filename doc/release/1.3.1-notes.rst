@@ -37,14 +37,14 @@ Issues closed for 1.3.1
 * `#9901 <https://github.com/scipy/scipy/issues/9901>`__: lsoda fails to detect stiff problem when called from solve_ivp
 * `#10206 <https://github.com/scipy/scipy/issues/10206>`__: sparse matrices indexing with scipy 1.3
 * `#10232 <https://github.com/scipy/scipy/issues/10232>`__: Exception in loadarff with quoted nominal attributes in scipy...
-* `#10292 <https://github.com/scipy/scipy/issues/10292>`__: DOC/REL: Some sections of the release notes are not nested correctly. 
-* `#10303 <https://github.com/scipy/scipy/issues/10303>`__: BUG: optimize: `linprog` failing TestLinprogSimplexBland::test_unbounded_below_no_presolve_corrected 
+* `#10292 <https://github.com/scipy/scipy/issues/10292>`__: DOC/REL: Some sections of the release notes are not nested correctly.
+* `#10303 <https://github.com/scipy/scipy/issues/10303>`__: BUG: optimize: `linprog` failing TestLinprogSimplexBland::test_unbounded_below_no_presolve_corrected
 * `#10376 <https://github.com/scipy/scipy/issues/10376>`__: TST: Travis CI fails (with pytest 5.0 ?)
 * `#10384 <https://github.com/scipy/scipy/issues/10384>`__: CircleCI doc build failing on new warnings
 * `#10398 <https://github.com/scipy/scipy/issues/10398>`__: Scipy 1.3.0 build broken in AIX
 * `#10501 <https://github.com/scipy/scipy/issues/10501>`__: BUG: scipy.spatial.HalfspaceIntersection works incorrectly
 * `#10514 <https://github.com/scipy/scipy/issues/10514>`__: BUG: cKDTree GIL handling is incorrect
-* `#10535 <https://github.com/scipy/scipy/issues/10535>`__: TST: master branch CI failures 
+* `#10535 <https://github.com/scipy/scipy/issues/10535>`__: TST: master branch CI failures
 * `#10572 <https://github.com/scipy/scipy/issues/10572>`__: BUG: ckdtree query_ball_point errors on discontiguous input
 * `#10597 <https://github.com/scipy/scipy/issues/10597>`__: BUG: No warning on PchipInterpolator changing from bernstein base to local power base
 
@@ -65,6 +65,6 @@ Pull requests for 1.3.1
 * `#10503 <https://github.com/scipy/scipy/pull/10503>`__: BUG: spatial/qhull: get HalfspaceIntersection.dual_points from the correct array
 * `#10516 <https://github.com/scipy/scipy/pull/10516>`__: BUG: Use nogil contexts in cKDTree
 * `#10520 <https://github.com/scipy/scipy/pull/10520>`__: DOC: Proper .rst formatting for deprecated features and Backwards incompatible changes
-* `#10540 <https://github.com/scipy/scipy/pull/10540>`__: MAINT: Fix Travis and Circle 
+* `#10540 <https://github.com/scipy/scipy/pull/10540>`__: MAINT: Fix Travis and Circle
 * `#10573 <https://github.com/scipy/scipy/pull/10573>`__: BUG: Fix query_ball_point with discontiguous input
 * `#10600 <https://github.com/scipy/scipy/pull/10600>`__: BUG: interpolate: fix broken conversions between PPoly/BPoly objects

@@ -19,7 +19,9 @@ def get_sample_problem():
 
 def test_singular():
     A, b = get_sample_problem()
-    A[0, ] = 0
+    A[
+        0,
+    ] = 0
     b[0] = 0
     xp, info = minres(A, b)
     assert_equal(info, 0)
@@ -35,6 +37,7 @@ def test_x0_is_used_by():
 
     def trace_iterates(xk):
         trace.append(xk)
+
     minres(A, b, x0=x0, callback=trace_iterates)
     trace_with_x0 = trace
 
@@ -64,7 +67,7 @@ def test_asymmetric_fail():
 
 def test_minres_non_default_x0():
     np.random.seed(1234)
-    tol = 10**(-6)
+    tol = 10 ** (-6)
     a = np.random.randn(5, 5)
     a = np.dot(a, a.T)
     b = np.random.randn(5)
@@ -75,7 +78,7 @@ def test_minres_non_default_x0():
 
 def test_minres_precond_non_default_x0():
     np.random.seed(12345)
-    tol = 10**(-6)
+    tol = 10 ** (-6)
     a = np.random.randn(5, 5)
     a = np.dot(a, a.T)
     b = np.random.randn(5)
@@ -88,7 +91,7 @@ def test_minres_precond_non_default_x0():
 
 def test_minres_precond_exact_x0():
     np.random.seed(1234)
-    tol = 10**(-6)
+    tol = 10 ** (-6)
     a = np.eye(10)
     b = np.ones(10)
     c = np.ones(10)

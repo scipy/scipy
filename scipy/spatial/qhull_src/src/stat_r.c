@@ -468,7 +468,7 @@ void qh_initstatistics(qhT *qh) {
   qh_allstatH(qh);
   qh_allstatI(qh);
   if (qh->qhstat.next > (int)sizeof(qh->qhstat.id)) {
-    qh_fprintf_stderr(6184, "qhull internal error (qh_initstatistics): increase size of qhstat.id[].  qhstat.next %d should be <= sizeof(qh->qhstat.id) %d\n", 
+    qh_fprintf_stderr(6184, "qhull internal error (qh_initstatistics): increase size of qhstat.id[].  qhstat.next %d should be <= sizeof(qh->qhstat.id) %d\n",
           qh->qhstat.next, (int)sizeof(qh->qhstat.id));
 #if 0 /* for locating error, Znumridges should be duplicated */
     for(i=0; i < ZEND; i++) {
@@ -585,7 +585,7 @@ void qh_printstatistics(qhT *qh, FILE *fp, const char *string) {
                                  wval_(Wnewbalance2), &ave);
   qh_fprintf(qh, fp, 9350, "\n\
 %s\n\
-qhull invoked by: %s | %s\n  %s with options:\n%s\n", 
+qhull invoked by: %s | %s\n  %s with options:\n%s\n",
     string, qh->rbox_command, qh->qhull_command, qh_version, qh->qhull_options);
 
   qh_fprintf(qh, fp, 9351, "\nprecision constants:\n\
@@ -714,7 +714,7 @@ realT qh_stddev(qhT *qh, int num, realT tot, realT tot2, realT *ave) { /* for qh
   QHULL_UNUSED(tot)
   QHULL_UNUSED(tot2)
   QHULL_UNUSED(ave)
-    
+
   return 0.0;
 }
 #endif /* qh_KEEPstatistics */
@@ -724,4 +724,3 @@ void    qh_collectstatistics(qhT *qh) {}
 void    qh_printallstatistics(qhT *qh, FILE *fp, const char *string) {}
 void    qh_printstatistics(qhT *qh, FILE *fp, const char *string) {}
 #endif
-

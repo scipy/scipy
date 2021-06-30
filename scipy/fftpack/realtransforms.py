@@ -2,7 +2,7 @@
 Real spectrum transforms (DCT, DST, MDCT)
 """
 
-__all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
+__all__ = ["dct", "idct", "dst", "idst", "dctn", "idctn", "dstn", "idstn"]
 
 from scipy.fft import _pocketfft
 from .helper import _good_shape

@@ -8,7 +8,7 @@ cdef inline double boxcox(double x, double lmbda) nogil:
     # For doubles, the range of log is -744.44 to +709.78, with eps being
     # the smallest value produced.  This range means that we will have
     # abs(lmbda)*log(x) < eps whenever abs(lmbda) <= eps/-log(min double)
-    # which is ~2.98e-19.  
+    # which is ~2.98e-19.
     if fabs(lmbda) < 1e-19:
         return log(x)
     else:

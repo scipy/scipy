@@ -12,7 +12,8 @@ import os
 try:
     import sympy  # type: ignore[import]
     from sympy import Poly
-    x = sympy.symbols('x')
+
+    x = sympy.symbols("x")
 except ImportError:
     pass
 
@@ -20,7 +21,7 @@ except ImportError:
 def generate_A(K):
     A = [Poly(1, x)]
     for k in range(K):
-        A.append(Poly(1 - 2*k*x, x)*A[k] + Poly(x*(x + 1))*A[k].diff())
+        A.append(Poly(1 - 2 * k * x, x) * A[k] + Poly(x * (x + 1)) * A[k].diff())
     return A
 
 
@@ -33,21 +34,21 @@ WARNING = """\
 
 def main():
     print(__doc__)
-    fn = os.path.join('..', 'cephes', 'expn.h')
+    fn = os.path.join("..", "cephes", "expn.h")
 
     K = 12
     A = generate_A(K)
-    with open(fn + '.new', 'w') as f:
+    with open(fn + ".new", "w") as f:
         f.write(WARNING)
         f.write("#define nA {}\n".format(len(A)))
         for k, Ak in enumerate(A):
-            tmp = ', '.join([str(x.evalf(18)) for x in Ak.coeffs()])
+            tmp = ", ".join([str(x.evalf(18)) for x in Ak.coeffs()])
             f.write("static const double A{}[] = {{{}}};\n".format(k, tmp))
         tmp = ", ".join(["A{}".format(k) for k in range(K + 1)])
         f.write("static const double *A[] = {{{}}};\n".format(tmp))
         tmp = ", ".join([str(Ak.degree()) for Ak in A])
         f.write("static const int Adegs[] = {{{}}};\n".format(tmp))
-    os.rename(fn + '.new', fn)
+    os.rename(fn + ".new", fn)
 
 
 if __name__ == "__main__":

@@ -51,4 +51,3 @@ benchmarks/asv.conf.json  @larsoner
 .github/*  @larsoner @andyfaff
 azure-pipelines.yml  @larsoner
 .travis.yml  @larsoner
-

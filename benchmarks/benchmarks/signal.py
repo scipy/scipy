@@ -10,12 +10,12 @@ with safe_import():
 class Resample(Benchmark):
 
     # Some slow (prime), some fast (in radix)
-    param_names = ['N', 'num']
+    param_names = ["N", "num"]
     params = [[977, 9973, 2 ** 14, 2 ** 16]] * 2
 
     def setup(self, N, num):
         x = np.linspace(0, 10, N, endpoint=False)
-        self.y = np.cos(-x**2/6.0)
+        self.y = np.cos(-(x ** 2) / 6.0)
 
     def time_complex(self, N, num):
         signal.resample(self.y + 0j, num)
@@ -25,12 +25,11 @@ class Resample(Benchmark):
 
 
 class CalculateWindowedFFT(Benchmark):
-
     def setup(self):
         rng = np.random.default_rng(5678)
         # Create some long arrays for computation
-        x = rng.standard_normal(2**20)
-        y = rng.standard_normal(2**20)
+        x = rng.standard_normal(2 ** 20)
+        y = rng.standard_normal(2 ** 20)
         self.x = x
         self.y = y
 
@@ -51,11 +50,8 @@ class CalculateWindowedFFT(Benchmark):
 
 
 class Convolve2D(Benchmark):
-    param_names = ['mode', 'boundary']
-    params = [
-        ['full', 'valid', 'same'],
-        ['fill', 'wrap', 'symm']
-    ]
+    param_names = ["mode", "boundary"]
+    params = [["full", "valid", "same"], ["fill", "wrap", "symm"]]
 
     def setup(self, mode, boundary):
         rng = np.random.default_rng(1234)
@@ -69,25 +65,28 @@ class Convolve2D(Benchmark):
 
     def time_convolve2d(self, mode, boundary):
         for a, b in self.pairs:
-            if mode == 'valid':
+            if mode == "valid":
                 if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
                     continue
             signal.convolve2d(a, b, mode=mode, boundary=boundary)
 
     def time_correlate2d(self, mode, boundary):
         for a, b in self.pairs:
-            if mode == 'valid':
+            if mode == "valid":
                 if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
                     continue
             signal.correlate2d(a, b, mode=mode, boundary=boundary)
 
 
 class FFTConvolve(Benchmark):
-    param_names = ['mode', 'size']
+    param_names = ["mode", "size"]
     params = [
-        ['full', 'valid', 'same'],
-        [(a,b) for a,b in product((1, 2, 8, 36, 60, 150, 200, 500), repeat=2)
-         if b <= a]
+        ["full", "valid", "same"],
+        [
+            (a, b)
+            for a, b in product((1, 2, 8, 36, 60, 150, 200, 500), repeat=2)
+            if b <= a
+        ],
     ]
 
     def setup(self, mode, size):
@@ -102,11 +101,10 @@ class FFTConvolve(Benchmark):
 
 
 class OAConvolve(Benchmark):
-    param_names = ['mode', 'size']
+    param_names = ["mode", "size"]
     params = [
-        ['full', 'valid', 'same'],
-        [(a, b) for a, b in product((40, 200, 3000), repeat=2)
-         if b < a]
+        ["full", "valid", "same"],
+        [(a, b) for a, b in product((40, 200, 3000), repeat=2) if b < a],
     ]
 
     def setup(self, mode, size):
@@ -121,56 +119,53 @@ class OAConvolve(Benchmark):
 
 
 class Convolve(Benchmark):
-    param_names = ['mode']
-    params = [
-        ['full', 'valid', 'same']
-    ]
+    param_names = ["mode"]
+    params = [["full", "valid", "same"]]
 
     def setup(self, mode):
         rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
-        pairs = {'1d': [], '2d': []}
+        pairs = {"1d": [], "2d": []}
         for ma, nb in product((1, 2, 8, 13, 30, 36, 50, 75), repeat=2):
             a = rng.standard_normal(ma)
             b = rng.standard_normal(nb)
-            pairs['1d'].append((a, b))
+            pairs["1d"].append((a, b))
 
         for n_image in [256, 512, 1024]:
             for n_kernel in [3, 5, 7]:
                 x = rng.standard_normal((n_image, n_image))
                 h = rng.standard_normal((n_kernel, n_kernel))
-                pairs['2d'].append((x, h))
+                pairs["2d"].append((x, h))
         self.pairs = pairs
 
     def time_convolve(self, mode):
-        for a, b in self.pairs['1d']:
+        for a, b in self.pairs["1d"]:
             if b.shape[0] > a.shape[0]:
                 continue
             signal.convolve(a, b, mode=mode)
 
     def time_convolve2d(self, mode):
-        for a, b in self.pairs['2d']:
-            if mode == 'valid':
+        for a, b in self.pairs["2d"]:
+            if mode == "valid":
                 if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
                     continue
             signal.convolve(a, b, mode=mode)
 
     def time_correlate(self, mode):
-        for a, b in self.pairs['1d']:
+        for a, b in self.pairs["1d"]:
             if b.shape[0] > a.shape[0]:
                 continue
             signal.correlate(a, b, mode=mode)
 
     def time_correlate2d(self, mode):
-        for a, b in self.pairs['2d']:
-            if mode == 'valid':
+        for a, b in self.pairs["2d"]:
+            if mode == "valid":
                 if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
                     continue
             signal.correlate(a, b, mode=mode)
 
 
 class LTI(Benchmark):
-
     def setup(self):
         self.system = signal.lti(1.0, [1, 0, 1])
         self.t = np.arange(0, 100, 0.5)
@@ -193,17 +188,16 @@ class LTI(Benchmark):
 
 
 class Upfirdn1D(Benchmark):
-    param_names = ['up', 'down']
-    params = [
-        [1, 4],
-        [1, 4]
-    ]
+    param_names = ["up", "down"]
+    params = [[1, 4], [1, 4]]
 
     def setup(self, up, down):
         rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        for nfilt in [8, ]:
+        for nfilt in [
+            8,
+        ]:
             for n in [32, 128, 512, 2048]:
                 h = rng.standard_normal(nfilt)
                 x = rng.standard_normal(n)
@@ -217,7 +211,7 @@ class Upfirdn1D(Benchmark):
 
 
 class Upfirdn2D(Benchmark):
-    param_names = ['up', 'down', 'axis']
+    param_names = ["up", "down", "axis"]
     params = [
         [1, 4],
         [1, 4],
@@ -228,7 +222,9 @@ class Upfirdn2D(Benchmark):
         rng = np.random.default_rng(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        for nfilt in [8, ]:
+        for nfilt in [
+            8,
+        ]:
             for n in [32, 128, 512]:
                 h = rng.standard_normal(nfilt)
                 x = rng.standard_normal((n, n))
@@ -242,11 +238,11 @@ class Upfirdn2D(Benchmark):
 
 
 class FIRLS(Benchmark):
-    param_names = ['n', 'edges']
+    param_names = ["n", "edges"]
     params = [
         [21, 101, 1001, 2001],
         [(0.1, 0.9), (0.01, 0.99)],
-        ]
+    ]
 
     def time_firls(self, n, edges):
         signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])

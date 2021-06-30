@@ -74,37 +74,37 @@ computing the distances between all pairs.
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 __all__ = [
-    'braycurtis',
-    'canberra',
-    'cdist',
-    'chebyshev',
-    'cityblock',
-    'correlation',
-    'cosine',
-    'dice',
-    'directed_hausdorff',
-    'euclidean',
-    'hamming',
-    'is_valid_dm',
-    'is_valid_y',
-    'jaccard',
-    'jensenshannon',
-    'kulsinski',
-    'mahalanobis',
-    'matching',
-    'minkowski',
-    'num_obs_dm',
-    'num_obs_y',
-    'pdist',
-    'rogerstanimoto',
-    'russellrao',
-    'seuclidean',
-    'sokalmichener',
-    'sokalsneath',
-    'sqeuclidean',
-    'squareform',
-    'wminkowski',
-    'yule'
+    "braycurtis",
+    "canberra",
+    "cdist",
+    "chebyshev",
+    "cityblock",
+    "correlation",
+    "cosine",
+    "dice",
+    "directed_hausdorff",
+    "euclidean",
+    "hamming",
+    "is_valid_dm",
+    "is_valid_y",
+    "jaccard",
+    "jensenshannon",
+    "kulsinski",
+    "mahalanobis",
+    "matching",
+    "minkowski",
+    "num_obs_dm",
+    "num_obs_y",
+    "pdist",
+    "rogerstanimoto",
+    "russellrao",
+    "seuclidean",
+    "sokalmichener",
+    "sokalsneath",
+    "sqeuclidean",
+    "squareform",
+    "wminkowski",
+    "yule",
 ]
 
 
@@ -209,39 +209,44 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_info, **kwargs):
 
 
 def _validate_weight_with_size(X, m, n, **kwargs):
-    w = kwargs.pop('w', None)
+    w = kwargs.pop("w", None)
     if w is None:
         return kwargs
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. "
-                         f"{w.shape[0]} vs. {n}")
+        raise ValueError(
+            f"Weights must have same size as input vector. {w.shape[0]} vs. {n}"
+        )
 
-    kwargs['w'] = _validate_weights(w)
+    kwargs["w"] = _validate_weights(w)
     return kwargs
 
 
 def _validate_hamming_kwargs(X, m, n, **kwargs):
-    w = kwargs.get('w', np.ones((n,), dtype='double'))
+    w = kwargs.get("w", np.ones((n,), dtype="double"))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+        raise ValueError(
+            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
+        )
 
-    kwargs['w'] = _validate_weights(w)
+    kwargs["w"] = _validate_weights(w)
     return kwargs
 
 
 def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
-    VI = kwargs.pop('VI', None)
+    VI = kwargs.pop("VI", None)
     if VI is None:
         if m <= n:
             # There are fewer observations than the dimension of
             # the observations.
-            raise ValueError("The number of observations (%d) is too "
-                             "small; the covariance matrix is "
-                             "singular. For observations with %d "
-                             "dimensions, at least %d observations "
-                             "are required." % (m, n, n + 1))
+            raise ValueError(
+                "The number of observations (%d) is too "
+                "small; the covariance matrix is "
+                "singular. For observations with %d "
+                "dimensions, at least %d observations "
+                "are required." % (m, n, n + 1)
+            )
         if isinstance(X, tuple):
             X = np.vstack(X)
         CV = np.atleast_2d(np.cov(X.astype(np.double, copy=False).T))
@@ -252,10 +257,10 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
     kwargs = _validate_weight_with_size(X, m, n, **kwargs)
-    if 'p' not in kwargs:
-        kwargs['p'] = 2.
+    if "p" not in kwargs:
+        kwargs["p"] = 2.0
     else:
-        if kwargs['p'] < 1:
+        if kwargs["p"] < 1:
             raise ValueError("p must be at least 1")
 
     return kwargs
@@ -277,27 +282,28 @@ def _validate_pdist_input(X, m, n, metric_info, **kwargs):
 
 
 def _validate_seuclidean_kwargs(X, m, n, **kwargs):
-    V = kwargs.pop('V', None)
+    V = kwargs.pop("V", None)
     if V is None:
         if isinstance(X, tuple):
             X = np.vstack(X)
         V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
     else:
-        V = np.asarray(V, order='c')
+        V = np.asarray(V, order="c")
         if len(V.shape) != 1:
-            raise ValueError('Variance vector V must '
-                             'be one-dimensional.')
+            raise ValueError("Variance vector V must be one-dimensional.")
         if V.shape[0] != n:
-            raise ValueError('Variance vector V must be of the same '
-                             'dimension as the vectors on which the distances '
-                             'are computed.')
-    kwargs['V'] = _convert_to_double(V)
+            raise ValueError(
+                "Variance vector V must be of the same "
+                "dimension as the vectors on which the distances "
+                "are computed."
+            )
+    kwargs["V"] = _convert_to_double(V)
     return kwargs
 
 
 def _validate_vector(u, dtype=None):
     # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c')
+    u = np.asarray(u, dtype=dtype, order="c")
     if u.ndim == 1:
         return u
 
@@ -308,7 +314,8 @@ def _validate_vector(u, dtype=None):
     warnings.warn(
         "scipy.spatial.distance metrics ignoring length-1 dimensions is "
         "deprecated in SciPy 1.7 and will raise an error in SciPy 1.9.",
-        DeprecationWarning)
+        DeprecationWarning,
+    )
     return u
 
 
@@ -320,16 +327,18 @@ def _validate_weights(w, dtype=np.double):
 
 
 @_deprecated(
-    msg="'wminkowski' metric is deprecated and will be removed in"
-        " SciPy 1.8.0, use 'minkowski' instead.")
+    msg=(
+        "'wminkowski' metric is deprecated and will be removed in"
+        " SciPy 1.8.0, use 'minkowski' instead."
+    )
+)
 def _validate_wminkowski_kwargs(X, m, n, **kwargs):
-    w = kwargs.pop('w', None)
+    w = kwargs.pop("w", None)
     if w is None:
-        raise ValueError('weighted minkowski requires a weight '
-                         'vector `w` to be given.')
-    kwargs['w'] = _validate_weights(w)
-    if 'p' not in kwargs:
-        kwargs['p'] = 2.
+        raise ValueError("weighted minkowski requires a weight vector `w` to be given.")
+    kwargs["w"] = _validate_weights(w)
+    if "p" not in kwargs:
+        kwargs["p"] = 2.0
     return kwargs
 
 
@@ -424,11 +433,10 @@ def directed_hausdorff(u, v, seed=0):
     (3, 3)
 
     """
-    u = np.asarray(u, dtype=np.float64, order='c')
-    v = np.asarray(v, dtype=np.float64, order='c')
+    u = np.asarray(u, dtype=np.float64, order="c")
+    v = np.asarray(v, dtype=np.float64, order="c")
     if u.shape[1] != v.shape[1]:
-        raise ValueError('u and v need to have the same '
-                         'number of columns')
+        raise ValueError("u and v need to have the same number of columns")
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 
@@ -494,9 +502,9 @@ def minkowski(u, v, p=2, w=None):
             # better precision and speed
             root_w = np.sqrt(w)
         elif p == np.inf:
-            root_w = (w != 0)
+            root_w = w != 0
         else:
-            root_w = np.power(w, 1/p)
+            root_w = np.power(w, 1 / p)
         u_v = root_w * u_v
     dist = norm(u_v, ord=p)
     return dist
@@ -551,11 +559,14 @@ def wminkowski(u, v, p, w):
 
     """
     warnings.warn(
-        message="scipy.distance.wminkowski is deprecated and will be removed "
-                "in SciPy 1.8.0, use scipy.distance.minkowski instead.",
-        category=DeprecationWarning)
+        message=(
+            "scipy.distance.wminkowski is deprecated and will be removed "
+            "in SciPy 1.8.0, use scipy.distance.minkowski instead."
+        ),
+        category=DeprecationWarning,
+    )
     w = _validate_weights(w)
-    return minkowski(u, v, p=p, w=w**p)
+    return minkowski(u, v, p=p, w=w ** p)
 
 
 def euclidean(u, v, w=None):
@@ -794,7 +805,7 @@ def hamming(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if u.shape != v.shape:
-        raise ValueError('The 1d arrays must have equal lengths.')
+        raise ValueError("The 1d arrays must have equal lengths.")
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
@@ -967,9 +978,8 @@ def seuclidean(u, v, V):
     v = _validate_vector(v)
     V = _validate_vector(V, dtype=np.float64)
     if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D array of the same dimension '
-                        'as u and v.')
-    return euclidean(u, v, w=1/V)
+        raise TypeError("V must be a 1-D array of the same dimension as u and v.")
+    return euclidean(u, v, w=1 / V)
 
 
 def cityblock(u, v, w=None):
@@ -1202,7 +1212,7 @@ def canberra(u, v, w=None):
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid="ignore"):
         abs_uv = abs(u - v)
         abs_u = abs(u)
         abs_v = abs(v)
@@ -1350,8 +1360,12 @@ def yule(u, v, w=None):
         return float(2.0 * half_R / (ntt * nff + half_R))
 
 
-@np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
-                      "use spatial.distance.hamming instead.")
+@np.deprecate(
+    message=(
+        "spatial.distance.matching is deprecated in scipy 1.0.0; "
+        "use spatial.distance.hamming instead."
+    )
+)
 def matching(u, v, w=None):
     """
     Compute the Hamming distance between two boolean 1-D arrays.
@@ -1633,8 +1647,10 @@ def sokalsneath(u, v, w=None):
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
     if not denom.any():
-        raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                         'vectors that are entirely false.')
+        raise ValueError(
+            "Sokal-Sneath dissimilarity is not defined for "
+            "vectors that are entirely false."
+        )
     return float(2.0 * (ntf + nft)) / denom
 
 
@@ -1658,17 +1674,17 @@ class CDistMetricWrapper:
         metric_name = self.metric_name
         metric_info = _METRICS[metric_name]
         XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, metric_info, **kwargs)
+            XA, XB, mA, mB, n, metric_info, **kwargs
+        )
 
-        w = kwargs.pop('w', None)
+        w = kwargs.pop("w", None)
         if w is not None:
             metric = metric_info.dist_func
-            return _cdist_callable(
-                XA, XB, metric=metric, out=out, w=w, **kwargs)
+            return _cdist_callable(XA, XB, metric=metric, out=out, w=w, **kwargs)
 
         dm = _prepare_out_argument(out, np.double, (mA, mB))
         # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
+        cdist_fn = getattr(_distance_wrap, f"cdist_{metric_name}_{typ}_wrap")
         cdist_fn(XA, XB, dm, **kwargs)
         return dm
 
@@ -1685,16 +1701,17 @@ class CDistWeightedMetricWrapper:
         mB, _ = XB.shape
         metric_name = self.metric_name
         XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
+            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs
+        )
         dm = _prepare_out_argument(out, np.double, (mA, mB))
 
-        w = kwargs.pop('w', None)
+        w = kwargs.pop("w", None)
         if w is not None:
             metric_name = self.weighted_metric
-            kwargs['w'] = w
+            kwargs["w"] = w
 
         # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
+        cdist_fn = getattr(_distance_wrap, f"cdist_{metric_name}_{typ}_wrap")
         cdist_fn(XA, XB, dm, **kwargs)
         return dm
 
@@ -1708,18 +1725,16 @@ class PDistMetricWrapper:
         m, n = X.shape
         metric_name = self.metric_name
         metric_info = _METRICS[metric_name]
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, metric_info, **kwargs)
+        X, typ, kwargs = _validate_pdist_input(X, m, n, metric_info, **kwargs)
         out_size = (m * (m - 1)) // 2
-        w = kwargs.pop('w', None)
+        w = kwargs.pop("w", None)
         if w is not None:
             metric = metric_info.dist_func
-            return _pdist_callable(
-                X, metric=metric, out=out, w=w, **kwargs)
+            return _pdist_callable(X, metric=metric, out=out, w=w, **kwargs)
 
         dm = _prepare_out_argument(out, np.double, (out_size,))
         # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
+        pdist_fn = getattr(_distance_wrap, f"pdist_{metric_name}_{typ}_wrap")
         pdist_fn(X, dm, **kwargs)
         return dm
 
@@ -1733,18 +1748,17 @@ class PDistWeightedMetricWrapper:
         X = np.ascontiguousarray(X)
         m, n = X.shape
         metric_name = self.metric_name
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, _METRICS[metric_name], **kwargs)
+        X, typ, kwargs = _validate_pdist_input(X, m, n, _METRICS[metric_name], **kwargs)
         out_size = (m * (m - 1)) // 2
         dm = _prepare_out_argument(out, np.double, (out_size,))
 
-        w = kwargs.pop('w', None)
+        w = kwargs.pop("w", None)
         if w is not None:
             metric_name = self.weighted_metric
-            kwargs['w'] = w
+            kwargs["w"] = w
 
         # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
+        pdist_fn = getattr(_distance_wrap, f"pdist_{metric_name}_{typ}_wrap")
         pdist_fn(X, dm, **kwargs)
         return dm
 
@@ -1767,7 +1781,7 @@ class MetricInfo:
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
-    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    types: List[str] = dataclasses.field(default_factory=lambda: ["double"])
     # true if out array must be C-contiguous
     requires_contiguous_out: bool = True
 
@@ -1775,188 +1789,184 @@ class MetricInfo:
 # Registry of implemented metrics:
 _METRIC_INFOS = [
     MetricInfo(
-        canonical_name='braycurtis',
-        aka={'braycurtis'},
+        canonical_name="braycurtis",
+        aka={"braycurtis"},
         dist_func=braycurtis,
         cdist_func=_distance_pybind.cdist_braycurtis,
         pdist_func=_distance_pybind.pdist_braycurtis,
     ),
     MetricInfo(
-        canonical_name='canberra',
-        aka={'canberra'},
+        canonical_name="canberra",
+        aka={"canberra"},
         dist_func=canberra,
         cdist_func=_distance_pybind.cdist_canberra,
         pdist_func=_distance_pybind.pdist_canberra,
     ),
     MetricInfo(
-        canonical_name='chebyshev',
-        aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
+        canonical_name="chebyshev",
+        aka={"chebychev", "chebyshev", "cheby", "cheb", "ch"},
         dist_func=chebyshev,
         cdist_func=_distance_pybind.cdist_chebyshev,
         pdist_func=_distance_pybind.pdist_chebyshev,
     ),
     MetricInfo(
-        canonical_name='cityblock',
-        aka={'cityblock', 'cblock', 'cb', 'c'},
+        canonical_name="cityblock",
+        aka={"cityblock", "cblock", "cb", "c"},
         dist_func=cityblock,
         cdist_func=_distance_pybind.cdist_cityblock,
         pdist_func=_distance_pybind.pdist_cityblock,
     ),
     MetricInfo(
-        canonical_name='correlation',
-        aka={'correlation', 'co'},
+        canonical_name="correlation",
+        aka={"correlation", "co"},
         dist_func=correlation,
-        cdist_func=CDistMetricWrapper('correlation'),
-        pdist_func=PDistMetricWrapper('correlation'),
+        cdist_func=CDistMetricWrapper("correlation"),
+        pdist_func=PDistMetricWrapper("correlation"),
     ),
     MetricInfo(
-        canonical_name='cosine',
-        aka={'cosine', 'cos'},
+        canonical_name="cosine",
+        aka={"cosine", "cos"},
         dist_func=cosine,
-        cdist_func=CDistMetricWrapper('cosine'),
-        pdist_func=PDistMetricWrapper('cosine'),
+        cdist_func=CDistMetricWrapper("cosine"),
+        pdist_func=PDistMetricWrapper("cosine"),
     ),
     MetricInfo(
-        canonical_name='dice',
-        aka={'dice'},
-        types=['bool'],
+        canonical_name="dice",
+        aka={"dice"},
+        types=["bool"],
         dist_func=dice,
-        cdist_func=CDistMetricWrapper('dice'),
-        pdist_func=PDistMetricWrapper('dice'),
+        cdist_func=CDistMetricWrapper("dice"),
+        pdist_func=PDistMetricWrapper("dice"),
     ),
     MetricInfo(
-        canonical_name='euclidean',
-        aka={'euclidean', 'euclid', 'eu', 'e'},
+        canonical_name="euclidean",
+        aka={"euclidean", "euclid", "eu", "e"},
         dist_func=euclidean,
         cdist_func=_distance_pybind.cdist_euclidean,
         pdist_func=_distance_pybind.pdist_euclidean,
     ),
     MetricInfo(
-        canonical_name='hamming',
-        aka={'matching', 'hamming', 'hamm', 'ha', 'h'},
-        types=['double', 'bool'],
+        canonical_name="hamming",
+        aka={"matching", "hamming", "hamm", "ha", "h"},
+        types=["double", "bool"],
         validator=_validate_hamming_kwargs,
         dist_func=hamming,
-        cdist_func=CDistWeightedMetricWrapper('hamming', 'hamming'),
-        pdist_func=PDistWeightedMetricWrapper('hamming', 'hamming'),
+        cdist_func=CDistWeightedMetricWrapper("hamming", "hamming"),
+        pdist_func=PDistWeightedMetricWrapper("hamming", "hamming"),
     ),
     MetricInfo(
-        canonical_name='jaccard',
-        aka={'jaccard', 'jacc', 'ja', 'j'},
-        types=['double', 'bool'],
+        canonical_name="jaccard",
+        aka={"jaccard", "jacc", "ja", "j"},
+        types=["double", "bool"],
         dist_func=jaccard,
-        cdist_func=CDistMetricWrapper('jaccard'),
-        pdist_func=PDistMetricWrapper('jaccard'),
+        cdist_func=CDistMetricWrapper("jaccard"),
+        pdist_func=PDistMetricWrapper("jaccard"),
     ),
     MetricInfo(
-        canonical_name='jensenshannon',
-        aka={'jensenshannon', 'js'},
+        canonical_name="jensenshannon",
+        aka={"jensenshannon", "js"},
         dist_func=jensenshannon,
-        cdist_func=CDistMetricWrapper('jensenshannon'),
-        pdist_func=PDistMetricWrapper('jensenshannon'),
+        cdist_func=CDistMetricWrapper("jensenshannon"),
+        pdist_func=PDistMetricWrapper("jensenshannon"),
     ),
     MetricInfo(
-        canonical_name='kulsinski',
-        aka={'kulsinski'},
-        types=['bool'],
+        canonical_name="kulsinski",
+        aka={"kulsinski"},
+        types=["bool"],
         dist_func=kulsinski,
-        cdist_func=CDistMetricWrapper('kulsinski'),
-        pdist_func=PDistMetricWrapper('kulsinski'),
+        cdist_func=CDistMetricWrapper("kulsinski"),
+        pdist_func=PDistMetricWrapper("kulsinski"),
     ),
     MetricInfo(
-        canonical_name='mahalanobis',
-        aka={'mahalanobis', 'mahal', 'mah'},
+        canonical_name="mahalanobis",
+        aka={"mahalanobis", "mahal", "mah"},
         validator=_validate_mahalanobis_kwargs,
         dist_func=mahalanobis,
-        cdist_func=CDistMetricWrapper('mahalanobis'),
-        pdist_func=PDistMetricWrapper('mahalanobis'),
+        cdist_func=CDistMetricWrapper("mahalanobis"),
+        pdist_func=PDistMetricWrapper("mahalanobis"),
     ),
     MetricInfo(
-        canonical_name='minkowski',
-        aka={'minkowski', 'mi', 'm', 'pnorm'},
+        canonical_name="minkowski",
+        aka={"minkowski", "mi", "m", "pnorm"},
         validator=_validate_minkowski_kwargs,
         dist_func=minkowski,
         cdist_func=_distance_pybind.cdist_minkowski,
         pdist_func=_distance_pybind.pdist_minkowski,
     ),
     MetricInfo(
-        canonical_name='rogerstanimoto',
-        aka={'rogerstanimoto'},
-        types=['bool'],
+        canonical_name="rogerstanimoto",
+        aka={"rogerstanimoto"},
+        types=["bool"],
         dist_func=rogerstanimoto,
-        cdist_func=CDistMetricWrapper('rogerstanimoto'),
-        pdist_func=PDistMetricWrapper('rogerstanimoto'),
+        cdist_func=CDistMetricWrapper("rogerstanimoto"),
+        pdist_func=PDistMetricWrapper("rogerstanimoto"),
     ),
     MetricInfo(
-        canonical_name='russellrao',
-        aka={'russellrao'},
-        types=['bool'],
+        canonical_name="russellrao",
+        aka={"russellrao"},
+        types=["bool"],
         dist_func=russellrao,
-        cdist_func=CDistMetricWrapper('russellrao'),
-        pdist_func=PDistMetricWrapper('russellrao'),
+        cdist_func=CDistMetricWrapper("russellrao"),
+        pdist_func=PDistMetricWrapper("russellrao"),
     ),
     MetricInfo(
-        canonical_name='seuclidean',
-        aka={'seuclidean', 'se', 's'},
+        canonical_name="seuclidean",
+        aka={"seuclidean", "se", "s"},
         validator=_validate_seuclidean_kwargs,
         dist_func=seuclidean,
-        cdist_func=CDistMetricWrapper('seuclidean'),
-        pdist_func=PDistMetricWrapper('seuclidean'),
+        cdist_func=CDistMetricWrapper("seuclidean"),
+        pdist_func=PDistMetricWrapper("seuclidean"),
     ),
     MetricInfo(
-        canonical_name='sokalmichener',
-        aka={'sokalmichener'},
-        types=['bool'],
+        canonical_name="sokalmichener",
+        aka={"sokalmichener"},
+        types=["bool"],
         dist_func=sokalmichener,
-        cdist_func=CDistMetricWrapper('sokalmichener'),
-        pdist_func=PDistMetricWrapper('sokalmichener'),
+        cdist_func=CDistMetricWrapper("sokalmichener"),
+        pdist_func=PDistMetricWrapper("sokalmichener"),
     ),
     MetricInfo(
-        canonical_name='sokalsneath',
-        aka={'sokalsneath'},
-        types=['bool'],
+        canonical_name="sokalsneath",
+        aka={"sokalsneath"},
+        types=["bool"],
         dist_func=sokalsneath,
-        cdist_func=CDistMetricWrapper('sokalsneath'),
-        pdist_func=PDistMetricWrapper('sokalsneath'),
+        cdist_func=CDistMetricWrapper("sokalsneath"),
+        pdist_func=PDistMetricWrapper("sokalsneath"),
     ),
     MetricInfo(
-        canonical_name='sqeuclidean',
-        aka={'sqeuclidean', 'sqe', 'sqeuclid'},
+        canonical_name="sqeuclidean",
+        aka={"sqeuclidean", "sqe", "sqeuclid"},
         dist_func=sqeuclidean,
         cdist_func=_distance_pybind.cdist_sqeuclidean,
         pdist_func=_distance_pybind.pdist_sqeuclidean,
     ),
     MetricInfo(
-        canonical_name='wminkowski',
-        aka={'wminkowski', 'wmi', 'wm', 'wpnorm'},
+        canonical_name="wminkowski",
+        aka={"wminkowski", "wmi", "wm", "wpnorm"},
         validator=_validate_wminkowski_kwargs,
         dist_func=wminkowski,
-        cdist_func=CDistWeightedMetricWrapper(
-            'wminkowski', 'old_weighted_minkowski'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'wminkowski', 'old_weighted_minkowski'),
+        cdist_func=CDistWeightedMetricWrapper("wminkowski", "old_weighted_minkowski"),
+        pdist_func=PDistWeightedMetricWrapper("wminkowski", "old_weighted_minkowski"),
     ),
     MetricInfo(
-        canonical_name='yule',
-        aka={'yule'},
-        types=['bool'],
+        canonical_name="yule",
+        aka={"yule"},
+        types=["bool"],
         dist_func=yule,
-        cdist_func=CDistMetricWrapper('yule'),
-        pdist_func=PDistMetricWrapper('yule'),
+        cdist_func=CDistMetricWrapper("yule"),
+        pdist_func=PDistMetricWrapper("yule"),
     ),
 ]
 
 _METRICS = {info.canonical_name: info for info in _METRIC_INFOS}
-_METRIC_ALIAS = dict((alias, info)
-                     for info in _METRIC_INFOS
-                     for alias in info.aka)
+_METRIC_ALIAS = dict((alias, info) for info in _METRIC_INFOS for alias in info.aka)
 
 _METRICS_NAMES = list(_METRICS.keys())
 
-_TEST_METRICS = {'test_' + info.canonical_name: info for info in _METRIC_INFOS}
+_TEST_METRICS = {"test_" + info.canonical_name: info for info in _METRIC_INFOS}
 
 
-def pdist(X, metric='euclidean', *, out=None, **kwargs):
+def pdist(X, metric="euclidean", *, out=None, **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
 
@@ -2223,22 +2233,22 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
-    X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
-                           check_finite=False)
+    X = _asarray_validated(
+        X, sparse_ok=False, objects_ok=True, mask_ok=True, check_finite=False
+    )
 
     s = X.shape
     if len(s) != 2:
-        raise ValueError('A 2-dimensional array must be passed.')
+        raise ValueError("A 2-dimensional array must be passed.")
 
     m, n = s
 
     if callable(metric):
-        mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
+        mstr = getattr(metric, "__name__", "UnknownCustomMetric")
         metric_info = _METRIC_ALIAS.get(mstr, None)
 
         if metric_info is not None:
-            X, typ, kwargs = _validate_pdist_input(
-                X, m, n, metric_info, **kwargs)
+            X, typ, kwargs = _validate_pdist_input(X, m, n, metric_info, **kwargs)
 
         return _pdist_callable(X, metric=metric, out=out, **kwargs)
     elif isinstance(metric, str):
@@ -2252,15 +2262,14 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
             metric_info = _TEST_METRICS.get(mstr, None)
             if metric_info is None:
                 raise ValueError(f'Unknown "Test" Distance Metric: {mstr[5:]}')
-            X, typ, kwargs = _validate_pdist_input(
-                X, m, n, metric_info, **kwargs)
-            return _pdist_callable(
-                X, metric=metric_info.dist_func, out=out, **kwargs)
+            X, typ, kwargs = _validate_pdist_input(X, m, n, metric_info, **kwargs)
+            return _pdist_callable(X, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError("Unknown Distance Metric: %s" % mstr)
     else:
-        raise TypeError('2nd argument metric must be a string identifier '
-                        'or a function.')
+        raise TypeError(
+            "2nd argument metric must be a string identifier or a function."
+        )
 
 
 def squareform(X, force="no", checks=True):
@@ -2319,14 +2328,12 @@ def squareform(X, force="no", checks=True):
 
     s = X.shape
 
-    if force.lower() == 'tomatrix':
+    if force.lower() == "tomatrix":
         if len(s) != 1:
-            raise ValueError("Forcing 'tomatrix' but input X is not a "
-                             "distance vector.")
-    elif force.lower() == 'tovector':
+            raise ValueError("Forcing 'tomatrix' but input X is not a distance vector.")
+    elif force.lower() == "tovector":
         if len(s) != 2:
-            raise ValueError("Forcing 'tovector' but input X is not a "
-                             "distance matrix.")
+            raise ValueError("Forcing 'tovector' but input X is not a distance matrix.")
 
     # X = squareform(v)
     if len(s) == 1:
@@ -2340,8 +2347,10 @@ def squareform(X, force="no", checks=True):
 
         # Check that v is of valid dimensions.
         if d * (d - 1) != s[0] * 2:
-            raise ValueError('Incompatible vector size. It must be a binomial '
-                             'coefficient n choose 2 for some integer n >= 2.')
+            raise ValueError(
+                "Incompatible vector size. It must be a binomial "
+                "coefficient n choose 2 for some integer n >= 2."
+            )
 
         # Allocate memory for the distance matrix.
         M = np.zeros((d, d), dtype=X.dtype)
@@ -2357,9 +2366,9 @@ def squareform(X, force="no", checks=True):
         return M
     elif len(s) == 2:
         if s[0] != s[1]:
-            raise ValueError('The matrix argument must be square.')
+            raise ValueError("The matrix argument must be square.")
         if checks:
-            is_valid_dm(X, throw=True, name='X')
+            is_valid_dm(X, throw=True, name="X")
 
         # One-side of the dimensions is set here.
         d = s[0]
@@ -2378,9 +2387,12 @@ def squareform(X, force="no", checks=True):
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
         return v
     else:
-        raise ValueError(('The first argument must be one or two dimensional '
-                          'array. A %d-dimensional array is not '
-                          'permitted') % len(s))
+        raise ValueError(
+            "The first argument must be one or two dimensional "
+            "array. A %d-dimensional array is not "
+            "permitted"
+            % len(s)
+        )
 
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
@@ -2420,48 +2432,56 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     by `tol`.
 
     """
-    D = np.asarray(D, order='c')
+    D = np.asarray(D, order="c")
     valid = True
     try:
         s = D.shape
         if len(D.shape) != 2:
             if name:
-                raise ValueError(('Distance matrix \'%s\' must have shape=2 '
-                                  '(i.e. be two-dimensional).') % name)
+                raise ValueError(
+                    "Distance matrix '%s' must have shape=2 (i.e. be two-dimensional)."
+                    % name
+                )
             else:
-                raise ValueError('Distance matrix must have shape=2 (i.e. '
-                                 'be two-dimensional).')
+                raise ValueError(
+                    "Distance matrix must have shape=2 (i.e. be two-dimensional)."
+                )
         if tol == 0.0:
             if not (D == D.T).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                     'symmetric.') % name)
+                    raise ValueError("Distance matrix '%s' must be symmetric." % name)
                 else:
-                    raise ValueError('Distance matrix must be symmetric.')
+                    raise ValueError("Distance matrix must be symmetric.")
             if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must '
-                                      'be zero.') % name)
+                    raise ValueError(
+                        "Distance matrix '%s' diagonal must be zero." % name
+                    )
                 else:
-                    raise ValueError('Distance matrix diagonal must be zero.')
+                    raise ValueError("Distance matrix diagonal must be zero.")
         else:
             if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(
+                        "Distance matrix '%s' must be symmetric within tolerance %5.5f."
+                        % (name, tol)
+                    )
                 else:
-                    raise ValueError('Distance matrix must be symmetric within'
-                                     ' tolerance %5.5f.' % tol)
+                    raise ValueError(
+                        "Distance matrix must be symmetric within tolerance %5.5f."
+                        % tol
+                    )
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(
+                        "Distance matrix '%s' diagonal must be"
+                        " close to zero within tolerance %5.5f." % (name, tol)
+                    )
                 else:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % tol)
+                    raise ValueError(
+                        "Distance matrix '%s' diagonal must be"
+                        " close to zero within tolerance %5.5f." % tol
+                    )
     except Exception as e:
         if throw:
             raise
@@ -2496,29 +2516,36 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         warning or exception message.
 
     """
-    y = np.asarray(y, order='c')
+    y = np.asarray(y, order="c")
     valid = True
     try:
         if len(y.shape) != 1:
             if name:
-                raise ValueError(('Condensed distance matrix \'%s\' must '
-                                  'have shape=1 (i.e. be one-dimensional).')
-                                 % name)
+                raise ValueError(
+                    "Condensed distance matrix '%s' must "
+                    "have shape=1 (i.e. be one-dimensional)." % name
+                )
             else:
-                raise ValueError('Condensed distance matrix must have shape=1 '
-                                 '(i.e. be one-dimensional).')
+                raise ValueError(
+                    "Condensed distance matrix must have shape=1 "
+                    "(i.e. be one-dimensional)."
+                )
         n = y.shape[0]
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             if name:
-                raise ValueError(('Length n of condensed distance matrix '
-                                  '\'%s\' must be a binomial coefficient, i.e.'
-                                  'there must be a k such that '
-                                  '(k \\choose 2)=n)!') % name)
+                raise ValueError(
+                    "Length n of condensed distance matrix "
+                    "'%s' must be a binomial coefficient, i.e."
+                    "there must be a k such that "
+                    "(k \\choose 2)=n)!" % name
+                )
             else:
-                raise ValueError('Length n of condensed distance matrix must '
-                                 'be a binomial coefficient, i.e. there must '
-                                 'be a k such that (k \\choose 2)=n)!')
+                raise ValueError(
+                    "Length n of condensed distance matrix must "
+                    "be a binomial coefficient, i.e. there must "
+                    "be a k such that (k \\choose 2)=n)!"
+                )
     except Exception as e:
         if throw:
             raise
@@ -2544,8 +2571,8 @@ def num_obs_dm(d):
         The number of observations in the redundant distance matrix.
 
     """
-    d = np.asarray(d, order='c')
-    is_valid_dm(d, tol=np.inf, throw=True, name='d')
+    d = np.asarray(d, order="c")
+    is_valid_dm(d, tol=np.inf, throw=True, name="d")
     return d.shape[0]
 
 
@@ -2565,16 +2592,20 @@ def num_obs_y(Y):
         The number of observations in the condensed distance matrix `Y`.
 
     """
-    Y = np.asarray(Y, order='c')
-    is_valid_y(Y, throw=True, name='Y')
+    Y = np.asarray(Y, order="c")
+    is_valid_y(Y, throw=True, name="Y")
     k = Y.shape[0]
     if k == 0:
-        raise ValueError("The number of observations cannot be determined on "
-                         "an empty distance matrix.")
+        raise ValueError(
+            "The number of observations cannot be determined on "
+            "an empty distance matrix."
+        )
     d = int(np.ceil(np.sqrt(k * 2)))
     if (d * (d - 1) / 2) != k:
-        raise ValueError("Invalid condensed distance matrix passed. Must be "
-                         "some k where k=(n choose 2) for some n >= 2.")
+        raise ValueError(
+            "Invalid condensed distance matrix passed. Must be "
+            "some k where k=(n choose 2) for some n >= 2."
+        )
     return d
 
 
@@ -2613,7 +2644,7 @@ def _cdist_callable(XA, XB, *, out, metric, **kwargs):
     return dm
 
 
-def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
+def cdist(XA, XB, metric="euclidean", *, out=None, **kwargs):
     """
     Compute distance between each pair of the two collections of inputs.
 
@@ -2928,23 +2959,25 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     sB = XB.shape
 
     if len(s) != 2:
-        raise ValueError('XA must be a 2-dimensional array.')
+        raise ValueError("XA must be a 2-dimensional array.")
     if len(sB) != 2:
-        raise ValueError('XB must be a 2-dimensional array.')
+        raise ValueError("XB must be a 2-dimensional array.")
     if s[1] != sB[1]:
-        raise ValueError('XA and XB must have the same number of columns '
-                         '(i.e. feature dimension.)')
+        raise ValueError(
+            "XA and XB must have the same number of columns (i.e. feature dimension.)"
+        )
 
     mA = s[0]
     mB = sB[0]
     n = s[1]
 
     if callable(metric):
-        mstr = getattr(metric, '__name__', 'Unknown')
+        mstr = getattr(metric, "__name__", "Unknown")
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             XA, XB, typ, kwargs = _validate_cdist_input(
-                XA, XB, mA, mB, n, metric_info, **kwargs)
+                XA, XB, mA, mB, n, metric_info, **kwargs
+            )
         return _cdist_callable(XA, XB, metric=metric, out=out, **kwargs)
     elif isinstance(metric, str):
         mstr = metric.lower()
@@ -2957,11 +2990,14 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
             if metric_info is None:
                 raise ValueError(f'Unknown "Test" Distance Metric: {mstr[5:]}')
             XA, XB, typ, kwargs = _validate_cdist_input(
-                XA, XB, mA, mB, n, metric_info, **kwargs)
+                XA, XB, mA, mB, n, metric_info, **kwargs
+            )
             return _cdist_callable(
-                XA, XB, metric=metric_info.dist_func, out=out, **kwargs)
+                XA, XB, metric=metric_info.dist_func, out=out, **kwargs
+            )
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError("Unknown Distance Metric: %s" % mstr)
     else:
-        raise TypeError('2nd argument metric must be a string identifier '
-                        'or a function.')
+        raise TypeError(
+            "2nd argument metric must be a string identifier or a function."
+        )

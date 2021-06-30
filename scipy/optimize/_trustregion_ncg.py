@@ -3,13 +3,14 @@ import math
 
 import numpy as np
 import scipy.linalg
-from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
+from ._trustregion import _minimize_trust_region, BaseQuadraticSubproblem
 
 __all__ = []
 
 
-def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                        **trust_region_options):
+def _minimize_trust_ncg(
+    fun, x0, args=(), jac=None, hess=None, hessp=None, **trust_region_options
+):
     """
     Minimization of scalar function of one or more variables using
     the Newton conjugate gradient trust-region algorithm.
@@ -29,18 +30,27 @@ def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     """
     if jac is None:
-        raise ValueError('Jacobian is required for Newton-CG trust-region '
-                         'minimization')
+        raise ValueError("Jacobian is required for Newton-CG trust-region minimization")
     if hess is None and hessp is None:
-        raise ValueError('Either the Hessian or the Hessian-vector product '
-                         'is required for Newton-CG trust-region minimization')
-    return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
-                                  hessp=hessp, subproblem=CGSteihaugSubproblem,
-                                  **trust_region_options)
+        raise ValueError(
+            "Either the Hessian or the Hessian-vector product "
+            "is required for Newton-CG trust-region minimization"
+        )
+    return _minimize_trust_region(
+        fun,
+        x0,
+        args=args,
+        jac=jac,
+        hess=hess,
+        hessp=hessp,
+        subproblem=CGSteihaugSubproblem,
+        **trust_region_options,
+    )
 
 
 class CGSteihaugSubproblem(BaseQuadraticSubproblem):
     """Quadratic subproblem solved by a conjugate gradient method"""
+
     def solve(self, trust_radius):
         """
         Solve the subproblem using a conjugate gradient method.

@@ -1,6 +1,11 @@
 import numpy as np
-from numpy.testing import assert_equal, \
-    assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
+from numpy.testing import (
+    assert_equal,
+    assert_array_equal,
+    assert_array_almost_equal,
+    assert_array_less,
+    assert_,
+)
 
 from scipy.signal import wavelets
 
@@ -37,15 +42,23 @@ class TestWavelets:
         assert_equal(x, y)
 
         # miscellaneous tests:
-        x = np.array([1.73752399e-09 + 9.84327394e-25j,
-                      6.49471756e-01 + 0.00000000e+00j,
-                      1.73752399e-09 - 9.84327394e-25j])
+        x = np.array(
+            [
+                1.73752399e-09 + 9.84327394e-25j,
+                6.49471756e-01 + 0.00000000e00j,
+                1.73752399e-09 - 9.84327394e-25j,
+            ]
+        )
         y = wavelets.morlet(3, w=2, complete=True)
         assert_array_almost_equal(x, y)
 
-        x = np.array([2.00947715e-09 + 9.84327394e-25j,
-                      7.51125544e-01 + 0.00000000e+00j,
-                      2.00947715e-09 - 9.84327394e-25j])
+        x = np.array(
+            [
+                2.00947715e-09 + 9.84327394e-25j,
+                7.51125544e-01 + 0.00000000e00j,
+                2.00947715e-09 - 9.84327394e-25j,
+            ]
+        )
         y = wavelets.morlet(3, w=2, complete=False)
         assert_array_almost_equal(x, y, decimal=2)
 
@@ -78,7 +91,7 @@ class TestWavelets:
 
     def test_morlet2(self):
         w = wavelets.morlet2(1.0, 0.5)
-        expected = (np.pi**(-0.25) * np.sqrt(1/0.5)).astype(complex)
+        expected = (np.pi ** (-0.25) * np.sqrt(1 / 0.5)).astype(complex)
         assert_array_equal(w, expected)
 
         lengths = [5, 11, 15, 51, 101]
@@ -93,10 +106,14 @@ class TestWavelets:
         half_vec = np.arange(0, points // 2)
         assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
 
-        x = np.array([5.03701224e-09 + 2.46742437e-24j,
-                      1.88279253e+00 + 0.00000000e+00j,
-                      5.03701224e-09 - 2.46742437e-24j])
-        y = wavelets.morlet2(3, s=1/(2*np.pi), w=2)
+        x = np.array(
+            [
+                5.03701224e-09 + 2.46742437e-24j,
+                1.88279253e00 + 0.00000000e00j,
+                5.03701224e-09 - 2.46742437e-24j,
+            ]
+        )
+        y = wavelets.morlet2(3, s=1 / (2 * np.pi), w=2)
         assert_array_almost_equal(x, y)
 
     def test_ricker(self):
@@ -114,10 +131,10 @@ class TestWavelets:
         points = 100
         w = wavelets.ricker(points, 2.0)
         half_vec = np.arange(0, points // 2)
-        #Wavelet should be symmetric
+        # Wavelet should be symmetric
         assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
 
-        #Check zeros
+        # Check zeros
         aas = [5, 10, 15, 20, 30]
         points = 99
         for a in aas:
@@ -134,19 +151,18 @@ class TestWavelets:
         len_data = 100
         test_data = np.sin(np.pi * np.arange(0, len_data) / 10.0)
 
-        #Test delta function input gives same data as output
+        # Test delta function input gives same data as output
         cwt_dat = wavelets.cwt(test_data, delta_wavelet, widths)
         assert_(cwt_dat.shape == (len(widths), len_data))
         assert_array_almost_equal(test_data, cwt_dat.flatten())
 
-        #Check proper shape on output
+        # Check proper shape on output
         widths = [1, 3, 4, 5, 10]
         cwt_dat = wavelets.cwt(test_data, wavelets.ricker, widths)
         assert_(cwt_dat.shape == (len(widths), len_data))
 
         widths = [len_data * 10]
-        #Note: this wavelet isn't defined quite right, but is fine for this test
+        # Note: this wavelet isn't defined quite right, but is fine for this test
         flat_wavelet = lambda l, w: np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
-

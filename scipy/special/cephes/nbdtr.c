@@ -82,7 +82,7 @@
  *    IEEE     0,100       100000      1.7e-13     8.8e-15
  * See also incbet.c.
  */
-
+
 /*                                                     nbdtrc
  *
  *     Complemented negative binomial distribution
@@ -144,7 +144,7 @@
  *    IEEE     0,100       100000      1.5e-14     8.5e-16
  * See also incbi.c.
  */
-
+
 /*
  * Cephes Math Library Release 2.3:  March, 1995
  * Copyright 1984, 1987, 1995 by Stephen L. Moshier

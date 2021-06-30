@@ -303,4 +303,3 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
 
     return 0;
 }
-

@@ -23,8 +23,8 @@ _AVAILABLE = {
     "multiquadric",
     "inverse_multiquadric",
     "inverse_quadratic",
-    "gaussian"
-    }
+    "gaussian",
+}
 
 
 # The shape parameter does not need to be specified when using these RBFs.
@@ -41,8 +41,8 @@ _NAME_TO_MIN_DEGREE = {
     "linear": 0,
     "thin_plate_spline": 1,
     "cubic": 1,
-    "quintic": 2
-    }
+    "quintic": 2,
+}
 
 
 def _monomial_powers(ndim, degree):
@@ -105,9 +105,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         Domain scaling used to create the polynomial matrix.
 
     """
-    lhs, rhs, shift, scale = _build_system(
-        y, d, smoothing, kernel, epsilon, powers
-        )
+    lhs, rhs, shift, scale = _build_system(y, d, smoothing, kernel, epsilon, powers)
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")
@@ -115,14 +113,14 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         msg = "Singular matrix."
         nmonos = powers.shape[0]
         if nmonos > 0:
-            pmat = _polynomial_matrix((y - shift)/scale, powers)
+            pmat = _polynomial_matrix((y - shift) / scale, powers)
             rank = np.linalg.matrix_rank(pmat)
             if rank < nmonos:
                 msg = (
                     "Singular matrix. The matrix of monomials evaluated at "
                     "the data point coordinates does not have full column "
                     f"rank ({rank}/{nmonos})."
-                    )
+                )
 
         raise LinAlgError(msg)
 
@@ -279,12 +277,16 @@ class RBFInterpolator:
 
     """
 
-    def __init__(self, y, d,
-                 neighbors=None,
-                 smoothing=0.0,
-                 kernel="thin_plate_spline",
-                 epsilon=None,
-                 degree=None):
+    def __init__(
+        self,
+        y,
+        d,
+        neighbors=None,
+        smoothing=0.0,
+        kernel="thin_plate_spline",
+        epsilon=None,
+        degree=None,
+    ):
         y = np.asarray(y, dtype=float, order="C")
         if y.ndim != 2:
             raise ValueError("`y` must be a 2-dimensional array.")
@@ -294,9 +296,7 @@ class RBFInterpolator:
         d_dtype = complex if np.iscomplexobj(d) else float
         d = np.asarray(d, dtype=d_dtype, order="C")
         if d.shape[0] != ny:
-            raise ValueError(
-                f"Expected the first axis of `d` to have length {ny}."
-                )
+            raise ValueError(f"Expected the first axis of `d` to have length {ny}.")
 
         d_shape = d.shape[1:]
         d = d.reshape((ny, -1))
@@ -311,9 +311,8 @@ class RBFInterpolator:
             smoothing = np.asarray(smoothing, dtype=float, order="C")
             if smoothing.shape != (ny,):
                 raise ValueError(
-                    "Expected `smoothing` to be a scalar or have shape "
-                    f"({ny},)."
-                    )
+                    f"Expected `smoothing` to be a scalar or have shape ({ny},)."
+                )
 
         kernel = kernel.lower()
         if kernel not in _AVAILABLE:
@@ -326,7 +325,7 @@ class RBFInterpolator:
                 raise ValueError(
                     "`epsilon` must be specified if `kernel` is not one of "
                     f"{_SCALE_INVARIANT}."
-                    )
+                )
         else:
             epsilon = float(epsilon)
 
@@ -343,8 +342,8 @@ class RBFInterpolator:
                     f"is '{kernel}'. The interpolant may not be uniquely "
                     "solvable, and the smoothing parameter may have an "
                     "unintuitive effect.",
-                    UserWarning
-                    )
+                    UserWarning,
+                )
 
         if neighbors is None:
             nobs = ny
@@ -362,12 +361,12 @@ class RBFInterpolator:
             raise ValueError(
                 f"At least {powers.shape[0]} data points are required when "
                 f"`degree` is {degree} and the number of dimensions is {ndim}."
-                )
+            )
 
         if neighbors is None:
             shift, scale, coeffs = _build_and_solve_system(
                 y, d, smoothing, kernel, epsilon, powers
-                )
+            )
 
             # Make these attributes private since they do not always exist.
             self._shift = shift
@@ -408,15 +407,20 @@ class RBFInterpolator:
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
             raise ValueError(
-                "Expected the second axis of `x` to have length "
-                f"{self.y.shape[1]}."
-                )
+                f"Expected the second axis of `x` to have length {self.y.shape[1]}."
+            )
 
         if self.neighbors is None:
             out = _evaluate(
-                x, self.y, self.kernel, self.epsilon, self.powers, self._shift,
-                self._scale, self._coeffs
-                )
+                x,
+                self.y,
+                self.kernel,
+                self.epsilon,
+                self.powers,
+                self._shift,
+                self._scale,
+                self._coeffs,
+            )
 
         else:
             # Get the indices of the k nearest observation points to each
@@ -449,15 +453,25 @@ class RBFInterpolator:
                 dnbr = self.d[yidx]
                 snbr = self.smoothing[yidx]
                 shift, scale, coeffs = _build_and_solve_system(
-                    ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
-                    )
+                    ynbr,
+                    dnbr,
+                    snbr,
+                    self.kernel,
+                    self.epsilon,
+                    self.powers,
+                )
 
                 out[xidx] = _evaluate(
-                    xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
-                    scale, coeffs
-                    )
+                    xnbr,
+                    ynbr,
+                    self.kernel,
+                    self.epsilon,
+                    self.powers,
+                    shift,
+                    scale,
+                    coeffs,
+                )
 
         out = out.view(self.d_dtype)
         out = out.reshape((nx,) + self.d_shape)
         return out
-

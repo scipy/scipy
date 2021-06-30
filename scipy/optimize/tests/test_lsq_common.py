@@ -3,10 +3,18 @@ from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize._lsq.common import (
-    step_size_to_bound, find_active_constraints, make_strictly_feasible,
-    CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
-    minimize_quadratic_1d, evaluate_quadratic, reflective_transformation,
-    left_multiplied_operator, right_multiplied_operator)
+    step_size_to_bound,
+    find_active_constraints,
+    make_strictly_feasible,
+    CL_scaling_vector,
+    intersect_trust_region,
+    build_quadratic_1d,
+    minimize_quadratic_1d,
+    evaluate_quadratic,
+    reflective_transformation,
+    left_multiplied_operator,
+    right_multiplied_operator,
+)
 
 
 class TestBounds:
@@ -115,10 +123,7 @@ class TestBounds:
 
 class TestQuadraticFunction:
     def setup_method(self):
-        self.J = np.array([
-            [0.1, 0.2],
-            [-1.0, 1.0],
-            [0.5, 0.2]])
+        self.J = np.array([[0.1, 0.2], [-1.0, 1.0], [0.5, 0.2]])
         self.g = np.array([0.8, -2.0])
         self.diag = np.array([1.0, 2.0])
 
@@ -153,20 +158,20 @@ class TestQuadraticFunction:
 
         t, y = minimize_quadratic_1d(a, b, 1, 2)
         assert_equal(t, 1)
-        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
+        assert_allclose(y, a * t ** 2 + b * t, rtol=1e-15)
 
         t, y = minimize_quadratic_1d(a, b, -2, -1)
         assert_equal(t, -1)
-        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
+        assert_allclose(y, a * t ** 2 + b * t, rtol=1e-15)
 
         t, y = minimize_quadratic_1d(a, b, -1, 1)
         assert_equal(t, 0.1)
-        assert_allclose(y, a * t**2 + b * t, rtol=1e-15)
+        assert_allclose(y, a * t ** 2 + b * t, rtol=1e-15)
 
         c = 10
         t, y = minimize_quadratic_1d(a, b, -1, 1, c=c)
         assert_equal(t, 0.1)
-        assert_allclose(y, a * t**2 + b * t + c, rtol=1e-15)
+        assert_allclose(y, a * t ** 2 + b * t + c, rtol=1e-15)
 
         t, y = minimize_quadratic_1d(a, b, -np.inf, np.inf, c=c)
         assert_equal(t, 0.1)
@@ -202,9 +207,7 @@ class TestQuadraticFunction:
         value = evaluate_quadratic(self.J, self.g, s, diag=self.diag)
         assert_equal(value, 6.35)
 
-        s = np.array([[1.0, -1.0],
-                     [1.0, 1.0],
-                     [0.0, 0.0]])
+        s = np.array([[1.0, -1.0], [1.0, 1.0], [0.0, 0.0]])
 
         values = evaluate_quadratic(self.J, self.g, s)
         assert_allclose(values, [4.85, -0.91, 0.0])
@@ -225,14 +228,14 @@ class TestTrustRegion:
 
         s = np.array([-1.0, 1.0, -1.0])
         t_neg, t_pos = intersect_trust_region(x, s, Delta)
-        assert_allclose(t_neg, -3**-0.5)
-        assert_allclose(t_pos, 3**-0.5)
+        assert_allclose(t_neg, -(3 ** -0.5))
+        assert_allclose(t_pos, 3 ** -0.5)
 
         x = np.array([0.5, -0.5, 0])
         s = np.array([0, 0, 1.0])
         t_neg, t_pos = intersect_trust_region(x, s, Delta)
-        assert_allclose(t_neg, -2**-0.5)
-        assert_allclose(t_pos, 2**-0.5)
+        assert_allclose(t_neg, -(2 ** -0.5))
+        assert_allclose(t_pos, 2 ** -0.5)
 
         x = np.ones(3)
         assert_raises(ValueError, intersect_trust_region, x, s, Delta)

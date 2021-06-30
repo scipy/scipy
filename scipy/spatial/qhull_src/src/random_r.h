@@ -36,6 +36,3 @@ double  qh_strtod(const char *s, char **endp);
 #endif
 
 #endif /* qhDEFrandom */
-
-
-

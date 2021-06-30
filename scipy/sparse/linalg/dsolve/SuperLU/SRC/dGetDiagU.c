@@ -1,7 +1,7 @@
 /*! @file dGetDiagU.c
  * \brief Extracts main diagonal of matrix
  *
- * <pre> 
+ * <pre>
  * -- Auxiliary routine in SuperLU (version 2.0) --
  * Lawrence Berkeley National Lab, Univ. of California Berkeley.
  * Xiaoye S. Li
@@ -11,7 +11,7 @@
  * =======
  *
  * GetDiagU extracts the main diagonal of matrix U of the LU factorization.
- *  
+ *
  * Arguments
  * =========
  *
@@ -27,7 +27,7 @@
  * ====
  * The diagonal blocks of the L and U matrices are stored in the L
  * data structures.
- * </pre> 
+ * </pre>
 */
 #include <slu_ddefs.h>
 
@@ -55,4 +55,3 @@ void dGetDiagU(SuperMatrix *L, double *diagU)
       }
     }
 }
-

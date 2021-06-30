@@ -8,7 +8,7 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-__all__ = ['expm', 'inv']
+__all__ = ["expm", "inv"]
 
 import numpy as np
 
@@ -27,7 +27,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 
 
-UPPER_TRIANGULAR = 'upper_triangular'
+UPPER_TRIANGULAR = "upper_triangular"
 
 
 def inv(A):
@@ -69,9 +69,9 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
-    #check input
+    # check input
     if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
-        raise TypeError('Input must be a sparse matrix')
+        raise TypeError("Input must be a sparse matrix")
 
     I = _ident_like(A)
     Ainv = spsolve(A, I)
@@ -97,10 +97,10 @@ def _onenorm_matrix_power_nnm(A, p):
     """
     # check input
     if int(p) != p or p < 0:
-        raise ValueError('expected non-negative integer p')
+        raise ValueError("expected non-negative integer p")
     p = int(p)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
+        raise ValueError("expected A to be like a square matrix")
 
     # Explicitly make a column vector so that this works when A is a
     # numpy matrix (in addition to ndarray and sparse matrix).
@@ -120,6 +120,7 @@ def _is_upper_triangular(A):
         return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
     elif is_pydata_spmatrix(A):
         import sparse
+
         lower_part = sparse.tril(A, -1)
         return lower_part.nnz == 0
     else:
@@ -149,17 +150,21 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
 
     """
     if len(A.shape) != 2:
-        raise ValueError('expected A to be a rectangular matrix')
+        raise ValueError("expected A to be a rectangular matrix")
     if len(B.shape) != 2:
-        raise ValueError('expected B to be a rectangular matrix')
+        raise ValueError("expected B to be a rectangular matrix")
     f = None
     if structure == UPPER_TRIANGULAR:
-        if (not isspmatrix(A) and not isspmatrix(B)
-                and not is_pydata_spmatrix(A) and not is_pydata_spmatrix(B)):
-            f, = scipy.linalg.get_blas_funcs(('trmm',), (A, B))
+        if (
+            not isspmatrix(A)
+            and not isspmatrix(B)
+            and not is_pydata_spmatrix(A)
+            and not is_pydata_spmatrix(B)
+        ):
+            (f,) = scipy.linalg.get_blas_funcs(("trmm",), (A, B))
     if f is not None:
         if alpha is None:
-            alpha = 1.
+            alpha = 1.0
         out = f(alpha, A, B)
     else:
         if alpha is None:
@@ -170,12 +175,11 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
 
 
 class MatrixPowerOperator(LinearOperator):
-
     def __init__(self, A, p, structure=None):
         if A.ndim != 2 or A.shape[0] != A.shape[1]:
-            raise ValueError('expected A to be like a square matrix')
+            raise ValueError("expected A to be like a square matrix")
         if p < 0:
-            raise ValueError('expected p to be a non-negative integer')
+            raise ValueError("expected p to be a non-negative integer")
         self._A = A
         self._p = p
         self._structure = structure
@@ -211,20 +215,22 @@ class ProductOperator(LinearOperator):
     """
 
     def __init__(self, *args, **kwargs):
-        self._structure = kwargs.get('structure', None)
+        self._structure = kwargs.get("structure", None)
         for A in args:
             if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
                 raise ValueError(
-                        'For now, the ProductOperator implementation is '
-                        'limited to the product of multiple square matrices.')
+                    "For now, the ProductOperator implementation is "
+                    "limited to the product of multiple square matrices."
+                )
         if args:
             n = args[0].shape[0]
             for A in args:
                 for d in A.shape:
                     if d != n:
                         raise ValueError(
-                                'The square matrices of the ProductOperator '
-                                'must all have the same shape.')
+                            "The square matrices of the ProductOperator "
+                            "must all have the same shape."
+                        )
             self.shape = (n, n)
             self.ndim = len(self.shape)
         self.dtype = np.find_common_type([x.dtype for x in args], [])
@@ -252,8 +258,9 @@ class ProductOperator(LinearOperator):
         return ProductOperator(*T_args)
 
 
-def _onenormest_matrix_power(A, p,
-        t=2, itmax=5, compute_v=False, compute_w=False, structure=None):
+def _onenormest_matrix_power(
+    A, p, t=2, itmax=5, compute_v=False, compute_w=False, structure=None
+):
     """
     Efficiently estimate the 1-norm of A^p.
 
@@ -290,11 +297,13 @@ def _onenormest_matrix_power(A, p,
 
     """
     return scipy.sparse.linalg.onenormest(
-            MatrixPowerOperator(A, p, structure=structure))
+        MatrixPowerOperator(A, p, structure=structure)
+    )
 
 
-def _onenormest_product(operator_seq,
-        t=2, itmax=5, compute_v=False, compute_w=False, structure=None):
+def _onenormest_product(
+    operator_seq, t=2, itmax=5, compute_v=False, compute_w=False, structure=None
+):
     """
     Efficiently estimate the 1-norm of the matrix product of the args.
 
@@ -332,7 +341,8 @@ def _onenormest_product(operator_seq,
 
     """
     return scipy.sparse.linalg.onenormest(
-            ProductOperator(*operator_seq, structure=structure))
+        ProductOperator(*operator_seq, structure=structure)
+    )
 
 
 class _ExpmPadeHelper:
@@ -344,6 +354,7 @@ class _ExpmPadeHelper:
     other properties of the matrix.
 
     """
+
     def __init__(self, A, structure=None, use_exact_onenorm=False):
         """
         Initialize the object.
@@ -381,60 +392,57 @@ class _ExpmPadeHelper:
     @property
     def A2(self):
         if self._A2 is None:
-            self._A2 = _smart_matrix_product(
-                    self.A, self.A, structure=self.structure)
+            self._A2 = _smart_matrix_product(self.A, self.A, structure=self.structure)
         return self._A2
 
     @property
     def A4(self):
         if self._A4 is None:
-            self._A4 = _smart_matrix_product(
-                    self.A2, self.A2, structure=self.structure)
+            self._A4 = _smart_matrix_product(self.A2, self.A2, structure=self.structure)
         return self._A4
 
     @property
     def A6(self):
         if self._A6 is None:
-            self._A6 = _smart_matrix_product(
-                    self.A4, self.A2, structure=self.structure)
+            self._A6 = _smart_matrix_product(self.A4, self.A2, structure=self.structure)
         return self._A6
 
     @property
     def A8(self):
         if self._A8 is None:
-            self._A8 = _smart_matrix_product(
-                    self.A6, self.A2, structure=self.structure)
+            self._A8 = _smart_matrix_product(self.A6, self.A2, structure=self.structure)
         return self._A8
 
     @property
     def A10(self):
         if self._A10 is None:
             self._A10 = _smart_matrix_product(
-                    self.A4, self.A6, structure=self.structure)
+                self.A4, self.A6, structure=self.structure
+            )
         return self._A10
 
     @property
     def d4_tight(self):
         if self._d4_exact is None:
-            self._d4_exact = _onenorm(self.A4)**(1/4.)
+            self._d4_exact = _onenorm(self.A4) ** (1 / 4.0)
         return self._d4_exact
 
     @property
     def d6_tight(self):
         if self._d6_exact is None:
-            self._d6_exact = _onenorm(self.A6)**(1/6.)
+            self._d6_exact = _onenorm(self.A6) ** (1 / 6.0)
         return self._d6_exact
 
     @property
     def d8_tight(self):
         if self._d8_exact is None:
-            self._d8_exact = _onenorm(self.A8)**(1/8.)
+            self._d8_exact = _onenorm(self.A8) ** (1 / 8.0)
         return self._d8_exact
 
     @property
     def d10_tight(self):
         if self._d10_exact is None:
-            self._d10_exact = _onenorm(self.A10)**(1/10.)
+            self._d10_exact = _onenorm(self.A10) ** (1 / 10.0)
         return self._d10_exact
 
     @property
@@ -445,8 +453,9 @@ class _ExpmPadeHelper:
             return self._d4_exact
         else:
             if self._d4_approx is None:
-                self._d4_approx = _onenormest_matrix_power(self.A2, 2,
-                        structure=self.structure)**(1/4.)
+                self._d4_approx = _onenormest_matrix_power(
+                    self.A2, 2, structure=self.structure
+                ) ** (1 / 4.0)
             return self._d4_approx
 
     @property
@@ -457,8 +466,9 @@ class _ExpmPadeHelper:
             return self._d6_exact
         else:
             if self._d6_approx is None:
-                self._d6_approx = _onenormest_matrix_power(self.A2, 3,
-                        structure=self.structure)**(1/6.)
+                self._d6_approx = _onenormest_matrix_power(
+                    self.A2, 3, structure=self.structure
+                ) ** (1 / 6.0)
             return self._d6_approx
 
     @property
@@ -469,8 +479,9 @@ class _ExpmPadeHelper:
             return self._d8_exact
         else:
             if self._d8_approx is None:
-                self._d8_approx = _onenormest_matrix_power(self.A4, 2,
-                        structure=self.structure)**(1/8.)
+                self._d8_approx = _onenormest_matrix_power(
+                    self.A4, 2, structure=self.structure
+                ) ** (1 / 8.0)
             return self._d8_approx
 
     @property
@@ -481,65 +492,105 @@ class _ExpmPadeHelper:
             return self._d10_exact
         else:
             if self._d10_approx is None:
-                self._d10_approx = _onenormest_product((self.A4, self.A6),
-                        structure=self.structure)**(1/10.)
+                self._d10_approx = _onenormest_product(
+                    (self.A4, self.A6), structure=self.structure
+                ) ** (1 / 10.0)
             return self._d10_approx
 
     def pade3(self):
-        b = (120., 60., 12., 1.)
-        U = _smart_matrix_product(self.A,
-                b[3]*self.A2 + b[1]*self.ident,
-                structure=self.structure)
-        V = b[2]*self.A2 + b[0]*self.ident
+        b = (120.0, 60.0, 12.0, 1.0)
+        U = _smart_matrix_product(
+            self.A, b[3] * self.A2 + b[1] * self.ident, structure=self.structure
+        )
+        V = b[2] * self.A2 + b[0] * self.ident
         return U, V
 
     def pade5(self):
-        b = (30240., 15120., 3360., 420., 30., 1.)
-        U = _smart_matrix_product(self.A,
-                b[5]*self.A4 + b[3]*self.A2 + b[1]*self.ident,
-                structure=self.structure)
-        V = b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
+        b = (30240.0, 15120.0, 3360.0, 420.0, 30.0, 1.0)
+        U = _smart_matrix_product(
+            self.A,
+            b[5] * self.A4 + b[3] * self.A2 + b[1] * self.ident,
+            structure=self.structure,
+        )
+        V = b[4] * self.A4 + b[2] * self.A2 + b[0] * self.ident
         return U, V
 
     def pade7(self):
-        b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
-        U = _smart_matrix_product(self.A,
-                b[7]*self.A6 + b[5]*self.A4 + b[3]*self.A2 + b[1]*self.ident,
-                structure=self.structure)
-        V = b[6]*self.A6 + b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
+        b = (17297280.0, 8648640.0, 1995840.0, 277200.0, 25200.0, 1512.0, 56.0, 1.0)
+        U = _smart_matrix_product(
+            self.A,
+            b[7] * self.A6 + b[5] * self.A4 + b[3] * self.A2 + b[1] * self.ident,
+            structure=self.structure,
+        )
+        V = b[6] * self.A6 + b[4] * self.A4 + b[2] * self.A2 + b[0] * self.ident
         return U, V
 
     def pade9(self):
-        b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
-                2162160., 110880., 3960., 90., 1.)
-        U = _smart_matrix_product(self.A,
-                (b[9]*self.A8 + b[7]*self.A6 + b[5]*self.A4 +
-                    b[3]*self.A2 + b[1]*self.ident),
-                structure=self.structure)
-        V = (b[8]*self.A8 + b[6]*self.A6 + b[4]*self.A4 +
-                b[2]*self.A2 + b[0]*self.ident)
+        b = (
+            17643225600.0,
+            8821612800.0,
+            2075673600.0,
+            302702400.0,
+            30270240.0,
+            2162160.0,
+            110880.0,
+            3960.0,
+            90.0,
+            1.0,
+        )
+        U = _smart_matrix_product(
+            self.A,
+            (
+                b[9] * self.A8
+                + b[7] * self.A6
+                + b[5] * self.A4
+                + b[3] * self.A2
+                + b[1] * self.ident
+            ),
+            structure=self.structure,
+        )
+        V = (
+            b[8] * self.A8
+            + b[6] * self.A6
+            + b[4] * self.A4
+            + b[2] * self.A2
+            + b[0] * self.ident
+        )
         return U, V
 
     def pade13_scaled(self, s):
-        b = (64764752532480000., 32382376266240000., 7771770303897600.,
-                1187353796428800., 129060195264000., 10559470521600.,
-                670442572800., 33522128640., 1323241920., 40840800., 960960.,
-                16380., 182., 1.)
-        B = self.A * 2**-s
-        B2 = self.A2 * 2**(-2*s)
-        B4 = self.A4 * 2**(-4*s)
-        B6 = self.A6 * 2**(-6*s)
-        U2 = _smart_matrix_product(B6,
-                b[13]*B6 + b[11]*B4 + b[9]*B2,
-                structure=self.structure)
-        U = _smart_matrix_product(B,
-                (U2 + b[7]*B6 + b[5]*B4 +
-                    b[3]*B2 + b[1]*self.ident),
-                structure=self.structure)
-        V2 = _smart_matrix_product(B6,
-                b[12]*B6 + b[10]*B4 + b[8]*B2,
-                structure=self.structure)
-        V = V2 + b[6]*B6 + b[4]*B4 + b[2]*B2 + b[0]*self.ident
+        b = (
+            64764752532480000.0,
+            32382376266240000.0,
+            7771770303897600.0,
+            1187353796428800.0,
+            129060195264000.0,
+            10559470521600.0,
+            670442572800.0,
+            33522128640.0,
+            1323241920.0,
+            40840800.0,
+            960960.0,
+            16380.0,
+            182.0,
+            1.0,
+        )
+        B = self.A * 2 ** -s
+        B2 = self.A2 * 2 ** (-2 * s)
+        B4 = self.A4 * 2 ** (-4 * s)
+        B6 = self.A6 * 2 ** (-6 * s)
+        U2 = _smart_matrix_product(
+            B6, b[13] * B6 + b[11] * B4 + b[9] * B2, structure=self.structure
+        )
+        U = _smart_matrix_product(
+            B,
+            (U2 + b[7] * B6 + b[5] * B4 + b[3] * B2 + b[1] * self.ident),
+            structure=self.structure,
+        )
+        V2 = _smart_matrix_product(
+            B6, b[12] * B6 + b[10] * B4 + b[8] * B2, structure=self.structure
+        )
+        V = V2 + b[6] * B6 + b[4] * B4 + b[2] * B2 + b[0] * self.ident
         return U, V
 
 
@@ -588,7 +639,7 @@ def expm(A):
             [  0.        ,   7.3890561 ,   0.        ],
             [  0.        ,   0.        ,  20.08553692]])
     """
-    return _expm(A, use_exact_onenorm='auto')
+    return _expm(A, use_exact_onenorm="auto")
 
 
 def _expm(A, use_exact_onenorm):
@@ -599,7 +650,7 @@ def _expm(A, use_exact_onenorm):
     if isinstance(A, (list, tuple, np.matrix)):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected a square matrix')
+        raise ValueError("expected a square matrix")
 
     # gracefully handle size-0 input,
     # carefully handling sparse scenario
@@ -621,8 +672,9 @@ def _expm(A, use_exact_onenorm):
         return np.array(out)
 
     # Ensure input is of float type, to avoid integer overflows etc.
-    if ((isinstance(A, np.ndarray) or isspmatrix(A) or is_pydata_spmatrix(A))
-            and not np.issubdtype(A.dtype, np.inexact)):
+    if (
+        isinstance(A, np.ndarray) or isspmatrix(A) or is_pydata_spmatrix(A)
+    ) and not np.issubdtype(A.dtype, np.inexact):
         A = A.astype(float)
 
     # Detect upper triangularity.
@@ -633,8 +685,7 @@ def _expm(A, use_exact_onenorm):
         use_exact_onenorm = A.shape[0] < 200
 
     # Track functions of A to help compute the matrix exponential.
-    h = _ExpmPadeHelper(
-            A, structure=structure, use_exact_onenorm=use_exact_onenorm)
+    h = _ExpmPadeHelper(A, structure=structure, use_exact_onenorm=use_exact_onenorm)
 
     # Try Pade order 3.
     eta_1 = max(h.d4_loose, h.d6_loose)
@@ -653,7 +704,7 @@ def _expm(A, use_exact_onenorm):
     if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
         U, V = h.pade7()
         return _solve_P_Q(U, V, structure=structure)
-    if eta_3 < 2.097847961257068e+000 and _ell(h.A, 9) == 0:
+    if eta_3 < 2.097847961257068e000 and _ell(h.A, 9) == 0:
         U, V = h.pade9()
         return _solve_P_Q(U, V, structure=structure)
 
@@ -668,7 +719,7 @@ def _expm(A, use_exact_onenorm):
         s = 0
     else:
         s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
-    s = s + _ell(2**-s * h.A, 13)
+    s = s + _ell(2 ** -s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)
     if structure == UPPER_TRIANGULAR:
@@ -710,7 +761,7 @@ def _solve_P_Q(U, V, structure=None):
     elif structure == UPPER_TRIANGULAR:
         return solve_triangular(Q, P)
     else:
-        raise ValueError('unsupported matrix structure: ' + str(structure))
+        raise ValueError("unsupported matrix structure: " + str(structure))
 
 
 def _exp_sinch(a, x):
@@ -738,10 +789,10 @@ def _exp_sinch(a, x):
     # of the approximation is less than 1e-14.
     # If x is large then directly evaluate sinh(x) / x.
     if abs(x) < 0.0135:
-        x2 = x*x
-        return np.exp(a) * (1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.))))
+        x2 = x * x
+        return np.exp(a) * (1 + (x2 / 6.0) * (1 + (x2 / 20.0) * (1 + (x2 / 42.0))))
     else:
-        return (np.exp(a + x) - np.exp(a - x)) / (2*x)
+        return (np.exp(a + x) - np.exp(a - x)) / (2 * x)
 
 
 def _eq_10_42(lam_1, lam_2, t_12):
@@ -793,7 +844,7 @@ def _fragment_2_1(X, T, s):
     for k in range(n):
         X[k, k] = exp_diag[k]
 
-    for i in range(s-1, -1, -1):
+    for i in range(s - 1, -1, -1):
         X = X.dot(X)
 
         # Replace diag(X) by exp(2^-i diag(T)).
@@ -806,12 +857,12 @@ def _fragment_2_1(X, T, s):
         # for superdiagonal of exp(2^-i T) from Eq (10.42) of
         # the author's 2008 textbook
         # Functions of Matrices: Theory and Computation.
-        for k in range(n-1):
+        for k in range(n - 1):
             lam_1 = scale * diag_T[k]
-            lam_2 = scale * diag_T[k+1]
-            t_12 = scale * T[k, k+1]
+            lam_2 = scale * diag_T[k + 1]
+            t_12 = scale * T[k, k + 1]
             value = _eq_10_42(lam_1, lam_2, t_12)
-            X[k, k+1] = value
+            X[k, k + 1] = value
 
     # Return the updated X matrix.
     return X
@@ -835,25 +886,25 @@ def _ell(A, m):
 
     """
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
+        raise ValueError("expected A to be like a square matrix")
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2m_m = scipy.special.comb(2*m, m, exact=True)
-    abs_c_recip = float(choose_2m_m) * float_factorial(2*m + 1)
+    choose_2m_m = scipy.special.comb(2 * m, m, exact=True)
+    abs_c_recip = float(choose_2m_m) * float_factorial(2 * m + 1)
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.
-    u = 2**-53
+    u = 2 ** -53
 
     # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2*m + 1)
+    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2 * m + 1)
 
     # Treat zero norm as a special case.
     if not A_abs_onenorm:
         return 0
 
     alpha = A_abs_onenorm / (_onenorm(A) * abs_c_recip)
-    log2_alpha_div_u = np.log2(alpha/u)
+    log2_alpha_div_u = np.log2(alpha / u)
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)

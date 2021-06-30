@@ -414,16 +414,15 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
-from ._constraints import (NonlinearConstraint,
-                           LinearConstraint,
-                           Bounds)
+from ._constraints import NonlinearConstraint, LinearConstraint, Bounds
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

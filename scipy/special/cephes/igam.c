@@ -76,7 +76,7 @@
  *    IEEE     0.5,100   0,100      200000       1.9e-14     1.7e-15
  *    IEEE     0.01,0.5  0,100      200000       1.4e-13     1.6e-15
  */
-
+
 /*
  * Cephes Math Library Release 2.0:  April, 1987
  * Copyright 1985, 1987 by Stephen L. Moshier

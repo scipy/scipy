@@ -36,21 +36,37 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, _prepare_scalar_function)
+from .optimize import (
+    MemoizeJac,
+    OptimizeResult,
+    _check_unknown_options,
+    _prepare_scalar_function,
+)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
+__all__ = ["fmin_l_bfgs_b", "LbfgsInvHessProduct"]
 
 
-def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
-                  approx_grad=0,
-                  bounds=None, m=10, factr=1e7, pgtol=1e-5,
-                  epsilon=1e-8,
-                  iprint=-1, maxfun=15000, maxiter=15000, disp=None,
-                  callback=None, maxls=20):
+def fmin_l_bfgs_b(
+    func,
+    x0,
+    fprime=None,
+    args=(),
+    approx_grad=0,
+    bounds=None,
+    m=10,
+    factr=1e7,
+    pgtol=1e-5,
+    epsilon=1e-8,
+    iprint=-1,
+    maxfun=15000,
+    maxiter=15000,
+    disp=None,
+    callback=None,
+    maxls=20,
+):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -183,35 +199,52 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     # build options
     if disp is None:
         disp = iprint
-    opts = {'disp': disp,
-            'iprint': iprint,
-            'maxcor': m,
-            'ftol': factr * np.finfo(float).eps,
-            'gtol': pgtol,
-            'eps': epsilon,
-            'maxfun': maxfun,
-            'maxiter': maxiter,
-            'callback': callback,
-            'maxls': maxls}
+    opts = {
+        "disp": disp,
+        "iprint": iprint,
+        "maxcor": m,
+        "ftol": factr * np.finfo(float).eps,
+        "gtol": pgtol,
+        "eps": epsilon,
+        "maxfun": maxfun,
+        "maxiter": maxiter,
+        "callback": callback,
+        "maxls": maxls,
+    }
 
-    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                           **opts)
-    d = {'grad': res['jac'],
-         'task': res['message'],
-         'funcalls': res['nfev'],
-         'nit': res['nit'],
-         'warnflag': res['status']}
-    f = res['fun']
-    x = res['x']
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds, **opts)
+    d = {
+        "grad": res["jac"],
+        "task": res["message"],
+        "funcalls": res["nfev"],
+        "nit": res["nit"],
+        "warnflag": res["status"],
+    }
+    f = res["fun"]
+    x = res["x"]
 
     return x, f, d
 
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
-                     disp=None, maxcor=10, ftol=2.2204460492503131e-09,
-                     gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
-                     iprint=-1, callback=None, maxls=20,
-                     finite_diff_rel_step=None, **unknown_options):
+def _minimize_lbfgsb(
+    fun,
+    x0,
+    args=(),
+    jac=None,
+    bounds=None,
+    disp=None,
+    maxcor=10,
+    ftol=2.2204460492503131e-09,
+    gtol=1e-5,
+    eps=1e-8,
+    maxfun=15000,
+    maxiter=15000,
+    iprint=-1,
+    callback=None,
+    maxls=20,
+    finite_diff_rel_step=None,
+    **unknown_options,
+):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -276,22 +309,26 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     factr = ftol / np.finfo(float).eps
 
     x0 = asarray(x0).ravel()
-    n, = x0.shape
+    (n,) = x0.shape
 
     if bounds is None:
         bounds = [(None, None)] * n
     if len(bounds) != n:
-        raise ValueError('length of x0 != length of bounds')
+        raise ValueError("length of x0 != length of bounds")
 
     # unbounded variables must use None, not +-inf, for optimizer to work properly
-    bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
+    bounds = [
+        (None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds
+    ]
     # LBFGSB is sent 'old-style' bounds, 'new-style' bounds are required by
     # approx_derivative and ScalarFunction
     new_bounds = old_bound_to_new(bounds)
 
     # check bounds
     if (new_bounds[0] > new_bounds[1]).any():
-        raise ValueError("LBFGSB - one of the lower bounds is greater than an upper bound.")
+        raise ValueError(
+            "LBFGSB - one of the lower bounds is greater than an upper bound."
+        )
 
     # initial vector must lie within the bounds. Otherwise ScalarFunction and
     # approx_derivative will cause problems
@@ -303,9 +340,15 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
-    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
-                                  bounds=new_bounds,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+    sf = _prepare_scalar_function(
+        fun,
+        x0,
+        jac=jac,
+        args=args,
+        epsilon=eps,
+        bounds=new_bounds,
+        finite_diff_rel_step=finite_diff_rel_step,
+    )
 
     func_and_grad = sf.fun_and_grad
 
@@ -314,10 +357,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     nbd = zeros(n, fortran_int)
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
-    bounds_map = {(None, None): 0,
-                  (1, None): 1,
-                  (1, 1): 2,
-                  (None, 1): 3}
+    bounds_map = {(None, None): 0, (1, None): 1, (1, 1): 2, (None, 1): 3}
     for i in range(0, n):
         l, u = bounds[i]
         if l is not None:
@@ -329,51 +369,67 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         nbd[i] = bounds_map[l, u]
 
     if not maxls > 0:
-        raise ValueError('maxls must be positive.')
+        raise ValueError("maxls must be positive.")
 
     x = array(x0, float64)
     f = array(0.0, float64)
     g = zeros((n,), float64)
-    wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
-    iwa = zeros(3*n, fortran_int)
-    task = zeros(1, 'S60')
-    csave = zeros(1, 'S60')
+    wa = zeros(2 * m * n + 5 * n + 11 * m * m + 8 * m, float64)
+    iwa = zeros(3 * n, fortran_int)
+    task = zeros(1, "S60")
+    csave = zeros(1, "S60")
     lsave = zeros(4, fortran_int)
     isave = zeros(44, fortran_int)
     dsave = zeros(29, float64)
 
-    task[:] = 'START'
+    task[:] = "START"
 
     n_iterations = 0
 
     while 1:
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
-        _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
-                       pgtol, wa, iwa, task, iprint, csave, lsave,
-                       isave, dsave, maxls)
+        _lbfgsb.setulb(
+            m,
+            x,
+            low_bnd,
+            upper_bnd,
+            nbd,
+            f,
+            g,
+            factr,
+            pgtol,
+            wa,
+            iwa,
+            task,
+            iprint,
+            csave,
+            lsave,
+            isave,
+            dsave,
+            maxls,
+        )
         task_str = task.tobytes()
-        if task_str.startswith(b'FG'):
+        if task_str.startswith(b"FG"):
             # The minimization routine wants f and g at the current x.
             # Note that interruptions due to maxfun are postponed
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
             f, g = func_and_grad(x)
-        elif task_str.startswith(b'NEW_X'):
+        elif task_str.startswith(b"NEW_X"):
             # new iteration
             n_iterations += 1
             if callback is not None:
                 callback(np.copy(x))
 
             if n_iterations >= maxiter:
-                task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
+                task[:] = "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT"
             elif sf.nfev > maxfun:
-                task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
-                           'EXCEEDS LIMIT')
+                task[:] = "STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT"
         else:
             break
 
-    task_str = task.tobytes().strip(b'\x00').strip()
-    if task_str.startswith(b'CONV'):
+    task_str = task.tobytes().strip(b"\x00").strip()
+    if task_str.startswith(b"CONV"):
         warnflag = 0
     elif sf.nfev > maxfun or n_iterations >= maxiter:
         warnflag = 1
@@ -382,8 +438,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     # These two portions of the workspace are described in the mainlb
     # subroutine in lbfgsb.f. See line 363.
-    s = wa[0: m*n].reshape(m, n)
-    y = wa[m*n: 2*m*n].reshape(m, n)
+    s = wa[0 : m * n].reshape(m, n)
+    y = wa[m * n : 2 * m * n].reshape(m, n)
 
     # See lbfgsb.f line 160 for this portion of the workspace.
     # isave(31) = the total number of BFGS updates prior the current iteration;
@@ -393,10 +449,18 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
     task_str = task_str.decode()
-    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
-                          njev=sf.ngev,
-                          nit=n_iterations, status=warnflag, message=task_str,
-                          x=x, success=(warnflag == 0), hess_inv=hess_inv)
+    return OptimizeResult(
+        fun=f,
+        jac=g,
+        nfev=sf.nfev,
+        njev=sf.ngev,
+        nit=n_iterations,
+        status=warnflag,
+        message=task_str,
+        x=x,
+        success=(warnflag == 0),
+        hess_inv=hess_inv,
+    )
 
 
 class LbfgsInvHessProduct(LinearOperator):
@@ -428,7 +492,7 @@ class LbfgsInvHessProduct(LinearOperator):
     def __init__(self, sk, yk):
         """Construct the operator."""
         if sk.shape != yk.shape or sk.ndim != 2:
-            raise ValueError('sk and yk must have matching shape, (n_corrs, n)')
+            raise ValueError("sk and yk must have matching shape, (n_corrs, n)")
         n_corrs, n = sk.shape
 
         super().__init__(dtype=np.float64, shape=(n, n))
@@ -436,7 +500,7 @@ class LbfgsInvHessProduct(LinearOperator):
         self.sk = sk
         self.yk = yk
         self.n_corrs = n_corrs
-        self.rho = 1 / np.einsum('ij,ij->i', sk, yk)
+        self.rho = 1 / np.einsum("ij,ij->i", sk, yk)
 
     def _matvec(self, x):
         """Efficient matrix-vector multiply with the BFGS matrices.
@@ -461,9 +525,9 @@ class LbfgsInvHessProduct(LinearOperator):
 
         alpha = np.empty(n_corrs)
 
-        for i in range(n_corrs-1, -1, -1):
+        for i in range(n_corrs - 1, -1, -1):
             alpha[i] = rho[i] * np.dot(s[i], q)
-            q = q - alpha[i]*y[i]
+            q = q - alpha[i] * y[i]
 
         r = q
         for i in range(n_corrs):
@@ -490,6 +554,7 @@ class LbfgsInvHessProduct(LinearOperator):
             A1 = I - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
             A2 = I - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
 
-            Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
-                                                        s[i][np.newaxis, :])
+            Hk = np.dot(A1, np.dot(Hk, A2)) + (
+                rho[i] * s[i][:, np.newaxis] * s[i][np.newaxis, :]
+            )
         return Hk

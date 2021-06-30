@@ -114,4 +114,3 @@ c  the b-splinecoefficients of g(x) = s(x,u).
  240  continue
  300  return
       end
-

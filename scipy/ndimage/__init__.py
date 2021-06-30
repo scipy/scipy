@@ -154,10 +154,11 @@ from .interpolation import *
 from .measurements import *
 from .morphology import *
 
-__version__ = '2.0'
+__version__ = "2.0"
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

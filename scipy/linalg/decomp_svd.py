@@ -7,11 +7,17 @@ from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
+__all__ = ["svd", "svdvals", "diagsvd", "orth", "subspace_angles", "null_space"]
 
 
-def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
-        check_finite=True, lapack_driver='gesdd'):
+def svd(
+    a,
+    full_matrices=True,
+    compute_uv=True,
+    overwrite_a=False,
+    check_finite=True,
+    lapack_driver="gesdd",
+):
     """
     Singular Value Decomposition.
 
@@ -107,31 +113,41 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError("expected matrix")
     m, n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if not isinstance(lapack_driver, str):
-        raise TypeError('lapack_driver must be a string')
-    if lapack_driver not in ('gesdd', 'gesvd'):
-        raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
-                         % (lapack_driver,))
-    funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
+        raise TypeError("lapack_driver must be a string")
+    if lapack_driver not in ("gesdd", "gesvd"):
+        raise ValueError(
+            'lapack_driver must be "gesdd" or "gesvd", not "%s"' % (lapack_driver,)
+        )
+    funcs = (lapack_driver, lapack_driver + "_lwork")
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64="preferred")
 
     # compute optimal lwork
-    lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
-                           compute_uv=compute_uv, full_matrices=full_matrices)
+    lwork = _compute_lwork(
+        gesXd_lwork,
+        a1.shape[0],
+        a1.shape[1],
+        compute_uv=compute_uv,
+        full_matrices=full_matrices,
+    )
 
     # perform decomposition
-    u, s, v, info = gesXd(a1, compute_uv=compute_uv, lwork=lwork,
-                          full_matrices=full_matrices, overwrite_a=overwrite_a)
+    u, s, v, info = gesXd(
+        a1,
+        compute_uv=compute_uv,
+        lwork=lwork,
+        full_matrices=full_matrices,
+        overwrite_a=overwrite_a,
+    )
 
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal gesdd'
-                         % -info)
+        raise ValueError("illegal value in %dth argument of internal gesdd" % -info)
     if compute_uv:
         return u, s, v
     else:
@@ -222,10 +238,9 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     """
     a = _asarray_validated(a, check_finite=check_finite)
     if a.size:
-        return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                   check_finite=False)
+        return svd(a, compute_uv=0, overwrite_a=overwrite_a, check_finite=False)
     elif len(a.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError("expected matrix")
     else:
         return numpy.empty(0)
 
@@ -272,14 +287,15 @@ def diagsvd(s, M, N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return r_['-1', part, zeros((M, N-M), typ)]
+        return r_["-1", part, zeros((M, N - M), typ)]
     elif MorN == N:
-        return r_[part, zeros((M-N, N), typ)]
+        return r_[part, zeros((M - N, N), typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
 
 # Orthonormal decomposition
+
 
 def orth(A, rcond=None):
     """
@@ -387,7 +403,7 @@ def null_space(A, rcond=None):
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
     tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
-    Q = vh[num:,:].T.conj()
+    Q = vh[num:, :].T.conj()
     return Q
 
 
@@ -460,16 +476,18 @@ def subspace_angles(A, B):
     # 1. Compute orthonormal bases of column-spaces
     A = _asarray_validated(A, check_finite=True)
     if len(A.shape) != 2:
-        raise ValueError('expected 2D array, got shape %s' % (A.shape,))
+        raise ValueError("expected 2D array, got shape %s" % (A.shape,))
     QA = orth(A)
     del A
 
     B = _asarray_validated(B, check_finite=True)
     if len(B.shape) != 2:
-        raise ValueError('expected 2D array, got shape %s' % (B.shape,))
+        raise ValueError("expected 2D array, got shape %s" % (B.shape,))
     if len(B) != len(QA):
-        raise ValueError('A and B must have the same number of rows, got '
-                         '%s and %s' % (QA.shape[0], B.shape[0]))
+        raise ValueError(
+            "A and B must have the same number of rows, got %s and %s"
+            % (QA.shape[0], B.shape[0])
+        )
     QB = orth(B)
     del B
 
@@ -487,12 +505,12 @@ def subspace_angles(A, B):
     # 4. Compute SVD for sine
     mask = sigma ** 2 >= 0.5
     if mask.any():
-        mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1., 1.))
+        mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1.0, 1.0))
     else:
-        mu_arcsin = 0.
+        mu_arcsin = 0.0
 
     # 5. Compute the principal angles
     # with reverse ordering of sigma because smallest sigma belongs to largest
     # angle theta
-    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
+    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1.0, 1.0)))
     return theta

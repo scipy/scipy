@@ -15,7 +15,7 @@ class Zacharov(Benchmark):
 
         f_{\text{Zacharov}}(x) = \sum_{i=1}^{n} x_i^2 + \left ( \frac{1}{2}
                                  \sum_{i=1}^{n} i x_i \right )^2
-                                 + \left ( \frac{1}{2} \sum_{i=1}^{n} i x_i 
+                                 + \left ( \frac{1}{2} \sum_{i=1}^{n} i x_i
                                  \right )^4
 
     Here, :math:`n` represents the number of dimensions and
@@ -182,11 +182,13 @@ class Zimmerman(Benchmark):
         Zh3 = lambda x: x[0] * x[1] - 14.0
         Zp = lambda x: 100.0 * (1.0 + x)
 
-        return max(Zh1(x),
-                   Zp(Zh2(x)) * sign(Zh2(x)),
-                   Zp(Zh3(x)) * sign(Zh3(x)),
-                   Zp(-x[0]) * sign(x[0]),
-                   Zp(-x[1]) * sign(x[1]))
+        return max(
+            Zh1(x),
+            Zp(Zh2(x)) * sign(Zh2(x)),
+            Zp(Zh3(x)) * sign(Zh3(x)),
+            Zp(-x[0]) * sign(x[0]),
+            Zp(-x[1]) * sign(x[1]),
+        )
 
 
 class Zirilli(Benchmark):

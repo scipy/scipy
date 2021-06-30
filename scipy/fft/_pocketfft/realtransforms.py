@@ -1,12 +1,28 @@
 import numpy as np
 from . import pypocketfft as pfft
-from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
-                     _fix_shape, _fix_shape_1d, _normalization, _workers)
+from .helper import (
+    _asfarray,
+    _init_nd_shape_and_axes,
+    _datacopied,
+    _fix_shape,
+    _fix_shape_1d,
+    _normalization,
+    _workers,
+)
 import functools
 
 
-def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
-         overwrite_x=False, workers=None):
+def _r2r(
+    forward,
+    transform,
+    x,
+    type=2,
+    n=None,
+    axis=-1,
+    norm=None,
+    overwrite_x=False,
+    workers=None,
+):
     """Forward or backward 1-D DCT/DST
 
     Parameters
@@ -31,10 +47,11 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
         tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
-                         .format(tmp.shape[axis]))
+        raise ValueError(
+            "invalid number of data points ({0}) specified".format(tmp.shape[axis])
+        )
 
-    out = (tmp if overwrite_x else None)
+    out = tmp if overwrite_x else None
 
     # For complex input, transform real and imaginary components separably
     if np.iscomplexobj(x):
@@ -47,18 +64,27 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
 
 
 dct = functools.partial(_r2r, True, pfft.dct)
-dct.__name__ = 'dct'
+dct.__name__ = "dct"
 idct = functools.partial(_r2r, False, pfft.dct)
-idct.__name__ = 'idct'
+idct.__name__ = "idct"
 
 dst = functools.partial(_r2r, True, pfft.dst)
-dst.__name__ = 'dst'
+dst.__name__ = "dst"
 idst = functools.partial(_r2r, False, pfft.dst)
-idst.__name__ = 'idst'
+idst.__name__ = "idst"
 
 
-def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
-          overwrite_x=False, workers=None):
+def _r2rn(
+    forward,
+    transform,
+    x,
+    type=2,
+    s=None,
+    axes=None,
+    norm=None,
+    overwrite_x=False,
+    workers=None,
+):
     """Forward or backward nd DCT/DST
 
     Parameters
@@ -87,7 +113,7 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
 
     norm = _normalization(norm, forward)
     workers = _workers(workers)
-    out = (tmp if overwrite_x else None)
+    out = tmp if overwrite_x else None
 
     # For complex input, transform real and imaginary components separably
     if np.iscomplexobj(x):
@@ -100,11 +126,11 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
 
 
 dctn = functools.partial(_r2rn, True, pfft.dct)
-dctn.__name__ = 'dctn'
+dctn.__name__ = "dctn"
 idctn = functools.partial(_r2rn, False, pfft.dct)
-idctn.__name__ = 'idctn'
+idctn.__name__ = "idctn"
 
 dstn = functools.partial(_r2rn, True, pfft.dst)
-dstn.__name__ = 'dstn'
+dstn.__name__ = "dstn"
 idstn = functools.partial(_r2rn, False, pfft.dst)
-idstn.__name__ = 'idstn'
+idstn.__name__ = "idstn"

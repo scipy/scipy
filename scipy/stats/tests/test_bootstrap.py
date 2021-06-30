@@ -21,13 +21,13 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1]), np.mean)
 
-    message = ("When `paired is True`, all samples must have the same length ")
+    message = "When `paired is True`, all samples must have the same length "
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
 
     message = "`vectorized` must be `True` or `False`."
     with pytest.raises(ValueError, match=message):
-        bootstrap(1, np.mean, vectorized='ekki')
+        bootstrap(1, np.mean, vectorized="ekki")
 
     message = "`axis` must be an integer."
     with pytest.raises(ValueError, match=message):
@@ -35,7 +35,7 @@ def test_bootstrap_iv():
 
     message = "could not convert string to float"
     with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, confidence_level='ni')
+        bootstrap(([1, 2, 3],), np.mean, confidence_level="ni")
 
     message = "`n_resamples` must be a positive integer."
     with pytest.raises(ValueError, match=message):
@@ -55,7 +55,7 @@ def test_bootstrap_iv():
 
     message = "`method` must be in"
     with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, method='ekki')
+        bootstrap(([1, 2, 3],), np.mean, method="ekki")
 
     message = "`method = 'BCa' is only available for one-sample statistics"
 
@@ -65,31 +65,45 @@ def test_bootstrap_iv():
         return mean1 - mean2
 
     with pytest.raises(ValueError, match=message):
-        bootstrap(([.1, .2, .3], [.1, .2, .3]), statistic, method='BCa')
+        bootstrap(([0.1, 0.2, 0.3], [0.1, 0.2, 0.3]), statistic, method="BCa")
 
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, random_state='herring')
+        bootstrap(([1, 2, 3],), np.mean, random_state="herring")
 
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_bootstrap_batch(method, axis):
     # for one-sample statistics, batch size shouldn't affect the result
     np.random.seed(0)
 
     x = np.random.rand(10, 11, 12)
-    res1 = bootstrap((x,), np.mean, batch=None, method=method,
-                     random_state=0, axis=axis, n_resamples=100)
-    res2 = bootstrap((x,), np.mean, batch=10, method=method,
-                     random_state=0, axis=axis, n_resamples=100)
+    res1 = bootstrap(
+        (x,),
+        np.mean,
+        batch=None,
+        method=method,
+        random_state=0,
+        axis=axis,
+        n_resamples=100,
+    )
+    res2 = bootstrap(
+        (x,),
+        np.mean,
+        batch=10,
+        method=method,
+        random_state=0,
+        axis=axis,
+        n_resamples=100,
+    )
 
     assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
     assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
     assert_equal(res2.standard_error, res1.standard_error)
 
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_bootstrap_paired(method):
     # test that `paired` works as expected
     np.random.seed(0)
@@ -98,7 +112,7 @@ def test_bootstrap_paired(method):
     y = np.random.rand(n)
 
     def my_statistic(x, y, axis=-1):
-        return ((x-y)**2).mean(axis=axis)
+        return ((x - y) ** 2).mean(axis=axis)
 
     def my_paired_statistic(i, axis=-1):
         a = x[i]
@@ -115,7 +129,7 @@ def test_bootstrap_paired(method):
     assert_allclose(res1.standard_error, res2.standard_error)
 
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 @pytest.mark.parametrize("axis", [0, 1, 2])
 @pytest.mark.parametrize("paired", [True, False])
 def test_bootstrap_vectorized(method, axis, paired):
@@ -123,7 +137,7 @@ def test_bootstrap_vectorized(method, axis, paired):
     # CI and standard_error of each axis-slice is the same as those of the
     # original 1d sample
 
-    if not paired and method == 'BCa':
+    if not paired and method == "BCa":
         # should re-assess when BCa is extended
         pytest.xfail(reason="BCa currently for 1-sample statistics only")
     np.random.seed(0)
@@ -137,21 +151,33 @@ def test_bootstrap_vectorized(method, axis, paired):
     x = np.random.rand(n_samples)
     y = np.random.rand(n_samples)
     z = np.random.rand(n_samples)
-    res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
-                     random_state=0, axis=0, n_resamples=100)
+    res1 = bootstrap(
+        (x, y, z),
+        my_statistic,
+        paired=paired,
+        method=method,
+        random_state=0,
+        axis=0,
+        n_resamples=100,
+    )
 
     reshape = [1, 1, 1]
     reshape[axis] = n_samples
     x = np.broadcast_to(x.reshape(reshape), shape)
     y = np.broadcast_to(y.reshape(reshape), shape)
     z = np.broadcast_to(z.reshape(reshape), shape)
-    res2 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
-                     random_state=0, axis=axis, n_resamples=100)
+    res2 = bootstrap(
+        (x, y, z),
+        my_statistic,
+        paired=paired,
+        method=method,
+        random_state=0,
+        axis=axis,
+        n_resamples=100,
+    )
 
-    assert_allclose(res2.confidence_interval.low,
-                    res1.confidence_interval.low)
-    assert_allclose(res2.confidence_interval.high,
-                    res1.confidence_interval.high)
+    assert_allclose(res2.confidence_interval.low, res1.confidence_interval.low)
+    assert_allclose(res2.confidence_interval.high, res1.confidence_interval.high)
     assert_allclose(res2.standard_error, res1.standard_error)
 
     result_shape = list(shape)
@@ -162,25 +188,28 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_equal(res2.standard_error.shape, result_shape)
 
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
     data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
     alpha = 0.95
-    dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
+    dist = stats.t(df=len(data) - 1, loc=np.mean(data), scale=stats.sem(data))
     expected_interval = dist.interval(alpha=alpha)
     expected_se = dist.std()
 
-    res = bootstrap((data,), np.mean, n_resamples=5000,
-                    confidence_level=alpha, method=method,
-                    random_state=0)
+    res = bootstrap(
+        (data,),
+        np.mean,
+        n_resamples=5000,
+        confidence_level=alpha,
+        method=method,
+        random_state=0,
+    )
     assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
     assert_allclose(res.standard_error, expected_se, atol=3e-4)
 
 
-tests_R = {"basic": (23.77, 79.12),
-           "percentile": (28.86, 84.21),
-           "BCa": (32.31, 91.43)}
+tests_R = {"basic": (23.77, 79.12), "percentile": (28.86, 84.21), "BCa": (32.31, 91.43)}
 
 
 @pytest.mark.parametrize("method, expected", tests_R.items())
@@ -200,20 +229,17 @@ def test_bootstrap_against_R(method, expected):
     # bootresult = boot(x, stat, n)
     # result <- boot.ci(bootresult)
     # print(result)
-    x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
-                  23, 34, 50, 81, 89, 121, 134, 213])
-    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method,
-                    random_state=0)
+    x = np.array(
+        [10, 12, 12.5, 12.5, 13.9, 15, 21, 22, 23, 34, 50, 81, 89, 121, 134, 213]
+    )
+    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method, random_state=0)
     assert_allclose(res.confidence_interval, expected, rtol=0.005)
 
 
-tests_against_itself_1samp = {"basic": 1780,
-                              "percentile": 1784,
-                              "BCa": 1784}
+tests_against_itself_1samp = {"basic": 1780, "percentile": 1784, "BCa": 1784}
 
 
-@pytest.mark.parametrize("method, expected",
-                         tests_against_itself_1samp.items())
+@pytest.mark.parametrize("method, expected", tests_against_itself_1samp.items())
 def test_bootstrap_against_itself_1samp(method, expected):
     # The expected values in this test were generated using bootstrap
     # to check for unintended changes in behavior. The test also makes sure
@@ -232,13 +258,15 @@ def test_bootstrap_against_itself_1samp(method, expected):
     # Do the same thing 2000 times. (The code is fully vectorized.)
     n_replications = 2000
     data = dist.rvs(size=(n_replications, n))
-    res = bootstrap((data,),
-                    statistic=np.mean,
-                    confidence_level=confidence_level,
-                    n_resamples=n_resamples,
-                    batch=50,
-                    method=method,
-                    axis=-1)
+    res = bootstrap(
+        (data,),
+        statistic=np.mean,
+        confidence_level=confidence_level,
+        n_resamples=n_resamples,
+        batch=50,
+        method=method,
+        axis=-1,
+    )
     ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
@@ -246,17 +274,14 @@ def test_bootstrap_against_itself_1samp(method, expected):
     assert ci_contains_true == expected
 
     # ci_contains_true is not inconsistent with confidence_level
-    pvalue = stats.binomtest(ci_contains_true, n_replications,
-                             confidence_level).pvalue
+    pvalue = stats.binomtest(ci_contains_true, n_replications, confidence_level).pvalue
     assert pvalue > 0.1
 
 
-tests_against_itself_2samp = {"basic": 892,
-                              "percentile": 890}
+tests_against_itself_2samp = {"basic": 892, "percentile": 890}
 
 
-@pytest.mark.parametrize("method, expected",
-                         tests_against_itself_2samp.items())
+@pytest.mark.parametrize("method, expected", tests_against_itself_2samp.items())
 def test_bootstrap_against_itself_2samp(method, expected):
     # The expected values in this test were generated using bootstrap
     # to check for unintended changes in behavior. The test also makes sure
@@ -284,13 +309,15 @@ def test_bootstrap_against_itself_2samp(method, expected):
     n_replications = 1000
     data1 = dist1.rvs(size=(n_replications, n1))
     data2 = dist2.rvs(size=(n_replications, n2))
-    res = bootstrap((data1, data2),
-                    statistic=my_stat,
-                    confidence_level=confidence_level,
-                    n_resamples=n_resamples,
-                    batch=50,
-                    method=method,
-                    axis=-1)
+    res = bootstrap(
+        (data1, data2),
+        statistic=my_stat,
+        confidence_level=confidence_level,
+        n_resamples=n_resamples,
+        batch=50,
+        method=method,
+        axis=-1,
+    )
     ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
@@ -298,8 +325,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
     assert ci_contains_true == expected
 
     # ci_contains_true is not inconsistent with confidence_level
-    pvalue = stats.binomtest(ci_contains_true, n_replications,
-                             confidence_level).pvalue
+    pvalue = stats.binomtest(ci_contains_true, n_replications, confidence_level).pvalue
     assert pvalue > 0.1
 
 
@@ -320,10 +346,24 @@ def test_bootstrap_vectorized_3samp(method, axis):
     x = np.random.rand(4, 5)
     y = np.random.rand(4, 5)
     z = np.random.rand(4, 5)
-    res1 = bootstrap((x, y, z), statistic, vectorized=True,
-                     axis=axis, n_resamples=100, method=method, random_state=0)
-    res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
-                     axis=axis, n_resamples=100, method=method, random_state=0)
+    res1 = bootstrap(
+        (x, y, z),
+        statistic,
+        vectorized=True,
+        axis=axis,
+        n_resamples=100,
+        method=method,
+        random_state=0,
+    )
+    res2 = bootstrap(
+        (x, y, z),
+        statistic_1d,
+        vectorized=False,
+        axis=axis,
+        n_resamples=100,
+        method=method,
+        random_state=0,
+    )
     assert_allclose(res1.confidence_interval, res2.confidence_interval)
     assert_allclose(res1.standard_error, res2.standard_error)
 
@@ -343,12 +383,26 @@ def test_bootstrap_vectorized_1samp(method, axis):
 
     np.random.seed(0)
     x = np.random.rand(4, 5)
-    res1 = bootstrap((x,), statistic, vectorized=True, axis=axis,
-                     n_resamples=100, batch=None, method=method,
-                     random_state=0)
-    res2 = bootstrap((x,), statistic_1d, vectorized=False, axis=axis,
-                     n_resamples=100, batch=10, method=method,
-                     random_state=0)
+    res1 = bootstrap(
+        (x,),
+        statistic,
+        vectorized=True,
+        axis=axis,
+        n_resamples=100,
+        batch=None,
+        method=method,
+        random_state=0,
+    )
+    res2 = bootstrap(
+        (x,),
+        statistic_1d,
+        vectorized=False,
+        axis=axis,
+        n_resamples=100,
+        batch=10,
+        method=method,
+        random_state=0,
+    )
     assert_allclose(res1.confidence_interval, res2.confidence_interval)
     assert_allclose(res1.standard_error, res2.standard_error)
 
@@ -367,8 +421,7 @@ def test_jackknife_resample():
 
         assert np.array_equal(slc, expected)
 
-    y2 = np.concatenate(list(_bootstrap._jackknife_resample(x, batch=2)),
-                        axis=-2)
+    y2 = np.concatenate(list(_bootstrap._jackknife_resample(x, batch=2)), axis=-2)
     assert np.array_equal(y2, y)
 
 
@@ -409,7 +462,7 @@ def test_percentile_of_score(score, axis):
     def vectorized_pos(a, score, axis):
         return np.apply_along_axis(stats.percentileofscore, axis, a, score)
 
-    p2 = vectorized_pos(x, score, axis=-1)/100
+    p2 = vectorized_pos(x, score, axis=-1) / 100
 
     assert_allclose(p, p2, 1e-15)
 

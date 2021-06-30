@@ -235,53 +235,53 @@ import numpy
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-add_newdocs = __import__('add_newdocs')
+add_newdocs = __import__("add_newdocs")
 
 CY_TYPES = {
-    'f': 'float',
-    'd': 'double',
-    'g': 'long double',
-    'F': 'float complex',
-    'D': 'double complex',
-    'G': 'long double complex',
-    'i': 'int',
-    'l': 'long',
-    'v': 'void',
+    "f": "float",
+    "d": "double",
+    "g": "long double",
+    "F": "float complex",
+    "D": "double complex",
+    "G": "long double complex",
+    "i": "int",
+    "l": "long",
+    "v": "void",
 }
 
 C_TYPES = {
-    'f': 'npy_float',
-    'd': 'npy_double',
-    'g': 'npy_longdouble',
-    'F': 'npy_cfloat',
-    'D': 'npy_cdouble',
-    'G': 'npy_clongdouble',
-    'i': 'npy_int',
-    'l': 'npy_long',
-    'v': 'void',
+    "f": "npy_float",
+    "d": "npy_double",
+    "g": "npy_longdouble",
+    "F": "npy_cfloat",
+    "D": "npy_cdouble",
+    "G": "npy_clongdouble",
+    "i": "npy_int",
+    "l": "npy_long",
+    "v": "void",
 }
 
 TYPE_NAMES = {
-    'f': 'NPY_FLOAT',
-    'd': 'NPY_DOUBLE',
-    'g': 'NPY_LONGDOUBLE',
-    'F': 'NPY_CFLOAT',
-    'D': 'NPY_CDOUBLE',
-    'G': 'NPY_CLONGDOUBLE',
-    'i': 'NPY_INT',
-    'l': 'NPY_LONG',
+    "f": "NPY_FLOAT",
+    "d": "NPY_DOUBLE",
+    "g": "NPY_LONGDOUBLE",
+    "F": "NPY_CFLOAT",
+    "D": "NPY_CDOUBLE",
+    "G": "NPY_CLONGDOUBLE",
+    "i": "NPY_INT",
+    "l": "NPY_LONG",
 }
 
 CYTHON_SPECIAL_BENCHFUNCS = {
-    'airy': ['d*dddd', 'D*DDDD'],
-    'beta': ['dd'],
-    'erf': ['d', 'D'],
-    'exprel': ['d'],
-    'gamma': ['d', 'D'],
-    'jv': ['dd', 'dD'],
-    'loggamma': ['D'],
-    'logit': ['d'],
-    'psi': ['d', 'D'],
+    "airy": ["d*dddd", "D*DDDD"],
+    "beta": ["dd"],
+    "erf": ["d", "D"],
+    "exprel": ["d"],
+    "gamma": ["d", "D"],
+    "jv": ["dd", "dD"],
+    "loggamma": ["D"],
+    "logit": ["d"],
+    "psi": ["d", "D"],
 }
 
 
@@ -290,35 +290,51 @@ def underscore(arg):
 
 
 def cast_order(c):
-    return ['ilfdgFDG'.index(x) for x in c]
+    return ["ilfdgFDG".index(x) for x in c]
 
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
-DANGEROUS_DOWNCAST = set([
-    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
-    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
-    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
-    ('f', 'i'), ('f', 'l'),
-    ('d', 'i'), ('d', 'l'),
-    ('g', 'i'), ('g', 'l'),
-    ('l', 'i'),
-])
+DANGEROUS_DOWNCAST = set(
+    [
+        ("F", "i"),
+        ("F", "l"),
+        ("F", "f"),
+        ("F", "d"),
+        ("F", "g"),
+        ("D", "i"),
+        ("D", "l"),
+        ("D", "f"),
+        ("D", "d"),
+        ("D", "g"),
+        ("G", "i"),
+        ("G", "l"),
+        ("G", "f"),
+        ("G", "d"),
+        ("G", "g"),
+        ("f", "i"),
+        ("f", "l"),
+        ("d", "i"),
+        ("d", "l"),
+        ("g", "i"),
+        ("g", "l"),
+        ("l", "i"),
+    ]
+)
 
 NAN_VALUE = {
-    'f': 'NPY_NAN',
-    'd': 'NPY_NAN',
-    'g': 'NPY_NAN',
-    'F': 'NPY_NAN',
-    'D': 'NPY_NAN',
-    'G': 'NPY_NAN',
-    'i': '0xbad0bad0',
-    'l': '0xbad0bad0',
+    "f": "NPY_NAN",
+    "d": "NPY_NAN",
+    "g": "NPY_NAN",
+    "F": "NPY_NAN",
+    "D": "NPY_NAN",
+    "G": "NPY_NAN",
+    "i": "0xbad0bad0",
+    "l": "0xbad0bad0",
 }
 
 
-def generate_loop(func_inputs, func_outputs, func_retval,
-                  ufunc_inputs, ufunc_outputs):
+def generate_loop(func_inputs, func_outputs, func_retval, ufunc_inputs, ufunc_outputs):
     """
     Generate a UFunc loop function that calls a function given as its
     data parameter with the specified input and output arguments and
@@ -360,13 +376,21 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         raise ValueError("Function and ufunc have different number of inputs")
 
     if len(func_outputs) != len(ufunc_outputs) and not (
-            func_retval != "v" and len(func_outputs)+1 == len(ufunc_outputs)):
+        func_retval != "v" and len(func_outputs) + 1 == len(ufunc_outputs)
+    ):
         raise ValueError("Function retval and ufunc outputs don't match")
 
     name = "loop_%s_%s_%s_As_%s_%s" % (
-        func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
-        )
-    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:\n" % name
+        func_retval,
+        func_inputs,
+        func_outputs,
+        ufunc_inputs,
+        ufunc_outputs,
+    )
+    body = (
+        "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data)"
+        " nogil:\n" % name
+    )
     body += "    cdef np.npy_intp i, n = dims[0]\n"
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
@@ -381,11 +405,12 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     outtypecodes = []
     for j in range(len(func_inputs)):
         ftypes.append(CY_TYPES[func_inputs[j]])
-        fvars.append("<%s>(<%s*>ip%d)[0]" % (
-            CY_TYPES[func_inputs[j]],
-            CY_TYPES[ufunc_inputs[j]], j))
+        fvars.append(
+            "<%s>(<%s*>ip%d)[0]"
+            % (CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j)
+        )
 
-    if len(func_outputs)+1 == len(ufunc_outputs):
+    if len(func_outputs) + 1 == len(ufunc_outputs):
         func_joff = 1
         outtypecodes.append(func_retval)
         body += "    cdef %s ov0\n" % (CY_TYPES[func_retval],)
@@ -393,37 +418,51 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         func_joff = 0
 
     for j, outtype in enumerate(func_outputs):
-        body += "    cdef %s ov%d\n" % (CY_TYPES[outtype], j+func_joff)
+        body += "    cdef %s ov%d\n" % (CY_TYPES[outtype], j + func_joff)
         ftypes.append("%s *" % CY_TYPES[outtype])
-        fvars.append("&ov%d" % (j+func_joff))
+        fvars.append("&ov%d" % (j + func_joff))
         outtypecodes.append(outtype)
 
     body += "    for i in range(n):\n"
-    if len(func_outputs)+1 == len(ufunc_outputs):
+    if len(func_outputs) + 1 == len(ufunc_outputs):
         rv = "ov0 = "
     else:
         rv = ""
 
     funcall = "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
-        rv, CY_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
+        rv,
+        CY_TYPES[func_retval],
+        ", ".join(ftypes),
+        ", ".join(fvars),
+    )
 
     # Cast-check inputs and call function
     input_checks = []
     for j in range(len(func_inputs)):
         if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
             chk = "<%s>(<%s*>ip%d)[0] == (<%s*>ip%d)[0]" % (
-                CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j,
-                CY_TYPES[ufunc_inputs[j]], j)
+                CY_TYPES[func_inputs[j]],
+                CY_TYPES[ufunc_inputs[j]],
+                j,
+                CY_TYPES[ufunc_inputs[j]],
+                j,
+            )
             input_checks.append(chk)
 
     if input_checks:
-        body += "        if %s:\n" % (" and ".join(input_checks))
+        body += "        if %s:\n" % " and ".join(input_checks)
         body += "    " + funcall
         body += "        else:\n"
-        body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid input argument\")\n"
+        body += (
+            '            sf_error.error(func_name, sf_error.DOMAIN, "invalid input'
+            ' argument")\n'
+        )
         for j, outtype in enumerate(outtypecodes):
             body += "            ov%d = <%s>%s\n" % (
-                j, CY_TYPES[outtype], NAN_VALUE[outtype])
+                j,
+                CY_TYPES[outtype],
+                NAN_VALUE[outtype],
+            )
     else:
         body += funcall
 
@@ -432,14 +471,29 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         if (fouttype, outtype) in DANGEROUS_DOWNCAST:
             body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
             body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+                CY_TYPES[outtype],
+                j,
+                CY_TYPES[outtype],
+                j,
+            )
             body += "        else:\n"
-            body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid output\")\n"
+            body += (
+                '            sf_error.error(func_name, sf_error.DOMAIN, "invalid'
+                ' output")\n'
+            )
             body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
+                CY_TYPES[outtype],
+                j,
+                CY_TYPES[outtype],
+                NAN_VALUE[outtype],
+            )
         else:
             body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+                CY_TYPES[outtype],
+                j,
+                CY_TYPES[outtype],
+                j,
+            )
     for j in range(len(ufunc_inputs)):
         body += "        ip%d += steps[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
@@ -470,7 +524,7 @@ def generate_fused_type(codes):
 
 
 def generate_bench(name, codes):
-    tab = " "*4
+    tab = " " * 4
     top, middle, end = [], [], []
 
     tmp = codes.split("*")
@@ -498,7 +552,7 @@ def generate_bench(name, codes):
         middle.append(tab + line)
 
     end.append(tab + "for n in range(N):")
-    end.append(2*tab + "{}({})")
+    end.append(2 * tab + "{}({})")
     pyfunc = "_bench_{}_{}_{}".format(name, incodes, "py")
     cyfunc = "_bench_{}_{}_{}".format(name, incodes, "cy")
     pytemplate = "\n".join(top + end)
@@ -509,7 +563,7 @@ def generate_bench(name, codes):
 
 
 def generate_doc(name, specs):
-    tab = " "*4
+    tab = " " * 4
     doc = ["- :py:func:`~scipy.special.{}`::\n".format(name)]
     for spec in specs:
         incodes, outcodes = spec.split("->")
@@ -520,7 +574,7 @@ def generate_doc(name, specs):
             intypes.extend(types)
         outtype = CY_TYPES[outcodes]
         line = "{} {}({})".format(outtype, name, ", ".join(intypes))
-        doc.append(2*tab + line)
+        doc.append(2 * tab + line)
     doc[-1] = "{}\n".format(doc[-1])
     doc = "\n".join(doc)
     return doc
@@ -561,18 +615,18 @@ def iter_variants(inputs, outputs):
     """
     maps = [
         # always use long instead of int (more common type on 64-bit)
-        ('i', 'l'),
+        ("i", "l"),
     ]
 
     # float32-preserving signatures
-    if not ('i' in inputs or 'l' in inputs):
+    if not ("i" in inputs or "l" in inputs):
         # Don't add float32 versions of ufuncs with integer arguments, as this
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
         # For instance sph_harm(0,[0],0,0).dtype == complex64
         # This may be a NumPy bug, but we need to work around it.
         # cf. gh-4895, https://github.com/numpy/numpy/issues/5895
-        maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
+        maps = maps + [(a + "dD", b + "fF") for a, b in maps]
 
     # do the replacements
     for src, dst in maps:
@@ -589,6 +643,7 @@ class Func:
     Base class for Ufunc and FusedFunc.
 
     """
+
     def __init__(self, name, signatures):
         self.name = name
         self.signatures = []
@@ -600,10 +655,12 @@ class Func:
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(
+            r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig
+        )
         if m:
             inarg, outarg, ret = [x.strip() for x in m.groups()]
-            if ret.count('*') > 1:
+            if ret.count("*") > 1:
                 raise ValueError("{}: Invalid signature: {}".format(self.name, sig))
             return inarg, outarg, ret
         m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
@@ -615,11 +672,11 @@ class Func:
     def get_prototypes(self, nptypes_for_h=False):
         prototypes = []
         for func_name, inarg, outarg, ret, header in self.signatures:
-            ret = ret.replace('*', '')
-            c_args = ([C_TYPES[x] for x in inarg]
-                      + [C_TYPES[x] + ' *' for x in outarg])
-            cy_args = ([CY_TYPES[x] for x in inarg]
-                       + [CY_TYPES[x] + ' *' for x in outarg])
+            ret = ret.replace("*", "")
+            c_args = [C_TYPES[x] for x in inarg] + [C_TYPES[x] + " *" for x in outarg]
+            cy_args = [CY_TYPES[x] for x in inarg] + [
+                CY_TYPES[x] + " *" for x in outarg
+            ]
             c_proto = "%s (*)(%s)" % (C_TYPES[ret], ", ".join(c_args))
             if header.endswith("h") and nptypes_for_h:
                 cy_proto = c_proto + "nogil"
@@ -628,23 +685,27 @@ class Func:
             prototypes.append((func_name, c_proto, cy_proto, header))
         return prototypes
 
-    def cython_func_name(self, c_name, specialized=False, prefix="_func_",
-                         override=True):
+    def cython_func_name(
+        self, c_name, specialized=False, prefix="_func_", override=True
+    ):
         # act on function name overrides
         if override and c_name in self.function_name_overrides:
             c_name = self.function_name_overrides[c_name]
             prefix = ""
 
         # support fused types
-        m = re.match(r'^(.*?)(\[.*\])$', c_name)
+        m = re.match(r"^(.*?)(\[.*\])$", c_name)
         if m:
             c_base_name, fused_part = m.groups()
         else:
             c_base_name, fused_part = c_name, ""
         if specialized:
-            return "%s%s%s" % (prefix, c_base_name, fused_part.replace(' ', '_'))
+            return "%s%s%s" % (prefix, c_base_name, fused_part.replace(" ", "_"))
         else:
-            return "%s%s" % (prefix, c_base_name,)
+            return "%s%s" % (
+                prefix,
+                c_base_name,
+            )
 
 
 class Ufunc(Func):
@@ -674,6 +735,7 @@ class Ufunc(Func):
         Overrides for the function names in signatures
 
     """
+
     def __init__(self, name, signatures):
         super().__init__(name, signatures)
         self.doc = add_newdocs.get(name)
@@ -697,9 +759,10 @@ class Ufunc(Func):
             if "v" in outp:
                 raise ValueError("%s: void signature %r" % (self.name, sig))
             if len(inp) != inarg_num or len(outp) != outarg_num:
-                raise ValueError("%s: signature %r does not have %d/%d input/output args" % (
-                    self.name, sig,
-                    inarg_num, outarg_num))
+                raise ValueError(
+                    "%s: signature %r does not have %d/%d input/output args"
+                    % (self.name, sig, inarg_num, outarg_num)
+                )
 
             loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
             all_loops[loop_name] = loop
@@ -707,8 +770,8 @@ class Ufunc(Func):
 
         # First add base variants
         for func_name, inarg, outarg, ret, header in self.signatures:
-            outp = re.sub(r'\*.*', '', ret) + outarg
-            ret = ret.replace('*', '')
+            outp = re.sub(r"\*.*", "", ret) + outarg
+            ret = ret.replace("*", "")
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
@@ -718,8 +781,8 @@ class Ufunc(Func):
 
         # Then the supplementary ones
         for func_name, inarg, outarg, ret, header in self.signatures:
-            outp = re.sub(r'\*.*', '', ret) + outarg
-            ret = ret.replace('*', '')
+            outp = re.sub(r"\*.*", "", ret) + outarg
+            ret = ret.replace("*", "")
             for inp, outp in iter_variants(inarg, outp):
                 add_variant(func_name, inarg, outarg, ret, inp, outp)
 
@@ -733,8 +796,7 @@ class Ufunc(Func):
     def generate(self, all_loops):
         toplevel = ""
 
-        variants, inarg_num, outarg_num = self._get_signatures_and_loops(
-                all_loops)
+        variants, inarg_num, outarg_num = self._get_signatures_and_loops(all_loops)
 
         loops = []
         funcs = []
@@ -748,33 +810,53 @@ class Ufunc(Func):
             loops.append(loop_name)
             funcs.append(func_name)
 
-        toplevel += "cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" % (self.name, len(loops))
-        toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2*len(funcs))
+        toplevel += "cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" % (
+            self.name,
+            len(loops),
+        )
+        toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2 * len(funcs))
         toplevel += "cdef void *ufunc_%s_data[%d]\n" % (self.name, len(funcs))
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
             self.name,
-            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
-            )
+            self.doc.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", '\\n"\n    "'),
+        )
 
         for j, function in enumerate(loops):
-            toplevel += "ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" % (self.name, j, function)
+            toplevel += "ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" % (
+                self.name,
+                j,
+                function,
+            )
         for j, type in enumerate(types):
             toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (self.name, j,
-                                                              self.cython_func_name(func, specialized=True))
-            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (self.name, j,
-                                                                             self.name)
+            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (
+                self.name,
+                j,
+                self.cython_func_name(func, specialized=True),
+            )
+            toplevel += 'ufunc_%s_ptr[2*%d+1] = <void*>(<char*>"%s")\n' % (
+                self.name,
+                j,
+                self.name,
+            )
         for j, func in enumerate(funcs):
             toplevel += "ufunc_%s_data[%d] = &ufunc_%s_ptr[2*%d]\n" % (
-                self.name, j, self.name, j)
+                self.name,
+                j,
+                self.name,
+                j,
+            )
 
-        toplevel += ('@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, '
-                     'ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, '
-                     '"@", ufunc_@_doc, 0)\n' % (len(types)/(inarg_num+outarg_num),
-                                                 inarg_num, outarg_num)
-                     ).replace('@', self.name)
+        toplevel += (
+            "@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, "
+            "ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, "
+            '"@", ufunc_@_doc, 0)\n'
+            % (len(types) / (inarg_num + outarg_num), inarg_num, outarg_num)
+        ).replace("@", self.name)
 
         return toplevel
 
@@ -785,6 +867,7 @@ class FusedFunc(Func):
     cimported in Cython.
 
     """
+
     def __init__(self, name, signatures):
         super().__init__(name, signatures)
         self.doc = "See the documentation for scipy.special." + self.name
@@ -801,7 +884,7 @@ class FusedFunc(Func):
         inarg_num, outarg_num = None, None
         all_inp, all_outp = [], []
         for _, inarg, outarg, ret, _ in self.signatures:
-            outp = re.sub(r'\*.*', '', ret) + outarg
+            outp = re.sub(r"\*.*", "", ret) + outarg
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
@@ -813,12 +896,12 @@ class FusedFunc(Func):
         for n in range(inarg_num):
             codes = unique([x[n] for x in all_inp])
             codes.sort()
-            incodes.append(''.join(codes))
+            incodes.append("".join(codes))
         outcodes = []
         for n in range(outarg_num):
             codes = unique([x[n] for x in all_outp])
             codes.sort()
-            outcodes.append(''.join(codes))
+            outcodes.append("".join(codes))
 
         return tuple(incodes), tuple(outcodes)
 
@@ -902,14 +985,13 @@ class FusedFunc(Func):
 
         """
         # Set non fused-type variables to nan
-        tab = " "*4
+        tab = " " * 4
         fused_types, lines = [], [tab + "else:"]
         seen = set()
-        for outvar, outtype, code in zip(self.outvars, self.outtypes,
-                                         self.outcodes):
+        for outvar, outtype, code in zip(self.outvars, self.outtypes, self.outcodes):
             if len(code) == 1:
                 line = "{}[0] = {}".format(outvar, NAN_VALUE[code])
-                lines.append(2*tab + line)
+                lines.append(2 * tab + line)
             else:
                 fused_type = outtype
                 name, _ = fused_type
@@ -940,8 +1022,8 @@ class FusedFunc(Func):
             else:
                 adverb = "elif"
             cond = self._get_conditional(fused_types, codes, adverb)
-            lines.append(2*tab + cond)
-            lines.extend([3*tab + x for x in decs])
+            lines.append(2 * tab + cond)
+            lines.extend([3 * tab + x for x in decs])
         return lines
 
     def _get_tmp_decs(self, all_tmpvars):
@@ -949,11 +1031,10 @@ class FusedFunc(Func):
         variables.
 
         """
-        tab = " "*4
+        tab = " " * 4
         tmpvars = list(all_tmpvars)
         tmpvars.sort()
-        tmpdecs = [tab + "cdef npy_cdouble {}".format(tmpvar)
-                   for tmpvar in tmpvars]
+        tmpdecs = [tab + "cdef npy_cdouble {}".format(tmpvar) for tmpvar in tmpvars]
         return tmpdecs
 
     def _get_python_wrap(self):
@@ -961,7 +1042,7 @@ class FusedFunc(Func):
         arguments as pointers.
 
         """
-        tab = " "*4
+        tab = " " * 4
         body, callvars = [], []
         for (intype, _), invar in zip(self.intypes, self.invars):
             callvars.append("{} {}".format(intype, invar))
@@ -971,8 +1052,9 @@ class FusedFunc(Func):
             line = "cdef {} {}".format(outtype, outvar)
             body.append(tab + line)
         addr_outvars = [f"&{x}" for x in self.outvars]
-        line = "{}({}, {})".format(self.name, ", ".join(self.invars),
-                                   ", ".join(addr_outvars))
+        line = "{}({}, {})".format(
+            self.name, ", ".join(self.invars), ", ".join(addr_outvars)
+        )
         body.append(tab + line)
         line = "return {}".format(", ".join(self.outvars))
         body.append(tab + line)
@@ -981,12 +1063,12 @@ class FusedFunc(Func):
 
     def _get_common(self, signum, sig):
         """Generate code common to all the _generate_* methods."""
-        tab = " "*4
+        tab = " " * 4
         func_name, incodes, outcodes, retcode, header = sig
         # Convert ints to longs; cf. iter_variants()
-        incodes = incodes.replace('i', 'l')
-        outcodes = outcodes.replace('i', 'l')
-        retcode = retcode.replace('i', 'l')
+        incodes = incodes.replace("i", "l")
+        outcodes = outcodes.replace("i", "l")
+        retcode = retcode.replace("i", "l")
 
         if header.endswith("h"):
             c = True
@@ -999,17 +1081,18 @@ class FusedFunc(Func):
 
         intypes = [CY_TYPES[x] for x in incodes]
         outtypes = [CY_TYPES[x] for x in outcodes]
-        retcode = re.sub(r'\*.*', '', retcode)
+        retcode = re.sub(r"\*.*", "", retcode)
         if not retcode:
-            retcode = 'v'
+            retcode = "v"
         rettype = CY_TYPES[retcode]
 
         if cpp:
             # Functions from _ufuncs_cxx are exported as a void*
             # pointers; cast them to the correct types
             func_name = "scipy.special._ufuncs_cxx._export_{}".format(func_name)
-            func_name = "(<{}(*)({}) nogil>{})"\
-                    .format(rettype, ", ".join(intypes + outtypes), func_name)
+            func_name = "(<{}(*)({}) nogil>{})".format(
+                rettype, ", ".join(intypes + outtypes), func_name
+            )
         else:
             func_name = self.cython_func_name(func_name, specialized=True)
 
@@ -1020,20 +1103,40 @@ class FusedFunc(Func):
         cond = self._get_conditional(self.intypes, incodes, adverb)
         if cond:
             lines = [tab + cond]
-            sp = 2*tab
+            sp = 2 * tab
         else:
             lines = []
             sp = tab
 
-        return func_name, incodes, outcodes, retcode, \
-            intypes, outtypes, rettype, c, lines, sp
+        return (
+            func_name,
+            incodes,
+            outcodes,
+            retcode,
+            intypes,
+            outtypes,
+            rettype,
+            c,
+            lines,
+            sp,
+        )
 
     def _generate_from_return_and_no_outargs(self):
-        tab = " "*4
+        tab = " " * 4
         specs, body = [], []
         for signum, sig in enumerate(self.signatures):
-            func_name, incodes, outcodes, retcode, intypes, outtypes, \
-                rettype, c, lines, sp = self._get_common(signum, sig)
+            (
+                func_name,
+                incodes,
+                outcodes,
+                retcode,
+                intypes,
+                outtypes,
+                rettype,
+                c,
+                lines,
+                sp,
+            ) = self._get_common(signum, sig)
             body.extend(lines)
 
             # Generate the call to the specialized function
@@ -1053,7 +1156,7 @@ class FusedFunc(Func):
             last = len(outcodes) - 1
             if len(outcodes) == 1:
                 line = "return {}".format(NAN_VALUE[outcodes])
-                body.append(2*tab + line)
+                body.append(2 * tab + line)
             else:
                 for n, code in enumerate(outcodes):
                     if n == 0:
@@ -1063,9 +1166,9 @@ class FusedFunc(Func):
                     else:
                         adverb = "elif"
                     cond = self._get_conditional(self.outtypes, code, adverb)
-                    body.append(2*tab + cond)
+                    body.append(2 * tab + cond)
                     line = "return {}".format(NAN_VALUE[code])
-                    body.append(3*tab + line)
+                    body.append(3 * tab + line)
 
         # Generate the head of the function
         callvars, head = [], []
@@ -1080,12 +1183,22 @@ class FusedFunc(Func):
         return dec, src, specs
 
     def _generate_from_outargs_and_no_return(self):
-        tab = " "*4
+        tab = " " * 4
         all_tmpvars = set()
         specs, body = [], []
         for signum, sig in enumerate(self.signatures):
-            func_name, incodes, outcodes, retcode, intypes, outtypes, \
-                rettype, c, lines, sp = self._get_common(signum, sig)
+            (
+                func_name,
+                incodes,
+                outcodes,
+                retcode,
+                intypes,
+                outtypes,
+                rettype,
+                c,
+                lines,
+                sp,
+            ) = self._get_common(signum, sig)
             body.extend(lines)
 
             # Generate the call to the specialized function
@@ -1121,7 +1234,9 @@ class FusedFunc(Func):
                 callvars.append("{} *{}".format(outtype, outvar))
         if len(self.outvars) == 1:
             outtype, _ = self.outtypes[0]
-            dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+            dec = "cpdef {} {}({}) nogil".format(
+                outtype, self.name, ", ".join(callvars)
+            )
         else:
             dec = "cdef void {}({}) nogil".format(self.name, ", ".join(callvars))
         head.append(dec + ":")
@@ -1137,12 +1252,22 @@ class FusedFunc(Func):
         return dec, src, specs
 
     def _generate_from_outargs_and_return(self):
-        tab = " "*4
+        tab = " " * 4
         all_tmpvars = set()
         specs, body = [], []
         for signum, sig in enumerate(self.signatures):
-            func_name, incodes, outcodes, retcode, intypes, outtypes, \
-                rettype, c, lines, sp = self._get_common(signum, sig)
+            (
+                func_name,
+                incodes,
+                outcodes,
+                retcode,
+                intypes,
+                outtypes,
+                rettype,
+                c,
+                lines,
+                sp,
+            ) = self._get_common(signum, sig)
             body.extend(lines)
 
             # Generate the call to the specialized function
@@ -1179,15 +1304,15 @@ class FusedFunc(Func):
 
     def generate(self):
         _, _, outcodes, retcode, _ = self.signatures[0]
-        retcode = re.sub(r'\*.*', '', retcode)
+        retcode = re.sub(r"\*.*", "", retcode)
         if not retcode:
-            retcode = 'v'
+            retcode = "v"
 
-        if len(outcodes) == 0 and retcode != 'v':
+        if len(outcodes) == 0 and retcode != "v":
             dec, src, specs = self._generate_from_return_and_no_outargs()
-        elif len(outcodes) > 0 and retcode == 'v':
+        elif len(outcodes) > 0 and retcode == "v":
             dec, src, specs = self._generate_from_outargs_and_no_return()
-        elif len(outcodes) > 0 and retcode != 'v':
+        elif len(outcodes) > 0 and retcode != "v":
             dec, src, specs = self._generate_from_outargs_and_return()
         else:
             raise ValueError("Invalid signature")
@@ -1200,8 +1325,7 @@ class FusedFunc(Func):
         return dec, src, specs, self.fused_types, wrap
 
 
-def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
-                    proto_h_filename):
+def get_declaration(ufunc, c_name, c_proto, cy_proto, header, proto_h_filename):
     """
     Construct a Cython declaration of a function coming either from a
     pxd or a header file. Do sufficient tricks to enable compile-time
@@ -1211,35 +1335,42 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
     defs = []
     defs_h = []
 
-    var_name = c_name.replace('[', '_').replace(']', '_').replace(' ', '_')
+    var_name = c_name.replace("[", "_").replace("]", "_").replace(" ", "_")
 
-    if header.endswith('.pxd'):
-        defs.append("from .%s cimport %s as %s" % (
-            header[:-4], ufunc.cython_func_name(c_name, prefix=""),
-            ufunc.cython_func_name(c_name)))
+    if header.endswith(".pxd"):
+        defs.append(
+            "from .%s cimport %s as %s"
+            % (
+                header[:-4],
+                ufunc.cython_func_name(c_name, prefix=""),
+                ufunc.cython_func_name(c_name),
+            )
+        )
 
         # check function signature at compile time
-        proto_name = '_proto_%s_t' % var_name
-        defs.append("ctypedef %s" % (cy_proto.replace('(*)', proto_name)))
-        defs.append("cdef %s *%s_var = &%s" % (
-            proto_name, proto_name, ufunc.cython_func_name(c_name, specialized=True)))
+        proto_name = "_proto_%s_t" % var_name
+        defs.append("ctypedef %s" % (cy_proto.replace("(*)", proto_name)))
+        defs.append(
+            "cdef %s *%s_var = &%s"
+            % (proto_name, proto_name, ufunc.cython_func_name(c_name, specialized=True))
+        )
     else:
         # redeclare the function, so that the assumed
         # signature is checked at compile time
-        new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
-        defs.append("cdef extern from \"%s\":" % proto_h_filename)
-        defs.append("    cdef %s" % (cy_proto.replace('(*)', new_name)))
-        defs_h.append("#include \"%s\"" % header)
-        defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
+        new_name = '%s "%s"' % (ufunc.cython_func_name(c_name), c_name)
+        defs.append('cdef extern from "%s":' % proto_h_filename)
+        defs.append("    cdef %s" % (cy_proto.replace("(*)", new_name)))
+        defs_h.append('#include "%s"' % header)
+        defs_h.append("%s;" % (c_proto.replace("(*)", c_name)))
 
     return defs, defs_h, var_name
 
 
 def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
     filename = fn_prefix + ".pyx"
-    proto_h_filename = fn_prefix + '_defs.h'
+    proto_h_filename = fn_prefix + "_defs.h"
 
-    cxx_proto_h_filename = cxx_fn_prefix + '_defs.h'
+    cxx_proto_h_filename = cxx_fn_prefix + "_defs.h"
     cxx_pyx_filename = cxx_fn_prefix + ".pyx"
     cxx_pxd_filename = cxx_fn_prefix + ".pxd"
 
@@ -1254,7 +1385,7 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
     cxx_defs = []
     cxx_pxd_defs = [
         "from . cimport sf_error",
-        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) nogil"
+        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) nogil",
     ]
     cxx_defs_h = []
 
@@ -1264,25 +1395,36 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         # generate function declaration and type checking snippets
         cfuncs = ufunc.get_prototypes()
         for c_name, c_proto, cy_proto, header in cfuncs:
-            if header.endswith('++'):
+            if header.endswith("++"):
                 header = header[:-2]
 
                 # for the CXX module
-                item_defs, item_defs_h, var_name = get_declaration(ufunc, c_name, c_proto, cy_proto,
-                                                                   header, cxx_proto_h_filename)
+                item_defs, item_defs_h, var_name = get_declaration(
+                    ufunc, c_name, c_proto, cy_proto, header, cxx_proto_h_filename
+                )
                 cxx_defs.extend(item_defs)
                 cxx_defs_h.extend(item_defs_h)
 
-                cxx_defs.append("cdef void *_export_%s = <void*>%s" % (
-                    var_name, ufunc.cython_func_name(c_name, specialized=True, override=False)))
+                cxx_defs.append(
+                    "cdef void *_export_%s = <void*>%s"
+                    % (
+                        var_name,
+                        ufunc.cython_func_name(
+                            c_name, specialized=True, override=False
+                        ),
+                    )
+                )
                 cxx_pxd_defs.append("cdef void *_export_%s" % (var_name,))
 
                 # let cython grab the function pointer from the c++ shared library
-                ufunc.function_name_overrides[c_name] = "scipy.special._ufuncs_cxx._export_" + var_name
+                ufunc.function_name_overrides[c_name] = (
+                    "scipy.special._ufuncs_cxx._export_" + var_name
+                )
             else:
                 # usual case
-                item_defs, item_defs_h, _ = get_declaration(ufunc, c_name, c_proto, cy_proto, header,
-                                                            proto_h_filename)
+                item_defs, item_defs_h, _ = get_declaration(
+                    ufunc, c_name, c_proto, cy_proto, header, proto_h_filename
+                )
                 defs.extend(item_defs)
                 defs_h.extend(item_defs_h)
 
@@ -1293,16 +1435,12 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
     # Produce output
     toplevel = "\n".join(sorted(all_loops.values()) + defs + [toplevel])
     # Generate an `__all__` for the module
-    all_ufuncs = (
-        [
-            "'{}'".format(ufunc.name)
-            for ufunc in ufuncs if not ufunc.name.startswith('_')
-        ]
-        + ["'geterr'", "'seterr'", "'errstate'", "'jn'"]
-    )
-    module_all = '__all__ = [{}]'.format(', '.join(all_ufuncs))
+    all_ufuncs = [
+        "'{}'".format(ufunc.name) for ufunc in ufuncs if not ufunc.name.startswith("_")
+    ] + ["'geterr'", "'seterr'", "'errstate'", "'jn'"]
+    module_all = "__all__ = [{}]".format(", ".join(all_ufuncs))
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write(UFUNCS_EXTRA_CODE)
         f.write(module_all)
@@ -1311,31 +1449,31 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         f.write(UFUNCS_EXTRA_CODE_BOTTOM)
 
     defs_h = unique(defs_h)
-    with open(proto_h_filename, 'w') as f:
+    with open(proto_h_filename, "w") as f:
         f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
         f.write("\n".join(defs_h))
         f.write("\n#endif\n")
 
     cxx_defs_h = unique(cxx_defs_h)
-    with open(cxx_proto_h_filename, 'w') as f:
+    with open(cxx_proto_h_filename, "w") as f:
         f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
         f.write("\n".join(cxx_defs_h))
         f.write("\n#endif\n")
 
-    with open(cxx_pyx_filename, 'w') as f:
+    with open(cxx_pyx_filename, "w") as f:
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write("\n")
         f.write("\n".join(cxx_defs))
         f.write("\n# distutils: language = c++\n")
 
-    with open(cxx_pxd_filename, 'w') as f:
+    with open(cxx_pxd_filename, "w") as f:
         f.write("\n".join(cxx_pxd_defs))
 
 
 def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
     pxdfile = modname + ".pxd"
     pyxfile = modname + ".pyx"
-    proto_h_filename = ufunc_fn_prefix + '_defs.h'
+    proto_h_filename = ufunc_fn_prefix + "_defs.h"
 
     sources = []
     declarations = []
@@ -1364,12 +1502,12 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         # Declare the specializations
         cfuncs = func.get_prototypes(nptypes_for_h=True)
         for c_name, c_proto, cy_proto, header in cfuncs:
-            if header.endswith('++'):
+            if header.endswith("++"):
                 # We grab the c++ functions from the c++ module
                 continue
-            item_defs, _, _ = get_declaration(func, c_name, c_proto,
-                                              cy_proto, header,
-                                              proto_h_filename)
+            item_defs, _, _ = get_declaration(
+                func, c_name, c_proto, cy_proto, header, proto_h_filename
+            )
             defs.extend(item_defs)
 
         # Add a line to the documentation
@@ -1384,13 +1522,13 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
     fused_types = list(fused_types)
     fused_types.sort()
 
-    with open(pxdfile, 'w') as f:
+    with open(pxdfile, "w") as f:
         f.write(CYTHON_SPECIAL_PXD)
         f.write("\n")
         f.write("\n\n".join(fused_types))
         f.write("\n\n")
         f.write("\n".join(declarations))
-    with open(pyxfile, 'w') as f:
+    with open(pyxfile, "w") as f:
         header = CYTHON_SPECIAL_PYX
         header = header.replace("FUNCLIST", "\n".join(doc))
         f.write(header)
@@ -1405,22 +1543,22 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
 def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
     stubs, module_all = [], []
     for ufunc in ufuncs:
-        stubs.append(f'{ufunc.name}: np.ufunc')
-        if not ufunc.name.startswith('_'):
+        stubs.append(f"{ufunc.name}: np.ufunc")
+        if not ufunc.name.startswith("_"):
             module_all.append(f"'{ufunc.name}'")
     # jn is an alias for jv.
     module_all.append("'jn'")
-    stubs.append('jn: np.ufunc')
+    stubs.append("jn: np.ufunc")
     module_all.sort()
     stubs.sort()
 
     contents = STUBS.format(
-        ALL=',\n    '.join(module_all),
-        STUBS='\n'.join(stubs),
+        ALL=",\n    ".join(module_all),
+        STUBS="\n".join(stubs),
     )
 
-    stubs_file = f'{module_name}.pyi'
-    with open(stubs_file, 'w') as f:
+    stubs_file = f"{module_name}.pyi"
+    with open(stubs_file, "w") as f:
         f.write(contents)
 
 
@@ -1441,28 +1579,36 @@ def unique(lst):
 
 def all_newer(src_files, dst_files):
     from distutils.dep_util import newer
-    return all(os.path.exists(dst) and newer(dst, src)
-               for dst in dst_files for src in src_files)
+
+    return all(
+        os.path.exists(dst) and newer(dst, src)
+        for dst in dst_files
+        for src in src_files
+    )
 
 
 def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
+    p = optparse.OptionParser(usage=(__doc__ or "").strip())
     options, args = p.parse_args()
     if len(args) != 0:
-        p.error('invalid number of arguments')
+        p.error("invalid number of arguments")
 
     pwd = os.path.dirname(__file__)
-    src_files = (os.path.abspath(__file__),
-                 os.path.abspath(os.path.join(pwd, 'functions.json')),
-                 os.path.abspath(os.path.join(pwd, 'add_newdocs.py')))
-    dst_files = ('_ufuncs.pyx',
-                 '_ufuncs_defs.h',
-                 '_ufuncs_cxx.pyx',
-                 '_ufuncs_cxx.pxd',
-                 '_ufuncs_cxx_defs.h',
-                 '_ufuncs.pyi',
-                 'cython_special.pyx',
-                 'cython_special.pxd')
+    src_files = (
+        os.path.abspath(__file__),
+        os.path.abspath(os.path.join(pwd, "functions.json")),
+        os.path.abspath(os.path.join(pwd, "add_newdocs.py")),
+    )
+    dst_files = (
+        "_ufuncs.pyx",
+        "_ufuncs_defs.h",
+        "_ufuncs_cxx.pyx",
+        "_ufuncs_cxx.pxd",
+        "_ufuncs_cxx_defs.h",
+        "_ufuncs.pyi",
+        "cython_special.pyx",
+        "cython_special.pxd",
+    )
 
     os.chdir(BASE_DIR)
 
@@ -1471,7 +1617,7 @@ def main():
         return
 
     ufuncs, fused_funcs = [], []
-    with open('functions.json') as data:
+    with open("functions.json") as data:
         functions = json.load(data)
     for f, sig in functions.items():
         ufuncs.append(Ufunc(f, sig))

@@ -20,7 +20,7 @@ You can view the results in 2-d, 3-d and 4-d with Geomview.
 To download Qhull:
         http://www.qhull.org/download
         git@github.com:qhull/qhull.git
- 
+
 Download qhull-96.ps for:
 
         Barber, C. B., D.P. Dobkin, and H.T. Huhdanpaa, "The

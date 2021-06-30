@@ -237,4 +237,3 @@ struct BaseMinkowskiDistP2 : public BaseMinkowskiDistPp<Dist1D> {
         return s * s;
     }
 };
-

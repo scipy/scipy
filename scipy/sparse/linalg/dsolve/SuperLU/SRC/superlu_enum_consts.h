@@ -1,18 +1,18 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 /** @file superlu_enum_consts.h
- * \brief enum constants header file 
+ * \brief enum constants header file
  *
  * -- SuperLU routine (version 4.1) --
- * Lawrence Berkeley National Lab, Univ. of California Berkeley, 
+ * Lawrence Berkeley National Lab, Univ. of California Berkeley,
  * October 1, 2010
  * January 28, 2018
  *
@@ -42,7 +42,7 @@ typedef enum {SILU, SMILU_1, SMILU_2, SMILU_3}			milu_t;
 typedef enum {NODROP		= 0x0000,
 	      DROP_BASIC	= 0x0001, /* ILU(tau) */
 	      DROP_PROWS	= 0x0002, /* ILUTP: keep p maximum rows */
-	      DROP_COLUMN	= 0x0004, /* ILUTP: for j-th column, 
+	      DROP_COLUMN	= 0x0004, /* ILUTP: for j-th column,
 					     p = gamma * nnz(A(:,j)) */
 	      DROP_AREA 	= 0x0008, /* ILUTP: for j-th column, use
 					     nnz(F(:,1:j)) / nnz(A(:,1:j))
@@ -53,8 +53,8 @@ typedef enum {NODROP		= 0x0000,
 #endif
 
 
-/* 
- * The following enumerate type is used by the statistics variable 
+/*
+ * The following enumerate type is used by the statistics variable
  * to keep track of flop count and time spent at various stages.
  *
  * Note that not all of the fields are disjoint.

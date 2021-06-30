@@ -6,7 +6,7 @@ from scipy.sparse import issparse
 
 from numpy import Inf, sqrt, abs
 
-__all__ = ['norm']
+__all__ = ["norm"]
 
 
 def _sparse_frobenius_norm(x):
@@ -109,7 +109,7 @@ def norm(x, ord=None, axis=None):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 
     # Check the default case first and handle it immediately.
-    if axis is None and ord in (None, 'fro', 'f'):
+    if axis is None and ord in (None, "fro", "f"):
         return _sparse_frobenius_norm(x)
 
     # Some norms require functions that are not implemented for all types.
@@ -131,34 +131,36 @@ def norm(x, ord=None, axis=None):
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            raise ValueError(
+                "Invalid axis %r for an array with shape %r" % (axis, x.shape)
+            )
         if row_axis % nd == col_axis % nd:
-            raise ValueError('Duplicate axes given.')
+            raise ValueError("Duplicate axes given.")
         if ord == 2:
             raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amax)
+            # return _multi_svd_norm(x, row_axis, col_axis, amax)
         elif ord == -2:
             raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amin)
+            # return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
-            return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).max(axis=col_axis)[0, 0]
         elif ord == Inf:
-            return abs(x).sum(axis=col_axis).max(axis=row_axis)[0,0]
+            return abs(x).sum(axis=col_axis).max(axis=row_axis)[0, 0]
         elif ord == -1:
-            return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).min(axis=col_axis)[0, 0]
         elif ord == -Inf:
-            return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
-        elif ord in (None, 'f', 'fro'):
+            return abs(x).sum(axis=col_axis).min(axis=row_axis)[0, 0]
+        elif ord in (None, "f", "fro"):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)
         else:
             raise ValueError("Invalid norm order for matrices.")
     elif len(axis) == 1:
-        a, = axis
+        (a,) = axis
         if not (-nd <= a < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            raise ValueError(
+                "Invalid axis %r for an array with shape %r" % (axis, x.shape)
+            )
         if ord == Inf:
             M = abs(x).max(axis=a)
         elif ord == -Inf:
@@ -175,7 +177,7 @@ def norm(x, ord=None, axis=None):
             try:
                 ord + 1
             except TypeError as e:
-                raise ValueError('Invalid norm order for vectors.') from e
+                raise ValueError("Invalid norm order for vectors.") from e
             M = np.power(abs(x).power(ord).sum(axis=a), 1 / ord)
         return M.A.ravel()
     else:

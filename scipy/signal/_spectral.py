@@ -5,7 +5,7 @@
 
 import numpy as np
 
-#pythran export _lombscargle(float64[], float64[], float64[])
+# pythran export _lombscargle(float64[], float64[], float64[])
 def _lombscargle(x, y, freqs):
     """
     _lombscargle(x, y, freqs)
@@ -49,11 +49,11 @@ def _lombscargle(x, y, freqs):
 
     for i in range(freqs.shape[0]):
 
-        xc = 0.
-        xs = 0.
-        cc = 0.
-        ss = 0.
-        cs = 0.
+        xc = 0.0
+        xs = 0.0
+        cc = 0.0
+        ss = 0.0
+        cs = 0.0
 
         c[:] = np.cos(freqs[i] * x)
         s[:] = np.sin(freqs[i] * x)
@@ -75,9 +75,12 @@ def _lombscargle(x, y, freqs):
         s_tau2 = s_tau * s_tau
         cs_tau = 2 * c_tau * s_tau
 
-        pgram[i] = 0.5 * (((c_tau * xc + s_tau * xs)**2 / \
-            (c_tau2 * cc + cs_tau * cs + s_tau2 * ss)) + \
-            ((c_tau * xs - s_tau * xc)**2 / \
-            (c_tau2 * ss - cs_tau * cs + s_tau2 * cc)))
+        pgram[i] = 0.5 * (
+            ((c_tau * xc + s_tau * xs) ** 2 / (c_tau2 * cc + cs_tau * cs + s_tau2 * ss))
+            + (
+                (c_tau * xs - s_tau * xc) ** 2
+                / (c_tau2 * ss - cs_tau * cs + s_tau2 * cc)
+            )
+        )
 
     return pgram

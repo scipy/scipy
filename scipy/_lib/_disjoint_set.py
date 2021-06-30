@@ -4,7 +4,7 @@ Disjoint set data structure
 
 
 class DisjointSet:
-    """ Disjoint set data structure for incremental connectivity queries.
+    """Disjoint set data structure for incremental connectivity queries.
 
     .. versionadded:: 1.6.0
 
@@ -81,6 +81,7 @@ class DisjointSet:
     >>> disjoint_set.subsets()
     [{1, 2}, {'a', 3, 'b'}]
     """
+
     def __init__(self, elements=None):
         self.n_subsets = 0
         self._sizes = {}
@@ -130,8 +131,7 @@ class DisjointSet:
         return x
 
     def add(self, x):
-        """Add element `x` to disjoint set
-        """
+        """Add element `x` to disjoint set"""
         if x in self._indices:
             return
 

@@ -11,7 +11,7 @@
 
 python module _clapack
   interface
-   
+
    function <prefix>gesv(n,nrhs,a,piv,b,info,rowmajor)
 
    ! lu,piv,x,info = gesv(a,b,rowmajor=1,overwrite_a=0,overwrite_b=0)
@@ -67,7 +67,7 @@ python module _clapack
 
 
    function <prefix>lauum(n,c,info,lower,rowmajor)
-   
+
      ! a,info = lauum(c,lower=0,rowmajor=1,overwrite_c=0)
      ! Compute product
      ! U^T * U, C = U if lower = 0
@@ -81,16 +81,16 @@ python module _clapack
 
      integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-     
+
      integer depend(c),intent(hide):: n = shape(c,0)
      <ftype> dimension(n,n),intent(c,in,out,copy,out=a) :: c
      check(shape(c,0)==shape(c,1)) :: c
      integer intent(out) :: info
-     
+
    end function <prefix>lauum
 
    function <prefix>trtri(n,c,info,lower,unitdiag,rowmajor)
-   
+
      ! inv_c,info = trtri(c,lower=0,unitdiag=0,rowmajor=1,overwrite_c=0)
      ! Compute C inverse C^-1 where
      ! C = U if lower = 0
@@ -106,12 +106,12 @@ python module _clapack
      integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
      integer optional,intent(in),check(unitdiag==0||unitdiag==1) :: unitdiag = 0
-     
+
      integer depend(c),intent(hide):: n = shape(c,0)
      <ftype> dimension(n,n),intent(c,in,out,copy,out=inv_c) :: c
      check(shape(c,0)==shape(c,1)) :: c
      integer intent(out) :: info
-     
+
    end function <prefix>trtri
 
 

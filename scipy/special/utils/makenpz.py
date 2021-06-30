@@ -13,10 +13,14 @@ from distutils.util import newer  # type: ignore
 
 
 def main():
-    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
-    p.add_argument('--use-timestamp', action='store_true', default=False,
-                   help="don't rewrite npz file if it is newer than sources")
-    p.add_argument('dirname')
+    p = argparse.ArgumentParser(usage=(__doc__ or "").strip())
+    p.add_argument(
+        "--use-timestamp",
+        action="store_true",
+        default=False,
+        help="don't rewrite npz file if it is newer than sources",
+    )
+    p.add_argument("dirname")
     args = p.parse_args()
 
     inp = os.path.normpath(args.dirname)
@@ -31,9 +35,9 @@ def main():
     files = []
     for dirpath, dirnames, filenames in os.walk(inp):
         for fn in filenames:
-            if fn.endswith('.txt'):
-                key = dirpath[len(inp)+1:] + '-' + fn[:-4]
-                key = key.strip('-')
+            if fn.endswith(".txt"):
+                key = dirpath[len(inp) + 1 :] + "-" + fn[:-4]
+                key = key.strip("-")
                 files.append((key, os.path.join(dirpath, fn)))
 
     # Check if changes required

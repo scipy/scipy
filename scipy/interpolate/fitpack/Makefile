@@ -11,9 +11,3 @@ lib$(LIB).a: $(OBJ)
 	$(AR) rus lib$(LIB).a $?
 clean:
 	rm *.o
-
-
-
-
-
-

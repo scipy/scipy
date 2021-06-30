@@ -1,4 +1,4 @@
-/* 
+/*
  * lu_factorize_bump.c
  *
  * Copyright (C) 2016-2019  ERGO-Code

@@ -9,7 +9,7 @@ from .misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 from .flinalg import get_flinalg_funcs
 
-__all__ = ['lu', 'lu_solve', 'lu_factor']
+__all__ = ["lu", "lu_solve", "lu_factor"]
 
 
 def lu_factor(a, overwrite_a=False, check_finite=True):
@@ -71,16 +71,20 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     else:
         a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
-        raise ValueError('expected square matrix')
+        raise ValueError("expected square matrix")
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    getrf, = get_lapack_funcs(('getrf',), (a1,))
+    (getrf,) = get_lapack_funcs(("getrf",), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of '
-                         'internal getrf (lu_factor)' % -info)
+        raise ValueError(
+            "illegal value in %dth argument of internal getrf (lu_factor)" % -info
+        )
     if info > 0:
-        warn("Diagonal number %d is exactly zero. Singular matrix." % info,
-             LinAlgWarning, stacklevel=2)
+        warn(
+            "Diagonal number %d is exactly zero. Singular matrix." % info,
+            LinAlgWarning,
+            stacklevel=2,
+        )
     return lu, piv
 
 
@@ -137,15 +141,15 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         b1 = asarray(b)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if lu.shape[0] != b1.shape[0]:
-        raise ValueError("Shapes of lu {} and b {} are incompatible"
-                         .format(lu.shape, b1.shape))
+        raise ValueError(
+            "Shapes of lu {} and b {} are incompatible".format(lu.shape, b1.shape)
+        )
 
-    getrs, = get_lapack_funcs(('getrs',), (lu, b1))
+    (getrs,) = get_lapack_funcs(("getrs",), (lu, b1))
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
     if info == 0:
         return x
-    raise ValueError('illegal value in %dth argument of internal gesv|posv'
-                     % -info)
+    raise ValueError("illegal value in %dth argument of internal gesv|posv" % -info)
 
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
@@ -210,13 +214,12 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     else:
         a1 = asarray(a)
     if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError("expected matrix")
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    flu, = get_flinalg_funcs(('lu',), (a1,))
+    (flu,) = get_flinalg_funcs(("lu",), (a1,))
     p, l, u, info = flu(a1, permute_l=permute_l, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of '
-                         'internal lu.getrf' % -info)
+        raise ValueError("illegal value in %dth argument of internal lu.getrf" % -info)
     if permute_l:
         return l, u
     return p, l, u

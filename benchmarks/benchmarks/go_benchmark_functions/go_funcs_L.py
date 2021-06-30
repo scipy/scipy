@@ -13,7 +13,7 @@ class Langermann(Benchmark):
 
     .. math::
 
-        f_{\text{Langermann}}(x) = - \sum_{i=1}^{5} 
+        f_{\text{Langermann}}(x) = - \sum_{i=1}^{5}
         \frac{c_i \cos\left\{\pi \left[\left(x_{1}- a_i\right)^{2}
         + \left(x_{2} - b_i \right)^{2}\right]\right\}}{e^{\frac{\left( x_{1}
         - a_i\right)^{2} + \left( x_{2} - b_i\right)^{2}}{\pi}}}
@@ -55,9 +55,11 @@ class Langermann(Benchmark):
         b = [5, 2, 1, 4, 9]
         c = [1, 2, 5, 2, 3]
 
-        return (-sum(c * exp(-(1 / pi) * ((x[0] - a) ** 2 +
-                    (x[1] - b) ** 2)) * cos(pi * ((x[0] - a) ** 2
-                                            + (x[1] - b) ** 2))))
+        return -sum(
+            c
+            * exp(-(1 / pi) * ((x[0] - a) ** 2 + (x[1] - b) ** 2))
+            * cos(pi * ((x[0] - a) ** 2 + (x[1] - b) ** 2))
+        )
 
 
 class LennardJones(Benchmark):
@@ -119,11 +121,27 @@ class LennardJones(Benchmark):
 
         self.global_optimum = [[]]
 
-        self.minima = [-1.0, -3.0, -6.0, -9.103852, -12.712062,
-                       -16.505384, -19.821489, -24.113360, -28.422532,
-                       -32.765970, -37.967600, -44.326801, -47.845157,
-                       -52.322627, -56.815742, -61.317995, -66.530949,
-                       -72.659782, -77.1777043]
+        self.minima = [
+            -1.0,
+            -3.0,
+            -6.0,
+            -9.103852,
+            -12.712062,
+            -16.505384,
+            -19.821489,
+            -24.113360,
+            -28.422532,
+            -32.765970,
+            -37.967600,
+            -44.326801,
+            -47.845157,
+            -52.322627,
+            -56.815742,
+            -61.317995,
+            -66.530949,
+            -72.659782,
+            -77.1777043,
+        ]
 
         k = int(dimensions / 3)
         self.fglob = self.minima[k - 2]
@@ -167,7 +185,7 @@ class Leon(Benchmark):
 
     .. math::
 
-        f_{\text{Leon}}(\mathbf{x}) = \left(1 - x_{1}\right)^{2} 
+        f_{\text{Leon}}(\mathbf{x}) = \left(1 - x_{1}\right)^{2}
         + 100 \left(x_{2} - x_{1}^{2} \right)^{2}
 
 
@@ -191,7 +209,7 @@ class Leon(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return 100. * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
+        return 100.0 * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
 
 
 class Levy03(Benchmark):
@@ -296,7 +314,7 @@ class Levy13(Benchmark):
     .. math::
 
         f_{\text{Levy13}}(x) = \left(x_{1} -1\right)^{2} \left[\sin^{2}
-        \left(3 \pi x_{2}\right) + 1\right] + \left(x_{2} 
+        \left(3 \pi x_{2}\right) + 1\right] + \left(x_{2}
         - 1\right)^{2} \left[\sin^{2}\left(2 \pi x_{2}\right)
         + 1\right] + \sin^{2}\left(3 \pi x_{1}\right)
 

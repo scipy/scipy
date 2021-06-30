@@ -16,15 +16,15 @@ include 'parameters.pxi'
 def reverse_cuthill_mckee(graph, symmetric_mode=False):
     """
     reverse_cuthill_mckee(graph, symmetric_mode=False)
-    
+
     Returns the permutation array that orders a sparse CSR or CSC matrix
-    in Reverse-Cuthill McKee ordering.  
-    
-    It is assumed by default, ``symmetric_mode=False``, that the input matrix 
-    is not symmetric and works on the matrix ``A+A.T``. If you are 
-    guaranteed that the matrix is symmetric in structure (values of matrix 
+    in Reverse-Cuthill McKee ordering.
+
+    It is assumed by default, ``symmetric_mode=False``, that the input matrix
+    is not symmetric and works on the matrix ``A+A.T``. If you are
+    guaranteed that the matrix is symmetric in structure (values of matrix
     elements do not matter) then set ``symmetric_mode=True``.
-    
+
     Parameters
     ----------
     graph : sparse matrix
@@ -36,7 +36,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     -------
     perm : ndarray
         Array of permuted row and column indices.
- 
+
     Notes
     -----
     .. versionadded:: 0.15.0
@@ -67,7 +67,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
 
     >>> reverse_cuthill_mckee(graph)
     array([3, 2, 1, 0], dtype=int32)
-    
+
     """
     if not (isspmatrix_csc(graph) or isspmatrix_csr(graph)):
         raise TypeError('Input must be in CSC or CSR sparse matrix format.')
@@ -87,7 +87,7 @@ cdef _node_degrees(
     """
     cdef np.npy_intp ii, jj
     cdef np.ndarray[int32_or_int64] degree = np.zeros(num_rows, dtype=ind.dtype)
-    
+
     for ii in range(num_rows):
         degree[ii] = ptr[ii + 1] - ptr[ii]
         for jj in range(ptr[ii], ptr[ii + 1]):
@@ -96,13 +96,13 @@ cdef _node_degrees(
                 degree[ii] += 1
                 break
     return degree
-    
+
 
 def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
         np.npy_intp num_rows):
     """
-    Reverse Cuthill-McKee ordering of a sparse symmetric CSR or CSC matrix.  
+    Reverse Cuthill-McKee ordering of a sparse symmetric CSR or CSC matrix.
     We follow the original Cuthill-McKee paper and always start the routine
     at a node of lowest degree for each connected component.
     """
@@ -114,7 +114,7 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
     cdef np.ndarray[np.npy_intp] rev_inds = np.argsort(inds)
     cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(np.max(degree), dtype=ITYPE)
     cdef int32_or_int64 i, j, seed, temp2
-    
+
     # loop over zz takes into account possible disconnected graph.
     for zz in range(num_rows):
         if inds[zz] != -1:   # Do BFS with seed=inds[zz]
@@ -144,7 +144,7 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
                     for kk in range(N_old, N):
                         temp_degrees[level_len] = degree[order[kk]]
                         level_len += 1
-                
+
                     # Do insertion sort for nodes from lowest to highest degree
                     for kk in range(1,level_len):
                         temp = temp_degrees[kk]
@@ -156,7 +156,7 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
                             ll -= 1
                         temp_degrees[ll] = temp
                         order[N_old+ll] = temp2
-                
+
                 # set next level start and end ranges
                 level_start = level_end
                 level_end = N
@@ -171,13 +171,13 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
 def structural_rank(graph):
     """
     structural_rank(graph)
-    
-    Compute the structural rank of a graph (matrix) with a given 
+
+    Compute the structural rank of a graph (matrix) with a given
     sparsity pattern.
 
-    The structural rank of a matrix is the number of entries in the maximum 
-    transversal of the corresponding bipartite graph, and is an upper bound 
-    on the numerical rank of the matrix. A graph has full structural rank 
+    The structural rank of a matrix is the number of entries in the maximum
+    transversal of the corresponding bipartite graph, and is an upper bound
+    on the numerical rank of the matrix. A graph has full structural rank
     if it is possible to permute the elements to make the diagonal zero-free.
 
     .. versionadded:: 0.19.0
@@ -191,12 +191,12 @@ def structural_rank(graph):
     -------
     rank : int
         The structural rank of the sparse graph.
-    
+
     References
     ----------
-    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc.
             Meth., Vol. 7, 594 (1986).
-    
+
     .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
 
     Examples

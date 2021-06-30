@@ -124,41 +124,41 @@ cs_graph_components i iII*I
 
 # List of compilation units
 COMPILATION_UNITS = [
-    ('bsr', BSR_ROUTINES),
-    ('csr', CSR_ROUTINES),
-    ('csc', CSC_ROUTINES),
-    ('other', OTHER_ROUTINES),
+    ("bsr", BSR_ROUTINES),
+    ("csr", CSR_ROUTINES),
+    ("csc", CSC_ROUTINES),
+    ("other", OTHER_ROUTINES),
 ]
 
 #
 # List of the supported index typenums and the corresponding C++ types
 #
 I_TYPES = [
-    ('NPY_INT32', 'npy_int32'),
-    ('NPY_INT64', 'npy_int64'),
+    ("NPY_INT32", "npy_int32"),
+    ("NPY_INT64", "npy_int64"),
 ]
 
 #
 # List of the supported data typenums and the corresponding C++ types
 #
 T_TYPES = [
-    ('NPY_BOOL', 'npy_bool_wrapper'),
-    ('NPY_BYTE', 'npy_byte'),
-    ('NPY_UBYTE', 'npy_ubyte'),
-    ('NPY_SHORT', 'npy_short'),
-    ('NPY_USHORT', 'npy_ushort'),
-    ('NPY_INT', 'npy_int'),
-    ('NPY_UINT', 'npy_uint'),
-    ('NPY_LONG', 'npy_long'),
-    ('NPY_ULONG', 'npy_ulong'),
-    ('NPY_LONGLONG', 'npy_longlong'),
-    ('NPY_ULONGLONG', 'npy_ulonglong'),
-    ('NPY_FLOAT', 'npy_float'),
-    ('NPY_DOUBLE', 'npy_double'),
-    ('NPY_LONGDOUBLE', 'npy_longdouble'),
-    ('NPY_CFLOAT', 'npy_cfloat_wrapper'),
-    ('NPY_CDOUBLE', 'npy_cdouble_wrapper'),
-    ('NPY_CLONGDOUBLE', 'npy_clongdouble_wrapper'),
+    ("NPY_BOOL", "npy_bool_wrapper"),
+    ("NPY_BYTE", "npy_byte"),
+    ("NPY_UBYTE", "npy_ubyte"),
+    ("NPY_SHORT", "npy_short"),
+    ("NPY_USHORT", "npy_ushort"),
+    ("NPY_INT", "npy_int"),
+    ("NPY_UINT", "npy_uint"),
+    ("NPY_LONG", "npy_long"),
+    ("NPY_ULONG", "npy_ulong"),
+    ("NPY_LONGLONG", "npy_longlong"),
+    ("NPY_ULONGLONG", "npy_ulonglong"),
+    ("NPY_FLOAT", "npy_float"),
+    ("NPY_DOUBLE", "npy_double"),
+    ("NPY_LONGDOUBLE", "npy_longdouble"),
+    ("NPY_CFLOAT", "npy_cfloat_wrapper"),
+    ("NPY_CDOUBLE", "npy_cdouble_wrapper"),
+    ("NPY_CLONGDOUBLE", "npy_clongdouble_wrapper"),
 ]
 
 #
@@ -192,6 +192,7 @@ static int get_thunk_case(int I_typenum, int T_typenum)
 #
 # Code generation
 #
+
 
 def get_thunk_type_set():
     """
@@ -267,28 +268,40 @@ def parse_routine(name, args, types):
         next_is_writeable = False
         j = 0
         for t in arg_spec:
-            const = '' if next_is_writeable else 'const '
+            const = "" if next_is_writeable else "const "
             next_is_writeable = False
-            if t == '*':
+            if t == "*":
                 next_is_writeable = True
                 continue
-            elif t == 'i':
+            elif t == "i":
                 args.append("*(%s*)a[%d]" % (const + I_type, j))
-            elif t == 'I':
+            elif t == "I":
                 args.append("(%s*)a[%d]" % (const + I_type, j))
-            elif t == 'T':
+            elif t == "T":
                 args.append("(%s*)a[%d]" % (const + T_type, j))
-            elif t == 'B':
+            elif t == "B":
                 args.append("(npy_bool_wrapper*)a[%d]" % (j,))
-            elif t == 'V':
+            elif t == "V":
                 if const:
                     raise ValueError("'V' argument must be an output arg")
-                args.append("(std::vector<%s>*)a[%d]" % (I_type, j,))
-            elif t == 'W':
+                args.append(
+                    "(std::vector<%s>*)a[%d]"
+                    % (
+                        I_type,
+                        j,
+                    )
+                )
+            elif t == "W":
                 if const:
                     raise ValueError("'W' argument must be an output arg")
-                args.append("(std::vector<%s>*)a[%d]" % (T_type, j,))
-            elif t == 'l':
+                args.append(
+                    "(std::vector<%s>*)a[%d]"
+                    % (
+                        T_type,
+                        j,
+                    )
+                )
+            elif t == "l":
                 args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
                 raise ValueError("Invalid spec character %r" % (t,))
@@ -304,37 +317,41 @@ def parse_routine(name, args, types):
 
         piece = """
         case %(j)s:"""
-        if ret_spec == 'v':
+        if ret_spec == "v":
             piece += """
             (void)%(name)s(%(arglist)s);
             return 0;"""
         else:
             piece += """
             return %(name)s(%(arglist)s);"""
-        thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type,
-                                      I_typenum=I_typenum, T_typenum=T_typenum,
-                                      arglist=arglist, name=name)
+        thunk_content += piece % dict(
+            j=j,
+            I_type=I_type,
+            T_type=T_type,
+            I_typenum=I_typenum,
+            T_typenum=T_typenum,
+            arglist=arglist,
+            name=name,
+        )
 
     thunk_content += """
     default:
         throw std::runtime_error("internal error: invalid argument typenums");
     }"""
 
-    thunk_code = THUNK_TEMPLATE % dict(name=name,
-                                       thunk_content=thunk_content)
+    thunk_code = THUNK_TEMPLATE % dict(name=name, thunk_content=thunk_content)
 
     # Generate method code
-    method_code = METHOD_TEMPLATE % dict(name=name,
-                                         ret_spec=ret_spec,
-                                         arg_spec=arg_spec)
+    method_code = METHOD_TEMPLATE % dict(
+        name=name, ret_spec=ret_spec, arg_spec=arg_spec
+    )
 
     return thunk_code, method_code
 
 
 def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
-    p.add_option("--no-force", action="store_false",
-                 dest="force", default=True)
+    p = optparse.OptionParser(usage=(__doc__ or "").strip())
+    p.add_option("--no-force", action="store_false", dest="force", default=True)
     options, args = p.parse_args()
 
     names = []
@@ -349,7 +366,7 @@ def main():
         # Generate thunks and methods for all routines
         for line in routines.splitlines():
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
 
             try:
@@ -358,7 +375,7 @@ def main():
                 raise ValueError("Malformed line: %r" % (line,)) from e
 
             args = "".join(args.split())
-            if 't' in args or 'T' in args:
+            if "t" in args or "T" in args:
                 thunk, method = parse_routine(name, args, it_types)
             else:
                 thunk, method = parse_routine(name, args, i_types)
@@ -371,12 +388,12 @@ def main():
             methods.append(method)
 
         # Produce output
-        dst = os.path.join(os.path.dirname(__file__),
-                           'sparsetools',
-                           unit_name + '_impl.h')
+        dst = os.path.join(
+            os.path.dirname(__file__), "sparsetools", unit_name + "_impl.h"
+        )
         if newer(__file__, dst) or options.force:
             print("[generate_sparsetools] generating %r" % (dst,))
-            with open(dst, 'w') as f:
+            with open(dst, "w") as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
                 for thunk in thunks:
@@ -389,24 +406,27 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n" % (name,)
+        method_defs += (
+            "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n"
+            % (name,)
+        )
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
         method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(
+            name=name
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""
 
     # Produce sparsetools_impl.h
-    dst = os.path.join(os.path.dirname(__file__),
-                       'sparsetools',
-                       'sparsetools_impl.h')
+    dst = os.path.join(os.path.dirname(__file__), "sparsetools", "sparsetools_impl.h")
 
     if newer(__file__, dst) or options.force:
         print("[generate_sparsetools] generating %r" % (dst,))
-        with open(dst, 'w') as f:
+        with open(dst, "w") as f:
             write_autogen_blurb(f)
             f.write(method_defs)
             f.write(method_struct)
@@ -415,11 +435,13 @@ def main():
 
 
 def write_autogen_blurb(stream):
-    stream.write("""\
+    stream.write(
+        """\
 /* This file is autogenerated by generate_sparsetools.py
  * Do not edit manually or check into VCS.
  */
-""")
+"""
+    )
 
 
 if __name__ == "__main__":

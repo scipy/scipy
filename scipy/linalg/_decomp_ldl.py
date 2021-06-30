@@ -1,16 +1,27 @@
 from warnings import warn
 
 import numpy as np
-from numpy import (atleast_2d, ComplexWarning, arange, zeros_like, imag, diag,
-                   iscomplexobj, tril, triu, argsort, empty_like)
+from numpy import (
+    atleast_2d,
+    ComplexWarning,
+    arange,
+    zeros_like,
+    imag,
+    diag,
+    iscomplexobj,
+    tril,
+    triu,
+    argsort,
+    empty_like,
+)
 from .decomp import _asarray_validated
 from .lapack import get_lapack_funcs, _compute_lwork
 
-__all__ = ['ldl']
+__all__ = ["ldl"]
 
 
 def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
-    """ Computes the LDLt or Bunch-Kaufman factorization of a symmetric/
+    """Computes the LDLt or Bunch-Kaufman factorization of a symmetric/
     hermitian matrix.
 
     This function returns a block diagonal matrix D consisting blocks of size
@@ -130,22 +141,27 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 
     # Get the LAPACK routine
     if r_or_c is complex and hermitian:
-        s, sl = 'hetrf', 'hetrf_lwork'
+        s, sl = "hetrf", "hetrf_lwork"
         if np.any(imag(diag(a))):
-            warn('scipy.linalg.ldl():\nThe imaginary parts of the diagonal'
-                 'are ignored. Use "hermitian=False" for factorization of'
-                 'complex symmetric arrays.', ComplexWarning, stacklevel=2)
+            warn(
+                "scipy.linalg.ldl():\nThe imaginary parts of the diagonal"
+                'are ignored. Use "hermitian=False" for factorization of'
+                "complex symmetric arrays.",
+                ComplexWarning,
+                stacklevel=2,
+            )
     else:
-        s, sl = 'sytrf', 'sytrf_lwork'
+        s, sl = "sytrf", "sytrf_lwork"
 
     solver, solver_lwork = get_lapack_funcs((s, sl), (a,))
     lwork = _compute_lwork(solver_lwork, n, lower=lower)
-    ldu, piv, info = solver(a, lwork=lwork, lower=lower,
-                            overwrite_a=overwrite_a)
+    ldu, piv, info = solver(a, lwork=lwork, lower=lower, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('{} exited with the internal error "illegal value '
-                         'in argument number {}". See LAPACK documentation '
-                         'for the error codes.'.format(s.upper(), -info))
+        raise ValueError(
+            '{} exited with the internal error "illegal value '
+            'in argument number {}". See LAPACK documentation '
+            "for the error codes.".format(s.upper(), -info)
+        )
 
     swap_arr, pivot_arr = _ldl_sanitize_ipiv(piv, lower=lower)
     d, lu = _ldl_get_d_and_l(ldu, pivot_arr, lower=lower, hermitian=hermitian)
@@ -209,7 +225,7 @@ def _ldl_sanitize_ipiv(a, lower=True):
 
     # Some upper/lower dependent offset values
     # range (s)tart, r(e)nd, r(i)ncrement
-    x, y, rs, re, ri = (1, 0, 0, n, 1) if lower else (-1, -1, n-1, -1, -1)
+    x, y, rs, re, ri = (1, 0, 0, n, 1) if lower else (-1, -1, n - 1, -1, -1)
 
     for ind in range(rs, re, ri):
         # If previous spin belonged already to a 2x2 block
@@ -220,22 +236,24 @@ def _ldl_sanitize_ipiv(a, lower=True):
         cur_val = a[ind]
         # do we have a 1x1 block or not?
         if cur_val > 0:
-            if cur_val != ind+1:
+            if cur_val != ind + 1:
                 # Index value != array value --> permutation required
-                swap_[ind] = swap_[cur_val-1]
+                swap_[ind] = swap_[cur_val - 1]
             pivots[ind] = 1
         # Not.
-        elif cur_val < 0 and cur_val == a[ind+x]:
+        elif cur_val < 0 and cur_val == a[ind + x]:
             # first neg entry of 2x2 block identifier
-            if -cur_val != ind+2:
+            if -cur_val != ind + 2:
                 # Index value != array value --> permutation required
-                swap_[ind+x] = swap_[-cur_val-1]
-            pivots[ind+y] = 2
+                swap_[ind + x] = swap_[-cur_val - 1]
+            pivots[ind + y] = 2
             skip_2x2 = True
         else:  # Doesn't make sense, give up
-            raise ValueError('While parsing the permutation array '
-                             'in "scipy.linalg.ldl", invalid entries '
-                             'found. The array syntax is invalid.')
+            raise ValueError(
+                "While parsing the permutation array "
+                'in "scipy.linalg.ldl", invalid entries '
+                "found. The array syntax is invalid."
+            )
     return swap_, pivots
 
 
@@ -281,15 +299,15 @@ def _ldl_get_d_and_l(ldu, pivs, lower=True, hermitian=True):
         inc = blk_i + blk
 
         if blk == 2:
-            d[blk_i+x, blk_i+y] = ldu[blk_i+x, blk_i+y]
+            d[blk_i + x, blk_i + y] = ldu[blk_i + x, blk_i + y]
             # If Hermitian matrix is factorized, the cross-offdiagonal element
             # should be conjugated.
             if is_c and hermitian:
-                d[blk_i+y, blk_i+x] = ldu[blk_i+x, blk_i+y].conj()
+                d[blk_i + y, blk_i + x] = ldu[blk_i + x, blk_i + y].conj()
             else:
-                d[blk_i+y, blk_i+x] = ldu[blk_i+x, blk_i+y]
+                d[blk_i + y, blk_i + x] = ldu[blk_i + x, blk_i + y]
 
-            lu[blk_i+x, blk_i+y] = 0.
+            lu[blk_i + x, blk_i + y] = 0.0
         blk_i = inc
 
     return d, lu
@@ -333,14 +351,14 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
     n = lu.shape[0]
     perm = arange(n)
     # Setup the reading order of the permutation matrix for upper/lower
-    rs, re, ri = (n-1, -1, -1) if lower else (0, n, 1)
+    rs, re, ri = (n - 1, -1, -1) if lower else (0, n, 1)
 
     for ind in range(rs, re, ri):
         s_ind = swap_vec[ind]
         if s_ind != ind:
             # Column start and end positions
             col_s = ind if lower else 0
-            col_e = n if lower else ind+1
+            col_e = n if lower else ind + 1
 
             # If we stumble upon a 2x2 block include both cols in the perm.
             if pivs[ind] == (0 if lower else 2):

@@ -237,4 +237,3 @@ Authors
 
 A total of 75 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
-

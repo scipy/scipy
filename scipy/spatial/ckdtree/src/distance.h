@@ -279,4 +279,3 @@ typedef BaseMinkowskiDistPp<BoxDist1D> BoxMinkowskiDistPp;
 typedef BaseMinkowskiDistPinf<BoxDist1D> BoxMinkowskiDistPinf;
 typedef BaseMinkowskiDistP1<BoxDist1D> BoxMinkowskiDistP1;
 typedef BaseMinkowskiDistP2<BoxDist1D> BoxMinkowskiDistP2;
-

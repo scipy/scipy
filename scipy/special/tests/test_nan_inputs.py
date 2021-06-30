@@ -37,11 +37,10 @@ UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 @pytest.mark.parametrize("func", UFUNCS, ids=UFUNC_NAMES)
 def test_nan_inputs(func):
-    args = (np.nan,)*func.nin
+    args = (np.nan,) * func.nin
     with suppress_warnings() as sup:
         # Ignore warnings about unsafe casts from legacy wrappers
-        sup.filter(RuntimeWarning,
-                   "floating point number truncated to an integer")
+        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
         try:
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning)
@@ -58,7 +57,6 @@ def test_nan_inputs(func):
 
 def test_legacy_cast():
     with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning,
-                   "floating point number truncated to an integer")
+        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
         res = sc.bdtrc(np.nan, 1, 0.5)
         assert_(np.isnan(res))

@@ -64,7 +64,7 @@ c
 c
         do k = 1,n
           indprod(k) = k
-        enddo ! k 
+        enddo ! k
 c
         do k = m,1,-1
 c
@@ -106,7 +106,7 @@ c       Right now, this routine simply multiplies
 c       one after another the krank Householder matrices
 c       in the full QR decomposition of a,
 c       in order to obtain the complete m x m Q factor in the QR.
-c       This routine should instead use the following 
+c       This routine should instead use the following
 c       (more elaborate but more efficient) scheme
 c       to construct a q dimensioned q(krank,m); this scheme
 c       was introduced by Robert Schreiber and Charles Van Loan
@@ -436,7 +436,7 @@ c       a -- matrix whose QR decomposition gets computed
 c
 c       output:
 c       a -- triangular (R) factor in the QR decompositon
-c            of the matrix input into the same storage locations, 
+c            of the matrix input into the same storage locations,
 c            with the Householder vectors stored in the part of a
 c            that would otherwise consist entirely of zeroes, that is,
 c            in a(j,k) with m >= j > k >= 1
@@ -693,7 +693,7 @@ c                less than krank)
 c
 c       output:
 c       a -- triangular (R) factor in the QR decompositon
-c            of the matrix input into the same storage locations, 
+c            of the matrix input into the same storage locations,
 c            with the Householder vectors stored in the part of a
 c            that would otherwise consist entirely of zeroes, that is,
 c            in a(j,k) with m >= j > k >= 1

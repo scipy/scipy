@@ -2,8 +2,7 @@
 """Tests for the linalg.isolve.gcrotmk module
 """
 
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+from numpy.testing import assert_, assert_allclose, assert_equal, suppress_warnings
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -15,19 +14,25 @@ from scipy.sparse.linalg import splu
 from scipy.sparse.linalg.isolve import gcrotmk, gmres
 
 
-Am = csr_matrix(array([[-2,1,0,0,0,9],
-                       [1,-2,1,0,5,0],
-                       [0,1,-2,1,0,0],
-                       [0,0,1,-2,1,0],
-                       [0,3,0,1,-2,1],
-                       [1,0,0,0,1,-2]]))
-b = array([1,2,3,4,5,6])
+Am = csr_matrix(
+    array(
+        [
+            [-2, 1, 0, 0, 0, 9],
+            [1, -2, 1, 0, 5, 0],
+            [0, 1, -2, 1, 0, 0],
+            [0, 0, 1, -2, 1, 0],
+            [0, 3, 0, 1, -2, 1],
+            [1, 0, 0, 0, 1, -2],
+        ]
+    )
+)
+b = array([1, 2, 3, 4, 5, 6])
 count = [0]
 
 
 def matvec(v):
     count[0] += 1
-    return Am*v
+    return Am * v
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
@@ -39,7 +44,7 @@ def do_solve(**kw):
         sup.filter(DeprecationWarning, ".*called without specifying.*")
         x0, flag = gcrotmk(A, b, x0=zeros(A.shape[0]), tol=1e-14, **kw)
     count_0 = count[0]
-    assert_(allclose(A*x0, b, rtol=1e-12, atol=1e-12), norm(A*x0-b))
+    assert_(allclose(A * x0, b, rtol=1e-12, atol=1e-12), norm(A * x0 - b))
     return x0, count_0
 
 
@@ -53,7 +58,7 @@ class TestGCROTMK:
         x1, count_1 = do_solve(M=M)
 
         assert_equal(count_1, 3)
-        assert_(count_1 < count_0/2)
+        assert_(count_1 < count_0 / 2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
     def test_arnoldi(self):
@@ -82,7 +87,7 @@ class TestGCROTMK:
         # exceptions are raised
 
         for n in [3, 5, 10, 100]:
-            A = 2*eye(n)
+            A = 2 * eye(n)
 
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -105,8 +110,8 @@ class TestGCROTMK:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
     def test_nans(self):
-        A = eye(3, format='lil')
-        A[1,1] = np.nan
+        A = eye(3, format="lil")
+        A[1, 1] = np.nan
         b = np.ones(3)
 
         with suppress_warnings() as sup:
@@ -119,11 +124,12 @@ class TestGCROTMK:
         A = np.random.rand(30, 30) + np.eye(30)
         b = np.random.rand(30)
 
-        for truncate in ['oldest', 'smallest']:
+        for truncate in ["oldest", "smallest"]:
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning, ".*called without specifying.*")
-                x, info = gcrotmk(A, b, m=10, k=10, truncate=truncate, tol=1e-4,
-                                  maxiter=200)
+                x, info = gcrotmk(
+                    A, b, m=10, k=10, truncate=truncate, tol=1e-4, maxiter=200
+                )
             assert_equal(info, 0)
             assert_allclose(A.dot(x) - b, 0, atol=1e-3)
 
@@ -145,7 +151,7 @@ class TestGCROTMK:
                 assert_equal(count_1, 2 + len(CU))
             else:
                 assert_equal(count_1, 3)
-            assert_(count_1 <= count_0/2)
+            assert_(count_1 <= count_0 / 2)
             assert_allclose(x1, x0, atol=1e-14)
 
     def test_denormals(self):

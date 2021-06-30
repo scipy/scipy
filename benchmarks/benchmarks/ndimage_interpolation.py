@@ -3,8 +3,14 @@ import numpy as np
 from .common import Benchmark
 
 try:
-    from scipy.ndimage import (geometric_transform, affine_transform, rotate,
-                               zoom, shift, map_coordinates)
+    from scipy.ndimage import (
+        geometric_transform,
+        affine_transform,
+        rotate,
+        zoom,
+        shift,
+        map_coordinates,
+    )
 except ImportError:
     pass
 
@@ -18,21 +24,18 @@ def shift_func_3d(c):
 
 
 class NdimageInterpolation(Benchmark):
-    param_names = ['shape', 'order', 'mode']
+    param_names = ["shape", "order", "mode"]
     params = [
         [(64, 64), (512, 512), (2048, 2048), (16, 16, 16), (128, 128, 128)],
         [0, 1, 3, 5],
-        ['mirror', 'constant']
+        ["mirror", "constant"],
     ]
 
     def setup(self, shape, order, mode):
         rstate = np.random.RandomState(5)
         self.x = rstate.standard_normal(shape)
-        self.matrix_2d = np.asarray([[0.8, 0, 1.5],
-                                     [0, 1.2, -5.]])
-        self.matrix_3d = np.asarray([[0.8, 0, 0, 1.5],
-                                     [0, 1.2, 0, -5.],
-                                     [0, 0, 1, 0]])
+        self.matrix_2d = np.asarray([[0.8, 0, 1.5], [0, 1.2, -5.0]])
+        self.matrix_3d = np.asarray([[0.8, 0, 0, 1.5], [0, 1.2, 0, -5.0], [0, 0, 1, 0]])
 
     def time_affine_transform(self, shape, order, mode):
         if self.x.ndim == 2:

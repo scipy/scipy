@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -11,7 +11,7 @@ at the top-level directory.
 
 /*! @file smyblas2.c
  * \brief Level 2 Blas operations
- * 
+ *
  * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
@@ -30,8 +30,8 @@ at the top-level directory.
 
 /*! \brief Solves a dense UNIT lower triangular system
  *
- *  The unit lower 
- * triangular matrix is stored in a 2D array M(1:nrow,1:ncol). 
+ *  The unit lower
+ * triangular matrix is stored in a 2D array M(1:nrow,1:ncol).
  * The solution will be returned in the rhs vector.
  */
 void slsolve ( int ldm, int ncol, float *M, float *rhs )
@@ -76,13 +76,13 @@ void slsolve ( int ldm, int ncol, float *M, float *rhs )
       rhs[++firstcol] = x6;
       rhs[++firstcol] = x7;
       ++firstcol;
-    
+
       for (k = firstcol; k < ncol; k++)
 	rhs[k] = rhs[k] - x0 * *Mki0++ - x1 * *Mki1++
 	                - x2 * *Mki2++ - x3 * *Mki3++
                         - x4 * *Mki4++ - x5 * *Mki5++
 			- x6 * *Mki6++ - x7 * *Mki7++;
- 
+
       M0 += 8 * ldm + 8;
     }
 
@@ -101,11 +101,11 @@ void slsolve ( int ldm, int ncol, float *M, float *rhs )
       rhs[++firstcol] = x2;
       rhs[++firstcol] = x3;
       ++firstcol;
-    
+
       for (k = firstcol; k < ncol; k++)
 	rhs[k] = rhs[k] - x0 * *Mki0++ - x1 * *Mki1++
 	                - x2 * *Mki2++ - x3 * *Mki3++;
- 
+
       M0 += 4 * ldm + 4;
     }
 
@@ -118,16 +118,16 @@ void slsolve ( int ldm, int ncol, float *M, float *rhs )
 
       rhs[++firstcol] = x1;
       ++firstcol;
-    
+
       for (k = firstcol; k < ncol; k++)
 	rhs[k] = rhs[k] - x0 * *Mki0++ - x1 * *Mki1++;
- 
+
     }
-    
+
 }
 
 /*! \brief Solves a dense upper triangular system
- * 
+ *
  * The upper triangular matrix is
  * stored in a 2-dim array M(1:ldm,1:ncol). The solution will be returned
  * in the rhs vector.
@@ -148,7 +148,7 @@ float *rhs;	/* modified */
 
 	xj = rhs[jcol] / M[jcol + jcol*ldm]; 		/* M(jcol, jcol) */
 	rhs[jcol] = xj;
-	
+
 	for (irow = 0; irow < jcol; irow++)
 	    rhs[irow] -= xj * M[irow + jcol*ldm];	/* M(irow, jcol) */
 
@@ -159,13 +159,13 @@ float *rhs;	/* modified */
 
 
 /*! \brief Performs a dense matrix-vector multiply: Mxvec = Mxvec + M * vec.
- * 
+ *
  * The input matrix is M(1:nrow,1:ncol); The product is returned in Mxvec[].
  */
 void smatvec ( ldm, nrow, ncol, M, vec, Mxvec )
 
 int ldm;	/* in -- leading dimension of M */
-int nrow;	/* in */ 
+int nrow;	/* in */
 int ncol;	/* in */
 float *M;	/* in */
 float *vec;	/* in */
@@ -193,15 +193,15 @@ float *Mxvec;	/* in/out */
 	vi0 = vec[firstcol++];
 	vi1 = vec[firstcol++];
 	vi2 = vec[firstcol++];
-	vi3 = vec[firstcol++];	
+	vi3 = vec[firstcol++];
 	vi4 = vec[firstcol++];
 	vi5 = vec[firstcol++];
 	vi6 = vec[firstcol++];
-	vi7 = vec[firstcol++];	
+	vi7 = vec[firstcol++];
 
-	for (k = 0; k < nrow; k++) 
+	for (k = 0; k < nrow; k++)
 	    Mxvec[k] += vi0 * *Mki0++ + vi1 * *Mki1++
-		      + vi2 * *Mki2++ + vi3 * *Mki3++ 
+		      + vi2 * *Mki2++ + vi3 * *Mki3++
 		      + vi4 * *Mki4++ + vi5 * *Mki5++
 		      + vi6 * *Mki6++ + vi7 * *Mki7++;
 
@@ -218,8 +218,8 @@ float *Mxvec;	/* in/out */
 	vi0 = vec[firstcol++];
 	vi1 = vec[firstcol++];
 	vi2 = vec[firstcol++];
-	vi3 = vec[firstcol++];	
-	for (k = 0; k < nrow; k++) 
+	vi3 = vec[firstcol++];
+	for (k = 0; k < nrow; k++)
 	    Mxvec[k] += vi0 * *Mki0++ + vi1 * *Mki1++
 		      + vi2 * *Mki2++ + vi3 * *Mki3++ ;
 
@@ -235,6 +235,5 @@ float *Mxvec;	/* in/out */
 
 	M0 += ldm;
     }
-	
-}
 
+}

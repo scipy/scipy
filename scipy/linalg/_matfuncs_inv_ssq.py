@@ -35,7 +35,7 @@ class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
 
 
-#TODO renovate or move this class when scipy operators are more mature
+# TODO renovate or move this class when scipy operators are more mature
 class _MatrixM1PowerOperator(LinearOperator):
     """
     A representation of the linear operator (A - I)^p.
@@ -43,9 +43,9 @@ class _MatrixM1PowerOperator(LinearOperator):
 
     def __init__(self, A, p):
         if A.ndim != 2 or A.shape[0] != A.shape[1]:
-            raise ValueError('expected A to be like a square matrix')
+            raise ValueError("expected A to be like a square matrix")
         if p < 0 or p != int(p):
-            raise ValueError('expected p to be a non-negative integer')
+            raise ValueError("expected p to be a non-negative integer")
         self._A = A
         self._p = p
         self.ndim = A.ndim
@@ -70,9 +70,8 @@ class _MatrixM1PowerOperator(LinearOperator):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
-#TODO renovate or move this function when SciPy operators are more mature
-def _onenormest_m1_power(A, p,
-        t=2, itmax=5, compute_v=False, compute_w=False):
+# TODO renovate or move this function when SciPy operators are more mature
+def _onenormest_m1_power(A, p, t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Efficiently estimate the 1-norm of (A - I)^p.
 
@@ -108,8 +107,13 @@ def _onenormest_m1_power(A, p,
         that is relatively large in norm compared to the input.
 
     """
-    return onenormest(_MatrixM1PowerOperator(A, p),
-            t=t, itmax=itmax, compute_v=compute_v, compute_w=compute_w)
+    return onenormest(
+        _MatrixM1PowerOperator(A, p),
+        t=t,
+        itmax=itmax,
+        compute_v=compute_v,
+        compute_w=compute_w,
+    )
 
 
 def _unwindk(z):
@@ -148,7 +152,7 @@ def _unwindk(z):
            36: 303-318, 2002.
 
     """
-    return int(np.ceil((z.imag - np.pi) / (2*np.pi)))
+    return int(np.ceil((z.imag - np.pi) / (2 * np.pi)))
 
 
 def _briggs_helper_function(a, k):
@@ -186,7 +190,7 @@ def _briggs_helper_function(a, k):
 
     """
     if k < 0 or int(k) != k:
-        raise ValueError('expected a nonnegative integer k')
+        raise ValueError("expected a nonnegative integer k")
     if k == 0:
         return a - 1
     elif k == 1:
@@ -242,16 +246,16 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
 
     """
     if l1 == l2:
-        f12 = t12 * p * l1**(p-1)
+        f12 = t12 * p * l1 ** (p - 1)
     elif abs(l2 - l1) > abs(l1 + l2) / 2:
-        f12 = t12 * ((l2**p) - (l1**p)) / (l2 - l1)
+        f12 = t12 * ((l2 ** p) - (l1 ** p)) / (l2 - l1)
     else:
         # This is Eq. (5.5) in [1].
         z = (l2 - l1) / (l2 + l1)
         log_l1 = np.log(l1)
         log_l2 = np.log(l2)
         arctanh_z = np.arctanh(z)
-        tmp_a = t12 * np.exp((p/2)*(log_l2 + log_l1))
+        tmp_a = t12 * np.exp((p / 2) * (log_l2 + log_l1))
         tmp_u = _unwindk(log_l2 - log_l1)
         if tmp_u:
             tmp_b = p * (arctanh_z + np.pi * 1j * tmp_u)
@@ -303,7 +307,7 @@ def _logm_superdiag_entry(l1, l2, t12):
         z = (l2 - l1) / (l2 + l1)
         u = _unwindk(np.log(l2) - np.log(l1))
         if u:
-            f12 = t12 * 2 * (np.arctanh(z) + np.pi*1j*u) / (l2 - l1)
+            f12 = t12 * 2 * (np.arctanh(z) + np.pi * 1j * u) / (l2 - l1)
         else:
             f12 = t12 * 2 * np.arctanh(z) / (l2 - l1)
     return f12
@@ -356,7 +360,7 @@ def _inverse_squaring_helper(T0, theta):
 
     """
     if len(T0.shape) != 2 or T0.shape[0] != T0.shape[1]:
-        raise ValueError('expected an upper triangular square matrix')
+        raise ValueError("expected an upper triangular square matrix")
     n, n = T0.shape
     T = T0
 
@@ -367,7 +371,7 @@ def _inverse_squaring_helper(T0, theta):
     s0 = 0
     tmp_diag = np.diag(T)
     if np.count_nonzero(tmp_diag) != n:
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
@@ -381,8 +385,8 @@ def _inverse_squaring_helper(T0, theta):
     # which have GOTOs in the publication.
     s = s0
     k = 0
-    d2 = _onenormest_m1_power(T, 2) ** (1/2)
-    d3 = _onenormest_m1_power(T, 3) ** (1/3)
+    d2 = _onenormest_m1_power(T, 2) ** (1 / 2)
+    d3 = _onenormest_m1_power(T, 3) ** (1 / 3)
     a2 = max(d2, d3)
     m = None
     for i in (1, 2):
@@ -391,8 +395,8 @@ def _inverse_squaring_helper(T0, theta):
             break
     while m is None:
         if s > s0:
-            d3 = _onenormest_m1_power(T, 3) ** (1/3)
-        d4 = _onenormest_m1_power(T, 4) ** (1/4)
+            d3 = _onenormest_m1_power(T, 3) ** (1 / 3)
+        d4 = _onenormest_m1_power(T, 4) ** (1 / 4)
         a3 = max(d3, d4)
         if a3 <= theta[7]:
             j1 = min(i for i in (3, 4, 5, 6, 7) if a3 <= theta[i])
@@ -404,7 +408,7 @@ def _inverse_squaring_helper(T0, theta):
                 T = _sqrtm_triu(T)
                 s += 1
                 continue
-        d5 = _onenormest_m1_power(T, 5) ** (1/5)
+        d5 = _onenormest_m1_power(T, 5) ** (1 / 5)
         a4 = max(d4, d5)
         eta = min(a3, a4)
         for i in (6, 7):
@@ -433,35 +437,35 @@ def _inverse_squaring_helper(T0, theta):
             r = _briggs_helper_function(a, s)
             R[j, j] = r
         p = np.exp2(-s)
-        for j in range(n-1):
+        for j in range(n - 1):
             l1 = T0[j, j]
-            l2 = T0[j+1, j+1]
-            t12 = T0[j, j+1]
+            l2 = T0[j + 1, j + 1]
+            t12 = T0[j, j + 1]
             f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-            R[j, j+1] = f12
+            R[j, j + 1] = f12
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
     if not np.array_equal(R, np.triu(R)):
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
     return R, s, m
 
 
 def _fractional_power_pade_constant(i, t):
     # A helper function for matrix fractional power.
     if i < 1:
-        raise ValueError('expected a positive integer i')
+        raise ValueError("expected a positive integer i")
     if not (-1 < t < 1):
-        raise ValueError('expected -1 < t < 1')
+        raise ValueError("expected -1 < t < 1")
     if i == 1:
         return -t
     elif i % 2 == 0:
         j = i // 2
-        return (-j + t) / (2 * (2*j - 1))
+        return (-j + t) / (2 * (2 * j - 1))
     elif i % 2 == 1:
         j = (i - 1) // 2
-        return (-j - t) / (2 * (2*j + 1))
+        return (-j - t) / (2 * (2 * j + 1))
     else:
-        raise Exception('internal error')
+        raise Exception("internal error")
 
 
 def _fractional_power_pade(R, t, m):
@@ -496,21 +500,21 @@ def _fractional_power_pade(R, t, m):
 
     """
     if m < 1 or int(m) != m:
-        raise ValueError('expected a positive integer m')
+        raise ValueError("expected a positive integer m")
     if not (-1 < t < 1):
-        raise ValueError('expected -1 < t < 1')
+        raise ValueError("expected -1 < t < 1")
     R = np.asarray(R)
     if len(R.shape) != 2 or R.shape[0] != R.shape[1]:
-        raise ValueError('expected an upper triangular square matrix')
+        raise ValueError("expected an upper triangular square matrix")
     n, n = R.shape
     ident = np.identity(n)
-    Y = R * _fractional_power_pade_constant(2*m, t)
-    for j in range(2*m - 1, 0, -1):
+    Y = R * _fractional_power_pade_constant(2 * m, t)
+    for j in range(2 * m - 1, 0, -1):
         rhs = R * _fractional_power_pade_constant(j, t)
         Y = solve_triangular(ident + Y, rhs)
     U = ident + Y
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
     return U
 
 
@@ -547,14 +551,14 @@ def _remainder_matrix_power_triu(T, t):
 
     """
     m_to_theta = {
-            1: 1.51e-5,
-            2: 2.24e-3,
-            3: 1.88e-2,
-            4: 6.04e-2,
-            5: 1.24e-1,
-            6: 2.00e-1,
-            7: 2.79e-1,
-            }
+        1: 1.51e-5,
+        2: 2.24e-3,
+        3: 1.88e-2,
+        4: 6.04e-2,
+        5: 1.24e-1,
+        6: 2.00e-1,
+        7: 2.79e-1,
+    }
     n, n = T.shape
     T0 = T
     T0_diag = np.diag(T0)
@@ -582,14 +586,14 @@ def _remainder_matrix_power_triu(T, t):
                 if has_principal_branch:
                     p = t * np.exp2(-i)
                     U[np.diag_indices(n)] = T0_diag ** p
-                    for j in range(n-1):
+                    for j in range(n - 1):
                         l1 = T0[j, j]
-                        l2 = T0[j+1, j+1]
-                        t12 = T0[j, j+1]
+                        l2 = T0[j + 1, j + 1]
+                        t12 = T0[j, j + 1]
                         f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-                        U[j, j+1] = f12
+                        U[j, j + 1] = f12
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
     return U
 
 
@@ -627,7 +631,7 @@ def _remainder_matrix_power(A, t):
     # This code block is copied from numpy.matrix_power().
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('input must be a square array')
+        raise ValueError("input must be a square array")
 
     # Get the number of rows and columns.
     n, n = A.shape
@@ -643,15 +647,16 @@ def _remainder_matrix_power(A, t):
             if not np.array_equal(T, np.triu(T)):
                 T, Z = rsf2csf(T, Z)
         else:
-            T, Z = schur(A, output='complex')
+            T, Z = schur(A, output="complex")
 
     # Zeros on the diagonal of the triangular matrix are forbidden,
     # because the inverse scaling and squaring cannot deal with it.
     T_diag = np.diag(T)
     if np.count_nonzero(T_diag) != n:
         raise FractionalMatrixPowerError(
-                'cannot use inverse scaling and squaring to find '
-                'the fractional matrix power of a singular matrix')
+            "cannot use inverse scaling and squaring to find "
+            "the fractional matrix power of a singular matrix"
+        )
 
     # If the triangular matrix is real and has a negative
     # entry on the diagonal, then force the matrix to be complex.
@@ -677,7 +682,7 @@ def _fractional_matrix_power(A, p):
     """
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected a square matrix')
+        raise ValueError("expected a square matrix")
     if p == int(p):
         return np.linalg.matrix_power(A, int(p))
     # Compute singular values.
@@ -755,7 +760,7 @@ def _logm_triu(T):
     """
     T = np.asarray(T)
     if len(T.shape) != 2 or T.shape[0] != T.shape[1]:
-        raise ValueError('expected an upper triangular square matrix')
+        raise ValueError("expected an upper triangular square matrix")
     n, n = T.shape
 
     # Construct T0 with the appropriate type,
@@ -768,11 +773,25 @@ def _logm_triu(T):
         T0 = T.astype(complex)
 
     # Define bounds given in Table (2.1).
-    theta = (None,
-            1.59e-5, 2.31e-3, 1.94e-2, 6.21e-2,
-            1.28e-1, 2.06e-1, 2.88e-1, 3.67e-1,
-            4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
-            6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
+    theta = (
+        None,
+        1.59e-5,
+        2.31e-3,
+        1.94e-2,
+        6.21e-2,
+        1.28e-1,
+        2.06e-1,
+        2.88e-1,
+        3.67e-1,
+        4.39e-1,
+        5.03e-1,
+        5.60e-1,
+        6.09e-1,
+        6.52e-1,
+        6.89e-1,
+        7.21e-1,
+        7.49e-1,
+    )
 
     R, s, m = _inverse_squaring_helper(T0, theta)
 
@@ -784,13 +803,13 @@ def _logm_triu(T):
     nodes, weights = scipy.special.p_roots(m)
     nodes = nodes.real
     if nodes.shape != (m,) or weights.shape != (m,):
-        raise Exception('internal error')
+        raise Exception("internal error")
     nodes = 0.5 + 0.5 * nodes
     weights = 0.5 * weights
     ident = np.identity(n)
     U = np.zeros_like(R)
     for alpha, beta in zip(weights, nodes):
-        U += solve_triangular(ident + beta*R, alpha*R)
+        U += solve_triangular(ident + beta * R, alpha * R)
     U *= np.exp2(s)
 
     # Skip this step if the principal branch
@@ -805,15 +824,15 @@ def _logm_triu(T):
         # Recompute superdiagonal entries of U.
         # This indexing of this code should be renovated
         # when newer np.diagonal() becomes available.
-        for i in range(n-1):
+        for i in range(n - 1):
             l1 = T0[i, i]
-            l2 = T0[i+1, i+1]
-            t12 = T0[i, i+1]
-            U[i, i+1] = _logm_superdiag_entry(l1, l2, t12)
+            l2 = T0[i + 1, i + 1]
+            t12 = T0[i, i + 1]
+            U[i, i + 1] = _logm_superdiag_entry(l1, l2, t12)
 
     # Return the logm of the upper triangular matrix.
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
     return U
 
 
@@ -823,7 +842,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
     tri_eps = 1e-20
     abs_diag = np.absolute(np.diag(T))
     if np.any(abs_diag == 0):
-        exact_singularity_msg = 'The logm input matrix is exactly singular.'
+        exact_singularity_msg = "The logm input matrix is exactly singular."
         warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
         if not inplace:
             T = T.copy()
@@ -832,7 +851,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
             if not T[i, i]:
                 T[i, i] = tri_eps
     elif np.any(abs_diag < tri_eps):
-        near_singularity_msg = 'The logm input matrix may be nearly singular.'
+        near_singularity_msg = "The logm input matrix may be nearly singular."
         warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
     return T
 
@@ -856,7 +875,7 @@ def _logm(A):
     """
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected a square matrix')
+        raise ValueError("expected a square matrix")
 
     # If the input matrix dtype is integer then copy to a float dtype matrix.
     if issubclass(A.dtype.type, np.integer):
@@ -875,7 +894,7 @@ def _logm(A):
                 if not np.array_equal(T, np.triu(T)):
                     T, Z = rsf2csf(T, Z)
             else:
-                T, Z = schur(A, output='complex')
+                T, Z = schur(A, output="complex")
             T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
             U = _logm_triu(T)
             ZH = np.conjugate(Z).T

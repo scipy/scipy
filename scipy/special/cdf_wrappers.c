@@ -294,7 +294,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
 
 /* scl == a in gdtr
    shp == b in gdtr
-*/ 
+*/
 extern void F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
 double cdfgam1_wrap(double scl, double shp, double x) {
   int which=1;

@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -271,7 +271,7 @@ ilu_cpivotL(
 	lsub_ptr[pivptr] = lsub_ptr[nsupc];
 	lsub_ptr[nsupc] = itemp;
 
-	/* Interchange numerical values as well, for the whole snode, such 
+	/* Interchange numerical values as well, for the whole snode, such
 	 * that L is indexed the same way as A.
 	 */
 	for (icol = 0; icol <= nsupc; icol++) {
@@ -285,7 +285,7 @@ ilu_cpivotL(
     /* cdiv operation */
     ops[FACT] += 10 * (nsupr - nsupc);
     c_div(&temp, &one, &lu_col_ptr[nsupc]);
-    for (k = nsupc+1; k < nsupr; k++) 
+    for (k = nsupc+1; k < nsupr; k++)
 	cc_mult(&lu_col_ptr[k], &lu_col_ptr[k], &temp);
 
     return info;

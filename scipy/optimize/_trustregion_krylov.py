@@ -1,10 +1,19 @@
-from ._trustregion import (_minimize_trust_region)
-from ._trlib import (get_trlib_quadratic_subproblem)
+from ._trustregion import _minimize_trust_region
+from ._trlib import get_trlib_quadratic_subproblem
 
-__all__ = ['_minimize_trust_krylov']
+__all__ = ["_minimize_trust_krylov"]
 
-def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                           inexact=True, **trust_region_options):
+
+def _minimize_trust_krylov(
+    fun,
+    x0,
+    args=(),
+    jac=None,
+    hess=None,
+    hessp=None,
+    inexact=True,
+    **trust_region_options,
+):
     """
     Minimization of a scalar function of one or more variables using
     a nearly exact trust-region algorithm that only requires matrix
@@ -20,11 +29,14 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
     """
 
     if jac is None:
-        raise ValueError('Jacobian is required for trust region ',
-                         'exact minimization.')
+        raise ValueError(
+            "Jacobian is required for trust region ", "exact minimization."
+        )
     if hess is None and hessp is None:
-        raise ValueError('Either the Hessian or the Hessian-vector product '
-                         'is required for Krylov trust-region minimization')
+        raise ValueError(
+            "Either the Hessian or the Hessian-vector product "
+            "is required for Krylov trust-region minimization"
+        )
 
     # tol_rel specifies the termination tolerance relative to the initial
     # gradient norm in the Krylov subspace iteration.
@@ -48,18 +60,32 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
     # has been tested on the unconstrained subset of the CUTEst library.
 
     if inexact:
-        return _minimize_trust_region(fun, x0, args=args, jac=jac,
-                                      hess=hess, hessp=hessp,
-                                      subproblem=get_trlib_quadratic_subproblem(
-                                          tol_rel_i=-2.0, tol_rel_b=-3.0,
-                                          disp=trust_region_options.get('disp', False)
-                                          ),
-                                      **trust_region_options)
+        return _minimize_trust_region(
+            fun,
+            x0,
+            args=args,
+            jac=jac,
+            hess=hess,
+            hessp=hessp,
+            subproblem=get_trlib_quadratic_subproblem(
+                tol_rel_i=-2.0,
+                tol_rel_b=-3.0,
+                disp=trust_region_options.get("disp", False),
+            ),
+            **trust_region_options,
+        )
     else:
-        return _minimize_trust_region(fun, x0, args=args, jac=jac,
-                                      hess=hess, hessp=hessp,
-                                      subproblem=get_trlib_quadratic_subproblem(
-                                          tol_rel_i=1e-8, tol_rel_b=1e-6,
-                                          disp=trust_region_options.get('disp', False)
-                                          ),
-                                      **trust_region_options)
+        return _minimize_trust_region(
+            fun,
+            x0,
+            args=args,
+            jac=jac,
+            hess=hess,
+            hessp=hessp,
+            subproblem=get_trlib_quadratic_subproblem(
+                tol_rel_i=1e-8,
+                tol_rel_b=1e-6,
+                disp=trust_region_options.get("disp", False),
+            ),
+            **trust_region_options,
+        )

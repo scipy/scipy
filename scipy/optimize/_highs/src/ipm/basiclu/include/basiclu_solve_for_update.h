@@ -62,7 +62,7 @@ Arguments:
         When the forward system is solved, irhs[0..nzrhs-1] are the indices of
         nonzeros and xrhs[0..nzrhs-1] the corresponding values. irhs must not
         contain duplicates.
-        
+
         When the transposed system is solved, the right-hand side is a unit
         vector with entry 1 in position irhs[0]. nzrhs, xrhs and elements of
         irhs other than irhs[0] are not accessed. xrhs can be NULL.

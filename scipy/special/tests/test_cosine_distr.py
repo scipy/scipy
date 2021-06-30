@@ -1,4 +1,3 @@
-
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
@@ -13,6 +12,7 @@ _coscdf_exact = [
     (np.pi, 1.0),
     (4.0, 1.0),
 ]
+
 
 @pytest.mark.parametrize("x, expected", _coscdf_exact)
 def test_cosine_cdf_exact(x, expected):
@@ -37,6 +37,7 @@ _coscdf_close = [
     (-np.pi, 4.871934450264861e-50),
 ]
 
+
 @pytest.mark.parametrize("x, expected", _coscdf_close)
 def test_cosine_cdf(x, expected):
     assert_allclose(_cosine_cdf(x), expected, rtol=5e-15)
@@ -49,6 +50,7 @@ _cosinvcdf_exact = [
     (0.5, 0.0),
     (1.0, np.pi),
 ]
+
 
 @pytest.mark.parametrize("p, expected", _cosinvcdf_exact)
 def test_cosine_invcdf_exact(p, expected):
@@ -78,6 +80,7 @@ _cosinvcdf_close = [
     (0.940, 1.7881244975330153),
     (0.9999999996, 3.1391220839917167),
 ]
+
 
 @pytest.mark.parametrize("p, expected", _cosinvcdf_close)
 def test_cosine_invcdf(p, expected):

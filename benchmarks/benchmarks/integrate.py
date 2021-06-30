@@ -10,6 +10,7 @@ with safe_import():
 
 with safe_import() as exc:
     from scipy import LowLevelCallable
+
     from_cython = LowLevelCallable.from_cython
 if exc.error:
     LowLevelCallable = lambda func, data: (func, data)
@@ -29,14 +30,22 @@ class SolveBVP(Benchmark):
 
     def fun_flow(self, x, y, p):
         A = p[0]
-        return np.vstack((
-            y[1], y[2], 100 * (y[1] ** 2 - y[0] * y[2] - A),
-            y[4], -100 * y[0] * y[4] - 1, y[6], -70 * y[0] * y[6]
-        ))
+        return np.vstack(
+            (
+                y[1],
+                y[2],
+                100 * (y[1] ** 2 - y[0] * y[2] - A),
+                y[4],
+                -100 * y[0] * y[4] - 1,
+                y[6],
+                -70 * y[0] * y[6],
+            )
+        )
 
     def bc_flow(self, ya, yb, p):
-        return np.array([
-            ya[0], ya[1], yb[0] - 1, yb[1], ya[3], yb[3], ya[5], yb[5] - 1])
+        return np.array(
+            [ya[0], ya[1], yb[0] - 1, yb[1], ya[3], yb[3], ya[5], yb[5] - 1]
+        )
 
     def time_flow(self):
         x = np.linspace(0, 1, 10)
@@ -45,10 +54,7 @@ class SolveBVP(Benchmark):
 
     def fun_peak(self, x, y):
         eps = 1e-3
-        return np.vstack((
-            y[1],
-            -(4 * x * y[1] + 2 * y[0]) / (eps + x**2)
-        ))
+        return np.vstack((y[1], -(4 * x * y[1] + 2 * y[0]) / (eps + x ** 2)))
 
     def bc_peak(self, ya, yb):
         eps = 1e-3
@@ -62,10 +68,7 @@ class SolveBVP(Benchmark):
 
     def fun_gas(self, x, y):
         alpha = 0.8
-        return np.vstack((
-            y[1],
-            -2 * x * y[1] * (1 - alpha * y[0]) ** -0.5
-        ))
+        return np.vstack((y[1], -2 * x * y[1] * (1 - alpha * y[0]) ** -0.5))
 
     def bc_gas(self, ya, yb):
         return np.array([ya[0] - 1, yb[0]])
@@ -87,8 +90,10 @@ class Quad(Benchmark):
 
         try:
             from scipy.integrate.tests.test_quadpack import get_clib_test_routine
-            self.f_ctypes = get_clib_test_routine('_multivariate_sin', ctypes.c_double,
-                                                  ctypes.c_int, ctypes.c_double)
+
+            self.f_ctypes = get_clib_test_routine(
+                "_multivariate_sin", ctypes.c_double, ctypes.c_int, ctypes.c_double
+            )
         except ImportError:
             lib = ctypes.CDLL(clib_test.__file__)
             self.f_ctypes = lib._multivariate_sin
@@ -99,7 +104,9 @@ class Quad(Benchmark):
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)
             address = voidp.value
             ffi = cffi.FFI()
-            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)", address))
+            self.f_cffi = LowLevelCallable(
+                ffi.cast("double (*)(int, double *)", address)
+            )
 
     def time_quad_python(self):
         quad(self.f_python, 0, np.pi)

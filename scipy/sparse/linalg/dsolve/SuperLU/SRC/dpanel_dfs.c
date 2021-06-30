@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -49,9 +49,9 @@ at the top-level directory.
  *   The routine returns one list of the supernodal representatives
  *   in topological order of the dfs that generates them. This list is
  *   a superset of the topological order of each individual column within
- *   the panel. 
+ *   the panel.
  *   The location of the first nonzero in each supernodal segment
- *   (supernodal entry location) is also returned. Each column has a 
+ *   (supernodal entry location) is also returned. Each column has a
  *   separate list for this purpose.
  *
  *   Two marker arrays are used for dfs:
@@ -78,7 +78,7 @@ dpanel_dfs (
 	   int        *segrep,     /* out */
 	   int        *repfnz,     /* out */
 	   int        *xprune,     /* out */
-	   int        *marker,     /* out */     
+	   int        *marker,     /* out */
 	   int        *parent,     /* working array */
 	   int        *xplore,     /* working array */
 	   GlobalLU_t *Glu         /* modified */
@@ -93,7 +93,7 @@ dpanel_dfs (
     int       k, krow, kmark, kperm;
     int       xdfs, maxdfs, kpar;
     int       jj;	   /* index through each column in the panel */
-    int       *marker1;	   /* marker1[jj] >= jcol if vertex jj was visited 
+    int       *marker1;	   /* marker1[jj] >= jcol if vertex jj was visited
 			      by a previous column within this panel.   */
     int       *repfnz_col; /* start of each column in the panel */
     double    *dense_col;  /* start of each column in the panel */
@@ -128,8 +128,8 @@ dpanel_dfs (
 	for (k = xa_begin[jj]; k < xa_end[jj]; k++) {
 	    krow = asub[k];
             dense_col[krow] = a[k];
-	    kmark = marker[krow];    	
-	    if ( kmark == jj ) 
+	    kmark = marker[krow];
+	    if ( kmark == jj )
 		continue;     /* krow visited before, go to the next nonzero */
 
 	    /* For each unmarked nbr krow of jj
@@ -137,19 +137,19 @@ dpanel_dfs (
 	     */
 	    marker[krow] = jj;
 	    kperm = perm_r[krow];
-	    
+
 	    if ( kperm == EMPTY ) {
 		panel_lsub[nextl_col++] = krow; /* krow is indexed into A */
 	    }
-	    /* 
+	    /*
 	     * krow is in U: if its supernode-rep krep
 	     * has been explored, update repfnz[*]
 	     */
 	    else {
-		
+
 		krep = xsup[supno[kperm]+1] - 1;
 		myfnz = repfnz_col[krep];
-		
+
 #ifdef CHK_DFS
 		printf("krep %d, myfnz %d, perm_r[%d] %d\n", krep, myfnz, krow, kperm);
 #endif
@@ -164,36 +164,36 @@ dpanel_dfs (
 		    repfnz_col[krep] = kperm;
 		    xdfs = xlsub[krep];
 		    maxdfs = xprune[krep];
-		    
-#ifdef CHK_DFS 
+
+#ifdef CHK_DFS
 		    printf("  xdfs %d, maxdfs %d: ", xdfs, maxdfs);
 		    for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);
 		    printf("\n");
 #endif
 		    do {
-			/* 
-			 * For each unmarked kchild of krep 
+			/*
+			 * For each unmarked kchild of krep
 			 */
 			while ( xdfs < maxdfs ) {
-			    
+
 			    kchild = lsub[xdfs];
 			    xdfs++;
 			    chmark = marker[kchild];
-			    
+
 			    if ( chmark != jj ) { /* Not reached yet */
 				marker[kchild] = jj;
 				chperm = perm_r[kchild];
-			      
+
 				/* Case kchild is in L: place it in L[*,j] */
 				if ( chperm == EMPTY ) {
 				    panel_lsub[nextl_col++] = kchild;
-				} 
-				/* Case kchild is in U: 
-				 *   chrep = its supernode-rep. If its rep has 
+				}
+				/* Case kchild is in U:
+				 *   chrep = its supernode-rep. If its rep has
 				 *   been explored, update its repfnz[*]
 				 */
 				else {
-				    
+
 				    chrep = xsup[supno[chperm]+1] - 1;
 				    myfnz = repfnz_col[chrep];
 #ifdef CHK_DFS
@@ -205,28 +205,28 @@ dpanel_dfs (
 				    }
 				    else {
 					/* Cont. dfs at snode-rep of kchild */
-					xplore[krep] = xdfs;	
+					xplore[krep] = xdfs;
 					oldrep = krep;
 					krep = chrep; /* Go deeper down G(L) */
 					parent[krep] = oldrep;
 					repfnz_col[krep] = chperm;
-					xdfs = xlsub[krep];     
+					xdfs = xlsub[krep];
 					maxdfs = xprune[krep];
-#ifdef CHK_DFS 
+#ifdef CHK_DFS
 					printf("  xdfs %d, maxdfs %d: ", xdfs, maxdfs);
-					for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);	
+					for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);
 					printf("\n");
 #endif
 				    } /* else */
-				  
+
 				} /* else */
-			      
+
 			    } /* if... */
-			    
+
 			} /* while xdfs < maxdfs */
-			
+
 			/* krow has no more unexplored nbrs:
-			 *    Place snode-rep krep in postorder DFS, if this 
+			 *    Place snode-rep krep in postorder DFS, if this
 			 *    segment is seen for the first time. (Note that
 			 *    "repfnz[krep]" may change later.)
 			 *    Backtrack dfs to its parent.
@@ -236,29 +236,29 @@ dpanel_dfs (
 			    ++(*nseg);
 			    marker1[krep] = jj;
 			}
-			
+
 			kpar = parent[krep]; /* Pop stack, mimic recursion */
 			if ( kpar == EMPTY ) break; /* dfs done */
 			krep = kpar;
 			xdfs = xplore[krep];
 			maxdfs = xprune[krep];
-			
-#ifdef CHK_DFS 
+
+#ifdef CHK_DFS
 			printf("  pop stack: krep %d,xdfs %d,maxdfs %d: ", krep,xdfs,maxdfs);
 			for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);
 			printf("\n");
 #endif
 		    } while ( kpar != EMPTY ); /* do-while - until empty stack */
-		    
+
 		} /* else */
-		
+
 	    } /* else */
-	    
+
 	} /* for each nonz in A[*,jj] */
-	
+
 	repfnz_col += m;    /* Move to next column */
         dense_col += m;
-	
+
     } /* for jj ... */
-    
+
 }

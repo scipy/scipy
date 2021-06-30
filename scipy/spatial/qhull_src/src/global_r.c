@@ -1517,7 +1517,7 @@ void qh_initflags(qhT *qh, char *command) {
     lastwarning= command;
   }
   if (lastwarning && !qh->ALLOWwarning) {
-    qh_fprintf(qh, qh->ferr, 6035, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n", 
+    qh_fprintf(qh, qh->ferr, 6035, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n",
           command, (int)(lastwarning-command));
     qh_errexit(qh, qh_ERRinput, NULL, NULL);
   }
@@ -2099,14 +2099,14 @@ void qh_initthresholds(qhT *qh, char *command) {
           if (!isdigit(*s)) {
             qh_fprintf(qh, qh->ferr, 7047, "qhull option warning: no dimension given for Qhull option 'Q%c'\n",
                     key);
-            lastwarning= lastoption;            
+            lastwarning= lastoption;
             continue;
           }
           idx= qh_strtol(s, &s);
           if (idx >= maxdim) {
             qh_fprintf(qh, qh->ferr, 7048, "qhull option warning: dimension %d for Qhull option 'Q%c' is >= %d.  Ignored\n",
                 idx, key, maxdim);
-            lastwarning= lastoption;            
+            lastwarning= lastoption;
             continue;
           }
           if (*s == ':') {
@@ -2141,7 +2141,7 @@ void qh_initthresholds(qhT *qh, char *command) {
       qh->GOODthreshold= True;
   }
   if (lastwarning && !qh->ALLOWwarning) {
-    qh_fprintf(qh, qh->ferr, 6036, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n", 
+    qh_fprintf(qh, qh->ferr, 6036, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n",
       command, (int)(lastwarning-command));
     qh_errexit(qh, qh_ERRinput, NULL, NULL);
   }
@@ -2205,7 +2205,7 @@ void qh_lib_check(int qhullLibraryType, int qhTsize, int vertexTsize, int ridgeT
       last_errcode= 6254;
     }
     if (last_errcode) {
-      qh_fprintf_stderr(6259, "qhull internal error (qh_lib_check): Cannot continue due to QH%d.  '%s' is not reentrant (e.g., qhull.so) or out-of-date.  Exit with %d\n", 
+      qh_fprintf_stderr(6259, "qhull internal error (qh_lib_check): Cannot continue due to QH%d.  '%s' is not reentrant (e.g., qhull.so) or out-of-date.  Exit with %d\n",
             last_errcode, qh_version2, last_errcode - 6200);
       qh_exit(last_errcode - 6200);  /* can not use qh_errexit(), must be less than 255 */
     }
@@ -2265,4 +2265,3 @@ void qh_zero(qhT *qh, FILE *errfile) {
     qh->NOerrexit= True;
     qh_meminit(qh, errfile);
 } /* zero */
-

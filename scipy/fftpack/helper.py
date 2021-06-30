@@ -2,7 +2,8 @@ import operator
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 import scipy.fft._pocketfft.helper as _helper
 import numpy as np
-__all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
+
+__all__ = ["fftshift", "ifftshift", "fftfreq", "rfftfreq", "next_fast_len"]
 
 
 def rfftfreq(n, d=1.0):
@@ -41,8 +42,7 @@ def rfftfreq(n, d=1.0):
     """
     n = operator.index(n)
     if n < 0:
-        raise ValueError("n = %s is not valid. "
-                         "n must be a nonnegative integer." % n)
+        raise ValueError("n = %s is not valid. n must be a nonnegative integer." % n)
 
     return (np.arange(1, n + 1, dtype=int) // 2) / float(n * d)
 
@@ -103,8 +103,9 @@ def _good_shape(x, shape, axes):
     scipy.fftpack does not support len(shape) < x.ndim when axes is not given.
     """
     if shape is not None and axes is None:
-        shape = _helper._iterable_of_int(shape, 'shape')
+        shape = _helper._iterable_of_int(shape, "shape")
         if len(shape) != np.ndim(x):
-            raise ValueError("when given, axes and shape arguments"
-                             " have to be of the same length")
+            raise ValueError(
+                "when given, axes and shape arguments have to be of the same length"
+            )
     return shape

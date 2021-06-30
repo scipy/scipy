@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module _arpack ! in 
+python module _arpack ! in
     <_rd=real,double precision>
     <_cd=complex,double complex>
     interface  ! in :_arpack
@@ -37,7 +37,7 @@ python module _arpack ! in
             character :: bmat
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
             character*2 :: which
-            integer :: nev 
+            integer :: nev
             <_rd> :: tol
             <_rd> dimension(n) :: resid
             integer optional,check(len(select)>=ncv),depend(select) :: ncv=len(select)
@@ -134,7 +134,7 @@ python module _arpack ! in
             character :: bmat
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
             character*2 :: which
-            integer :: nev 
+            integer :: nev
             <_rd> :: tol
             <_cd> dimension(n) :: resid
             integer optional,check(len(select)>=ncv),depend(select) :: ncv=len(select)
@@ -206,7 +206,7 @@ python module _arpack ! in
             common /debug/ logfil,ndigit,mgetv0,msaupd,msaup2,msaitr,mseigt,msapps,msgets,mseupd,mnaupd,mnaup2,mnaitr,mneigh,mnapps,mngets,mneupd,mcaupd,mcaup2,mcaitr,mceigh,mcapps,mcgets,mceupd
             common /timing/ nopx,nbx,nrorth,nitref,nrstrt,tsaupd,tsaup2,tsaitr,tseigt,tsgets,tsapps,tsconv,tnaupd,tnaup2,tnaitr,tneigh,tngets,tnapps,tnconv,tcaupd,tcaup2,tcaitr,tceigh,tcgets,tcapps,tcconv,tmvopx,tmvbx,tgetv0,titref,trvec
 
-    end interface 
+    end interface
 end python module _arpack
 
 ! This file was auto-generated with f2py (version:2_3198).

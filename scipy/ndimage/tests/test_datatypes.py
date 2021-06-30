@@ -11,16 +11,23 @@ from scipy import ndimage
 
 def test_map_coordinates_dts():
     # check that ndimage accepts different data types for interpolation
-    data = np.array([[4, 1, 3, 2],
-                     [7, 6, 8, 5],
-                     [3, 5, 3, 6]])
-    shifted_data = np.array([[0, 0, 0, 0],
-                             [0, 4, 1, 3],
-                             [0, 7, 6, 8]])
+    data = np.array([[4, 1, 3, 2], [7, 6, 8, 5], [3, 5, 3, 6]])
+    shifted_data = np.array([[0, 0, 0, 0], [0, 4, 1, 3], [0, 7, 6, 8]])
     idx = np.indices(data.shape)
-    dts = (np.uint8, np.uint16, np.uint32, np.uint64,
-           np.int8, np.int16, np.int32, np.int64,
-           np.intp, np.uintp, np.float32, np.float64)
+    dts = (
+        np.uint8,
+        np.uint16,
+        np.uint32,
+        np.uint64,
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.intp,
+        np.uintp,
+        np.float32,
+        np.float64,
+    )
     for order in range(0, 6):
         for data_dt in dts:
             these_data = data.astype(data_dt)
@@ -37,7 +44,7 @@ def test_map_coordinates_dts():
                 assert_array_almost_equal(out, shifted_data)
                 # check constant fill works
                 out = ndimage.map_coordinates(these_data, coords_p10, order=order)
-                assert_array_almost_equal(out, np.zeros((3,4)))
+                assert_array_almost_equal(out, np.zeros((3, 4)))
             # check shift and zoom
             out = ndimage.shift(these_data, 1)
             assert_array_almost_equal(out, shifted_data)
@@ -45,7 +52,7 @@ def test_map_coordinates_dts():
             assert_array_almost_equal(these_data, out)
 
 
-@pytest.mark.xfail(not sys.platform == 'darwin', reason="runs only on darwin")
+@pytest.mark.xfail(not sys.platform == "darwin", reason="runs only on darwin")
 def test_uint64_max():
     # Test interpolation respects uint64 max.  Reported to fail at least on
     # win32 (due to the 32 bit visual C compiler using signed int64 when
@@ -53,7 +60,7 @@ def test_uint64_max():
     # Interpolation is always done in double precision floating point, so
     # we use the largest uint64 value for which int(float(big)) still fits
     # in a uint64.
-    big = 2**64 - 1025
+    big = 2 ** 64 - 1025
     arr = np.array([big, big, big], dtype=np.uint64)
     # Tests geometric transform (map_coordinates, affine_transform)
     inds = np.indices(arr.shape) - 0.1

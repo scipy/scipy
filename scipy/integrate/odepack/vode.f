@@ -35,7 +35,7 @@ C   920722  Minor revisions to prologue (ACH).
 C   920831  Conversion to double precision done (ACH).
 C   921106  Fixed minor bug: ETAQ,ETAQM1 in DVSTEP SAVE statement (ACH).
 C   921118  Changed LUNSAV/MFLGSV to IXSAV (ACH).
-C   941222  Removed MF overwrite; attached sign to H in estimated second 
+C   941222  Removed MF overwrite; attached sign to H in estimated second
 C           derivative in DVHIN; misc. comment corrections throughout.
 C   970515  Minor corrections to comments in prologue, DVJAC.
 C-----------------------------------------------------------------------
@@ -1056,7 +1056,7 @@ C
       DOUBLE PRECISION ATOLI, BIG, EWTI, FOUR, H0, HMAX, HMX, HUN, ONE,
      1   PT2, RH, RTOLI, SIZE, TCRIT, TNEXT, TOLSF, TP, TWO, ZERO
       INTEGER I, IER, IFLAG, IMXER, JCO, KGO, LENIW, LENJ, LENP, LENRW,
-     1   LENWM, LF0, MBAND, MFA, ML, MORD, MU, MXHNL0, MXSTP0, NITER, 
+     1   LENWM, LF0, MBAND, MFA, ML, MORD, MU, MXHNL0, MXSTP0, NITER,
      2   NSLAST
       CHARACTER*80 MSG
 C
@@ -3522,7 +3522,7 @@ C----------------------- End of Function D1MACH ------------------------
       CHARACTER*1 MSG(NMES)
 C-----------------------------------------------------------------------
 C Subroutines XERRWD, XSETF, XSETUN, and the function routine IXSAV,
-C as given here, constitute a simplified version of the SLATEC error 
+C as given here, constitute a simplified version of the SLATEC error
 C handling package.
 C Written by A. C. Hindmarsh and P. N. Brown at LLNL.
 C Version of 18 November, 1992.

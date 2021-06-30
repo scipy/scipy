@@ -37,18 +37,17 @@ class Rana(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-500.000001] * self.N,
-                           [500.000001] * self.N))
+        self._bounds = list(zip([-500.000001] * self.N, [500.000001] * self.N))
 
-        self.global_optimum = [[-300.3376, 500.]]
+        self.global_optimum = [[-300.3376, 500.0]]
         self.fglob = -500.8021602966615
         self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        t1 = sqrt(abs(x[1:] + x[: -1] + 1))
-        t2 = sqrt(abs(x[1:] - x[: -1] + 1))
+        t1 = sqrt(abs(x[1:] + x[:-1] + 1))
+        t2 = sqrt(abs(x[1:] - x[:-1] + 1))
         v = (x[1:] + 1) * cos(t2) * sin(t1) + x[:-1] * cos(t1) * sin(t2)
         return sum(v)
 
@@ -101,15 +100,31 @@ class Ratkowsky01(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([0., 1., 0., 0.1],
-                           [1000, 20., 3., 6.]))
-        self.global_optimum = [[6.996415127e2, 5.2771253025, 7.5962938329e-1,
-                                1.2792483859]]
+        self._bounds = list(zip([0.0, 1.0, 0.0, 0.1], [1000, 20.0, 3.0, 6.0]))
+        self.global_optimum = [
+            [6.996415127e2, 5.2771253025, 7.5962938329e-1, 1.2792483859]
+        ]
         self.fglob = 8.786404908e3
-        self.a = asarray([16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87,
-                          520.53, 590.03, 651.92, 724.93, 699.56, 689.96,
-                          637.56, 717.41])
-        self.b = arange(1, 16.)
+        self.a = asarray(
+            [
+                16.08,
+                33.83,
+                65.80,
+                97.20,
+                191.55,
+                326.20,
+                386.87,
+                520.53,
+                590.03,
+                651.92,
+                724.93,
+                699.56,
+                689.96,
+                637.56,
+                717.41,
+            ]
+        )
+        self.b = arange(1, 16.0)
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -131,15 +146,15 @@ class Ratkowsky02(Benchmark):
         - b_m x[2]))^2
 
     where
-    
+
     .. math::
-        
+
         \begin{cases}
         a=[8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62, 67.08]\\
         b=[9., 14., 21., 28., 42., 57., 63., 70., 79.]\\
-        \end{cases}       
-        
-        
+        \end{cases}
+
+
     Here :math:`x_1 \in [1, 100]`, :math:`x_2 \in [0.1, 5]` and
     :math:`x_3 \in [0.01, 0.5]`
 
@@ -152,13 +167,11 @@ class Ratkowsky02(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([10, 0.5, 0.01],
-                           [200, 5., 0.5]))
+        self._bounds = list(zip([10, 0.5, 0.01], [200, 5.0, 0.5]))
         self.global_optimum = [[7.2462237576e1, 2.6180768402, 6.7359200066e-2]]
         self.fglob = 8.0565229338
-        self.a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
-                          67.08])
-        self.b = asarray([9., 14., 21., 28., 42., 57., 63., 70., 79.])
+        self.a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62, 67.08])
+        self.b = asarray([9.0, 14.0, 21.0, 28.0, 42.0, 57.0, 63.0, 70.0, 79.0])
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -177,7 +190,7 @@ class Ripple01(Benchmark):
 
     .. math::
 
-        f_{\text{Ripple01}}(x) = \sum_{i=1}^2 -e^{-2 \log 2 
+        f_{\text{Ripple01}}(x) = \sum_{i=1}^2 -e^{-2 \log 2
         (\frac{x_i-0.1}{0.8})^2} \left[\sin^6(5 \pi x_i)
         + 0.1\cos^2(500 \pi x_i) \right]
 
@@ -217,7 +230,7 @@ class Ripple25(Benchmark):
 
     .. math::
 
-        f_{\text{Ripple25}}(x) = \sum_{i=1}^2 -e^{-2 
+        f_{\text{Ripple25}}(x) = \sum_{i=1}^2 -e^{-2
         \log 2 (\frac{x_i-0.1}{0.8})^2}
         \left[\sin^6(5 \pi x_i) \right]
 
@@ -276,7 +289,7 @@ class Rosenbrock(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-30.] * self.N, [30.0] * self.N))
+        self._bounds = list(zip([-30.0] * self.N, [30.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [[1 for _ in range(self.N)]]
@@ -328,8 +341,8 @@ class RosenbrockModified(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = 74 + 100. * (x[1] - x[0] ** 2) ** 2 + (1 - x[0]) ** 2
-        a -= 400 * exp(-((x[0] + 1.) ** 2 + (x[1] + 1.) ** 2) / 0.1)
+        a = 74 + 100.0 * (x[1] - x[0] ** 2) ** 2 + (1 - x[0]) ** 2
+        a -= 400 * exp(-((x[0] + 1.0) ** 2 + (x[1] + 1.0) ** 2) / 0.1)
         return a
 
 
@@ -357,8 +370,7 @@ class RotatedEllipse01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-500.0] * self.N,
-                           [500.0] * self.N))
+        self._bounds = list(zip([-500.0] * self.N, [500.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]
@@ -367,8 +379,7 @@ class RotatedEllipse01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (7.0 * x[0] ** 2.0 - 6.0 * sqrt(3) * x[0] * x[1]
-                + 13 * x[1] ** 2.0)
+        return 7.0 * x[0] ** 2.0 - 6.0 * sqrt(3) * x[0] * x[1] + 13 * x[1] ** 2.0
 
 
 class RotatedEllipse02(Benchmark):
@@ -395,8 +406,7 @@ class RotatedEllipse02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-500.0] * self.N,
-                           [500.0] * self.N))
+        self._bounds = list(zip([-500.0] * self.N, [500.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]

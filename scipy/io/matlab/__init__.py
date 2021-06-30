@@ -11,8 +11,9 @@ Drive, Natick, MA 01760-2098, USA.
 from .mio import loadmat, savemat, whosmat
 from . import byteordercodes
 
-__all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes']
+__all__ = ["loadmat", "savemat", "whosmat", "byteordercodes"]
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

@@ -41,9 +41,19 @@ import numpy
 from warnings import warn
 from scipy.odr import __odrpack
 
-__all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
-           'Data', 'RealData', 'Model', 'Output', 'ODR',
-           'odr_error', 'odr_stop']
+__all__ = [
+    "odr",
+    "OdrWarning",
+    "OdrError",
+    "OdrStop",
+    "Data",
+    "RealData",
+    "Model",
+    "Output",
+    "ODR",
+    "odr_error",
+    "odr_stop",
+]
 
 odr = __odrpack.odr
 
@@ -54,6 +64,7 @@ class OdrWarning(UserWarning):
     ODR will cause problems when passed into 'odr'
     that the user should be aware of.
     """
+
     pass
 
 
@@ -63,6 +74,7 @@ class OdrError(Exception):
 
     This is raised by `~scipy.odr.odr` if an error occurs during fitting.
     """
+
     pass
 
 
@@ -73,6 +85,7 @@ class OdrStop(Exception):
     You can raise this exception in your objective function to tell
     `~scipy.odr.odr` to stop fitting.
     """
+
     pass
 
 
@@ -84,8 +97,7 @@ __odrpack._set_exceptions(OdrError, OdrStop)
 
 
 def _conv(obj, dtype=None):
-    """ Convert an object to the preferred form for input to the odr routine.
-    """
+    """Convert an object to the preferred form for input to the odr routine."""
 
     if obj is None:
         return obj
@@ -102,7 +114,7 @@ def _conv(obj, dtype=None):
 
 
 def _report_error(info):
-    """ Interprets the return code of the odr routine.
+    """Interprets the return code of the odr routine.
 
     Parameters
     ----------
@@ -115,63 +127,67 @@ def _report_error(info):
         A list of messages about why the odr() routine stopped.
     """
 
-    stopreason = ('Blank',
-                  'Sum of squares convergence',
-                  'Parameter convergence',
-                  'Both sum of squares and parameter convergence',
-                  'Iteration limit reached')[info % 5]
+    stopreason = (
+        "Blank",
+        "Sum of squares convergence",
+        "Parameter convergence",
+        "Both sum of squares and parameter convergence",
+        "Iteration limit reached",
+    )[info % 5]
 
     if info >= 5:
         # questionable results or fatal error
 
-        I = (info//10000 % 10,
-             info//1000 % 10,
-             info//100 % 10,
-             info//10 % 10,
-             info % 10)
+        I = (
+            info // 10000 % 10,
+            info // 1000 % 10,
+            info // 100 % 10,
+            info // 10 % 10,
+            info % 10,
+        )
         problems = []
 
         if I[0] == 0:
             if I[1] != 0:
-                problems.append('Derivatives possibly not correct')
+                problems.append("Derivatives possibly not correct")
             if I[2] != 0:
-                problems.append('Error occurred in callback')
+                problems.append("Error occurred in callback")
             if I[3] != 0:
-                problems.append('Problem is not full rank at solution')
+                problems.append("Problem is not full rank at solution")
             problems.append(stopreason)
         elif I[0] == 1:
             if I[1] != 0:
-                problems.append('N < 1')
+                problems.append("N < 1")
             if I[2] != 0:
-                problems.append('M < 1')
+                problems.append("M < 1")
             if I[3] != 0:
-                problems.append('NP < 1 or NP > N')
+                problems.append("NP < 1 or NP > N")
             if I[4] != 0:
-                problems.append('NQ < 1')
+                problems.append("NQ < 1")
         elif I[0] == 2:
             if I[1] != 0:
-                problems.append('LDY and/or LDX incorrect')
+                problems.append("LDY and/or LDX incorrect")
             if I[2] != 0:
-                problems.append('LDWE, LD2WE, LDWD, and/or LD2WD incorrect')
+                problems.append("LDWE, LD2WE, LDWD, and/or LD2WD incorrect")
             if I[3] != 0:
-                problems.append('LDIFX, LDSTPD, and/or LDSCLD incorrect')
+                problems.append("LDIFX, LDSTPD, and/or LDSCLD incorrect")
             if I[4] != 0:
-                problems.append('LWORK and/or LIWORK too small')
+                problems.append("LWORK and/or LIWORK too small")
         elif I[0] == 3:
             if I[1] != 0:
-                problems.append('STPB and/or STPD incorrect')
+                problems.append("STPB and/or STPD incorrect")
             if I[2] != 0:
-                problems.append('SCLB and/or SCLD incorrect')
+                problems.append("SCLB and/or SCLD incorrect")
             if I[3] != 0:
-                problems.append('WE incorrect')
+                problems.append("WE incorrect")
             if I[4] != 0:
-                problems.append('WD incorrect')
+                problems.append("WD incorrect")
         elif I[0] == 4:
-            problems.append('Error in derivatives')
+            problems.append("Error in derivatives")
         elif I[0] == 5:
-            problems.append('Error occurred in callback')
+            problems.append("Error occurred in callback")
         elif I[0] == 6:
-            problems.append('Numerical error detected')
+            problems.append("Numerical error detected")
 
         return problems
 
@@ -261,9 +277,12 @@ class Data:
         self.x = _conv(x)
 
         if not isinstance(self.x, numpy.ndarray):
-            raise ValueError(("Expected an 'ndarray' of data for 'x', "
-                              "but instead got data of type '{name}'").format(
-                    name=type(self.x).__name__))
+            raise ValueError(
+                (
+                    "Expected an 'ndarray' of data for 'x', "
+                    "but instead got data of type '{name}'"
+                ).format(name=type(self.x).__name__)
+            )
 
         self.y = _conv(y)
         self.we = _conv(we)
@@ -272,7 +291,7 @@ class Data:
         self.meta = meta
 
     def set_meta(self, **kwds):
-        """ Update the metadata dictionary with the keywords and data provided
+        """Update the metadata dictionary with the keywords and data provided
         by keywords.
 
         Examples
@@ -285,8 +304,7 @@ class Data:
         self.meta.update(kwds)
 
     def __getattr__(self, attr):
-        """ Dispatch attribute access to the metadata dictionary.
-        """
+        """Dispatch attribute access to the metadata dictionary."""
         if attr in self.meta:
             return self.meta[attr]
         else:
@@ -354,8 +372,9 @@ class RealData(Data):
 
     """
 
-    def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,
-                 fix=None, meta={}):
+    def __init__(
+        self, x, y=None, sx=None, sy=None, covx=None, covy=None, fix=None, meta={}
+    ):
         if (sx is not None) and (covx is not None):
             raise ValueError("cannot set both sx and covx")
         if (sy is not None) and (covy is not None):
@@ -364,20 +383,23 @@ class RealData(Data):
         # Set flags for __getattr__
         self._ga_flags = {}
         if sx is not None:
-            self._ga_flags['wd'] = 'sx'
+            self._ga_flags["wd"] = "sx"
         else:
-            self._ga_flags['wd'] = 'covx'
+            self._ga_flags["wd"] = "covx"
         if sy is not None:
-            self._ga_flags['we'] = 'sy'
+            self._ga_flags["we"] = "sy"
         else:
-            self._ga_flags['we'] = 'covy'
+            self._ga_flags["we"] = "covy"
 
         self.x = _conv(x)
 
         if not isinstance(self.x, numpy.ndarray):
-            raise ValueError(("Expected an 'ndarray' of data for 'x', "
-                              "but instead got data of type '{name}'").format(
-                    name=type(self.x).__name__))
+            raise ValueError(
+                (
+                    "Expected an 'ndarray' of data for 'x', "
+                    "but instead got data of type '{name}'"
+                ).format(name=type(self.x).__name__)
+            )
 
         self.y = _conv(y)
         self.sx = _conv(sx)
@@ -388,14 +410,12 @@ class RealData(Data):
         self.meta = meta
 
     def _sd2wt(self, sd):
-        """ Convert standard deviation to weights.
-        """
+        """Convert standard deviation to weights."""
 
-        return 1./numpy.power(sd, 2)
+        return 1.0 / numpy.power(sd, 2)
 
     def _cov2wt(self, cov):
-        """ Convert covariance matrix(-ices) to weights.
-        """
+        """Convert covariance matrix(-ices) to weights."""
 
         from scipy.linalg import inv
 
@@ -405,17 +425,19 @@ class RealData(Data):
             weights = numpy.zeros(cov.shape, float)
 
             for i in range(cov.shape[-1]):  # n
-                weights[:,:,i] = inv(cov[:,:,i])
+                weights[:, :, i] = inv(cov[:, :, i])
 
             return weights
 
     def __getattr__(self, attr):
-        lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
-                      ('wd', 'covx'): (self._cov2wt, self.covx),
-                      ('we', 'sy'): (self._sd2wt, self.sy),
-                      ('we', 'covy'): (self._cov2wt, self.covy)}
+        lookup_tbl = {
+            ("wd", "sx"): (self._sd2wt, self.sx),
+            ("wd", "covx"): (self._cov2wt, self.covx),
+            ("we", "sy"): (self._sd2wt, self.sy),
+            ("we", "covy"): (self._cov2wt, self.covy),
+        }
 
-        if attr not in ('wd', 'we'):
+        if attr not in ("wd", "we"):
             if attr in self.meta:
                 return self.meta[attr]
             else:
@@ -505,8 +527,16 @@ class Model:
 
     """
 
-    def __init__(self, fcn, fjacb=None, fjacd=None,
-        extra_args=None, estimate=None, implicit=0, meta=None):
+    def __init__(
+        self,
+        fcn,
+        fjacb=None,
+        fjacd=None,
+        extra_args=None,
+        estimate=None,
+        implicit=0,
+        meta=None,
+    ):
 
         self.fcn = fcn
         self.fjacb = fjacb
@@ -521,7 +551,7 @@ class Model:
         self.meta = meta
 
     def set_meta(self, **kwds):
-        """ Update the metadata dictionary with the keywords and data provided
+        """Update the metadata dictionary with the keywords and data provided
         here.
 
         Examples
@@ -532,8 +562,7 @@ class Model:
         self.meta.update(kwds)
 
     def __getattr__(self, attr):
-        """ Dispatch attribute access to the metadata.
-        """
+        """Dispatch attribute access to the metadata."""
 
         if attr in self.meta:
             return self.meta[attr]
@@ -601,18 +630,17 @@ class Output:
             self.stopreason = _report_error(self.info)
 
     def pprint(self):
-        """ Pretty-print important results.
-        """
+        """Pretty-print important results."""
 
-        print('Beta:', self.beta)
-        print('Beta Std Error:', self.sd_beta)
-        print('Beta Covariance:', self.cov_beta)
-        if hasattr(self, 'info'):
-            print('Residual Variance:',self.res_var)
-            print('Inverse Condition #:', self.inv_condnum)
-            print('Reason(s) for Halting:')
+        print("Beta:", self.beta)
+        print("Beta Std Error:", self.sd_beta)
+        print("Beta Covariance:", self.cov_beta)
+        if hasattr(self, "info"):
+            print("Residual Variance:", self.res_var)
+            print("Inverse Condition #:", self.inv_condnum)
+            print("Reason(s) for Halting:")
             for r in self.stopreason:
-                print('  %s' % r)
+                print("  %s" % r)
 
 
 class ODR:
@@ -728,11 +756,31 @@ class ODR:
 
     """
 
-    def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
-        ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
-        ndigit=None, taufac=None, sstol=None, partol=None, maxit=None,
-        stpb=None, stpd=None, sclb=None, scld=None, work=None, iwork=None,
-        overwrite=False):
+    def __init__(
+        self,
+        data,
+        model,
+        beta0=None,
+        delta0=None,
+        ifixb=None,
+        ifixx=None,
+        job=None,
+        iprint=None,
+        errfile=None,
+        rptfile=None,
+        ndigit=None,
+        taufac=None,
+        sstol=None,
+        partol=None,
+        maxit=None,
+        stpb=None,
+        stpd=None,
+        sclb=None,
+        scld=None,
+        work=None,
+        iwork=None,
+        overwrite=False,
+    ):
 
         self.data = data
         self.model = model
@@ -742,7 +790,7 @@ class ODR:
                 self.beta0 = _conv(self.model.estimate(self.data))
             else:
                 raise ValueError(
-                  "must specify beta0 or provide an estimater with the model"
+                    "must specify beta0 or provide an estimater with the model"
                 )
         else:
             self.beta0 = _conv(beta0)
@@ -784,7 +832,7 @@ class ODR:
         self._check()
 
     def _check(self):
-        """ Check the inputs for consistency, but don't bother checking things
+        """Check the inputs for consistency, but don't bother checking things
         that the builtin function odr will check.
         """
 
@@ -853,27 +901,29 @@ class ODR:
             res = self.model.fjacd(*arglist)
             if res.shape not in fjacd_perms:
                 raise OdrError(
-                    "fjacd does not output %s-shaped array" % repr((q, m, n)))
+                    "fjacd does not output %s-shaped array" % repr((q, m, n))
+                )
         if self.model.fjacb is not None:
             res = self.model.fjacb(*arglist)
             if res.shape not in fjacb_perms:
                 raise OdrError(
-                    "fjacb does not output %s-shaped array" % repr((q, p, n)))
+                    "fjacb does not output %s-shaped array" % repr((q, p, n))
+                )
 
         # check shape of delta0
 
         if self.delta0 is not None and self.delta0.shape != self.data.x.shape:
-            raise OdrError(
-                "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
+            raise OdrError("delta0 is not a %s-shaped array" % repr(self.data.x.shape))
 
         if self.data.x.size == 0:
-            warn(("Empty data detected for ODR instance. "
-                  "Do not expect any fitting to occur"),
-                 OdrWarning)
+            warn(
+                "Empty data detected for ODR instance. "
+                "Do not expect any fitting to occur",
+                OdrWarning,
+            )
 
     def _gen_work(self):
-        """ Generate a suitable work array if one does not already exist.
-        """
+        """Generate a suitable work array if one does not already exist."""
 
         n = self.data.x.shape[-1]
         p = self.beta0.shape[0]
@@ -902,22 +952,50 @@ class ODR:
 
         if self.job % 10 < 2:
             # ODR not OLS
-            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 6*n*m + 2*n*q*p +
-                     2*n*q*m + q*q + 5*q + q*(p+m) + ldwe*ld2we*q)
+            lwork = (
+                18
+                + 11 * p
+                + p * p
+                + m
+                + m * m
+                + 4 * n * q
+                + 6 * n * m
+                + 2 * n * q * p
+                + 2 * n * q * m
+                + q * q
+                + 5 * q
+                + q * (p + m)
+                + ldwe * ld2we * q
+            )
         else:
             # OLS not ODR
-            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p +
-                     5*q + q*(p+m) + ldwe*ld2we*q)
+            lwork = (
+                18
+                + 11 * p
+                + p * p
+                + m
+                + m * m
+                + 4 * n * q
+                + 2 * n * m
+                + 2 * n * q * p
+                + 5 * q
+                + q * (p + m)
+                + ldwe * ld2we * q
+            )
 
-        if isinstance(self.work, numpy.ndarray) and self.work.shape == (lwork,)\
-                and self.work.dtype.str.endswith('f8'):
+        if (
+            isinstance(self.work, numpy.ndarray)
+            and self.work.shape == (lwork,)
+            and self.work.dtype.str.endswith("f8")
+        ):
             # the existing array is fine
             return
         else:
             self.work = numpy.zeros((lwork,), float)
 
-    def set_job(self, fit_type=None, deriv=None, var_calc=None,
-        del_init=None, restart=None):
+    def set_job(
+        self, fit_type=None, deriv=None, var_calc=None, del_init=None, restart=None
+    ):
         """
         Sets the "job" parameter is a hopefully comprehensible way.
 
@@ -975,11 +1053,13 @@ class ODR:
         if self.job is None:
             job_l = [0, 0, 0, 0, 0]
         else:
-            job_l = [self.job // 10000 % 10,
-                     self.job // 1000 % 10,
-                     self.job // 100 % 10,
-                     self.job // 10 % 10,
-                     self.job % 10]
+            job_l = [
+                self.job // 10000 % 10,
+                self.job // 1000 % 10,
+                self.job // 100 % 10,
+                self.job // 10 % 10,
+                self.job % 10,
+            ]
 
         if fit_type in (0, 1, 2):
             job_l[4] = fit_type
@@ -992,12 +1072,25 @@ class ODR:
         if restart in (0, 1):
             job_l[0] = restart
 
-        self.job = (job_l[0]*10000 + job_l[1]*1000 +
-                    job_l[2]*100 + job_l[3]*10 + job_l[4])
+        self.job = (
+            job_l[0] * 10000
+            + job_l[1] * 1000
+            + job_l[2] * 100
+            + job_l[3] * 10
+            + job_l[4]
+        )
 
-    def set_iprint(self, init=None, so_init=None,
-        iter=None, so_iter=None, iter_step=None, final=None, so_final=None):
-        """ Set the iprint parameter for the printing of computation reports.
+    def set_iprint(
+        self,
+        init=None,
+        so_init=None,
+        iter=None,
+        so_iter=None,
+        iter_step=None,
+        final=None,
+        so_final=None,
+    ):
+        """Set the iprint parameter for the printing of computation reports.
 
         If any of the arguments are specified here, then they are set in the
         iprint member. If iprint is not set manually or with this method, then
@@ -1024,27 +1117,29 @@ class ODR:
         if self.iprint is None:
             self.iprint = 0
 
-        ip = [self.iprint // 1000 % 10,
-              self.iprint // 100 % 10,
-              self.iprint // 10 % 10,
-              self.iprint % 10]
+        ip = [
+            self.iprint // 1000 % 10,
+            self.iprint // 100 % 10,
+            self.iprint // 10 % 10,
+            self.iprint % 10,
+        ]
 
         # make a list to convert iprint digits to/from argument inputs
         #                   rptfile, stdout
-        ip2arg = [[0, 0],  # none,  none
-                  [1, 0],  # short, none
-                  [2, 0],  # long,  none
-                  [1, 1],  # short, short
-                  [2, 1],  # long,  short
-                  [1, 2],  # short, long
-                  [2, 2]]  # long,  long
+        ip2arg = [
+            [0, 0],  # none,  none
+            [1, 0],  # short, none
+            [2, 0],  # long,  none
+            [1, 1],  # short, short
+            [2, 1],  # long,  short
+            [1, 2],  # short, long
+            [2, 2],
+        ]  # long,  long
 
-        if (self.rptfile is None and
-            (so_init is not None or
-             so_iter is not None or
-             so_final is not None)):
-            raise OdrError(
-                "no rptfile specified, cannot output to stdout twice")
+        if self.rptfile is None and (
+            so_init is not None or so_iter is not None or so_final is not None
+        ):
+            raise OdrError("no rptfile specified, cannot output to stdout twice")
 
         iprint_l = ip2arg[ip[0]] + ip2arg[ip[1]] + ip2arg[ip[3]]
 
@@ -1069,10 +1164,10 @@ class ODR:
         ip[1] = ip2arg.index(iprint_l[2:4])
         ip[3] = ip2arg.index(iprint_l[4:6])
 
-        self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
+        self.iprint = ip[0] * 1000 + ip[1] * 100 + ip[2] * 10 + ip[3]
 
     def run(self):
-        """ Run the fitting routine with all of the information given and with ``full_output=1``.
+        """Run the fitting routine with all of the information given and with ``full_output=1``.
 
         Returns
         -------
@@ -1081,10 +1176,26 @@ class ODR:
         """
 
         args = (self.model.fcn, self.beta0, self.data.y, self.data.x)
-        kwds = {'full_output': 1}
-        kwd_l = ['ifixx', 'ifixb', 'job', 'iprint', 'errfile', 'rptfile',
-                 'ndigit', 'taufac', 'sstol', 'partol', 'maxit', 'stpb',
-                 'stpd', 'sclb', 'scld', 'work', 'iwork']
+        kwds = {"full_output": 1}
+        kwd_l = [
+            "ifixx",
+            "ifixb",
+            "job",
+            "iprint",
+            "errfile",
+            "rptfile",
+            "ndigit",
+            "taufac",
+            "sstol",
+            "partol",
+            "maxit",
+            "stpb",
+            "stpd",
+            "sclb",
+            "scld",
+            "work",
+            "iwork",
+        ]
 
         if self.delta0 is not None and (self.job // 10000) % 10 == 0:
             # delta0 provided and fit is not a restart
@@ -1092,19 +1203,19 @@ class ODR:
 
             d0 = numpy.ravel(self.delta0)
 
-            self.work[:len(d0)] = d0
+            self.work[: len(d0)] = d0
 
         # set the kwds from other objects explicitly
         if self.model.fjacb is not None:
-            kwds['fjacb'] = self.model.fjacb
+            kwds["fjacb"] = self.model.fjacb
         if self.model.fjacd is not None:
-            kwds['fjacd'] = self.model.fjacd
+            kwds["fjacd"] = self.model.fjacd
         if self.data.we is not None:
-            kwds['we'] = self.data.we
+            kwds["we"] = self.data.we
         if self.data.wd is not None:
-            kwds['wd'] = self.data.wd
+            kwds["wd"] = self.data.wd
         if self.model.extra_args is not None:
-            kwds['extra_args'] = self.model.extra_args
+            kwds["extra_args"] = self.model.extra_args
 
         # implicitly set kwds from self's members
         for attr in kwd_l:
@@ -1117,7 +1228,7 @@ class ODR:
         return self.output
 
     def restart(self, iter=None):
-        """ Restarts the run with iter more iterations.
+        """Restarts the run with iter more iterations.
 
         Parameters
         ----------

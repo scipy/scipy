@@ -16,19 +16,24 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import (make_stream,
-    GenericStream, ZlibInputStream,
-    _read_into, _read_string, BLOCK_SIZE)
+from scipy.io.matlab.streams import (
+    make_stream,
+    GenericStream,
+    ZlibInputStream,
+    _read_into,
+    _read_string,
+    BLOCK_SIZE,
+)
 
 
 @contextmanager
 def setup_test_file():
-    val = b'a\x00string'
+    val = b"a\x00string"
     fd, fname = mkstemp()
 
-    with os.fdopen(fd, 'wb') as fs:
+    with os.fdopen(fd, "wb") as fs:
         fs.write(val)
-    with open(fname, 'rb') as fs:
+    with open(fname, "rb") as fs:
         gs = BytesIO(val)
         cs = BytesIO(val)
         yield fs, gs, cs
@@ -65,23 +70,23 @@ def test_read():
             st = make_stream(s)
             st.seek(0)
             res = st.read(-1)
-            assert_equal(res, b'a\x00string')
+            assert_equal(res, b"a\x00string")
             st.seek(0)
             res = st.read(4)
-            assert_equal(res, b'a\x00st')
+            assert_equal(res, b"a\x00st")
             # read into
             st.seek(0)
             res = _read_into(st, 4)
-            assert_equal(res, b'a\x00st')
+            assert_equal(res, b"a\x00st")
             res = _read_into(st, 4)
-            assert_equal(res, b'ring')
+            assert_equal(res, b"ring")
             assert_raises(IOError, _read_into, st, 2)
             # read alloc
             st.seek(0)
             res = _read_string(st, 4)
-            assert_equal(res, b'a\x00st')
+            assert_equal(res, b"a\x00st")
             res = _read_string(st, 4)
-            assert_equal(res, b'ring')
+            assert_equal(res, b"ring")
             assert_raises(IOError, _read_string, st, 2)
 
 
@@ -93,20 +98,26 @@ class TestZlibInputStream:
         return stream, len(compressed_data), data
 
     def test_read(self):
-        SIZES = [0, 1, 10, BLOCK_SIZE//2, BLOCK_SIZE-1,
-                 BLOCK_SIZE, BLOCK_SIZE+1, 2*BLOCK_SIZE-1]
+        SIZES = [
+            0,
+            1,
+            10,
+            BLOCK_SIZE // 2,
+            BLOCK_SIZE - 1,
+            BLOCK_SIZE,
+            BLOCK_SIZE + 1,
+            2 * BLOCK_SIZE - 1,
+        ]
 
-        READ_SIZES = [BLOCK_SIZE//2, BLOCK_SIZE-1,
-                      BLOCK_SIZE, BLOCK_SIZE+1]
+        READ_SIZES = [BLOCK_SIZE // 2, BLOCK_SIZE - 1, BLOCK_SIZE, BLOCK_SIZE + 1]
 
         def check(size, read_size):
             compressed_stream, compressed_data_len, data = self._get_data(size)
             stream = ZlibInputStream(compressed_stream, compressed_data_len)
-            data2 = b''
+            data2 = b""
             so_far = 0
             while True:
-                block = stream.read(min(read_size,
-                                        size - so_far))
+                block = stream.read(min(read_size, size - so_far))
                 if not block:
                     break
                 so_far += len(block)
@@ -134,7 +145,9 @@ class TestZlibInputStream:
         compressed_data = zlib.compress(data)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = compressed_data[:-1] + bytes(
+            [(compressed_data[-1] + 1) & 255]
+        )
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -150,19 +163,19 @@ class TestZlibInputStream:
         p = 123
         assert_equal(stream.tell(), p)
         d1 = stream.read(11)
-        assert_equal(d1, data[p:p+11])
+        assert_equal(d1, data[p : p + 11])
 
         stream.seek(321, 1)
-        p = 123+11+321
+        p = 123 + 11 + 321
         assert_equal(stream.tell(), p)
         d2 = stream.read(21)
-        assert_equal(d2, data[p:p+21])
+        assert_equal(d2, data[p : p + 21])
 
         stream.seek(641, 0)
         p = 641
         assert_equal(stream.tell(), p)
         d3 = stream.read(11)
-        assert_equal(d3, data[p:p+11])
+        assert_equal(d3, data[p : p + 11])
 
         assert_raises(IOError, stream.seek, 10, 2)
         assert_raises(IOError, stream.seek, -1, 1)
@@ -176,7 +189,9 @@ class TestZlibInputStream:
         compressed_data = zlib.compress(data)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = compressed_data[:-1] + bytes(
+            [(compressed_data[-1] + 1) & 255]
+        )
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -219,7 +234,9 @@ class TestZlibInputStream:
         assert_(compressed_data_len == BLOCK_SIZE + 2)
 
         # break checksum
-        compressed_data = compressed_data[:-1] + bytes([(compressed_data[-1] + 1) & 255])
+        compressed_data = compressed_data[:-1] + bytes(
+            [(compressed_data[-1] + 1) & 255]
+        )
 
         compressed_stream = BytesIO(compressed_data)
         stream = ZlibInputStream(compressed_stream, compressed_data_len)

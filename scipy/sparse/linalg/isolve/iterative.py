@@ -1,6 +1,6 @@
 """Iterative methods for solving linear systems"""
 
-__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
+__all__ = ["bicg", "bicgstab", "cg", "cgs", "gmres", "qmr"]
 
 import warnings
 import numpy as np
@@ -12,18 +12,16 @@ from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
 
-_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
+_type_conv = {"f": "s", "d": "d", "F": "c", "D": "z"}
 
 
 # Part of the docstring common to all iterative solvers
-common_doc1 = \
-"""
+common_doc1 = """
 Parameters
 ----------
 A : {sparse matrix, dense matrix, LinearOperator}"""
 
-common_doc2 = \
-"""b : {array, matrix}
+common_doc2 = """b : {array, matrix}
     Right hand side of the linear system. Has shape (N,) or (N,1).
 
 Returns
@@ -93,21 +91,24 @@ def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
     """
 
     if atol is None:
-        warnings.warn("scipy.sparse.linalg.{name} called without specifying `atol`. "
-                      "The default value will be changed in a future release. "
-                      "For compatibility, specify a value for `atol` explicitly, e.g., "
-                      "``{name}(..., atol=0)``, or to retain the old behavior "
-                      "``{name}(..., atol='legacy')``".format(name=routine_name),
-                      category=DeprecationWarning, stacklevel=4)
-        atol = 'legacy'
+        warnings.warn(
+            "scipy.sparse.linalg.{name} called without specifying `atol`. "
+            "The default value will be changed in a future release. "
+            "For compatibility, specify a value for `atol` explicitly, e.g., "
+            "``{name}(..., atol=0)``, or to retain the old behavior "
+            "``{name}(..., atol='legacy')``".format(name=routine_name),
+            category=DeprecationWarning,
+            stacklevel=4,
+        )
+        atol = "legacy"
 
     tol = float(tol)
 
-    if atol == 'legacy':
+    if atol == "legacy":
         # emulate old legacy behavior
         resid = get_residual()
         if resid <= tol:
-            return 'exit'
+            return "exit"
         if bnrm2 == 0:
             return tol
         else:
@@ -116,22 +117,30 @@ def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
         return max(float(atol), tol * float(bnrm2))
 
 
-def set_docstring(header, Ainfo, footer='', atol_default='0'):
+def set_docstring(header, Ainfo, footer="", atol_default="0"):
     def combine(fn):
-        fn.__doc__ = '\n'.join((header, common_doc1,
-                                '    ' + Ainfo.replace('\n', '\n    '),
-                                common_doc2, footer))
+        fn.__doc__ = "\n".join(
+            (
+                header,
+                common_doc1,
+                "    " + Ainfo.replace("\n", "\n    "),
+                common_doc2,
+                footer,
+            )
+        )
         return fn
+
     return combine
 
 
-@set_docstring('Use BIConjugate Gradient iteration to solve ``Ax = b``.',
-               'The real or complex N-by-N matrix of the linear system.\n'
-               'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.',
-               footer="""
-               
+@set_docstring(
+    "Use BIConjugate Gradient iteration to solve ``Ax = b``.",
+    "The real or complex N-by-N matrix of the linear system.\n"
+    "Alternatively, ``A`` can be a linear operator which can\n"
+    "produce ``Ax`` and ``A^T x`` using, e.g.,\n"
+    "``scipy.sparse.linalg.LinearOperator``.",
+    footer="""
+
                Examples
                --------
                >>> from scipy.sparse import csc_matrix
@@ -143,62 +152,63 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                0
                >>> np.allclose(A.dot(x), b)
                True
-               
-               """
-               )
+
+               """,
+)
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A,M,x,b,postprocess = make_system(A, M, x0, b)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     matvec, rmatvec = A.matvec, A.rmatvec
     psolve, rpsolve = M.matvec, M.rmatvec
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'bicgrevcom')
+    revcom = getattr(_iterative, ltr + "bicgrevcom")
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicg')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, "bicg")
+    if atol == "exit":
         return postprocess(x), 0
 
     resid = atol
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(6*n,dtype=x.dtype)
+    work = _aligned_zeros(6 * n, dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
     iter_ = maxiter
     while True:
         olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, work, iter_, resid, info, ndx1, ndx2, ijob
+        )
         if callback is not None and iter_ > olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:
             if callback is not None:
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
+            work[slice2] += sclr1 * matvec(work[slice1])
+        elif ijob == 2:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*rmatvec(work[slice1])
-        elif (ijob == 3):
+            work[slice2] += sclr1 * rmatvec(work[slice1])
+        elif ijob == 3:
             work[slice1] = psolve(work[slice2])
-        elif (ijob == 4):
+        elif ijob == 4:
             work[slice1] = rpsolve(work[slice2])
-        elif (ijob == 5):
+        elif ijob == 5:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 6):
+            work[slice2] += sclr1 * matvec(x)
+        elif ijob == 6:
             if ftflag:
                 info = -1
                 ftflag = False
@@ -212,60 +222,62 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
     return postprocess(x), info
 
 
-@set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
-               '``Ax = b``.',
-               'The real or complex N-by-N matrix of the linear system.\n'
-               'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+@set_docstring(
+    "Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.",
+    "The real or complex N-by-N matrix of the linear system.\n"
+    "Alternatively, ``A`` can be a linear operator which can\n"
+    "produce ``Ax`` using, e.g.,\n"
+    "``scipy.sparse.linalg.LinearOperator``.",
+)
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
+    revcom = getattr(_iterative, ltr + "bicgstabrevcom")
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicgstab')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, "bicgstab")
+    if atol == "exit":
         return postprocess(x), 0
 
     resid = atol
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(7*n,dtype=x.dtype)
+    work = _aligned_zeros(7 * n, dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
     iter_ = maxiter
     while True:
         olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, work, iter_, resid, info, ndx1, ndx2, ijob
+        )
         if callback is not None and iter_ > olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:
             if callback is not None:
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
+            work[slice2] += sclr1 * matvec(work[slice1])
+        elif ijob == 2:
             work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
+        elif ijob == 3:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
+            work[slice2] += sclr1 * matvec(x)
+        elif ijob == 4:
             if ftflag:
                 info = -1
                 ftflag = False
@@ -279,60 +291,63 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
     return postprocess(x), info
 
 
-@set_docstring('Use Conjugate Gradient iteration to solve ``Ax = b``.',
-               'The real or complex N-by-N matrix of the linear system.\n'
-               '``A`` must represent a hermitian, positive definite matrix.\n'
-               'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+@set_docstring(
+    "Use Conjugate Gradient iteration to solve ``Ax = b``.",
+    "The real or complex N-by-N matrix of the linear system.\n"
+    "``A`` must represent a hermitian, positive definite matrix.\n"
+    "Alternatively, ``A`` can be a linear operator which can\n"
+    "produce ``Ax`` using, e.g.,\n"
+    "``scipy.sparse.linalg.LinearOperator``.",
+)
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgrevcom')
+    revcom = getattr(_iterative, ltr + "cgrevcom")
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cg')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, "cg")
+    if atol == "exit":
         return postprocess(x), 0
 
     resid = atol
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(4*n,dtype=x.dtype)
+    work = _aligned_zeros(4 * n, dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
     iter_ = maxiter
     while True:
         olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, work, iter_, resid, info, ndx1, ndx2, ijob
+        )
         if callback is not None and iter_ > olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:
             if callback is not None:
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
+            work[slice2] += sclr1 * matvec(work[slice1])
+        elif ijob == 2:
             work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
+        elif ijob == 3:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
+            work[slice2] += sclr1 * matvec(x)
+        elif ijob == 4:
             if ftflag:
                 info = -1
                 ftflag = False
@@ -351,59 +366,62 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     return postprocess(x), info
 
 
-@set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
-               'The real-valued N-by-N matrix of the linear system.\n'
-               'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+@set_docstring(
+    "Use Conjugate Gradient Squared iteration to solve ``Ax = b``.",
+    "The real-valued N-by-N matrix of the linear system.\n"
+    "Alternatively, ``A`` can be a linear operator which can\n"
+    "produce ``Ax`` using, e.g.,\n"
+    "``scipy.sparse.linalg.LinearOperator``.",
+)
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgsrevcom')
+    revcom = getattr(_iterative, ltr + "cgsrevcom")
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cgs')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, "cgs")
+    if atol == "exit":
         return postprocess(x), 0
 
     resid = atol
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(7*n,dtype=x.dtype)
+    work = _aligned_zeros(7 * n, dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
     iter_ = maxiter
     while True:
         olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, work, iter_, resid, info, ndx1, ndx2, ijob
+        )
         if callback is not None and iter_ > olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:
             if callback is not None:
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
+            work[slice2] += sclr1 * matvec(work[slice1])
+        elif ijob == 2:
             work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
+        elif ijob == 3:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
+            work[slice2] += sclr1 * matvec(x)
+        elif ijob == 4:
             if ftflag:
                 info = -1
                 ftflag = False
@@ -429,8 +447,19 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 
 @non_reentrant()
-def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None, callback_type=None):
+def gmres(
+    A,
+    b,
+    x0=None,
+    tol=1e-5,
+    restart=None,
+    maxiter=None,
+    M=None,
+    callback=None,
+    restrt=None,
+    atol=None,
+    callback_type=None,
+):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -528,33 +557,38 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     if restrt is None:
         restrt = restart
     elif restart is not None:
-        raise ValueError("Cannot specify both restart and restrt keywords. "
-                         "Preferably use 'restart' only.")
+        raise ValueError(
+            "Cannot specify both restart and restrt keywords. "
+            "Preferably use 'restart' only."
+        )
 
     if callback is not None and callback_type is None:
         # Warn about 'callback_type' semantic changes.
         # Probably should be removed only in far future, Scipy 2.0 or so.
-        warnings.warn("scipy.sparse.linalg.gmres called without specifying `callback_type`. "
-                      "The default value will be changed in a future release. "
-                      "For compatibility, specify a value for `callback_type` explicitly, e.g., "
-                      "``{name}(..., callback_type='pr_norm')``, or to retain the old behavior "
-                      "``{name}(..., callback_type='legacy')``",
-                      category=DeprecationWarning, stacklevel=3)
+        warnings.warn(
+            "scipy.sparse.linalg.gmres called without specifying `callback_type`. "
+            "The default value will be changed in a future release. "
+            "For compatibility, specify a value for `callback_type` explicitly, e.g., "
+            "``{name}(..., callback_type='pr_norm')``, or to retain the old behavior "
+            "``{name}(..., callback_type='legacy')``",
+            category=DeprecationWarning,
+            stacklevel=3,
+        )
 
     if callback_type is None:
-        callback_type = 'legacy'
+        callback_type = "legacy"
 
-    if callback_type not in ('x', 'pr_norm', 'legacy'):
+    if callback_type not in ("x", "pr_norm", "legacy"):
         raise ValueError("Unknown callback_type: {!r}".format(callback_type))
 
     if callback is None:
-        callback_type = 'none'
+        callback_type = "none"
 
-    A, M, x, b,postprocess = make_system(A, M, x0, b)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     if restrt is None:
         restrt = 20
@@ -563,13 +597,13 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'gmresrevcom')
+    revcom = getattr(_iterative, ltr + "gmresrevcom")
 
     bnrm2 = np.linalg.norm(b)
     Mb_nrm2 = np.linalg.norm(psolve(b))
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, bnrm2, get_residual, 'gmres')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, bnrm2, get_residual, "gmres")
+    if atol == "exit":
         return postprocess(x), 0
 
     if bnrm2 == 0:
@@ -584,8 +618,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros((6+restrt)*n,dtype=x.dtype)
-    work2 = _aligned_zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
+    work = _aligned_zeros((6 + restrt) * n, dtype=x.dtype)
+    work2 = _aligned_zeros((restrt + 1) * (2 * restrt + 2), dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -596,38 +630,39 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     iter_num = 1
     while True:
         olditer = iter_
-        x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol)
-        if callback_type == 'x' and iter_ != olditer:
+        x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol
+        )
+        if callback_type == "x" and iter_ != olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):  # gmres success, update last residual
-            if callback_type in ('pr_norm', 'legacy'):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:  # gmres success, update last residual
+            if callback_type in ("pr_norm", "legacy"):
                 if resid_ready:
                     callback(presid / bnrm2)
-            elif callback_type == 'x':
+            elif callback_type == "x":
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 2):
+            work[slice2] += sclr1 * matvec(x)
+        elif ijob == 2:
             work[slice1] = psolve(work[slice2])
             if not first_pass and old_ijob == 3:
                 resid_ready = True
 
             first_pass = False
-        elif (ijob == 3):
+        elif ijob == 3:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            work[slice2] += sclr1 * matvec(work[slice1])
             if resid_ready:
-                if callback_type in ('pr_norm', 'legacy'):
+                if callback_type in ("pr_norm", "legacy"):
                     callback(presid / bnrm2)
                 resid_ready = False
-                iter_num = iter_num+1
+                iter_num = iter_num + 1
 
-        elif (ijob == 4):
+        elif ijob == 4:
             if ftflag:
                 info = -1
                 ftflag = False
@@ -648,7 +683,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         old_ijob = ijob
         ijob = 2
 
-        if callback_type == 'legacy':
+        if callback_type == "legacy":
             # Legacy behavior
             if iter_num > maxiter:
                 info = maxiter
@@ -657,13 +692,14 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     if info >= 0 and not (resid <= atol):
         # info isn't set appropriately otherwise
         info = maxiter
-        
+
     return postprocess(x), info
 
 
 @non_reentrant()
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
-        atol=None):
+def qmr(
+    A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None, atol=None
+):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
@@ -732,77 +768,82 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     A, M, x, b, postprocess = make_system(A, None, x0, b)
 
     if M1 is None and M2 is None:
-        if hasattr(A_,'psolve'):
+        if hasattr(A_, "psolve"):
+
             def left_psolve(b):
-                return A_.psolve(b,'left')
+                return A_.psolve(b, "left")
 
             def right_psolve(b):
-                return A_.psolve(b,'right')
+                return A_.psolve(b, "right")
 
             def left_rpsolve(b):
-                return A_.rpsolve(b,'left')
+                return A_.rpsolve(b, "left")
 
             def right_rpsolve(b):
-                return A_.rpsolve(b,'right')
+                return A_.rpsolve(b, "right")
+
             M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=left_rpsolve)
             M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=right_rpsolve)
         else:
+
             def id(b):
                 return b
+
             M1 = LinearOperator(A.shape, matvec=id, rmatvec=id)
             M2 = LinearOperator(A.shape, matvec=id, rmatvec=id)
 
     n = len(b)
     if maxiter is None:
-        maxiter = n*10
+        maxiter = n * 10
 
     ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'qmrrevcom')
+    revcom = getattr(_iterative, ltr + "qmrrevcom")
 
     get_residual = lambda: np.linalg.norm(A.matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'qmr')
-    if atol == 'exit':
+    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, "qmr")
+    if atol == "exit":
         return postprocess(x), 0
 
     resid = atol
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(11*n,x.dtype)
+    work = _aligned_zeros(11 * n, x.dtype)
     ijob = 1
     info = 0
     ftflag = True
     iter_ = maxiter
     while True:
         olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = revcom(
+            b, x, work, iter_, resid, info, ndx1, ndx2, ijob
+        )
         if callback is not None and iter_ > olditer:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
+        slice1 = slice(ndx1 - 1, ndx1 - 1 + n)
+        slice2 = slice(ndx2 - 1, ndx2 - 1 + n)
+        if ijob == -1:
             if callback is not None:
                 callback(x)
             break
-        elif (ijob == 1):
+        elif ijob == 1:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(work[slice1])
-        elif (ijob == 2):
+            work[slice2] += sclr1 * A.matvec(work[slice1])
+        elif ijob == 2:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*A.rmatvec(work[slice1])
-        elif (ijob == 3):
+            work[slice2] += sclr1 * A.rmatvec(work[slice1])
+        elif ijob == 3:
             work[slice1] = M1.matvec(work[slice2])
-        elif (ijob == 4):
+        elif ijob == 4:
             work[slice1] = M2.matvec(work[slice2])
-        elif (ijob == 5):
+        elif ijob == 5:
             work[slice1] = M1.rmatvec(work[slice2])
-        elif (ijob == 6):
+        elif ijob == 6:
             work[slice1] = M2.rmatvec(work[slice2])
-        elif (ijob == 7):
+        elif ijob == 7:
             work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(x)
-        elif (ijob == 8):
+            work[slice2] += sclr1 * A.matvec(x)
+        elif ijob == 8:
             if ftflag:
                 info = -1
                 ftflag = False

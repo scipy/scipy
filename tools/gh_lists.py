@@ -17,55 +17,55 @@ import time
 from urllib.request import urlopen, Request, HTTPError
 
 
-Issue = collections.namedtuple('Issue', ('id', 'title', 'url'))
+Issue = collections.namedtuple("Issue", ("id", "title", "url"))
 
 
 def main():
     p = argparse.ArgumentParser(usage=__doc__.lstrip())
-    p.add_argument('--project', default='scipy/scipy')
-    p.add_argument('milestone')
+    p.add_argument("--project", default="scipy/scipy")
+    p.add_argument("milestone")
     args = p.parse_args()
 
-    getter = CachedGet('gh_cache.json', GithubGet())
+    getter = CachedGet("gh_cache.json", GithubGet())
     try:
         milestones = get_milestones(getter, args.project)
         if args.milestone not in milestones:
             msg = "Milestone {0} not available. Available milestones: {1}"
-            msg = msg.format(args.milestone, u", ".join(sorted(milestones)))
+            msg = msg.format(args.milestone, ", ".join(sorted(milestones)))
             p.error(msg)
         issues = get_issues(getter, args.project, args.milestone)
         issues.sort()
     finally:
         getter.save()
 
-    prs = [x for x in issues if u'/pull/' in x.url]
+    prs = [x for x in issues if "/pull/" in x.url]
     issues = [x for x in issues if x not in prs]
 
     def print_list(title, items):
         print()
         print(title)
-        print("-"*len(title))
+        print("-" * len(title))
         print()
 
         for issue in items:
-            msg = u"* `#{0} <{1}>`__: {2}"
+            msg = "* `#{0} <{1}>`__: {2}"
             # sanitize whitespace, `, and *
-            title = re.sub(u"\\s+", u" ", issue.title.strip())
-            title = title.replace(u'`', u'\\`').replace(u'*', u'\\*')
+            title = re.sub("\\s+", " ", issue.title.strip())
+            title = title.replace("`", "\\`").replace("*", "\\*")
             if len(title) > 60:
-                remainder = re.sub(u"\\s.*$", u"...", title[60:])
+                remainder = re.sub("\\s.*$", "...", title[60:])
                 if len(remainder) > 20:
-                    remainder = title[:80] + u"..."
+                    remainder = title[:80] + "..."
                 else:
                     title = title[:60] + remainder
             msg = msg.format(issue.id, issue.url, title)
             print(msg)
         print()
 
-    msg = u"Issues closed for {0}".format(args.milestone)
+    msg = "Issues closed for {0}".format(args.milestone)
     print_list(msg, issues)
 
-    msg = u"Pull requests for {0}".format(args.milestone)
+    msg = "Pull requests for {0}".format(args.milestone)
     print_list(msg, prs)
 
     return 0
@@ -77,7 +77,7 @@ def get_milestones(getter, project):
 
     milestones = {}
     for ms in data:
-        milestones[ms[u'title']] = ms[u'number']
+        milestones[ms["title"]] = ms["number"]
     return milestones
 
 
@@ -92,9 +92,9 @@ def get_issues(getter, project, milestone):
 
     issues = []
     for issue_data in data:
-        issues.append(Issue(issue_data[u'number'],
-                            issue_data[u'title'],
-                            issue_data[u'html_url']))
+        issues.append(
+            Issue(issue_data["number"], issue_data["title"], issue_data["html_url"])
+        )
     return issues
 
 
@@ -104,9 +104,12 @@ class CachedGet:
 
         self.filename = filename
         if os.path.isfile(filename):
-            print("[gh_lists] using {0} as cache (remove it if you want fresh data)".format(filename),
-                  file=sys.stderr)
-            with open(filename, 'r', encoding='utf-8') as f:
+            print(
+                "[gh_lists] using {0} as cache (remove it if you want fresh data)"
+                .format(filename),
+                file=sys.stderr,
+            )
+            with open(filename, "r", encoding="utf-8") as f:
                 self.cache = json.load(f)
         else:
             self.cache = {}
@@ -122,41 +125,46 @@ class CachedGet:
 
     def save(self):
         tmp = self.filename + ".new"
-        with open(tmp, 'w', encoding='utf-8') as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(self.cache, f)
         os.rename(tmp, self.filename)
 
 
 class GithubGet:
     def __init__(self, auth=False):
-        self.headers = {'User-Agent': 'gh_lists.py',
-                        'Accept': 'application/vnd.github.v3+json'}
+        self.headers = {
+            "User-Agent": "gh_lists.py",
+            "Accept": "application/vnd.github.v3+json",
+        }
 
         if auth:
             self.authenticate()
 
-        req = self.urlopen('https://api.github.com/rate_limit')
+        req = self.urlopen("https://api.github.com/rate_limit")
         try:
             if req.getcode() != 200:
                 raise RuntimeError()
-            info = json.loads(req.read().decode('utf-8'))
+            info = json.loads(req.read().decode("utf-8"))
         finally:
             req.close()
 
-        self.ratelimit_remaining = int(info['rate']['remaining'])
-        self.ratelimit_reset = float(info['rate']['reset'])
+        self.ratelimit_remaining = int(info["rate"]["remaining"])
+        self.ratelimit_reset = float(info["rate"]["reset"])
 
     def authenticate(self):
-        print("Input a Github API access token.\n"
-              "Personal tokens can be created at https://github.com/settings/tokens\n"
-              "This script does not require any permissions (so don't give it any).",
-              file=sys.stderr, flush=True)
-        print("Access token: ", file=sys.stderr, end='', flush=True)
+        print(
+            "Input a Github API access token.\n"
+            "Personal tokens can be created at https://github.com/settings/tokens\n"
+            "This script does not require any permissions (so don't give it any).",
+            file=sys.stderr,
+            flush=True,
+        )
+        print("Access token: ", file=sys.stderr, end="", flush=True)
         token = input()
-        self.headers['Authorization'] = 'token {0}'.format(token.strip())
+        self.headers["Authorization"] = "token {0}".format(token.strip())
 
     def urlopen(self, url, auth=None):
-        assert url.startswith('https://')
+        assert url.startswith("https://")
         req = Request(url, headers=self.headers)
         return urlopen(req, timeout=60)
 
@@ -175,11 +183,18 @@ class GithubGet:
                 s = self.ratelimit_reset + 5 - time.time()
                 if s <= 0:
                     break
-                print("[gh_lists] rate limit exceeded: waiting until {0} ({1} s remaining)".format(
-                         datetime.datetime.fromtimestamp(self.ratelimit_reset).strftime('%Y-%m-%d %H:%M:%S'),
-                         int(s)),
-                      file=sys.stderr, flush=True)
-                time.sleep(min(5*60, s))
+                print(
+                    "[gh_lists] rate limit exceeded: waiting until {0} ({1} s"
+                    " remaining)".format(
+                        datetime.datetime.fromtimestamp(self.ratelimit_reset).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        int(s),
+                    ),
+                    file=sys.stderr,
+                    flush=True,
+                )
+                time.sleep(min(5 * 60, s))
 
             # Get page
             print("[gh_lists] get:", url, file=sys.stderr, flush=True)
@@ -188,7 +203,7 @@ class GithubGet:
                 try:
                     code = req.getcode()
                     info = req.info()
-                    data = json.loads(req.read().decode('utf-8'))
+                    data = json.loads(req.read().decode("utf-8"))
                 finally:
                     req.close()
             except HTTPError as err:
@@ -201,16 +216,16 @@ class GithubGet:
 
             # Parse reply
             next_url = None
-            if 'Link' in info:
-                m = re.search('<([^<>]*)>; rel="next"', info['Link'])
+            if "Link" in info:
+                m = re.search('<([^<>]*)>; rel="next"', info["Link"])
                 if m:
                     next_url = m.group(1)
 
             # Update rate limit info
-            if 'X-RateLimit-Remaining' in info:
-                self.ratelimit_remaining = int(info['X-RateLimit-Remaining'])
-            if 'X-RateLimit-Reset' in info:
-                self.ratelimit_reset = float(info['X-RateLimit-Reset'])
+            if "X-RateLimit-Remaining" in info:
+                self.ratelimit_remaining = int(info["X-RateLimit-Remaining"])
+            if "X-RateLimit-Reset" in info:
+                self.ratelimit_reset = float(info["X-RateLimit-Reset"])
 
             # Deal with rate limit exceeded
             if code != 200 or data is None:

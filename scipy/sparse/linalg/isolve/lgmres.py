@@ -9,12 +9,24 @@ from .utils import make_system
 
 from ._gcrotmk import _fgmres
 
-__all__ = ['lgmres']
+__all__ = ["lgmres"]
 
 
-def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
-           inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
-           prepend_outer_v=False, atol=None):
+def lgmres(
+    A,
+    b,
+    x0=None,
+    tol=1e-5,
+    maxiter=1000,
+    M=None,
+    callback=None,
+    inner_m=30,
+    outer_k=3,
+    outer_v=None,
+    store_outer_Av=True,
+    prepend_outer_v=False,
+    atol=None,
+):
     """
     Solve a matrix equation using the LGMRES algorithm.
 
@@ -71,7 +83,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     store_outer_Av : bool, optional
         Whether LGMRES should store also A*v in addition to vectors `v`
         in the `outer_v` list. Default is True.
-    prepend_outer_v : bool, optional 
+    prepend_outer_v : bool, optional
         Whether to put outer_v augmentation vectors before Krylov iterates.
         In standard LGMRES, prepend_outer_v=False.
 
@@ -122,16 +134,19 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A,M,x,b,postprocess = make_system(A,M,x0,b)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
     if atol is None:
-        warnings.warn("scipy.sparse.linalg.lgmres called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "scipy.sparse.linalg.lgmres called without specifying `atol`. "
+            "The default value will change in the future. To preserve "
+            "current behavior, set ``atol=tol``.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         atol = tol
 
     matvec = A.matvec
@@ -141,7 +156,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         outer_v = []
 
     axpy, dot, scal = None, None, None
-    nrm2 = get_blas_funcs('nrm2', [b])
+    nrm2 = get_blas_funcs("nrm2", [b])
 
     b_norm = nrm2(b)
     ptol_max_factor = 1.0
@@ -157,8 +172,9 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         if axpy is None:
             if np.iscomplexobj(r_outer) and not np.iscomplexobj(x):
                 x = x.astype(r_outer.dtype)
-            axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'],
-                                                   (x, r_outer))
+            axpy, dot, scal, nrm2 = get_blas_funcs(
+                ["axpy", "dot", "scal", "nrm2"], (x, r_outer)
+            )
 
         # -- check stopping condition
         r_norm = nrm2(r_outer)
@@ -171,21 +187,24 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         if inner_res_0 == 0:
             rnorm = nrm2(r_outer)
-            raise RuntimeError("Preconditioner returned a zero vector; "
-                               "|v| ~ %.1g, |M v| = 0" % rnorm)
+            raise RuntimeError(
+                "Preconditioner returned a zero vector; |v| ~ %.1g, |M v| = 0" % rnorm
+            )
 
-        v0 = scal(1.0/inner_res_0, v0)
+        v0 = scal(1.0 / inner_res_0, v0)
 
-        ptol = min(ptol_max_factor, max(atol, tol*b_norm)/r_norm)
+        ptol = min(ptol_max_factor, max(atol, tol * b_norm) / r_norm)
 
         try:
-            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
-                                               v0,
-                                               inner_m,
-                                               lpsolve=psolve,
-                                               atol=ptol,
-                                               outer_v=outer_v,
-                                               prepend_outer_v=prepend_outer_v)
+            Q, R, B, vs, zs, y, pres = _fgmres(
+                matvec,
+                v0,
+                inner_m,
+                lpsolve=psolve,
+                atol=ptol,
+                outer_v=outer_v,
+                prepend_outer_v=prepend_outer_v,
+            )
             y *= inner_res_0
             if not np.isfinite(y).all():
                 # Overflow etc. in computation. There's no way to
@@ -203,7 +222,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
 
         # -- GMRES terminated: eval solution
-        dx = zs[0]*y[0]
+        dx = zs[0] * y[0]
         for w, yc in zip(zs[1:], y[1:]):
             dx = axpy(w, dx, dx.shape[0], yc)  # dx += w*yc
 
@@ -212,12 +231,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         if nx > 0:
             if store_outer_Av:
                 q = Q.dot(R.dot(y))
-                ax = vs[0]*q[0]
+                ax = vs[0] * q[0]
                 for v, qc in zip(vs[1:], q[1:]):
                     ax = axpy(v, ax, ax.shape[0], qc)
-                outer_v.append((dx/nx, ax/nx))
+                outer_v.append((dx / nx, ax / nx))
             else:
-                outer_v.append((dx/nx, None))
+                outer_v.append((dx / nx, None))
 
         # -- Retain only a finite number of augmentation vectors
         while len(outer_v) > outer_k:

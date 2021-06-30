@@ -13,7 +13,7 @@ class FreudensteinRoth(Benchmark):
     .. math::
 
         f_{\text{FreudensteinRoth}}(x) =  \left\{x_1 - 13 + \left[(5 - x_2) x_2
-        - 2 \right] x_2 \right\}^2 + \left \{x_1 - 29 
+        - 2 \right] x_2 \right\}^2 + \left \{x_1 - 29
         + \left[(x_2 + 1) x_2 - 14 \right] x_2 \right\}^2
 
 

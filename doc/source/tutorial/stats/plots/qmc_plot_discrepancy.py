@@ -12,17 +12,17 @@ u_bounds = [6.5, 6.5]
 space_1 = qmc.scale(space_1, l_bounds, u_bounds, reverse=True)
 space_2 = qmc.scale(space_2, l_bounds, u_bounds, reverse=True)
 
-sample = {'space_1': space_1, 'space_2': space_2}
+sample = {"space_1": space_1, "space_2": space_2}
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))
 
 for i, kind in enumerate(sample):
     axs[i].scatter(sample[kind][:, 0], sample[kind][:, 1])
 
-    axs[i].set_aspect('equal')
-    axs[i].set_xlabel(r'$x_1$')
-    axs[i].set_ylabel(r'$x_2$')
-    axs[i].set_title(f'{kind}—$C^2 = ${qmc.discrepancy(sample[kind]):.5}')
+    axs[i].set_aspect("equal")
+    axs[i].set_xlabel(r"$x_1$")
+    axs[i].set_ylabel(r"$x_2$")
+    axs[i].set_title(f"{kind}—$C^2 = ${qmc.discrepancy(sample[kind]):.5}")
 
 plt.tight_layout()
 plt.show()

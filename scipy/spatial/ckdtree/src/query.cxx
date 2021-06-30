@@ -519,4 +519,3 @@ query_knn(const ckdtree      *self,
     }
     return 0;
 }
-

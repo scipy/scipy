@@ -1,4 +1,3 @@
-
 import pytest
 import pickle
 from numpy.testing import assert_equal
@@ -7,7 +6,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 
 # `Result` is defined at the top level of the module so it can be
 # used to test pickling.
-Result = _make_tuple_bunch('Result', ['x', 'y', 'z'], ['w', 'beta'])
+Result = _make_tuple_bunch("Result", ["x", "y", "z"], ["w", "beta"])
 
 
 class TestMakeTupleBunch:
@@ -32,7 +31,7 @@ class TestMakeTupleBunch:
         assert_equal(self.result[1], 2)
         assert_equal(self.result[2], 3)
         assert_equal(self.result[-1], 3)
-        with pytest.raises(IndexError, match='index out of range'):
+        with pytest.raises(IndexError, match="index out of range"):
             self.result[3]
 
     def test_unpacking(self):
@@ -50,7 +49,7 @@ class TestMakeTupleBunch:
 
     def test_repr(self):
         s = repr(self.result)
-        assert_equal(s, 'Result(x=1, y=2, z=3, w=99, beta=0.5)')
+        assert_equal(s, "Result(x=1, y=2, z=3, w=99, beta=0.5)")
 
     def test_hash(self):
         assert_equal(hash(self.result), hash((1, 2, 3)))
@@ -74,17 +73,17 @@ class TestMakeTupleBunch:
             self.result.plate_of_shrimp = "lattice of coincidence"
 
     def test_constructor_missing_parameter(self):
-        with pytest.raises(TypeError, match='missing'):
+        with pytest.raises(TypeError, match="missing"):
             # `w` is missing.
             Result(x=1, y=2, z=3, beta=0.75)
 
     def test_constructor_incorrect_parameter(self):
-        with pytest.raises(TypeError, match='unexpected'):
+        with pytest.raises(TypeError, match="unexpected"):
             # `foo` is not an existing field.
             Result(x=1, y=2, z=3, w=123, beta=0.75, foo=999)
 
     def test_module(self):
-        m = 'scipy._lib.tests.test_bunch'
+        m = "scipy._lib.tests.test_bunch"
         assert_equal(Result.__module__, m)
         assert_equal(self.result.__module__, m)
 
@@ -108,22 +107,22 @@ class TestMakeTupleBunch:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def test_extra_field_names_is_optional(self):
-        Square = _make_tuple_bunch('Square', ['width', 'height'])
+        Square = _make_tuple_bunch("Square", ["width", "height"])
         sq = Square(width=1, height=2)
         assert_equal(sq.width, 1)
         assert_equal(sq.height, 2)
         s = repr(sq)
-        assert_equal(s, 'Square(width=1, height=2)')
+        assert_equal(s, "Square(width=1, height=2)")
 
     def test_tuple_like(self):
-        Tup = _make_tuple_bunch('Tup', ['a', 'b'])
+        Tup = _make_tuple_bunch("Tup", ["a", "b"])
         tu = Tup(a=1, b=2)
         assert isinstance(tu, tuple)
         assert isinstance(tu + (1,), tuple)
 
     def test_explicit_module(self):
-        m = 'some.module.name'
-        Foo = _make_tuple_bunch('Foo', ['x'], ['a', 'b'], module=m)
+        m = "some.module.name"
+        Foo = _make_tuple_bunch("Foo", ["x"], ["a", "b"], module=m)
         foo = Foo(x=1, a=355, b=113)
         assert_equal(Foo.__module__, m)
         assert_equal(foo.__module__, m)
@@ -132,32 +131,33 @@ class TestMakeTupleBunch:
     # Argument validation
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    @pytest.mark.parametrize('args', [('123', ['a'], ['b']),
-                                      ('Foo', ['-3'], ['x']),
-                                      ('Foo', ['a'], ['+-*/'])])
+    @pytest.mark.parametrize(
+        "args",
+        [("123", ["a"], ["b"]), ("Foo", ["-3"], ["x"]), ("Foo", ["a"], ["+-*/"])],
+    )
     def test_identifiers_not_allowed(self, args):
-        with pytest.raises(ValueError, match='identifiers'):
+        with pytest.raises(ValueError, match="identifiers"):
             _make_tuple_bunch(*args)
 
-    @pytest.mark.parametrize('args', [('Foo', ['a', 'b', 'a'], ['x']),
-                                      ('Foo', ['a', 'b'], ['b', 'x'])])
+    @pytest.mark.parametrize(
+        "args", [("Foo", ["a", "b", "a"], ["x"]), ("Foo", ["a", "b"], ["b", "x"])]
+    )
     def test_repeated_field_names(self, args):
-        with pytest.raises(ValueError, match='Duplicate'):
+        with pytest.raises(ValueError, match="Duplicate"):
             _make_tuple_bunch(*args)
 
-    @pytest.mark.parametrize('args', [('Foo', ['_a'], ['x']),
-                                      ('Foo', ['a'], ['_x'])])
+    @pytest.mark.parametrize("args", [("Foo", ["_a"], ["x"]), ("Foo", ["a"], ["_x"])])
     def test_leading_underscore_not_allowed(self, args):
-        with pytest.raises(ValueError, match='underscore'):
+        with pytest.raises(ValueError, match="underscore"):
             _make_tuple_bunch(*args)
 
-    @pytest.mark.parametrize('args', [('Foo', ['def'], ['x']),
-                                      ('Foo', ['a'], ['or']),
-                                      ('and', ['a'], ['x'])])
+    @pytest.mark.parametrize(
+        "args", [("Foo", ["def"], ["x"]), ("Foo", ["a"], ["or"]), ("and", ["a"], ["x"])]
+    )
     def test_keyword_not_allowed_in_fields(self, args):
-        with pytest.raises(ValueError, match='keyword'):
+        with pytest.raises(ValueError, match="keyword"):
             _make_tuple_bunch(*args)
 
     def test_at_least_one_field_name_required(self):
-        with pytest.raises(ValueError, match='at least one name'):
-            _make_tuple_bunch('Qwerty', [], ['a', 'b'])
+        with pytest.raises(ValueError, match="at least one name"):
+            _make_tuple_bunch("Qwerty", [], ["a", "b"])

@@ -80,7 +80,7 @@
  *    IEEE      0, 30       30000       1.3e-15     1.6e-16
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.8:  June, 2000
  * Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
@@ -208,7 +208,7 @@ double x;
     p = p * cos(xn) - w * q * sin(xn);
     return (p * SQ2OPI / sqrt(x));
 }
-
+
 /*                                                     y0() 2  */
 /* Bessel function of second kind, order zero  */
 

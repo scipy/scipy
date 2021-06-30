@@ -3,13 +3,18 @@ from scipy.special import factorial
 from scipy._lib._util import _asarray_validated, float_factorial
 
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
-           "barycentric_interpolate", "approximate_taylor_polynomial"]
+__all__ = [
+    "KroghInterpolator",
+    "krogh_interpolate",
+    "BarycentricInterpolator",
+    "barycentric_interpolate",
+    "approximate_taylor_polynomial",
+]
 
 
 def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
-    return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
+    return np.isscalar(x) or hasattr(x, "shape") and x.shape == ()
 
 
 class _Interpolator1D:
@@ -44,7 +49,7 @@ class _Interpolator1D:
 
     """
 
-    __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
+    __slots__ = ("_y_axis", "_y_extra_shape", "dtype")
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis
@@ -70,7 +75,7 @@ class _Interpolator1D:
 
         Notes
         -----
-        Input values `x` must be convertible to `float` values like `int` 
+        Input values `x` must be convertible to `float` values like `int`
         or `float`.
 
         """
@@ -96,16 +101,21 @@ class _Interpolator1D:
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
-            s = (list(range(nx, nx + self._y_axis))
-                 + list(range(nx)) + list(range(nx+self._y_axis, nx+ny)))
+            s = (
+                list(range(nx, nx + self._y_axis))
+                + list(range(nx))
+                + list(range(nx + self._y_axis, nx + ny))
+            )
             y = y.transpose(s)
         return y
 
     def _reshape_yi(self, yi, check=False):
         yi = np.rollaxis(np.asarray(yi), self._y_axis)
         if check and yi.shape[1:] != self._y_extra_shape:
-            ok_shape = "%r + (N,) + %r" % (self._y_extra_shape[-self._y_axis:],
-                                           self._y_extra_shape[:-self._y_axis])
+            ok_shape = "%r + (N,) + %r" % (
+                self._y_extra_shape[-self._y_axis :],
+                self._y_extra_shape[: -self._y_axis],
+            )
             raise ValueError("Data must be of shape %s" % ok_shape)
         return yi.reshape((yi.shape[0], -1))
 
@@ -121,17 +131,19 @@ class _Interpolator1D:
         if shape == ():
             shape = (1,)
         if xi is not None and shape[axis] != len(xi):
-            raise ValueError("x and y arrays must be equal in length along "
-                             "interpolation axis.")
+            raise ValueError(
+                "x and y arrays must be equal in length along interpolation axis."
+            )
 
-        self._y_axis = (axis % yi.ndim)
-        self._y_extra_shape = yi.shape[:self._y_axis]+yi.shape[self._y_axis+1:]
+        self._y_axis = axis % yi.ndim
+        self._y_extra_shape = yi.shape[: self._y_axis] + yi.shape[self._y_axis + 1 :]
         self.dtype = None
         self._set_dtype(yi.dtype)
 
     def _set_dtype(self, dtype, union=False):
-        if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.dtype, np.complexfloating):
+        if np.issubdtype(dtype, np.complexfloating) or np.issubdtype(
+            self.dtype, np.complexfloating
+        ):
             self.dtype = np.complex_
         else:
             if not union or self.dtype != np.complex_:
@@ -180,9 +192,12 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
-            s = ([0] + list(range(nx+1, nx + self._y_axis+1))
-                 + list(range(1, nx+1)) +
-                 list(range(nx+1+self._y_axis, nx+ny+1)))
+            s = (
+                [0]
+                + list(range(nx + 1, nx + self._y_axis + 1))
+                + list(range(1, nx + 1))
+                + list(range(nx + 1 + self._y_axis, nx + ny + 1))
+            )
             y = y.transpose(s)
         return y
 
@@ -213,7 +228,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         """
         x, x_shape = self._prepare_x(x)
-        y = self._evaluate_derivatives(x, der+1)
+        y = self._evaluate_derivatives(x, der + 1)
         return self._finish_y(y[der], x_shape)
 
 
@@ -296,33 +311,33 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         self.yi = self._reshape_yi(yi)
         self.n, self.r = self.yi.shape
 
-        c = np.zeros((self.n+1, self.r), dtype=self.dtype)
+        c = np.zeros((self.n + 1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
         Vk = np.zeros((self.n, self.r), dtype=self.dtype)
         for k in range(1, self.n):
             s = 0
-            while s <= k and xi[k-s] == xi[k]:
+            while s <= k and xi[k - s] == xi[k]:
                 s += 1
             s -= 1
-            Vk[0] = self.yi[k]/float_factorial(s)
-            for i in range(k-s):
+            Vk[0] = self.yi[k] / float_factorial(s)
+            for i in range(k - s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
                 if s == 0:
-                    Vk[i+1] = (c[i]-Vk[i])/(xi[i]-xi[k])
+                    Vk[i + 1] = (c[i] - Vk[i]) / (xi[i] - xi[k])
                 else:
-                    Vk[i+1] = (Vk[i+1]-Vk[i])/(xi[i]-xi[k])
-            c[k] = Vk[k-s]
+                    Vk[i + 1] = (Vk[i + 1] - Vk[i]) / (xi[i] - xi[k])
+            c[k] = Vk[k - s]
         self.c = c
 
     def _evaluate(self, x):
         pi = 1
         p = np.zeros((len(x), self.r), dtype=self.dtype)
-        p += self.c[0,np.newaxis,:]
+        p += self.c[0, np.newaxis, :]
         for k in range(1, self.n):
-            w = x - self.xi[k-1]
-            pi = w*pi
-            p += pi[:,np.newaxis] * self.c[k]
+            w = x - self.xi[k - 1]
+            pi = w * pi
+            p += pi[:, np.newaxis] * self.c[k]
         return p
 
     def _evaluate_derivatives(self, x, der=None):
@@ -338,17 +353,17 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         p += self.c[0, np.newaxis, :]
 
         for k in range(1, n):
-            w[k-1] = x - self.xi[k-1]
-            pi[k] = w[k-1] * pi[k-1]
+            w[k - 1] = x - self.xi[k - 1]
+            pi[k] = w[k - 1] * pi[k - 1]
             p += pi[k, :, np.newaxis] * self.c[k]
 
-        cn = np.zeros((max(der, n+1), len(x), r), dtype=self.dtype)
-        cn[:n+1, :, :] += self.c[:n+1, np.newaxis, :]
+        cn = np.zeros((max(der, n + 1), len(x), r), dtype=self.dtype)
+        cn[: n + 1, :, :] += self.c[: n + 1, np.newaxis, :]
         cn[0] = p
         for k in range(1, n):
-            for i in range(1, n-k+1):
-                pi[i] = w[k+i-1]*pi[i-1] + pi[i]
-                cn[k] = cn[k] + pi[i, :, np.newaxis]*cn[k+i]
+            for i in range(1, n - k + 1):
+                pi[i] = w[k + i - 1] * pi[i - 1] + pi[i]
+                cn[k] = cn[k] + pi[i, :, np.newaxis] * cn[k + i]
             cn[k] *= float_factorial(k)
 
         cn[n, :, :] = 0
@@ -416,12 +431,12 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     if der == 0:
         return P(x)
     elif _isscalar(der):
-        return P.derivative(x,der=der)
+        return P.derivative(x, der=der)
     else:
-        return P.derivatives(x,der=np.amax(der)+1)[der]
+        return P.derivatives(x, der=np.amax(der) + 1)[der]
 
 
-def approximate_taylor_polynomial(f,x,degree,scale,order=None):
+def approximate_taylor_polynomial(f, x, degree, scale, order=None):
     """
     Estimate the Taylor polynomial of f at x by polynomial fitting.
 
@@ -482,17 +497,17 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     if order is None:
         order = degree
 
-    n = order+1
+    n = order + 1
     # Choose n points that cluster near the endpoints of the interval in
     # a way that avoids the Runge phenomenon. Ensure, by including the
     # endpoint or not as appropriate, that one point always falls at x
     # exactly.
-    xs = scale*np.cos(np.linspace(0,np.pi,n,endpoint=n % 1)) + x
+    xs = scale * np.cos(np.linspace(0, np.pi, n, endpoint=n % 1)) + x
 
     P = KroghInterpolator(xs, f(xs))
-    d = P.derivatives(x,der=degree+1)
+    d = P.derivatives(x, der=degree + 1)
 
-    return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
+    return np.poly1d((d / factorial(np.arange(degree + 1)))[::-1])
 
 
 class BarycentricInterpolator(_Interpolator1D):
@@ -532,6 +547,7 @@ class BarycentricInterpolator(_Interpolator1D):
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
 
     """
+
     def __init__(self, xi, yi=None, axis=0):
         _Interpolator1D.__init__(self, xi, yi, axis)
 
@@ -542,8 +558,8 @@ class BarycentricInterpolator(_Interpolator1D):
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
         for j in range(1, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
+            self.wi[:j] *= self.xi[j] - self.xi[:j]
+            self.wi[j] = np.multiply.reduce(self.xi[:j] - self.xi[j])
         self.wi **= -1
 
     def set_yi(self, yi, axis=None):
@@ -594,20 +610,20 @@ class BarycentricInterpolator(_Interpolator1D):
             if self.yi is None:
                 raise ValueError("No previous yi value to update!")
             yi = self._reshape_yi(yi, check=True)
-            self.yi = np.vstack((self.yi,yi))
+            self.yi = np.vstack((self.yi, yi))
         else:
             if self.yi is not None:
                 raise ValueError("No update to yi provided!")
         old_n = self.n
-        self.xi = np.concatenate((self.xi,xi))
+        self.xi = np.concatenate((self.xi, xi))
         self.n = len(self.xi)
         self.wi **= -1
         old_wi = self.wi
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
         for j in range(old_n, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
+            self.wi[:j] *= self.xi[j] - self.xi[:j]
+            self.wi[j] = np.multiply.reduce(self.xi[:j] - self.xi[j])
         self.wi **= -1
 
     def __call__(self, x):
@@ -636,11 +652,11 @@ class BarycentricInterpolator(_Interpolator1D):
         if x.size == 0:
             p = np.zeros((0, self.r), dtype=self.dtype)
         else:
-            c = x[...,np.newaxis]-self.xi
+            c = x[..., np.newaxis] - self.xi
             z = c == 0
             c[z] = 1
-            c = self.wi/c
-            p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
+            c = self.wi / c
+            p = np.dot(c, self.yi) / np.sum(c, axis=-1)[..., np.newaxis]
             # Now fix where x==some xi
             r = np.nonzero(z)
             if len(r) == 1:  # evaluation at a scalar

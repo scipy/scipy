@@ -652,37 +652,34 @@ from . import orthogonal
 from .orthogonal import *
 
 from .spfun_stats import multigammaln
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
+from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
 from ._lambertw import lambertw
-from ._spherical_bessel import (
-    spherical_jn,
-    spherical_yn,
-    spherical_in,
-    spherical_kn
-)
+from ._spherical_bessel import spherical_jn, spherical_yn, spherical_in, spherical_kn
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
-    'SpecialFunctionWarning',
-    'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
-    'logsumexp',
-    'softmax',
-    'log_softmax',
-    'multigammaln',
-    'ellip_harm',
-    'ellip_harm_2',
-    'ellip_normal',
-    'lambertw',
-    'spherical_jn',
-    'spherical_yn',
-    'spherical_in',
-    'spherical_kn',
-]
+__all__ = (
+    _ufuncs.__all__
+    + _basic.__all__
+    + orthogonal.__all__
+    + [
+        "SpecialFunctionWarning",
+        "SpecialFunctionError",
+        "orthogonal",  # Not public, but kept in __all__ for back-compat
+        "logsumexp",
+        "softmax",
+        "log_softmax",
+        "multigammaln",
+        "ellip_harm",
+        "ellip_harm_2",
+        "ellip_normal",
+        "lambertw",
+        "spherical_jn",
+        "spherical_yn",
+        "spherical_in",
+        "spherical_kn",
+    ]
+)
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

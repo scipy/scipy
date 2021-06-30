@@ -1,4 +1,4 @@
-python module gees__user__routines 
+python module gees__user__routines
     interface
         function <prefix>select(<_arg=arg1\,arg2,\0,arg,\2>)
             <ftype> :: <_arg>
@@ -7,7 +7,7 @@ python module gees__user__routines
     end interface
 end python module gees__user__routines
 
-python module gges__user__routines 
+python module gges__user__routines
     interface
         function <prefix2c>select(alpha, beta)
             <ftype2c> :: alpha, beta

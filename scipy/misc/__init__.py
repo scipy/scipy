@@ -21,12 +21,14 @@ Various utilities that don't have another home.
 from . import doccer
 from .common import *
 
-__all__ = ['doccer']
+__all__ = ["doccer"]
 
 from . import common
+
 __all__ += common.__all__
 del common
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

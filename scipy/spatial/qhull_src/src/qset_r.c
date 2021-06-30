@@ -851,7 +851,7 @@ int qh_setindex(setT *set, void *atelem) {
       the new set is qhmem.LASTsize
     otherwise use quick memory,
       the new set is 2x larger, rounded up to next qh_memsize
-       
+
     if temp set, updates qh->qhmem.tempstack
 
   design:
@@ -1379,5 +1379,3 @@ void qh_setzero(qhT *qh, setT *set, int idx, int size) {
   count= size - idx + 1;   /* +1 for NULL terminator */
   memset((char *)SETelemaddr_(set, idx, void), 0, (size_t)count * SETelemsize);
 } /* setzero */
-
-

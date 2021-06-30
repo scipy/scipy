@@ -4,10 +4,31 @@ import warnings
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, atleast_1d, sqrt, array,
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,
-                   arctan2, hypot)
+from numpy import (
+    isscalar,
+    r_,
+    log,
+    around,
+    unique,
+    asarray,
+    zeros,
+    arange,
+    sort,
+    amin,
+    amax,
+    atleast_1d,
+    sqrt,
+    array,
+    compress,
+    pi,
+    exp,
+    ravel,
+    count_nonzero,
+    sin,
+    cos,
+    arctan2,
+    hypot,
+)
 
 from scipy import optimize
 from scipy import special
@@ -20,20 +41,42 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 
 
-__all__ = ['mvsdist',
-           'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
-           'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
-           'fligner', 'mood', 'wilcoxon', 'median_test',
-           'circmean', 'circvar', 'circstd', 'anderson_ksamp',
-           'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
-           ]
+__all__ = [
+    "mvsdist",
+    "bayes_mvs",
+    "kstat",
+    "kstatvar",
+    "probplot",
+    "ppcc_max",
+    "ppcc_plot",
+    "boxcox_llf",
+    "boxcox",
+    "boxcox_normmax",
+    "boxcox_normplot",
+    "shapiro",
+    "anderson",
+    "ansari",
+    "bartlett",
+    "levene",
+    "binom_test",
+    "fligner",
+    "mood",
+    "wilcoxon",
+    "median_test",
+    "circmean",
+    "circvar",
+    "circstd",
+    "anderson_ksamp",
+    "yeojohnson_llf",
+    "yeojohnson",
+    "yeojohnson_normmax",
+    "yeojohnson_normplot",
+]
 
 
-Mean = namedtuple('Mean', ('statistic', 'minmax'))
-Variance = namedtuple('Variance', ('statistic', 'minmax'))
-Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
+Mean = namedtuple("Mean", ("statistic", "minmax"))
+Variance = namedtuple("Variance", ("statistic", "minmax"))
+Std_dev = namedtuple("Std_dev", ("statistic", "minmax"))
 
 
 def bayes_mvs(data, alpha=0.90):
@@ -125,8 +168,7 @@ def bayes_mvs(data, alpha=0.90):
     """
     m, v, s = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
-        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
-                         % alpha)
+        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
 
     m_res = Mean(m.mean(), m.interval(alpha))
     v_res = Variance(v.mean(), v.interval(alpha))
@@ -198,12 +240,12 @@ def mvsdist(data):
     C = x.var()
     if n > 1000:  # gaussian approximations for large n
         mdist = distributions.norm(loc=xbar, scale=math.sqrt(C / n))
-        sdist = distributions.norm(loc=math.sqrt(C), scale=math.sqrt(C / (2. * n)))
+        sdist = distributions.norm(loc=math.sqrt(C), scale=math.sqrt(C / (2.0 * n)))
         vdist = distributions.norm(loc=C, scale=math.sqrt(2.0 / n) * C)
     else:
         nm1 = n - 1
-        fac = n * C / 2.
-        val = nm1 / 2.
+        fac = n * C / 2.0
+        val = nm1 / 2.0
         mdist = distributions.t(nm1, loc=xbar, scale=math.sqrt(C / nm1))
         sdist = distributions.gengamma(val, -2, scale=math.sqrt(fac))
         vdist = distributions.invgamma(val, scale=fac)
@@ -291,17 +333,23 @@ def kstat(data, n=2):
         return np.nan
 
     for k in range(1, n + 1):
-        S[k] = np.sum(data**k, axis=0)
+        S[k] = np.sum(data ** k, axis=0)
     if n == 1:
-        return S[1] * 1.0/N
+        return S[1] * 1.0 / N
     elif n == 2:
-        return (N*S[2] - S[1]**2.0) / (N*(N - 1.0))
+        return (N * S[2] - S[1] ** 2.0) / (N * (N - 1.0))
     elif n == 3:
-        return (2*S[1]**3 - 3*N*S[1]*S[2] + N*N*S[3]) / (N*(N - 1.0)*(N - 2.0))
+        return (2 * S[1] ** 3 - 3 * N * S[1] * S[2] + N * N * S[3]) / (
+            N * (N - 1.0) * (N - 2.0)
+        )
     elif n == 4:
-        return ((-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
-                 4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) /
-                 (N*(N-1.0)*(N-2.0)*(N-3.0)))
+        return (
+            -6 * S[1] ** 4
+            + 12 * N * S[1] ** 2 * S[2]
+            - 3 * N * (N - 1.0) * S[2] ** 2
+            - 4 * N * (N + 1) * S[1] * S[3]
+            + N * N * (N + 1) * S[4]
+        ) / (N * (N - 1.0) * (N - 2.0) * (N - 3.0))
     else:
         raise ValueError("Should not be here.")
 
@@ -348,11 +396,11 @@ def kstatvar(data, n=2):
     data = ravel(data)
     N = len(data)
     if n == 1:
-        return kstat(data, n=2) * 1.0/N
+        return kstat(data, n=2) * 1.0 / N
     elif n == 2:
         k2 = kstat(data, n=2)
         k4 = kstat(data, n=4)
-        return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
+        return (2 * N * k2 ** 2 + (N - 1) * k4) / (N * (N + 1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
 
@@ -412,7 +460,7 @@ def _calc_uniform_order_statistic_medians(n):
 
     """
     v = np.empty(n, dtype=np.float64)
-    v[-1] = 0.5**(1.0 / n)
+    v[-1] = 0.5 ** (1.0 / n)
     v[0] = 1 - v[-1]
     i = np.arange(2, n)
     v[1:-1] = (i - 0.3175) / (n + 0.365)
@@ -443,8 +491,10 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         except AttributeError as e:
             raise ValueError("%s is not a valid distribution name" % dist) from e
     elif enforce_subclass:
-        msg = ("`dist` should be a stats.distributions instance or a string "
-               "with the name of such a distribution.")
+        msg = (
+            "`dist` should be a stats.distributions instance or a string "
+            "with the name of such a distribution."
+        )
         raise ValueError(msg)
 
     return dist
@@ -453,7 +503,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
 def _add_axis_labels_title(plot, xlabel, ylabel, title):
     """Helper function to add axes labels and a title to stats plots."""
     try:
-        if hasattr(plot, 'set_title'):
+        if hasattr(plot, "set_title"):
             # Matplotlib Axes instance or something that looks like it
             plot.set_title(title)
             plot.set_xlabel(xlabel)
@@ -469,7 +519,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
-def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
+def probplot(x, sparams=(), dist="norm", fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
 
@@ -604,12 +654,15 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
-        plot.plot(osm, osr, 'bo')
+        plot.plot(osm, osr, "bo")
         if fit:
-            plot.plot(osm, slope*osm + intercept, 'r-')
-        _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
-                               ylabel='Ordered Values',
-                               title='Probability Plot')
+            plot.plot(osm, slope * osm + intercept, "r-")
+        _add_axis_labels_title(
+            plot,
+            xlabel="Theoretical quantiles",
+            ylabel="Ordered Values",
+            title="Probability Plot",
+        )
 
         # Add R^2 value to the plot as text
         if rvalue:
@@ -619,7 +672,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
             ymax = amax(x)
             posx = xmin + 0.70 * (xmax - xmin)
             posy = ymin + 0.01 * (ymax - ymin)
-            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+            plot.text(posx, posy, "$R^2=%1.4f$" % r ** 2)
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -627,7 +680,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         return osm, osr
 
 
-def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
+def ppcc_max(x, brack=(0.0, 1.0), dist="tukeylambda"):
     """Calculate the shape parameter that maximizes the PPCC.
 
     The probability plot correlation coefficient (PPCC) plot can be used
@@ -710,11 +763,10 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         r, prob = stats.pearsonr(xvals, yvals)
         return 1 - r
 
-    return optimize.brent(tempfunc, brack=brack,
-                          args=(osm_uniform, osr, dist.ppf))
+    return optimize.brent(tempfunc, brack=brack, args=(osm_uniform, osr, dist.ppf))
 
 
-def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
+def ppcc_plot(x, a, b, dist="tukeylambda", plot=None, N=80):
     """Calculate and optionally plot probability plot correlation coefficient.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
@@ -808,10 +860,13 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
         ppcc[k] = r2[-1]
 
     if plot is not None:
-        plot.plot(svals, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='Shape Values',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title='(%s) PPCC Plot' % dist)
+        plot.plot(svals, ppcc, "x")
+        _add_axis_labels_title(
+            plot,
+            xlabel="Shape Values",
+            ylabel="Prob Plot Corr. Coef.",
+            title="(%s) PPCC Plot" % dist,
+        )
 
     return svals, ppcc
 
@@ -909,9 +964,9 @@ def boxcox_llf(lmb, data):
         # Transform without the constant offset 1/lmb.  The offset does
         # not effect the variance, and the subtraction of the offset can
         # lead to loss of precision.
-        variance = np.var(data**lmb / lmb, axis=0)
+        variance = np.var(data ** lmb / lmb, axis=0)
 
-    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
+    return (lmb - 1) * np.sum(logdata, axis=0) - N / 2 * np.log(variance)
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -1067,7 +1122,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, method='mle', optimizer=optimizer)
+    lmax = boxcox_normmax(x, method="mle", optimizer=optimizer)
     y = boxcox(x, lmax)
 
     if alpha is None:
@@ -1078,7 +1133,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
+def boxcox_normmax(x, brack=None, method="pearsonr", optimizer=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
@@ -1199,7 +1254,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         def _optimizer(func, args):
             def func_wrapped(x):
                 return func(x, *args)
-            return getattr(optimizer(func_wrapped), 'x', None)
+
+            return getattr(optimizer(func_wrapped), "x", None)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
@@ -1230,17 +1286,17 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         maxlog[1] = _mle(x)
         return maxlog
 
-    methods = {'pearsonr': _pearsonr,
-               'mle': _mle,
-               'all': _all}
+    methods = {"pearsonr": _pearsonr, "mle": _mle, "all": _all}
     if method not in methods.keys():
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
     res = optimfunc(x)
     if res is None:
-        message = ("`optimizer` must return an object containing the optimal "
-                   "`lmbda` in attribute `x`")
+        message = (
+            "`optimizer` must return an object containing the optimal "
+            "`lmbda` in attribute `x`"
+        )
         raise ValueError(message)
     return res
 
@@ -1252,11 +1308,11 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     See `boxcox_normplot` or `yeojohnson_normplot` for details.
     """
 
-    if method == 'boxcox':
-        title = 'Box-Cox Normality Plot'
+    if method == "boxcox":
+        title = "Box-Cox Normality Plot"
         transform_func = boxcox
     else:
-        title = 'Yeo-Johnson Normality Plot'
+        title = "Yeo-Johnson Normality Plot"
         transform_func = yeojohnson
 
     x = np.asarray(x)
@@ -1272,14 +1328,14 @@ def _normplot(method, x, la, lb, plot=None, N=80):
         # Determine for each lmbda the square root of correlation coefficient
         # of transformed x
         z = transform_func(x, lmbda=val)
-        _, (_, _, r) = probplot(z, dist='norm', fit=True)
+        _, (_, _, r) = probplot(z, dist="norm", fit=True)
         ppcc[i] = r
 
     if plot is not None:
-        plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\\lambda$',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title=title)
+        plot.plot(lmbdas, ppcc, "x")
+        _add_axis_labels_title(
+            plot, xlabel="$\\lambda$", ylabel="Prob Plot Corr. Coef.", title=title
+        )
 
     return lmbdas, ppcc
 
@@ -1349,7 +1405,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
-    return _normplot('boxcox', x, la, lb, plot, N)
+    return _normplot("boxcox", x, la, lb, plot, N)
 
 
 def yeojohnson(x, lmbda=None):
@@ -1427,8 +1483,9 @@ def yeojohnson(x, lmbda=None):
         return x
 
     if np.issubdtype(x.dtype, np.complexfloating):
-        raise ValueError('Yeo-Johnson transformation is not defined for '
-                         'complex numbers.')
+        raise ValueError(
+            "Yeo-Johnson transformation is not defined for complex numbers."
+        )
 
     if np.issubdtype(x.dtype, np.integer):
         x = x.astype(np.float64, copy=False)
@@ -1451,13 +1508,13 @@ def _yeojohnson_transform(x, lmbda):
     pos = x >= 0  # binary mask
 
     # when x >= 0
-    if abs(lmbda) < np.spacing(1.):
+    if abs(lmbda) < np.spacing(1.0):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
         out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
 
     # when x < 0
-    if abs(lmbda - 2) > np.spacing(1.):
+    if abs(lmbda - 2) > np.spacing(1.0):
         out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log1p(-x[~pos])
@@ -1607,6 +1664,7 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     >>> plt.show()
 
     """
+
     def _neg_llf(lmbda, data):
         return -yeojohnson_llf(lmbda, data)
 
@@ -1680,10 +1738,10 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
-    return _normplot('yeojohnson', x, la, lb, plot, N)
+    return _normplot("yeojohnson", x, la, lb, plot, N)
 
 
-ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
+ShapiroResult = namedtuple("ShapiroResult", ("statistic", "pvalue"))
 
 
 def shapiro(x):
@@ -1748,14 +1806,15 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    a = zeros(N, 'f')
+    a = zeros(N, "f")
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
+    a, w, pw, ifault = statlib.swilk(y, a[: N // 2], init)
     if ifault not in [0, 2]:
-        warnings.warn("Input data for shapiro has range zero. The results "
-                      "may not be accurate.")
+        warnings.warn(
+            "Input data for shapiro has range zero. The results may not be accurate."
+        )
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
@@ -1776,12 +1835,12 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 
 
-AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                               'critical_values',
-                                               'significance_level'))
+AndersonResult = namedtuple(
+    "AndersonResult", ("statistic", "critical_values", "significance_level")
+)
 
 
-def anderson(x, dist='norm'):
+def anderson(x, dist="norm"):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -1851,33 +1910,45 @@ def anderson(x, dist='norm'):
            pp. 591-595.
 
     """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+    if dist not in [
+        "norm",
+        "expon",
+        "gumbel",
+        "gumbel_l",
+        "gumbel_r",
+        "extreme1",
+        "logistic",
+    ]:
+        raise ValueError(
+            "Invalid distribution; dist must be 'norm', "
+            "'expon', 'gumbel', 'extreme1' or 'logistic'."
+        )
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
-    if dist == 'norm':
+    if dist == "norm":
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
-    elif dist == 'expon':
+        critical = around(_Avals_norm / (1.0 + 4.0 / N - 25.0 / N / N), 3)
+    elif dist == "expon":
         w = y / xbar
         logcdf = distributions.expon.logcdf(w)
         logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
-    elif dist == 'logistic':
+        critical = around(_Avals_expon / (1.0 + 0.6 / N), 3)
+    elif dist == "logistic":
+
         def rootfunc(ab, xj, N):
             a, b = ab
             tmp = (xj - a) / b
             tmp2 = exp(tmp)
-            val = [np.sum(1.0/(1+tmp2), axis=0) - 0.5*N,
-                   np.sum(tmp*(1.0-tmp2)/(1+tmp2), axis=0) + N]
+            val = [
+                np.sum(1.0 / (1 + tmp2), axis=0) - 0.5 * N,
+                np.sum(tmp * (1.0 - tmp2) / (1 + tmp2), axis=0) + N,
+            ]
             return array(val)
 
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
@@ -1886,24 +1957,24 @@ def anderson(x, dist='norm'):
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
-        critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
-    elif dist == 'gumbel_r':
+        critical = around(_Avals_logistic / (1.0 + 0.25 / N), 3)
+    elif dist == "gumbel_r":
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = around(_Avals_gumbel / (1.0 + 0.2 / sqrt(N)), 3)
     else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = around(_Avals_gumbel / (1.0 + 0.2 / sqrt(N)), 3)
 
     i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
+    A2 = -N - np.sum((2 * i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
     return AndersonResult(A2, critical, sig)
 
@@ -1932,22 +2003,24 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
         The A2aKN statistics of Scholz and Stephens 1987.
 
     """
-    A2akN = 0.
-    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    A2akN = 0.0
+    Z_ssorted_left = Z.searchsorted(Zstar, "left")
     if N == Zstar.size:
-        lj = 1.
+        lj = 1.0
     else:
-        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
-    Bj = Z_ssorted_left + lj / 2.
+        lj = Z.searchsorted(Zstar, "right") - Z_ssorted_left
+    Bj = Z_ssorted_left + lj / 2.0
     for i in arange(0, k):
         s = np.sort(samples[i])
-        s_ssorted_right = s.searchsorted(Zstar, side='right')
+        s_ssorted_right = s.searchsorted(Zstar, side="right")
         Mij = s_ssorted_right.astype(float)
-        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
-        Mij -= fij / 2.
-        inner = lj / float(N) * (N*Mij - Bj*n[i])**2 / (Bj*(N - Bj) - N*lj/4.)
+        fij = s_ssorted_right - s.searchsorted(Zstar, "left")
+        Mij -= fij / 2.0
+        inner = (
+            lj / float(N) * (N * Mij - Bj * n[i]) ** 2 / (Bj * (N - Bj) - N * lj / 4.0)
+        )
         A2akN += inner.sum() / n[i]
-    A2akN *= (N - 1.) / N
+    A2akN *= (N - 1.0) / N
     return A2akN
 
 
@@ -1975,21 +2048,20 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
         The A2KN statistics of Scholz and Stephens 1987.
 
     """
-    A2kN = 0.
-    lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
-                                                              'left')
+    A2kN = 0.0
+    lj = Z.searchsorted(Zstar[:-1], "right") - Z.searchsorted(Zstar[:-1], "left")
     Bj = lj.cumsum()
     for i in arange(0, k):
         s = np.sort(samples[i])
-        Mij = s.searchsorted(Zstar[:-1], side='right')
-        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
+        Mij = s.searchsorted(Zstar[:-1], side="right")
+        inner = lj / float(N) * (N * Mij - Bj * n[i]) ** 2 / (Bj * (N - Bj))
         A2kN += inner.sum() / n[i]
     return A2kN
 
 
-Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                  ('statistic', 'critical_values',
-                                   'significance_level'))
+Anderson_ksampResult = namedtuple(
+    "Anderson_ksampResult", ("statistic", "critical_values", "significance_level")
+)
 
 
 def anderson_ksamp(samples, midrank=True):
@@ -2093,7 +2165,7 @@ def anderson_ksamp(samples, midrank=True):
 
     """
     k = len(samples)
-    if (k < 2):
+    if k < 2:
         raise ValueError("anderson_ksamp needs at least two samples")
 
     samples = list(map(np.asarray, samples))
@@ -2101,29 +2173,29 @@ def anderson_ksamp(samples, midrank=True):
     N = Z.size
     Zstar = np.unique(Z)
     if Zstar.size < 2:
-        raise ValueError("anderson_ksamp needs more than one distinct "
-                         "observation")
+        raise ValueError("anderson_ksamp needs more than one distinct observation")
 
     n = np.array([sample.size for sample in samples])
     if np.any(n == 0):
-        raise ValueError("anderson_ksamp encountered sample without "
-                         "observations")
+        raise ValueError("anderson_ksamp encountered sample without observations")
 
     if midrank:
         A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
     else:
         A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
-    H = (1. / n).sum()
-    hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
+    H = (1.0 / n).sum()
+    hs_cs = (1.0 / arange(N - 1, 1, -1)).cumsum()
     h = hs_cs[-1] + 1
     g = (hs_cs / arange(2, N)).sum()
 
-    a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
-    b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
-    c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
-    d = (2*h + 6)*k**2 - 4*h*k
-    sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
+    a = (4 * g - 6) * (k - 1) + (10 - 6 * g) * H
+    b = (2 * g - 4) * k ** 2 + 8 * h * k + (2 * g - 14 * h - 4) * H - 8 * h + 4 * g - 6
+    c = (6 * h + 2 * g - 2) * k ** 2 + (4 * h - 4 * g + 6) * k + (2 * h - 6) * H + 4 * h
+    d = (2 * h + 6) * k ** 2 - 4 * h * k
+    sigmasq = (a * N ** 3 + b * N ** 2 + c * N + d) / (
+        (N - 1.0) * (N - 2.0) * (N - 3.0)
+    )
     m = k - 1
     A2 = (A2kN - m) / math.sqrt(sigmasq)
 
@@ -2137,12 +2209,14 @@ def anderson_ksamp(samples, midrank=True):
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
     if A2 < critical.min():
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
+        warnings.warn(
+            "p-value capped: true value larger than {}".format(p), stacklevel=2
+        )
     elif A2 > critical.max():
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
+        warnings.warn(
+            "p-value floored: true value smaller than {}".format(p), stacklevel=2
+        )
     else:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
@@ -2151,11 +2225,12 @@ def anderson_ksamp(samples, midrank=True):
     return Anderson_ksampResult(A2, critical, p)
 
 
-AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
+AnsariResult = namedtuple("AnsariResult", ("statistic", "pvalue"))
 
 
 class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
+
     # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
     # but inititally it doesn't seem worth the extra complexity
@@ -2197,7 +2272,7 @@ class _ABW:
         # Null distribution derived without considering ties is
         # approximate. Round down to avoid Type I error.
         ind = np.ceil(k - self.astart).astype(int)
-        return self.freqs[:ind+1].sum() / self.total
+        return self.freqs[: ind + 1].sum() / self.total
 
     def sf(self, k, n, m):
         """Survival function."""
@@ -2212,7 +2287,7 @@ class _ABW:
 _abw_state = _ABW()
 
 
-def ansari(x, y, alternative='two-sided'):
+def ansari(x, y, alternative="two-sided"):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -2315,9 +2390,8 @@ def ansari(x, y, alternative='two-sided'):
     AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
 
     """
-    if alternative not in {'two-sided', 'greater', 'less'}:
-        raise ValueError("'alternative' must be 'two-sided',"
-                         " 'greater', or 'less'.")
+    if alternative not in {"two-sided", "greater", "less"}:
+        raise ValueError("'alternative' must be 'two-sided', 'greater', or 'less'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2332,15 +2406,14 @@ def ansari(x, y, alternative='two-sided'):
     symrank = amin(array((rank, N - rank + 1)), 0)
     AB = np.sum(symrank[:n], axis=0)
     uxy = unique(xy)
-    repeats = (len(uxy) != len(xy))
-    exact = ((m < 55) and (n < 55) and not repeats)
+    repeats = len(uxy) != len(xy)
+    exact = (m < 55) and (n < 55) and not repeats
     if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
-        if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
-                                    _abw_state.sf(AB, n, m))
-        elif alternative == 'greater':
+        if alternative == "two-sided":
+            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m), _abw_state.sf(AB, n, m))
+        elif alternative == "greater":
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
             pval = _abw_state.cdf(AB, n, m)
@@ -2350,18 +2423,18 @@ def ansari(x, y, alternative='two-sided'):
 
     # otherwise compute normal approximation
     if N % 2:  # N odd
-        mnAB = n * (N+1.0)**2 / 4.0 / N
-        varAB = n * m * (N+1.0) * (3+N**2) / (48.0 * N**2)
+        mnAB = n * (N + 1.0) ** 2 / 4.0 / N
+        varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
     else:
-        mnAB = n * (N+2.0) / 4.0
-        varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
-    if repeats:   # adjust variance estimates
+        mnAB = n * (N + 2.0) / 4.0
+        varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
+    if repeats:  # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=0)
+        fac = np.sum(symrank ** 2, axis=0)
         if N % 2:  # N odd
-            varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
+            varAB = m * n * (16 * N * fac - (N + 1) ** 4) / (16.0 * N ** 2 * (N - 1))
         else:  # N even
-            varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
+            varAB = m * n * (16 * fac - N * (N + 2) ** 2) / (16.0 * N * (N - 1))
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
@@ -2371,7 +2444,7 @@ def ansari(x, y, alternative='two-sided'):
     return AnsariResult(AB, pval)
 
 
-BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
+BartlettResult = namedtuple("BartlettResult", ("statistic", "pvalue"))
 
 
 def bartlett(*args):
@@ -2452,31 +2525,32 @@ def bartlett(*args):
         if np.asanyarray(a).size == 0:
             return BartlettResult(np.nan, np.nan)
         if np.asanyarray(a).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
+            raise ValueError("Samples must be one-dimensional.")
 
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     Ni = np.empty(k)
-    ssq = np.empty(k, 'd')
+    ssq = np.empty(k, "d")
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
     Ntot = np.sum(Ni, axis=0)
-    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
-                                     1.0/(Ntot - k))
+    spsq = np.sum((Ni - 1) * ssq, axis=0) / (1.0 * (Ntot - k))
+    numer = (Ntot * 1.0 - k) * log(spsq) - np.sum((Ni - 1.0) * log(ssq), axis=0)
+    denom = 1.0 + 1.0 / (3 * (k - 1)) * (
+        (np.sum(1.0 / (Ni - 1.0), axis=0)) - 1.0 / (Ntot - k)
+    )
     T = numer / denom
     pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
 
     return BartlettResult(T, pval)
 
 
-LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
+LeveneResult = namedtuple("LeveneResult", ("statistic", "pvalue"))
 
 
-def levene(*args, center='median', proportiontocut=0.05):
+def levene(*args, center="median", proportiontocut=0.05):
     """Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
@@ -2550,7 +2624,7 @@ def levene(*args, center='median', proportiontocut=0.05):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
-    if center not in ['mean', 'median', 'trimmed']:
+    if center not in ["mean", "median", "trimmed"]:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(args)
@@ -2559,18 +2633,17 @@ def levene(*args, center='median', proportiontocut=0.05):
     # check for 1d input
     for j in range(k):
         if np.asanyarray(args[j]).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
+            raise ValueError("Samples must be one-dimensional.")
 
     Ni = np.empty(k)
-    Yci = np.empty(k, 'd')
+    Yci = np.empty(k, "d")
 
-    if center == 'median':
+    if center == "median":
         func = lambda x: np.median(x, axis=0)
-    elif center == 'mean':
+    elif center == "mean":
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(stats.trimboth(np.sort(arg), proportiontocut)
-                     for arg in args)
+        args = tuple(stats.trimboth(np.sort(arg), proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
@@ -2584,28 +2657,28 @@ def levene(*args, center='median', proportiontocut=0.05):
         Zij[i] = abs(asarray(args[i]) - Yci[i])
 
     # compute Zbari
-    Zbari = np.empty(k, 'd')
+    Zbari = np.empty(k, "d")
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
         Zbar += Zbari[i] * Ni[i]
 
     Zbar /= Ntot
-    numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
+    numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar) ** 2, axis=0)
 
     # compute denom_variance
     dvar = 0.0
     for i in range(k):
-        dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
+        dvar += np.sum((Zij[i] - Zbari[i]) ** 2, axis=0)
 
     denom = (k - 1.0) * dvar
 
     W = numer / denom
-    pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
+    pval = distributions.f.sf(W, k - 1, Ntot - k)  # 1 - cdf
     return LeveneResult(W, pval)
 
 
-def binom_test(x, n=None, p=0.5, alternative='two-sided'):
+def binom_test(x, n=None, p=0.5, alternative="two-sided"):
     """Perform a test that the probability of success is p.
 
     Note: `binom_test` is deprecated; it is recommended that `binomtest`
@@ -2669,16 +2742,17 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     if (p > 1.0) or (p < 0.0):
         raise ValueError("p must be in range [0,1]")
 
-    if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized\n"
-                         "should be 'two-sided', 'less' or 'greater'")
+    if alternative not in ("two-sided", "less", "greater"):
+        raise ValueError(
+            "alternative not recognized\nshould be 'two-sided', 'less' or 'greater'"
+        )
 
-    if alternative == 'less':
+    if alternative == "less":
         pval = distributions.binom.cdf(x, n, p)
         return pval
 
-    if alternative == 'greater':
-        pval = distributions.binom.sf(x-1, n, p)
+    if alternative == "greater":
+        pval = distributions.binom.sf(x - 1, n, p)
         return pval
 
     # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
@@ -2686,17 +2760,17 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     rerr = 1 + 1e-7
     if x == p * n:
         # special case as shortcut, would also be handled by `else` below
-        pval = 1.
+        pval = 1.0
     elif x < p * n:
-        i = np.arange(np.ceil(p * n), n+1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(x, n, p) +
-                distributions.binom.sf(n - y, n, p))
+        i = np.arange(np.ceil(p * n), n + 1)
+        y = np.sum(distributions.binom.pmf(i, n, p) <= d * rerr, axis=0)
+        pval = distributions.binom.cdf(x, n, p) + distributions.binom.sf(n - y, n, p)
     else:
-        i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(y-1, n, p) +
-                distributions.binom.sf(x-1, n, p))
+        i = np.arange(np.floor(p * n) + 1)
+        y = np.sum(distributions.binom.pmf(i, n, p) <= d * rerr, axis=0)
+        pval = distributions.binom.cdf(y - 1, n, p) + distributions.binom.sf(
+            x - 1, n, p
+        )
 
     return min(1.0, pval)
 
@@ -2706,15 +2780,15 @@ def _apply_func(x, g, func):
     #  separating x into different groups
     #  func should be applied over the groups
     g = unique(r_[0, g, len(x)])
-    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
+    output = [func(x[g[k] : g[k + 1]]) for k in range(len(g) - 1)]
 
     return asarray(output)
 
 
-FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
+FlignerResult = namedtuple("FlignerResult", ("statistic", "pvalue"))
 
 
-def fligner(*args, center='median', proportiontocut=0.05):
+def fligner(*args, center="median", proportiontocut=0.05):
     """Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -2801,7 +2875,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
-    if center not in ['mean', 'median', 'trimmed']:
+    if center not in ["mean", "median", "trimmed"]:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     # Handle empty input
@@ -2813,9 +2887,9 @@ def fligner(*args, center='median', proportiontocut=0.05):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    if center == 'median':
+    if center == "median":
         func = lambda x: np.median(x, axis=0)
-    elif center == 'mean':
+    elif center == "mean":
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
         args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
@@ -2833,13 +2907,13 @@ def fligner(*args, center='median', proportiontocut=0.05):
         g.append(len(allZij))
 
     ranks = stats.rankdata(allZij)
-    a = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    a = distributions.norm.ppf(ranks / (2 * (Ntot + 1.0)) + 0.5)
 
     # compute Aibar
     Aibar = _apply_func(a, g, np.sum) / Ni
     anbar = np.mean(a, axis=0)
     varsq = np.var(a, axis=0, ddof=1)
-    Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    Xsq = np.sum(Ni * (asarray(Aibar) - anbar) ** 2.0, axis=0) / varsq
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
 
@@ -2935,10 +3009,10 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # Determine shape of the result arrays
     res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
-    if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
-                                ax != axis])):
-        raise ValueError("Dimensions of x and y on all axes except `axis` "
-                         "should match")
+    if not (
+        res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if ax != axis])
+    ):
+        raise ValueError("Dimensions of x and y on all axes except `axis` should match")
 
     n = x.shape[axis]
     m = y.shape[axis]
@@ -2960,7 +3034,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
     Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
+    M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
     # Approx stat.
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
@@ -2978,11 +3052,17 @@ def mood(x, y, axis=0, alternative="two-sided"):
     return z, pval
 
 
-WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+WilcoxonResult = namedtuple("WilcoxonResult", ("statistic", "pvalue"))
 
 
-def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", mode='auto'):
+def wilcoxon(
+    x,
+    y=None,
+    zero_method="wilcox",
+    correction=False,
+    alternative="two-sided",
+    mode="auto",
+):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
@@ -3110,23 +3190,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
 
     if zero_method not in ["wilcox", "pratt", "zsplit"]:
-        raise ValueError("Zero method must be either 'wilcox' "
-                         "or 'pratt' or 'zsplit'")
+        raise ValueError("Zero method must be either 'wilcox' or 'pratt' or 'zsplit'")
 
     if alternative not in ["two-sided", "less", "greater"]:
-        raise ValueError("Alternative must be either 'two-sided', "
-                         "'greater' or 'less'")
+        raise ValueError("Alternative must be either 'two-sided', 'greater' or 'less'")
 
     if y is None:
         d = asarray(x)
         if d.ndim > 1:
-            raise ValueError('Sample x must be one-dimensional.')
+            raise ValueError("Sample x must be one-dimensional.")
     else:
         x, y = map(asarray, (x, y))
         if x.ndim > 1 or y.ndim > 1:
-            raise ValueError('Samples x and y must be one-dimensional.')
+            raise ValueError("Samples x and y must be one-dimensional.")
         if len(x) != len(y):
-            raise ValueError('The samples x and y must have the same length.')
+            raise ValueError("The samples x and y must have the same length.")
         d = x - y
 
     if mode == "auto":
@@ -3138,14 +3216,18 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     n_zero = np.sum(d == 0)
     if n_zero > 0 and mode == "exact":
         mode = "approx"
-        warnings.warn("Exact p-value calculation does not work if there are "
-                      "ties. Switching to normal approximation.")
+        warnings.warn(
+            "Exact p-value calculation does not work if there are "
+            "ties. Switching to normal approximation."
+        )
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
             if n_zero == len(d):
-                raise ValueError("zero_method 'wilcox' and 'pratt' do not "
-                                 "work if x - y is zero for all elements.")
+                raise ValueError(
+                    "zero_method 'wilcox' and 'pratt' do not "
+                    "work if x - y is zero for all elements."
+                )
         if zero_method == "wilcox":
             # Keep all non-zero differences
             d = compress(np.not_equal(d, 0), d)
@@ -3160,8 +3242,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     if zero_method == "zsplit":
         r_zero = np.sum((d == 0) * r)
-        r_plus += r_zero / 2.
-        r_minus += r_zero / 2.
+        r_plus += r_zero / 2.0
+        r_minus += r_zero / 2.0
 
     # return min for two-sided test, but r_plus for one-sided test
     # the literature is not consistent here
@@ -3176,14 +3258,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         T = r_plus
 
     if mode == "approx":
-        mn = count * (count + 1.) * 0.25
-        se = count * (count + 1.) * (2. * count + 1.)
+        mn = count * (count + 1.0) * 0.25
+        se = count * (count + 1.0) * (2.0 * count + 1.0)
 
         if zero_method == "pratt":
             r = r[d != 0]
             # normal approximation needs to be adjusted, see Cureton (1967)
-            mn -= n_zero * (n_zero + 1.) * 0.25
-            se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
+            mn -= n_zero * (n_zero + 1.0) * 0.25
+            se -= n_zero * (n_zero + 1.0) * (2.0 * n_zero + 1.0)
 
         replist, repnum = find_repeats(r)
         if repnum.size != 0:
@@ -3205,7 +3287,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         # compute statistic and p-value using normal approximation
         z = (T - mn - d) / se
         if alternative == "two-sided":
-            prob = 2. * distributions.norm.sf(abs(z))
+            prob = 2.0 * distributions.norm.sf(abs(z))
         elif alternative == "greater":
             # large T = r_plus indicates x is greater than y; i.e.
             # accept alternative in that case and return small p-value (sf)
@@ -3222,19 +3304,20 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
-                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-                p_greater = np.sum(cnt[r_plus:]) / 2**count
-                prob = 2*min(p_greater, p_less)
+                p_less = np.sum(cnt[: r_plus + 1]) / 2 ** count
+                p_greater = np.sum(cnt[r_plus:]) / 2 ** count
+                prob = 2 * min(p_greater, p_less)
         elif alternative == "greater":
-            prob = np.sum(cnt[r_plus:]) / 2**count
+            prob = np.sum(cnt[r_plus:]) / 2 ** count
         else:
-            prob = np.sum(cnt[:r_plus + 1]) / 2**count
+            prob = np.sum(cnt[: r_plus + 1]) / 2 ** count
 
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, ties='below', correction=True, lambda_=1,
-                nan_policy='propagate'):
+def median_test(
+    *args, ties="below", correction=True, lambda_=1, nan_policy="propagate"
+):
     """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
@@ -3373,28 +3456,33 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
 
     """
     if len(args) < 2:
-        raise ValueError('median_test requires two or more samples.')
+        raise ValueError("median_test requires two or more samples.")
 
-    ties_options = ['below', 'above', 'ignore']
+    ties_options = ["below", "above", "ignore"]
     if ties not in ties_options:
-        raise ValueError("invalid 'ties' option '%s'; 'ties' must be one "
-                         "of: %s" % (ties, str(ties_options)[1:-1]))
+        raise ValueError(
+            "invalid 'ties' option '%s'; 'ties' must be one of: %s"
+            % (ties, str(ties_options)[1:-1])
+        )
 
     data = [np.asarray(arg) for arg in args]
 
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(
+                "Sample %d is empty. All samples must contain at least one value."
+                % (k + 1)
+            )
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(
+                "Sample %d has %d dimensions.  All "
+                "samples must be one-dimensional sequences." % (k + 1, d.ndim)
+            )
 
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'propagate':
+    if contains_nan and nan_policy == "propagate":
         return np.nan, np.nan, np.nan, None
 
     if contains_nan:
@@ -3425,11 +3513,9 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
     # a zero in the table of expected frequencies.
     rowsums = table.sum(axis=1)
     if rowsums[0] == 0:
-        raise ValueError("All values are below the grand median (%r)." %
-                         grand_median)
+        raise ValueError("All values are below the grand median (%r)." % grand_median)
     if rowsums[1] == 0:
-        raise ValueError("All values are above the grand median (%r)." %
-                         grand_median)
+        raise ValueError("All values are above the grand median (%r)." % grand_median)
     if ties == "ignore":
         # We already checked that each sample has at least one value, but it
         # is possible that all those values equal the grand median.  If `ties`
@@ -3437,17 +3523,20 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
+            msg = (
+                "All values in sample %d are equal to the grand "
+                "median (%r), so they are ignored, resulting in an "
+                "empty sample." % (zero_cols[0] + 1, grand_median)
+            )
             raise ValueError(msg)
 
-    stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
-                                              correction=correction)
+    stat, p, dof, expected = chi2_contingency(
+        table, lambda_=lambda_, correction=correction
+    )
     return stat, p, grand_median, table
 
 
-def _circfuncs_common(samples, high, low, nan_policy='propagate'):
+def _circfuncs_common(samples, high, low, nan_policy="propagate"):
     # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
     if samples.size == 0:
@@ -3455,12 +3544,12 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = sin((samples - low)*2.*pi / (high - low))
-    cos_samp = cos((samples - low)*2.*pi / (high - low))
+    sin_samp = sin((samples - low) * 2.0 * pi / (high - low))
+    cos_samp = cos((samples - low) * 2.0 * pi / (high - low))
 
     # Apply the NaN policy
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         mask = np.isnan(samples)
         # Set the sines and cosines that are NaN to zero
         sin_samp[mask] = 0.0
@@ -3471,7 +3560,7 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
     return samples, sin_samp, cos_samp, mask
 
 
-def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circmean(samples, high=2 * pi, low=0, axis=None, nan_policy="propagate"):
     """Compute the circular mean for samples in a range.
 
     Parameters
@@ -3506,8 +3595,9 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.4
 
     """
-    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
-                                                           nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, nmask = _circfuncs_common(
+        samples, high, low, nan_policy=nan_policy
+    )
     sin_sum = sin_samp.sum(axis=axis)
     cos_sum = cos_samp.sum(axis=axis)
     res = arctan2(sin_sum, cos_sum)
@@ -3520,9 +3610,9 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     if mask.ndim > 0:
         mask_nan[mask_nan] = mask
-        res[mask_nan] += 2*pi
+        res[mask_nan] += 2 * pi
     elif mask:
-        res += 2*pi
+        res += 2 * pi
 
     # Set output to NaN if no samples went into the mean
     if nmask is not None:
@@ -3536,10 +3626,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
             if smask.any():
                 res[smask] = np.nan
 
-    return res*(high - low)/2.0/pi + low
+    return res * (high - low) / 2.0 / pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circvar(samples, high=2 * pi, low=0, axis=None, nan_policy="propagate"):
     """Compute the circular variance for samples assumed to be in a range.
 
     Parameters
@@ -3575,8 +3665,9 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     2.19722457734
 
     """
-    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
-                                                          nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(
+        samples, high, low, nan_policy=nan_policy
+    )
     if mask is None:
         sin_mean = sin_samp.mean(axis=axis)
         cos_mean = cos_samp.mean(axis=axis)
@@ -3586,13 +3677,13 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
     # hypot can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid="ignore"):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * -2 * log(R)
+    return ((high - low) / 2.0 / pi) ** 2 * -2 * log(R)
 
 
-def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circstd(samples, high=2 * pi, low=0, axis=None, nan_policy="propagate"):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3631,8 +3722,9 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.063564063306
 
     """
-    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
-                                                          nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(
+        samples, high, low, nan_policy=nan_policy
+    )
     if mask is None:
         sin_mean = sin_samp.mean(axis=axis)
         cos_mean = cos_samp.mean(axis=axis)
@@ -3642,7 +3734,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
     # hypot can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid="ignore"):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))
+    return ((high - low) / 2.0 / pi) * sqrt(-2 * log(R))

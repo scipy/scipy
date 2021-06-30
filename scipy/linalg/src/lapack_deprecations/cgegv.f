@@ -2,25 +2,25 @@
 *
 *  =========== DOCUMENTATION ===========
 *
-* Online html documentation available at 
-*            http://www.netlib.org/lapack/explore-html/ 
+* Online html documentation available at
+*            http://www.netlib.org/lapack/explore-html/
 *
 *> \htmlonly
-*> Download CGEGV + dependencies 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/cgegv.f"> 
-*> [TGZ]</a> 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/cgegv.f"> 
-*> [ZIP]</a> 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/cgegv.f"> 
+*> Download CGEGV + dependencies
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/cgegv.f">
+*> [TGZ]</a>
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/cgegv.f">
+*> [ZIP]</a>
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/cgegv.f">
 *> [TXT]</a>
-*> \endhtmlonly 
+*> \endhtmlonly
 *
 *  Definition:
 *  ===========
 *
 *       SUBROUTINE CGEGV( JOBVL, JOBVR, N, A, LDA, B, LDB, ALPHA, BETA,
 *                         VL, LDVL, VR, LDVR, WORK, LWORK, RWORK, INFO )
-* 
+*
 *       .. Scalar Arguments ..
 *       CHARACTER          JOBVL, JOBVR
 *       INTEGER            INFO, LDA, LDB, LDVL, LDVR, LWORK, N
@@ -31,7 +31,7 @@
 *      $                   BETA( * ), VL( LDVL, * ), VR( LDVR, * ),
 *      $                   WORK( * )
 *       ..
-*  
+*
 *
 *> \par Purpose:
 *  =============
@@ -57,7 +57,7 @@
 *> lambda or mu is zero or small, two values alpha and beta are returned
 *> for each eigenvalue, such that lambda = alpha/beta and
 *> mu = beta/alpha.
-*> 
+*>
 *> The vectors x and y in the above equations are right eigenvectors of
 *> the matrix pair (A,B).  Vectors u and v satisfying
 *>    u**H*A = lambda*u**H*B  or  mu*v**H*A = v**H*B
@@ -138,7 +138,7 @@
 *> \verbatim
 *>          BETA is COMPLEX array, dimension (N)
 *>          The complex scalars beta that define the eigenvalues of GNEP.
-*>          
+*>
 *>          Together, the quantities alpha = ALPHA(j) and beta = BETA(j)
 *>          represent the j-th eigenvalue of the matrix pair (A,B), in
 *>          one of the forms lambda = alpha/beta or mu = beta/alpha.
@@ -237,10 +237,10 @@
 *  Authors:
 *  ========
 *
-*> \author Univ. of Tennessee 
-*> \author Univ. of California Berkeley 
-*> \author Univ. of Colorado Denver 
-*> \author NAG Ltd. 
+*> \author Univ. of Tennessee
+*> \author Univ. of California Berkeley
+*> \author Univ. of Colorado Denver
+*> \author NAG Ltd.
 *
 *> \date November 2011
 *

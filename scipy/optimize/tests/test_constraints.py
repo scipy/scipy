@@ -3,8 +3,14 @@ import numpy as np
 from numpy.testing import TestCase, assert_array_equal
 import scipy.sparse as sps
 from scipy.optimize._constraints import (
-    Bounds, LinearConstraint, NonlinearConstraint, PreparedConstraint,
-    new_bounds_to_old, old_bound_to_new, strict_bounds)
+    Bounds,
+    LinearConstraint,
+    NonlinearConstraint,
+    PreparedConstraint,
+    new_bounds_to_old,
+    old_bound_to_new,
+    strict_bounds,
+)
 
 
 class TestStrictBounds(TestCase):
@@ -13,16 +19,12 @@ class TestStrictBounds(TestCase):
         lb = 2
         ub = 4
         enforce_feasibility = False
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                             enforce_feasibility,
-                                             m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [-np.inf, -np.inf, -np.inf])
         assert_array_equal(strict_ub, [np.inf, np.inf, np.inf])
 
         enforce_feasibility = True
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                             enforce_feasibility,
-                                             m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [2, 2, 2])
         assert_array_equal(strict_ub, [4, 4, 4])
 
@@ -31,16 +33,12 @@ class TestStrictBounds(TestCase):
         lb = [1, 2, 3]
         ub = [4, 5, 6]
         enforce_feasibility = False
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                              enforce_feasibility,
-                                              m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [-np.inf, -np.inf, -np.inf])
         assert_array_equal(strict_ub, [np.inf, np.inf, np.inf])
 
         enforce_feasibility = True
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                              enforce_feasibility,
-                                              m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [1, 2, 3])
         assert_array_equal(strict_ub, [4, 5, 6])
 
@@ -49,9 +47,7 @@ class TestStrictBounds(TestCase):
         lb = 2
         ub = 4
         enforce_feasibility = [False, True, False]
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                             enforce_feasibility,
-                                             m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [-np.inf, 2, -np.inf])
         assert_array_equal(strict_ub, [np.inf, 4, np.inf])
 
@@ -60,9 +56,7 @@ class TestStrictBounds(TestCase):
         lb = [1, 2, 3]
         ub = [4, 6, np.inf]
         enforce_feasibility = [True, False, True]
-        strict_lb, strict_ub = strict_bounds(lb, ub,
-                                             enforce_feasibility,
-                                             m)
+        strict_lb, strict_ub = strict_bounds(lb, ub, enforce_feasibility, m)
         assert_array_equal(strict_lb, [1, -np.inf, 3])
         assert_array_equal(strict_ub, [4, np.inf, np.inf])
 
@@ -85,8 +79,7 @@ def test_prepare_constraint_infeasible_x0():
     linear = LinearConstraint(A, -np.inf, 0, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, linear, x0)
 
-    pc = PreparedConstraint(LinearConstraint(A, -np.inf, 0),
-                            [1, 2, 3, 4])
+    pc = PreparedConstraint(LinearConstraint(A, -np.inf, 0), [1, 2, 3, 4])
     assert (pc.violation([1, 2, 3, 4]) > 0).any()
     assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
@@ -99,8 +92,7 @@ def test_prepare_constraint_infeasible_x0():
     def hess(x, v):
         return sps.csr_matrix((4, 4))
 
-    nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess,
-                                    enforce_feasibility)
+    nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, nonlinear, x0)
 
     pc = PreparedConstraint(nonlinear, [-10, 2, -10, 4])
@@ -115,9 +107,9 @@ def test_violation():
     nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
     pc = PreparedConstraint(nlc, [0.5, 1])
 
-    assert_array_equal(pc.violation([0.5, 1]), [0., 0.])
+    assert_array_equal(pc.violation([0.5, 1]), [0.0, 0.0])
 
-    np.testing.assert_almost_equal(pc.violation([0.5, 1.2]), [0., 0.1])
+    np.testing.assert_almost_equal(pc.violation([0.5, 1.2]), [0.0, 0.1])
 
     np.testing.assert_almost_equal(pc.violation([1.2, 1.2]), [0.64, 0])
 
@@ -170,6 +162,7 @@ def test_old_bounds_to_new():
 
 def test_bounds_repr():
     from numpy import array, inf  # so that eval works
+
     for args in (
         (-1.0, 5.0),
         (-1.0, np.inf, True),

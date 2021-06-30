@@ -48,4 +48,3 @@ Pull requests for 0.19.1
 - `#7336 <https://github.com/scipy/scipy/pull/7336>`__: BUG: Fix signal.dfreqresp for StateSpace systems
 - `#7419 <https://github.com/scipy/scipy/pull/7419>`__: Fix several issues in ``sparse.load_npz``, ``save_npz``
 - `#7420 <https://github.com/scipy/scipy/pull/7420>`__: BUG: stats: allow integers as kappa4 shape parameters
-

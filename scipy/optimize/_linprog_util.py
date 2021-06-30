@@ -7,15 +7,16 @@ import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
-    _remove_redundancy_pivot_dense, _remove_redundancy_id
-    )
+    _remove_redundancy_svd,
+    _remove_redundancy_pivot_sparse,
+    _remove_redundancy_pivot_dense,
+    _remove_redundancy_id,
+)
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
+_LPProblem = namedtuple("_LPProblem", "c A_ub b_ub A_eq b_eq bounds x0")
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
-_LPProblem.__doc__ = \
-    """ Represents a linear-programming problem.
+_LPProblem.__doc__ = """ Represents a linear-programming problem.
 
     Attributes
     ----------
@@ -111,7 +112,7 @@ def _check_sparse_inputs(options, meth, A_ub, A_eq):
         For method-specific options, see :func:`show_options('linprog')`.
     """
     # This is an undocumented option for unit testing sparse presolve
-    _sparse_presolve = options.pop('_sparse_presolve', False)
+    _sparse_presolve = options.pop("_sparse_presolve", False)
     if _sparse_presolve and A_eq is not None:
         A_eq = sps.coo_matrix(A_eq)
     if _sparse_presolve and A_ub is not None:
@@ -122,15 +123,20 @@ def _check_sparse_inputs(options, meth, A_ub, A_eq):
     preferred_methods = {"highs", "highs-ds", "highs-ipm"}
     dense_methods = {"simplex", "revised simplex"}
     if meth in dense_methods and sparse_constraint:
-        raise ValueError(f"Method '{meth}' does not support sparse "
-                         "constraint matrices. Please consider using one of "
-                         f"{preferred_methods}.")
+        raise ValueError(
+            f"Method '{meth}' does not support sparse "
+            "constraint matrices. Please consider using one of "
+            f"{preferred_methods}."
+        )
 
-    sparse = options.get('sparse', False)
-    if not sparse and sparse_constraint and meth == 'interior-point':
-        options['sparse'] = True
-        warn("Sparse constraint matrix detected; setting 'sparse':True.",
-             OptimizeWarning, stacklevel=4)
+    sparse = options.get("sparse", False)
+    if not sparse and sparse_constraint and meth == "interior-point":
+        options["sparse"] = True
+        warn(
+            "Sparse constraint matrix detected; setting 'sparse':True.",
+            OptimizeWarning,
+            stacklevel=4,
+        )
     return options, A_ub, A_eq
 
 
@@ -156,9 +162,7 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
 
     """
     if sparse_lhs:
-        return sps.coo_matrix(
-            (0, n_x) if A is None else A, dtype=float, copy=True
-        )
+        return sps.coo_matrix((0, n_x) if A is None else A, dtype=float, copy=True)
     elif A is None:
         return np.zeros((0, n_x), dtype=float)
     else:
@@ -267,8 +271,8 @@ def _clean_inputs(lp):
         c = np.array(c, dtype=np.float64, copy=True).squeeze()
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: c must be a 1-D array of numerical "
-            "coefficients") from e
+            "Invalid input for linprog: c must be a 1-D array of numerical coefficients"
+        ) from e
     else:
         # If c is a single value, convert it to a 1-D array.
         if c.size == 1:
@@ -278,31 +282,38 @@ def _clean_inputs(lp):
         if n_x == 0 or len(c.shape) != 1:
             raise ValueError(
                 "Invalid input for linprog: c must be a 1-D array and must "
-                "not have more than one non-singleton dimension")
-        if not(np.isfinite(c).all()):
+                "not have more than one non-singleton dimension"
+            )
+        if not (np.isfinite(c).all()):
             raise ValueError(
-                "Invalid input for linprog: c must not contain values "
-                "inf, nan, or None")
+                "Invalid input for linprog: c must not contain values inf, nan, or None"
+            )
 
     sparse_lhs = sps.issparse(A_eq) or sps.issparse(A_ub)
     try:
         A_ub = _format_A_constraints(A_ub, n_x, sparse_lhs=sparse_lhs)
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: A_ub must be a 2-D array "
-            "of numerical values") from e
+            "Invalid input for linprog: A_ub must be a 2-D array of numerical values"
+        ) from e
     else:
         n_ub = A_ub.shape[0]
         if len(A_ub.shape) != 2 or A_ub.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_ub must have exactly two "
                 "dimensions, and the number of columns in A_ub must be "
-                "equal to the size of c")
-        if (sps.issparse(A_ub) and not np.isfinite(A_ub.data).all()
-                or not sps.issparse(A_ub) and not np.isfinite(A_ub).all()):
+                "equal to the size of c"
+            )
+        if (
+            sps.issparse(A_ub)
+            and not np.isfinite(A_ub.data).all()
+            or not sps.issparse(A_ub)
+            and not np.isfinite(A_ub).all()
+        ):
             raise ValueError(
                 "Invalid input for linprog: A_ub must not contain values "
-                "inf, nan, or None")
+                "inf, nan, or None"
+            )
 
     try:
         b_ub = _format_b_constraints(b_ub)
@@ -310,38 +321,47 @@ def _clean_inputs(lp):
         raise TypeError(
             "Invalid input for linprog: b_ub must be a 1-D array of "
             "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_ub") from e
+            "inequality constraint (row) in A_ub"
+        ) from e
     else:
         if b_ub.shape != (n_ub,):
             raise ValueError(
                 "Invalid input for linprog: b_ub must be a 1-D array; b_ub "
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_ub must equal the number of values "
-                "in b_ub")
-        if not(np.isfinite(b_ub).all()):
+                "in b_ub"
+            )
+        if not (np.isfinite(b_ub).all()):
             raise ValueError(
                 "Invalid input for linprog: b_ub must not contain values "
-                "inf, nan, or None")
+                "inf, nan, or None"
+            )
 
     try:
         A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: A_eq must be a 2-D array "
-            "of numerical values") from e
+            "Invalid input for linprog: A_eq must be a 2-D array of numerical values"
+        ) from e
     else:
         n_eq = A_eq.shape[0]
         if len(A_eq.shape) != 2 or A_eq.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_eq must have exactly two "
                 "dimensions, and the number of columns in A_eq must be "
-                "equal to the size of c")
+                "equal to the size of c"
+            )
 
-        if (sps.issparse(A_eq) and not np.isfinite(A_eq.data).all()
-                or not sps.issparse(A_eq) and not np.isfinite(A_eq).all()):
+        if (
+            sps.issparse(A_eq)
+            and not np.isfinite(A_eq.data).all()
+            or not sps.issparse(A_eq)
+            and not np.isfinite(A_eq).all()
+        ):
             raise ValueError(
                 "Invalid input for linprog: A_eq must not contain values "
-                "inf, nan, or None")
+                "inf, nan, or None"
+            )
 
     try:
         b_eq = _format_b_constraints(b_eq)
@@ -349,18 +369,21 @@ def _clean_inputs(lp):
         raise TypeError(
             "Invalid input for linprog: b_eq must be a dense, 1-D array of "
             "numerical values, each representing the right hand side of an "
-            "equality constraint (row) in A_eq") from e
+            "equality constraint (row) in A_eq"
+        ) from e
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
                 "Invalid input for linprog: b_eq must be a 1-D array; b_eq "
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_eq must equal the number of values "
-                "in b_eq")
-        if not(np.isfinite(b_eq).all()):
+                "in b_eq"
+            )
+        if not (np.isfinite(b_eq).all()):
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
-                "inf, nan, or None")
+                "inf, nan, or None"
+            )
 
     # x0 gives a (optional) starting solution to the solver. If x0 is None,
     # skip the checks. Initial solution will be generated automatically.
@@ -370,21 +393,25 @@ def _clean_inputs(lp):
         except ValueError as e:
             raise TypeError(
                 "Invalid input for linprog: x0 must be a 1-D array of "
-                "numerical coefficients") from e
+                "numerical coefficients"
+            ) from e
         if x0.ndim == 0:
             x0 = x0.reshape((-1))
         if len(x0) == 0 or x0.ndim != 1:
             raise ValueError(
                 "Invalid input for linprog: x0 should be a 1-D array; it "
-                "must not have more than one non-singleton dimension")
+                "must not have more than one non-singleton dimension"
+            )
         if not x0.size == c.size:
             raise ValueError(
                 "Invalid input for linprog: x0 and c should contain the "
-                "same number of elements")
+                "same number of elements"
+            )
         if not np.isfinite(x0).all():
             raise ValueError(
                 "Invalid input for linprog: x0 must not contain values "
-                "inf, nan, or None")
+                "inf, nan, or None"
+            )
 
     # Bounds can be one of these formats:
     # (1) a 2-D array or sequence, with shape N x 2
@@ -409,11 +436,15 @@ def _clean_inputs(lp):
     except ValueError as e:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds, "
-            "check values and dimensions: " + e.args[0]) from e
+            "check values and dimensions: "
+            + e.args[0]
+        ) from e
     except TypeError as e:
         raise TypeError(
             "Invalid input for linprog: unable to interpret bounds, "
-            "check values and dimensions: " + e.args[0]) from e
+            "check values and dimensions: "
+            + e.args[0]
+        ) from e
 
     # Check bounds options
     bsh = bounds_conv.shape
@@ -421,11 +452,12 @@ def _clean_inputs(lp):
         # Do not try to handle multidimensional bounds input
         raise ValueError(
             "Invalid input for linprog: provide a 2-D array for bounds, "
-            "not a {:d}-D array.".format(len(bsh)))
+            "not a {:d}-D array.".format(len(bsh))
+        )
     elif np.all(bsh == (n_x, 2)):
         # Regular N x 2 array
         bounds_clean = bounds_conv
-    elif (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
+    elif np.all(bsh == (2, 1)) or np.all(bsh == (1, 2)):
         # 2 values: interpret as overall lower and upper bound
         bounds_flat = bounds_conv.flatten()
         bounds_clean[:, 0] = bounds_flat[0]
@@ -434,11 +466,13 @@ def _clean_inputs(lp):
         # Reject a 2 x N array
         raise ValueError(
             "Invalid input for linprog: provide a {:d} x 2 array for bounds, "
-            "not a 2 x {:d} array.".format(n_x, n_x))
+            "not a 2 x {:d} array.".format(n_x, n_x)
+        )
     else:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds with this "
-            "dimension tuple: {0}.".format(bsh))
+            "dimension tuple: {0}.".format(bsh)
+        )
 
     # The process above creates nan-s where the input specified None
     # Convert the nan-s in the 1st column to -np.inf and in the 2nd column
@@ -574,13 +608,13 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
-    revstack = []               # record of variables eliminated from problem
+    revstack = []  # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
     c0 = 0
-    complete = False        # complete is True if detected infeasible/unbounded
-    x = np.zeros(c.shape)   # this is solution vector if completed in presolve
+    complete = False  # complete is True if detected infeasible/unbounded
+    x = np.zeros(c.shape)  # this is solution vector if completed in presolve
 
-    status = 0              # all OK unless determined otherwise
+    status = 0  # all OK unless determined otherwise
     message = ""
 
     # Lower and upper bounds. Copy to prevent feedback.
@@ -590,11 +624,14 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
 
-    if (rr_method is not None
-            and rr_method.lower() not in {"svd", "pivot", "id"}):
-        message = ("'" + str(rr_method) + "' is not a valid option "
-                   "for redundancy removal. Valid options are 'SVD', "
-                   "'pivot', and 'ID'.")
+    if rr_method is not None and rr_method.lower() not in {"svd", "pivot", "id"}:
+        message = (
+            "'"
+            + str(rr_method)
+            + "' is not a valid option "
+            "for redundancy removal. Valid options are 'SVD', "
+            "'pivot', and 'ID'."
+        )
         raise ValueError(message)
 
     if sps.issparse(A_eq):
@@ -612,29 +649,44 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     # upper bounds > lower bounds
     if np.any(ub < lb) or np.any(lb == np.inf) or np.any(ub == -np.inf):
         status = 2
-        message = ("The problem is (trivially) infeasible since one "
-                   "or more upper bounds are smaller than the corresponding "
-                   "lower bounds, a lower bound is np.inf or an upper bound "
-                   "is -np.inf.")
+        message = (
+            "The problem is (trivially) infeasible since one "
+            "or more upper bounds are smaller than the corresponding "
+            "lower bounds, a lower bound is np.inf or an upper bound "
+            "is -np.inf."
+        )
         complete = True
-        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, revstack, complete, status, message)
+        return (
+            _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+            c0,
+            x,
+            revstack,
+            complete,
+            status,
+            message,
+        )
 
     # zero row in equality constraints
     zero_row = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
     if np.any(zero_row):
-        if np.any(
-            np.logical_and(
-                zero_row,
-                np.abs(b_eq) > tol)):  # test_zero_row_1
+        if np.any(np.logical_and(zero_row, np.abs(b_eq) > tol)):  # test_zero_row_1
             # infeasible if RHS is not zero
             status = 2
-            message = ("The problem is (trivially) infeasible due to a row "
-                       "of zeros in the equality constraint matrix with a "
-                       "nonzero corresponding constraint value.")
+            message = (
+                "The problem is (trivially) infeasible due to a row "
+                "of zeros in the equality constraint matrix with a "
+                "nonzero corresponding constraint value."
+            )
             complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, revstack, complete, status, message)
+            return (
+                _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0,
+                x,
+                revstack,
+                complete,
+                status,
+                message,
+            )
         else:  # test_zero_row_2
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row), :]
@@ -646,12 +698,21 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         if np.any(np.logical_and(zero_row, b_ub < -tol)):  # test_zero_row_1
             # infeasible if RHS is less than zero (because LHS is zero)
             status = 2
-            message = ("The problem is (trivially) infeasible due to a row "
-                       "of zeros in the equality constraint matrix with a "
-                       "nonzero corresponding  constraint value.")
+            message = (
+                "The problem is (trivially) infeasible due to a row "
+                "of zeros in the equality constraint matrix with a "
+                "nonzero corresponding  constraint value."
+            )
             complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, revstack, complete, status, message)
+            return (
+                _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0,
+                x,
+                revstack,
+                complete,
+                status,
+                message,
+            )
         else:  # test_zero_row_2
             # if LHS is >= 0, we can eliminate this constraint entirely
             A_ub = A_ub[np.logical_not(zero_row), :]
@@ -663,24 +724,29 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     if A.shape[0] > 0:
         zero_col = np.array(np.sum(A != 0, axis=0) == 0).flatten()
         # variable will be at upper or lower bound, depending on objective
-        x[np.logical_and(zero_col, c < 0)] = ub[
-            np.logical_and(zero_col, c < 0)]
-        x[np.logical_and(zero_col, c > 0)] = lb[
-            np.logical_and(zero_col, c > 0)]
+        x[np.logical_and(zero_col, c < 0)] = ub[np.logical_and(zero_col, c < 0)]
+        x[np.logical_and(zero_col, c > 0)] = lb[np.logical_and(zero_col, c > 0)]
         if np.any(np.isinf(x)):  # if an unconstrained variable has no bound
             status = 3
-            message = ("If feasible, the problem is (trivially) unbounded "
-                       "due  to a zero column in the constraint matrices. If "
-                       "you wish to check whether the problem is infeasible, "
-                       "turn presolve off.")
+            message = (
+                "If feasible, the problem is (trivially) unbounded "
+                "due  to a zero column in the constraint matrices. If "
+                "you wish to check whether the problem is infeasible, "
+                "turn presolve off."
+            )
             complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, revstack, complete, status, message)
+            return (
+                _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0,
+                x,
+                revstack,
+                complete,
+                status,
+                message,
+            )
         # variables will equal upper/lower bounds will be removed later
-        lb[np.logical_and(zero_col, c < 0)] = ub[
-            np.logical_and(zero_col, c < 0)]
-        ub[np.logical_and(zero_col, c > 0)] = lb[
-            np.logical_and(zero_col, c > 0)]
+        lb[np.logical_and(zero_col, c < 0)] = ub[np.logical_and(zero_col, c < 0)]
+        ub[np.logical_and(zero_col, c > 0)] = lb[np.logical_and(zero_col, c > 0)]
 
     # row singleton in equality constraints
     # this fixes a variable and removes the constraint
@@ -693,12 +759,21 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             if not lb[col] - tol <= val <= ub[col] + tol:
                 # infeasible if fixed value is not within bounds
                 status = 2
-                message = ("The problem is (trivially) infeasible because a "
-                           "singleton row in the equality constraints is "
-                           "inconsistent with the bounds.")
+                message = (
+                    "The problem is (trivially) infeasible because a "
+                    "singleton row in the equality constraints is "
+                    "inconsistent with the bounds."
+                )
                 complete = True
-                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, revstack, complete, status, message)
+                return (
+                    _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0,
+                    x,
+                    revstack,
+                    complete,
+                    status,
+                    message,
+                )
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
@@ -730,31 +805,50 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
                     lb[col] = val
             if complete:
                 status = 2
-                message = ("The problem is (trivially) infeasible because a "
-                           "singleton row in the upper bound constraints is "
-                           "inconsistent with the bounds.")
-                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, revstack, complete, status, message)
+                message = (
+                    "The problem is (trivially) infeasible because a "
+                    "singleton row in the upper bound constraints is "
+                    "inconsistent with the bounds."
+                )
+                return (
+                    _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0,
+                    x,
+                    revstack,
+                    complete,
+                    status,
+                    message,
+                )
         A_ub = A_ub[np.logical_not(singleton_row), :]
         b_ub = b_ub[np.logical_not(singleton_row)]
 
     # identical bounds indicate that variable can be removed
-    i_f = np.abs(lb - ub) < tol   # indices of "fixed" variables
+    i_f = np.abs(lb - ub) < tol  # indices of "fixed" variables
     i_nf = np.logical_not(i_f)  # indices of "not fixed" variables
 
     # test_bounds_equal_but_infeasible
     if np.all(i_f):  # if bounds define solution, check for consistency
         residual = b_eq - A_eq.dot(lb)
         slack = b_ub - A_ub.dot(lb)
-        if ((A_ub.size > 0 and np.any(slack < 0)) or
-                (A_eq.size > 0 and not np.allclose(residual, 0))):
+        if (A_ub.size > 0 and np.any(slack < 0)) or (
+            A_eq.size > 0 and not np.allclose(residual, 0)
+        ):
             status = 2
-            message = ("The problem is (trivially) infeasible because the "
-                       "bounds fix all variables to values inconsistent with "
-                       "the constraints")
+            message = (
+                "The problem is (trivially) infeasible because the "
+                "bounds fix all variables to values inconsistent with "
+                "the constraints"
+            )
             complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, revstack, complete, status, message)
+            return (
+                _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0,
+                x,
+                revstack,
+                complete,
+                status,
+                message,
+            )
 
     ub_mod = ub
     lb_mod = lb
@@ -798,24 +892,31 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         # test_empty_constraint_1
         if c.size == 0:
             status = 0
-            message = ("The solution was determined in presolve as there are "
-                       "no non-trivial constraints.")
-        elif (np.any(np.logical_and(c < 0, ub_mod == np.inf)) or
-              np.any(np.logical_and(c > 0, lb_mod == -np.inf))):
+            message = (
+                "The solution was determined in presolve as there are "
+                "no non-trivial constraints."
+            )
+        elif np.any(np.logical_and(c < 0, ub_mod == np.inf)) or np.any(
+            np.logical_and(c > 0, lb_mod == -np.inf)
+        ):
             # test_no_constraints()
             # test_unbounded_no_nontrivial_constraints_1
             # test_unbounded_no_nontrivial_constraints_2
             status = 3
-            message = ("The problem is (trivially) unbounded "
-                       "because there are no non-trivial constraints and "
-                       "a) at least one decision variable is unbounded "
-                       "above and its corresponding cost is negative, or "
-                       "b) at least one decision variable is unbounded below "
-                       "and its corresponding cost is positive. ")
+            message = (
+                "The problem is (trivially) unbounded "
+                "because there are no non-trivial constraints and "
+                "a) at least one decision variable is unbounded "
+                "above and its corresponding cost is negative, or "
+                "b) at least one decision variable is unbounded below "
+                "and its corresponding cost is positive. "
+            )
         else:  # test_empty_constraint_2
             status = 0
-            message = ("The solution was determined in presolve as there are "
-                       "no non-trivial constraints.")
+            message = (
+                "The solution was determined in presolve as there are "
+                "no non-trivial constraints."
+            )
         complete = True
         x[c < 0] = ub_mod[c < 0]
         x[c > 0] = lb_mod[c > 0]
@@ -832,10 +933,12 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
 
     # remove redundant (linearly dependent) rows from equality constraints
     n_rows_A = A_eq.shape[0]
-    redundancy_warning = ("A_eq does not appear to be of full row rank. To "
-                          "improve performance, check the problem formulation "
-                          "for redundant equality constraints.")
-    if (sps.issparse(A_eq)):
+    redundancy_warning = (
+        "A_eq does not appear to be of full row rank. To "
+        "improve performance, check the problem formulation "
+        "for redundant equality constraints."
+    )
+    if sps.issparse(A_eq):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
             rr_res = _remove_redundancy_pivot_sparse(A_eq, b_eq)
             A_eq, b_eq, status, message = rr_res
@@ -843,8 +946,15 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
-        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, revstack, complete, status, message)
+        return (
+            _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+            c0,
+            x,
+            revstack,
+            complete,
+            status,
+            message,
+        )
 
     # This is a wild guess for which redundancy removal algorithm will be
     # faster. More testing would be good.
@@ -857,7 +967,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
-        dim_row_nullspace = A_eq.shape[0]-rank
+        dim_row_nullspace = A_eq.shape[0] - rank
         if rr_method is None:
             if dim_row_nullspace <= small_nullspace:
                 rr_res = _remove_redundancy_svd(A_eq, b_eq)
@@ -880,17 +990,26 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             else:  # shouldn't get here; option validity checked above
                 pass
         if A_eq.shape[0] < rank:
-            message = ("Due to numerical issues, redundant equality "
-                       "constraints could not be removed automatically. "
-                       "Try providing your constraint matrices as sparse "
-                       "matrices to activate sparse presolve, try turning "
-                       "off redundancy removal, or try turning off presolve "
-                       "altogether.")
+            message = (
+                "Due to numerical issues, redundant equality "
+                "constraints could not be removed automatically. "
+                "Try providing your constraint matrices as sparse "
+                "matrices to activate sparse presolve, try turning "
+                "off redundancy removal, or try turning off presolve "
+                "altogether."
+            )
             status = 4
         if status != 0:
             complete = True
-    return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-            c0, x, revstack, complete, status, message)
+    return (
+        _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+        c0,
+        x,
+        revstack,
+        complete,
+        status,
+        message,
+    )
 
 
 def _parse_linprog(lp, options, meth):
@@ -997,8 +1116,9 @@ def _parse_linprog(lp, options, meth):
         options = {}
 
     solver_options = {k: v for k, v in options.items()}
-    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, meth,
-                                                      lp.A_ub, lp.A_eq)
+    solver_options, A_ub, A_eq = _check_sparse_inputs(
+        solver_options, meth, lp.A_ub, lp.A_eq
+    )
     # Convert lists to numpy arrays, etc...
     lp = _clean_inputs(lp._replace(A_ub=A_ub, A_eq=A_eq))
     return lp, solver_options
@@ -1129,8 +1249,7 @@ def _get_Abc(lp, c0):
     # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
     l_nolb_someub = np.logical_and(lb_none, ub_some)
     i_nolb = np.nonzero(l_nolb_someub)[0]
-    lbs[l_nolb_someub], ubs[l_nolb_someub] = (
-        -ubs[l_nolb_someub], -lbs[l_nolb_someub])
+    lbs[l_nolb_someub], ubs[l_nolb_someub] = (-ubs[l_nolb_someub], -lbs[l_nolb_someub])
     lb_none = np.equal(lbs, -np.inf)
     ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
@@ -1145,15 +1264,16 @@ def _get_Abc(lp, c0):
             A_eq[:, i_nolb] *= -1
 
     # upper bound: add inequality constraint
-    i_newub, = ub_some.nonzero()
+    (i_newub,) = ub_some.nonzero()
     ub_newub = ubs[ub_some]
     n_bounds = len(i_newub)
     if n_bounds > 0:
         shape = (n_bounds, A_ub.shape[1])
         if sparse:
             idxs = (np.arange(n_bounds), i_newub)
-            A_ub = vstack((A_ub, sps.csr_matrix((np.ones(n_bounds), idxs),
-                                                shape=shape)))
+            A_ub = vstack(
+                (A_ub, sps.csr_matrix((np.ones(n_bounds), idxs), shape=shape))
+            )
         else:
             A_ub = vstack((A_ub, np.zeros(shape)))
             A_ub[np.arange(m_ub, A_ub.shape[0]), i_newub] = 1
@@ -1173,7 +1293,7 @@ def _get_Abc(lp, c0):
     if x0 is not None:
         x0 = np.concatenate((x0, np.zeros(n_free)))
     A1 = hstack((A1[:, :n_ub], -A1[:, i_free]))
-    c[n_ub:n_ub+n_free] = -c[i_free]
+    c[n_ub : n_ub + n_free] = -c[i_free]
     if x0 is not None:
         i_free_neg = x0[i_free] < 0
         x0[np.arange(n_ub, A1.shape[1])[i_free_neg]] = -x0[i_free[i_free_neg]]
@@ -1206,7 +1326,7 @@ def _round_to_power_of_two(x):
     """
     Round elements of the array to the nearest power of two.
     """
-    return 2**np.around(np.log2(x))
+    return 2 ** np.around(np.log2(x))
 
 
 def _autoscale(A, b, c, x0):
@@ -1225,25 +1345,25 @@ def _autoscale(A, b, c, x0):
         if sps.issparse(A):
             R = R.toarray().flatten()
         R[R == 0] = 1
-        R = 1/_round_to_power_of_two(R)
-        A = sps.diags(R)*A if sps.issparse(A) else A*R.reshape(m, 1)
-        b = b*R
+        R = 1 / _round_to_power_of_two(R)
+        A = sps.diags(R) * A if sps.issparse(A) else A * R.reshape(m, 1)
+        b = b * R
 
         C = np.max(np.abs(A), axis=0)
         if sps.issparse(A):
             C = C.toarray().flatten()
         C[C == 0] = 1
-        C = 1/_round_to_power_of_two(C)
-        A = A*sps.diags(C) if sps.issparse(A) else A*C
-        c = c*C
+        C = 1 / _round_to_power_of_two(C)
+        A = A * sps.diags(C) if sps.issparse(A) else A * C
+        c = c * C
 
     b_scale = np.max(np.abs(b)) if b.size > 0 else 1
     if b_scale == 0:
-        b_scale = 1.
-    b = b/b_scale
+        b_scale = 1.0
+    b = b / b_scale
 
     if x0 is not None:
-        x0 = x0/b_scale*(1/C)
+        x0 = x0 / b_scale * (1 / C)
     return A, b, c, x0, C, b_scale
 
 
@@ -1259,7 +1379,7 @@ def _unscale(x, C, b_scale):
     except TypeError:
         n = len(x)
 
-    return x[:n]*b_scale*C
+    return x[:n] * b_scale * C
 
 
 def _display_summary(message, status, fun, iteration):
@@ -1450,8 +1570,10 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         # HiGHS does not provide x if infeasible/unbounded
         if status == 0:  # Observed with HiGHS Simplex Primal
             status = 4
-            message = ("The solver did not provide a solution nor did it "
-                       "report a failure. Please submit a bug report.")
+            message = (
+                "The solver did not provide a solution nor did it "
+                "report a failure. Please submit a bug report."
+            )
         return status, message
 
     contains_nans = (
@@ -1464,28 +1586,36 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
+        invalid_bounds = (x < bounds[:, 0] - tol).any() or (
+            x > bounds[:, 1] + tol
+        ).any()
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
 
     if status == 0 and not is_feasible:
         status = 4
-        message = ("The solution does not satisfy the constraints within the "
-                   "required tolerance of " + "{:.2E}".format(tol) + ", yet "
-                   "no errors were raised and there is no certificate of "
-                   "infeasibility or unboundedness. Check whether "
-                   "the slack and constraint residuals are acceptable; "
-                   "if not, consider enabling presolve, adjusting the "
-                   "tolerance option(s), and/or using a different method. "
-                   "Please consider submitting a bug report.")
+        message = (
+            "The solution does not satisfy the constraints within the "
+            "required tolerance of "
+            + "{:.2E}".format(tol)
+            + ", yet "
+            "no errors were raised and there is no certificate of "
+            "infeasibility or unboundedness. Check whether "
+            "the slack and constraint residuals are acceptable; "
+            "if not, consider enabling presolve, adjusting the "
+            "tolerance option(s), and/or using a different method. "
+            "Please consider submitting a bug report."
+        )
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
         # basic, however, this solution is NOT optimal
         status = 4
-        message = ("The solution is feasible, but the solver did not report "
-                   "that the solution was optimal. Please try a different "
-                   "method.")
+        message = (
+            "The solution is feasible, but the solver did not report "
+            "that the solution was optimal. Please try a different "
+            "method."
+        )
 
     return status, message

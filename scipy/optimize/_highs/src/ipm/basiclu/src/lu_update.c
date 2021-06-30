@@ -232,7 +232,7 @@ static void permute(struct lu *this, const lu_int *jlist, lu_int nswap)
         j = jlist[n];
         jprev = jlist[n-1];
 
-        /* 
+        /*
          * When row i was indexed by jprev in the row file before,
          * then it is indexed by j now.
          */

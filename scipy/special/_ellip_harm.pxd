@@ -120,7 +120,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
            else:
                f[j] = (-alpha*(2*(r - (j + 1)) + 2)*(2*(r + (j + 1)) - 1))
                d[j] = 2*r*(2*r + 1)*alpha - 4*j*j*gamma
-		
+
     elif t == 'L':
         for j in range(0, n - r):
            g[j] = (-(2*j + 2)*(2*j + 3)*beta)
@@ -130,7 +130,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
            else:
                f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))
                d[j] = (2*r*(2*r + 1) - (2*j + 1)*(2*j + 1))*alpha + (2*j + 2)*(2*j + 2)*beta
-		
+
     elif t == 'M':
         for j in range(0, n - r):
            g[j] = (-(2*j + 2)*(2*j + 1)*beta)
@@ -139,14 +139,14 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                d[j] = ((2*r + 1)*(2*r + 2) - (2*j + 1)*(2*j + 1))*alpha + 4*j*j*beta
            else:
                f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))
-               d[j] = 2*r*(2*r + 1)*alpha - (2*j + 1)*(2*j + 1)*gamma	
+               d[j] = 2*r*(2*r + 1)*alpha - (2*j + 1)*(2*j + 1)*gamma
 
     elif t == 'N':
         for j in range(0, r):
            g[j] = (-(2*j + 2)*(2*j + 3)*beta)
            if n%2:
                f[j] = (-alpha*(2*(r- (j + 1)))*(2*((j + 1) + r) + 3))
-               d[j] = (2*r + 1)*(2*r + 2)*alpha - (2*j + 2)*(2*j + 2)*gamma	
+               d[j] = (2*r + 1)*(2*r + 2)*alpha - (2*j + 2)*(2*j + 2)*gamma
            else:
                f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))
                d[j] = 2*r*(2*r + 1)*alpha - (2*j + 2)*(2*j +2)*alpha + (2*j + 1)*(2*j + 1)*beta

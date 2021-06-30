@@ -3438,7 +3438,7 @@ void qh_mergefacet(qhT *qh, facetT *facet1, facetT *facet2, mergeType mergetype,
     qh_errexit2(qh, qh_ERRqhull, facet1, facet2);
   }
   if (qh->num_facets - qh->num_visible <= qh->hull_dim + 1) {
-    qh_fprintf(qh, qh->ferr, 6227, "qhull topology error: Only %d facets remain.  The input is too degenerate or the convexity constraints are too strong.\n", 
+    qh_fprintf(qh, qh->ferr, 6227, "qhull topology error: Only %d facets remain.  The input is too degenerate or the convexity constraints are too strong.\n",
           qh->hull_dim+1);
     if (qh->hull_dim >= 5 && !qh->MERGEexact)
       qh_fprintf(qh, qh->ferr, 8079, "    Option 'Qx' may avoid this problem.\n");
@@ -5573,7 +5573,7 @@ void qh_checkdelridge(qhT *qh /* qh.visible_facets, vertex_mergeset */) {
 boolT qh_checkzero(qhT *qh, boolT testall) {
   QHULL_UNUSED(qh)
   QHULL_UNUSED(testall)
-    
+
   return True;
 }
 void qh_freemergesets(qhT *qh) {
@@ -5587,4 +5587,3 @@ void qh_merge_pinchedvertices(qhT *qh, int apexpointid /* qh.newfacet_list */) {
   QHULL_UNUSED(apexpointid)
 }
 #endif /* qh_NOmerge */
-

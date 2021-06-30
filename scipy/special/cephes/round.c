@@ -17,7 +17,7 @@
  * Returns the nearest integer to x as a double precision
  * floating point result.  If x ends in 0.5 exactly, the
  * nearest even integer is chosen.
- * 
+ *
  *
  *
  * ACCURACY:
@@ -26,7 +26,7 @@
  * representation is already an integer, so rounding does
  * not change it.
  */
-
+
 /*
  * Cephes Math Library Release 2.1:  January, 1989
  * Copyright 1984, 1987, 1989 by Stephen L. Moshier

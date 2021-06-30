@@ -34,7 +34,7 @@ Highlights of this release
   `scipy.stats`
 - an implementation of the Edmonds-Karp algorithm in
   `scipy.sparse.csgraph.maximum_flow`
-- `scipy.spatial.SphericalVoronoi` now supports n-dimensional input, 
+- `scipy.spatial.SphericalVoronoi` now supports n-dimensional input,
    has linear memory complexity, improved performance, and
    supports single-hemisphere generators
 
@@ -56,20 +56,20 @@ facilitate getting started with SciPy development.
 
 `scipy.fft` added
 -----------------
-`scipy.fft` is a new submodule that supersedes the `scipy.fftpack` submodule. 
-For the most part, this is a drop-in replacement for ``numpy.fft`` and 
+`scipy.fft` is a new submodule that supersedes the `scipy.fftpack` submodule.
+For the most part, this is a drop-in replacement for ``numpy.fft`` and
 `scipy.fftpack` alike. With some important differences, `scipy.fft`:
-- uses NumPy's conventions for real transforms (``rfft``). This means the 
+- uses NumPy's conventions for real transforms (``rfft``). This means the
 return value is a complex array, half the size of the full ``fft`` output.
-This is different from the output of ``fftpack`` which returned a real array 
+This is different from the output of ``fftpack`` which returned a real array
 representing complex components packed together.
-- the inverse real to real transforms (``idct`` and ``idst``) are normalized 
-for ``norm=None`` in thesame way as ``ifft``. This means the identity 
+- the inverse real to real transforms (``idct`` and ``idst``) are normalized
+for ``norm=None`` in thesame way as ``ifft``. This means the identity
 ``idct(dct(x)) == x`` is now ``True`` for all norm modes.
 - does not include the convolutions or pseudo-differential operators
 from ``fftpack``.
 
-This submodule is based on the ``pypocketfft`` library, developed by the 
+This submodule is based on the ``pypocketfft`` library, developed by the
 author of ``pocketfft`` which was recently adopted by NumPy as well.
 ``pypocketfft`` offers a number of advantages over fortran ``FFTPACK``:
 - support for long double (``np.longfloat``) precision transforms.
@@ -80,8 +80,8 @@ author of ``pocketfft`` which was recently adopted by NumPy as well.
 - optional multithreading of multi-dimensional transforms via the ``workers``
 argument
 
-Note that `scipy.fftpack` has not been deprecated and will continue to be 
-maintained but is now considered legacy. New code is recommended to use 
+Note that `scipy.fftpack` has not been deprecated and will continue to be
+maintained but is now considered legacy. New code is recommended to use
 `scipy.fft` instead, where possible.
 
 `scipy.fftpack` improvements
@@ -98,14 +98,14 @@ This allows the user-defined functions passed to the function to have
 additional parameters without having to create wrapper functions or
 lambda expressions for them.
 
-`scipy.integrate.solve_ivp` can now return a ``y_events`` attribute 
+`scipy.integrate.solve_ivp` can now return a ``y_events`` attribute
 representing the solution of the ODE at event times
 
 New ``OdeSolver`` is implemented --- ``DOP853``. This is a high-order explicit
-Runge-Kutta method originally implemented in Fortran. Now we provide a pure 
+Runge-Kutta method originally implemented in Fortran. Now we provide a pure
 Python implementation usable through ``solve_ivp`` with all its features.
 
-`scipy.integrate.quad` provides better user feedback when break points are 
+`scipy.integrate.quad` provides better user feedback when break points are
 specified with a weighted integrand.
 
 `scipy.integrate.quad_vec` is now available for general purpose integration
@@ -134,8 +134,8 @@ The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
 results for complex-valued matrices. Before this, the function only returned
 correct values for real-valued matrices.
 
-New boolean keyword argument ``check_finite`` for `scipy.linalg.norm`; whether 
-to check that the input matrix contains only finite numbers. Disabling may 
+New boolean keyword argument ``check_finite`` for `scipy.linalg.norm`; whether
+to check that the input matrix contains only finite numbers. Disabling may
 give a performance gain, but may result in problems (crashes, non-termination)
 if the inputs do contain infinities or NaNs.
 
@@ -158,10 +158,10 @@ Block ``QR`` wrappers are now available in `scipy.linalg.lapack`
 
 `scipy.optimize` improvements
 -----------------------------
-It is now possible to use linear and non-linear constraints with 
+It is now possible to use linear and non-linear constraints with
 `scipy.optimize.differential_evolution`.
 
-`scipy.optimize.linear_sum_assignment` has been re-written in C++ to improve 
+`scipy.optimize.linear_sum_assignment` has been re-written in C++ to improve
 performance, and now allows input costs to be infinite.
 
 A ``ScalarFunction.fun_and_grad`` method was added for convenient simultaneous
@@ -183,8 +183,8 @@ function supports specifying dimensions along which to do the convolution.
 
 `scipy.signal.cwt` now supports complex wavelets.
 
-The implementation of ``choose_conv_method`` has been updated to reflect the 
-new FFT implementation. In addition, the performance has been significantly 
+The implementation of ``choose_conv_method`` has been updated to reflect the
+new FFT implementation. In addition, the performance has been significantly
 improved (with rather drastic improvements in edge cases).
 
 The function ``upfirdn`` now has a ``mode`` keyword argument that can be used
@@ -201,11 +201,11 @@ possible
 ---------------------------
 It is now possible to use the LOBPCG method in `scipy.sparse.linalg.svds`.
 
-`scipy.sparse.linalg.LinearOperator` now supports the operation ``rmatmat`` 
+`scipy.sparse.linalg.LinearOperator` now supports the operation ``rmatmat``
 for adjoint matrix-matrix multiplication, in addition to ``rmatvec``.
 
-Multiple stability updates enable float32 support in the LOBPCG eigenvalue 
-solver for symmetric and Hermitian eigenvalues problems in 
+Multiple stability updates enable float32 support in the LOBPCG eigenvalue
+solver for symmetric and Hermitian eigenvalues problems in
 ``scipy.sparse.linalg.lobpcg``.
 
 A solver for the maximum flow problem has been added as
@@ -254,10 +254,10 @@ The Voigt profile has been added as `scipy.special.voigt_profile`.
 A real dispatch has been added for the Wright Omega function
 (`scipy.special.wrightomega`).
 
-The analytic continuation of the Riemann zeta function has been added. (The 
+The analytic continuation of the Riemann zeta function has been added. (The
 Riemann zeta function is the one-argument variant of `scipy.special.zeta`.)
 
-The complete elliptic integral of the first kind (`scipy.special.ellipk`) is 
+The complete elliptic integral of the first kind (`scipy.special.ellipk`) is
 now available in `scipy.special.cython_special`.
 
 The accuracy of `scipy.special.hyp1f1` for real arguments has been improved.
@@ -271,10 +271,10 @@ operates on high dimensional and nonlinear data sets. It has higher statistical
 power than other `scipy.stats` tests while being the only one that operates on
 multivariate data.
 
-The generalized inverse Gaussian distribution (`scipy.stats.geninvgauss`) has 
+The generalized inverse Gaussian distribution (`scipy.stats.geninvgauss`) has
 been added.
 
-It is now possible to efficiently reuse `scipy.stats.binned_statistic_dd` 
+It is now possible to efficiently reuse `scipy.stats.binned_statistic_dd`
 with new values by providing the result of a previous call to the function.
 
 `scipy.stats.hmean` now handles input with zeros more gracefully.
@@ -312,13 +312,13 @@ The exception to this rule is using ``scipy.fft`` as a function --
 :mod:`scipy.fft` is now meant to be used only as a module, so the ability to
 call ``scipy.fft(...)`` will be removed in SciPy 1.5.0.
 
-In `scipy.spatial.Rotation` methods ``from_dcm``, ``as_dcm`` were renamed to 
-``from_matrix``, ``as_matrix`` respectively. The old names will be removed in 
+In `scipy.spatial.Rotation` methods ``from_dcm``, ``as_dcm`` were renamed to
+``from_matrix``, ``as_matrix`` respectively. The old names will be removed in
 SciPy 1.6.0.
 
-Method ``Rotation.match_vectors`` was deprecated in favor of 
-``Rotation.align_vectors``, which provides a more logical and 
-general API to the same functionality. The old method 
+Method ``Rotation.match_vectors`` was deprecated in favor of
+``Rotation.align_vectors``, which provides a more logical and
+general API to the same functionality. The old method
 will be removed in SciPy 1.6.0.
 
 Backwards incompatible changes
@@ -331,17 +331,17 @@ removed.
 
 The deprecated function ``bessel_diff_formula`` has been removed.
 
-The function ``i0`` is no longer registered with ``numpy.dual``, so that 
-``numpy.dual.i0`` will unconditionally refer to the NumPy version regardless 
+The function ``i0`` is no longer registered with ``numpy.dual``, so that
+``numpy.dual.i0`` will unconditionally refer to the NumPy version regardless
 of whether `scipy.special` is imported.
 
-The function ``expn`` has been changed to return ``nan`` outside of its 
+The function ``expn`` has been changed to return ``nan`` outside of its
 domain of definition (``x, n < 0``) instead of ``inf``.
 
 `scipy.sparse` changes
 ---------------------------
-Sparse matrix reshape now raises an error if shape is not two-dimensional, 
-rather than guessing what was meant. The behavior is now the same as before 
+Sparse matrix reshape now raises an error if shape is not two-dimensional,
+rather than guessing what was meant. The behavior is now the same as before
 SciPy 1.1.0.
 
 ``CSR`` and ``CSC`` sparse matrix classes should now return empty matrices
@@ -374,11 +374,11 @@ problems.
 
 `scipy.spatial.cKDTree` now accepts and correctly handles empty input data
 
-`scipy.stats.binned_statistic_dd` now calculates the standard deviation 
+`scipy.stats.binned_statistic_dd` now calculates the standard deviation
 statistic in a numerically stable way.
 
-`scipy.stats.binned_statistic_dd` now throws an error if the input data 
-contains either ``np.nan`` or ``np.inf``. Similarly, in `scipy.stats` now all 
+`scipy.stats.binned_statistic_dd` now throws an error if the input data
+contains either ``np.nan`` or ``np.inf``. Similarly, in `scipy.stats` now all
 continuous distributions' ``.fit()`` methods throw an error if the input data
 contain any instance of either ``np.nan`` or ``np.inf``.
 

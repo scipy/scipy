@@ -44,18 +44,18 @@ class TestLSMR:
 
     def testIdentityACase2(self):
         A = eye(self.n)
-        xtrue = ones((self.n,1))
+        xtrue = ones((self.n, 1))
         self.assertCompatibleSystem(A, xtrue)
 
     def testIdentityACase3(self):
         A = eye(self.n)
-        xtrue = transpose(arange(self.n,0,-1))
+        xtrue = transpose(arange(self.n, 0, -1))
         self.assertCompatibleSystem(A, xtrue)
 
     def testBidiagonalA(self):
-        A = lowerBidiagonalMatrix(20,self.n)
-        xtrue = transpose(arange(self.n,0,-1))
-        self.assertCompatibleSystem(A,xtrue)
+        A = lowerBidiagonalMatrix(20, self.n)
+        xtrue = transpose(arange(self.n, 0, -1))
+        self.assertCompatibleSystem(A, xtrue)
 
     def testScalarB(self):
         A = array([[1.0, 2.0]])
@@ -97,7 +97,7 @@ class TestLSMR:
     def testInitialization(self):
         # Test that the default setting is not modified
         x_ref, _, itn_ref, normr_ref, *_ = lsmr(G, b)
-        assert_allclose(norm(b - G@x_ref), normr_ref, atol=1e-6)
+        assert_allclose(norm(b - G @ x_ref), normr_ref, atol=1e-6)
 
         # Test passing zeros yields similiar result
         x0 = zeros(b.shape)
@@ -108,7 +108,7 @@ class TestLSMR:
         x0 = lsmr(G, b, maxiter=1)[0]
 
         x, _, itn, normr, *_ = lsmr(G, b, x0=x0)
-        assert_allclose(norm(b - G@x), normr, atol=1e-6)
+        assert_allclose(norm(b - G @ x), normr, atol=1e-6)
 
         # NOTE(gh-12139): This doesn't always converge to the same value as
         # ref because error estimates will be slightly different when calculated
@@ -128,11 +128,11 @@ class TestLSMR:
 class TestLSMRReturns:
     def setup_method(self):
         self.n = 10
-        self.A = lowerBidiagonalMatrix(20,self.n)
-        self.xtrue = transpose(arange(self.n,0,-1))
+        self.A = lowerBidiagonalMatrix(20, self.n)
+        self.xtrue = transpose(arange(self.n, 0, -1))
         self.Afun = aslinearoperator(self.A)
         self.b = self.Afun.matvec(self.xtrue)
-        self.returnValues = lsmr(self.A,self.b)
+        self.returnValues = lsmr(self.A, self.b)
 
     def testNormr(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
@@ -140,8 +140,9 @@ class TestLSMRReturns:
 
     def testNormar(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
-        assert (norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x)))
-                == pytest.approx(normar))
+        assert norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x))) == pytest.approx(
+            normar
+        )
 
     def testNormx(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
@@ -161,61 +162,56 @@ def lowerBidiagonalMatrix(m, n):
     #
     # 04 Jun 2010: First version for distribution with lsmr.py
     if m <= n:
-        row = hstack((arange(m, dtype=int),
-                      arange(1, m, dtype=int)))
-        col = hstack((arange(m, dtype=int),
-                      arange(m-1, dtype=int)))
-        data = hstack((arange(1, m+1, dtype=float),
-                       arange(1,m, dtype=float)))
-        return coo_matrix((data, (row, col)), shape=(m,n))
+        row = hstack((arange(m, dtype=int), arange(1, m, dtype=int)))
+        col = hstack((arange(m, dtype=int), arange(m - 1, dtype=int)))
+        data = hstack((arange(1, m + 1, dtype=float), arange(1, m, dtype=float)))
+        return coo_matrix((data, (row, col)), shape=(m, n))
     else:
-        row = hstack((arange(n, dtype=int),
-                      arange(1, n+1, dtype=int)))
-        col = hstack((arange(n, dtype=int),
-                      arange(n, dtype=int)))
-        data = hstack((arange(1, n+1, dtype=float),
-                       arange(1,n+1, dtype=float)))
-        return coo_matrix((data,(row, col)), shape=(m,n))
+        row = hstack((arange(n, dtype=int), arange(1, n + 1, dtype=int)))
+        col = hstack((arange(n, dtype=int), arange(n, dtype=int)))
+        data = hstack((arange(1, n + 1, dtype=float), arange(1, n + 1, dtype=float)))
+        return coo_matrix((data, (row, col)), shape=(m, n))
 
 
 def lsmrtest(m, n, damp):
     """Verbose testing of lsmr"""
 
-    A = lowerBidiagonalMatrix(m,n)
-    xtrue = arange(n,0,-1, dtype=float)
+    A = lowerBidiagonalMatrix(m, n)
+    xtrue = arange(n, 0, -1, dtype=float)
     Afun = aslinearoperator(A)
 
     b = Afun.matvec(xtrue)
 
     atol = 1.0e-7
     btol = 1.0e-7
-    conlim = 1.0e+10
-    itnlim = 10*n
+    conlim = 1.0e10
+    itnlim = 10 * n
     show = 1
 
-    x, istop, itn, normr, normar, norma, conda, normx \
-      = lsmr(A, b, damp, atol, btol, conlim, itnlim, show)
+    x, istop, itn, normr, normar, norma, conda, normx = lsmr(
+        A, b, damp, atol, btol, conlim, itnlim, show
+    )
 
-    j1 = min(n,5)
-    j2 = max(n-4,1)
-    print(' ')
-    print('First elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[0:j1]]
-    print(''.join(str))
-    print(' ')
-    print('Last  elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[j2-1:]]
-    print(''.join(str))
+    j1 = min(n, 5)
+    j2 = max(n - 4, 1)
+    print(" ")
+    print("First elements of x:")
+    str = ["%10.4f" % (xi) for xi in x[0:j1]]
+    print("".join(str))
+    print(" ")
+    print("Last  elements of x:")
+    str = ["%10.4f" % (xi) for xi in x[j2 - 1 :]]
+    print("".join(str))
 
     r = b - Afun.matvec(x)
-    r2 = sqrt(norm(r)**2 + (damp*norm(x))**2)
-    print(' ')
-    str = 'normr (est.)  %17.10e' % (normr)
-    str2 = 'normr (true)  %17.10e' % (r2)
+    r2 = sqrt(norm(r) ** 2 + (damp * norm(x)) ** 2)
+    print(" ")
+    str = "normr (est.)  %17.10e" % (normr)
+    str2 = "normr (true)  %17.10e" % (r2)
     print(str)
     print(str2)
-    print(' ')
+    print(" ")
 
 
 if __name__ == "__main__":
-    lsmrtest(20,10,0)
+    lsmrtest(20, 10, 0)

@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -11,7 +11,7 @@ at the top-level directory.
 
 /*! @file zgscon.c
  * \brief Estimates reciprocal of the condition number of a general matrix
- * 
+ *
  * <pre>
  * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
@@ -19,7 +19,7 @@ at the top-level directory.
  * July 25, 2015
  *
  * Modified from lapack routines ZGECON.
- * </pre> 
+ * </pre>
  */
 
 /*
@@ -32,51 +32,51 @@ at the top-level directory.
 /*! \brief
  *
  * <pre>
- *   Purpose   
- *   =======   
+ *   Purpose
+ *   =======
  *
- *   ZGSCON estimates the reciprocal of the condition number of a general 
- *   real matrix A, in either the 1-norm or the infinity-norm, using   
+ *   ZGSCON estimates the reciprocal of the condition number of a general
+ *   real matrix A, in either the 1-norm or the infinity-norm, using
  *   the LU factorization computed by ZGETRF.   *
  *
- *   An estimate is obtained for norm(inv(A)), and the reciprocal of the   
- *   condition number is computed as   
- *      RCOND = 1 / ( norm(A) * norm(inv(A)) ).   
+ *   An estimate is obtained for norm(inv(A)), and the reciprocal of the
+ *   condition number is computed as
+ *      RCOND = 1 / ( norm(A) * norm(inv(A)) ).
  *
  *   See supermatrix.h for the definition of 'SuperMatrix' structure.
- * 
- *   Arguments   
- *   =========   
+ *
+ *   Arguments
+ *   =========
  *
  *    NORM    (input) char*
- *            Specifies whether the 1-norm condition number or the   
- *            infinity-norm condition number is required:   
- *            = '1' or 'O':  1-norm;   
+ *            Specifies whether the 1-norm condition number or the
+ *            infinity-norm condition number is required:
+ *            = '1' or 'O':  1-norm;
  *            = 'I':         Infinity-norm.
- *	    
+ *
  *    L       (input) SuperMatrix*
  *            The factor L from the factorization Pr*A*Pc=L*U as computed by
  *            zgstrf(). Use compressed row subscripts storage for supernodes,
  *            i.e., L has types: Stype = SLU_SC, Dtype = SLU_Z, Mtype = SLU_TRLU.
- * 
+ *
  *    U       (input) SuperMatrix*
  *            The factor U from the factorization Pr*A*Pc=L*U as computed by
  *            zgstrf(). Use column-wise storage scheme, i.e., U has types:
  *            Stype = SLU_NC, Dtype = SLU_Z, Mtype = SLU_TRU.
- *	    
- *    ANORM   (input) double
- *            If NORM = '1' or 'O', the 1-norm of the original matrix A.   
- *            If NORM = 'I', the infinity-norm of the original matrix A.
- *	    
- *    RCOND   (output) double*
- *           The reciprocal of the condition number of the matrix A,   
- *           computed as RCOND = 1/(norm(A) * norm(inv(A))).
- *	    
- *    INFO    (output) int*
- *           = 0:  successful exit   
- *           < 0:  if INFO = -i, the i-th argument had an illegal value   
  *
- *    ===================================================================== 
+ *    ANORM   (input) double
+ *            If NORM = '1' or 'O', the 1-norm of the original matrix A.
+ *            If NORM = 'I', the infinity-norm of the original matrix A.
+ *
+ *    RCOND   (output) double*
+ *           The reciprocal of the condition number of the matrix A,
+ *           computed as RCOND = 1/(norm(A) * norm(inv(A))).
+ *
+ *    INFO    (output) int*
+ *           = 0:  successful exit
+ *           < 0:  if INFO = -i, the i-th argument had an illegal value
+ *
+ *    =====================================================================
  * </pre>
  */
 
@@ -95,7 +95,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 
     extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
 
-    
+
     /* Test the input parameters. */
     *info = 0;
     onenrm = *(unsigned char *)norm == '1' || strncmp(norm, "O", 1)==0;
@@ -104,7 +104,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
              L->Stype != SLU_SC || L->Dtype != SLU_Z || L->Mtype != SLU_TRLU)
 	 *info = -2;
     else if (U->nrow < 0 || U->nrow != U->ncol ||
-             U->Stype != SLU_NC || U->Dtype != SLU_Z || U->Mtype != SLU_TRU) 
+             U->Stype != SLU_NC || U->Dtype != SLU_Z || U->Mtype != SLU_TRU)
 	*info = -3;
     if (*info != 0) {
 	i = -(*info);
@@ -124,7 +124,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 
     if ( !work )
 	ABORT("Malloc fails for work arrays in zgscon.");
-    
+
     /* Estimate the norm of inv(A). */
     ainvnm = 0.;
     if ( onenrm ) kase1 = 1;
@@ -142,7 +142,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 
 	    /* Multiply by inv(U). */
 	    sp_ztrsv("U", "No trans", "Non-unit", L, U, &work[0], stat, info);
-	    
+
 	} else {
 
 	    /* Multiply by inv(U'). */
@@ -150,7 +150,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 
 	    /* Multiply by inv(L'). */
 	    sp_ztrsv("L", "Transpose", "Unit", L, U, &work[0], stat, info);
-	    
+
 	}
 
     } while ( kase != 0 );
@@ -162,4 +162,3 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
     return;
 
 } /* zgscon */
-

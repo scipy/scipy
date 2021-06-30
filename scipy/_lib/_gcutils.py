@@ -15,10 +15,10 @@ import gc
 from contextlib import contextmanager
 from platform import python_implementation
 
-__all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
+__all__ = ["set_gc_state", "gc_state", "assert_deallocated"]
 
 
-IS_PYPY = python_implementation() == 'PyPy'
+IS_PYPY = python_implementation() == "PyPy"
 
 
 class ReferenceError(AssertionError):
@@ -26,7 +26,7 @@ class ReferenceError(AssertionError):
 
 
 def set_gc_state(state):
-    """ Set status of garbage collector """
+    """Set status of garbage collector"""
     if gc.isenabled() == state:
         return
     if state:
@@ -37,7 +37,7 @@ def set_gc_state(state):
 
 @contextmanager
 def gc_state(state):
-    """ Context manager to set state of garbage collector to `state`
+    """Context manager to set state of garbage collector to `state`
 
     Parameters
     ----------

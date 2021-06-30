@@ -31,7 +31,7 @@ cdef inline int _sf_error_test_function(int code) nogil:
 
     """
     cdef sf_error_t sf_error_code
-    
+
     if code < 0 or code >= 10:
         sf_error_code = OTHER
     else:

@@ -18,10 +18,10 @@ tasks:
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
       conda develop .
       echo "📖 Building docs 📖 "
-      cd doc 
+      cd doc
       make html-scipyorg
       echo "✨ Pre-build complete! You can close this terminal ✨ "
-  
+
 # --------------------------------------------------------
 # exposing ports for liveserve
 ports:
@@ -44,14 +44,14 @@ vscode:
 # --------------------------------------------------------
 # using prebuilds for the container - note: atm this only
 # works for the SciPy repo
-# With this configuration the prebuild will happen on push to master 
+# With this configuration the prebuild will happen on push to master
 github:
   prebuilds:
     # enable for master branch
     master: true
-    # enable for other branches (defaults to false) 
-    branches: false 
-    # enable for pull requests coming from this repo (defaults to true) 
+    # enable for other branches (defaults to false)
+    branches: false
+    # enable for pull requests coming from this repo (defaults to true)
     pullRequests: false
     # enable for pull requests coming from forks (defaults to false)
     pullRequestsFromForks: false

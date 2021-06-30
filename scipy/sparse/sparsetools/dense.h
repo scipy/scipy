@@ -37,7 +37,7 @@ void dot(const I n, const T * x, const T * y){
 
 // vectorize a binary operation
 template<class I, class T, class binary_operator>
-void vector_binop(const I n, const T * x, const T * y, T * z, 
+void vector_binop(const I n, const T * x, const T * y, T * z,
                   const binary_operator& op)
 {
     for(I i = 0; i < n; i++){

@@ -1,20 +1,20 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 /*! @file colamd.c
  *\brief A sparse matrix column ordering algorithm
- 
+
  <pre>
-    ========================================================================== 
-    === colamd/symamd - a sparse matrix column ordering algorithm ============ 
-    ========================================================================== 
+    ==========================================================================
+    === colamd/symamd - a sparse matrix column ordering algorithm ============
+    ==========================================================================
 
 
     colamd:  an approximate minimum degree column ordering algorithm,
@@ -43,7 +43,7 @@ at the top-level directory.
 	floating point operations than A.  Symamd constructs a matrix M such
 	that M'M has the same nonzero pattern of A, and then orders the columns
 	of M using colmmd.  The column ordering of M is then returned as the
-	row and column ordering P of A. 
+	row and column ordering P of A.
 
     Authors:
 
@@ -73,7 +73,7 @@ at the top-level directory.
 	this program, provided that the Copyright, this License, and the
 	Availability of the original version is retained on all copies and made
 	accessible to the end-user of any code or package that includes COLAMD
-	or any modified version of COLAMD. 
+	or any modified version of COLAMD.
 
     Availability:
 
@@ -87,9 +87,9 @@ at the top-level directory.
 
     See the ChangeLog file for changes since Version 1.0.
 
-    ========================================================================== 
-    === Description of user-callable routines ================================ 
-    ========================================================================== 
+    ==========================================================================
+    === Description of user-callable routines ================================
+    ==========================================================================
 
 
     ----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ at the top-level directory.
 		Colamd: rows with more than (knobs [COLAMD_DENSE_ROW] * n_col)
 		entries are removed prior to ordering.  Columns with more than
 		(knobs [COLAMD_DENSE_COL] * n_row) entries are removed prior to
-		ordering, and placed last in the output column ordering. 
+		ordering, and placed last in the output column ordering.
 
 		Symamd: uses only knobs [COLAMD_DENSE_ROW], which is knobs [0].
 		Rows and columns with more than (knobs [COLAMD_DENSE_ROW] * n)
@@ -179,7 +179,7 @@ at the top-level directory.
 	    (AQ)'AQ=LL' have less fill-in and require fewer floating point
 	    operations than factorizing the unpermuted matrix A or A'A,
 	    respectively.
-	    
+
 	Returns:
 
 	    TRUE (1) if successful, FALSE (0) otherwise.
@@ -209,8 +209,8 @@ at the top-level directory.
 		We do, however, guarantee that
 
 			Alen >= colamd_recommended (nnz, n_row, n_col)
-		
-		or equivalently as a C preprocessor macro: 
+
+		or equivalently as a C preprocessor macro:
 
 			Alen >= COLAMD_RECOMMENDED (nnz, n_row, n_col)
 
@@ -348,7 +348,7 @@ at the top-level directory.
 		Future versions may return more statistics in the stats array.
 
 	Example:
-	
+
 	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c
 	    for a complete example.
 
@@ -409,12 +409,12 @@ at the top-level directory.
 	    int A [nnz] ;	Input argument.
 
 	    	A is an integer array of size nnz, where nnz = p [n].
-		
+
 		The row indices of the entries in column c of the matrix are
 		held in A [(p [c]) ... (p [c+1]-1)].  The row indices in a
 		given column c need not be in ascending order, and duplicate
 		row indices may be present.  However, symamd will run faster
-		if the columns are in sorted order with no duplicate entries. 
+		if the columns are in sorted order with no duplicate entries.
 
 		The matrix is 0-based.  That is, rows are in the range 0 to
 		n-1, and columns are in the range 0 to n-1.  Symamd
@@ -456,7 +456,7 @@ at the top-level directory.
 		Symamd returns FALSE if stats is not present.
 
 		stats [0]:  number of dense or empty row and columns ignored
-				(and ordered last in the output permutation 
+				(and ordered last in the output permutation
 				perm).  Note that a row/column can become
 				"empty" if it contains only "dense" and/or
 				"empty" columns/rows.
@@ -658,7 +658,7 @@ at the top-level directory.
 #define ONES_COMPLEMENT(r) (-(r)-1)
 
 /* -------------------------------------------------------------------------- */
-/* Change for version 2.1:  define TRUE and FALSE only if not yet defined */  
+/* Change for version 2.1:  define TRUE and FALSE only if not yet defined */
 /* -------------------------------------------------------------------------- */
 
 #ifndef TRUE
@@ -915,7 +915,7 @@ PUBLIC int colamd_recommended	/* returns recommended value of Alen. */
     int n_col			/* number of columns in A */
 )
 {
-    return (COLAMD_RECOMMENDED (nnz, n_row, n_col)) ; 
+    return (COLAMD_RECOMMENDED (nnz, n_row, n_col)) ;
 }
 
 
@@ -996,7 +996,7 @@ PUBLIC int symamd			/* return TRUE if OK, FALSE otherwise */
     int nnz ;			/* number of entries in A */
     int i ;			/* row index of A */
     int j ;			/* column index of A */
-    int k ;			/* row index of M */ 
+    int k ;			/* row index of M */
     int mnz ;			/* number of nonzeros in M */
     int pp ;			/* index into a column of A */
     int last_row ;		/* last row seen in the current column */
@@ -1463,7 +1463,7 @@ PUBLIC int colamd		/* returns TRUE if successful, FALSE otherwise*/
     stats [COLAMD_DENSE_ROW] = n_row - n_row2 ;
     stats [COLAMD_DENSE_COL] = n_col - n_col2 ;
     stats [COLAMD_DEFRAG_COUNT] = ngarbage ;
-    DEBUG0 (("colamd: done.\n")) ; 
+    DEBUG0 (("colamd: done.\n")) ;
     return (TRUE) ;
 }
 
@@ -1525,7 +1525,7 @@ PRIVATE int init_rows_cols	/* returns TRUE if OK, or FALSE otherwise */
     Colamd_Col Col [],		/* of size n_col+1 */
     int A [],			/* row indices of A, of size Alen */
     int p [],			/* pointers to columns in A, of size n_col+1 */
-    int stats [COLAMD_STATS]	/* colamd statistics */ 
+    int stats [COLAMD_STATS]	/* colamd statistics */
 )
 {
     /* === Local variables ================================================== */
@@ -3421,4 +3421,3 @@ PRIVATE void colamd_get_debug
 }
 
 #endif /* NDEBUG */
-

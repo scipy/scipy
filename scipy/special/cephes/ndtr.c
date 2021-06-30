@@ -122,7 +122,7 @@
  * arithmetic   domain     # trials      peak         rms
  *    IEEE      0,26.6417   30000       5.7e-14     1.5e-14
  */
-
+
 
 /*
  * Cephes Math Library Release 2.2:  June, 1992

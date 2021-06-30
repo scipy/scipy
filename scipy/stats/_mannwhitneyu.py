@@ -6,7 +6,7 @@ from scipy import stats
 
 
 def _broadcast_concatenate(x, y, axis):
-    '''Broadcast then concatenate arrays, leaving concatenation axis last'''
+    """Broadcast then concatenate arrays, leaving concatenation axis last"""
     x = np.moveaxis(x, axis, -1)
     y = np.moveaxis(y, axis, -1)
     z = np.broadcast(x[..., 0], y[..., 0])
@@ -17,15 +17,16 @@ def _broadcast_concatenate(x, y, axis):
 
 
 class _MWU:
-    '''Distribution of MWU statistic under the null hypothesis'''
+    """Distribution of MWU statistic under the null hypothesis"""
+
     # Possible improvement: if m and n are small enough, use integer arithmetic
 
     def __init__(self):
-        '''Minimal initializer'''
+        """Minimal initializer"""
         self._fmnks = -np.ones((1, 1, 1))
 
     def pmf(self, k, m, n):
-        '''Probability mass function'''
+        """Probability mass function"""
         self._resize_fmnks(m, n, np.max(k))
         # could loop over just the unique elements, but probably not worth
         # the time to find them
@@ -34,7 +35,7 @@ class _MWU:
         return self._fmnks[m, n, k] / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
-        '''Cumulative distribution function'''
+        """Cumulative distribution function"""
         # We could use the fact that the distribution is symmetric to avoid
         # summing more than m*n/2 terms, but it might not be worth the
         # overhead. Let's leave that to an improvement.
@@ -43,32 +44,32 @@ class _MWU:
         return cdfs[k]
 
     def sf(self, k, m, n):
-        '''Survival function'''
+        """Survival function"""
         # Use the fact that the distribution is symmetric; i.e.
         # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        k = m*n - k
+        k = m * n - k
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
         return self.cdf(k, m, n)
 
     def _resize_fmnks(self, m, n, k):
-        '''If necessary, expand the array that remembers PMF values'''
+        """If necessary, expand the array that remembers PMF values"""
         # could probably use `np.pad` but I'm not sure it would save code
         shape_old = np.array(self._fmnks.shape)
-        shape_new = np.array((m+1, n+1, k+1))
+        shape_new = np.array((m + 1, n + 1, k + 1))
         if np.any(shape_new > shape_old):
             shape = np.maximum(shape_old, shape_new)
-            fmnks = -np.ones(shape)             # create the new array
+            fmnks = -np.ones(shape)  # create the new array
             m0, n0, k0 = shape_old
             fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
             self._fmnks = fmnks
 
     def _f(self, m, n, k):
-        '''Recursive implementation of function of [3] Theorem 2.5'''
+        """Recursive implementation of function of [3] Theorem 2.5"""
 
         # [3] Theorem 2.5 Line 1
-        if k < 0 or m < 0 or n < 0 or k > m*n:
+        if k < 0 or m < 0 or n < 0 or k > m * n:
             return 0
 
         # if already calculated, return the value
@@ -77,8 +78,8 @@ class _MWU:
 
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
-        else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
+        else:  # [3] Theorem 2.5 Line 3 / Equation 3
+            fmnk = self._f(m - 1, n, k - n) + self._f(m, n - 1, k)
 
         self._fmnks[m, n, k] = fmnk  # remember result
 
@@ -93,18 +94,18 @@ def _tie_term(ranks):
     """Tie correction term"""
     # element i of t is the number of elements sharing rank i
     _, t = np.unique(ranks, return_counts=True, axis=-1)
-    return (t**3 - t).sum(axis=-1)
+    return (t ** 3 - t).sum(axis=-1)
 
 
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
-    '''Standardized MWU statistic'''
+    """Standardized MWU statistic"""
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
     # Tie correction according to [2]
     tie_term = np.apply_along_axis(_tie_term, -1, ranks)
-    s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
+    s = np.sqrt(n1 * n2 / 12 * ((n + 1) - tie_term / (n * (n - 1))))
 
     # equivalent to using scipy.stats.tiecorrect
     # T = np.apply_along_axis(stats.tiecorrect, -1, ranks)
@@ -120,37 +121,37 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
         numerator -= 0.5
 
     # no problem evaluating the norm SF at an infinity
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         z = numerator / s
     return z
 
 
 def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
-    ''' Input validation and standardization for mannwhitneyu '''
+    """Input validation and standardization for mannwhitneyu"""
     # Would use np.asarray_chkfinite, but infs are OK
     x, y = np.atleast_1d(x), np.atleast_1d(y)
     if np.isnan(x).any() or np.isnan(y).any():
-        raise ValueError('`x` and `y` must not contain NaNs.')
+        raise ValueError("`x` and `y` must not contain NaNs.")
     if np.size(x) == 0 or np.size(y) == 0:
-        raise ValueError('`x` and `y` must be of nonzero size.')
+        raise ValueError("`x` and `y` must be of nonzero size.")
 
     bools = {True, False}
     if use_continuity not in bools:
-        raise ValueError(f'`use_continuity` must be one of {bools}.')
+        raise ValueError(f"`use_continuity` must be one of {bools}.")
 
     alternatives = {"two-sided", "less", "greater"}
     alternative = alternative.lower()
     if alternative not in alternatives:
-        raise ValueError(f'`alternative` must be one of {alternatives}.')
+        raise ValueError(f"`alternative` must be one of {alternatives}.")
 
     axis_int = int(axis)
     if axis != axis_int:
-        raise ValueError('`axis` must be an integer.')
+        raise ValueError("`axis` must be an integer.")
 
     methods = {"asymptotic", "exact", "auto"}
     method = method.lower()
     if method not in methods:
-        raise ValueError(f'`method` must be one of {methods}.')
+        raise ValueError(f"`method` must be one of {methods}.")
 
     return x, y, use_continuity, alternative, axis_int, method
 
@@ -175,12 +176,13 @@ def _mwu_choose_method(n1, n2, xy, method):
     return "exact"
 
 
-MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
+MannwhitneyuResult = namedtuple("MannwhitneyuResult", ("statistic", "pvalue"))
 
 
-def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
-                 axis=0, method="auto"):
-    r'''Perform the Mann-Whitney U rank test on two independent samples.
+def mannwhitneyu(
+    x, y, use_continuity=True, alternative="two-sided", axis=0, method="auto"
+):
+    r"""Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
     that the distribution underlying sample `x` is the same as the
@@ -385,10 +387,11 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     Under this assumption, the *p*-value would be low enough to reject the
     null hypothesis in favor of the alternative.
 
-    '''
+    """
 
-    x, y, use_continuity, alternative, axis_int, method = (
-        _mwu_input_validation(x, y, use_continuity, alternative, axis, method))
+    x, y, use_continuity, alternative, axis_int, method = _mwu_input_validation(
+        x, y, use_continuity, alternative, axis, method
+    )
 
     x, y, xy = _broadcast_concatenate(x, y, axis)
 
@@ -399,9 +402,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     # Follows [2]
     ranks = stats.rankdata(xy, axis=-1)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)    # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                # method 2, step 3
-    U2 = n1 * n2 - U1                    # as U1 + U2 = n1 * n2
+    R1 = ranks[..., :n1].sum(axis=-1)  # method 2, step 2
+    U1 = R1 - n1 * (n1 + 1) / 2  # method 2, step 3
+    U2 = n1 * n2 - U1  # as U1 + U2 = n1 * n2
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor

@@ -36,55 +36,108 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+from scipy._lib._util import (
+    check_random_state,
+    MapWrapper,
+    rng_integers,
+    float_factorial,
+)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
-from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
-                                   siegelslopes)
-from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
-                     _local_correlations)
+from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
+from ._stats import _kendall_dis, _toint64, _weightedrankedtau, _local_correlations
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
-           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
-           'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
-           'normaltest', 'jarque_bera', 'itemfreq',
-           'scoreatpercentile', 'percentileofscore',
-           'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
-           'median_abs_deviation',
-           'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'F_onewayConstantInputWarning',
-           'F_onewayBadInputSizesWarning',
-           'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact',
-           'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedtau', 'multiscale_graphcorr',
-           'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
-           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
-           'kstest', 'ks_1samp', 'ks_2samp',
-           'chisquare', 'power_divergence',
-           'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata',
-           'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+__all__ = [
+    "find_repeats",
+    "gmean",
+    "hmean",
+    "mode",
+    "tmean",
+    "tvar",
+    "tmin",
+    "tmax",
+    "tstd",
+    "tsem",
+    "moment",
+    "variation",
+    "skew",
+    "kurtosis",
+    "describe",
+    "skewtest",
+    "kurtosistest",
+    "normaltest",
+    "jarque_bera",
+    "itemfreq",
+    "scoreatpercentile",
+    "percentileofscore",
+    "cumfreq",
+    "relfreq",
+    "obrientransform",
+    "sem",
+    "zmap",
+    "zscore",
+    "iqr",
+    "gstd",
+    "median_absolute_deviation",
+    "median_abs_deviation",
+    "sigmaclip",
+    "trimboth",
+    "trim1",
+    "trim_mean",
+    "f_oneway",
+    "F_onewayConstantInputWarning",
+    "F_onewayBadInputSizesWarning",
+    "PearsonRConstantInputWarning",
+    "PearsonRNearConstantInputWarning",
+    "pearsonr",
+    "fisher_exact",
+    "SpearmanRConstantInputWarning",
+    "spearmanr",
+    "pointbiserialr",
+    "kendalltau",
+    "weightedtau",
+    "multiscale_graphcorr",
+    "linregress",
+    "siegelslopes",
+    "theilslopes",
+    "ttest_1samp",
+    "ttest_ind",
+    "ttest_ind_from_stats",
+    "ttest_rel",
+    "kstest",
+    "ks_1samp",
+    "ks_2samp",
+    "chisquare",
+    "power_divergence",
+    "tiecorrect",
+    "ranksums",
+    "kruskal",
+    "friedmanchisquare",
+    "rankdata",
+    "combine_pvalues",
+    "wasserstein_distance",
+    "energy_distance",
+    "brunnermunzel",
+    "alexandergovern",
+]
 
 
-def _contains_nan(a, nan_policy='propagate'):
-    policies = ['propagate', 'raise', 'omit']
+def _contains_nan(a, nan_policy="propagate"):
+    policies = ["propagate", "raise", "omit"]
     if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
+        raise ValueError(
+            "nan_policy must be one of {%s}" % ", ".join("'%s'" % s for s in policies)
+        )
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid="ignore"):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # This can happen when attempting to sum things which are not
@@ -95,12 +148,15 @@ def _contains_nan(a, nan_policy='propagate'):
             # Don't know what to do. Fall back to omitting nan values and
             # issue a warning.
             contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly "
-                          "checked for nan values. nan values "
-                          "will be ignored.", RuntimeWarning)
+            nan_policy = "omit"
+            warnings.warn(
+                "The input array could not be properly "
+                "checked for nan values. nan values "
+                "will be ignored.",
+                RuntimeWarning,
+            )
 
-    if contains_nan and nan_policy == 'raise':
+    if contains_nan and nan_policy == "raise":
         raise ValueError("The input contains nan values")
 
     return contains_nan, nan_policy
@@ -171,11 +227,11 @@ def _broadcast_shapes(shape1, shape2):
     """
     d = len(shape1) - len(shape2)
     if d <= 0:
-        shp1 = (1,)*(-d) + shape1
+        shp1 = (1,) * (-d) + shape1
         shp2 = shape2
     else:
         shp1 = shape1
-        shp2 = (1,)*d + shape2
+        shp2 = (1,) * d + shape2
     shape = []
     for n1, n2 in zip(shp1, shp2):
         if n1 == 1:
@@ -183,8 +239,9 @@ def _broadcast_shapes(shape1, shape2):
         elif n2 == 1 or n1 == n2:
             n = n1
         else:
-            raise ValueError(f'shapes {shape1} and {shape2} could not be '
-                             'broadcast together')
+            raise ValueError(
+                f"shapes {shape1} and {shape2} could not be broadcast together"
+            )
         shape.append(n)
     return tuple(shape)
 
@@ -207,8 +264,9 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     try:
         shp = _broadcast_shapes(shp1, shp2)
     except ValueError:
-        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
-                         'broadcast together') from None
+        raise ValueError(
+            f"non-axis shapes {shp1} and {shp2} could not be broadcast together"
+        ) from None
     return shp
 
 
@@ -348,17 +406,18 @@ def hmean(a, axis=0, dtype=None):
                 size = a.shape[0]
             else:
                 size = a.shape[axis]
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
     else:
-        raise ValueError("Harmonic mean only defined if all elements greater "
-                         "than or equal to zero")
+        raise ValueError(
+            "Harmonic mean only defined if all elements greater than or equal to zero"
+        )
 
 
-ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+ModeResult = namedtuple("ModeResult", ("mode", "count"))
 
 
-def mode(a, axis=0, nan_policy='propagate'):
+def mode(a, axis=0, nan_policy="propagate"):
     """Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only the smallest is returned.
@@ -409,7 +468,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
@@ -422,7 +481,7 @@ def mode(a, axis=0, nan_policy='propagate'):
         oldcounts = np.zeros(testshape, dtype=int)
 
         for score in scores:
-            template = (a == score)
+            template = a == score
             counts = np.sum(template, axis, keepdims=True)
             mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
             oldcounts = np.maximum(counts, oldcounts)
@@ -439,7 +498,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     # This recreates the results without that issue
     # View of a, rotated so the requested axis is last
     in_dims = list(range(a.ndim))
-    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis + 1 :] + [axis])
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
@@ -600,7 +659,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 
-def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
+def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy="propagate"):
     """Compute the trimmed minimum.
 
     This function finds the miminum value of an array `a` along the
@@ -653,7 +712,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(am, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         am = ma.masked_invalid(am)
 
     res = ma.minimum.reduce(am, axis).data
@@ -662,7 +721,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res
 
 
-def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
+def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy="propagate"):
     """Compute the trimmed maximum.
 
     This function computes the maximum value of an array along a given axis,
@@ -714,7 +773,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(am, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         am = ma.masked_invalid(am)
 
     res = ma.maximum.reduce(am, axis).data
@@ -830,7 +889,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy="propagate"):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -893,17 +952,18 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
 
     if a.size == 0:
         moment_shape = list(a.shape)
         del moment_shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+        dtype = a.dtype.type if a.dtype.kind in "fc" else np.float64
         # empty array, return nan(s) with shape matching `moment`
-        out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+        out_shape = (
+            moment_shape if np.isscalar(moment) else [len(moment)] + moment_shape
+        )
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -928,13 +988,16 @@ def _moment(a, moment, axis, *, mean=None):
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+        dtype = a.dtype.type if a.dtype.kind in "fc" else np.float64
 
         if len(shape) == 0:
             return dtype(1.0 if moment == 0 else 0.0)
         else:
-            return (np.ones(shape, dtype=dtype) if moment == 0
-                    else np.zeros(shape, dtype=dtype))
+            return (
+                np.ones(shape, dtype=dtype)
+                if moment == 0
+                else np.zeros(shape, dtype=dtype)
+            )
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -952,17 +1015,17 @@ def _moment(a, moment, axis, *, mean=None):
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
-            s = a_zero_mean**2
+            s = a_zero_mean ** 2
 
         # Perform multiplications
         for n in n_list[-2::-1]:
-            s = s**2
+            s = s ** 2
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
 
 
-def variation(a, axis=0, nan_policy='propagate', ddof=0):
+def variation(a, axis=0, nan_policy="propagate", ddof=0):
     """Compute the coefficient of variation.
 
     The coefficient of variation is the standard deviation divided by the
@@ -1014,14 +1077,14 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.variation(a, axis, ddof)
 
     return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
-def skew(a, axis=0, bias=True, nan_policy='propagate'):
+def skew(a, axis=0, bias=True, nan_policy="propagate"):
     r"""Compute the sample skewness of a data set.
 
     For normally distributed data, the skewness should be about zero. For
@@ -1100,22 +1163,22 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.skew(a, axis, bias)
 
     mean = a.mean(axis, keepdims=True)
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
-    with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m3 / m2**1.5)
+    with np.errstate(all="ignore"):
+        zero = m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis)) ** 2
+        vals = np.where(zero, 0, m3 / m2 ** 1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
-            nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
+            nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2 ** 1.5
             np.place(vals, can_correct, nval)
 
     if vals.ndim == 0:
@@ -1124,7 +1187,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
-def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
+def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy="propagate"):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
     Kurtosis is the fourth central moment divided by the square of the
@@ -1208,7 +1271,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosis(a, axis, fisher, bias)
 
@@ -1216,16 +1279,21 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     mean = a.mean(axis, keepdims=True)
     m2 = _moment(a, 2, axis, mean=mean)
     m4 = _moment(a, 4, axis, mean=mean)
-    with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m4 / m2**2.0)
+    with np.errstate(all="ignore"):
+        zero = m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis)) ** 2
+        vals = np.where(zero, 0, m4 / m2 ** 2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
-            nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
+            nval = (
+                1.0
+                / (n - 2)
+                / (n - 3)
+                * ((n ** 2 - 1.0) * m4 / m2 ** 2.0 - 3 * (n - 1) ** 2.0)
+            )
             np.place(vals, can_correct, nval + 3.0)
 
     if vals.ndim == 0:
@@ -1234,12 +1302,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     return vals - 3 if fisher else vals
 
 
-DescribeResult = namedtuple('DescribeResult',
-                            ('nobs', 'minmax', 'mean', 'variance', 'skewness',
-                             'kurtosis'))
+DescribeResult = namedtuple(
+    "DescribeResult", ("nobs", "minmax", "mean", "variance", "skewness", "kurtosis")
+)
 
 
-def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
+def describe(a, axis=0, ddof=1, bias=True, nan_policy="propagate"):
     """Compute several descriptive statistics of the passed array.
 
     Parameters
@@ -1307,7 +1375,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
 
@@ -1322,6 +1390,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
     return DescribeResult(n, mm, m, v, sk, kurt)
 
+
 #####################################
 #         NORMALITY TESTS           #
 #####################################
@@ -1329,15 +1398,14 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
 def _normtest_finish(z, alternative):
     """Common code between all the normality-test functions."""
-    if alternative == 'less':
+    if alternative == "less":
         prob = distributions.norm.cdf(z)
-    elif alternative == 'greater':
+    elif alternative == "greater":
         prob = distributions.norm.sf(z)
-    elif alternative == 'two-sided':
+    elif alternative == "two-sided":
         prob = 2 * distributions.norm.sf(np.abs(z))
     else:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
+        raise ValueError("alternative must be 'less', 'greater' or 'two-sided'")
 
     if z.ndim == 0:
         z = z[()]
@@ -1345,10 +1413,10 @@ def _normtest_finish(z, alternative):
     return z, prob
 
 
-SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
+SkewtestResult = namedtuple("SkewtestResult", ("statistic", "pvalue"))
 
 
-def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
+def skewtest(a, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Test whether the skew is different from the normal distribution.
 
     This function tests the null hypothesis that the skewness of
@@ -1421,7 +1489,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.skewtest(a, axis, alternative)
 
@@ -1432,24 +1500,30 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     n = a.shape[axis]
     if n < 8:
         raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % int(n))
+            "skewtest is not valid with less than 8 samples; %i samples were given."
+            % int(n)
+        )
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
-    beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
-             ((n-2.0) * (n+5) * (n+7) * (n+9)))
+    beta2 = (
+        3.0
+        * (n ** 2 + 27 * n - 70)
+        * (n + 1)
+        * (n + 3)
+        / ((n - 2.0) * (n + 5) * (n + 7) * (n + 9))
+    )
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
     y = np.where(y == 0, 1, y)
-    Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
+    Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
 
     return SkewtestResult(*_normtest_finish(Z, alternative))
 
 
-KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
+KurtosistestResult = namedtuple("KurtosistestResult", ("statistic", "pvalue"))
 
 
-def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
+def kurtosistest(a, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Test whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
@@ -1520,47 +1594,58 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosistest(a, axis, alternative)
 
     n = a.shape[axis]
     if n < 5:
         raise ValueError(
-            "kurtosistest requires at least 5 observations; %i observations"
-            " were given." % int(n))
+            "kurtosistest requires at least 5 observations; %i observations were given."
+            % int(n)
+        )
     if n < 20:
-        warnings.warn("kurtosistest only valid for n>=20 ... continuing "
-                      "anyway, n=%i" % int(n))
+        warnings.warn(
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % int(n)
+        )
     b2 = kurtosis(a, axis, fisher=False)
 
-    E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
-    x = (b2-E) / np.sqrt(varb2)  # [1]_ Eq. 4
+    E = 3.0 * (n - 1) / (n + 1)
+    varb2 = (
+        24.0 * n * (n - 2) * (n - 3) / ((n + 1) * (n + 1.0) * (n + 3) * (n + 5))
+    )  # [1]_ Eq. 1
+    x = (b2 - E) / np.sqrt(varb2)  # [1]_ Eq. 4
     # [1]_ Eq. 2:
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
-                                                        (n*(n-2)*(n-3)))
+    sqrtbeta1 = (
+        6.0
+        * (n * n - 5 * n + 2)
+        / ((n + 7) * (n + 9))
+        * np.sqrt((6.0 * (n + 3) * (n + 5)) / (n * (n - 2) * (n - 3)))
+    )
     # [1]_ Eq. 3:
-    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
-    term1 = 1 - 2/(9.0*A)
-    denom = 1 + x*np.sqrt(2/(A-4.0))
-    term2 = np.sign(denom) * np.where(denom == 0.0, np.nan,
-                                      np.power((1-2.0/A)/np.abs(denom), 1/3.0))
+    A = 6.0 + 8.0 / sqrtbeta1 * (2.0 / sqrtbeta1 + np.sqrt(1 + 4.0 / (sqrtbeta1 ** 2)))
+    term1 = 1 - 2 / (9.0 * A)
+    denom = 1 + x * np.sqrt(2 / (A - 4.0))
+    term2 = np.sign(denom) * np.where(
+        denom == 0.0, np.nan, np.power((1 - 2.0 / A) / np.abs(denom), 1 / 3.0)
+    )
     if np.any(denom == 0):
-        msg = "Test statistic not defined in some cases due to division by " \
-              "zero. Return nan in that case..."
+        msg = (
+            "Test statistic not defined in some cases due to division by "
+            "zero. Return nan in that case..."
+        )
         warnings.warn(msg, RuntimeWarning)
 
-    Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
+    Z = (term1 - term2) / np.sqrt(2 / (9.0 * A))  # [1]_ Eq. 5
 
     # zprob uses upper tail, so Z needs to be positive
     return KurtosistestResult(*_normtest_finish(Z, alternative))
 
 
-NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
+NormaltestResult = namedtuple("NormaltestResult", ("statistic", "pvalue"))
 
 
-def normaltest(a, axis=0, nan_policy='propagate'):
+def normaltest(a, axis=0, nan_policy="propagate"):
     """Test whether a sample differs from a normal distribution.
 
     This function tests the null hypothesis that a sample comes
@@ -1622,18 +1707,18 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.normaltest(a, axis)
 
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    k2 = s*s + k*k
+    k2 = s * s + k * k
 
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+Jarque_beraResult = namedtuple("Jarque_beraResult", ("statistic", "pvalue"))
 
 
 def jarque_bera(x):
@@ -1681,13 +1766,13 @@ def jarque_bera(x):
     x = np.asarray(x)
     n = x.size
     if n == 0:
-        raise ValueError('At least one observation is required.')
+        raise ValueError("At least one observation is required.")
 
     mu = x.mean()
     diffx = x - mu
-    skewness = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
-    kurtosis = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
-    jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
+    skewness = (1 / n * np.sum(diffx ** 3)) / (1 / n * np.sum(diffx ** 2)) ** (3 / 2.0)
+    kurtosis = (1 / n * np.sum(diffx ** 4)) / (1 / n * np.sum(diffx ** 2)) ** 2
+    jb_value = n / 6 * (skewness ** 2 + (kurtosis - 3) ** 2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
     return Jarque_beraResult(jb_value, p)
@@ -1699,51 +1784,52 @@ def jarque_bera(x):
 
 # deindent to work around numpy/gh-16202
 @np.deprecate(
-    message="`itemfreq` is deprecated and will be removed in a "
-            "future version. Use instead `np.unique(..., return_counts=True)`")
+    message=(
+        "`itemfreq` is deprecated and will be removed in a "
+        "future version. Use instead `np.unique(..., return_counts=True)`"
+    )
+)
 def itemfreq(a):
     """
-Return a 2-D array of item frequencies.
+    Return a 2-D array of item frequencies.
 
-Parameters
-----------
-a : (N,) array_like
-    Input array.
+    Parameters
+    ----------
+    a : (N,) array_like
+        Input array.
 
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
+    Returns
+    -------
+    itemfreq : (K, 2) ndarray
+        A 2-D frequency table.  Column 1 contains sorted, unique values from
+        `a`, column 2 contains their respective counts.
 
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
+    >>> stats.itemfreq(a)
+    array([[ 0.,  2.],
+           [ 1.,  4.],
+           [ 2.,  2.],
+           [ 4.,  1.],
+           [ 5.,  1.]])
+    >>> np.bincount(a)
+    array([2, 4, 2, 0, 1, 1])
 
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-
-"""
+    >>> stats.itemfreq(a/10.)
+    array([[ 0. ,  2. ],
+           [ 0.1,  4. ],
+           [ 0.2,  2. ],
+           [ 0.4,  1. ],
+           [ 0.5,  1. ]])
+    """
     items, inv = np.unique(a, return_inverse=True)
     freq = np.bincount(inv)
     return np.array([items, freq]).T
 
 
-def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-                      axis=None):
+def scoreatpercentile(a, per, limit=(), interpolation_method="fraction", axis=None):
     """Calculate the score at a given percentile of the input sequence.
 
     For example, the score at `per=50` is the median. If the desired quantile
@@ -1824,28 +1910,29 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 # handle sequence of per's without calling sort multiple times
 def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     if not np.isscalar(per):
-        score = [_compute_qth_percentile(sorted_, i,
-                                         interpolation_method, axis)
-                 for i in per]
+        score = [
+            _compute_qth_percentile(sorted_, i, interpolation_method, axis) for i in per
+        ]
         return np.array(score)
 
     if not (0 <= per <= 100):
         raise ValueError("percentile must be in the range [0, 100]")
 
     indexer = [slice(None)] * sorted_.ndim
-    idx = per / 100. * (sorted_.shape[axis] - 1)
+    idx = per / 100.0 * (sorted_.shape[axis] - 1)
 
     if int(idx) != idx:
         # round fractional indices according to interpolation method
-        if interpolation_method == 'lower':
+        if interpolation_method == "lower":
             idx = int(np.floor(idx))
-        elif interpolation_method == 'higher':
+        elif interpolation_method == "higher":
             idx = int(np.ceil(idx))
-        elif interpolation_method == 'fraction':
+        elif interpolation_method == "fraction":
             pass  # keep idx as fraction and interpolate
         else:
-            raise ValueError("interpolation_method can only be 'fraction', "
-                             "'lower' or 'higher'")
+            raise ValueError(
+                "interpolation_method can only be 'fraction', 'lower' or 'higher'"
+            )
 
     i = int(idx)
     if i == idx:
@@ -1865,7 +1952,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
-def percentileofscore(a, score, kind='rank'):
+def percentileofscore(a, score, kind="rank"):
     """Compute the percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
@@ -1938,29 +2025,28 @@ def percentileofscore(a, score, kind='rank'):
     if n == 0:
         return 100.0
 
-    if kind == 'rank':
+    if kind == "rank":
         left = np.count_nonzero(a < score)
         right = np.count_nonzero(a <= score)
-        pct = (right + left + (1 if right > left else 0)) * 50.0/n
+        pct = (right + left + (1 if right > left else 0)) * 50.0 / n
         return pct
-    elif kind == 'strict':
+    elif kind == "strict":
         return np.count_nonzero(a < score) / n * 100
-    elif kind == 'weak':
+    elif kind == "weak":
         return np.count_nonzero(a <= score) / n * 100
-    elif kind == 'mean':
-        pct = (np.count_nonzero(a < score)
-               + np.count_nonzero(a <= score)) / n * 50
+    elif kind == "mean":
+        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / n * 50
         return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
-HistogramResult = namedtuple('HistogramResult',
-                             ('count', 'lowerlimit', 'binsize', 'extrapoints'))
+HistogramResult = namedtuple(
+    "HistogramResult", ("count", "lowerlimit", "binsize", "extrapoints")
+)
 
 
-def _histogram(a, numbins=10, defaultlimits=None, weights=None,
-               printextras=False):
+def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """Create a histogram.
 
     Separate the range into several bins and return the number of instances
@@ -2016,30 +2102,29 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
             data_min = a.min()
             data_max = a.max()
             # Have bins extend past min and max values slightly
-            s = (data_max - data_min) / (2. * (numbins - 1.))
+            s = (data_max - data_min) / (2.0 * (numbins - 1.0))
             defaultlimits = (data_min - s, data_max + s)
 
     # use numpy's histogram method to compute bins
-    hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
-                                   weights=weights)
+    hist, bin_edges = np.histogram(
+        a, bins=numbins, range=defaultlimits, weights=weights
+    )
     # hist are not always floats, convert to keep with old output
     hist = np.array(hist, dtype=float)
     # fixed width for bins is assumed, as numpy's histogram gives
     # fixed width bins for int values for 'bins'
     binsize = bin_edges[1] - bin_edges[0]
     # calculate number of extra points
-    extrapoints = len([v for v in a
-                       if defaultlimits[0] > v or v > defaultlimits[1]])
+    extrapoints = len([v for v in a if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s"
-                      % extrapoints)
+        warnings.warn("Points outside given histogram range = %s" % extrapoints)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
 
-CumfreqResult = namedtuple('CumfreqResult',
-                           ('cumcount', 'lowerlimit', 'binsize',
-                            'extrapoints'))
+CumfreqResult = namedtuple(
+    "CumfreqResult", ("cumcount", "lowerlimit", "binsize", "extrapoints")
+)
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -2119,9 +2204,9 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     return CumfreqResult(cumhist, l, b, e)
 
 
-RelfreqResult = namedtuple('RelfreqResult',
-                           ('frequency', 'lowerlimit', 'binsize',
-                            'extrapoints'))
+RelfreqResult = namedtuple(
+    "RelfreqResult", ("frequency", "lowerlimit", "binsize", "extrapoints")
+)
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -2204,6 +2289,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
+
 def obrientransform(*args):
     """Compute the O'Brien transform on input data (any number of arrays).
 
@@ -2265,7 +2351,7 @@ def obrientransform(*args):
         a = np.asarray(arg)
         n = len(a)
         mu = np.mean(a)
-        sq = (a - mu)**2
+        sq = (a - mu) ** 2
         sumsq = sq.sum()
 
         # The O'Brien transform.
@@ -2275,7 +2361,7 @@ def obrientransform(*args):
         # original variance.
         var = sumsq / (n - 1)
         if abs(var - np.mean(t)) > TINY:
-            raise ValueError('Lack of convergence in obrientransform.')
+            raise ValueError("Lack of convergence in obrientransform.")
 
         arrays.append(t)
         sLast = a.shape
@@ -2287,7 +2373,7 @@ def obrientransform(*args):
     return np.array(arrays)
 
 
-def sem(a, axis=0, ddof=1, nan_policy='propagate'):
+def sem(a, axis=0, ddof=1, nan_policy="propagate"):
     """Compute standard error of the mean.
 
     Calculate the standard error of the mean (or standard error of
@@ -2342,7 +2428,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.sem(a, axis, ddof)
 
@@ -2395,7 +2481,7 @@ def _quiet_nanstd(x, ddof=0):
         return np.std(y, keepdims=True, ddof=ddof)
 
 
-def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
+def zscore(a, axis=0, ddof=0, nan_policy="propagate"):
     """
     Compute the z score.
 
@@ -2466,7 +2552,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
+def zmap(scores, compare, axis=0, ddof=0, nan_policy="propagate"):
     """
     Calculate the relative z-scores.
 
@@ -2523,7 +2609,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         if axis is None:
             mn = _quiet_nanmean(a.ravel())
             std = _quiet_nanstd(a.ravel(), ddof=ddof)
@@ -2654,38 +2740,46 @@ def gstd(a, axis=0, ddof=1):
     except RuntimeWarning as w:
         if np.isinf(a).any():
             raise ValueError(
-                'Infinite value encountered. The geometric standard deviation '
-                'is defined for strictly positive values only.'
+                "Infinite value encountered. The geometric standard deviation "
+                "is defined for strictly positive values only."
             ) from w
         a_nan = np.isnan(a)
         a_nan_any = a_nan.any()
         # exclude NaN's from negativity check, but
         # avoid expensive masking for arrays with no NaN
-        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
-                (not a_nan_any and np.less_equal(a, 0).any())):
+        if (a_nan_any and np.less_equal(np.nanmin(a), 0)) or (
+            not a_nan_any and np.less_equal(a, 0).any()
+        ):
             raise ValueError(
-                'Non positive value encountered. The geometric standard '
-                'deviation is defined for strictly positive values only.'
+                "Non positive value encountered. The geometric standard "
+                "deviation is defined for strictly positive values only."
             ) from w
-        elif 'Degrees of freedom <= 0 for slice' == str(w):
+        elif "Degrees of freedom <= 0 for slice" == str(w):
             raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
             return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
     except TypeError as e:
         raise ValueError(
-            'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types') from e
+            "Invalid array input. The inputs could not be "
+            "safely coerced to any supported types"
+        ) from e
 
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'raw': 1.0,
-                      'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {"raw": 1.0, "normal": special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
-def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
-        interpolation='linear', keepdims=False):
+def iqr(
+    x,
+    axis=None,
+    rng=(25, 75),
+    scale=1.0,
+    nan_policy="propagate",
+    interpolation="linear",
+    keepdims=False,
+):
     r"""
     Compute the interquartile range of the data along the specified axis.
 
@@ -2824,17 +2918,17 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
-        if scale_key == 'raw':
+        if scale_key == "raw":
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-                )
+                np.VisibleDeprecationWarning,
+            )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         percentile_func = np.nanpercentile
     else:
         percentile_func = np.percentile
@@ -2846,8 +2940,9 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                          keepdims=keepdims)
+    pct = percentile_func(
+        x, rng, axis=axis, interpolation=interpolation, keepdims=keepdims
+    )
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -2866,7 +2961,7 @@ def _mad_1d(x, center, nan_policy):
     # No warning is generated if x is empty or all nan.
     isnan = np.isnan(x)
     if isnan.any():
-        if nan_policy == 'propagate':
+        if nan_policy == "propagate":
             return np.nan
         x = x[~isnan]
     if x.size == 0:
@@ -2878,8 +2973,9 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
-                         nan_policy='propagate'):
+def median_abs_deviation(
+    x, axis=0, center=np.median, scale=1.0, nan_policy="propagate"
+):
     r"""
     Compute the median absolute deviation of the data along the given axis.
 
@@ -2988,13 +3084,15 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 
     """
     if not callable(center):
-        raise TypeError("The argument 'center' must be callable. The given "
-                        f"value {repr(center)} is not callable.")
+        raise TypeError(
+            "The argument 'center' must be callable. The given "
+            f"value {repr(center)} is not callable."
+        )
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
-        if scale.lower() == 'normal':
+        if scale.lower() == "normal":
             scale = 0.6744897501960817  # special.ndtri(0.75)
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
@@ -3042,125 +3140,129 @@ with a normal distribution. For a numerically precise value, use
 
 
 # Due to numpy/gh-16349 we need to unindent the entire docstring
-@np.deprecate(old_name='median_absolute_deviation',
-              new_name='median_abs_deviation',
-              message=_median_absolute_deviation_deprec_msg)
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
+@np.deprecate(
+    old_name="median_absolute_deviation",
+    new_name="median_abs_deviation",
+    message=_median_absolute_deviation_deprec_msg,
+)
+def median_absolute_deviation(
+    x, axis=0, center=np.median, scale=1.4826, nan_policy="propagate"
+):
     r"""
-Compute the median absolute deviation of the data along the given axis.
+    Compute the median absolute deviation of the data along the given axis.
 
-The median absolute deviation (MAD, [1]_) computes the median over the
-absolute deviations from the median. It is a measure of dispersion
-similar to the standard deviation but more robust to outliers [2]_.
+    The median absolute deviation (MAD, [1]_) computes the median over the
+    absolute deviations from the median. It is a measure of dispersion
+    similar to the standard deviation but more robust to outliers [2]_.
 
-The MAD of an empty array is ``np.nan``.
+    The MAD of an empty array is ``np.nan``.
 
-.. versionadded:: 1.3.0
+    .. versionadded:: 1.3.0
 
-Parameters
-----------
-x : array_like
-    Input array or object that can be converted to an array.
-axis : int or None, optional
-    Axis along which the range is computed. Default is 0. If None, compute
-    the MAD over the entire array.
-center : callable, optional
-    A function that will return the central value. The default is to use
-    np.median. Any user defined function used will need to have the function
-    signature ``func(arr, axis)``.
-scale : int, optional
-    The scaling factor applied to the MAD. The default scale (1.4826)
-    ensures consistency with the standard deviation for normally distributed
-    data.
-nan_policy : {'propagate', 'raise', 'omit'}, optional
-    Defines how to handle when input contains nan.
-    The following options are available (default is 'propagate'):
+    Parameters
+    ----------
+    x : array_like
+        Input array or object that can be converted to an array.
+    axis : int or None, optional
+        Axis along which the range is computed. Default is 0. If None, compute
+        the MAD over the entire array.
+    center : callable, optional
+        A function that will return the central value. The default is to use
+        np.median. Any user defined function used will need to have the function
+        signature ``func(arr, axis)``.
+    scale : int, optional
+        The scaling factor applied to the MAD. The default scale (1.4826)
+        ensures consistency with the standard deviation for normally distributed
+        data.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
 
-    * 'propagate': returns nan
-    * 'raise': throws an error
-    * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
-Returns
--------
-mad : scalar or ndarray
-    If ``axis=None``, a scalar is returned. If the input contains
-    integers or floats of smaller precision than ``np.float64``, then the
-    output data-type is ``np.float64``. Otherwise, the output data-type is
-    the same as that of the input.
+    Returns
+    -------
+    mad : scalar or ndarray
+        If ``axis=None``, a scalar is returned. If the input contains
+        integers or floats of smaller precision than ``np.float64``, then the
+        output data-type is ``np.float64``. Otherwise, the output data-type is
+        the same as that of the input.
 
-See Also
---------
-numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-scipy.stats.tstd, scipy.stats.tvar
+    See Also
+    --------
+    numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+    scipy.stats.tstd, scipy.stats.tvar
 
-Notes
------
-The `center` argument only affects the calculation of the central value
-around which the MAD is calculated. That is, passing in ``center=np.mean``
-will calculate the MAD around the mean - it will not calculate the *mean*
-absolute deviation.
+    Notes
+    -----
+    The `center` argument only affects the calculation of the central value
+    around which the MAD is calculated. That is, passing in ``center=np.mean``
+    will calculate the MAD around the mean - it will not calculate the *mean*
+    absolute deviation.
 
-References
-----------
-.. [1] "Median absolute deviation",
-       https://en.wikipedia.org/wiki/Median_absolute_deviation
-.. [2] "Robust measures of scale",
-       https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    References
+    ----------
+    .. [1] "Median absolute deviation",
+           https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale",
+           https://en.wikipedia.org/wiki/Robust_measures_of_scale
 
-Examples
---------
-When comparing the behavior of `median_absolute_deviation` with ``np.std``,
-the latter is affected when we change a single value of an array to have an
-outlier value while the MAD hardly changes:
+    Examples
+    --------
+    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    the latter is affected when we change a single value of an array to have an
+    outlier value while the MAD hardly changes:
 
->>> from scipy import stats
->>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
->>> x.std()
-0.9973906394005013
->>> stats.median_absolute_deviation(x)
-1.2280762773108278
->>> x[0] = 345.6
->>> x.std()
-34.42304872314415
->>> stats.median_absolute_deviation(x)
-1.2340335571164334
+    >>> from scipy import stats
+    >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+    >>> x.std()
+    0.9973906394005013
+    >>> stats.median_absolute_deviation(x)
+    1.2280762773108278
+    >>> x[0] = 345.6
+    >>> x.std()
+    34.42304872314415
+    >>> stats.median_absolute_deviation(x)
+    1.2340335571164334
 
-Axis handling example:
+    Axis handling example:
 
->>> x = np.array([[10, 7, 4], [3, 2, 1]])
->>> x
-array([[10,  7,  4],
-       [ 3,  2,  1]])
->>> stats.median_absolute_deviation(x)
-array([5.1891, 3.7065, 2.2239])
->>> stats.median_absolute_deviation(x, axis=None)
-2.9652
-
-"""
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> stats.median_absolute_deviation(x)
+    array([5.1891, 3.7065, 2.2239])
+    >>> stats.median_absolute_deviation(x, axis=None)
+    2.9652
+    """
     if isinstance(scale, str):
-        if scale.lower() == 'raw':
+        if scale.lower() == "raw":
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-                )
+                np.VisibleDeprecationWarning,
+            )
             scale = 1.0
 
     if not isinstance(scale, str):
         scale = 1 / scale
 
-    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
-                                nan_policy=nan_policy)
+    return median_abs_deviation(
+        x, axis=axis, center=center, scale=scale, nan_policy=nan_policy
+    )
+
 
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
 
 
-SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
+SigmaclipResult = namedtuple("SigmaclipResult", ("clipped", "lower", "upper"))
 
 
-def sigmaclip(a, low=4., high=4.):
+def sigmaclip(a, low=4.0, high=4.0):
     """Perform iterative sigma-clipping of array elements.
 
     Starting from the full sample, all elements outside the critical range are
@@ -3279,7 +3381,7 @@ def trimboth(a, proportiontocut, axis=0):
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut
-    if (lowercut >= uppercut):
+    if lowercut >= uppercut:
         raise ValueError("Proportion too big.")
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
@@ -3289,7 +3391,7 @@ def trimboth(a, proportiontocut, axis=0):
     return atmp[tuple(sl)]
 
 
-def trim1(a, proportiontocut, tail='right', axis=0):
+def trim1(a, proportiontocut, tail="right", axis=0):
     """Slice off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
@@ -3336,11 +3438,11 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     if proportiontocut >= 1:
         return []
 
-    if tail.lower() == 'right':
+    if tail.lower() == "right":
         lowercut = 0
         uppercut = nobs - int(proportiontocut * nobs)
 
-    elif tail.lower() == 'left':
+    elif tail.lower() == "left":
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
@@ -3408,7 +3510,7 @@ def trim_mean(a, proportiontocut, axis=0):
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut
-    if (lowercut > uppercut):
+    if lowercut > uppercut:
         raise ValueError("Proportion too big.")
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
@@ -3418,7 +3520,7 @@ def trim_mean(a, proportiontocut, axis=0):
     return np.mean(atmp[tuple(sl)], axis=axis)
 
 
-F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+F_onewayResult = namedtuple("F_onewayResult", ("statistic", "pvalue"))
 
 
 class F_onewayConstantInputWarning(RuntimeWarning):
@@ -3429,8 +3531,10 @@ class F_onewayConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("Each of the input arrays is constant;"
-                   "the F statistic is not defined or infinite")
+            msg = (
+                "Each of the input arrays is constant;"
+                "the F statistic is not defined or infinite"
+            )
         self.args = (msg,)
 
 
@@ -3439,6 +3543,7 @@ class F_onewayBadInputSizesWarning(RuntimeWarning):
     Warning generated by `f_oneway` when an input has length 0,
     or if all the inputs have length 1.
     """
+
     pass
 
 
@@ -3449,7 +3554,7 @@ def _create_f_oneway_nan_result(shape, axis):
     all nan with the appropriate shape for the given `shape` and `axis`.
     """
     axis = np.core.multiarray.normalize_axis_index(axis, len(shape))
-    shp = shape[:axis] + shape[axis+1:]
+    shp = shape[:axis] + shape[axis + 1 :]
     if shp == ():
         f = np.nan
         prob = np.nan
@@ -3593,7 +3698,7 @@ def f_oneway(*args, axis=0):
 
     """
     if len(args) < 2:
-        raise TypeError(f'at least two inputs are required; got {len(args)}.')
+        raise TypeError(f"at least two inputs are required; got {len(args)}.")
 
     args = [np.asarray(arg, dtype=float) for arg in args]
 
@@ -3610,14 +3715,15 @@ def f_oneway(*args, axis=0):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(arg.shape[axis] == 0 for arg in args):
-        warnings.warn(F_onewayBadInputSizesWarning('at least one input '
-                                                   'has length 0'))
+        warnings.warn(F_onewayBadInputSizesWarning("at least one input has length 0"))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
     if all(arg.shape[axis] == 1 for arg in args):
-        msg = ('all input arrays have length 1.  f_oneway requires that at '
-               'least one input has length greater than 1.')
+        msg = (
+            "all input arrays have length 1.  f_oneway requires that at "
+            "least one input has length greater than 1."
+        )
         warnings.warn(F_onewayBadInputSizesWarning(msg))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
@@ -3630,9 +3736,9 @@ def f_oneway(*args, axis=0):
     # It is True if the groups along the axis slice are each consant.
     # In the typical case where each input array is 1-d, is_const is a
     # 1-d array with length num_groups.
-    is_const = np.concatenate([(_first(a, axis) == a).all(axis=axis,
-                                                          keepdims=True)
-                               for a in args], axis=axis)
+    is_const = np.concatenate(
+        [(_first(a, axis) == a).all(axis=axis, keepdims=True) for a in args], axis=axis
+    )
 
     # all_const is a boolean array with shape (...) (see previous comment).
     # It is True if the values within each group along the axis slice are
@@ -3668,10 +3774,10 @@ def f_oneway(*args, axis=0):
     dfwn = bign - num_groups
     msb = ssbn / dfbn
     msw = sswn / dfwn
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         f = msb / msw
 
-    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+    prob = special.fdtrc(dfbn, dfwn, f)  # equivalent to stats.f.sf
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
@@ -3691,7 +3797,7 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-def alexandergovern(*args, nan_policy='propagate'):
+def alexandergovern(*args, nan_policy="propagate"):
     """Performs the Alexander Govern test.
 
     The Alexander-Govern approximation tests the equality of k independent
@@ -3788,13 +3894,15 @@ def alexandergovern(*args, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(arg) if nan_policy == 'omit' else len(arg)
-                        for arg in args])
+    lengths = np.array(
+        [ma.count(arg) if nan_policy == "omit" else len(arg) for arg in args]
+    )
     means = np.array([np.mean(arg) for arg in args])
 
     # (1) determine standard error of the mean for each sample
-    standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
-                       for arg, length in zip(args, lengths)]
+    standard_errors = [
+        np.std(arg, ddof=1) / np.sqrt(length) for arg, length in zip(args, lengths)
+    ]
 
     # (2) define a weight for each sample
     inv_sq_se = 1 / np.square(standard_errors)
@@ -3804,18 +3912,23 @@ def alexandergovern(*args, nan_policy='propagate'):
     var_w = np.sum(weights * means)
 
     # (4) determine one-sample t statistic for each group
-    t_stats = (means - var_w)/standard_errors
+    t_stats = (means - var_w) / standard_errors
 
     # calculate parameters to be used in transformation
     v = lengths - 1
-    a = v - .5
-    b = 48 * a**2
-    c = (a * np.log(1 + (t_stats ** 2)/v))**.5
+    a = v - 0.5
+    b = 48 * a ** 2
+    c = (a * np.log(1 + (t_stats ** 2) / v)) ** 0.5
 
     # (8) perform a normalizing transformation on t statistic
-    z = (c + ((c**3 + 3*c)/b) -
-         ((4*c**7 + 33*c**5 + 240*c**3 + 855*c) /
-          (b**2*10 + 8*b*c**4 + 1000*b)))
+    z = (
+        c
+        + ((c ** 3 + 3 * c) / b)
+        - (
+            (4 * c ** 7 + 33 * c ** 5 + 240 * c ** 3 + 855 * c)
+            / (b ** 2 * 10 + 8 * b * c ** 4 + 1000 * b)
+        )
+    )
 
     # (9) calculate statistic
     A = np.sum(np.square(z))
@@ -3842,13 +3955,12 @@ def _alexandergovern_input_validation(args, nan_policy):
             raise ValueError("Input samples must be finite.")
 
         contains_nan, nan_policy = _contains_nan(arg, nan_policy=nan_policy)
-        if contains_nan and nan_policy == 'omit':
+        if contains_nan and nan_policy == "omit":
             args[i] = ma.masked_invalid(arg)
     return args
 
 
-AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
-                                                                 "pvalue"))
+AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic", "pvalue"))
 
 
 class AlexanderGovernConstantInputWarning(RuntimeWarning):
@@ -3856,7 +3968,7 @@ class AlexanderGovernConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the statistic is not defined.")
+            msg = "An input array is constant; the statistic is not defined."
         self.args = (msg,)
 
 
@@ -3865,8 +3977,10 @@ class PearsonRConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
+            msg = (
+                "An input array is constant; the correlation coefficient "
+                "is not defined."
+            )
         self.args = (msg,)
 
 
@@ -3875,8 +3989,10 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is nearly constant; the computed "
-                   "correlation coefficient may be inaccurate.")
+            msg = (
+                "An input array is nearly constant; the computed "
+                "correlation coefficient may be inaccurate."
+            )
         self.args = (msg,)
 
 
@@ -4038,10 +4154,10 @@ def pearsonr(x, y):
     """
     n = len(x)
     if n != len(y):
-        raise ValueError('x and y must have the same length.')
+        raise ValueError("x and y must have the same length.")
 
     if n < 2:
-        raise ValueError('x and y must have length at least 2.')
+        raise ValueError("x and y must have length at least 2.")
 
     x = np.asarray(x)
     y = np.asarray(y)
@@ -4057,7 +4173,7 @@ def pearsonr(x, y):
     dtype = type(1.0 + x[0] + y[0])
 
     if n == 2:
-        return dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0])), 1.0
+        return dtype(np.sign(x[1] - x[0]) * np.sign(y[1] - y[0])), 1.0
 
     xmean = x.mean(dtype=dtype)
     ymean = y.mean(dtype=dtype)
@@ -4074,13 +4190,13 @@ def pearsonr(x, y):
     normym = linalg.norm(ym)
 
     threshold = 1e-13
-    if normxm < threshold*abs(xmean) or normym < threshold*abs(ymean):
+    if normxm < threshold * abs(xmean) or normym < threshold * abs(ymean):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
         warnings.warn(PearsonRNearConstantInputWarning())
 
-    r = np.dot(xm/normxm, ym/normym)
+    r = np.dot(xm / normxm, ym / normym)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
@@ -4094,13 +4210,13 @@ def pearsonr(x, y):
     # shape parameters do not change.  Then -abs(r) used in `cdf(-abs(r))`
     # becomes x = (-abs(r) + 1)/2 = 0.5*(1 - abs(r)).  (r is cast to float64
     # to avoid a TypeError raised by btdtr when r is higher precision.)
-    ab = n/2 - 1
-    prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    ab = n / 2 - 1
+    prob = 2 * special.btdtr(ab, ab, 0.5 * (1 - abs(np.float64(r))))
 
     return r, prob
 
 
-def fisher_exact(table, alternative='two-sided'):
+def fisher_exact(table, alternative="two-sided"):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
     Parameters
@@ -4305,32 +4421,30 @@ def fisher_exact(table, alternative='two-sided'):
         if guess == -1:
             guess = minval
         if side == "upper":
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
+            while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
                 guess -= 1
             while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
                 guess += 1
         else:
             while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
                 guess += 1
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
+            while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
                 guess -= 1
         return guess
 
-    if alternative == 'less':
+    if alternative == "less":
         pvalue = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
-    elif alternative == 'greater':
+    elif alternative == "greater":
         # Same formula as the 'less' case, but with the second column.
         pvalue = hypergeom.cdf(c[0, 1], n1 + n2, n1, c[0, 1] + c[1, 1])
-    elif alternative == 'two-sided':
+    elif alternative == "two-sided":
         mode = int((n + 1) * (n1 + 1) / (n1 + n2 + 2))
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
         epsilon = 1 - 1e-4
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
-            return oddsratio, 1.
+            return oddsratio, 1.0
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
@@ -4360,16 +4474,17 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
+            msg = (
+                "An input array is constant; the correlation coefficient "
+                "is not defined."
+            )
         self.args = (msg,)
 
 
-SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+SpearmanrResult = namedtuple("SpearmanrResult", ("correlation", "pvalue"))
 
 
-def spearmanr(a, b=None, axis=0, nan_policy='propagate',
-              alternative='two-sided'):
+def spearmanr(a, b=None, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Calculate a Spearman correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
@@ -4478,9 +4593,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     """
     if axis is not None and axis > 1:
-        raise ValueError("spearmanr only handles 1-D or 2-D arrays, "
-                         "supplied axis argument {}, please use only "
-                         "values 0, 1 or None for axis".format(axis))
+        raise ValueError(
+            "spearmanr only handles 1-D or 2-D arrays, "
+            "supplied axis argument {}, please use only "
+            "values 0, 1 or None for axis".format(axis)
+        )
 
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 2:
@@ -4488,8 +4605,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     if b is None:
         if a.ndim < 2:
-            raise ValueError("`spearmanr` needs at least 2 "
-                             "variables to compare")
+            raise ValueError("`spearmanr` needs at least 2 variables to compare")
     else:
         # Concatenate a and b, so that we now only have to handle the case
         # of a 2-D `a`.
@@ -4521,10 +4637,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
-        if nan_policy == 'omit':
-            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy,
-                                          alternative=alternative)
-        elif nan_policy == 'propagate':
+        if nan_policy == "omit":
+            return mstats_basic.spearmanr(
+                a, axis=axis, nan_policy=nan_policy, alternative=alternative
+            )
+        elif nan_policy == "propagate":
             if a.ndim == 1 or n_vars <= 2:
                 return SpearmanrResult(np.nan, np.nan)
             else:
@@ -4537,10 +4654,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     dof = n_obs - 2  # degrees of freedom
 
     # rs can have elements equal to 1, so avoid zero division warnings
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide="ignore"):
         # clip the small negative values possibly caused by rounding
         # errors before taking the square root
-        t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
+        t = rs * np.sqrt((dof / ((rs + 1.0) * (1.0 - rs))).clip(0))
 
     t, prob = _ttest_finish(dof, t, alternative)
 
@@ -4553,8 +4670,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return SpearmanrResult(rs, prob)
 
 
-PointbiserialrResult = namedtuple('PointbiserialrResult',
-                                  ('correlation', 'pvalue'))
+PointbiserialrResult = namedtuple("PointbiserialrResult", ("correlation", "pvalue"))
 
 
 def pointbiserialr(x, y):
@@ -4643,11 +4759,12 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+KendalltauResult = namedtuple("KendalltauResult", ("correlation", "pvalue"))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
-               method='auto', variant='b'):
+def kendalltau(
+    x, y, initial_lexsort=None, nan_policy="propagate", method="auto", variant="b"
+):
     """Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -4746,8 +4863,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     y = np.asarray(y).ravel()
 
     if x.size != y.size:
-        raise ValueError("All inputs to `kendalltau` must be of the same "
-                         f"size, found x-size {x.size} and y-size {y.size}")
+        raise ValueError(
+            "All inputs to `kendalltau` must be of the same "
+            f"size, found x-size {x.size} and y-size {y.size}"
+        )
     elif not x.size or not y.size:
         # Return NaN if arrays are empty
         return KendalltauResult(np.nan, np.nan)
@@ -4756,16 +4875,16 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     cnx, npx = _contains_nan(x, nan_policy)
     cny, npy = _contains_nan(y, nan_policy)
     contains_nan = cnx or cny
-    if npx == 'omit' or npy == 'omit':
-        nan_policy = 'omit'
+    if npx == "omit" or npy == "omit":
+        nan_policy = "omit"
 
-    if contains_nan and nan_policy == 'propagate':
+    if contains_nan and nan_policy == "propagate":
         return KendalltauResult(np.nan, np.nan)
 
-    elif contains_nan and nan_policy == 'omit':
+    elif contains_nan and nan_policy == "omit":
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
-        if variant == 'b':
+        if variant == "b":
             return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
         else:
             raise ValueError("Only variant 'b' is supported for masked arrays")
@@ -4774,11 +4893,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         warnings.warn('"initial_lexsort" is gone!')
 
     def count_rank_tie(ranks):
-        cnt = np.bincount(ranks).astype('int64', copy=False)
+        cnt = np.bincount(ranks).astype("int64", copy=False)
         cnt = cnt[cnt > 1]
-        return ((cnt * (cnt - 1) // 2).sum(),
-                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+        return (
+            (cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.0) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.0) * (2 * cnt + 5)).sum(),
+        )
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -4786,18 +4907,18 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     y = np.r_[True, y[1:] != y[:-1]].cumsum(dtype=np.intp)
 
     # stable sort on x and convert x to dense ranks
-    perm = np.argsort(x, kind='mergesort')
+    perm = np.argsort(x, kind="mergesort")
     x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
     dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
-    cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
+    cnt = np.diff(np.nonzero(obs)[0]).astype("int64", copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
-    ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
+    xtie, x0, x1 = count_rank_tie(x)  # ties in x, stats
+    ytie, y0, y1 = count_rank_tie(y)  # ties in y, stats
 
     tot = (size * (size - 1)) // 2
 
@@ -4807,47 +4928,51 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
     con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
-    if variant == 'b':
+    if variant == "b":
         tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
-    elif variant == 'c':
+    elif variant == "c":
         minclasses = min(len(set(x)), len(set(y)))
-        tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
+        tau = 2 * con_minus_dis / (size ** 2 * (minclasses - 1) / minclasses)
     else:
-        raise ValueError(f"Unknown variant of the method chosen: {variant}. "
-                         "variant must be 'b' or 'c'.")
+        raise ValueError(
+            f"Unknown variant of the method chosen: {variant}. "
+            "variant must be 'b' or 'c'."
+        )
 
     # Limit range to fix computational errors
-    tau = min(1., max(-1., tau))
+    tau = min(1.0, max(-1.0, tau))
 
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
-    if method == 'exact' and (xtie != 0 or ytie != 0):
+    if method == "exact" and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
 
-    if method == 'auto':
-        if (xtie == 0 and ytie == 0) and (size <= 33 or
-                                          min(dis, tot-dis) <= 1):
-            method = 'exact'
+    if method == "auto":
+        if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot - dis) <= 1):
+            method = "exact"
         else:
-            method = 'asymptotic'
+            method = "asymptotic"
 
-    if xtie == 0 and ytie == 0 and method == 'exact':
-        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
-    elif method == 'asymptotic':
+    if xtie == 0 and ytie == 0 and method == "exact":
+        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot - dis))
+    elif method == "asymptotic":
         # con_minus_dis is approx normally distributed with this variance [3]_
-        m = size * (size - 1.)
-        var = ((m * (2*size + 5) - x1 - y1) / 18 +
-               (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
-        pvalue = (special.erfc(np.abs(con_minus_dis) /
-                  np.sqrt(var) / np.sqrt(2)))
+        m = size * (size - 1.0)
+        var = (
+            (m * (2 * size + 5) - x1 - y1) / 18
+            + (2 * xtie * ytie) / m
+            + x0 * y0 / (9 * m * (size - 2))
+        )
+        pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
     else:
-        raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
-                         "'exact' or 'asymptotic'.")
+        raise ValueError(
+            f"Unknown method {method} specified.  Use 'auto', 'exact' or 'asymptotic'."
+        )
 
     return KendalltauResult(tau, pvalue)
 
 
-WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
+WeightedTauResult = namedtuple("WeightedTauResult", ("correlation", "pvalue"))
 
 
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
@@ -4983,9 +5108,11 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     y = np.asarray(y).ravel()
 
     if x.size != y.size:
-        raise ValueError("All inputs to `weightedtau` must be "
-                         "of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
+        raise ValueError(
+            "All inputs to `weightedtau` must be "
+            "of the same size, "
+            "found x-size %s and y-size %s" % (x.size, y.size)
+        )
     if not x.size:
         # Return NaN if arrays are empty
         return WeightedTauResult(np.nan, np.nan)
@@ -5008,10 +5135,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
             y = _toint64(y)
 
     if rank is True:
-        return WeightedTauResult((
-            _weightedrankedtau(x, y, None, weigher, additive) +
-            _weightedrankedtau(y, x, None, weigher, additive)
-            ) / 2, np.nan)
+        return WeightedTauResult(
+            (
+                _weightedrankedtau(x, y, None, weigher, additive)
+                + _weightedrankedtau(y, x, None, weigher, additive)
+            )
+            / 2,
+            np.nan,
+        )
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
@@ -5023,8 +5154,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
                 "found x-size %s and rank-size %s" % (x.size, rank.size)
             )
 
-    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive),
-                             np.nan)
+    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
@@ -5089,8 +5219,12 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
     # generate seeds for each rep (change to new parallel random number
     # capabilities in numpy >= 1.17+)
     random_state = check_random_state(random_state)
-    random_states = [np.random.RandomState(rng_integers(random_state, 1 << 32,
-                     size=4, dtype=np.uint32)) for _ in range(reps)]
+    random_states = [
+        np.random.RandomState(
+            rng_integers(random_state, 1 << 32, size=4, dtype=np.uint32)
+        )
+        for _ in range(reps)
+    ]
 
     # parallelizes with specified workers over number of reps and set seeds
     parallelp = _ParallelP(x=x, y=y, random_states=random_states)
@@ -5112,11 +5246,18 @@ def _euclidean_dist(x):
     return cdist(x, x)
 
 
-MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
+MGCResult = namedtuple("MGCResult", ("stat", "pvalue", "mgc_dict"))
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         workers=1, is_twosamp=False, random_state=None):
+def multiscale_graphcorr(
+    x,
+    y,
+    compute_distance=_euclidean_dist,
+    reps=1000,
+    workers=1,
+    is_twosamp=False,
+    random_state=None,
+):
     r"""Computes the Multiscale Graph Correlation (MGC) test statistic.
 
     Specifically, for each point, MGC finds the :math:`k`-nearest neighbors for
@@ -5326,20 +5467,18 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     if x.ndim == 1:
         x = x[:, np.newaxis]
     elif x.ndim != 2:
-        raise ValueError("Expected a 2-D array `x`, found shape "
-                         "{}".format(x.shape))
+        raise ValueError("Expected a 2-D array `x`, found shape {}".format(x.shape))
     if y.ndim == 1:
         y = y[:, np.newaxis]
     elif y.ndim != 2:
-        raise ValueError("Expected a 2-D array `y`, found shape "
-                         "{}".format(y.shape))
+        raise ValueError("Expected a 2-D array `y`, found shape {}".format(y.shape))
 
     nx, px = x.shape
     ny, py = y.shape
 
     # check for NaNs
-    _contains_nan(x, nan_policy='raise')
-    _contains_nan(y, nan_policy='raise')
+    _contains_nan(x, nan_policy="raise")
+    _contains_nan(y, nan_policy="raise")
 
     # check for positive or negative infinity and raise error
     if np.sum(np.isinf(x)) > 0 or np.sum(np.isinf(y)) > 0:
@@ -5350,12 +5489,13 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
             # reshape x and y for two sample testing
             is_twosamp = True
         else:
-            raise ValueError("Shape mismatch, x and y must have shape [n, p] "
-                             "and [n, q] or have shape [n, p] and [m, p].")
+            raise ValueError(
+                "Shape mismatch, x and y must have shape [n, p] "
+                "and [n, q] or have shape [n, p] and [m, p]."
+            )
 
     if nx < 5 or ny < 5:
-        raise ValueError("MGC requires at least 5 samples to give reasonable "
-                         "results.")
+        raise ValueError("MGC requires at least 5 samples to give reasonable results.")
 
     # convert x and y to float
     x = x.astype(np.float64)
@@ -5370,9 +5510,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     if not isinstance(reps, int) or reps < 0:
         raise ValueError("Number of reps must be an integer greater than 0.")
     elif reps < 1000:
-        msg = ("The number of replications is low (under 1000), and p-value "
-               "calculations may be unreliable. Use the p-value result, with "
-               "caution!")
+        msg = (
+            "The number of replications is low (under 1000), and p-value "
+            "calculations may be unreliable. Use the p-value result, with "
+            "caution!"
+        )
         warnings.warn(msg, RuntimeWarning)
 
     if is_twosamp:
@@ -5391,13 +5533,12 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, reps=reps, workers=workers,
-                                   random_state=random_state)
+    pvalue, null_dist = _perm_test(
+        x, y, stat, reps=reps, workers=workers, random_state=random_state
+    )
 
     # save all stats (other than stat/p-value) in dictionary
-    mgc_dict = {"mgc_map": stat_mgc_map,
-                "opt_scale": opt_scale,
-                "null_dist": null_dist}
+    mgc_dict = {"mgc_map": stat_mgc_map, "opt_scale": opt_scale, "null_dist": null_dist}
 
     return MGCResult(stat, pvalue, mgc_dict)
 
@@ -5426,7 +5567,7 @@ def _mgc_stat(distx, disty):
 
     """
     # calculate MGC map and optimal scale
-    stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
+    stat_mgc_map = _local_correlations(distx, disty, global_corr="mgc")
 
     n, m = stat_mgc_map.shape
     if m == 1 or n == 1:
@@ -5444,8 +5585,7 @@ def _mgc_stat(distx, disty):
         # maximum within the significant region
         stat, opt_scale = _smooth_mgc_map(sig_connect, stat_mgc_map)
 
-    stat_dict = {"stat_mgc_map": stat_mgc_map,
-                 "opt_scale": opt_scale}
+    stat_dict = {"stat_mgc_map": stat_mgc_map, "opt_scale": opt_scale}
 
     return stat, stat_dict
 
@@ -5473,7 +5613,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     # with varying levels of performance. Threshold is based on a beta
     # approximation.
     per_sig = 1 - (0.02 / samp_size)  # Percentile to consider as significant
-    threshold = samp_size * (samp_size - 3)/4 - 1/2  # Beta approximation
+    threshold = samp_size * (samp_size - 3) / 4 - 1 / 2  # Beta approximation
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
     # the global scale at is the statistic calculated at maximial nearest
@@ -5541,7 +5681,7 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
                 one_d_indices = k * n + l  # 2D to 1D indexing
                 k = np.max(one_d_indices) // n
                 l = np.max(one_d_indices) % n
-                opt_scale = [k+1, l+1]  # adding 1s to match R indexing
+                opt_scale = [k + 1, l + 1]  # adding 1s to match R indexing
 
     return stat, opt_scale
 
@@ -5577,11 +5717,10 @@ def _two_sample_transform(u, v):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+Ttest_1sampResult = namedtuple("Ttest_1sampResult", ("statistic", "pvalue"))
 
 
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
-                alternative="two-sided"):
+def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
     This is a test for the null hypothesis that the expected value
@@ -5668,7 +5807,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
 
@@ -5679,7 +5818,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     v = np.var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
@@ -5693,15 +5832,14 @@ def _ttest_finish(df, t, alternative):
     # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
     # can be shared between the ``stats`` and ``mstats`` versions.
 
-    if alternative == 'less':
+    if alternative == "less":
         pval = special.stdtr(df, t)
-    elif alternative == 'greater':
+    elif alternative == "greater":
         pval = special.stdtr(df, -t)
-    elif alternative == 'two-sided':
-        pval = special.stdtr(df, -np.abs(t))*2
+    elif alternative == "two-sided":
+        pval = special.stdtr(df, -np.abs(t)) * 2
     else:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
+        raise ValueError("alternative must be 'less', 'greater' or 'two-sided'")
 
     if t.ndim == 0:
         t = t[()]
@@ -5714,7 +5852,7 @@ def _ttest_finish(df, t, alternative):
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
     d = mean1 - mean2
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
@@ -5724,8 +5862,8 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 def _unequal_var_ttest_denom(v1, n1, v2, n2):
     vn1 = v1 / n1
     vn2 = v2 / n2
-    with np.errstate(divide='ignore', invalid='ignore'):
-        df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        df = (vn1 + vn2) ** 2 / (vn1 ** 2 / (n1 - 1) + vn2 ** 2 / (n2 - 1))
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
@@ -5741,11 +5879,12 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     return df, denom
 
 
-Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
+Ttest_indResult = namedtuple("Ttest_indResult", ("statistic", "pvalue"))
 
 
-def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
-                         equal_var=True, alternative="two-sided"):
+def ttest_ind_from_stats(
+    mean1, std1, nobs1, mean2, std2, nobs2, equal_var=True, alternative="two-sided"
+):
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
@@ -5861,10 +6000,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     mean2 = np.asarray(mean2)
     std2 = np.asarray(std2)
     if equal_var:
-        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+        df, denom = _equal_var_ttest_denom(std1 ** 2, nobs1, std2 ** 2, nobs2)
     else:
-        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
-                                             std2**2, nobs2)
+        df, denom = _unequal_var_ttest_denom(std1 ** 2, nobs1, std2 ** 2, nobs2)
 
     res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
@@ -5913,9 +6051,17 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided",
-              trim=0):
+def ttest_ind(
+    a,
+    b,
+    axis=0,
+    equal_var=True,
+    nan_policy="propagate",
+    permutations=None,
+    random_state=None,
+    alternative="two-sided",
+    trim=0,
+):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6128,7 +6274,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     Ttest_indResult(statistic=3.4463884028073513,
                     pvalue=0.01369338726499547)
     """
-    if not (0 <= trim < .5):
+    if not (0 <= trim < 0.5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -6137,15 +6283,17 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     cna, npa = _contains_nan(a, nan_policy)
     cnb, npb = _contains_nan(b, nan_policy)
     contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
+    if npa == "omit" or npb == "omit":
+        nan_policy = "omit"
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         if permutations or trim != 0:
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by permutation tests or "
-                             "trimmed tests.")
+            raise ValueError(
+                "nan-containing/masked inputs with "
+                "nan_policy='omit' are currently not "
+                "supported by permutation tests or "
+                "trimmed tests."
+            )
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var, alternative)
@@ -6155,17 +6303,22 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     if permutations is not None and permutations != 0:
         if trim != 0:
-            raise ValueError("Permutations are currently not supported "
-                             "with trimming.")
-        if permutations < 0 or (np.isfinite(permutations) and
-                                int(permutations) != permutations) :
+            raise ValueError("Permutations are currently not supported with trimming.")
+        if permutations < 0 or (
+            np.isfinite(permutations) and int(permutations) != permutations
+        ):
             raise ValueError("Permutations must be a non-negative integer.")
 
-        res = _permutation_ttest(a, b, permutations=permutations,
-                                 axis=axis, equal_var=equal_var,
-                                 nan_policy=nan_policy,
-                                 random_state=random_state,
-                                 alternative=alternative)
+        res = _permutation_ttest(
+            a,
+            b,
+            permutations=permutations,
+            axis=axis,
+            equal_var=equal_var,
+            nan_policy=nan_policy,
+            random_state=random_state,
+            alternative=alternative,
+        )
 
     else:
         n1 = a.shape[axis]
@@ -6275,16 +6428,18 @@ def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
     n_max = special.comb(size, size_a)
 
     if permutations < n_max:
-        indices = np.array([random_state.permutation(size)
-                            for i in range(permutations)]).T
+        indices = np.array(
+            [random_state.permutation(size) for i in range(permutations)]
+        ).T
     else:
         permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(size_a, size-size_a)]).T
+        indices = np.array(
+            [np.concatenate(z) for z in _all_partitions(size_a, size - size_a)]
+        ).T
 
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
-    data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
+    data = data.swapaxes(axis, -1)  # so we can index along a new dimension
+    data = data[..., indices]  # generate permutations
+    data = data.swapaxes(-2, axis)  # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
     return data, permutations
 
@@ -6303,12 +6458,19 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     else:
         denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
 
-    return (avg_a-avg_b)/denom
+    return (avg_a - avg_b) / denom
 
 
-def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
-                       nan_policy='propagate', random_state=None,
-                       alternative="two-sided"):
+def _permutation_ttest(
+    a,
+    b,
+    permutations,
+    axis=0,
+    equal_var=True,
+    nan_policy="propagate",
+    random_state=None,
+    alternative="two-sided",
+):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods.
@@ -6355,16 +6517,19 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
-                                              random_state=random_state)
+    mat_perm, permutations = _data_partitions(
+        mat, permutations, size_a=na, random_state=random_state
+    )
 
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
+    compare = {
+        "less": np.less_equal,
+        "greater": np.greater_equal,
+        "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y)),
+    }
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
@@ -6372,7 +6537,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
-    if nan_policy == 'propagate' and np.isnan(t_stat_observed).any():
+    if nan_policy == "propagate" and np.isnan(t_stat_observed).any():
         if np.ndim(pvalues) == 0:
             pvalues = np.float64(np.nan)
         else:
@@ -6389,10 +6554,10 @@ def _get_len(a, axis, msg):
     return n
 
 
-Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
+Ttest_relResult = namedtuple("Ttest_relResult", ("statistic", "pvalue"))
 
 
-def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
+def ttest_rel(a, b, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
     This is a test for the null hypothesis that two related or
@@ -6471,10 +6636,10 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     cna, npa = _contains_nan(a, nan_policy)
     cnb, npb = _contains_nan(b, nan_policy)
     contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
+    if npa == "omit" or npb == "omit":
+        nan_policy = "omit"
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         m = ma.mask_or(ma.getmask(a), ma.getmask(b))
@@ -6485,7 +6650,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
     if na != nb:
-        raise ValueError('unequal length arrays')
+        raise ValueError("unequal length arrays")
 
     if na == 0:
         return _ttest_nans(a, b, axis, Ttest_relResult)
@@ -6498,7 +6663,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     dm = np.mean(d, axis)
     denom = np.sqrt(v / n)
 
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
@@ -6512,7 +6677,7 @@ _power_div_lambda_names = {
     "freeman-tukey": -0.5,
     "mod-log-likelihood": -1,
     "neyman": -2,
-    "cressie-read": 2/3,
+    "cressie-read": 2 / 3,
 }
 
 
@@ -6522,7 +6687,7 @@ def _count(a, axis=None):
     This function behaves like `np.ma.count`, but is much faster
     for ndarrays.
     """
-    if hasattr(a, 'count'):
+    if hasattr(a, "count"):
         num = a.count(axis=axis)
         if isinstance(num, np.ndarray) and num.ndim == 0:
             # In some cases, the `count` method returns a scalar array (e.g.
@@ -6538,13 +6703,13 @@ def _count(a, axis=None):
 
 def _m_broadcast_to(a, shape):
     if np.ma.isMaskedArray(a):
-        return np.ma.masked_array(np.broadcast_to(a, shape),
-                                  mask=np.broadcast_to(a.mask, shape))
+        return np.ma.masked_array(
+            np.broadcast_to(a, shape), mask=np.broadcast_to(a.mask, shape)
+        )
     return np.broadcast_to(a, shape, subok=True)
 
 
-Power_divergenceResult = namedtuple('Power_divergenceResult',
-                                    ('statistic', 'pvalue'))
+Power_divergenceResult = namedtuple("Power_divergenceResult", ("statistic", "pvalue"))
 
 
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -6707,8 +6872,11 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
-            raise ValueError("invalid string for lambda_: {0!r}. "
-                             "Valid strings are {1}".format(lambda_, names))
+            raise ValueError(
+                "invalid string for lambda_: {0!r}. Valid strings are {1}".format(
+                    lambda_, names
+                )
+            )
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -6722,24 +6890,27 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         f_obs_float = _m_broadcast_to(f_obs_float, bshape)
         f_exp = _m_broadcast_to(f_exp, bshape)
         rtol = 1e-8  # to pass existing tests
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid="ignore"):
             f_obs_sum = f_obs_float.sum(axis=axis)
             f_exp_sum = f_exp.sum(axis=axis)
-            relative_diff = (np.abs(f_obs_sum - f_exp_sum) /
-                             np.minimum(f_obs_sum, f_exp_sum))
+            relative_diff = np.abs(f_obs_sum - f_exp_sum) / np.minimum(
+                f_obs_sum, f_exp_sum
+            )
             diff_gt_tol = (relative_diff > rtol).any()
         if diff_gt_tol:
-            msg = (f"For each axis slice, the sum of the observed "
-                   f"frequencies must agree with the sum of the "
-                   f"expected frequencies to a relative tolerance "
-                   f"of {rtol}, but the percent differences are:\n"
-                   f"{relative_diff}")
+            msg = (
+                "For each axis slice, the sum of the observed "
+                "frequencies must agree with the sum of the "
+                "expected frequencies to a relative tolerance "
+                f"of {rtol}, but the percent differences are:\n"
+                f"{relative_diff}"
+            )
             raise ValueError(msg)
 
     else:
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid="ignore"):
             f_exp = f_obs.mean(axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
@@ -6747,7 +6918,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     # cases of lambda_.
     if lambda_ == 1:
         # Pearson's chi-squared statistic
-        terms = (f_obs_float - f_exp)**2 / f_exp
+        terms = (f_obs_float - f_exp) ** 2 / f_exp
     elif lambda_ == 0:
         # Log-likelihood ratio (i.e. G-test)
         terms = 2.0 * special.xlogy(f_obs, f_obs / f_exp)
@@ -6756,7 +6927,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         terms = 2.0 * special.xlogy(f_exp, f_exp / f_obs)
     else:
         # General Cressie-Read power divergence.
-        terms = f_obs * ((f_obs / f_exp)**lambda_ - 1)
+        terms = f_obs * ((f_obs / f_exp) ** lambda_ - 1)
         terms /= 0.5 * lambda_ * (lambda_ + 1)
 
     stat = terms.sum(axis=axis)
@@ -6892,11 +7063,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
 
     """
-    return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
-                            lambda_="pearson")
+    return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis, lambda_="pearson")
 
 
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+KstestResult = namedtuple("KstestResult", ("statistic", "pvalue"))
 
 
 def _compute_dplus(cdfvals):
@@ -6909,8 +7079,7 @@ def _compute_dplus(cdfvals):
 
     Returns
     -------
-      Maximum distance of the CDF values below Uniform(0, 1)
-"""
+      Maximum distance of the CDF values below Uniform(0, 1)"""
     n = len(cdfvals)
     return (np.arange(1.0, n + 1) / n - cdfvals).max()
 
@@ -6929,10 +7098,10 @@ def _compute_dminus(cdfvals):
 
     """
     n = len(cdfvals)
-    return (cdfvals - np.arange(0.0, n)/n).max()
+    return (cdfvals - np.arange(0.0, n) / n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+def ks_1samp(x, cdf, args=(), alternative="two-sided", mode="auto"):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7045,9 +7214,10 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
-    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
-    if alternative not in ['two-sided', 'greater', 'less']:
+    alternative = {"t": "two-sided", "g": "greater", "l": "less"}.get(
+        alternative.lower()[0], alternative
+    )
+    if alternative not in ["two-sided", "greater", "less"]:
         raise ValueError("Unexpected alternative %s" % alternative)
     if np.ma.is_masked(x):
         x = x.compressed()
@@ -7056,11 +7226,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     x = np.sort(x)
     cdfvals = cdf(x, *args)
 
-    if alternative == 'greater':
+    if alternative == "greater":
         Dplus = _compute_dplus(cdfvals)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
 
-    if alternative == 'less':
+    if alternative == "less":
         Dminus = _compute_dminus(cdfvals)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N))
 
@@ -7068,11 +7238,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Dplus = _compute_dplus(cdfvals)
     Dminus = _compute_dminus(cdfvals)
     D = np.max([Dplus, Dminus])
-    if mode == 'auto':  # Always select exact
-        mode = 'exact'
-    if mode == 'exact':
+    if mode == "auto":  # Always select exact
+        mode = "exact"
+    if mode == "exact":
         prob = distributions.kstwo.sf(D, N)
-    elif mode == 'asymp':
+    elif mode == "asymp":
         prob = distributions.kstwobign.sf(D * np.sqrt(N))
     else:
         # mode == 'approx'
@@ -7160,11 +7330,11 @@ def _compute_prob_inside_method(m, n, g, h):
         if maxj <= minj:
             return 0
         # Now fill in the values
-        A[0:maxj - minj] = np.cumsum(A[minj - lastminj:maxj - lastminj])
+        A[0 : maxj - minj] = np.cumsum(A[minj - lastminj : maxj - lastminj])
         curlen = maxj - minj
         if lastlen > curlen:
             # Set some carried-over elements to 0
-            A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
+            A[maxj - minj : maxj - minj + (lastlen - curlen)] = 0
         # Rescale if the right most value is over 2**900
         val = A[maxj - minj - 1]
         _, valexpt = math.frexp(val)
@@ -7280,8 +7450,8 @@ def _count_paths_outside_method(m, n, g, h):
     # Not every x needs to be considered.
     # xj holds the list of x values to be checked.
     # Wherever n*x/m + ng*h crosses an integer
-    lxj = n + (mg-h)//mg
-    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
+    lxj = n + (mg - h) // mg
+    xj = [(h + mg * j + ng - 1) // ng for j in range(lxj)]
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
@@ -7296,7 +7466,7 @@ def _count_paths_outside_method(m, n, g, h):
         if not np.isfinite(Bj):
             raise FloatingPointError()
         for i in range(j):
-            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
+            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j - i))
             Bj -= bin * B[i]
         B[j] = Bj
         if not np.isfinite(Bj):
@@ -7304,7 +7474,7 @@ def _count_paths_outside_method(m, n, g, h):
     # Compute the number of path extensions...
     num_paths = 0
     for j in range(lxj):
-        bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
+        bin = np.round(special.binom((m - xj[j]) + (n - j), n - j))
         term = B[j] * bin
         if not np.isfinite(term):
             raise FloatingPointError()
@@ -7328,7 +7498,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
         return True, d, 1.0
     saw_fp_error, prob = False, np.nan
     try:
-        if alternative == 'two-sided':
+        if alternative == "two-sided":
             if n1 == n2:
                 prob = _compute_prob_outside_square(n1, h)
             else:
@@ -7343,8 +7513,11 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
             else:
                 num_paths = _count_paths_outside_method(n1, n2, g, h)
                 bin = special.binom(n1 + n2, n1)
-                if not np.isfinite(bin) or not np.isfinite(num_paths)\
-                        or num_paths > bin:
+                if (
+                    not np.isfinite(bin)
+                    or not np.isfinite(num_paths)
+                    or num_paths > bin
+                ):
                     saw_fp_error = True
                 else:
                     prob = num_paths / bin
@@ -7359,7 +7532,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+def ks_2samp(data1, data2, alternative="two-sided", mode="auto"):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7466,12 +7639,13 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     KstestResult(statistic=0.12166666666666667, pvalue=0.05401863039081145)
 
     """
-    if mode not in ['auto', 'exact', 'asymp']:
-        raise ValueError(f'Invalid value for mode: {mode}')
-    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
-    if alternative not in ['two-sided', 'less', 'greater']:
-        raise ValueError(f'Invalid value for alternative: {alternative}')
+    if mode not in ["auto", "exact", "asymp"]:
+        raise ValueError(f"Invalid value for mode: {mode}")
+    alternative = {"t": "two-sided", "g": "greater", "l": "less"}.get(
+        alternative.lower()[0], alternative
+    )
+    if alternative not in ["two-sided", "less", "greater"]:
+        raise ValueError(f"Invalid value for alternative: {alternative}")
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
     if np.ma.is_masked(data1):
         data1 = data1.compressed()
@@ -7482,54 +7656,59 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     if min(n1, n2) == 0:
-        raise ValueError('Data passed to ks_2samp must not be empty')
+        raise ValueError("Data passed to ks_2samp must not be empty")
 
     data_all = np.concatenate([data1, data2])
     # using searchsorted solves equal data problem
-    cdf1 = np.searchsorted(data1, data_all, side='right') / n1
-    cdf2 = np.searchsorted(data2, data_all, side='right') / n2
+    cdf1 = np.searchsorted(data1, data_all, side="right") / n1
+    cdf2 = np.searchsorted(data2, data_all, side="right") / n2
     cddiffs = cdf1 - cdf2
     # Ensure sign of minS is not negative.
     minS = np.clip(-np.min(cddiffs), 0, 1)
     maxS = np.max(cddiffs)
-    alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
+    alt2Dvalue = {"less": minS, "greater": maxS, "two-sided": max(minS, maxS)}
     d = alt2Dvalue[alternative]
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
     original_mode = mode
-    if mode == 'auto':
-        mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
-    elif mode == 'exact':
+    if mode == "auto":
+        mode = "exact" if max(n1, n2) <= MAX_AUTO_N else "asymp"
+    elif mode == "exact":
         # If lcm(n1, n2) is too big, switch from exact to asymp
         if n1g >= np.iinfo(np.int32).max / n2g:
-            mode = 'asymp'
+            mode = "asymp"
             warnings.warn(
-                f"Exact ks_2samp calculation not possible with samples sizes "
-                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning)
+                "Exact ks_2samp calculation not possible with samples sizes "
+                f"{n1} and {n2}. Switching to 'asymp'.",
+                RuntimeWarning,
+            )
 
-    if mode == 'exact':
+    if mode == "exact":
         success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
         if not success:
-            mode = 'asymp'
-            if original_mode == 'exact':
-                warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+            mode = "asymp"
+            if original_mode == "exact":
+                warnings.warn(
+                    "ks_2samp: Exact calculation unsuccessful. "
+                    f"Switching to mode={mode}.",
+                    RuntimeWarning,
+                )
 
-    if mode == 'asymp':
+    if mode == "asymp":
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         # Ensure float to avoid overflow in multiplication
         # sorted because the one-sided formula is not symmetric in n1, n2
         m, n = sorted([float(n1), float(n2)], reverse=True)
         en = m * n / (m + n)
-        if alternative == 'two-sided':
+        if alternative == "two-sided":
             prob = distributions.kstwo.sf(d, np.round(en))
         else:
             z = np.sqrt(en) * d
             # Use Hodges' suggested approximation Eqn 5.3
             # Requires m to be the larger of (n1, n2)
-            expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
+            expt = -2 * z ** 2 - 2 * z * (m + 2 * n) / np.sqrt(m * n * (m + n)) / 3.0
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
@@ -7565,7 +7744,7 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+def kstest(rvs, cdf, args=(), N=20, alternative="two-sided", mode="auto"):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7694,14 +7873,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     """
     # to not break compatibility with existing code
-    if alternative == 'two_sided':
-        alternative = 'two-sided'
-    if alternative not in ['two-sided', 'greater', 'less']:
+    if alternative == "two_sided":
+        alternative = "two-sided"
+    if alternative not in ["two-sided", "greater", "less"]:
         raise ValueError("Unexpected alternative %s" % alternative)
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
-        return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
+        return ks_1samp(xvals, cdf, args=args, alternative=alternative, mode=mode)
     return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
 
 
@@ -7747,13 +7925,13 @@ def tiecorrect(rankvals):
     cnt = np.diff(idx).astype(np.float64)
 
     size = np.float64(arr.size)
-    return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
+    return 1.0 if size < 2 else 1.0 - (cnt ** 3 - cnt).sum() / (size ** 3 - size)
 
 
-RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
+RanksumsResult = namedtuple("RanksumsResult", ("statistic", "pvalue"))
 
 
-def ranksums(x, y, alternative='two-sided'):
+def ranksums(x, y, alternative="two-sided"):
     """Compute the Wilcoxon rank-sum statistic for two samples.
 
     The Wilcoxon rank-sum test tests the null hypothesis that two sets
@@ -7823,17 +8001,17 @@ def ranksums(x, y, alternative='two-sided'):
     ranked = rankdata(alldata)
     x = ranked[:n1]
     s = np.sum(x, axis=0)
-    expected = n1 * (n1+n2+1) / 2.0
-    z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
+    expected = n1 * (n1 + n2 + 1) / 2.0
+    z = (s - expected) / np.sqrt(n1 * n2 * (n1 + n2 + 1) / 12.0)
     z, prob = _normtest_finish(z, alternative)
 
     return RanksumsResult(z, prob)
 
 
-KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
+KruskalResult = namedtuple("KruskalResult", ("statistic", "pvalue"))
 
 
-def kruskal(*args, nan_policy='propagate'):
+def kruskal(*args, nan_policy="propagate"):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -7913,7 +8091,7 @@ def kruskal(*args, nan_policy='propagate'):
 
     n = np.asarray(list(map(len, args)))
 
-    if nan_policy not in ('propagate', 'raise', 'omit'):
+    if nan_policy not in ("propagate", "raise", "omit"):
         raise ValueError("nan_policy must be 'propagate', 'raise' or 'omit'")
 
     contains_nan = False
@@ -7923,25 +8101,25 @@ def kruskal(*args, nan_policy='propagate'):
             contains_nan = True
             break
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == "omit":
         for a in args:
             a = ma.masked_invalid(a)
         return mstats_basic.kruskal(*args)
 
-    if contains_nan and nan_policy == 'propagate':
+    if contains_nan and nan_policy == "propagate":
         return KruskalResult(np.nan, np.nan)
 
     alldata = np.concatenate(args)
     ranked = rankdata(alldata)
     ties = tiecorrect(ranked)
     if ties == 0:
-        raise ValueError('All numbers are identical in kruskal')
+        raise ValueError("All numbers are identical in kruskal")
 
     # Compute sum^2/n for each group and sum
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(num_groups):
-        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
+        ssbn += _square_of_sums(ranked[j[i] : j[i + 1]]) / n[i]
 
     totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
@@ -7951,8 +8129,7 @@ def kruskal(*args, nan_policy='propagate'):
     return KruskalResult(h, distributions.chi2.sf(h, df))
 
 
-FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
-                                     ('statistic', 'pvalue'))
+FriedmanchisquareResult = namedtuple("FriedmanchisquareResult", ("statistic", "pvalue"))
 
 
 def friedmanchisquare(*args):
@@ -7992,13 +8169,15 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('At least 3 sets of measurements must be given '
-                         'for Friedman test, got {}.'.format(k))
+        raise ValueError(
+            "At least 3 sets of measurements must be given "
+            "for Friedman test, got {}.".format(k)
+        )
 
     n = len(args[0])
     for i in range(1, k):
         if len(args[i]) != n:
-            raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
+            raise ValueError("Unequal N in friedmanchisquare.  Aborting.")
 
     # Rank data
     data = np.vstack(args).T
@@ -8011,21 +8190,21 @@ def friedmanchisquare(*args):
     for i in range(len(data)):
         replist, repnum = find_repeats(array(data[i]))
         for t in repnum:
-            ties += t * (t*t - 1)
-    c = 1 - ties / (k*(k*k - 1)*n)
+            ties += t * (t * t - 1)
+    c = 1 - ties / (k * (k * k - 1) * n)
 
-    ssbn = np.sum(data.sum(axis=0)**2)
-    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    ssbn = np.sum(data.sum(axis=0) ** 2)
+    chisq = (12.0 / (k * n * (k + 1)) * ssbn - 3 * n * (k + 1)) / c
 
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
 
 
-BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
-                                 ('statistic', 'pvalue'))
+BrunnerMunzelResult = namedtuple("BrunnerMunzelResult", ("statistic", "pvalue"))
 
 
-def brunnermunzel(x, y, alternative="two-sided", distribution="t",
-                  nan_policy='propagate'):
+def brunnermunzel(
+    x, y, alternative="two-sided", distribution="t", nan_policy="propagate"
+):
     """Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
@@ -8123,7 +8302,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         return BrunnerMunzelResult(np.nan, np.nan)
     rankc = rankdata(np.concatenate((x, y)))
     rankcx = rankc[0:nx]
-    rankcy = rankc[nx:nx+ny]
+    rankcy = rankc[nx : nx + ny]
     rankcx_mean = np.mean(rankcx)
     rankcy_mean = np.mean(rankcy)
     rankx = rankdata(x)
@@ -8148,23 +8327,21 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
     else:
-        raise ValueError(
-            "distribution should be 't' or 'normal'")
+        raise ValueError("distribution should be 't' or 'normal'")
 
     if alternative == "greater":
         pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":
-        p = 2 * np.min([p, 1-p])
+        p = 2 * np.min([p, 1 - p])
     else:
-        raise ValueError(
-            "alternative should be 'less', 'greater' or 'two-sided'")
+        raise ValueError("alternative should be 'less', 'greater' or 'two-sided'")
 
     return BrunnerMunzelResult(wbfn, p)
 
 
-def combine_pvalues(pvalues, method='fisher', weights=None):
+def combine_pvalues(pvalues, method="fisher", weights=None):
     """
     Combine p-values from independent tests bearing upon the same hypothesis.
 
@@ -8242,23 +8419,22 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     if pvalues.ndim != 1:
         raise ValueError("pvalues is not 1-D")
 
-    if method == 'fisher':
+    if method == "fisher":
         statistic = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
-    elif method == 'pearson':
+    elif method == "pearson":
         statistic = -2 * np.sum(np.log1p(-pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
-    elif method == 'mudholkar_george':
-        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
+    elif method == "mudholkar_george":
+        normalizing_factor = np.sqrt(3 / len(pvalues)) / np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * normalizing_factor
-                                  * approx_factor, nu)
-    elif method == 'tippett':
+        pval = distributions.t.sf(statistic * normalizing_factor * approx_factor, nu)
+    elif method == "tippett":
         statistic = np.min(pvalues)
         pval = distributions.beta.sf(statistic, 1, len(pvalues))
-    elif method == 'stouffer':
+    elif method == "stouffer":
         if weights is None:
             weights = np.ones_like(pvalues)
         elif len(weights) != len(pvalues):
@@ -8274,8 +8450,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     else:
         raise ValueError(
-            "Invalid method '%s'. Options are 'fisher', 'pearson', \
-            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+            "Invalid method '%s'. Options are 'fisher', 'pearson',            "
+            " 'mudholkar_george', 'tippett', 'or 'stouffer'",
+            method,
+        )
 
     return (statistic, pval)
 
@@ -8440,8 +8618,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     0.88003340976158217
 
     """
-    return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
-                                      u_weights, v_weights)
+    return np.sqrt(2) * _cdf_distance(2, u_values, v_values, u_weights, v_weights)
 
 
 def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
@@ -8495,29 +8672,27 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     v_sorter = np.argsort(v_values)
 
     all_values = np.concatenate((u_values, v_values))
-    all_values.sort(kind='mergesort')
+    all_values.sort(kind="mergesort")
 
     # Compute the differences between pairs of successive values of u and v.
     deltas = np.diff(all_values)
 
     # Get the respective positions of the values of u and v among the values of
     # both distributions.
-    u_cdf_indices = u_values[u_sorter].searchsorted(all_values[:-1], 'right')
-    v_cdf_indices = v_values[v_sorter].searchsorted(all_values[:-1], 'right')
+    u_cdf_indices = u_values[u_sorter].searchsorted(all_values[:-1], "right")
+    v_cdf_indices = v_values[v_sorter].searchsorted(all_values[:-1], "right")
 
     # Calculate the CDFs of u and v using their weights, if specified.
     if u_weights is None:
         u_cdf = u_cdf_indices / u_values.size
     else:
-        u_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(u_weights[u_sorter])))
+        u_sorted_cumweights = np.concatenate(([0], np.cumsum(u_weights[u_sorter])))
         u_cdf = u_sorted_cumweights[u_cdf_indices] / u_sorted_cumweights[-1]
 
     if v_weights is None:
         v_cdf = v_cdf_indices / v_values.size
     else:
-        v_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(v_weights[v_sorter])))
+        v_sorted_cumweights = np.concatenate(([0], np.cumsum(v_weights[v_sorter])))
         v_cdf = v_sorted_cumweights[v_cdf_indices] / v_sorted_cumweights[-1]
 
     # Compute the value of the integral based on the CDFs.
@@ -8527,8 +8702,9 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
         return np.sum(np.multiply(np.abs(u_cdf - v_cdf), deltas))
     if p == 2:
         return np.sqrt(np.sum(np.multiply(np.square(u_cdf - v_cdf), deltas)))
-    return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
-                                       deltas)), 1/p)
+    return np.power(
+        np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p), deltas)), 1 / p
+    )
 
 
 def _validate_distribution(values, weights):
@@ -8560,14 +8736,18 @@ def _validate_distribution(values, weights):
     if weights is not None:
         weights = np.asarray(weights, dtype=float)
         if len(weights) != len(values):
-            raise ValueError('Value and weight array-likes for the same '
-                             'empirical distribution must be of the same size.')
+            raise ValueError(
+                "Value and weight array-likes for the same "
+                "empirical distribution must be of the same size."
+            )
         if np.any(weights < 0):
-            raise ValueError('All weights must be non-negative.')
+            raise ValueError("All weights must be non-negative.")
         if not 0 < np.sum(weights) < np.inf:
-            raise ValueError('Weight array-like sum must be positive and '
-                             'finite. Set as None for an equal distribution of '
-                             'weight.')
+            raise ValueError(
+                "Weight array-like sum must be positive and "
+                "finite. Set as None for an equal distribution of "
+                "weight."
+            )
 
         return values, weights
 
@@ -8578,7 +8758,7 @@ def _validate_distribution(values, weights):
 #         SUPPORT FUNCTIONS         #
 #####################################
 
-RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
+RepeatedResults = namedtuple("RepeatedResults", ("values", "counts"))
 
 
 def find_repeats(arr):
@@ -8639,7 +8819,7 @@ def _sum_of_squares(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return np.sum(a*a, axis)
+    return np.sum(a * a, axis)
 
 
 def _square_of_sums(a, axis=0):
@@ -8671,7 +8851,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None):
+def rankdata(a, method="average", *, axis=None):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -8736,7 +8916,7 @@ def rankdata(a, method='average', *, axis=None):
            [2. , 1. , 3. ]])
 
     """
-    if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
+    if method not in ("average", "min", "max", "dense", "ordinal"):
         raise ValueError('unknown method "{0}"'.format(method))
 
     if axis is not None:
@@ -8746,35 +8926,35 @@ def rankdata(a, method='average', *, axis=None):
             # call validates `axis`, even though we won't use it.
             # use scipy._lib._util._normalize_axis_index when available
             np.core.multiarray.normalize_axis_index(axis, a.ndim)
-            dt = np.float64 if method == 'average' else np.int_
+            dt = np.float64 if method == "average" else np.int_
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method)
 
     arr = np.ravel(np.asarray(a))
-    algo = 'mergesort' if method == 'ordinal' else 'quicksort'
+    algo = "mergesort" if method == "ordinal" else "quicksort"
     sorter = np.argsort(arr, kind=algo)
 
     inv = np.empty(sorter.size, dtype=np.intp)
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
-    if method == 'ordinal':
+    if method == "ordinal":
         return inv + 1
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
-    if method == 'dense':
+    if method == "dense":
         return dense
 
     # cumulative counts of each unique value
     count = np.r_[np.nonzero(obs)[0], len(obs)]
 
-    if method == 'max':
+    if method == "max":
         return count[dense]
 
-    if method == 'min':
+    if method == "min":
         return count[dense - 1] + 1
 
     # average method
-    return .5 * (count[dense] + count[dense - 1] + 1)
+    return 0.5 * (count[dense] + count[dense - 1] + 1)

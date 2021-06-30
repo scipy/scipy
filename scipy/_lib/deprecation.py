@@ -6,18 +6,21 @@ __all__ = ["_deprecated"]
 
 def _deprecated(msg, stacklevel=2):
     """Deprecate a function by emitting a warning on use."""
+
     def wrap(fun):
         if isinstance(fun, type):
             warnings.warn(
                 "Trying to deprecate class {!r}".format(fun),
-                category=RuntimeWarning, stacklevel=2)
+                category=RuntimeWarning,
+                stacklevel=2,
+            )
             return fun
 
         @functools.wraps(fun)
         def call(*args, **kwargs):
-            warnings.warn(msg, category=DeprecationWarning,
-                          stacklevel=stacklevel)
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=stacklevel)
             return fun(*args, **kwargs)
+
         call.__doc__ = msg
         return call
 
@@ -28,6 +31,7 @@ class _DeprecationHelperStr:
     """
     Helper class used by deprecate_cython_api
     """
+
     def __init__(self, content, message):
         self._content = content
         self._message = message
@@ -36,10 +40,9 @@ class _DeprecationHelperStr:
         return hash(self._content)
 
     def __eq__(self, other):
-        res = (self._content == other)
+        res = self._content == other
         if res:
-            warnings.warn(self._message, category=DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(self._message, category=DeprecationWarning, stacklevel=2)
         return res
 
 
@@ -81,8 +84,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     if new_name is None:
         depdoc = "`%s` is deprecated!" % old_name
     else:
-        depdoc = "`%s` is deprecated, use `%s` instead!" % \
-                 (old_name, new_name)
+        depdoc = "`%s` is deprecated, use `%s` instead!" % (old_name, new_name)
 
     if message is not None:
         depdoc += "\n" + message
@@ -104,4 +106,3 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     # If not, apply deprecation to the named routine
     if not has_fused:
         d[_DeprecationHelperStr(routine_name, depdoc)] = d.pop(routine_name)
-

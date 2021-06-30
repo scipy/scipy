@@ -17,7 +17,7 @@ from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 
-from scipy.special import (comb, chndtr, entr, xlogy, ive)
+from scipy.special import comb, chndtr, entr, xlogy, ive
 
 # for root finding for continuous distribution ppf, and max likelihood
 # estimation
@@ -33,9 +33,28 @@ from scipy.misc import derivative
 # have cause import problems
 from scipy import stats
 
-from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
-                   logical_and, log, sqrt, place, argmax, vectorize, asarray,
-                   nan, inf, isinf, NINF, empty)
+from numpy import (
+    arange,
+    putmask,
+    ravel,
+    ones,
+    shape,
+    ndarray,
+    zeros,
+    floor,
+    logical_and,
+    log,
+    sqrt,
+    place,
+    argmax,
+    vectorize,
+    asarray,
+    nan,
+    inf,
+    isinf,
+    NINF,
+    empty,
+)
 
 import numpy as np
 from ._constants import _XMAX
@@ -43,9 +62,11 @@ from ._constants import _XMAX
 # These are the docstring parts used for substitution in specific
 # distribution docstrings
 
-docheaders = {'methods': """\nMethods\n-------\n""",
-              'notes': """\nNotes\n-----\n""",
-              'examples': """\nExamples\n--------\n"""}
+docheaders = {
+    "methods": """\nMethods\n-------\n""",
+    "notes": """\nNotes\n-----\n""",
+    "examples": """\nExamples\n--------\n""",
+}
 
 _doc_rvs = """\
 rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)
@@ -138,12 +159,30 @@ interval(alpha, %(shapes)s, loc=0, scale=1)
     Endpoints of the range that contains fraction alpha [0, 1] of the
     distribution
 """
-_doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
-                           _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
-                           _doc_logsf, _doc_ppf, _doc_isf, _doc_moment,
-                           _doc_stats, _doc_entropy, _doc_fit,
-                           _doc_expect, _doc_median,
-                           _doc_mean, _doc_var, _doc_std, _doc_interval])
+_doc_allmethods = "".join(
+    [
+        docheaders["methods"],
+        _doc_rvs,
+        _doc_pdf,
+        _doc_logpdf,
+        _doc_cdf,
+        _doc_logcdf,
+        _doc_sf,
+        _doc_logsf,
+        _doc_ppf,
+        _doc_isf,
+        _doc_moment,
+        _doc_stats,
+        _doc_entropy,
+        _doc_fit,
+        _doc_expect,
+        _doc_median,
+        _doc_mean,
+        _doc_var,
+        _doc_std,
+        _doc_interval,
+    ]
+)
 
 _doc_default_longsummary = """\
 As an instance of the `rv_continuous` class, `%(name)s` object inherits from it
@@ -215,68 +254,83 @@ does not make it a "noncentral" distribution; noncentral generalizations of
 some distributions are available in separate classes.
 """
 
-_doc_default = ''.join([_doc_default_longsummary,
-                        _doc_allmethods,
-                        '\n',
-                        _doc_default_example])
+_doc_default = "".join(
+    [_doc_default_longsummary, _doc_allmethods, "\n", _doc_default_example]
+)
 
-_doc_default_before_notes = ''.join([_doc_default_longsummary,
-                                     _doc_allmethods])
+_doc_default_before_notes = "".join([_doc_default_longsummary, _doc_allmethods])
 
 docdict = {
-    'rvs': _doc_rvs,
-    'pdf': _doc_pdf,
-    'logpdf': _doc_logpdf,
-    'cdf': _doc_cdf,
-    'logcdf': _doc_logcdf,
-    'sf': _doc_sf,
-    'logsf': _doc_logsf,
-    'ppf': _doc_ppf,
-    'isf': _doc_isf,
-    'stats': _doc_stats,
-    'entropy': _doc_entropy,
-    'fit': _doc_fit,
-    'moment': _doc_moment,
-    'expect': _doc_expect,
-    'interval': _doc_interval,
-    'mean': _doc_mean,
-    'std': _doc_std,
-    'var': _doc_var,
-    'median': _doc_median,
-    'allmethods': _doc_allmethods,
-    'longsummary': _doc_default_longsummary,
-    'frozennote': _doc_default_frozen_note,
-    'example': _doc_default_example,
-    'default': _doc_default,
-    'before_notes': _doc_default_before_notes,
-    'after_notes': _doc_default_locscale
+    "rvs": _doc_rvs,
+    "pdf": _doc_pdf,
+    "logpdf": _doc_logpdf,
+    "cdf": _doc_cdf,
+    "logcdf": _doc_logcdf,
+    "sf": _doc_sf,
+    "logsf": _doc_logsf,
+    "ppf": _doc_ppf,
+    "isf": _doc_isf,
+    "stats": _doc_stats,
+    "entropy": _doc_entropy,
+    "fit": _doc_fit,
+    "moment": _doc_moment,
+    "expect": _doc_expect,
+    "interval": _doc_interval,
+    "mean": _doc_mean,
+    "std": _doc_std,
+    "var": _doc_var,
+    "median": _doc_median,
+    "allmethods": _doc_allmethods,
+    "longsummary": _doc_default_longsummary,
+    "frozennote": _doc_default_frozen_note,
+    "example": _doc_default_example,
+    "default": _doc_default,
+    "before_notes": _doc_default_before_notes,
+    "after_notes": _doc_default_locscale,
 }
 
 # Reuse common content between continuous and discrete docs, change some
 # minor bits.
 docdict_discrete = docdict.copy()
 
-docdict_discrete['pmf'] = _doc_pmf
-docdict_discrete['logpmf'] = _doc_logpmf
-docdict_discrete['expect'] = _doc_expect_discrete
-_doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
-                     'ppf', 'isf', 'stats', 'entropy', 'expect', 'median',
-                     'mean', 'var', 'std', 'interval']
+docdict_discrete["pmf"] = _doc_pmf
+docdict_discrete["logpmf"] = _doc_logpmf
+docdict_discrete["expect"] = _doc_expect_discrete
+_doc_disc_methods = [
+    "rvs",
+    "pmf",
+    "logpmf",
+    "cdf",
+    "logcdf",
+    "sf",
+    "logsf",
+    "ppf",
+    "isf",
+    "stats",
+    "entropy",
+    "expect",
+    "median",
+    "mean",
+    "var",
+    "std",
+    "interval",
+]
 for obj in _doc_disc_methods:
-    docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
+    docdict_discrete[obj] = docdict_discrete[obj].replace(", scale=1", "")
 
-_doc_disc_methods_err_varname = ['cdf', 'logcdf', 'sf', 'logsf']
+_doc_disc_methods_err_varname = ["cdf", "logcdf", "sf", "logsf"]
 for obj in _doc_disc_methods_err_varname:
-    docdict_discrete[obj] = docdict_discrete[obj].replace('(x, ', '(k, ')
+    docdict_discrete[obj] = docdict_discrete[obj].replace("(x, ", "(k, ")
 
-docdict_discrete.pop('pdf')
-docdict_discrete.pop('logpdf')
+docdict_discrete.pop("pdf")
+docdict_discrete.pop("logpdf")
 
-_doc_allmethods = ''.join([docdict_discrete[obj] for obj in _doc_disc_methods])
-docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
+_doc_allmethods = "".join([docdict_discrete[obj] for obj in _doc_disc_methods])
+docdict_discrete["allmethods"] = docheaders["methods"] + _doc_allmethods
 
-docdict_discrete['longsummary'] = _doc_default_longsummary.replace(
-    'rv_continuous', 'rv_discrete')
+docdict_discrete["longsummary"] = _doc_default_longsummary.replace(
+    "rv_continuous", "rv_discrete"
+)
 
 _doc_default_frozen_note = """
 Alternatively, the object may be called (as a function) to fix the shape and
@@ -286,7 +340,7 @@ rv = %(name)s(%(shapes)s, loc=0)
     - Frozen RV object with the same methods but holding the given shape and
       location fixed.
 """
-docdict_discrete['frozennote'] = _doc_default_frozen_note
+docdict_discrete["frozennote"] = _doc_default_frozen_note
 
 _doc_default_discrete_example = """\
 Examples
@@ -338,57 +392,62 @@ Specifically, ``%(name)s.pmf(k, %(shapes)s, loc)`` is identically
 equivalent to ``%(name)s.pmf(k - loc, %(shapes)s)``.
 """
 
-docdict_discrete['example'] = _doc_default_discrete_example
-docdict_discrete['after_notes'] = _doc_default_discrete_locscale
+docdict_discrete["example"] = _doc_default_discrete_example
+docdict_discrete["after_notes"] = _doc_default_discrete_locscale
 
-_doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
-                                     docdict_discrete['allmethods']])
-docdict_discrete['before_notes'] = _doc_default_before_notes
+_doc_default_before_notes = "".join(
+    [docdict_discrete["longsummary"], docdict_discrete["allmethods"]]
+)
+docdict_discrete["before_notes"] = _doc_default_before_notes
 
-_doc_default_disc = ''.join([docdict_discrete['longsummary'],
-                             docdict_discrete['allmethods'],
-                             docdict_discrete['frozennote'],
-                             docdict_discrete['example']])
-docdict_discrete['default'] = _doc_default_disc
+_doc_default_disc = "".join(
+    [
+        docdict_discrete["longsummary"],
+        docdict_discrete["allmethods"],
+        docdict_discrete["frozennote"],
+        docdict_discrete["example"],
+    ]
+)
+docdict_discrete["default"] = _doc_default_disc
 
 # clean up all the separate docstring elements, we do not need them anymore
-for obj in [s for s in dir() if s.startswith('_doc_')]:
-    exec('del ' + obj)
+for obj in [s for s in dir() if s.startswith("_doc_")]:
+    exec("del " + obj)
 del obj
 
 
 def _moment(data, n, mu=None):
     if mu is None:
         mu = data.mean()
-    return ((data - mu)**n).mean()
+    return ((data - mu) ** n).mean()
 
 
 def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
-    if (n == 0):
+    if n == 0:
         return 1.0
-    elif (n == 1):
+    elif n == 1:
         if mu is None:
             val = moment_func(1, *args)
         else:
             val = mu
-    elif (n == 2):
+    elif n == 2:
         if mu2 is None or mu is None:
             val = moment_func(2, *args)
         else:
-            val = mu2 + mu*mu
-    elif (n == 3):
+            val = mu2 + mu * mu
+    elif n == 3:
         if g1 is None or mu2 is None or mu is None:
             val = moment_func(3, *args)
         else:
             mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
-            val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
-    elif (n == 4):
+            val = mu3 + 3 * mu * mu2 + mu * mu * mu  # 3rd non-central moment
+    elif n == 4:
         if g1 is None or g2 is None or mu2 is None or mu is None:
             val = moment_func(4, *args)
         else:
-            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
-            mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
-            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
+            mu4 = (g2 + 3.0) * (mu2 ** 2.0)  # 4th central moment
+            mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
+            val = mu4 + 4 * mu * mu3 + 6 * mu * mu * mu2 + mu * mu * mu * mu
     else:
         val = moment_func(n, *args)
 
@@ -401,8 +460,8 @@ def _skew(data):
     """
     data = np.ravel(data)
     mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m3 = ((data - mu)**3).mean()
+    m2 = ((data - mu) ** 2).mean()
+    m3 = ((data - mu) ** 3).mean()
     return m3 / np.power(m2, 1.5)
 
 
@@ -410,17 +469,17 @@ def _kurtosis(data):
     """kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
-    m2 = ((data - mu)**2).mean()
-    m4 = ((data - mu)**4).mean()
-    return m4 / m2**2 - 3
+    m2 = ((data - mu) ** 2).mean()
+    m4 = ((data - mu) ** 4).mean()
+    return m4 / m2 ** 2 - 3
 
 
 def _fit_determine_optimizer(optimizer):
     if not callable(optimizer) and isinstance(optimizer, str):
-        if not optimizer.startswith('fmin_'):
-            optimizer = "fmin_"+optimizer
-        if optimizer == 'fmin_':
-            optimizer = 'fmin'
+        if not optimizer.startswith("fmin_"):
+            optimizer = "fmin_" + optimizer
+        if optimizer == "fmin_":
+            optimizer = "fmin"
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
@@ -430,7 +489,6 @@ def _fit_determine_optimizer(optimizer):
 
 # Frozen RV class
 class rv_frozen:
-
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
@@ -449,7 +507,7 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
+    def pdf(self, x):  # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
 
     def logpdf(self, x):
@@ -469,7 +527,7 @@ class rv_frozen:
 
     def rvs(self, size=None, random_state=None):
         kwds = self.kwds.copy()
-        kwds.update({'size': size, 'random_state': random_state})
+        kwds.update({"size": size, "random_state": random_state})
         return self.dist.rvs(*self.args, **kwds)
 
     def sf(self, x):
@@ -478,9 +536,9 @@ class rv_frozen:
     def logsf(self, x):
         return self.dist.logsf(x, *self.args, **self.kwds)
 
-    def stats(self, moments='mv'):
+    def stats(self, moments="mv"):
         kwds = self.kwds.copy()
-        kwds.update({'moments': moments})
+        kwds.update({"moments": moments})
         return self.dist.stats(*self.args, **kwds)
 
     def median(self):
@@ -519,8 +577,7 @@ class rv_frozen:
         if isinstance(self.dist, rv_discrete):
             return self.dist.expect(func, a, loc, lb, ub, conditional, **kwds)
         else:
-            return self.dist.expect(func, a, loc, scale, lb, ub,
-                                    conditional, **kwds)
+            return self.dist.expect(func, a, loc, scale, lb, ub, conditional, **kwds)
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
@@ -565,7 +622,9 @@ def argsreduce(cond, *args):
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
     if not isinstance(newargs, list):
-        newargs = [newargs, ]
+        newargs = [
+            newargs,
+        ]
 
     if np.all(cond):
         # Nothing to do
@@ -574,9 +633,10 @@ def argsreduce(cond, *args):
     s = cond.shape
     # np.extract returns flattened arrays, which are not broadcastable together
     # unless they are either the same size or size == 1.
-    return [(arg if np.size(arg) == 1
-            else np.extract(cond, np.broadcast_to(arg, s)))
-            for arg in newargs]
+    return [
+        (arg if np.size(arg) == 1 else np.extract(cond, np.broadcast_to(arg, s)))
+        for arg in newargs
+    ]
 
 
 parse_arg_template = """
@@ -594,28 +654,27 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 # Both the continuous and discrete distributions depend on ncx2.
 # The function name ncx2 is an abbreviation for noncentral chi squared.
 
+
 def _ncx2_log_pdf(x, df, nc):
     # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
     # factor of exp(-xs*ns) into the ive function to improve numerical
     # stability at large values of xs. See also `rice.pdf`.
-    df2 = df/2.0 - 1.0
+    df2 = df / 2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
-    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    corr = ive(df2, xs*ns) / 2.0
+    res = xlogy(df2 / 2.0, x / nc) - 0.5 * (xs - ns) ** 2
+    corr = ive(df2, xs * ns) / 2.0
     # Return res + np.log(corr) avoiding np.log(0)
     return _lazywhere(
-        corr > 0,
-        (res, corr),
-        f=lambda r, c: r + np.log(c),
-        fillvalue=-np.inf)
+        corr > 0, (res, corr), f=lambda r, c: r + np.log(c), fillvalue=-np.inf
+    )
 
 
 def _ncx2_pdf(x, df, nc):
     # Copy of _ncx2_log_pdf avoiding np.log(0) when corr = 0
-    df2 = df/2.0 - 1.0
+    df2 = df / 2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
-    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    corr = ive(df2, xs*ns) / 2.0
+    res = xlogy(df2 / 2.0, x / nc) - 0.5 * (xs - ns) ** 2
+    corr = ive(df2, xs * ns) / 2.0
     return np.exp(res) * corr
 
 
@@ -628,14 +687,17 @@ class rv_generic:
     and rv_continuous.
 
     """
+
     def __init__(self, seed=None):
         super().__init__()
 
         # figure out if _stats signature has 'moments' keyword
         sig = _getfullargspec(self._stats)
-        self._stats_has_moments = ((sig.varkw is not None) or
-                                   ('moments' in sig.args) or
-                                   ('moments' in sig.kwonlyargs))
+        self._stats_has_moments = (
+            (sig.varkw is not None)
+            or ("moments" in sig.args)
+            or ("moments" in sig.kwonlyargs)
+        )
         self._random_state = check_random_state(seed)
 
         # For historical reasons, `size` was made an attribute that was read
@@ -648,9 +710,11 @@ class rv_generic:
         # and if not set self._size inside self.rvs()
         # before calling self._rvs().
         argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
+        self._rvs_uses_size_attribute = (
+            argspec.varkw is None
+            and "size" not in argspec.args
+            and "size" not in argspec.kwonlyargs
+        )
         # Warn on first use only
         self._rvs_size_warned = False
 
@@ -707,11 +771,10 @@ class rv_generic:
         ns = {}
         exec(self._parse_arg_template, ns)
         # NB: attach to the instance, not class
-        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
+        for name in ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]:
             setattr(self, name, types.MethodType(ns[name], self))
 
-    def _construct_argparser(
-            self, meths_to_inspect, locscale_in, locscale_out):
+    def _construct_argparser(self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser string for the shape arguments.
 
         This method should be called in __init__ of a class for each
@@ -731,16 +794,15 @@ class rv_generic:
         if self.shapes:
             # sanitize the user-supplied shapes
             if not isinstance(self.shapes, str):
-                raise TypeError('shapes must be a string.')
+                raise TypeError("shapes must be a string.")
 
-            shapes = self.shapes.replace(',', ' ').split()
+            shapes = self.shapes.replace(",", " ").split()
 
             for field in shapes:
                 if keyword.iskeyword(field):
-                    raise SyntaxError('keywords cannot be used as shapes.')
-                if not re.match('^[_a-zA-Z][_a-zA-Z0-9]*$', field):
-                    raise SyntaxError(
-                        'shapes must be valid python identifiers')
+                    raise SyntaxError("keywords cannot be used as shapes.")
+                if not re.match("^[_a-zA-Z][_a-zA-Z0-9]*$", field):
+                    raise SyntaxError("shapes must be valid python identifiers")
         else:
             # find out the call signatures (_pdf, _cdf etc), deduce shape
             # arguments. Generic methods only have 'self, x', any further args
@@ -748,23 +810,22 @@ class rv_generic:
             shapes_list = []
             for meth in meths_to_inspect:
                 shapes_args = _getfullargspec(meth)  # NB does not contain self
-                args = shapes_args.args[1:]       # peel off 'x', too
+                args = shapes_args.args[1:]  # peel off 'x', too
 
                 if args:
                     shapes_list.append(args)
 
                     # *args or **kwargs are not allowed w/automatic shapes
                     if shapes_args.varargs is not None:
-                        raise TypeError(
-                            '*args are not allowed w/out explicit shapes')
+                        raise TypeError("*args are not allowed w/out explicit shapes")
                     if shapes_args.varkw is not None:
-                        raise TypeError(
-                            '**kwds are not allowed w/out explicit shapes')
+                        raise TypeError("**kwds are not allowed w/out explicit shapes")
                     if shapes_args.kwonlyargs:
                         raise TypeError(
-                            'kwonly args are not allowed w/out explicit shapes')
+                            "kwonly args are not allowed w/out explicit shapes"
+                        )
                     if shapes_args.defaults is not None:
-                        raise TypeError('defaults are not allowed for shapes')
+                        raise TypeError("defaults are not allowed for shapes")
 
             if shapes_list:
                 shapes = shapes_list[0]
@@ -772,50 +833,52 @@ class rv_generic:
                 # make sure the signatures are consistent
                 for item in shapes_list:
                     if item != shapes:
-                        raise TypeError('Shape arguments are inconsistent.')
+                        raise TypeError("Shape arguments are inconsistent.")
             else:
                 shapes = []
 
         # have the arguments, construct the method from template
-        shapes_str = ', '.join(shapes) + ', ' if shapes else ''  # NB: not None
-        dct = dict(shape_arg_str=shapes_str,
-                   locscale_in=locscale_in,
-                   locscale_out=locscale_out,
-                   )
+        shapes_str = ", ".join(shapes) + ", " if shapes else ""  # NB: not None
+        dct = dict(
+            shape_arg_str=shapes_str,
+            locscale_in=locscale_in,
+            locscale_out=locscale_out,
+        )
 
         # this string is used by _attach_argparser_methods
         self._parse_arg_template = parse_arg_template % dct
 
-        self.shapes = ', '.join(shapes) if shapes else None
-        if not hasattr(self, 'numargs'):
+        self.shapes = ", ".join(shapes) if shapes else None
+        if not hasattr(self, "numargs"):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
 
     def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
         tempdict = docdict.copy()
-        tempdict['name'] = self.name or 'distname'
-        tempdict['shapes'] = self.shapes or ''
+        tempdict["name"] = self.name or "distname"
+        tempdict["shapes"] = self.shapes or ""
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
-        tempdict['vals'] = vals
+        vals = ", ".join("%.3g" % val for val in shapes_vals)
+        tempdict["vals"] = vals
 
-        tempdict['shapes_'] = self.shapes or ''
+        tempdict["shapes_"] = self.shapes or ""
         if self.shapes and self.numargs == 1:
-            tempdict['shapes_'] += ','
+            tempdict["shapes_"] += ","
 
         if self.shapes:
-            tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
+            tempdict["set_vals_stmt"] = ">>> %s = %s" % (self.shapes, vals)
         else:
-            tempdict['set_vals_stmt'] = ''
+            tempdict["set_vals_stmt"] = ""
 
         if self.shapes is None:
             # remove shapes from call parameters if there are none
-            for item in ['default', 'before_notes']:
+            for item in ["default", "before_notes"]:
                 tempdict[item] = tempdict[item].replace(
-                    "\n%(shapes)s : array_like\n    shape parameters", "")
+                    "\n%(shapes)s : array_like\n    shape parameters", ""
+                )
         for i in range(2):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
@@ -823,25 +886,33 @@ class rv_generic:
             try:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
-                raise Exception("Unable to construct docstring for "
-                                "distribution \"%s\": %s" %
-                                (self.name, repr(e))) from e
+                raise Exception(
+                    'Unable to construct docstring for distribution "%s": %s'
+                    % (self.name, repr(e))
+                ) from e
 
         # correct for empty shapes
-        self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
+        self.__doc__ = self.__doc__.replace("(, ", "(").replace(", )", ")")
 
-    def _construct_default_doc(self, longname=None, extradoc=None,
-                               docdict=None, discrete='continuous'):
+    def _construct_default_doc(
+        self, longname=None, extradoc=None, docdict=None, discrete="continuous"
+    ):
         """Construct instance docstring from the default template."""
         if longname is None:
-            longname = 'A'
+            longname = "A"
         if extradoc is None:
-            extradoc = ''
-        if extradoc.startswith('\n\n'):
+            extradoc = ""
+        if extradoc.startswith("\n\n"):
             extradoc = extradoc[2:]
-        self.__doc__ = ''.join(['%s %s random variable.' % (longname, discrete),
-                                '\n\n%(before_notes)s\n', docheaders['notes'],
-                                extradoc, '\n%(example)s'])
+        self.__doc__ = "".join(
+            [
+                "%s %s random variable." % (longname, discrete),
+                "\n\n%(before_notes)s\n",
+                docheaders["notes"],
+                extradoc,
+                "\n%(example)s",
+            ]
+        )
         self._construct_doc(docdict)
 
     def freeze(self, *args, **kwds):
@@ -863,6 +934,7 @@ class rv_generic:
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
+
     __call__.__doc__ = freeze.__doc__
 
     # The actual calculation functions (no basic checking need be done)
@@ -876,7 +948,7 @@ class rv_generic:
     # The primed mu is a widely used notation for the noncentral moment.
     def _munp(self, n, *args):
         # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
+        with np.errstate(all="ignore"):
             vals = self.generic_moment(n, *args)
         return vals
 
@@ -891,7 +963,7 @@ class rv_generic:
         # location and the scale in a flat tuple (e.g. if there are two
         # shape parameters `a` and `b`, `args` will be `(a, b, loc, scale)`).
         # The only keyword argument expected is 'size'.
-        size = kwargs.get('size', None)
+        size = kwargs.get("size", None)
         all_bcast = np.broadcast_arrays(*args)
 
         def squeeze_left(a):
@@ -931,20 +1003,22 @@ class rv_generic:
         # so that the two shapes have the same number of dimensions.
         ndiff = bcast_ndim - len(size_)
         if ndiff < 0:
-            bcast_shape = (1,)*(-ndiff) + bcast_shape
+            bcast_shape = (1,) * (-ndiff) + bcast_shape
         elif ndiff > 0:
-            size_ = (1,)*ndiff + size_
+            size_ = (1,) * ndiff + size_
 
         # This compatibility test is not standard.  In "regular" broadcasting,
         # two shapes are compatible if for each dimension, the lengths are the
         # same or one of the lengths is 1.  Here, the length of a dimension in
         # size_ must not be less than the corresponding length in bcast_shape.
-        ok = all([bcdim == 1 or bcdim == szdim
-                  for (bcdim, szdim) in zip(bcast_shape, size_)])
+        ok = all(
+            [bcdim == 1 or bcdim == szdim for (bcdim, szdim) in zip(bcast_shape, size_)]
+        )
         if not ok:
-            raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. %s, %s, %s" % (size, size_,
-                                                             bcast_shape))
+            raise ValueError(
+                "size does not match the broadcast shape of the parameters. %s, %s, %s"
+                % (size, size_, bcast_shape)
+            )
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -991,12 +1065,12 @@ class rv_generic:
 
     def _support_mask(self, x, *args):
         a, b = self._get_support(*args)
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid="ignore"):
             return (a <= x) & (x <= b)
 
     def _open_support_mask(self, x, *args):
         a, b = self._get_support(*args)
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid="ignore"):
             return (a < x) & (x < b)
 
     def _rvs(self, *args, size=None, random_state=None):
@@ -1011,21 +1085,21 @@ class rv_generic:
         return Y
 
     def _logcdf(self, x, *args):
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             return log(self._cdf(x, *args))
 
     def _sf(self, x, *args):
-        return 1.0-self._cdf(x, *args)
+        return 1.0 - self._cdf(x, *args)
 
     def _logsf(self, x, *args):
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
         return self._ppfvec(q, *args)
 
     def _isf(self, q, *args):
-        return self._ppf(1.0-q, *args)  # use correct _ppf for subclasses
+        return self._ppf(1.0 - q, *args)  # use correct _ppf for subclasses
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
@@ -1059,15 +1133,15 @@ class rv_generic:
             Random variates of given `size`.
 
         """
-        discrete = kwds.pop('discrete', None)
-        rndm = kwds.pop('random_state', None)
+        discrete = kwds.pop("discrete", None)
+        rndm = kwds.pop("random_state", None)
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
             raise ValueError("Domain error in arguments.")
 
         if np.all(scale == 0):
-            return loc*ones(size, 'd')
+            return loc * ones(size, "d")
 
         # extra gymnastics needed for a custom random_state
         if rndm is not None:
@@ -1081,9 +1155,10 @@ class rv_generic:
         if self._rvs_uses_size_attribute:
             if not self._rvs_size_warned:
                 warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
+                    f"The signature of {self._rvs} does not contain "
+                    'a "size" keyword.  Such signatures are deprecated.',
+                    np.VisibleDeprecationWarning,
+                )
                 self._rvs_size_warned = True
             self._size = size
             self._random_state = random_state
@@ -1142,12 +1217,11 @@ class rv_generic:
 
         # Use only entries that are valid in calculation
         if np.any(cond):
-            goodargs = argsreduce(cond, *(args+(scale, loc)))
+            goodargs = argsreduce(cond, *(args + (scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
 
             if self._stats_has_moments:
-                mu, mu2, g1, g2 = self._stats(*goodargs,
-                                              **{'moments': moments})
+                mu, mu2, g1, g2 = self._stats(*goodargs, **{"moments": moments})
             else:
                 mu, mu2, g1, g2 = self._stats(*goodargs)
             if g1 is None:
@@ -1159,26 +1233,26 @@ class rv_generic:
                     # (mu2**1.5) breaks down for nan and inf
                     mu3 = g1 * np.power(mu2, 1.5)
 
-            if 'm' in moments:
+            if "m" in moments:
                 if mu is None:
                     mu = self._munp(1, *goodargs)
                 out0 = default.copy()
                 place(out0, cond, mu * scale + loc)
                 output.append(out0)
 
-            if 'v' in moments:
+            if "v" in moments:
                 if mu2 is None:
                     mu2p = self._munp(2, *goodargs)
                     if mu is None:
                         mu = self._munp(1, *goodargs)
                     # if mean is inf then var is also inf
-                    with np.errstate(invalid='ignore'):
-                        mu2 = np.where(np.isfinite(mu), mu2p - mu**2, np.inf)
+                    with np.errstate(invalid="ignore"):
+                        mu2 = np.where(np.isfinite(mu), mu2p - mu ** 2, np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
 
-            if 's' in moments:
+            if "s" in moments:
                 if g1 is None:
                     mu3p = self._munp(3, *goodargs)
                     if mu is None:
@@ -1186,14 +1260,14 @@ class rv_generic:
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
-                    with np.errstate(invalid='ignore'):
-                        mu3 = (-mu*mu - 3*mu2)*mu + mu3p
+                    with np.errstate(invalid="ignore"):
+                        mu3 = (-mu * mu - 3 * mu2) * mu + mu3p
                         g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
                 place(out0, cond, g1)
                 output.append(out0)
 
-            if 'k' in moments:
+            if "k" in moments:
                 if g2 is None:
                     mu4p = self._munp(4, *goodargs)
                     if mu is None:
@@ -1203,11 +1277,11 @@ class rv_generic:
                         mu2 = mu2p - mu * mu
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
-                        with np.errstate(invalid='ignore'):
+                        with np.errstate(invalid="ignore"):
                             mu3 = (-mu * mu - 3 * mu2) * mu + mu3p
-                    with np.errstate(invalid='ignore'):
-                        mu4 = ((-mu**2 - 6*mu2) * mu - 4*mu3)*mu + mu4p
-                        g2 = mu4 / mu2**2.0 - 3.0
+                    with np.errstate(invalid="ignore"):
+                        mu4 = ((-(mu ** 2) - 6 * mu2) * mu - 4 * mu3) * mu + mu4p
+                        g2 = mu4 / mu2 ** 2.0 - 3.0
                 out0 = default.copy()
                 place(out0, cond, g2)
                 output.append(out0)
@@ -1246,8 +1320,8 @@ class rv_generic:
         loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
-        output = zeros(shape(cond0), 'd')
-        place(output, (1-cond0), self.badvalue)
+        output = zeros(shape(cond0), "d")
+        place(output, (1 - cond0), self.badvalue)
         goodargs = argsreduce(cond0, scale, *args)
         goodscale = goodargs[0]
         goodargs = goodargs[1:]
@@ -1273,14 +1347,14 @@ class rv_generic:
         args, loc, scale = self._parse_args(*args, **kwds)
         if not (self._argcheck(*args) and (scale > 0)):
             return nan
-        if (floor(n) != n):
+        if floor(n) != n:
             raise ValueError("Moment must be an integer.")
-        if (n < 0):
+        if n < 0:
             raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {"moments": {1: "m", 2: "v", 3: "vs", 4: "vk"}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*args, **mdict)
@@ -1289,15 +1363,15 @@ class rv_generic:
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
         if loc == 0:
-            return scale**n * val
+            return scale ** n * val
         else:
             result = 0
             fac = float(scale) / float(loc)
             for k in range(n):
                 valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n, k, exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
+                result += comb(n, k, exact=True) * (fac ** k) * valk
+            result += fac ** n * val
+            return result * loc ** n
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -1344,7 +1418,7 @@ class rv_generic:
             the mean of the distribution
 
         """
-        kwds['moments'] = 'm'
+        kwds["moments"] = "m"
         res = self.stats(*args, **kwds)
         if isinstance(res, ndarray) and res.ndim == 0:
             return res[()]
@@ -1369,7 +1443,7 @@ class rv_generic:
             the variance of the distribution
 
         """
-        kwds['moments'] = 'v'
+        kwds["moments"] = "v"
         res = self.stats(*args, **kwds)
         if isinstance(res, ndarray) and res.ndim == 0:
             return res[()]
@@ -1394,7 +1468,7 @@ class rv_generic:
             standard deviation of the distribution
 
         """
-        kwds['moments'] = 'v'
+        kwds["moments"] = "v"
         res = sqrt(self.stats(*args, **kwds))
         return res
 
@@ -1424,8 +1498,8 @@ class rv_generic:
         alpha = asarray(alpha)
         if np.any((alpha > 1) | (alpha < 0)):
             raise ValueError("alpha must be between 0 and 1 inclusive")
-        q1 = (1.0-alpha)/2
-        q2 = (1.0+alpha)/2
+        q1 = (1.0 - alpha) / 2
+        q2 = (1.0 + alpha) / 2
         a = self.ppf(q1, *args, **kwds)
         b = self.ppf(q2, *args, **kwds)
         return a, b
@@ -1459,10 +1533,10 @@ class rv_generic:
         elif cond.ndim == 0:
             return self.badvalue, self.badvalue
         # promote bounds to at least float to fill in the badvalue
-        _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
+        _a, _b = np.asarray(_a).astype("d"), np.asarray(_b).astype("d")
         out_a, out_b = _a * scale + loc, _b * scale + loc
-        place(out_a, 1-cond, self.badvalue)
-        place(out_b, 1-cond, self.badvalue)
+        place(out_a, 1 - cond, self.badvalue)
+        place(out_b, 1 - cond, self.badvalue)
         return out_a, out_b
 
 
@@ -1477,10 +1551,13 @@ def _get_fixed_fit_value(kwds, names):
     vals = [(name, kwds.pop(name)) for name in names if name in kwds]
     if len(vals) > 1:
         repeated = [name for name, val in vals]
-        raise ValueError("fit method got multiple keyword arguments to "
-                         "specify the same fixed parameter: " +
-                         ', '.join(repeated))
+        raise ValueError(
+            "fit method got multiple keyword arguments to "
+            "specify the same fixed parameter: "
+            + ", ".join(repeated)
+        )
     return vals[0][1] if vals else None
+
 
 #  continuous random variables: implement maybe later
 #
@@ -1686,22 +1763,41 @@ class rv_continuous(rv_generic):
     ``gaussian._pdf(y) / scale``.
 
     """
-    def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
-                 badvalue=None, name=None, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+
+    def __init__(
+        self,
+        momtype=1,
+        a=None,
+        b=None,
+        xtol=1e-14,
+        badvalue=None,
+        name=None,
+        longname=None,
+        shapes=None,
+        extradoc=None,
+        seed=None,
+    ):
 
         super().__init__(seed)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
-            momtype=momtype, a=a, b=b, xtol=xtol,
-            badvalue=badvalue, name=name, longname=longname,
-            shapes=shapes, extradoc=extradoc, seed=seed)
+            momtype=momtype,
+            a=a,
+            b=b,
+            xtol=xtol,
+            badvalue=badvalue,
+            name=name,
+            longname=longname,
+            shapes=shapes,
+            extradoc=extradoc,
+            seed=seed,
+        )
 
         if badvalue is None:
             badvalue = nan
         if name is None:
-            name = 'Distribution'
+            name = "Distribution"
         self.badvalue = badvalue
         self.name = name
         self.a = a
@@ -1715,13 +1811,15 @@ class rv_continuous(rv_generic):
         self.shapes = shapes
         self.extradoc = extradoc
 
-        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
-                                  locscale_in='loc=0, scale=1',
-                                  locscale_out='loc, scale')
+        self._construct_argparser(
+            meths_to_inspect=[self._pdf, self._cdf],
+            locscale_in="loc=0, scale=1",
+            locscale_out="loc, scale",
+        )
         self._attach_methods()
 
         if longname is None:
-            if name[0] in ['aeiouAEIOU']:
+            if name[0] in ["aeiouAEIOU"]:
                 hstr = "An "
             else:
                 hstr = "A "
@@ -1730,10 +1828,12 @@ class rv_continuous(rv_generic):
         if sys.flags.optimize < 2:
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
-                self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc,
-                                            docdict=docdict,
-                                            discrete='continuous')
+                self._construct_default_doc(
+                    longname=longname,
+                    extradoc=extradoc,
+                    docdict=docdict,
+                    discrete="continuous",
+                )
             else:
                 dct = dict(distcont)
                 self._construct_doc(docdict, dct.get(self.name))
@@ -1743,8 +1843,15 @@ class rv_continuous(rv_generic):
 
         # these methods will be remade in __setstate__
         # _random_state attribute is taken care of by rv_generic
-        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
-                 "_cdfvec", "_ppfvec", "vecentropy", "generic_moment"]
+        attrs = [
+            "_parse_args",
+            "_parse_args_stats",
+            "_parse_args_rvs",
+            "_cdfvec",
+            "_ppfvec",
+            "vecentropy",
+            "generic_moment",
+        ]
         [dct.pop(attr, None) for attr in attrs]
         return dct
 
@@ -1756,16 +1863,16 @@ class rv_continuous(rv_generic):
         self._attach_argparser_methods()
 
         # nin correction
-        self._ppfvec = vectorize(self._ppf_single, otypes='d')
+        self._ppfvec = vectorize(self._ppf_single, otypes="d")
         self._ppfvec.nin = self.numargs + 1
-        self.vecentropy = vectorize(self._entropy, otypes='d')
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self.vecentropy = vectorize(self._entropy, otypes="d")
+        self._cdfvec = vectorize(self._cdf_single, otypes="d")
         self._cdfvec.nin = self.numargs + 1
 
         if self.moment_type == 0:
-            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
+            self.generic_moment = vectorize(self._mom0_sc, otypes="d")
         else:
-            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
+            self.generic_moment = vectorize(self._mom1_sc, otypes="d")
         # Because of the *args argument of _mom0_sc, vectorize cannot count the
         # number of arguments correctly.
         self.generic_moment.nin = self.numargs + 1
@@ -1777,53 +1884,53 @@ class rv_continuous(rv_generic):
         Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
-        dct['a'] = self.a
-        dct['b'] = self.b
-        dct['xtol'] = self.xtol
-        dct['badvalue'] = self.badvalue
-        dct['name'] = self.name
-        dct['shapes'] = self.shapes
-        dct['extradoc'] = self.extradoc
+        dct["a"] = self.a
+        dct["b"] = self.b
+        dct["xtol"] = self.xtol
+        dct["badvalue"] = self.badvalue
+        dct["name"] = self.name
+        dct["shapes"] = self.shapes
+        dct["extradoc"] = self.extradoc
         return dct
 
     def _ppf_to_solve(self, x, q, *args):
-        return self.cdf(*(x, )+args)-q
+        return self.cdf(*(x,) + args) - q
 
     def _ppf_single(self, q, *args):
-        factor = 10.
+        factor = 10.0
         left, right = self._get_support(*args)
 
         if np.isinf(left):
             left = min(-factor, right)
-            while self._ppf_to_solve(left, q, *args) > 0.:
+            while self._ppf_to_solve(left, q, *args) > 0.0:
                 left, right = left * factor, left
             # left is now such that cdf(left) <= q
             # if right has changed, then cdf(right) > q
 
         if np.isinf(right):
             right = max(factor, left)
-            while self._ppf_to_solve(right, q, *args) < 0.:
+            while self._ppf_to_solve(right, q, *args) < 0.0:
                 left, right = right, right * factor
             # right is now such that cdf(right) >= q
 
-        return optimize.brentq(self._ppf_to_solve,
-                               left, right, args=(q,)+args, xtol=self.xtol)
+        return optimize.brentq(
+            self._ppf_to_solve, left, right, args=(q,) + args, xtol=self.xtol
+        )
 
     # moment from definition
     def _mom_integ0(self, x, m, *args):
-        return x**m * self.pdf(x, *args)
+        return x ** m * self.pdf(x, *args)
 
     def _mom0_sc(self, m, *args):
         _a, _b = self._get_support(*args)
-        return integrate.quad(self._mom_integ0, _a, _b,
-                              args=(m,)+args)[0]
+        return integrate.quad(self._mom_integ0, _a, _b, args=(m,) + args)[0]
 
     # moment calculated using ppf
     def _mom_integ1(self, q, m, *args):
-        return (self.ppf(q, *args))**m
+        return (self.ppf(q, *args)) ** m
 
     def _mom1_sc(self, m, *args):
-        return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
+        return integrate.quad(self._mom_integ1, 0, 1, args=(m,) + args)[0]
 
     def _pdf(self, x, *args):
         return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
@@ -1867,14 +1974,14 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
-        putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
+        putmask(output, (1 - cond0) + np.isnan(x), self.badvalue)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            goodargs = argsreduce(cond, *((x,) + args + (scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._pdf(*goodargs) / scale)
         if output.ndim == 0:
@@ -1908,15 +2015,15 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
-        putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
+        putmask(output, (1 - cond0) + np.isnan(x), self.badvalue)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            goodargs = argsreduce(cond, *((x,) + args + (scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._logpdf(*goodargs) - log(scale))
         if output.ndim == 0:
@@ -1950,16 +2057,16 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
         cond2 = (x >= np.asarray(_b)) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
-        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, (1 - cond0) + np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
         if np.any(cond):  # call only if at least 1 entry
-            goodargs = argsreduce(cond, *((x,)+args))
+            goodargs = argsreduce(cond, *((x,) + args))
             place(output, cond, self._cdf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -1991,17 +2098,17 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
         cond2 = (x >= _b) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
-        place(output, (1-cond0)*(cond1 == cond1)+np.isnan(x), self.badvalue)
+        place(output, (1 - cond0) * (cond1 == cond1) + np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):  # call only if at least 1 entry
-            goodargs = argsreduce(cond, *((x,)+args))
+            goodargs = argsreduce(cond, *((x,) + args))
             place(output, cond, self._logcdf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -2033,16 +2140,16 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
         cond2 = cond0 & (x <= _a)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
-        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, (1 - cond0) + np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((x,)+args))
+            goodargs = argsreduce(cond, *((x,) + args))
             place(output, cond, self._sf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -2077,17 +2184,17 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
-        x = np.asarray((x - loc)/scale, dtype=dtyp)
+        x = np.asarray((x - loc) / scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
         cond2 = cond0 & (x <= _a)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
-        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, (1 - cond0) + np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((x,)+args))
+            goodargs = argsreduce(cond, *((x,) + args))
             place(output, cond, self._logsf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -2131,7 +2238,7 @@ class rv_continuous(rv_generic):
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
         if np.any(cond):  # call only if at least 1 entry
-            goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
+            goodargs = argsreduce(cond, *((q,) + args + (scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
             place(output, cond, self._ppf(*goodargs) * scale + loc)
         if output.ndim == 0:
@@ -2176,7 +2283,7 @@ class rv_continuous(rv_generic):
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
         if np.any(cond):
-            goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
+            goodargs = argsreduce(cond, *((q,) + args + (scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
             place(output, cond, self._isf(*goodargs) * scale + loc)
         if output.ndim == 0:
@@ -2206,7 +2313,7 @@ class rv_continuous(rv_generic):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
+        x = asarray((x - loc) / scale)
         n_log_scale = len(x) * log(scale)
         if np.any(~self._support_mask(x, *args)):
             return inf
@@ -2234,14 +2341,14 @@ class rv_continuous(rv_generic):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
+        x = asarray((x - loc) / scale)
         n_log_scale = len(x) * log(scale)
         return self._nnlf_and_penalty(x, args) + n_log_scale
 
     def _fitstart(self, data, args=None):
         """Starting point for fit (shape arguments + loc + scale)."""
         if args is None:
-            args = (1.0,)*self.numargs
+            args = (1.0,) * self.numargs
         loc, scale = self._fit_loc_scale_support(data, *args)
         return args + (loc, scale)
 
@@ -2256,10 +2363,10 @@ class rv_continuous(rv_generic):
         # into the first (numeric) form.
         shapes = []
         if self.shapes:
-            shapes = self.shapes.replace(',', ' ').split()
+            shapes = self.shapes.replace(",", " ").split()
             for j, s in enumerate(shapes):
-                key = 'f' + str(j)
-                names = [key, 'f' + s, 'fix_' + s]
+                key = "f" + str(j)
+                names = [key, "f" + s, "fix_" + s]
                 val = _get_fixed_fit_value(kwds, names)
                 if val is not None:
                     kwds[key] = val
@@ -2267,7 +2374,7 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        names = ["f%d" % n for n in range(Nargs - 2)] + ["floc", "fscale"]
         x0 = []
         for n, key in enumerate(names):
             if key in kwds:
@@ -2277,27 +2384,28 @@ class rv_continuous(rv_generic):
                 x0.append(args[n])
 
         methods = {"mle", "mm"}
-        method = kwds.pop('method', "mle").lower()
+        method = kwds.pop("method", "mle").lower()
         if method == "mm":
             n_params = len(shapes) + 2 - len(fixedn)
-            exponents = (np.arange(1, n_params+1))[:, np.newaxis]
-            data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+            exponents = (np.arange(1, n_params + 1))[:, np.newaxis]
+            data_moments = np.sum(data[None, :] ** exponents / len(data), axis=1)
 
             def objective(theta, x):
                 return self._moment_error(theta, x, data_moments)
+
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
-            raise ValueError("Method '{0}' not available; must be one of {1}"
-                             .format(method, methods))
+            raise ValueError(
+                "Method '{0}' not available; must be one of {1}".format(method, methods)
+            )
 
         if len(fixedn) == 0:
             func = objective
             restore = None
         else:
             if len(fixedn) == Nargs:
-                raise ValueError(
-                    "All parameters fixed. There is nothing to optimize.")
+                raise ValueError("All parameters fixed. There is nothing to optimize.")
 
             def restore(args, theta):
                 # Replace with theta for all numbers not in fixedn
@@ -2321,15 +2429,23 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
 
-        dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
-                                 for i in range(len(data_moments))])
+        dist_moments = np.array(
+            [
+                self.moment(i + 1, *args, loc=loc, scale=scale)
+                for i in range(len(data_moments))
+            ]
+        )
         if np.any(np.isnan(dist_moments)):
-            raise ValueError("Method of moments encountered a non-finite "
-                             "distribution moment and cannot continue. "
-                             "Consider trying method='MLE'.")
+            raise ValueError(
+                "Method of moments encountered a non-finite "
+                "distribution moment and cannot continue. "
+                "Consider trying method='MLE'."
+            )
 
-        return (((data_moments - dist_moments) /
-                 np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+        return (
+            ((data_moments - dist_moments) / np.maximum(np.abs(data_moments), 1e-8))
+            ** 2
+        ).sum()
 
     def fit(self, data, *args, **kwds):
         """
@@ -2462,7 +2578,7 @@ class rv_continuous(rv_generic):
         (0.92087172783841631, 2.0015750750324668)
         """
         data = np.asarray(data)
-        method = kwds.get('method', "mle").lower()
+        method = kwds.get("method", "mle").lower()
 
         # memory for method of moments
         Narg = len(args)
@@ -2472,17 +2588,16 @@ class rv_continuous(rv_generic):
         if not np.isfinite(data).all():
             raise RuntimeError("The data contains non-finite values.")
 
-        start = [None]*2
-        if (Narg < self.numargs) or not ('loc' in kwds and
-                                         'scale' in kwds):
+        start = [None] * 2
+        if (Narg < self.numargs) or not ("loc" in kwds and "scale" in kwds):
             # get distribution specific starting locations
             start = self._fitstart(data)
             args += start[Narg:-2]
-        loc = kwds.pop('loc', start[-2])
-        scale = kwds.pop('scale', start[-1])
+        loc = kwds.pop("loc", start[-2])
+        scale = kwds.pop("scale", start[-1])
         args += (loc, scale)
         x0, func, restore, args = self._reduce_func(args, kwds, data=data)
-        optimizer = kwds.pop('optimizer', optimize.fmin)
+        optimizer = kwds.pop("optimizer", optimize.fmin)
         # convert string to function in scipy.optimize
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
@@ -2502,14 +2617,18 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise Exception(
+                "Optimization converged to parameters that are "
+                "outside the range allowed by the distribution."
+            )
 
-        if method == 'mm':
+        if method == "mm":
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise Exception(
+                    "Optimization failed: either a data moment "
+                    "or fitted distribution moment is "
+                    "non-finite."
+                )
 
         return vals
 
@@ -2598,12 +2717,12 @@ class rv_continuous(rv_generic):
             Estimated scale parameter for the data.
 
         """
-        mu, mu2 = self.stats(*args, **{'moments': 'mv'})
+        mu, mu2 = self.stats(*args, **{"moments": "mv"})
         tmp = asarray(data)
         muhat = tmp.mean()
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
-        Lhat = muhat - Shat*mu
+        Lhat = muhat - Shat * mu
         if not np.isfinite(Lhat):
             Lhat = 0
         if not (np.isfinite(Shat) and (0 < Shat)):
@@ -2617,14 +2736,14 @@ class rv_continuous(rv_generic):
 
         # upper limit is often inf, so suppress warnings when integrating
         _a, _b = self._get_support(*args)
-        with np.errstate(over='ignore'):
+        with np.errstate(over="ignore"):
             h = integrate.quad(integ, _a, _b)[0]
 
         if not np.isnan(h):
             return h
         else:
             # try with different limits if integration problems
-            low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
+            low, upp = self.ppf([1e-10, 1.0 - 1e-10], *args)
             if np.isinf(_b):
                 upper = upp
             else:
@@ -2635,8 +2754,17 @@ class rv_continuous(rv_generic):
                 lower = _a
             return integrate.quad(integ, lower, upper)[0]
 
-    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
-               conditional=False, **kwds):
+    def expect(
+        self,
+        func=None,
+        args=(),
+        loc=0,
+        scale=1,
+        lb=None,
+        ub=None,
+        conditional=False,
+        **kwds,
+    ):
         """Calculate expected value of a function with respect to the
         distribution by numerical integration.
 
@@ -2713,28 +2841,30 @@ class rv_continuous(rv_generic):
 
         The slight deviation from 1 is due to numerical integration.
         """
-        lockwds = {'loc': loc,
-                   'scale': scale}
+        lockwds = {"loc": loc, "scale": scale}
         self._argcheck(*args)
         _a, _b = self._get_support(*args)
         if func is None:
+
             def fun(x, *args):
                 return x * self.pdf(x, *args, **lockwds)
+
         else:
+
             def fun(x, *args):
                 return func(x) * self.pdf(x, *args, **lockwds)
+
         if lb is None:
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
         if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
+            invfac = self.sf(lb, *args, **lockwds) - self.sf(ub, *args, **lockwds)
         else:
             invfac = 1.0
-        kwds['args'] = args
+        kwds["args"] = args
         # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
+        with np.errstate(all="ignore"):
             vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
@@ -2742,6 +2872,7 @@ class rv_continuous(rv_generic):
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
+
     def fun(x):
         return np.power(x, n) * self._pmf(x, *args)
 
@@ -2753,27 +2884,27 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     _a, _b = self._get_support(*args)
     b = _b
     a = _a
-    if isinf(b):            # Be sure ending point is > q
-        b = int(max(100*q, 10))
+    if isinf(b):  # Be sure ending point is > q
+        b = int(max(100 * q, 10))
         while 1:
             if b >= _b:
                 qb = 1.0
                 break
             qb = self._cdf(b, *args)
-            if (qb < q):
+            if qb < q:
                 b += 10
             else:
                 break
     else:
         qb = 1.0
-    if isinf(a):    # be sure starting point < q
-        a = int(min(-100*q, -10))
+    if isinf(a):  # be sure starting point < q
+        a = int(min(-100 * q, -10))
         while 1:
             if a <= _a:
                 qb = 0.0
                 break
             qa = self._cdf(a, *args)
-            if (qa > q):
+            if qa > q:
                 a -= 10
             else:
                 break
@@ -2781,28 +2912,28 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         qa = self._cdf(a, *args)
 
     while 1:
-        if (qa == q):
+        if qa == q:
             return a
-        if (qb == q):
+        if qb == q:
             return b
-        if b <= a+1:
+        if b <= a + 1:
             if qa > q:
                 return a
             else:
                 return b
-        c = int((a+b)/2.0)
+        c = int((a + b) / 2.0)
         qc = self._cdf(c, *args)
-        if (qc < q):
+        if qc < q:
             if a != c:
                 a = c
             else:
-                raise RuntimeError('updating stopped, endless loop')
+                raise RuntimeError("updating stopped, endless loop")
             qa = qc
-        elif (qc > q):
+        elif qc > q:
             if b != c:
                 b = c
             else:
-                raise RuntimeError('updating stopped, endless loop')
+                raise RuntimeError("updating stopped, endless loop")
             qb = qc
         else:
             return c
@@ -2945,9 +3076,21 @@ class rv_discrete(rv_generic):
     >>> R = custm.rvs(size=100)
 
     """
-    def __new__(cls, a=0, b=inf, name=None, badvalue=None,
-                moment_tol=1e-8, values=None, inc=1, longname=None,
-                shapes=None, extradoc=None, seed=None):
+
+    def __new__(
+        cls,
+        a=0,
+        b=inf,
+        name=None,
+        badvalue=None,
+        moment_tol=1e-8,
+        values=None,
+        inc=1,
+        longname=None,
+        shapes=None,
+        extradoc=None,
+        seed=None,
+    ):
 
         if values is not None:
             # dispatch to a subclass
@@ -2956,17 +3099,37 @@ class rv_discrete(rv_generic):
             # business as usual
             return super(rv_discrete, cls).__new__(cls)
 
-    def __init__(self, a=0, b=inf, name=None, badvalue=None,
-                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+    def __init__(
+        self,
+        a=0,
+        b=inf,
+        name=None,
+        badvalue=None,
+        moment_tol=1e-8,
+        values=None,
+        inc=1,
+        longname=None,
+        shapes=None,
+        extradoc=None,
+        seed=None,
+    ):
 
         super().__init__(seed)
 
         # cf generic freeze
         self._ctor_param = dict(
-            a=a, b=b, name=name, badvalue=badvalue,
-            moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+            a=a,
+            b=b,
+            name=name,
+            badvalue=badvalue,
+            moment_tol=moment_tol,
+            values=values,
+            inc=inc,
+            longname=longname,
+            shapes=shapes,
+            extradoc=extradoc,
+            seed=seed,
+        )
 
         if badvalue is None:
             badvalue = nan
@@ -2980,24 +3143,32 @@ class rv_discrete(rv_generic):
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
 
-        self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
-                                  locscale_in='loc=0',
-                                  # scale=1 for discrete RVs
-                                  locscale_out='loc, 1')
+        self._construct_argparser(
+            meths_to_inspect=[self._pmf, self._cdf],
+            locscale_in="loc=0",
+            # scale=1 for discrete RVs
+            locscale_out="loc, 1",
+        )
         self._attach_methods()
         self._construct_docstrings(name, longname, extradoc)
 
     def __getstate__(self):
         dct = self.__dict__.copy()
         # these methods will be remade in __setstate__
-        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
-                 "_cdfvec", "_ppfvec", "generic_moment"]
+        attrs = [
+            "_parse_args",
+            "_parse_args_stats",
+            "_parse_args_rvs",
+            "_cdfvec",
+            "_ppfvec",
+            "generic_moment",
+        ]
         [dct.pop(attr, None) for attr in attrs]
         return dct
 
     def _attach_methods(self):
         """Attaches dynamically created methods to the rv_discrete instance."""
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self._cdfvec = vectorize(self._cdf_single, otypes="d")
         self.vecentropy = vectorize(self._entropy)
 
         # _attach_methods is responsible for calling _attach_argparser_methods
@@ -3005,12 +3176,12 @@ class rv_discrete(rv_generic):
 
         # nin correction needs to be after we know numargs
         # correct nin for generic moment vectorization
-        _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
+        _vec_generic_moment = vectorize(_drv2_moment, otypes="d")
         _vec_generic_moment.nin = self.numargs + 2
         self.generic_moment = types.MethodType(_vec_generic_moment, self)
 
         # correct nin for ppf vectorization
-        _vppf = vectorize(_drv2_ppfsingle, otypes='d')
+        _vppf = vectorize(_drv2_ppfsingle, otypes="d")
         _vppf.nin = self.numargs + 2
         self._ppfvec = types.MethodType(_vppf, self)
 
@@ -3019,13 +3190,13 @@ class rv_discrete(rv_generic):
 
     def _construct_docstrings(self, name, longname, extradoc):
         if name is None:
-            name = 'Distribution'
+            name = "Distribution"
         self.name = name
         self.extradoc = extradoc
 
         # generate docstring for subclass instances
         if longname is None:
-            if name[0] in ['aeiouAEIOU']:
+            if name[0] in ["aeiouAEIOU"]:
                 hstr = "An "
             else:
                 hstr = "A "
@@ -3034,18 +3205,22 @@ class rv_discrete(rv_generic):
         if sys.flags.optimize < 2:
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
-                self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc,
-                                            docdict=docdict_discrete,
-                                            discrete='discrete')
+                self._construct_default_doc(
+                    longname=longname,
+                    extradoc=extradoc,
+                    docdict=docdict_discrete,
+                    discrete="discrete",
+                )
             else:
                 dct = dict(distdiscrete)
                 self._construct_doc(docdict_discrete, dct.get(self.name))
 
             # discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
-                '\n    scale : array_like, '
-                'optional\n        scale parameter (default=1)', '')
+                "\n    scale : array_like, "
+                "optional\n        scale parameter (default=1)",
+                "",
+            )
 
     def _updated_ctor_param(self):
         """Return the current version of _ctor_param, possibly updated by user.
@@ -3054,28 +3229,28 @@ class rv_discrete(rv_generic):
         Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
-        dct['a'] = self.a
-        dct['b'] = self.b
-        dct['badvalue'] = self.badvalue
-        dct['moment_tol'] = self.moment_tol
-        dct['inc'] = self.inc
-        dct['name'] = self.name
-        dct['shapes'] = self.shapes
-        dct['extradoc'] = self.extradoc
+        dct["a"] = self.a
+        dct["b"] = self.b
+        dct["badvalue"] = self.badvalue
+        dct["moment_tol"] = self.moment_tol
+        dct["inc"] = self.inc
+        dct["name"] = self.name
+        dct["shapes"] = self.shapes
+        dct["extradoc"] = self.extradoc
         return dct
 
     def _nonzero(self, k, *args):
         return floor(k) == k
 
     def _pmf(self, k, *args):
-        return self._cdf(k, *args) - self._cdf(k-1, *args)
+        return self._cdf(k, *args) - self._cdf(k - 1, *args)
 
     def _logpmf(self, k, *args):
         return log(self._pmf(k, *args))
 
     def _cdf_single(self, k, *args):
         _a, _b = self._get_support(*args)
-        m = arange(int(_a), k+1)
+        m = arange(int(_a), k + 1)
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
@@ -3113,7 +3288,7 @@ class rv_discrete(rv_generic):
             Random variates of given `size`.
 
         """
-        kwargs['discrete'] = True
+        kwargs["discrete"] = True
         return super().rvs(*args, **kwargs)
 
     def pmf(self, k, *args, **kwds):
@@ -3139,14 +3314,14 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray((k - loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        output = zeros(shape(cond), "d")
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, np.clip(self._pmf(*goodargs), 0, 1))
         if output.ndim == 0:
             return output[()]
@@ -3175,15 +3350,15 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray((k - loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), "d")
         output.fill(NINF)
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, self._logpmf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -3212,17 +3387,17 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray((k - loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
-        cond2 = (k >= _b)
+        cond2 = k >= _b
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
-        place(output, cond2*(cond0 == cond0), 1.0)
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        output = zeros(shape(cond), "d")
+        place(output, cond2 * (cond0 == cond0), 1.0)
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
 
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, np.clip(self._cdf(*goodargs), 0, 1))
         if output.ndim == 0:
             return output[()]
@@ -3251,18 +3426,18 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray((k - loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
-        cond2 = (k >= _b)
+        cond2 = k >= _b
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), "d")
         output.fill(NINF)
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
-        place(output, cond2*(cond0 == cond0), 0.0)
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
+        place(output, cond2 * (cond0 == cond0), 0.0)
 
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, self._logcdf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -3291,16 +3466,16 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray(k-loc)
+        k = asarray(k - loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k < _a) & cond0
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        output = zeros(shape(cond), "d")
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 1.0)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, np.clip(self._sf(*goodargs), 0, 1))
         if output.ndim == 0:
             return output[()]
@@ -3332,17 +3507,17 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray(k-loc)
+        k = asarray(k - loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k < _a) & cond0
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), "d")
         output.fill(NINF)
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, (1 - cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((k,)+args))
+            goodargs = argsreduce(cond, *((k,) + args))
             place(output, cond, self._logsf(*goodargs))
         if output.ndim == 0:
             return output[()]
@@ -3375,12 +3550,12 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
-        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype="d")
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _a-1 + loc)
+        place(output, (q == 0) * (cond == cond), _a - 1 + loc)
         place(output, cond2, _b + loc)
         if np.any(cond):
-            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            goodargs = argsreduce(cond, *((q,) + args + (loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._ppf(*goodargs) + loc)
 
@@ -3418,16 +3593,16 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
-        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype="d")
         # output type 'd' to handle nin and inf
         lower_bound = _a - 1 + loc
         upper_bound = _b + loc
-        place(output, cond2*(cond == cond), lower_bound)
-        place(output, cond3*(cond == cond), upper_bound)
+        place(output, cond2 * (cond == cond), lower_bound)
+        place(output, cond3 * (cond == cond), upper_bound)
 
         # call place only if at least 1 valid argument
         if np.any(cond):
-            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            goodargs = argsreduce(cond, *((q,) + args + (loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             # PB same as ticket 766
             place(output, cond, self._isf(*goodargs) + loc)
@@ -3437,15 +3612,30 @@ class rv_discrete(rv_generic):
         return output
 
     def _entropy(self, *args):
-        if hasattr(self, 'pk'):
+        if hasattr(self, "pk"):
             return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
-            return _expect(lambda x: entr(self.pmf(x, *args)),
-                           _a, _b, self.ppf(0.5, *args), self.inc)
+            return _expect(
+                lambda x: entr(self.pmf(x, *args)),
+                _a,
+                _b,
+                self.ppf(0.5, *args),
+                self.inc,
+            )
 
-    def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
-               conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
+    def expect(
+        self,
+        func=None,
+        args=(),
+        loc=0,
+        lb=None,
+        ub=None,
+        conditional=False,
+        maxcount=1000,
+        tolerance=1e-10,
+        chunksize=32,
+    ):
         """
         Calculate expected value of a function with respect to the distribution
         for discrete distribution by numerical summation.
@@ -3499,13 +3689,17 @@ class rv_discrete(rv_generic):
 
         """
         if func is None:
+
             def fun(x):
                 # loc and args from outer scope
-                return (x+loc)*self._pmf(x, *args)
+                return (x + loc) * self._pmf(x, *args)
+
         else:
+
             def fun(x):
                 # loc and args from outer scope
-                return func(x+loc)*self._pmf(x, *args)
+                return func(x + loc) * self._pmf(x, *args)
+
         # used pmf because _pmf does not check support in randint and there
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
@@ -3514,13 +3708,13 @@ class rv_discrete(rv_generic):
         if lb is None:
             lb = _a
         else:
-            lb = lb - loc   # convert bound for standardized distribution
+            lb = lb - loc  # convert bound for standardized distribution
         if ub is None:
             ub = _b
         else:
-            ub = ub - loc   # convert bound for standardized distribution
+            ub = ub - loc  # convert bound for standardized distribution
         if conditional:
-            invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
+            invfac = self.sf(lb - 1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
 
@@ -3534,12 +3728,11 @@ class rv_discrete(rv_generic):
         return res / invfac
 
 
-def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
-            chunksize=32):
+def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10, chunksize=32):
     """Helper for computing the expectation value of `fun`."""
     # short-circuit if the support size is small enough
     if (ub - lb) <= chunksize:
-        supp = np.arange(lb, ub+1, inc)
+        supp = np.arange(lb, ub + 1, inc)
         vals = fun(supp)
         return np.sum(vals)
 
@@ -3549,27 +3742,27 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
     if x0 > ub:
         x0 = ub
 
-    count, tot = 0, 0.
+    count, tot = 0, 0.0
     # iterate over [x0, ub] inclusive
-    for x in _iter_chunked(x0, ub+1, chunksize=chunksize, inc=inc):
+    for x in _iter_chunked(x0, ub + 1, chunksize=chunksize, inc=inc):
         count += x.size
         delta = np.sum(fun(x))
         tot += delta
         if abs(delta) < tolerance * x.size:
             break
         if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            warnings.warn("expect(): sum did not converge", RuntimeWarning)
             return tot
 
     # iterate over [lb, x0)
-    for x in _iter_chunked(x0-1, lb-1, chunksize=chunksize, inc=-inc):
+    for x in _iter_chunked(x0 - 1, lb - 1, chunksize=chunksize, inc=-inc):
         count += x.size
         delta = np.sum(fun(x))
         tot += delta
         if abs(delta) < tolerance * x.size:
             break
         if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            warnings.warn("expect(): sum did not converge", RuntimeWarning)
             break
 
     return tot
@@ -3594,9 +3787,9 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
 
     """
     if inc == 0:
-        raise ValueError('Cannot increment by zero.')
+        raise ValueError("Cannot increment by zero.")
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError("Chunk size must be positive; got %s." % chunksize)
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
@@ -3615,9 +3808,21 @@ class rv_sample(rv_discrete):
 
     The ctor ignores most of the arguments, only needs the `values` argument.
     """
-    def __init__(self, a=0, b=inf, name=None, badvalue=None,
-                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+
+    def __init__(
+        self,
+        a=0,
+        b=inf,
+        name=None,
+        badvalue=None,
+        moment_tol=1e-8,
+        values=None,
+        inc=1,
+        longname=None,
+        shapes=None,
+        extradoc=None,
+        seed=None,
+    ):
 
         super(rv_discrete, self).__init__(seed)
 
@@ -3626,9 +3831,18 @@ class rv_sample(rv_discrete):
 
         # cf generic freeze
         self._ctor_param = dict(
-            a=a, b=b, name=name, badvalue=badvalue,
-            moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+            a=a,
+            b=b,
+            name=name,
+            badvalue=badvalue,
+            moment_tol=moment_tol,
+            values=values,
+            inc=inc,
+            longname=longname,
+            shapes=shapes,
+            extradoc=extradoc,
+            seed=seed,
+        )
 
         if badvalue is None:
             badvalue = nan
@@ -3655,12 +3869,14 @@ class rv_sample(rv_discrete):
 
         self.qvals = np.cumsum(self.pk, axis=0)
 
-        self.shapes = ' '   # bypass inspection
+        self.shapes = " "  # bypass inspection
 
-        self._construct_argparser(meths_to_inspect=[self._pmf],
-                                  locscale_in='loc=0',
-                                  # scale=1 for discrete RVs
-                                  locscale_out='loc, 1')
+        self._construct_argparser(
+            meths_to_inspect=[self._pmf],
+            locscale_in="loc=0",
+            # scale=1 for discrete RVs
+            locscale_out="loc, 1",
+        )
 
         self._attach_methods()
 
@@ -3697,8 +3913,11 @@ class rv_sample(rv_discrete):
         return self.a, self.b
 
     def _pmf(self, x):
-        return np.select([x == k for k in self.xk],
-                         [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
+        return np.select(
+            [x == k for k in self.xk],
+            [np.broadcast_arrays(p, x)[0] for p in self.pk],
+            0,
+        )
 
     def _cdf(self, x):
         xx, xxk = np.broadcast_arrays(x[:, None], self.xk)
@@ -3726,7 +3945,7 @@ class rv_sample(rv_discrete):
 
     def generic_moment(self, n):
         n = asarray(n)
-        return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+        return np.sum(self.xk ** n[np.newaxis, ...] * self.pk, axis=0)
 
     def _expect(self, fun, lb, ub, *args, **kwds):
         # ignore all args, just do a brute force summation
@@ -3763,8 +3982,7 @@ def _check_shape(argshape, size):
     """
     scalar_shape = []
     bc = []
-    for argdim, sizedim in zip_longest(argshape[::-1], size[::-1],
-                                       fillvalue=1):
+    for argdim, sizedim in zip_longest(argshape[::-1], size[::-1], fillvalue=1):
         if sizedim > argdim or (argdim == sizedim == 1):
             scalar_shape.append(sizedim)
             bc.append(True)
@@ -3796,9 +4014,9 @@ def get_distribution_names(namespace_pairs, rv_base_class):
     distn_names = []
     distn_gen_names = []
     for name, value in namespace_pairs:
-        if name.startswith('_'):
+        if name.startswith("_"):
             continue
-        if name.endswith('_gen') and issubclass(value, rv_base_class):
+        if name.endswith("_gen") and issubclass(value, rv_base_class):
             distn_gen_names.append(name)
         if isinstance(value, rv_base_class):
             distn_names.append(name)

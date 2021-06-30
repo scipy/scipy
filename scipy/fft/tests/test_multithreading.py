@@ -6,18 +6,42 @@ import multiprocessing
 import os
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def x():
     return np.random.randn(512, 128)  # Must be large enough to qualify for mt
 
 
-@pytest.mark.parametrize("func", [
-    fft.fft, fft.ifft, fft.fft2, fft.ifft2, fft.fftn, fft.ifftn,
-    fft.rfft, fft.irfft, fft.rfft2, fft.irfft2, fft.rfftn, fft.irfftn,
-    fft.hfft, fft.ihfft, fft.hfft2, fft.ihfft2, fft.hfftn, fft.ihfftn,
-    fft.dct, fft.idct, fft.dctn, fft.idctn,
-    fft.dst, fft.idst, fft.dstn, fft.idstn,
-])
+@pytest.mark.parametrize(
+    "func",
+    [
+        fft.fft,
+        fft.ifft,
+        fft.fft2,
+        fft.ifft2,
+        fft.fftn,
+        fft.ifftn,
+        fft.rfft,
+        fft.irfft,
+        fft.rfft2,
+        fft.irfft2,
+        fft.rfftn,
+        fft.irfftn,
+        fft.hfft,
+        fft.ihfft,
+        fft.hfft2,
+        fft.ihfft2,
+        fft.hfftn,
+        fft.ihfftn,
+        fft.dct,
+        fft.idct,
+        fft.dctn,
+        fft.idctn,
+        fft.dst,
+        fft.idst,
+        fft.dstn,
+        fft.idstn,
+    ],
+)
 @pytest.mark.parametrize("workers", [2, -1])
 def test_threaded_same(x, func, workers):
     expected = func(x, workers=1)
@@ -48,11 +72,11 @@ def test_invalid_workers(x):
 
     fft.ifft([1], workers=-cpus)
 
-    with pytest.raises(ValueError, match='workers must not be zero'):
+    with pytest.raises(ValueError, match="workers must not be zero"):
         fft.fft(x, workers=0)
 
-    with pytest.raises(ValueError, match='workers value out of range'):
-        fft.ifft(x, workers=-cpus-1)
+    with pytest.raises(ValueError, match="workers value out of range"):
+        fft.ifft(x, workers=-cpus - 1)
 
 
 def test_set_get_workers():
@@ -74,10 +98,10 @@ def test_set_get_workers():
 
 def test_set_workers_invalid():
 
-    with pytest.raises(ValueError, match='workers must not be zero'):
+    with pytest.raises(ValueError, match="workers must not be zero"):
         with fft.set_workers(0):
             pass
 
-    with pytest.raises(ValueError, match='workers value out of range'):
-        with fft.set_workers(-os.cpu_count()-1):
+    with pytest.raises(ValueError, match="workers value out of range"):
+        with fft.set_workers(-os.cpu_count() - 1):
             pass

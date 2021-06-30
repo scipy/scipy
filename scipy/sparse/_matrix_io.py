@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse
 
-__all__ = ['save_npz', 'load_npz']
+__all__ = ["save_npz", "load_npz"]
 
 
 # Make loading safe vs. malicious input
@@ -9,7 +9,7 @@ PICKLE_KWARGS = dict(allow_pickle=False)
 
 
 def save_npz(file, matrix, compressed=True):
-    """ Save a sparse matrix to a file using ``.npz`` format.
+    """Save a sparse matrix to a file using ``.npz`` format.
 
     Parameters
     ----------
@@ -53,18 +53,20 @@ def save_npz(file, matrix, compressed=True):
             [4, 0, 0]], dtype=int64)
     """
     arrays_dict = {}
-    if matrix.format in ('csc', 'csr', 'bsr'):
+    if matrix.format in ("csc", "csr", "bsr"):
         arrays_dict.update(indices=matrix.indices, indptr=matrix.indptr)
-    elif matrix.format == 'dia':
+    elif matrix.format == "dia":
         arrays_dict.update(offsets=matrix.offsets)
-    elif matrix.format == 'coo':
+    elif matrix.format == "coo":
         arrays_dict.update(row=matrix.row, col=matrix.col)
     else:
-        raise NotImplementedError('Save is not implemented for sparse matrix of format {}.'.format(matrix.format))
+        raise NotImplementedError(
+            "Save is not implemented for sparse matrix of format {}.".format(
+                matrix.format
+            )
+        )
     arrays_dict.update(
-        format=matrix.format.encode('ascii'),
-        shape=matrix.shape,
-        data=matrix.data
+        format=matrix.format.encode("ascii"), shape=matrix.shape, data=matrix.data
     )
     if compressed:
         np.savez_compressed(file, **arrays_dict)
@@ -73,7 +75,7 @@ def save_npz(file, matrix, compressed=True):
 
 
 def load_npz(file):
-    """ Load a sparse matrix from a file using ``.npz`` format.
+    """Load a sparse matrix from a file using ``.npz`` format.
 
     Parameters
     ----------
@@ -122,28 +124,38 @@ def load_npz(file):
 
     with np.load(file, **PICKLE_KWARGS) as loaded:
         try:
-            matrix_format = loaded['format']
+            matrix_format = loaded["format"]
         except KeyError as e:
-            raise ValueError('The file {} does not contain a sparse matrix.'.format(file)) from e
+            raise ValueError(
+                "The file {} does not contain a sparse matrix.".format(file)
+            ) from e
 
         matrix_format = matrix_format.item()
 
         if not isinstance(matrix_format, str):
             # Play safe with Python 2 vs 3 backward compatibility;
             # files saved with SciPy < 1.0.0 may contain unicode or bytes.
-            matrix_format = matrix_format.decode('ascii')
+            matrix_format = matrix_format.decode("ascii")
 
         try:
-            cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
+            cls = getattr(scipy.sparse, "{}_matrix".format(matrix_format))
         except AttributeError as e:
             raise ValueError('Unknown matrix format "{}"'.format(matrix_format)) from e
 
-        if matrix_format in ('csc', 'csr', 'bsr'):
-            return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
-        elif matrix_format == 'dia':
-            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
-        elif matrix_format == 'coo':
-            return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
+        if matrix_format in ("csc", "csr", "bsr"):
+            return cls(
+                (loaded["data"], loaded["indices"], loaded["indptr"]),
+                shape=loaded["shape"],
+            )
+        elif matrix_format == "dia":
+            return cls((loaded["data"], loaded["offsets"]), shape=loaded["shape"])
+        elif matrix_format == "coo":
+            return cls(
+                (loaded["data"], (loaded["row"], loaded["col"])), shape=loaded["shape"]
+            )
         else:
-            raise NotImplementedError('Load is not implemented for '
-                                      'sparse matrix of format {}.'.format(matrix_format))
+            raise NotImplementedError(
+                "Load is not implemented for sparse matrix of format {}.".format(
+                    matrix_format
+                )
+            )

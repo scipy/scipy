@@ -23,7 +23,7 @@
  *                 |                   2
  * E(phi_\m)  =    |    sqrt( 1 - m sin t ) dt
  *                 |
- *               | |    
+ *               | |
  *                -
  *                 0
  *
@@ -40,7 +40,7 @@
  * arithmetic   domain     # trials      peak         rms
  *    IEEE     -10,10      150000       3.3e-15     1.4e-16
  */
-
+
 
 /*
  * Cephes Math Library Release 2.0:  April, 1987
@@ -95,7 +95,7 @@ double ellie(double phi, double m)
         temp = ellie_neg_m(lphi, m);
         goto done;
     }
- 
+
     if (lphi < 0.135) {
         double m11= (((((-7.0/2816.0)*m + (5.0/1056.0))*m - (7.0/2640.0))*m
                     + (17.0/41580.0))*m - (1.0/155925.0))*m;
@@ -168,16 +168,16 @@ double ellie(double phi, double m)
  * negative m, we use a power series in phi for small m*phi*phi, an asymptotic
  * series in m for large m*phi*phi* and the relation to Carlson's symmetric
  * integrals, R_F(x,y,z) and R_D(x,y,z).
- * 
+ *
  * E(phi, m) = sin(phi) * R_F(cos(phi)^2, 1 - m * sin(phi)^2, 1.0)
  *             - m * sin(phi)^3 * R_D(cos(phi)^2, 1 - m * sin(phi)^2, 1.0) / 3
- *             
+ *
  *           = R_F(c-1, c-m, c) - m * R_D(c-1, c-m, c) / 3
  *
  * where c = csc(phi)^2. We use the second form of this for (approximately)
  * phi > 1/(sqrt(DBL_MAX) ~ 1e-154, where csc(phi)^2 overflows. Elsewhere we
  * use the first form, accounting for the smallness of phi.
- * 
+ *
  * The algorithm used is described in Carlson, B. C. Numerical computation of
  * real or complex elliptic integrals. (1994) https://arxiv.org/abs/math/9409227
  * Most variable names reflect Carlson's usage.
@@ -191,7 +191,7 @@ double ellie_neg_m(double phi, double m)
     double A0d, Ad, seriesn, seriesd, Xd, Yd, Zd, E2d, E3d, E4d, E5d, scaled;
     int n = 0;
     double mpp = (m*phi)*phi;
-   
+
     if (-mpp < 1e-6 && phi < -m) {
         return phi + (mpp*phi*phi/30.0 - mpp*mpp/40.0 - mpp/6.0)*phi;
     }
@@ -224,7 +224,7 @@ double ellie_neg_m(double phi, double m)
         y = 1 - mpp;
         z = 1.0;
     }
-    
+
     if (x == y && x == z) {
         return (scalef + scaled/x)/sqrt(x);
     }
@@ -237,7 +237,7 @@ double ellie_neg_m(double phi, double m)
     /* Carlson gives 1/pow(3*r, 1.0/6.0) for this constant. if r == eps,
      * it is ~338.38. */
     Q = 400.0 * MAX3(fabs(A0f-x), fabs(A0f-y), fabs(A0f-z));
-    
+
     while (Q > fabs(Af) && Q > fabs(Ad) && n <= 100) {
         double sx = sqrt(x1);
         double sy = sqrt(y1);
@@ -279,4 +279,3 @@ double ellie_neg_m(double phi, double m)
     ret -= 3.0 * scaled * seriesd;
     return ret;
 }
-

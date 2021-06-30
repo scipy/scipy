@@ -84,10 +84,17 @@ _PI_SIX = np.pi ** 6
 
 # [Lifted from _loggamma.pxd.] If B_m are the Bernoulli numbers,
 # then Stirling coeffs are B_{2j}/(2j)/(2j-1) for j=8,...1.
-_STIRLING_COEFFS = [-2.955065359477124183e-2, 6.4102564102564102564e-3,
-                    -1.9175269175269175269e-3, 8.4175084175084175084e-4,
-                    -5.952380952380952381e-4, 7.9365079365079365079e-4,
-                    -2.7777777777777777778e-3, 8.3333333333333333333e-2]
+_STIRLING_COEFFS = [
+    -2.955065359477124183e-2,
+    6.4102564102564102564e-3,
+    -1.9175269175269175269e-3,
+    8.4175084175084175084e-4,
+    -5.952380952380952381e-4,
+    7.9365079365079365079e-4,
+    -2.7777777777777777778e-3,
+    8.3333333333333333333e-2,
+]
+
 
 def _log_nfactorial_div_n_pow_n(n):
     # Computes n! / n**n
@@ -95,8 +102,8 @@ def _log_nfactorial_div_n_pow_n(n):
     # Uses Stirling's approximation, but removes n*log(n) up-front to
     # avoid subtractive cancellation.
     #    = log(n)/2 - n + log(sqrt(2pi)) + sum B_{2j}/(2j)/(2j-1)/n**(2j-1)
-    rn = 1.0/n
-    return np.log(n)/2 - n + _LOG_2PI/2 + rn * np.polyval(_STIRLING_COEFFS, rn/n)
+    rn = 1.0 / n
+    return np.log(n) / 2 - n + _LOG_2PI / 2 + rn * np.polyval(_STIRLING_COEFFS, rn / n)
 
 
 def _clip_prob(p):
@@ -145,11 +152,11 @@ def _kolmogn_DMTW(n, d, cdf=True):
         w[j - 1] = fac
         fac /= j  # This might underflow.  Isn't a problem.
         v[j - 1] *= fac
-    tt = max(2 * h - 1.0, 0)**m - 2*h**m
+    tt = max(2 * h - 1.0, 0) ** m - 2 * h ** m
     v[-1] = (1.0 + tt) * fac
 
     for i in range(1, m):
-        H[i - 1:, i] = w[:m - i + 1]
+        H[i - 1 :, i] = w[: m - i + 1]
     H[:, 0] = v
     H[-1, :] = np.flip(v, axis=0)
 
@@ -182,7 +189,7 @@ def _kolmogn_DMTW(n, d, cdf=True):
     if expnt != 0:
         p = np.ldexp(p, expnt)
 
-    return _select_and_clip_prob(p, 1.0-p, cdf)
+    return _select_and_clip_prob(p, 1.0 - p, cdf)
 
 
 def _pomeranz_compute_j1j2(i, n, ll, ceilf, roundf):
@@ -225,9 +232,9 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     ll = int(np.floor(t))
     f = 1.0 * (t - ll)  # fractional part of t
     g = min(f, 1.0 - f)
-    ceilf = (1 if f > 0 else 0)
-    roundf = (1 if f > 0.5 else 0)
-    npwrs = 2 * (ll + 1)    # Maximum number of powers needed in convolutions
+    ceilf = 1 if f > 0 else 0
+    roundf = 1 if f > 0.5 else 0
+    npwrs = 2 * (ll + 1)  # Maximum number of powers needed in convolutions
     gpower = np.empty(npwrs)  # gpower = (g/n)^m/m!
     twogpower = np.empty(npwrs)  # twogpower = (2g/n)^m/m!
     onem2gpower = np.empty(npwrs)  # onem2gpower = ((1-2g)/n)^m/m!
@@ -237,7 +244,7 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     twogpower[0] = 1.0
     onem2gpower[0] = 1.0
     expnt = 0
-    g_over_n, two_g_over_n, one_minus_two_g_over_n = g/n, 2*g/n, (1 - 2*g)/n
+    g_over_n, two_g_over_n, one_minus_two_g_over_n = g / n, 2 * g / n, (1 - 2 * g) / n
     for m in range(1, npwrs):
         gpower[m] = gpower[m - 1] * g_over_n / m
         twogpower[m] = twogpower[m - 1] * two_g_over_n / m
@@ -259,13 +266,13 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
         if i == 1 or i == 2 * n + 1:
             pwrs = gpower
         else:
-            pwrs = (twogpower if i % 2 else onem2gpower)
+            pwrs = twogpower if i % 2 else onem2gpower
         ln2 = j2 - k1 + 1
         if ln2 > 0:
-            conv = np.convolve(V0[k1 - V0s:k1 - V0s + ln2], pwrs[:ln2])
+            conv = np.convolve(V0[k1 - V0s : k1 - V0s + ln2], pwrs[:ln2])
             conv_start = j1 - k1  # First index to use from conv
             conv_len = j2 - j1 + 1  # Number of entries to use from conv
-            V1[:conv_len] = conv[conv_start:conv_start + conv_len]
+            V1[:conv_len] = conv[conv_start : conv_start + conv_len]
             # Scale to avoid underflow.
             if 0 < np.max(V1) < _EM128:
                 V1 *= _EP128
@@ -303,7 +310,7 @@ def _kolmogn_PelzGood(n, x, cdf=True):
         return _select_and_clip_prob(1.0, 0.0, cdf=cdf)
 
     z = np.sqrt(n) * x
-    zsquared, zthree, zfour, zsix = z**2, z**3, z**4, z**6
+    zsquared, zthree, zfour, zsix = z ** 2, z ** 3, z ** 4, z ** 6
 
     qlog = -_PI_SQUARED / 8 / zsquared
     if qlog < _MIN_LOG:  # z ~ 0.041743441416853426
@@ -322,7 +329,7 @@ def _kolmogn_PelzGood(n, x, cdf=True):
     k3d = _PI_SIX * (5 - 30 * zsquared) / 64
     k3c = _PI_FOUR * (-60 * zsquared + 212 * zfour) / 16
     k3b = _PI_SQUARED * (135 * zfour - 96 * zsix) / 4
-    k3a = -30 * zsix - 90 * z**8
+    k3a = -30 * zsix - 90 * z ** 8
 
     K0to3 = np.zeros(4)
     # Use a Horner scheme to evaluate sum c_i q^(i^2)
@@ -330,18 +337,22 @@ def _kolmogn_PelzGood(n, x, cdf=True):
     maxk = int(np.ceil(16 * z / np.pi))
     for k in range(maxk, 0, -1):
         m = 2 * k - 1
-        msquared, mfour, msix = m**2, m**4, m**6
+        msquared, mfour, msix = m ** 2, m ** 4, m ** 6
         qpower = np.power(q, 8 * k)
-        coeffs = np.array([1.0,
-                           k1a + k1b*msquared,
-                           k2a + k2b*msquared + k2c*mfour,
-                           k3a + k3b*msquared + k3c*mfour + k3d*msix])
+        coeffs = np.array(
+            [
+                1.0,
+                k1a + k1b * msquared,
+                k2a + k2b * msquared + k2c * mfour,
+                k3a + k3b * msquared + k3c * mfour + k3d * msix,
+            ]
+        )
         K0to3 *= qpower
         K0to3 += coeffs
     K0to3 *= q
     K0to3 *= _SQRT2PI
     # z**10 > 0 as z > 0.04
-    K0to3 /= np.array([z, 6 * zfour, 72 * z**7, 6480 * z**10])
+    K0to3 /= np.array([z, 6 * zfour, 72 * z ** 7, 6480 * z ** 10])
 
     # Now do the other sum over the other terms, all integers k
     # K_2:  (pi^2 k^2) q^(k^2),
@@ -354,10 +365,10 @@ def _kolmogn_PelzGood(n, x, cdf=True):
     kspi = np.pi * ks
     qpwers = q ** ksquared
     k2extra = np.sum(ksquared * qpwers)
-    k2extra *= _PI_SQUARED * _SQRT2PI/(-36 * zthree)
+    k2extra *= _PI_SQUARED * _SQRT2PI / (-36 * zthree)
     K0to3[2] += k2extra
     k3extra = np.sum((sqrt3z + kspi) * (sqrt3z - kspi) * ksquared * qpwers)
-    k3extra *= _PI_SQUARED * _SQRT2PI/(216 * zsix)
+    k3extra *= _PI_SQUARED * _SQRT2PI / (216 * zsix)
     K0to3[3] += k3extra
     powers_of_n = np.power(n * 1.0, np.arange(len(K0to3)) / 2.0)
     K0to3 /= powers_of_n
@@ -390,12 +401,12 @@ def _kolmogn(n, x, cdf=True):
         if t <= 0.5:
             return _select_and_clip_prob(0.0, 1.0, cdf=cdf)
         if n <= 140:
-            prob = np.prod(np.arange(1, n+1) * (1.0/n) * (2*t - 1))
+            prob = np.prod(np.arange(1, n + 1) * (1.0 / n) * (2 * t - 1))
         else:
-            prob = np.exp(_log_nfactorial_div_n_pow_n(n) + n * np.log(2*t-1))
+            prob = np.exp(_log_nfactorial_div_n_pow_n(n) + n * np.log(2 * t - 1))
         return _select_and_clip_prob(prob, 1.0 - prob, cdf=cdf)
     if t >= n - 1:  # Ruben-Gambino
-        prob = 2 * (1.0 - x)**n
+        prob = 2 * (1.0 - x) ** n
         return _select_and_clip_prob(1 - prob, prob, cdf=cdf)
     if x >= 0.5:  # Exact: 2 * smirnov
         prob = 2 * scipy.special.smirnov(n, x)
@@ -423,7 +434,7 @@ def _kolmogn(n, x, cdf=True):
         # Fall through and compute the SF as 1.0-CDF
     if nxsquared >= 18.0:
         cdfprob = 1.0
-    elif n <= 100000 and n * x**1.5 <= 1.4:
+    elif n <= 100000 and n * x ** 1.5 <= 1.4:
         cdfprob = _kolmogn_DMTW(n, x, cdf=True)
     else:
         cdfprob = _kolmogn_PelzGood(n, x, cdf=True)
@@ -449,11 +460,11 @@ def _kolmogn_p(n, x):
         if n <= 140:
             prd = np.prod(np.arange(1, n) * (1.0 / n) * (2 * t - 1))
         else:
-            prd = np.exp(_log_nfactorial_div_n_pow_n(n) + (n-1) * np.log(2 * t - 1))
-        return prd * 2 * n**2
+            prd = np.exp(_log_nfactorial_div_n_pow_n(n) + (n - 1) * np.log(2 * t - 1))
+        return prd * 2 * n ** 2
     if t >= n - 1:
         # Ruben-Gambino : 1-2(1-x)**n -> 2n*(1-x)**(n-1)
-        return 2 * (1.0 - x) ** (n-1) * n
+        return 2 * (1.0 - x) ** (n - 1) * n
     if x >= 0.5:
         return 2 * scipy.stats.ksone.pdf(x, n)
 
@@ -462,8 +473,8 @@ def _kolmogn_p(n, x):
     # as the CDF is a piecewise degree n polynomial.
     # It has knots at 1/n, 2/n, ... (n-1)/n
     # and is not a C-infinity function at the knots
-    delta = x / 2.0**16
-    delta = min(delta, x - 1.0/n)
+    delta = x / 2.0 ** 16
+    delta = min(delta, x - 1.0 / n)
     delta = min(delta, 0.5 - x)
 
     def _kk(_x):
@@ -483,19 +494,19 @@ def _kolmogni(n, p, q):
     if int(n) != n or n <= 0:
         return np.nan
     if p <= 0:
-        return 1.0/n
+        return 1.0 / n
     if q <= 0:
         return 1.0
-    delta = np.exp((np.log(p) - scipy.special.loggamma(n+1))/n)
-    if delta <= 1.0/n:
+    delta = np.exp((np.log(p) - scipy.special.loggamma(n + 1)) / n)
+    if delta <= 1.0 / n:
         return (delta + 1.0 / n) / 2
-    x = -np.expm1(np.log(q/2.0)/n)
-    if x >= 1 - 1.0/n:
+    x = -np.expm1(np.log(q / 2.0) / n)
+    if x >= 1 - 1.0 / n:
         return x
-    x1 = scu._kolmogci(p)/np.sqrt(n)
-    x1 = min(x1, 1.0 - 1.0/n)
+    x1 = scu._kolmogci(p) / np.sqrt(n)
+    x1 = min(x1, 1.0 - 1.0 / n)
     _f = lambda x: _kolmogn(n, x) - p
-    return scipy.optimize.brentq(_f, 1.0/n, x1, xtol=1e-14)
+    return scipy.optimize.brentq(_f, 1.0 / n, x1, xtol=1e-14)
 
 
 def kolmogn(n, x, cdf=True):
@@ -522,14 +533,15 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, cdf, None],
-                   op_dtypes=[None, np.float64, np.bool_, np.float64])
+    it = np.nditer(
+        [n, x, cdf, None], op_dtypes=[None, np.float64, np.bool_, np.float64]
+    )
     for _n, _x, _cdf, z in it:
         if np.isnan(_n):
             z[...] = _n
             continue
         if int(_n) != _n:
-            raise ValueError(f'n is not integral: {_n}')
+            raise ValueError(f"n is not integral: {_n}")
         z[...] = _kolmogn(int(_n), _x, cdf=_cdf)
     result = it.operands[-1]
     return result
@@ -558,7 +570,7 @@ def kolmognp(n, x):
             z[...] = _n
             continue
         if int(_n) != _n:
-            raise ValueError(f'n is not integral: {_n}')
+            raise ValueError(f"n is not integral: {_n}")
         z[...] = _kolmogn_p(int(_n), _x)
     result = it.operands[-1]
     return result
@@ -589,8 +601,8 @@ def kolmogni(n, q, cdf=True):
             z[...] = _n
             continue
         if int(_n) != _n:
-            raise ValueError(f'n is not integral: {_n}')
-        _pcdf, _psf = (_q, 1-_q) if _cdf else (1-_q, _q)
+            raise ValueError(f"n is not integral: {_n}")
+        _pcdf, _psf = (_q, 1 - _q) if _cdf else (1 - _q, _q)
         z[...] = _kolmogni(int(_n), _pcdf, _psf)
     result = it.operands[-1]
     return result

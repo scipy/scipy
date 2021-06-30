@@ -6,7 +6,7 @@
 #include <numpy/arrayobject.h>
 
 /*
- * A compiler time (ct) assert macro from 
+ * A compiler time (ct) assert macro from
  * http://www.pixelbeat.org/programming/gcc/static_assert.html
  * This is used to assure that npy_bool_wrapper is the right size.
  */
@@ -38,8 +38,8 @@ class npy_bool_wrapper {
             return (*this);
         }
         /* constructors */
-        npy_bool_wrapper() { 
-            value = 0; 
+        npy_bool_wrapper() {
+            value = 0;
         }
         template <class T>
         npy_bool_wrapper(T x) {

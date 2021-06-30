@@ -5,7 +5,7 @@ from scipy.special import beta
 
 # The following code was used to generate the Pade coefficients for the
 # Tukey Lambda variance function.  Version 0.17 of mpmath was used.
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # import mpmath as mp
 #
 # mp.mp.dps = 60
@@ -25,14 +25,23 @@ from scipy.special import beta
 # p, q = mp.pade(t, 4, 4)
 # print("p =", [mp.fp.mpf(c) for c in p])
 # print("q =", [mp.fp.mpf(c) for c in q])
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda variance function.
-_tukeylambda_var_pc = [3.289868133696453, 0.7306125098871127,
-                       -0.5370742306855439, 0.17292046290190008,
-                       -0.02371146284628187]
-_tukeylambda_var_qc = [1.0, 3.683605511659861, 4.184152498888124,
-                       1.7660926747377275, 0.2643989311168465]
+_tukeylambda_var_pc = [
+    3.289868133696453,
+    0.7306125098871127,
+    -0.5370742306855439,
+    0.17292046290190008,
+    -0.02371146284628187,
+]
+_tukeylambda_var_qc = [
+    1.0,
+    3.683605511659861,
+    4.184152498888124,
+    1.7660926747377275,
+    0.2643989311168465,
+]
 
 # numpy.poly1d instances for the numerator and denominator of the
 # Pade approximation to the Tukey Lambda variance.
@@ -94,15 +103,16 @@ def tukeylambda_variance(lam):
         # Use the Pade approximation near lambda = 0.
         v[small_mask] = _tukeylambda_var_p(small) / _tukeylambda_var_q(small)
     if reg.size > 0:
-        v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
-                                      beta(reg + 1, reg + 1))
+        v[reg_mask] = (2.0 / reg ** 2) * (
+            1.0 / (1.0 + 2 * reg) - beta(reg + 1, reg + 1)
+        )
     v.shape = shp
     return v
 
 
 # The following code was used to generate the Pade coefficients for the
 # Tukey Lambda kurtosis function.  Version 0.17 of mpmath was used.
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # import mpmath as mp
 #
 # mp.mp.dps = 60
@@ -130,13 +140,23 @@ def tukeylambda_variance(lam):
 # p, q = mp.pade(t, 4, 4)
 # print("p =", [mp.fp.mpf(c) for c in p])
 # print("q =", [mp.fp.mpf(c) for c in q])
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda kurtosis function.
-_tukeylambda_kurt_pc = [1.2, -5.853465139719495, -22.653447381131077,
-                        0.20601184383406815, 4.59796302262789]
-_tukeylambda_kurt_qc = [1.0, 7.171149192233599, 12.96663094361842,
-                        0.43075235247853005, -2.789746758009912]
+_tukeylambda_kurt_pc = [
+    1.2,
+    -5.853465139719495,
+    -22.653447381131077,
+    0.20601184383406815,
+    4.59796302262789,
+]
+_tukeylambda_kurt_qc = [
+    1.0,
+    7.171149192233599,
+    12.96663094361842,
+    0.43075235247853005,
+    -2.789746758009912,
+]
 
 # numpy.poly1d instances for the numerator and denominator of the
 # Pade approximation to the Tukey Lambda kurtosis.
@@ -188,9 +208,12 @@ def tukeylambda_kurtosis(lam):
     if small.size > 0:
         k[small_mask] = _tukeylambda_kurt_p(small) / _tukeylambda_kurt_q(small)
     if reg.size > 0:
-        numer = (1.0 / (4 * reg + 1) - 4 * beta(3 * reg + 1, reg + 1) +
-                 3 * beta(2 * reg + 1, 2 * reg + 1))
-        denom = 2 * (1.0/(2 * reg + 1) - beta(reg + 1, reg + 1))**2
+        numer = (
+            1.0 / (4 * reg + 1)
+            - 4 * beta(3 * reg + 1, reg + 1)
+            + 3 * beta(2 * reg + 1, 2 * reg + 1)
+        )
+        denom = 2 * (1.0 / (2 * reg + 1) - beta(reg + 1, reg + 1)) ** 2
         k[reg_mask] = numer / denom - 3
 
     # The return value will be a numpy array; resetting the shape ensures that

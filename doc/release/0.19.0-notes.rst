@@ -780,4 +780,3 @@ Pull requests for 0.19.0
 - `#7101 <https://github.com/scipy/scipy/pull/7101>`__: TST: Relax solve_continuous_are test case 2 and 12
 - `#7106 <https://github.com/scipy/scipy/pull/7106>`__: BUG: stop cdist "correlation" modifying input
 - `#7116 <https://github.com/scipy/scipy/pull/7116>`__: Backports to 0.19.0rc2
-

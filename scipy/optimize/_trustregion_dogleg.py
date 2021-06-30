@@ -1,13 +1,12 @@
 """Dog-leg trust-region optimization."""
 import numpy as np
 import scipy.linalg
-from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
+from ._trustregion import _minimize_trust_region, BaseQuadraticSubproblem
 
 __all__ = []
 
 
-def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
-                     **trust_region_options):
+def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None, **trust_region_options):
     """
     Minimization of scalar function of one or more variables using
     the dog-leg trust-region algorithm.
@@ -27,12 +26,18 @@ def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
 
     """
     if jac is None:
-        raise ValueError('Jacobian is required for dogleg minimization')
+        raise ValueError("Jacobian is required for dogleg minimization")
     if hess is None:
-        raise ValueError('Hessian is required for dogleg minimization')
-    return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
-                                  subproblem=DoglegSubproblem,
-                                  **trust_region_options)
+        raise ValueError("Hessian is required for dogleg minimization")
+    return _minimize_trust_region(
+        fun,
+        x0,
+        args=args,
+        jac=jac,
+        hess=hess,
+        subproblem=DoglegSubproblem,
+        **trust_region_options,
+    )
 
 
 class DoglegSubproblem(BaseQuadraticSubproblem):
@@ -115,8 +120,7 @@ class DoglegSubproblem(BaseQuadraticSubproblem):
         # This requires solving a quadratic equation.
         # ||p_u + t*(p_best - p_u)||**2 == trust_radius**2
         # Solve this for positive time t using the quadratic formula.
-        _, tb = self.get_boundaries_intersections(p_u, p_best - p_u,
-                                                  trust_radius)
+        _, tb = self.get_boundaries_intersections(p_u, p_best - p_u, trust_radius)
         p_boundary = p_u + tb * (p_best - p_u)
         hits_boundary = True
         return p_boundary, hits_boundary

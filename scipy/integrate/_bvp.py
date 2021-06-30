@@ -31,7 +31,7 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
     dtype = y.dtype
 
     df_dy = np.empty((n, n, m), dtype=dtype)
-    h = EPS**0.5 * (1 + np.abs(y))
+    h = EPS ** 0.5 * (1 + np.abs(y))
     for i in range(n):
         y_new = y.copy()
         y_new[i] += h[i]
@@ -44,7 +44,7 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
         df_dp = None
     else:
         df_dp = np.empty((n, k, m), dtype=dtype)
-        h = EPS**0.5 * (1 + np.abs(p))
+        h = EPS ** 0.5 * (1 + np.abs(p))
         for i in range(k):
             p_new = p.copy()
             p_new[i] += h[i]
@@ -79,7 +79,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
     dtype = ya.dtype
 
     dbc_dya = np.empty((n, n + k), dtype=dtype)
-    h = EPS**0.5 * (1 + np.abs(ya))
+    h = EPS ** 0.5 * (1 + np.abs(ya))
     for i in range(n):
         ya_new = ya.copy()
         ya_new[i] += h[i]
@@ -88,7 +88,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
         dbc_dya[i] = (bc_new - bc0) / hi
     dbc_dya = dbc_dya.T
 
-    h = EPS**0.5 * (1 + np.abs(yb))
+    h = EPS ** 0.5 * (1 + np.abs(yb))
     dbc_dyb = np.empty((n, n + k), dtype=dtype)
     for i in range(n):
         yb_new = yb.copy()
@@ -101,7 +101,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
     if k == 0:
         dbc_dp = None
     else:
-        h = EPS**0.5 * (1 + np.abs(p))
+        h = EPS ** 0.5 * (1 + np.abs(p))
         dbc_dp = np.empty((k, n + k), dtype=dtype)
         for i in range(k):
             p_new = p.copy()
@@ -120,8 +120,7 @@ def compute_jac_indices(n, m, k):
     See `construct_global_jac` for the explanation.
     """
     i_col = np.repeat(np.arange((m - 1) * n), n)
-    j_col = (np.tile(np.arange(n), n * (m - 1)) +
-             np.repeat(np.arange(m - 1) * n, n**2))
+    j_col = np.tile(np.arange(n), n * (m - 1)) + np.repeat(np.arange(m - 1) * n, n ** 2)
 
     i_bc = np.repeat(np.arange((m - 1) * n, m * n + k), n)
     j_bc = np.tile(np.arange(n), n + k)
@@ -133,9 +132,7 @@ def compute_jac_indices(n, m, k):
     j_p_bc = np.tile(np.arange(m * n, m * n + k), n + k)
 
     i = np.hstack((i_col, i_col, i_bc, i_bc, i_p_col, i_p_bc))
-    j = np.hstack((j_col, j_col + n,
-                   j_bc, j_bc + (m - 1) * n,
-                   j_p_col, j_p_bc))
+    j = np.hstack((j_col, j_col + n, j_bc, j_bc + (m - 1) * n, j_p_col, j_p_bc))
 
     return i, j
 
@@ -152,11 +149,24 @@ def stacked_matmul(a, b):
             out[i] = np.dot(a[i], b[i])
         return out
     else:
-        return np.einsum('...ij,...jk->...ik', a, b)
+        return np.einsum("...ij,...jk->...ik", a, b)
 
 
-def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
-                         df_dp_middle, dbc_dya, dbc_dyb, dbc_dp):
+def construct_global_jac(
+    n,
+    m,
+    k,
+    i_jac,
+    j_jac,
+    h,
+    df_dy,
+    df_dy_middle,
+    df_dp,
+    df_dp_middle,
+    dbc_dya,
+    dbc_dyb,
+    dbc_dp,
+):
     """Construct the Jacobian of the collocation system.
 
     There are n * m + k functions: m - 1 collocations residuals, each
@@ -249,24 +259,25 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     dPhi_dy_0[:] = -np.identity(n)
     dPhi_dy_0 -= h / 6 * (df_dy[:-1] + 2 * df_dy_middle)
     T = stacked_matmul(df_dy_middle, df_dy[:-1])
-    dPhi_dy_0 -= h**2 / 12 * T
+    dPhi_dy_0 -= h ** 2 / 12 * T
 
     # Computing off-diagonal n x n blocks.
     dPhi_dy_1 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_1[:] = np.identity(n)
     dPhi_dy_1 -= h / 6 * (df_dy[1:] + 2 * df_dy_middle)
     T = stacked_matmul(df_dy_middle, df_dy[1:])
-    dPhi_dy_1 += h**2 / 12 * T
+    dPhi_dy_1 += h ** 2 / 12 * T
 
-    values = np.hstack((dPhi_dy_0.ravel(), dPhi_dy_1.ravel(), dbc_dya.ravel(),
-                        dbc_dyb.ravel()))
+    values = np.hstack(
+        (dPhi_dy_0.ravel(), dPhi_dy_1.ravel(), dbc_dya.ravel(), dbc_dyb.ravel())
+    )
 
     if k > 0:
         df_dp = np.transpose(df_dp, (2, 0, 1))
         df_dp_middle = np.transpose(df_dp_middle, (2, 0, 1))
         T = stacked_matmul(df_dy_middle, df_dp[:-1] - df_dp[1:])
         df_dp_middle += 0.125 * h * T
-        dPhi_dp = -h/6 * (df_dp[:-1] + df_dp[1:] + 4 * df_dp_middle)
+        dPhi_dp = -h / 6 * (df_dp[:-1] + df_dp[1:] + 4 * df_dp_middle)
         values = np.hstack((values, dPhi_dp.ravel(), dbc_dp.ravel()))
 
     J = coo_matrix((values, (i_jac, j_jac)))
@@ -305,11 +316,9 @@ def collocation_fun(fun, y, p, x, h):
            Number 3, pp. 299-316, 2001.
     """
     f = fun(x, y, p)
-    y_middle = (0.5 * (y[:, 1:] + y[:, :-1]) -
-                0.125 * h * (f[:, 1:] - f[:, :-1]))
+    y_middle = 0.5 * (y[:, 1:] + y[:, :-1]) - 0.125 * h * (f[:, 1:] - f[:, :-1])
     f_middle = fun(x[:-1] + 0.5 * h, y_middle, p)
-    col_res = y[:, 1:] - y[:, :-1] - h / 6 * (f[:, :-1] + f[:, 1:] +
-                                              4 * f_middle)
+    col_res = y[:, 1:] - y[:, :-1] - h / 6 * (f[:, :-1] + f[:, 1:] + 4 * f_middle)
 
     return col_res, y_middle, f, f_middle
 
@@ -326,20 +335,32 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
         if fun_jac is None:
             df_dy, df_dp = estimate_fun_jac(fun, x, y, p, f)
             df_dy_middle, df_dp_middle = estimate_fun_jac(
-                fun, x_middle, y_middle, p, f_middle)
+                fun, x_middle, y_middle, p, f_middle
+            )
         else:
             df_dy, df_dp = fun_jac(x, y, p)
             df_dy_middle, df_dp_middle = fun_jac(x_middle, y_middle, p)
 
         if bc_jac is None:
-            dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1],
-                                                       p, bc0)
+            dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1], p, bc0)
         else:
             dbc_dya, dbc_dyb, dbc_dp = bc_jac(y[:, 0], y[:, -1], p)
 
-        return construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy,
-                                    df_dy_middle, df_dp, df_dp_middle, dbc_dya,
-                                    dbc_dyb, dbc_dp)
+        return construct_global_jac(
+            n,
+            m,
+            k,
+            i_jac,
+            j_jac,
+            h,
+            df_dy,
+            df_dy_middle,
+            df_dp,
+            df_dp_middle,
+            dbc_dya,
+            dbc_dyb,
+            dbc_dp,
+        )
 
     return col_fun, sys_jac
 
@@ -412,7 +433,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     # which we choose to be 1.5 orders lower than the BVP tolerance. We rewrite
     # the condition as col_res < tol_r * (1 + np.abs(f_middle)), then tol_r
     # should be computed as follows:
-    tol_r = 2/3 * h * 5e-2 * bvp_tol
+    tol_r = 2 / 3 * h * 5e-2 * bvp_tol
 
     # Maximum allowed number of Jacobian evaluation and factorization, in
     # other words, the maximum number of full Newton iterations. A small value
@@ -437,7 +458,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
     col_res, y_middle, f, f_middle = col_fun(y, p)
     bc_res = bc(y[:, 0], y[:, -1], p)
-    res = np.hstack((col_res.ravel(order='F'), bc_res))
+    res = np.hstack((col_res.ravel(order="F"), bc_res))
 
     njev = 0
     singular = False
@@ -455,8 +476,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
             step = LU.solve(res)
             cost = np.dot(step, step)
 
-        y_step = step[:m * n].reshape((n, m), order='F')
-        p_step = step[m * n:]
+        y_step = step[: m * n].reshape((n, m), order="F")
+        p_step = step[m * n :]
 
         alpha = 1
         for trial in range(n_trial + 1):
@@ -467,7 +488,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
             col_res, y_middle, f, f_middle = col_fun(y_new, p_new)
             bc_res = bc(y_new[:, 0], y_new[:, -1], p_new)
-            res = np.hstack((col_res.ravel(order='F'), bc_res))
+            res = np.hstack((col_res.ravel(order="F"), bc_res))
 
             step_new = LU.solve(res)
             cost_new = np.dot(step_new, step_new)
@@ -483,8 +504,9 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         if njev == max_njev:
             break
 
-        if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(np.abs(bc_res) < bc_tol)):
+        if np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and np.all(
+            np.abs(bc_res) < bc_tol
+        ):
             break
 
         # If the full step was taken, then we are going to continue with
@@ -500,15 +522,21 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
 
 def print_iteration_header():
-    print("{:^15}{:^15}{:^15}{:^15}{:^15}".format(
-        "Iteration", "Max residual", "Max BC residual", "Total nodes",
-        "Nodes added"))
+    print(
+        "{:^15}{:^15}{:^15}{:^15}{:^15}".format(
+            "Iteration", "Max residual", "Max BC residual", "Total nodes", "Nodes added"
+        )
+    )
 
 
-def print_iteration_progress(iteration, residual, bc_residual, total_nodes,
-                             nodes_added):
-    print("{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, bc_residual, total_nodes, nodes_added))
+def print_iteration_progress(
+    iteration, residual, bc_residual, total_nodes, nodes_added
+):
+    print(
+        "{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
+            iteration, residual, bc_residual, total_nodes, nodes_added
+        )
+    )
 
 
 class BVPResult(OptimizeResult):
@@ -519,7 +547,10 @@ TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
     1: "The maximum number of mesh nodes is exceeded.",
     2: "A singular Jacobian encountered when solving the collocation system.",
-    3: "The solver was unable to satisfy boundary conditions tolerance on iteration 10."
+    3: (
+        "The solver was unable to satisfy boundary conditions tolerance on"
+        " iteration 10."
+    ),
 }
 
 
@@ -551,7 +582,7 @@ def estimate_rms_residuals(fun, sol, x, h, p, r_middle, f_middle):
        Number 3, pp. 299-316, 2001.
     """
     x_middle = x[:-1] + 0.5 * h
-    s = 0.5 * h * (3/7)**0.5
+    s = 0.5 * h * (3 / 7) ** 0.5
     x1 = x_middle + s
     x2 = x_middle - s
     y1 = sol(x1)
@@ -626,12 +657,16 @@ def modify_mesh(x, insert_1, insert_2):
     """
     # Because np.insert implementation apparently varies with a version of
     # NumPy, we use a simple and reliable approach with sorting.
-    return np.sort(np.hstack((
-        x,
-        0.5 * (x[insert_1] + x[insert_1 + 1]),
-        (2 * x[insert_2] + x[insert_2 + 1]) / 3,
-        (x[insert_2] + 2 * x[insert_2 + 1]) / 3
-    )))
+    return np.sort(
+        np.hstack(
+            (
+                x,
+                0.5 * (x[insert_1] + x[insert_1 + 1]),
+                (2 * x[insert_2] + x[insert_2 + 1]) / 3,
+                (x[insert_2] + 2 * x[insert_2 + 1]) / 3,
+            )
+        )
+    )
 
 
 def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
@@ -643,6 +678,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
         bc_jac_wrapped = None
 
     if k == 0:
+
         def fun_p(x, y, _):
             return np.asarray(fun(x, y), dtype)
 
@@ -650,15 +686,18 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
             return np.asarray(bc(ya, yb), dtype)
 
         if fun_jac is not None:
+
             def fun_jac_p(x, y, _):
                 return np.asarray(fun_jac(x, y), dtype), None
 
         if bc_jac is not None:
+
             def bc_jac_wrapped(ya, yb, _):
                 dbc_dya, dbc_dyb = bc_jac(ya, yb)
-                return (np.asarray(dbc_dya, dtype),
-                        np.asarray(dbc_dyb, dtype), None)
+                return (np.asarray(dbc_dya, dtype), np.asarray(dbc_dyb, dtype), None)
+
     else:
+
         def fun_p(x, y, p):
             return np.asarray(fun(x, y, p), dtype)
 
@@ -666,19 +705,25 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
             return np.asarray(bc(x, y, p), dtype)
 
         if fun_jac is not None:
+
             def fun_jac_p(x, y, p):
                 df_dy, df_dp = fun_jac(x, y, p)
                 return np.asarray(df_dy, dtype), np.asarray(df_dp, dtype)
 
         if bc_jac is not None:
+
             def bc_jac_wrapped(ya, yb, p):
                 dbc_dya, dbc_dyb, dbc_dp = bc_jac(ya, yb, p)
-                return (np.asarray(dbc_dya, dtype), np.asarray(dbc_dyb, dtype),
-                        np.asarray(dbc_dp, dtype))
+                return (
+                    np.asarray(dbc_dya, dtype),
+                    np.asarray(dbc_dyb, dtype),
+                    np.asarray(dbc_dp, dtype),
+                )
 
     if S is None:
         fun_wrapped = fun_p
     else:
+
         def fun_wrapped(x, y, p):
             f = fun_p(x, y, p)
             if x[0] == a:
@@ -707,8 +752,20 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
     return fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped
 
 
-def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
-              tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
+def solve_bvp(
+    fun,
+    bc,
+    x,
+    y,
+    p=None,
+    S=None,
+    fun_jac=None,
+    bc_jac=None,
+    tol=1e-3,
+    max_nodes=1000,
+    verbose=0,
+    bc_tol=None,
+):
     """Solve a boundary value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
@@ -1013,8 +1070,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if y.ndim != 2:
         raise ValueError("`y` must be 2 dimensional.")
     if y.shape[1] != x.shape[0]:
-        raise ValueError("`y` is expected to have {} columns, but actually "
-                         "has {}.".format(x.shape[0], y.shape[1]))
+        raise ValueError(
+            "`y` is expected to have {} columns, but actually has {}.".format(
+                x.shape[0], y.shape[1]
+            )
+        )
 
     if p is None:
         p = np.array([])
@@ -1036,8 +1096,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if S is not None:
         S = np.asarray(S, dtype=dtype)
         if S.shape != (n, n):
-            raise ValueError("`S` is expected to have shape {}, "
-                             "but actually has {}".format((n, n), S.shape))
+            raise ValueError(
+                "`S` is expected to have shape {}, but actually has {}".format(
+                    (n, n), S.shape
+                )
+            )
 
         # Compute I - S^+ S to impose necessary boundary conditions.
         B = np.identity(n) - np.dot(pinv(S), S)
@@ -1057,17 +1120,24 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     max_iteration = 10
 
     fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
-        fun, bc, fun_jac, bc_jac, k, a, S, D, dtype)
+        fun, bc, fun_jac, bc_jac, k, a, S, D, dtype
+    )
 
     f = fun_wrapped(x, y, p)
     if f.shape != y.shape:
-        raise ValueError("`fun` return is expected to have shape {}, "
-                         "but actually has {}.".format(y.shape, f.shape))
+        raise ValueError(
+            "`fun` return is expected to have shape {}, but actually has {}.".format(
+                y.shape, f.shape
+            )
+        )
 
     bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
     if bc_res.shape != (n + k,):
-        raise ValueError("`bc` return is expected to have shape {}, "
-                         "but actually has {}.".format((n + k,), bc_res.shape))
+        raise ValueError(
+            "`bc` return is expected to have shape {}, but actually has {}.".format(
+                (n + k,), bc_res.shape
+            )
+        )
 
     status = 0
     iteration = 0
@@ -1077,43 +1147,43 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     while True:
         m = x.shape[0]
 
-        col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
-                                       fun_jac_wrapped, bc_jac_wrapped, x, h)
-        y, p, singular = solve_newton(n, m, h, col_fun, bc_wrapped, jac_sys,
-                                      y, p, B, tol, bc_tol)
+        col_fun, jac_sys = prepare_sys(
+            n, m, k, fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped, x, h
+        )
+        y, p, singular = solve_newton(
+            n, m, h, col_fun, bc_wrapped, jac_sys, y, p, B, tol, bc_tol
+        )
         iteration += 1
 
-        col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
-                                                         p, x, h)
+        col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y, p, x, h)
         bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
         max_bc_res = np.max(abs(bc_res))
 
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
-        rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
-                                         r_middle, f_middle)
+        rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p, r_middle, f_middle)
         max_rms_res = np.max(rms_res)
 
         if singular:
             status = 2
             break
 
-        insert_1, = np.nonzero((rms_res > tol) & (rms_res < 100 * tol))
-        insert_2, = np.nonzero(rms_res >= 100 * tol)
+        (insert_1,) = np.nonzero((rms_res > tol) & (rms_res < 100 * tol))
+        (insert_2,) = np.nonzero(rms_res >= 100 * tol)
         nodes_added = insert_1.shape[0] + 2 * insert_2.shape[0]
 
         if m + nodes_added > max_nodes:
             status = 1
             if verbose == 2:
                 nodes_added = "({})".format(nodes_added)
-                print_iteration_progress(iteration, max_rms_res, max_bc_res,
-                                         m, nodes_added)
+                print_iteration_progress(
+                    iteration, max_rms_res, max_bc_res, m, nodes_added
+                )
             break
 
         if verbose == 2:
-            print_iteration_progress(iteration, max_rms_res, max_bc_res, m,
-                                     nodes_added)
+            print_iteration_progress(iteration, max_rms_res, max_bc_res, m, nodes_added)
 
         if nodes_added > 0:
             x = modify_mesh(x, insert_1, insert_2)
@@ -1128,31 +1198,52 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     if verbose > 0:
         if status == 0:
-            print("Solved in {} iterations, number of nodes {}. \n"
-                  "Maximum relative residual: {:.2e} \n"
-                  "Maximum boundary residual: {:.2e}"
-                  .format(iteration, x.shape[0], max_rms_res, max_bc_res))
+            print(
+                "Solved in {} iterations, number of nodes {}. \n"
+                "Maximum relative residual: {:.2e} \n"
+                "Maximum boundary residual: {:.2e}".format(
+                    iteration, x.shape[0], max_rms_res, max_bc_res
+                )
+            )
         elif status == 1:
-            print("Number of nodes is exceeded after iteration {}. \n"
-                  "Maximum relative residual: {:.2e} \n"
-                  "Maximum boundary residual: {:.2e}"
-                  .format(iteration, max_rms_res, max_bc_res))
+            print(
+                "Number of nodes is exceeded after iteration {}. \n"
+                "Maximum relative residual: {:.2e} \n"
+                "Maximum boundary residual: {:.2e}".format(
+                    iteration, max_rms_res, max_bc_res
+                )
+            )
         elif status == 2:
-            print("Singular Jacobian encountered when solving the collocation "
-                  "system on iteration {}. \n"
-                  "Maximum relative residual: {:.2e} \n"
-                  "Maximum boundary residual: {:.2e}"
-                  .format(iteration, max_rms_res, max_bc_res))
+            print(
+                "Singular Jacobian encountered when solving the collocation "
+                "system on iteration {}. \n"
+                "Maximum relative residual: {:.2e} \n"
+                "Maximum boundary residual: {:.2e}".format(
+                    iteration, max_rms_res, max_bc_res
+                )
+            )
         elif status == 3:
-            print("The solver was unable to satisfy boundary conditions "
-                  "tolerance on iteration {}. \n"
-                  "Maximum relative residual: {:.2e} \n"
-                  "Maximum boundary residual: {:.2e}"
-                  .format(iteration, max_rms_res, max_bc_res))
+            print(
+                "The solver was unable to satisfy boundary conditions "
+                "tolerance on iteration {}. \n"
+                "Maximum relative residual: {:.2e} \n"
+                "Maximum boundary residual: {:.2e}".format(
+                    iteration, max_rms_res, max_bc_res
+                )
+            )
 
     if p.size == 0:
         p = None
 
-    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, rms_residuals=rms_res,
-                     niter=iteration, status=status,
-                     message=TERMINATION_MESSAGES[status], success=status == 0)
+    return BVPResult(
+        sol=sol,
+        p=p,
+        x=x,
+        y=y,
+        yp=f,
+        rms_residuals=rms_res,
+        niter=iteration,
+        status=status,
+        message=TERMINATION_MESSAGES[status],
+        success=status == 0,
+    )

@@ -36,7 +36,7 @@
 */
 typedef enum {  /* must match mergetypes[] */
   MRGnone= 0,
-                  /* MRGcoplanar..MRGtwisted go into qh.facet_mergeset for qh_all_merges 
+                  /* MRGcoplanar..MRGtwisted go into qh.facet_mergeset for qh_all_merges
                      qh_compare_facetmerge selects lower mergetypes for merging first */
   MRGcoplanar,          /* (1) centrum coplanar if centrum ('Cn') or vertex not clearly above or below neighbor */
   MRGanglecoplanar,     /* (2) angle coplanar if angle ('An') is coplanar */
@@ -54,7 +54,7 @@ typedef enum {  /* must match mergetypes[] */
   MRGdegen,             /* (10) degenerate facet (!enough neighbors) facet1 == facet2 */
   MRGredundant,         /* (11) redundant facet (vertex subset) */
                         /* merge_degenredundant assumes degen < redundant */
-  MRGmirror,            /* (12) mirror facets: same vertices due to null facets in qh_triangulate 
+  MRGmirror,            /* (12) mirror facets: same vertices due to null facets in qh_triangulate
                            f.redundant for both facets*/
                   /* MRGcoplanarhorizon for qh_mergecycle_all only */
   MRGcoplanarhorizon,   /* (13) new facet coplanar with the horizon (qh_mergecycle_all) */
@@ -80,7 +80,7 @@ typedef enum {  /* must match mergetypes[] */
 
 typedef struct mergeT mergeT;
 struct mergeT {         /* initialize in qh_appendmergeset */
-  realT   angle;        /* cosine of angle between normals of facet1 and facet2, 
+  realT   angle;        /* cosine of angle between normals of facet1 and facet2,
                            null value and right angle is 0.0, coplanar is 1.0, narrow is -1.0 */
   realT   distance;     /* absolute value of distance between vertices, centrum and facet, or vertex and facet */
   facetT *facet1;       /* will merge facet1 into facet2 */

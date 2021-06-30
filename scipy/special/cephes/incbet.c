@@ -52,7 +52,7 @@
  * incbet domain      x<0, x>1          0.0
  * incbet underflow                     0.0
  */
-
+
 
 /*
  * Cephes Math Library, Release 2.3:  March, 1995
@@ -158,7 +158,7 @@ double aa, bb, xx;
     }
     return (t);
 }
-
+
 /* Continued fraction expansion #1
  * for incomplete beta integral
  */
@@ -245,7 +245,7 @@ double a, b, x;
   cdone:
     return (ans);
 }
-
+
 
 /* Continued fraction expansion #2
  * for incomplete beta integral
@@ -333,7 +333,7 @@ double a, b, x;
   cdone:
     return (ans);
 }
-
+
 /* Power series for incomplete beta integral.
  * Use when b*x is small and x not too close to 1.  */
 

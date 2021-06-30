@@ -402,4 +402,3 @@ c  we partition the working space and determine the spline approximation
      * wrk1(lh),iwrk(ki),iwrk(kn),wrk2,lwrk2,ier)
   80  return
       end
-

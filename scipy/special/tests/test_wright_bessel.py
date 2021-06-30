@@ -24,15 +24,15 @@ import scipy.special as sc
 from scipy.special import rgamma, wright_bessel
 
 
-@pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
-@pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
+@pytest.mark.parametrize("a", [0, 1e-6, 0.1, 0.5, 1, 10])
+@pytest.mark.parametrize("b", [0, 1e-6, 0.1, 0.5, 1, 10])
 def test_wright_bessel_zero(a, b):
     """Test at x = 0."""
-    assert_equal(wright_bessel(a, b, 0.), rgamma(b))
+    assert_equal(wright_bessel(a, b, 0.0), rgamma(b))
 
 
-@pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
-@pytest.mark.parametrize('x', [0, 1e-6, 0.1, 0.5, 1])
+@pytest.mark.parametrize("b", [0, 1e-6, 0.1, 0.5, 1, 10])
+@pytest.mark.parametrize("x", [0, 1e-6, 0.1, 0.5, 1])
 def test_wright_bessel_iv(b, x):
     """Test relation of wright_bessel and modified bessel function iv.
 
@@ -41,17 +41,15 @@ def test_wright_bessel_iv(b, x):
     """
     if x != 0:
         v = b - 1
-        wb = wright_bessel(1, v + 1, x**2 / 4.)
+        wb = wright_bessel(1, v + 1, x ** 2 / 4.0)
         # Note: iv(v, x) has precision of less than 1e-12 for some cases
         # e.g v=1-1e-6 and x=1e-06)
-        assert_allclose(np.power(x / 2., v) * wb,
-                        sc.iv(v, x),
-                        rtol=1e-11, atol=1e-11)
+        assert_allclose(np.power(x / 2.0, v) * wb, sc.iv(v, x), rtol=1e-11, atol=1e-11)
 
 
-@pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
-@pytest.mark.parametrize('b', [1, 1 + 1e-3, 2, 5, 10])
-@pytest.mark.parametrize('x', [0, 1e-6, 0.1, 0.5, 1, 5, 10, 100])
+@pytest.mark.parametrize("a", [0, 1e-6, 0.1, 0.5, 1, 10])
+@pytest.mark.parametrize("b", [1, 1 + 1e-3, 2, 5, 10])
+@pytest.mark.parametrize("x", [0, 1e-6, 0.1, 0.5, 1, 5, 10, 100])
 def test_wright_functional(a, b, x):
     """Test functional relation of wright_bessel.
 
@@ -63,47 +61,47 @@ def test_wright_functional(a, b, x):
     Publ. de l' Institut Mathematique, Beograd,
     Nouvelle S`er. 10 (1970), 113-124.
     """
-    assert_allclose(wright_bessel(a, b - 1, x),
-                    a * x * wright_bessel(a, b + a, x)
-                    + (b - 1) * wright_bessel(a, b, x),
-                    rtol=1e-8, atol=1e-8)
+    assert_allclose(
+        wright_bessel(a, b - 1, x),
+        a * x * wright_bessel(a, b + a, x) + (b - 1) * wright_bessel(a, b, x),
+        rtol=1e-8,
+        atol=1e-8,
+    )
 
 
 # grid of rows [a, b, x, value, accuracy] that do not reach 1e-11 accuracy
 # see output of:
 # cd scipy/scipy/_precompute
 # python wright_bessel_data.py
-grid_a_b_x_value_acc = np.array([
-    [0.1, 100.0, 709.7827128933841, 8.026353022981087e+34, 2e-8],
-    [0.5, 10.0, 709.7827128933841, 2.680788404494657e+48, 9e-8],
-    [0.5, 10.0, 1000.0, 2.005901980702872e+64, 1e-8],
-    [0.5, 100.0, 1000.0, 3.4112367580445246e-117, 6e-8],
-    [1.0, 20.0, 100000.0, 1.7717158630699857e+225, 3e-11],
-    [1.0, 100.0, 100000.0, 1.0269334596230763e+22, np.nan],
-    [1.0000000000000222, 20.0, 100000.0, 1.7717158630001672e+225, 3e-11],
-    [1.0000000000000222, 100.0, 100000.0, 1.0269334595866202e+22, np.nan],
-    [1.5, 0.0, 500.0, 15648961196.432373, 3e-11],
-    [1.5, 2.220446049250313e-14, 500.0, 15648961196.431465, 3e-11],
-    [1.5, 1e-10, 500.0, 15648961192.344728, 3e-11],
-    [1.5, 1e-05, 500.0, 15648552437.334162, 3e-11],
-    [1.5, 0.1, 500.0, 12049870581.10317, 2e-11],
-    [1.5, 20.0, 100000.0, 7.81930438331405e+43, 3e-9],
-    [1.5, 100.0, 100000.0, 9.653370857459075e-130, np.nan],
-    ])
+grid_a_b_x_value_acc = np.array(
+    [
+        [0.1, 100.0, 709.7827128933841, 8.026353022981087e34, 2e-8],
+        [0.5, 10.0, 709.7827128933841, 2.680788404494657e48, 9e-8],
+        [0.5, 10.0, 1000.0, 2.005901980702872e64, 1e-8],
+        [0.5, 100.0, 1000.0, 3.4112367580445246e-117, 6e-8],
+        [1.0, 20.0, 100000.0, 1.7717158630699857e225, 3e-11],
+        [1.0, 100.0, 100000.0, 1.0269334596230763e22, np.nan],
+        [1.0000000000000222, 20.0, 100000.0, 1.7717158630001672e225, 3e-11],
+        [1.0000000000000222, 100.0, 100000.0, 1.0269334595866202e22, np.nan],
+        [1.5, 0.0, 500.0, 15648961196.432373, 3e-11],
+        [1.5, 2.220446049250313e-14, 500.0, 15648961196.431465, 3e-11],
+        [1.5, 1e-10, 500.0, 15648961192.344728, 3e-11],
+        [1.5, 1e-05, 500.0, 15648552437.334162, 3e-11],
+        [1.5, 0.1, 500.0, 12049870581.10317, 2e-11],
+        [1.5, 20.0, 100000.0, 7.81930438331405e43, 3e-9],
+        [1.5, 100.0, 100000.0, 9.653370857459075e-130, np.nan],
+    ]
+)
 
 
 @pytest.mark.xfail
-@pytest.mark.parametrize(
-    'a, b, x, phi',
-    grid_a_b_x_value_acc[:, :4].tolist())
+@pytest.mark.parametrize("a, b, x, phi", grid_a_b_x_value_acc[:, :4].tolist())
 def test_wright_data_grid_failures(a, b, x, phi):
     """Test cases of test_data that do not reach relative accuracy of 1e-11"""
     assert_allclose(wright_bessel(a, b, x), phi, rtol=1e-11)
 
 
-@pytest.mark.parametrize(
-    'a, b, x, phi, accuracy',
-    grid_a_b_x_value_acc.tolist())
+@pytest.mark.parametrize("a, b, x, phi, accuracy", grid_a_b_x_value_acc.tolist())
 def test_wright_data_grid_less_accurate(a, b, x, phi, accuracy):
     """Test cases of test_data that do not reach relative accuracy of 1e-11
 

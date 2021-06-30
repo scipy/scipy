@@ -9,8 +9,8 @@ many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a limited number of deprecations
 and backwards-incompatible changes in this release, which are documented
 below.  All users are encouraged to upgrade to this release, as there
-are a large number of bug-fixes and optimizations.  Moreover, our 
-development attention will now shift to bug-fix releases on the 0.10.x 
+are a large number of bug-fixes and optimizations.  Moreover, our
+development attention will now shift to bug-fix releases on the 0.10.x
 branch, and on adding new features on the development master branch.
 
 Release highlights:
@@ -75,7 +75,7 @@ frequency).
 Additional decomposition options (``scipy.linalg``)
 ---------------------------------------------------
 
-A sort keyword has been added to the Schur decomposition routine 
+A sort keyword has been added to the Schur decomposition routine
 (``scipy.linalg.schur``) to allow the sorting of eigenvalues in
 the resultant Schur form.
 
@@ -89,7 +89,7 @@ Enhancements to ``scipy.stats``
 -------------------------------
 
 * The *one-sided form* of Fisher's exact test is now also implemented in
-  ``stats.fisher_exact``. 
+  ``stats.fisher_exact``.
 * The function ``stats.chi2_contingency`` for computing the chi-square test of
   independence of factors in a contingency table has been added, along with
   the related utility functions ``stats.contingency.margins`` and
@@ -160,7 +160,7 @@ removed::
   - ``anderson2`` (equivalent to ``anderson``)
   - ``broyden3`` (obsoleted by new limited-memory broyden methods)
   - ``vackar`` (renamed to ``diagbroyden``)
- 
+
 
 Other changes
 =============
@@ -218,4 +218,3 @@ one patch to this release, names in alphabetical order):
 
 A total of 35 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
-

@@ -28,5 +28,3 @@ Pull requests for 0.17.1
 - `#6100 <https://github.com/scipy/scipy/pull/6100>`__: BUG: Fix mannwhitneyu to be backward compatible
 - `#6135 <https://github.com/scipy/scipy/pull/6135>`__: Don't pass null pointers to LAPACK, even during workspace queries.
 - `#6148 <https://github.com/scipy/scipy/pull/6148>`__: stats: fix handling of nan values in T tests and kendalltau
-
-

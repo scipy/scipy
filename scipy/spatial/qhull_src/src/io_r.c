@@ -4101,4 +4101,3 @@ char *qh_skipfilename(qhT *qh, char *filename) {
       s++;
   return s;
 } /* skipfilename */
-

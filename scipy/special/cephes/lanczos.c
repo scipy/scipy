@@ -35,7 +35,7 @@ static double lanczos_sum_near_1(double dx)
 {
     double result = 0;
     unsigned k;
-    
+
     for (k = 1; k <= sizeof(lanczos_sum_near_1_d)/sizeof(lanczos_sum_near_1_d[0]); ++k) {
 	result += (-lanczos_sum_near_1_d[k-1]*dx)/(k*dx + k*k);
     }
@@ -48,7 +48,7 @@ static double lanczos_sum_near_2(double dx)
     double result = 0;
     double x = dx + 2;
     unsigned k;
-    
+
     for(k = 1; k <= sizeof(lanczos_sum_near_2_d)/sizeof(lanczos_sum_near_2_d[0]); ++k) {
 	result += (-lanczos_sum_near_2_d[k-1]*dx)/(x + k*x + k*k - 1);
     }

@@ -36,8 +36,11 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join("`{}`".format(x) for x in extraneous)))
+        warn(
+            "The following arguments have no effect for a chosen solver: {}.".format(
+                ", ".join("`{}`".format(x) for x in extraneous)
+            )
+        )
 
 
 def validate_tol(rtol, atol, n):
@@ -148,18 +151,17 @@ class OdeSolution:
     t_min, t_max : float
         Time range of the interpolation.
     """
+
     def __init__(self, ts, interpolants):
         ts = np.asarray(ts)
         d = np.diff(ts)
         # The first case covers integration on zero segment.
-        if not ((ts.size == 2 and ts[0] == ts[-1])
-                or np.all(d > 0) or np.all(d < 0)):
+        if not ((ts.size == 2 and ts[0] == ts[-1]) or np.all(d > 0) or np.all(d < 0)):
             raise ValueError("`ts` must be strictly increasing or decreasing.")
 
         self.n_segments = len(interpolants)
         if ts.shape != (self.n_segments + 1,):
-            raise ValueError("Numbers of time stamps and interpolants "
-                             "don't match.")
+            raise ValueError("Numbers of time stamps and interpolants don't match.")
 
         self.ts = ts
         self.interpolants = interpolants
@@ -178,9 +180,9 @@ class OdeSolution:
         # Here we preserve a certain symmetry that when t is in self.ts,
         # then we prioritize a segment with a lower index.
         if self.ascending:
-            ind = np.searchsorted(self.ts_sorted, t, side='left')
+            ind = np.searchsorted(self.ts_sorted, t, side="left")
         else:
-            ind = np.searchsorted(self.ts_sorted, t, side='right')
+            ind = np.searchsorted(self.ts_sorted, t, side="right")
 
         segment = min(max(ind - 1, 0), self.n_segments - 1)
         if not self.ascending:
@@ -214,9 +216,9 @@ class OdeSolution:
 
         # See comment in self._call_single.
         if self.ascending:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='left')
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side="left")
         else:
-            segments = np.searchsorted(self.ts_sorted, t_sorted, side='right')
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side="right")
         segments -= 1
         segments[segments < 0] = 0
         segments[segments > self.n_segments - 1] = self.n_segments - 1
@@ -316,8 +318,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         return _dense_num_jac(fun, t, y, f, h, factor, y_scale)
     else:
         structure, groups = sparsity
-        return _sparse_num_jac(fun, t, y, f, h, factor, y_scale,
-                               structure, groups)
+        return _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups)
 
 
 def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
@@ -332,7 +333,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 
     diff_too_small = max_diff < NUM_JAC_DIFF_REJECT * scale
     if np.any(diff_too_small):
-        ind, = np.nonzero(diff_too_small)
+        (ind,) = np.nonzero(diff_too_small)
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
         h_vecs[ind, ind] = h_new
@@ -345,7 +346,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.nonzero(update)
+            (update,) = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]
@@ -379,12 +380,11 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     max_ind = np.array(abs(diff).argmax(axis=0)).ravel()
     r = np.arange(n)
     max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
-    scale = np.maximum(np.abs(f[max_ind]),
-                       np.abs(f_new[max_ind, groups[r]]))
+    scale = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, groups[r]]))
 
     diff_too_small = max_diff < NUM_JAC_DIFF_REJECT * scale
     if np.any(diff_too_small):
-        ind, = np.nonzero(diff_too_small)
+        (ind,) = np.nonzero(diff_too_small)
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
         h_new_all = np.zeros(n)
@@ -402,19 +402,20 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         f_new = fun(t, y[:, None] + h_vecs)
         df = f_new - f[:, None]
         i, j, _ = find(structure[:, ind])
-        diff_new = coo_matrix((df[i, groups_map[groups[ind[j]]]],
-                               (i, j)), shape=(n, ind.shape[0])).tocsc()
+        diff_new = coo_matrix(
+            (df[i, groups_map[groups[ind[j]]]], (i, j)), shape=(n, ind.shape[0])
+        ).tocsc()
 
         max_ind_new = np.array(abs(diff_new).argmax(axis=0)).ravel()
         r = np.arange(ind.shape[0])
         max_diff_new = np.asarray(np.abs(diff_new[max_ind_new, r])).ravel()
         scale_new = np.maximum(
-            np.abs(f[max_ind_new]),
-            np.abs(f_new[max_ind_new, groups_map[groups[ind]]]))
+            np.abs(f[max_ind_new]), np.abs(f_new[max_ind_new, groups_map[groups[ind]]])
+        )
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.nonzero(update)
+            (update,) = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]

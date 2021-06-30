@@ -25,6 +25,7 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
+
 has_umfpack = True
 has_cholmod = True
 try:
@@ -39,8 +40,14 @@ except ImportError:
     has_umfpack = False
 
 
-def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
-                cholesky=True, permc_spec='MMD_AT_PLUS_A'):
+def _get_solver(
+    M,
+    sparse=False,
+    lstsq=False,
+    sym_pos=True,
+    cholesky=True,
+    permc_spec="MMD_AT_PLUS_A",
+):
     """
     Given solver options, return a handle to the appropriate linear system
     solver.
@@ -84,8 +91,10 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     try:
         if sparse:
             if lstsq:
+
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
+
             elif cholesky:
                 try:
                     # Will raise an exception in the first call,
@@ -103,18 +112,22 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
 
         else:
             if lstsq:  # sometimes necessary as solution is approached
+
                 def solve(r):
                     return sp.linalg.lstsq(M, r)[0]
+
             elif cholesky:
                 L = sp.linalg.cho_factor(M)
 
                 def solve(r):
                     return sp.linalg.cho_solve(L, r)
+
             else:
                 # this seems to cache the matrix factorization, so solving
                 # with multiple right hand sides is much faster
                 def solve(r, sym_pos=sym_pos):
                     return sp.linalg.solve(M, r, sym_pos=sym_pos)
+
     # There are many things that can go wrong here, and it's hard to say
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
@@ -126,9 +139,25 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     return solve
 
 
-def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
-               lstsq=False, sym_pos=True, cholesky=True, pc=True, ip=False,
-               permc_spec='MMD_AT_PLUS_A'):
+def _get_delta(
+    A,
+    b,
+    c,
+    x,
+    y,
+    z,
+    tau,
+    kappa,
+    gamma,
+    eta,
+    sparse=False,
+    lstsq=False,
+    sym_pos=True,
+    cholesky=True,
+    pc=True,
+    ip=False,
+    permc_spec="MMD_AT_PLUS_A",
+):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -234,11 +263,12 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [4] Eq. 8.23
-                rhatxs = ((1 - alpha) * gamma * mu -
-                          x * z - alpha**2 * d_x * d_z)
-                rhattk = ((1 - alpha) * gamma * mu -
-                    tau * kappa -
-                    alpha**2 * d_tau * d_kappa)
+                rhatxs = (1 - alpha) * gamma * mu - x * z - alpha ** 2 * d_x * d_z
+                rhattk = (
+                    (1 - alpha) * gamma * mu
+                    - tau * kappa
+                    - alpha ** 2 * d_tau * d_kappa
+                )
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z
@@ -257,13 +287,12 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
         solved = False
-        while(not solved):
+        while not solved:
             try:
                 # [4] Equation 8.28
                 p, q = _sym_solve(Dinv, A, c, b, solve)
                 # [4] Equation 8.29
-                u, v = _sym_solve(Dinv, A, rhatd -
-                                  (1 / x) * rhatxs, rhatp, solve)
+                u, v = _sym_solve(Dinv, A, rhatd - (1 / x) * rhatxs, rhatp, solve)
                 if np.any(np.isnan(p)) or np.any(np.isnan(q)):
                     raise LinAlgError
                 solved = True
@@ -279,7 +308,9 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'cholesky' to False.",
-                        OptimizeWarning, stacklevel=5)
+                        OptimizeWarning,
+                        stacklevel=5,
+                    )
                 elif sym_pos:
                     sym_pos = False
                     warn(
@@ -288,7 +319,9 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'sym_pos' to False.",
-                        OptimizeWarning, stacklevel=5)
+                        OptimizeWarning,
+                        stacklevel=5,
+                    )
                 elif not lstsq:
                     lstsq = True
                     warn(
@@ -300,14 +333,16 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
                         "If you cannot improve the formulation, consider "
                         "setting 'lstsq' to True. Consider also setting "
                         "`presolve` to True, if it is not already.",
-                        OptimizeWarning, stacklevel=5)
+                        OptimizeWarning,
+                        stacklevel=5,
+                    )
                 else:
                     raise e
-                solve = _get_solver(M, sparse, lstsq, sym_pos,
-                                    cholesky, permc_spec)
+                solve = _get_solver(M, sparse, lstsq, sym_pos, cholesky, permc_spec)
         # [4] Results after 8.29
-        d_tau = ((rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) /
-                 (1 / tau * kappa + (-c.dot(p) + b.dot(q))))
+        d_tau = (rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) / (
+            1 / tau * kappa + (-c.dot(p) + b.dot(q))
+        )
         d_x = u + p * d_tau
         d_y = v + q * d_tau
 
@@ -321,7 +356,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
             gamma = 10
         else:  # predictor-corrector, [4] definition after 8.12
             beta1 = 0.1  # [4] pg. 220 (Table 8.1)
-            gamma = (1 - alpha)**2 * min(beta1, (1 - alpha))
+            gamma = (1 - alpha) ** 2 * min(beta1, (1 - alpha))
         i += 1
 
     return d_x, d_y, d_z, d_tau, d_kappa
@@ -394,19 +429,19 @@ def _get_message(status):
         A string descriptor of the exit status of the optimization.
 
     """
-    messages = (
-        ["Optimization terminated successfully.",
-         "The iteration limit was reached before the algorithm converged.",
-         "The algorithm terminated successfully and determined that the "
-         "problem is infeasible.",
-         "The algorithm terminated successfully and determined that the "
-         "problem is unbounded.",
-         "Numerical difficulties were encountered before the problem "
-         "converged. Please check your problem formulation for errors, "
-         "independence of linear equality constraints, and reasonable "
-         "scaling and matrix condition numbers. If you continue to "
-         "encounter this error, please submit a bug report."
-         ])
+    messages = [
+        "Optimization terminated successfully.",
+        "The iteration limit was reached before the algorithm converged.",
+        "The algorithm terminated successfully and determined that the "
+        "problem is infeasible.",
+        "The algorithm terminated successfully and determined that the "
+        "problem is unbounded.",
+        "Numerical difficulties were encountered before the problem "
+        "converged. Please check your problem formulation for errors, "
+        "independence of linear equality constraints, and reasonable "
+        "scaling and matrix condition numbers. If you continue to "
+        "encounter this error, please submit a bug report.",
+    ]
     return messages[status]
 
 
@@ -530,26 +565,49 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
     """
     if header:
-        print("Primal Feasibility ",
-              "Dual Feasibility   ",
-              "Duality Gap        ",
-              "Step            ",
-              "Path Parameter     ",
-              "Objective          ")
+        print(
+            "Primal Feasibility ",
+            "Dual Feasibility   ",
+            "Duality Gap        ",
+            "Step            ",
+            "Path Parameter     ",
+            "Objective          ",
+        )
 
     # no clue why this works
-    fmt = '{0:<20.13}{1:<20.13}{2:<20.13}{3:<17.13}{4:<20.13}{5:<20.13}'
-    print(fmt.format(
-        float(rho_p),
-        float(rho_d),
-        float(rho_g),
-        alpha if isinstance(alpha, str) else float(alpha),
-        float(rho_mu),
-        float(obj)))
+    fmt = "{0:<20.13}{1:<20.13}{2:<20.13}{3:<17.13}{4:<20.13}{5:<20.13}"
+    print(
+        fmt.format(
+            float(rho_p),
+            float(rho_d),
+            float(rho_g),
+            alpha if isinstance(alpha, str) else float(alpha),
+            float(rho_mu),
+            float(obj),
+        )
+    )
 
 
-def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
-            sym_pos, cholesky, pc, ip, permc_spec, callback, postsolve_args):
+def _ip_hsd(
+    A,
+    b,
+    c,
+    c0,
+    alpha0,
+    beta,
+    maxiter,
+    disp,
+    tol,
+    sparse,
+    lstsq,
+    sym_pos,
+    cholesky,
+    pc,
+    ip,
+    permc_spec,
+    callback,
+    postsolve_args,
+):
     r"""
     Solve a linear programming problem in standard form:
 
@@ -703,17 +761,28 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     # [4] 4.5
     rho_p, rho_d, rho_A, rho_g, rho_mu, obj = _indicators(
-        A, b, c, c0, x, y, z, tau, kappa)
+        A, b, c, c0, x, y, z, tau, kappa
+    )
     go = rho_p > tol or rho_d > tol or rho_A > tol  # we might get lucky : )
 
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
-        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                              'con': con, 'nit': iteration, 'phase': 1,
-                              'complete': False, 'status': 0,
-                              'message': "", 'success': False})
+        x_o, fun, slack, con = _postsolve(x / tau, postsolve_args)
+        res = OptimizeResult(
+            {
+                "x": x_o,
+                "fun": fun,
+                "slack": slack,
+                "con": con,
+                "nit": iteration,
+                "phase": 1,
+                "complete": False,
+                "status": 0,
+                "message": "",
+                "success": False,
+            }
+        )
         callback(res)
 
     status = 0
@@ -735,6 +804,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
             def eta(g):
                 return 1
+
         else:
             # gamma = 0 in predictor step according to [4] 4.1
             # if predictor/corrector is off, use mean of complementarity [6]
@@ -748,8 +818,24 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         try:
             # Solve [4] 8.6 and 8.7/8.13/8.23
             d_x, d_y, d_z, d_tau, d_kappa = _get_delta(
-                A, b, c, x, y, z, tau, kappa, gamma, eta,
-                sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec)
+                A,
+                b,
+                c,
+                x,
+                y,
+                z,
+                tau,
+                kappa,
+                gamma,
+                eta,
+                sparse,
+                lstsq,
+                sym_pos,
+                cholesky,
+                pc,
+                ip,
+                permc_spec,
+            )
 
             if ip:  # initial point
                 # [4] 4.4
@@ -757,8 +843,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 # take it negative
                 alpha = 1.0
                 x, y, z, tau, kappa = _do_step(
-                    x, y, z, tau, kappa, d_x, d_y,
-                    d_z, d_tau, d_kappa, alpha)
+                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha
+                )
                 x[x < 1] = 1
                 z[z < 1] = 1
                 tau = max(1, tau)
@@ -766,14 +852,13 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 ip = False  # done with initial point
             else:
                 # [4] Section 4.3
-                alpha = _get_step(x, d_x, z, d_z, tau,
-                                  d_tau, kappa, d_kappa, alpha0)
+                alpha = _get_step(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, alpha0)
                 # [4] Equation 8.9
                 x, y, z, tau, kappa = _do_step(
-                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
+                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha
+                )
 
-        except (LinAlgError, FloatingPointError,
-                ValueError, ZeroDivisionError):
+        except (LinAlgError, FloatingPointError, ValueError, ZeroDivisionError):
             # this can happen when sparse solver is used and presolve
             # is turned off. Also observed ValueError in AppVeyor Python 3.6
             # Win32 build (PR #8676). I've never seen it otherwise.
@@ -783,22 +868,32 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
         # [4] 4.5
         rho_p, rho_d, rho_A, rho_g, rho_mu, obj = _indicators(
-            A, b, c, c0, x, y, z, tau, kappa)
+            A, b, c, c0, x, y, z, tau, kappa
+        )
         go = rho_p > tol or rho_d > tol or rho_A > tol
 
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
-            res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                                  'con': con, 'nit': iteration, 'phase': 1,
-                                  'complete': False, 'status': 0,
-                                  'message': "", 'success': False})
+            x_o, fun, slack, con = _postsolve(x / tau, postsolve_args)
+            res = OptimizeResult(
+                {
+                    "x": x_o,
+                    "fun": fun,
+                    "slack": slack,
+                    "con": con,
+                    "nit": iteration,
+                    "phase": 1,
+                    "complete": False,
+                    "status": 0,
+                    "message": "",
+                    "success": False,
+                }
+            )
             callback(res)
 
         # [4] 4.5
-        inf1 = (rho_p < tol and rho_d < tol and rho_g < tol and tau < tol *
-                max(1, kappa))
+        inf1 = rho_p < tol and rho_d < tol and rho_g < tol and tau < tol * max(1, kappa)
         inf2 = rho_mu < tol and tau < tol * min(1, kappa)
         if inf1 or inf2:
             # [4] Lemma 8.4 / Theorem 8.3
@@ -818,10 +913,27 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     return x_hat, status, message, iteration
 
 
-def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
-                disp=False, alpha0=.99995, beta=0.1, sparse=False, lstsq=False,
-                sym_pos=True, cholesky=None, pc=True, ip=False,
-                permc_spec='MMD_AT_PLUS_A', **unknown_options):
+def _linprog_ip(
+    c,
+    c0,
+    A,
+    b,
+    callback,
+    postsolve_args,
+    maxiter=1000,
+    tol=1e-8,
+    disp=False,
+    alpha0=0.99995,
+    beta=0.1,
+    sparse=False,
+    lstsq=False,
+    sym_pos=True,
+    cholesky=None,
+    pc=True,
+    ip=False,
+    permc_spec="MMD_AT_PLUS_A",
+    **unknown_options,
+):
     r"""
     Minimize a linear objective function subject to linear
     equality and non-negativity constraints using the interior point method
@@ -1083,43 +1195,72 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
     # These should be warnings, not errors
     if (cholesky or cholesky is None) and sparse and not has_cholmod:
         if cholesky:
-            warn("Sparse cholesky is only available with scikit-sparse. "
-                 "Setting `cholesky = False`",
-                 OptimizeWarning, stacklevel=3)
+            warn(
+                "Sparse cholesky is only available with scikit-sparse. "
+                "Setting `cholesky = False`",
+                OptimizeWarning,
+                stacklevel=3,
+            )
         cholesky = False
 
     if sparse and lstsq:
-        warn("Option combination 'sparse':True and 'lstsq':True "
-             "is not recommended.",
-             OptimizeWarning, stacklevel=3)
+        warn(
+            "Option combination 'sparse':True and 'lstsq':True is not recommended.",
+            OptimizeWarning,
+            stacklevel=3,
+        )
 
     if lstsq and cholesky:
-        warn("Invalid option combination 'lstsq':True "
-             "and 'cholesky':True; option 'cholesky' has no effect when "
-             "'lstsq' is set True.",
-             OptimizeWarning, stacklevel=3)
+        warn(
+            "Invalid option combination 'lstsq':True "
+            "and 'cholesky':True; option 'cholesky' has no effect when "
+            "'lstsq' is set True.",
+            OptimizeWarning,
+            stacklevel=3,
+        )
 
-    valid_permc_spec = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', 'COLAMD')
+    valid_permc_spec = ("NATURAL", "MMD_ATA", "MMD_AT_PLUS_A", "COLAMD")
     if permc_spec.upper() not in valid_permc_spec:
-        warn("Invalid permc_spec option: '" + str(permc_spec) + "'. "
-             "Acceptable values are 'NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', "
-             "and 'COLAMD'. Reverting to default.",
-             OptimizeWarning, stacklevel=3)
-        permc_spec = 'MMD_AT_PLUS_A'
+        warn(
+            "Invalid permc_spec option: '"
+            + str(permc_spec)
+            + "'. "
+            "Acceptable values are 'NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', "
+            "and 'COLAMD'. Reverting to default.",
+            OptimizeWarning,
+            stacklevel=3,
+        )
+        permc_spec = "MMD_AT_PLUS_A"
 
     # This can be an error
     if not sym_pos and cholesky:
         raise ValueError(
             "Invalid option combination 'sym_pos':False "
             "and 'cholesky':True: Cholesky decomposition is only possible "
-            "for symmetric positive definite matrices.")
+            "for symmetric positive definite matrices."
+        )
 
     cholesky = cholesky or (cholesky is None and sym_pos and not lstsq)
 
-    x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
-                                            maxiter, disp, tol, sparse,
-                                            lstsq, sym_pos, cholesky,
-                                            pc, ip, permc_spec, callback,
-                                            postsolve_args)
+    x, status, message, iteration = _ip_hsd(
+        A,
+        b,
+        c,
+        c0,
+        alpha0,
+        beta,
+        maxiter,
+        disp,
+        tol,
+        sparse,
+        lstsq,
+        sym_pos,
+        cholesky,
+        pc,
+        ip,
+        permc_spec,
+        callback,
+        postsolve_args,
+    )
 
     return x, status, message, iteration

@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -12,10 +12,10 @@ at the top-level directory.
  * \brief Takes sum of the absolute values of a complex vector and returns a single precision result
  *
  * <pre>
- *     -- LAPACK auxiliary routine (version 2.0) --   
- *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
- *     Courant Institute, Argonne National Lab, and Rice University   
- *     October 31, 1992   
+ *     -- LAPACK auxiliary routine (version 2.0) --
+ *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+ *     Courant Institute, Argonne National Lab, and Rice University
+ *     October 31, 1992
  * </pre>
  */
 #include "slu_scomplex.h"
@@ -24,30 +24,30 @@ at the top-level directory.
 /*! \brief
 
 <pre>
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    SCSUM1 takes the sum of the absolute values of a complex   
-    vector and returns a single precision result.   
+    SCSUM1 takes the sum of the absolute values of a complex
+    vector and returns a single precision result.
 
-    Based on SCASUM from the Level 1 BLAS.   
-    The change is to use the 'genuine' absolute value.   
+    Based on SCASUM from the Level 1 BLAS.
+    The change is to use the 'genuine' absolute value.
 
-    Contributed by Nick Higham for use with CLACON.   
+    Contributed by Nick Higham for use with CLACON.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
     N       (input) INT
-            The number of elements in the vector CX.   
+            The number of elements in the vector CX.
 
-    CX      (input) COMPLEX array, dimension (N)   
-            The vector whose elements will be summed.   
+    CX      (input) COMPLEX array, dimension (N)
+            The vector whose elements will be summed.
 
     INCX    (input) INT
-            The spacing between successive values of CX.  INCX > 0.   
+            The spacing between successive values of CX.  INCX > 0.
 
-    ===================================================================== 
+    =====================================================================
 </pre>
 */
 double scsum1_slu(int *n, complex *cx, int *incx)
@@ -106,4 +106,3 @@ L20:
 /*     End of SCSUM1 */
 
 } /* scsum1_slu */
-

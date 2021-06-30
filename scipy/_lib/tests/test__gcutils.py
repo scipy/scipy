@@ -2,8 +2,13 @@
 """
 import gc
 
-from scipy._lib._gcutils import (set_gc_state, gc_state, assert_deallocated,
-                                 ReferenceError, IS_PYPY)
+from scipy._lib._gcutils import (
+    set_gc_state,
+    gc_state,
+    assert_deallocated,
+    ReferenceError,
+    IS_PYPY,
+)
 
 from numpy.testing import assert_equal
 
@@ -51,16 +56,17 @@ def test_gc_state():
 def test_assert_deallocated():
     # Ordinary use
     class C:
-        def __init__(self, arg0, arg1, name='myname'):
+        def __init__(self, arg0, arg1, name="myname"):
             self.name = name
+
     for gc_current in (True, False):
         with gc_state(gc_current):
             # We are deleting from with-block context, so that's OK
-            with assert_deallocated(C, 0, 2, 'another name') as c:
-                assert_equal(c.name, 'another name')
+            with assert_deallocated(C, 0, 2, "another name") as c:
+                assert_equal(c.name, "another name")
                 del c
             # Or not using the thing in with-block context, also OK
-            with assert_deallocated(C, 0, 2, name='third name'):
+            with assert_deallocated(C, 0, 2, name="third name"):
                 pass
             assert_equal(gc.isenabled(), gc_current)
 
@@ -69,6 +75,7 @@ def test_assert_deallocated():
 def test_assert_deallocated_nodel():
     class C:
         pass
+
     with pytest.raises(ReferenceError):
         # Need to delete after using if in with-block context
         # Note: assert_deallocated(C) needs to be assigned for the test
@@ -84,6 +91,7 @@ def test_assert_deallocated_circular():
     class C:
         def __init__(self):
             self._circular = self
+
     with pytest.raises(ReferenceError):
         # Circular reference, no automatic garbage collection
         with assert_deallocated(C) as c:
@@ -95,6 +103,7 @@ def test_assert_deallocated_circular2():
     class C:
         def __init__(self):
             self._circular = self
+
     with pytest.raises(ReferenceError):
         # Still circular reference, no automatic garbage collection
         with assert_deallocated(C):

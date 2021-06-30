@@ -65,7 +65,7 @@
  * See i1().
  *
  */
-
+
 /*                                                     i1.c 2          */
 
 
@@ -164,7 +164,7 @@ double x;
 	z = -z;
     return (z);
 }
-
+
 /*                                                     i1e()   */
 
 double i1e(x)

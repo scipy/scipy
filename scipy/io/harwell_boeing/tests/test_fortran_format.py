@@ -4,7 +4,11 @@ from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 
 from scipy.io.harwell_boeing._fortran_format_parser import (
-        FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat)
+    FortranFormatParser,
+    IntFormat,
+    ExpFormat,
+    BadFortranFormat,
+)
 
 
 class TestFortranFormatParser:
@@ -36,6 +40,7 @@ class TestFortranFormatParser:
     def test_wrong_formats(self):
         def _test_invalid(bad_format):
             assert_raises(BadFortranFormat, lambda: self.parser.parse(bad_format))
+
         _test_invalid("I4")
         _test_invalid("(E4)")
         _test_invalid("(E4.)")
@@ -52,16 +57,23 @@ class TestIntFormat:
 
     def test_from_number(self):
         f = [10, -12, 123456789]
-        r_f = [IntFormat(3, repeat=26), IntFormat(4, repeat=20),
-               IntFormat(10, repeat=8)]
+        r_f = [
+            IntFormat(3, repeat=26),
+            IntFormat(4, repeat=20),
+            IntFormat(10, repeat=8),
+        ]
         for i, j in zip(f, r_f):
             assert_equal(IntFormat.from_number(i).__dict__, j.__dict__)
 
 
 class TestExpFormat:
     def test_to_fortran(self):
-        f = [ExpFormat(10, 5), ExpFormat(12, 10), ExpFormat(12, 10, min=3),
-             ExpFormat(10, 5, repeat=3)]
+        f = [
+            ExpFormat(10, 5),
+            ExpFormat(12, 10),
+            ExpFormat(12, 10, min=3),
+            ExpFormat(10, 5, repeat=3),
+        ]
         res = ["(E10.5)", "(E12.10)", "(E12.10E3)", "(3E10.5)"]
 
         for i, j in zip(f, res):

@@ -39,9 +39,9 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
         Whether to switch to one-sided scheme. Informative only for
         ``scheme='2-sided'``.
     """
-    if scheme == '1-sided':
+    if scheme == "1-sided":
         use_one_sided = np.ones_like(h, dtype=bool)
-    elif scheme == '2-sided':
+    elif scheme == "2-sided":
         h = np.abs(h)
         use_one_sided = np.zeros_like(h, dtype=bool)
     else:
@@ -56,7 +56,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     lower_dist = x0 - lb
     upper_dist = ub - x0
 
-    if scheme == '1-sided':
+    if scheme == "1-sided":
         x = x0 + h_total
         violated = (x < lb) | (x > ub)
         fitting = np.abs(h_total) <= np.maximum(lower_dist, upper_dist)
@@ -66,21 +66,23 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
         h_adjusted[forward] = upper_dist[forward] / num_steps
         backward = (upper_dist < lower_dist) & ~fitting
         h_adjusted[backward] = -lower_dist[backward] / num_steps
-    elif scheme == '2-sided':
+    elif scheme == "2-sided":
         central = (lower_dist >= h_total) & (upper_dist >= h_total)
 
         forward = (upper_dist >= lower_dist) & ~central
         h_adjusted[forward] = np.minimum(
-            h[forward], 0.5 * upper_dist[forward] / num_steps)
+            h[forward], 0.5 * upper_dist[forward] / num_steps
+        )
         use_one_sided[forward] = True
 
         backward = (upper_dist < lower_dist) & ~central
         h_adjusted[backward] = -np.minimum(
-            h[backward], 0.5 * lower_dist[backward] / num_steps)
+            h[backward], 0.5 * lower_dist[backward] / num_steps
+        )
         use_one_sided[backward] = True
 
         min_dist = np.minimum(upper_dist, lower_dist) / num_steps
-        adjusted_central = (~central & (np.abs(h_adjusted) <= min_dist))
+        adjusted_central = ~central & (np.abs(h_adjusted) <= min_dist)
         h_adjusted[adjusted_central] = min_dist[adjusted_central]
         use_one_sided[adjusted_central] = False
 
@@ -133,12 +135,13 @@ def _eps_for_method(x0_dtype, f0_dtype, method):
             EPS = np.finfo(f0_dtype).eps
 
     if method in ["2-point", "cs"]:
-        return EPS**0.5
+        return EPS ** 0.5
     elif method in ["3-point"]:
-        return EPS**(1/3)
+        return EPS ** (1 / 3)
     else:
-        raise RuntimeError("Unknown step method, should be one of "
-                           "{'2-point', '3-point', 'cs'}")
+        raise RuntimeError(
+            "Unknown step method, should be one of {'2-point', '3-point', 'cs'}"
+        )
 
 
 def _compute_absolute_step(rel_step, x0, f0, method):
@@ -254,9 +257,19 @@ def group_columns(A, order=0):
     return groups
 
 
-def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
-                      f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs={}):
+def approx_derivative(
+    fun,
+    x0,
+    method="3-point",
+    rel_step=None,
+    abs_step=None,
+    f0=None,
+    bounds=(-np.inf, np.inf),
+    sparsity=None,
+    as_linear_operator=False,
+    args=(),
+    kwargs={},
+):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -416,7 +429,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     >>> approx_derivative(g, x0, bounds=(1.0, np.inf))
     array([ 2.])
     """
-    if method not in ['2-point', '3-point', 'cs']:
+    if method not in ["2-point", "3-point", "cs"]:
         raise ValueError("Unknown method '%s'. " % method)
 
     x0 = np.atleast_1d(x0)
@@ -428,16 +441,13 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if lb.shape != x0.shape or ub.shape != x0.shape:
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
-    if as_linear_operator and not (np.all(np.isinf(lb))
-                                   and np.all(np.isinf(ub))):
-        raise ValueError("Bounds not supported when "
-                         "`as_linear_operator` is True.")
+    if as_linear_operator and not (np.all(np.isinf(lb)) and np.all(np.isinf(ub))):
+        raise ValueError("Bounds not supported when `as_linear_operator` is True.")
 
     def fun_wrapped(x):
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
-            raise RuntimeError("`fun` return value has "
-                               "more than 1 dimension.")
+            raise RuntimeError("`fun` return value has more than 1 dimension.")
         return f
 
     if f0 is None:
@@ -454,8 +464,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         if rel_step is None:
             rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
 
-        return _linear_operator_difference(fun_wrapped, x0,
-                                           f0, rel_step, method)
+        return _linear_operator_difference(fun_wrapped, x0, f0, rel_step, method)
     else:
         # by default we use rel_step
         if abs_step is None:
@@ -467,24 +476,24 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
             # cannot have a zero step. This might happen if x0 is very large
             # or small. In which case fall back to relative step.
-            dx = ((x0 + h) - x0)
-            h = np.where(dx == 0,
-                         _eps_for_method(x0.dtype, f0.dtype, method) *
-                         sign_x0 * np.maximum(1.0, np.abs(x0)),
-                         h)
+            dx = (x0 + h) - x0
+            h = np.where(
+                dx == 0,
+                _eps_for_method(x0.dtype, f0.dtype, method)
+                * sign_x0
+                * np.maximum(1.0, np.abs(x0)),
+                h,
+            )
 
-        if method == '2-point':
-            h, use_one_sided = _adjust_scheme_to_bounds(
-                x0, h, 1, '1-sided', lb, ub)
-        elif method == '3-point':
-            h, use_one_sided = _adjust_scheme_to_bounds(
-                x0, h, 1, '2-sided', lb, ub)
-        elif method == 'cs':
+        if method == "2-point":
+            h, use_one_sided = _adjust_scheme_to_bounds(x0, h, 1, "1-sided", lb, ub)
+        elif method == "3-point":
+            h, use_one_sided = _adjust_scheme_to_bounds(x0, h, 1, "2-sided", lb, ub)
+        elif method == "cs":
             use_one_sided = False
 
         if sparsity is None:
-            return _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method)
+            return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
         else:
             if not issparse(sparsity) and len(sparsity) == 2:
                 structure, groups = sparsity
@@ -498,42 +507,45 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                 structure = np.atleast_2d(structure)
 
             groups = np.atleast_1d(groups)
-            return _sparse_difference(fun_wrapped, x0, f0, h,
-                                      use_one_sided, structure,
-                                      groups, method)
+            return _sparse_difference(
+                fun_wrapped, x0, f0, h, use_one_sided, structure, groups, method
+            )
 
 
 def _linear_operator_difference(fun, x0, f0, h, method):
     m = f0.size
     n = x0.size
 
-    if method == '2-point':
+    if method == "2-point":
+
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
             dx = h / norm(p)
-            x = x0 + dx*p
+            x = x0 + dx * p
             df = fun(x) - f0
             return df / dx
 
-    elif method == '3-point':
+    elif method == "3-point":
+
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
-            dx = 2*h / norm(p)
-            x1 = x0 - (dx/2)*p
-            x2 = x0 + (dx/2)*p
+            dx = 2 * h / norm(p)
+            x1 = x0 - (dx / 2) * p
+            x2 = x0 + (dx / 2) * p
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
             return df / dx
 
-    elif method == 'cs':
+    elif method == "cs":
+
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
             dx = h / norm(p)
-            x = x0 + dx*p*1.j
+            x = x0 + dx * p * 1.0j
             f1 = fun(x)
             df = f1.imag
             return df / dx
@@ -551,26 +563,26 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     h_vecs = np.diag(h)
 
     for i in range(h.size):
-        if method == '2-point':
+        if method == "2-point":
             x = x0 + h_vecs[i]
             dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
             df = fun(x) - f0
-        elif method == '3-point' and use_one_sided[i]:
+        elif method == "3-point" and use_one_sided[i]:
             x1 = x0 + h_vecs[i]
             x2 = x0 + 2 * h_vecs[i]
             dx = x2[i] - x0[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = -3.0 * f0 + 4 * f1 - f2
-        elif method == '3-point' and not use_one_sided[i]:
+        elif method == "3-point" and not use_one_sided[i]:
             x1 = x0 - h_vecs[i]
             x2 = x0 + h_vecs[i]
             dx = x2[i] - x1[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
-        elif method == 'cs':
-            f1 = fun(x0 + h_vecs[i]*1.j)
+        elif method == "cs":
+            f1 = fun(x0 + h_vecs[i] * 1.0j)
             df = f1.imag
             dx = h_vecs[i, i]
         else:
@@ -584,8 +596,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     return J_transposed.T
 
 
-def _sparse_difference(fun, x0, f0, h, use_one_sided,
-                       structure, groups, method):
+def _sparse_difference(fun, x0, f0, h, use_one_sided, structure, groups, method):
     m = f0.size
     n = x0.size
     row_indices = []
@@ -597,18 +608,18 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
         # Perturb variables which are in the same group simultaneously.
         e = np.equal(group, groups)
         h_vec = h * e
-        if method == '2-point':
+        if method == "2-point":
             x = x0 + h_vec
             dx = x - x0
             df = fun(x) - f0
             # The result is  written to columns which correspond to perturbed
             # variables.
-            cols, = np.nonzero(e)
+            (cols,) = np.nonzero(e)
             # Find all non-zero elements in selected columns of Jacobian.
             i, j, _ = find(structure[:, cols])
             # Restore column indices in the full array.
             j = cols[j]
-        elif method == '3-point':
+        elif method == "3-point":
             # Here we do conceptually the same but separate one-sided
             # and two-sided schemes.
             x1 = x0.copy()
@@ -629,7 +640,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             f1 = fun(x1)
             f2 = fun(x2)
 
-            cols, = np.nonzero(e)
+            (cols,) = np.nonzero(e)
             i, j, _ = find(structure[:, cols])
             j = cols[j]
 
@@ -641,11 +652,11 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
 
             rows = i[~mask]
             df[rows] = f2[rows] - f1[rows]
-        elif method == 'cs':
-            f1 = fun(x0 + h_vec*1.j)
+        elif method == "cs":
+            f1 = fun(x0 + h_vec * 1.0j)
             df = f1.imag
             dx = h_vec
-            cols, = np.nonzero(e)
+            (cols,) = np.nonzero(e)
             i, j, _ = find(structure[:, cols])
             j = cols[j]
         else:
@@ -664,8 +675,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     return csr_matrix(J)
 
 
-def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
-                     kwargs={}):
+def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(), kwargs={}):
     """Check correctness of a function computing derivatives (Jacobian or
     gradient) by comparison with a finite difference approximation.
 
@@ -727,16 +737,15 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     """
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
-        J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
-                                   args=args, kwargs=kwargs)
+        J_diff = approx_derivative(
+            fun, x0, bounds=bounds, sparsity=J_to_test, args=args, kwargs=kwargs
+        )
         J_to_test = csr_matrix(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
         J_diff_data = np.asarray(J_diff[i, j]).ravel()
-        return np.max(np.abs(abs_err_data) /
-                      np.maximum(1, np.abs(J_diff_data)))
+        return np.max(np.abs(abs_err_data) / np.maximum(1, np.abs(J_diff_data)))
     else:
-        J_diff = approx_derivative(fun, x0, bounds=bounds,
-                                   args=args, kwargs=kwargs)
+        J_diff = approx_derivative(fun, x0, bounds=bounds, args=args, kwargs=kwargs)
         abs_err = np.abs(J_to_test - J_diff)
         return np.max(abs_err / np.maximum(1, np.abs(J_diff)))

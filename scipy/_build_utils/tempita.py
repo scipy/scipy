@@ -2,6 +2,7 @@ import sys
 import os
 
 from Cython import Tempita as tempita
+
 # XXX: If this import ever fails (does it really?), vendor either
 # cython.tempita or numpy/npy_tempita.
 
@@ -13,20 +14,18 @@ def process_tempita(fromfile):
     E.g. processing `template.c.in` generates `template.c`.
 
     """
-    if not fromfile.endswith('.in'):
+    if not fromfile.endswith(".in"):
         raise ValueError("Unexpected extension: %s" % fromfile)
 
     from_filename = tempita.Template.from_filename
-    template = from_filename(fromfile,
-                             encoding=sys.getdefaultencoding())    
+    template = from_filename(fromfile, encoding=sys.getdefaultencoding())
 
     content = template.substitute()
 
     outfile = os.path.splitext(fromfile)[0]
-    with open(outfile, 'w') as f:
+    with open(outfile, "w") as f:
         f.write(content)
 
 
 if __name__ == "__main__":
     process_tempita(sys.argv[1])
-    

@@ -10,7 +10,7 @@ def test_identities1():
     x = np.array([-99.5, -9.5, -0.5, 0.5, 9.5, 99.5])
     y = x.copy()
     x, y = np.meshgrid(x, y)
-    z = (x + 1J*y).flatten()
+    z = (x + 1j * y).flatten()
     dataset = np.vstack((z, gamma(z))).T
 
     def f(z):
@@ -24,7 +24,7 @@ def test_identities2():
     x = np.array([-99.5, -9.5, -0.5, 0.5, 9.5, 99.5])
     y = x.copy()
     x, y = np.meshgrid(x, y)
-    z = (x + 1J*y).flatten()
+    z = (x + 1j * y).flatten()
     dataset = np.vstack((z, np.log(z) + loggamma(z))).T
 
     def f(z):
@@ -41,7 +41,7 @@ def test_complex_dispatch_realpart():
     dataset = np.vstack((x, gammaln(x))).T
 
     def f(z):
-        z = np.array(z, dtype='complex128')
+        z = np.array(z, dtype="complex128")
         return loggamma(z).real
 
     FuncData(f, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()

@@ -15,7 +15,7 @@ c
         subroutine idzr_aid(m,n,a,krank,w,list,proj)
 c
 c       computes the ID of the matrix a, i.e., lists in list
-c       the indices of krank columns of a such that 
+c       the indices of krank columns of a such that
 c
 c       a(j,list(k))  =  a(j,list(k))
 c

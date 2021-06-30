@@ -4,7 +4,7 @@ SciPy 0.10.1 Release Notes
 
 .. contents::
 
-SciPy 0.10.1 is a bug-fix release with no new features compared to 0.10.0.  
+SciPy 0.10.1 is a bug-fix release with no new features compared to 0.10.0.
 
 Main changes
 ------------
@@ -30,4 +30,3 @@ Other issues fixed
 - #1562: cluster: segfault in linkage function
 - #1568: stats: One-sided fisher_exact() returns `p` < 1 for 0 successful attempts
 - #1575: stats: zscore and zmap handle the axis keyword incorrectly
-

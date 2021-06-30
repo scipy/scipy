@@ -20,36 +20,71 @@ from ._sosfilt import _sosfilt
 import warnings
 
 
-__all__ = ['correlate', 'correlation_lags', 'correlate2d',
-           'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
-           'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
-           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
-           'residuez', 'resample', 'resample_poly', 'detrend',
-           'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
-           'filtfilt', 'decimate', 'vectorstrength']
+__all__ = [
+    "correlate",
+    "correlation_lags",
+    "correlate2d",
+    "convolve",
+    "convolve2d",
+    "fftconvolve",
+    "oaconvolve",
+    "order_filter",
+    "medfilt",
+    "medfilt2d",
+    "wiener",
+    "lfilter",
+    "lfiltic",
+    "sosfilt",
+    "deconvolve",
+    "hilbert",
+    "hilbert2",
+    "cmplx_sort",
+    "unique_roots",
+    "invres",
+    "invresz",
+    "residue",
+    "residuez",
+    "resample",
+    "resample_poly",
+    "detrend",
+    "lfilter_zi",
+    "sosfilt_zi",
+    "sosfiltfilt",
+    "choose_conv_method",
+    "filtfilt",
+    "decimate",
+    "vectorstrength",
+]
 
 
-_modedict = {'valid': 0, 'same': 1, 'full': 2}
+_modedict = {"valid": 0, "same": 1, "full": 2}
 
-_boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
-                 'symmetric': 1, 'reflect': 4}
+_boundarydict = {
+    "fill": 0,
+    "pad": 0,
+    "wrap": 2,
+    "circular": 2,
+    "symm": 1,
+    "symmetric": 1,
+    "reflect": 4,
+}
 
 
 def _valfrommode(mode):
     try:
         return _modedict[mode]
     except KeyError as e:
-        raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.") from e
+        raise ValueError("Acceptable mode flags are 'valid', 'same', or 'full'.") from e
 
 
 def _bvalfromboundary(boundary):
     try:
         return _boundarydict[boundary] << 2
     except KeyError as e:
-        raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
-                         "(or 'wrap'), and 'symmetric' (or 'symm').") from e
+        raise ValueError(
+            "Acceptable boundary flags are 'fill', 'circular' "
+            "(or 'wrap'), and 'symmetric' (or 'symm')."
+        ) from e
 
 
 def _inputs_swap_needed(mode, shape1, shape2, axes=None):
@@ -67,7 +102,7 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     returned.
 
     """
-    if mode != 'valid':
+    if mode != "valid":
         return False
 
     if not shape1:
@@ -80,13 +115,15 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     ok2 = all(shape2[i] >= shape1[i] for i in axes)
 
     if not (ok1 or ok2):
-        raise ValueError("For 'valid' mode, one must be at least "
-                         "as large as the other in every dimension")
+        raise ValueError(
+            "For 'valid' mode, one must be at least "
+            "as large as the other in every dimension"
+        )
 
     return not ok1
 
 
-def correlate(in1, in2, mode='full', method='auto'):
+def correlate(in1, in2, mode="full", method="auto"):
     r"""
     Cross-correlate two N-dimensional arrays.
 
@@ -231,14 +268,13 @@ def correlate(in1, in2, mode='full', method='auto'):
     try:
         val = _modedict[mode]
     except KeyError as e:
-        raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.") from e
+        raise ValueError("Acceptable mode flags are 'valid', 'same', or 'full'.") from e
 
     # this either calls fftconvolve or this function with method=='direct'
-    if method in ('fft', 'auto'):
+    if method in ("fft", "auto"):
         return convolve(in1, _reverse_and_conj(in2), mode, method)
 
-    elif method == 'direct':
+    elif method == "direct":
         # fastpath to faster numpy.correlate for 1d inputs when possible
         if _np_conv_ok(in1, in2, mode):
             return np.correlate(in1, in2, mode)
@@ -247,13 +283,16 @@ def correlate(in1, in2, mode='full', method='auto'):
         # and then undo the effect afterward if mode == 'full'.  Also, it fails
         # with 'valid' mode if in2 is larger than in1, so swap those, too.
         # Don't swap inputs for 'same' mode, since shape of in1 matters.
-        swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
-                          _inputs_swap_needed(mode, in1.shape, in2.shape))
+        swapped_inputs = (
+            (mode == "full")
+            and (in2.size > in1.size)
+            or _inputs_swap_needed(mode, in1.shape, in2.shape)
+        )
 
         if swapped_inputs:
             in1, in2 = in2, in1
 
-        if mode == 'valid':
+        if mode == "valid":
             ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
             out = np.empty(ps, in1.dtype)
 
@@ -267,9 +306,9 @@ def correlate(in1, in2, mode='full', method='auto'):
             sc = tuple(slice(0, i) for i in in1.shape)
             in1zpadded[sc] = in1.copy()
 
-            if mode == 'full':
+            if mode == "full":
                 out = np.empty(ps, in1.dtype)
-            elif mode == 'same':
+            elif mode == "same":
                 out = np.empty(in1.shape, in1.dtype)
 
             z = sigtools._correlateND(in1zpadded, in2, out, val)
@@ -281,11 +320,10 @@ def correlate(in1, in2, mode='full', method='auto'):
         return z
 
     else:
-        raise ValueError("Acceptable method flags are 'auto',"
-                         " 'direct', or 'fft'.")
+        raise ValueError("Acceptable method flags are 'auto', 'direct', or 'fft'.")
 
 
-def correlation_lags(in1_len, in2_len, mode='full'):
+def correlation_lags(in1_len, in2_len, mode="full"):
     r"""
     Calculates the lag / displacement indices array for 1D cross-correlation.
 
@@ -364,9 +402,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
         lag_bound = in1_len // 2
         # calculate lag ranges for even and odd scenarios
         if in1_len % 2 == 0:
-            lags = lags[(mid-lag_bound):(mid+lag_bound)]
+            lags = lags[(mid - lag_bound) : (mid + lag_bound)]
         else:
-            lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
+            lags = lags[(mid - lag_bound) : (mid + lag_bound) + 1]
     elif mode == "valid":
         # the output consists only of those elements that do not
         # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
@@ -440,10 +478,14 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if sorted_axes:
         axes.sort()
 
-    if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
-               for a in range(in1.ndim) if a not in axes):
-        raise ValueError("incompatible shapes for in1 and in2:"
-                         " {0} and {1}".format(s1, s2))
+    if not all(
+        s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
+        for a in range(in1.ndim)
+        if a not in axes
+    ):
+        raise ValueError(
+            "incompatible shapes for in1 and in2: {0} and {1}".format(s1, s2)
+        )
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):
@@ -487,12 +529,11 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False):
     if not len(axes):
         return in1 * in2
 
-    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    complex_result = in1.dtype.kind == "c" or in2.dtype.kind == "c"
 
     if calc_fast_len:
         # Speed up FFT by padding to optimal size.
-        fshape = [
-            sp_fft.next_fast_len(shape[a], not complex_result) for a in axes]
+        fshape = [sp_fft.next_fast_len(shape[a], not complex_result) for a in axes]
     else:
         fshape = shape
 
@@ -543,12 +584,13 @@ def _apply_conv_mode(ret, s1, s2, mode, axes):
     elif mode == "same":
         return _centered(ret, s1).copy()
     elif mode == "valid":
-        shape_valid = [ret.shape[a] if a not in axes else s1[a] - s2[a] + 1
-                       for a in range(ret.ndim)]
+        shape_valid = [
+            ret.shape[a] if a not in axes else s1[a] - s2[a] + 1
+            for a in range(ret.ndim)
+        ]
         return _centered(ret, shape_valid).copy()
     else:
-        raise ValueError("acceptable mode flags are 'valid',"
-                         " 'same', or 'full'")
+        raise ValueError("acceptable mode flags are 'valid', 'same', or 'full'")
 
 
 def fftconvolve(in1, in2, mode="full", axes=None):
@@ -654,14 +696,15 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.size == 0 or in2.size == 0:  # empty arrays
         return np.array([])
 
-    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
-                                          sorted_axes=False)
+    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False)
 
     s1 = in1.shape
     s2 = in2.shape
 
-    shape = [max((s1[i], s2[i])) if i not in axes else s1[i] + s2[i] - 1
-             for i in range(in1.ndim)]
+    shape = [
+        max((s1[i], s2[i])) if i not in axes else s1[i] + s2[i] - 1
+        for i in range(in1.ndim)
+    ]
 
     ret = _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=True)
 
@@ -693,7 +736,7 @@ def _calc_oa_lens(s1, s2):
 
     """
     # Set up the arguments for the conventional FFT approach.
-    fallback = (s1+s2-1, None, s1, s2)
+    fallback = (s1 + s2 - 1, None, s1, s2)
 
     # Use conventional FFT convolve if sizes are same.
     if s1 == s2 or s1 == 1 or s2 == 1:
@@ -706,7 +749,7 @@ def _calc_oa_lens(s1, s2):
         swapped = False
 
     # There cannot be a useful block size if s2 is more than half of s1.
-    if s2 >= s1/2:
+    if s2 >= s1 / 2:
         return fallback
 
     # Derivation of optimal block length
@@ -761,8 +804,8 @@ def _calc_oa_lens(s1, s2):
     # N/-K = W(-1/(2*e*K))
     #
     # N = -K*W(-1/(2*e*K))
-    overlap = s2-1
-    opt_size = -overlap*lambertw(-1/(2*math.e*overlap), k=-1).real
+    overlap = s2 - 1
+    opt_size = -overlap * lambertw(-1 / (2 * math.e * overlap), k=-1).real
     block_size = sp_fft.next_fast_len(math.ceil(opt_size))
 
     # Use conventional FFT convolve if there is only going to be one block.
@@ -770,11 +813,11 @@ def _calc_oa_lens(s1, s2):
         return fallback
 
     if not swapped:
-        in1_step = block_size-s2+1
+        in1_step = block_size - s2 + 1
         in2_step = s2
     else:
         in1_step = s2
-        in2_step = block_size-s2+1
+        in2_step = block_size - s2 + 1
 
     return block_size, overlap, in1_step, in2_step
 
@@ -870,8 +913,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
-    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
-                                          sorted_axes=True)
+    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=True)
 
     s1 = in1.shape
     s2 = in2.shape
@@ -881,16 +923,18 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         return _apply_conv_mode(ret, s1, s2, mode, axes)
 
     # Calculate this now since in1 is changed later
-    shape_final = [None if i not in axes else
-                   s1[i] + s2[i] - 1 for i in range(in1.ndim)]
+    shape_final = [
+        None if i not in axes else s1[i] + s2[i] - 1 for i in range(in1.ndim)
+    ]
 
     # Calculate the block sizes for the output, steps, first and second inputs.
     # It is simpler to calculate them all together than doing them in separate
     # loops due to all the special cases that need to be handled.
-    optimal_sizes = ((-1, -1, s1[i], s2[i]) if i not in axes else
-                     _calc_oa_lens(s1[i], s2[i]) for i in range(in1.ndim))
-    block_size, overlaps, \
-        in1_step, in2_step = zip(*optimal_sizes)
+    optimal_sizes = (
+        (-1, -1, s1[i], s2[i]) if i not in axes else _calc_oa_lens(s1[i], s2[i])
+        for i in range(in1.ndim)
+    )
+    block_size, overlaps, in1_step, in2_step = zip(*optimal_sizes)
 
     # Fall back to fftconvolve if there is only one block in every dimension.
     if in1_step == s1 and in2_step == s2:
@@ -909,21 +953,21 @@ def oaconvolve(in1, in2, mode="full", axes=None):
             continue
 
         if s1[i] > in1_step[i]:
-            curnstep1 = math.ceil((s1[i]+1)/in1_step[i])
-            if (block_size[i] - overlaps[i])*curnstep1 < shape_final[i]:
+            curnstep1 = math.ceil((s1[i] + 1) / in1_step[i])
+            if (block_size[i] - overlaps[i]) * curnstep1 < shape_final[i]:
                 curnstep1 += 1
 
-            curpad1 = curnstep1*in1_step[i] - s1[i]
+            curpad1 = curnstep1 * in1_step[i] - s1[i]
         else:
             curnstep1 = 1
             curpad1 = 0
 
         if s2[i] > in2_step[i]:
-            curnstep2 = math.ceil((s2[i]+1)/in2_step[i])
-            if (block_size[i] - overlaps[i])*curnstep2 < shape_final[i]:
+            curnstep2 = math.ceil((s2[i] + 1) / in2_step[i])
+            if (block_size[i] - overlaps[i]) * curnstep2 < shape_final[i]:
                 curnstep2 += 1
 
-            curpad2 = curnstep2*in2_step[i] - s2[i]
+            curpad2 = curnstep2 * in2_step[i] - s2[i]
         else:
             curnstep2 = 1
             curpad2 = 0
@@ -936,14 +980,14 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     # Pad the array to a size that can be reshaped to the desired shape
     # if necessary.
     if not all(curpad == (0, 0) for curpad in pad_size1):
-        in1 = np.pad(in1, pad_size1, mode='constant', constant_values=0)
+        in1 = np.pad(in1, pad_size1, mode="constant", constant_values=0)
 
     if not all(curpad == (0, 0) for curpad in pad_size2):
-        in2 = np.pad(in2, pad_size2, mode='constant', constant_values=0)
+        in2 = np.pad(in2, pad_size2, mode="constant", constant_values=0)
 
     # Reshape the overlap-add parts to input block sizes.
-    split_axes = [iax+i for i, iax in enumerate(axes)]
-    fft_axes = [iax+1 for iax in split_axes]
+    split_axes = [iax + i for i, iax in enumerate(axes)]
+    fft_axes = [iax + 1 for iax in split_axes]
 
     # We need to put each new dimension before the corresponding dimension
     # being reshaped in order to get the data in the right layout at the end.
@@ -974,9 +1018,11 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         ret_overpart += overpart
 
     # Reshape back to the correct dimensionality.
-    shape_ret = [ret.shape[i] if i not in fft_axes else
-                 ret.shape[i]*ret.shape[i-1]
-                 for i in range(ret.ndim) if i not in split_axes]
+    shape_ret = [
+        ret.shape[i] if i not in fft_axes else ret.shape[i] * ret.shape[i - 1]
+        for i in range(ret.ndim)
+        if i not in split_axes
+    ]
     ret = ret.reshape(*shape_ret)
 
     # Slice to the correct size.
@@ -986,7 +1032,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     return _apply_conv_mode(ret, s1, s2, mode, axes)
 
 
-def _numeric_arrays(arrays, kinds='buifc'):
+def _numeric_arrays(arrays, kinds="buifc"):
     """
     See if a list of arrays are all numeric.
 
@@ -1023,8 +1069,11 @@ def _conv_ops(x_shape, h_shape, mode):
     elif mode == "same":
         out_shape = x_shape
     else:
-        raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full', not mode={}".format(mode))
+        raise ValueError(
+            "Acceptable mode flags are 'valid', 'same', or 'full', not mode={}".format(
+                mode
+            )
+        )
 
     s1, s2 = x_shape, h_shape
     if len(x_shape) == 1:
@@ -1034,8 +1083,7 @@ def _conv_ops(x_shape, h_shape, mode):
         elif mode == "valid":
             direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
         elif mode == "same":
-            direct_ops = (s1 * s2 if s1 < s2 else
-                          s1 * s2 - (s2 // 2) * ((s2 + 1) // 2))
+            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
     else:
         if mode == "full":
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
@@ -1077,17 +1125,21 @@ def _fftconv_faster(x, h, mode):
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
     offset = -1e-3 if x.ndim == 1 else -1e-4
-    constants = {
+    constants = (
+        {
             "valid": (1.89095737e-9, 2.1364985e-10, offset),
             "full": (1.7649070e-9, 2.1414831e-10, offset),
             "same": (3.2646654e-9, 2.8478277e-10, offset)
             if h.size <= x.size
             else (3.21635404e-9, 1.1773253e-8, -1e-5),
-    } if x.ndim == 1 else {
+        }
+        if x.ndim == 1
+        else {
             "valid": (1.85927e-9, 2.11242e-8, offset),
             "full": (1.99817e-9, 1.66174e-8, offset),
             "same": (2.04735e-9, 1.55367e-8, offset),
-    }
+        }
+    )
     O_fft, O_direct, O_offset = constants[mode]
     return O_fft * fft_ops < O_direct * direct_ops + O_offset
 
@@ -1109,9 +1161,9 @@ def _np_conv_ok(volume, kernel, mode):
     Invalid mode strings will return False and be caught by the calling func.
     """
     if volume.ndim == kernel.ndim == 1:
-        if mode in ('full', 'valid'):
+        if mode in ("full", "valid"):
             return True
-        elif mode == 'same':
+        elif mode == "same":
             return volume.size >= kernel.size
     else:
         return False
@@ -1136,7 +1188,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     # determine number of calls per rep so total time for 1 rep >= 5 ms
     x = 0
     for p in range(0, 10):
-        number = 10**p
+        number = 10 ** p
         x = timer.timeit(number)  # seconds
         if x >= 5e-3 / 10:  # 5 ms for final test, 1/10th that for this one
             break
@@ -1152,7 +1204,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     return sec
 
 
-def choose_conv_method(in1, in2, mode='full', measure=False):
+def choose_conv_method(in1, in2, mode="full", measure=False):
     """
     Find the fastest convolution/correlation method.
 
@@ -1264,33 +1316,34 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     if measure:
         times = {}
-        for method in ['fft', 'direct']:
-            times[method] = _timeit_fast(lambda: convolve(volume, kernel,
-                                         mode=mode, method=method))
+        for method in ["fft", "direct"]:
+            times[method] = _timeit_fast(
+                lambda: convolve(volume, kernel, mode=mode, method=method)
+            )
 
-        chosen_method = 'fft' if times['fft'] < times['direct'] else 'direct'
+        chosen_method = "fft" if times["fft"] < times["direct"] else "direct"
         return chosen_method, times
 
     # for integer input,
     # catch when more precision required than float provides (representing an
     # integer as float can lose precision in fftconvolve if larger than 2**52)
-    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
+    if any([_numeric_arrays([x], kinds="ui") for x in [volume, kernel]]):
         max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
         max_value *= int(min(volume.size, kernel.size))
-        if max_value > 2**np.finfo('float').nmant - 1:
-            return 'direct'
+        if max_value > 2 ** np.finfo("float").nmant - 1:
+            return "direct"
 
-    if _numeric_arrays([volume, kernel], kinds='b'):
-        return 'direct'
+    if _numeric_arrays([volume, kernel], kinds="b"):
+        return "direct"
 
     if _numeric_arrays([volume, kernel]):
         if _fftconv_faster(volume, kernel, mode):
-            return 'fft'
+            return "fft"
 
-    return 'direct'
+    return "direct"
 
 
-def convolve(in1, in2, mode='full', method='auto'):
+def convolve(in1, in2, mode="full", method="auto"):
     """
     Convolve two N-dimensional arrays.
 
@@ -1386,31 +1439,29 @@ def convolve(in1, in2, mode='full', method='auto'):
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
     elif volume.ndim != kernel.ndim:
-        raise ValueError("volume and kernel should have the same "
-                         "dimensionality")
+        raise ValueError("volume and kernel should have the same dimensionality")
 
     if _inputs_swap_needed(mode, volume.shape, kernel.shape):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
 
-    if method == 'auto':
+    if method == "auto":
         method = choose_conv_method(volume, kernel, mode=mode)
 
-    if method == 'fft':
+    if method == "fft":
         out = fftconvolve(volume, kernel, mode=mode)
         result_type = np.result_type(volume, kernel)
-        if result_type.kind in {'u', 'i'}:
+        if result_type.kind in {"u", "i"}:
             out = np.around(out)
         return out.astype(result_type)
-    elif method == 'direct':
+    elif method == "direct":
         # fastpath to faster numpy.convolve for 1d inputs when possible
         if _np_conv_ok(volume, kernel, mode):
             return np.convolve(volume, kernel, mode)
 
-        return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
+        return correlate(volume, _reverse_and_conj(kernel), mode, "direct")
     else:
-        raise ValueError("Acceptable method flags are 'auto',"
-                         " 'direct', or 'fft'.")
+        raise ValueError("Acceptable method flags are 'auto', 'direct', or 'fft'.")
 
 
 def order_filter(a, domain, rank):
@@ -1470,8 +1521,10 @@ def order_filter(a, domain, rank):
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
-            raise ValueError("Each dimension of domain argument "
-                             " should have an odd number of elements.")
+            raise ValueError(
+                "Each dimension of domain argument "
+                " should have an odd number of elements."
+            )
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -1528,8 +1581,9 @@ def medfilt(volume, kernel_size=None):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
     if any(k > s for k, s in zip(kernel_size, volume.shape)):
-        warnings.warn('kernel_size exceeds volume extent: the volume will be '
-                      'zero-padded.')
+        warnings.warn(
+            "kernel_size exceeds volume extent: the volume will be zero-padded."
+        )
 
     domain = np.ones(kernel_size, dtype=volume.dtype)
 
@@ -1597,25 +1651,27 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
+    lMean = correlate(im, np.ones(mysize), "same") / np.prod(mysize, axis=0)
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
-            np.prod(mysize, axis=0) - lMean ** 2)
+    lVar = (
+        correlate(im ** 2, np.ones(mysize), "same") / np.prod(mysize, axis=0)
+        - lMean ** 2
+    )
 
     # Estimate the noise power if needed.
     if noise is None:
         noise = np.mean(np.ravel(lVar), axis=0)
 
-    res = (im - lMean)
-    res *= (1 - noise / lVar)
+    res = im - lMean
+    res *= 1 - noise / lVar
     res += lMean
     out = np.where(lVar < noise, lMean, res)
 
     return out
 
 
-def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
+def convolve2d(in1, in2, mode="full", boundary="fill", fillvalue=0):
     """
     Convolve two 2-dimensional arrays.
 
@@ -1693,7 +1749,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('convolve2d inputs must both be 2-D arrays')
+        raise ValueError("convolve2d inputs must both be 2-D arrays")
 
     if _inputs_swap_needed(mode, in1.shape, in2.shape):
         in1, in2 = in2, in1
@@ -1704,7 +1760,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     return out
 
 
-def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
+def correlate2d(in1, in2, mode="full", boundary="fill", fillvalue=0):
     """
     Cross-correlate two 2-dimensional arrays.
 
@@ -1789,7 +1845,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('correlate2d inputs must both be 2-D arrays')
+        raise ValueError("correlate2d inputs must both be 2-D arrays")
 
     swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
     if swapped_inputs:
@@ -1994,7 +2050,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         b = np.asarray(b)
         a = np.asarray(a)
         if b.ndim != 1 and a.ndim != 1:
-            raise ValueError('object of too small depth for desired array')
+            raise ValueError("object of too small depth for desired array")
         x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
@@ -2002,7 +2058,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
             # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
-                raise ValueError('object of too small depth for desired array')
+                raise ValueError("object of too small depth for desired array")
             expected_shape = list(x.shape)
             expected_shape[axis] = b.shape[0] - 1
             expected_shape = tuple(expected_shape)
@@ -2019,15 +2075,15 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     elif k != axis and zi.shape[k] == 1:
                         strides[k] = 0
                     else:
-                        raise ValueError('Unexpected shape for zi: expected '
-                                         '%s, found %s.' %
-                                         (expected_shape, zi.shape))
-                zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
-                                                     strides)
+                        raise ValueError(
+                            "Unexpected shape for zi: expected %s, found %s."
+                            % (expected_shape, zi.shape)
+                        )
+                zi = np.lib.stride_tricks.as_strided(zi, expected_shape, strides)
             inputs.append(zi)
         dtype = np.result_type(*inputs)
 
-        if dtype.char not in 'fdgFDGO':
+        if dtype.char not in "fdgFDGO":
             raise NotImplementedError("input type '%s' not supported" % dtype)
 
         b = np.array(b, dtype=dtype)
@@ -2104,14 +2160,14 @@ def lfiltic(b, a, y, x=None):
 
     if x is None:
         result_type = np.result_type(np.asarray(b), np.asarray(a), y)
-        if result_type.kind in 'bui':
+        if result_type.kind in "bui":
             result_type = np.float64
         x = np.zeros(M, dtype=result_type)
     else:
         x = np.asarray(x)
 
         result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
-        if result_type.kind in 'bui':
+        if result_type.kind in "bui":
             result_type = np.float64
         x = x.astype(result_type)
 
@@ -2127,10 +2183,10 @@ def lfiltic(b, a, y, x=None):
         y = np.r_[y, np.zeros(N - L)]
 
     for m in range(M):
-        zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi[m] = np.sum(b[m + 1 :] * x[: M - m], axis=0)
 
     for m in range(N):
-        zi[m] -= np.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi[m] -= np.sum(a[m + 1 :] * y[: N - m], axis=0)
 
     return zi
 
@@ -2187,7 +2243,7 @@ def deconvolve(signal, divisor):
         input = np.zeros(N - D + 1, float)
         input[0] = 1
         quot = lfilter(num, den, input)
-        rem = num - convolve(den, quot, mode='full')
+        rem = num - convolve(den, quot, mode="full")
     return quot, rem
 
 
@@ -2288,10 +2344,10 @@ def hilbert(x, N=None, axis=-1):
     h = np.zeros(N)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
+        h[1 : N // 2] = 2
     else:
         h[0] = 1
-        h[1:(N + 1) // 2] = 2
+        h[1 : (N + 1) // 2] = 2
 
     if x.ndim > 1:
         ind = [np.newaxis] * x.ndim
@@ -2335,21 +2391,22 @@ def hilbert2(x, N=None):
             raise ValueError("N must be positive.")
         N = (N, N)
     elif len(N) != 2 or np.any(np.asarray(N) <= 0):
-        raise ValueError("When given as a tuple, N must hold exactly "
-                         "two positive integers")
+        raise ValueError(
+            "When given as a tuple, N must hold exactly two positive integers"
+        )
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = np.zeros(N[0], 'd')
-    h2 = np.zeros(N[1], 'd')
+    h1 = np.zeros(N[0], "d")
+    h2 = np.zeros(N[1], "d")
     for p in range(2):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
         if N1 % 2 == 0:
             h[0] = h[N1 // 2] = 1
-            h[1:N1 // 2] = 2
+            h[1 : N1 // 2] = 2
         else:
             h[0] = 1
-            h[1:(N1 + 1) // 2] = 2
+            h[1 : (N1 + 1) // 2] = 2
         exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, np.newaxis] * h2[np.newaxis, :]
@@ -2391,7 +2448,7 @@ def cmplx_sort(p):
     return np.take(p, indx, 0), indx
 
 
-def unique_roots(p, tol=1e-3, rtype='min'):
+def unique_roots(p, tol=1e-3, rtype="min"):
     """Determine unique roots and their multiplicities from a list of roots.
 
     Parameters
@@ -2443,15 +2500,16 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     >>> uniq[mult > 1]
     array([ 1.305])
     """
-    if rtype in ['max', 'maximum']:
+    if rtype in ["max", "maximum"]:
         reduce = np.max
-    elif rtype in ['min', 'minimum']:
+    elif rtype in ["min", "minimum"]:
         reduce = np.min
-    elif rtype in ['avg', 'mean']:
+    elif rtype in ["avg", "mean"]:
         reduce = np.mean
     else:
-        raise ValueError("`rtype` must be one of "
-                         "{'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}")
+        raise ValueError(
+            "`rtype` must be one of {'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}"
+        )
 
     p = np.asarray(p)
 
@@ -2478,7 +2536,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
-def invres(r, p, k, tol=1e-3, rtype='avg'):
+def invres(r, p, k, tol=1e-3, rtype="avg"):
     """Compute b(s) and a(s) from partial fraction expansion.
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
@@ -2536,11 +2594,12 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
-    k = np.trim_zeros(np.atleast_1d(k), 'f')
+    k = np.trim_zeros(np.atleast_1d(k), "f")
 
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
-    factors, denominator = _compute_factors(unique_poles, multiplicity,
-                                            include_powers=True)
+    factors, denominator = _compute_factors(
+        unique_poles, multiplicity, include_powers=True
+    )
 
     if len(k) == 0:
         numerator = 0
@@ -2583,11 +2642,9 @@ def _compute_residues(poles, multiplicity, numerator):
     numerator = numerator.astype(poles.dtype)
 
     residues = []
-    for pole, mult, factor in zip(poles, multiplicity,
-                                  denominator_factors):
+    for pole, mult, factor in zip(poles, multiplicity, denominator_factors):
         if mult == 1:
-            residues.append(np.polyval(numerator, pole) /
-                            np.polyval(factor, pole))
+            residues.append(np.polyval(numerator, pole) / np.polyval(factor, pole))
         else:
             numer = numerator.copy()
             monomial = np.array([1, -pole])
@@ -2605,7 +2662,7 @@ def _compute_residues(poles, multiplicity, numerator):
     return np.asarray(residues)
 
 
-def residue(b, a, tol=1e-3, rtype='avg'):
+def residue(b, a, tol=1e-3, rtype="avg"):
     """Compute partial-fraction expansion of b(s) / a(s).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
@@ -2683,16 +2740,17 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     """
     b = np.asarray(b)
     a = np.asarray(a)
-    if (np.issubdtype(b.dtype, np.complexfloating)
-            or np.issubdtype(a.dtype, np.complexfloating)):
+    if np.issubdtype(b.dtype, np.complexfloating) or np.issubdtype(
+        a.dtype, np.complexfloating
+    ):
         b = b.astype(complex)
         a = a.astype(complex)
     else:
         b = b.astype(float)
         a = a.astype(float)
 
-    b = np.trim_zeros(np.atleast_1d(b), 'f')
-    a = np.trim_zeros(np.atleast_1d(a), 'f')
+    b = np.trim_zeros(np.atleast_1d(b), "f")
+    a = np.trim_zeros(np.atleast_1d(a), "f")
 
     if a.size == 0:
         raise ValueError("Denominator `a` is zero.")
@@ -2714,13 +2772,13 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     index = 0
     for pole, mult in zip(unique_poles, multiplicity):
-        poles[index:index + mult] = pole
+        poles[index : index + mult] = pole
         index += mult
 
     return residues / a[0], poles, k
 
 
-def residuez(b, a, tol=1e-3, rtype='avg'):
+def residuez(b, a, tol=1e-3, rtype="avg"):
     """Compute partial-fraction expansion of b(z) / a(z).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
@@ -2778,22 +2836,22 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     """
     b = np.asarray(b)
     a = np.asarray(a)
-    if (np.issubdtype(b.dtype, np.complexfloating)
-            or np.issubdtype(a.dtype, np.complexfloating)):
+    if np.issubdtype(b.dtype, np.complexfloating) or np.issubdtype(
+        a.dtype, np.complexfloating
+    ):
         b = b.astype(complex)
         a = a.astype(complex)
     else:
         b = b.astype(float)
         a = a.astype(float)
 
-    b = np.trim_zeros(np.atleast_1d(b), 'b')
-    a = np.trim_zeros(np.atleast_1d(a), 'b')
+    b = np.trim_zeros(np.atleast_1d(b), "b")
+    a = np.trim_zeros(np.atleast_1d(a), "b")
 
     if a.size == 0:
         raise ValueError("Denominator `a` is zero.")
     elif a[0] == 0:
-        raise ValueError("First coefficient of determinant `a` must be "
-                         "non-zero.")
+        raise ValueError("First coefficient of determinant `a` must be non-zero.")
 
     poles = np.roots(a)
     if b.size == 0:
@@ -2816,8 +2874,8 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     index = 0
     powers = np.empty(len(residues), dtype=int)
     for pole, mult in zip(unique_poles, multiplicity):
-        poles[index:index + mult] = pole
-        powers[index:index + mult] = 1 + np.arange(mult)
+        poles[index : index + mult] = pole
+        powers[index : index + mult] = 1 + np.arange(mult)
         index += mult
 
     residues *= (-poles) ** powers / a_rev[0]
@@ -2826,15 +2884,16 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
 
 def _group_poles(poles, tol, rtype):
-    if rtype in ['max', 'maximum']:
+    if rtype in ["max", "maximum"]:
         reduce = np.max
-    elif rtype in ['min', 'minimum']:
+    elif rtype in ["min", "minimum"]:
         reduce = np.min
-    elif rtype in ['avg', 'mean']:
+    elif rtype in ["avg", "mean"]:
         reduce = np.mean
     else:
-        raise ValueError("`rtype` must be one of "
-                         "{'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}")
+        raise ValueError(
+            "`rtype` must be one of {'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}"
+        )
 
     unique = []
     multiplicity = []
@@ -2856,7 +2915,7 @@ def _group_poles(poles, tol, rtype):
     return np.asarray(unique), np.asarray(multiplicity)
 
 
-def invresz(r, p, k, tol=1e-3, rtype='avg'):
+def invresz(r, p, k, tol=1e-3, rtype="avg"):
     """Compute b(z) and a(z) from partial fraction expansion.
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
@@ -2913,11 +2972,12 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
-    k = np.trim_zeros(np.atleast_1d(k), 'b')
+    k = np.trim_zeros(np.atleast_1d(k), "b")
 
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
-    factors, denominator = _compute_factors(unique_poles, multiplicity,
-                                            include_powers=True)
+    factors, denominator = _compute_factors(
+        unique_poles, multiplicity, include_powers=True
+    )
 
     if len(k) == 0:
         numerator = 0
@@ -2930,7 +2990,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return numerator[::-1], denominator
 
 
-def resample(x, num, t=None, axis=0, window=None, domain='time'):
+def resample(x, num, t=None, axis=0, window=None, domain="time"):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
 
@@ -3015,9 +3075,10 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.show()
     """
 
-    if domain not in ('time', 'freq'):
-        raise ValueError("Acceptable domain flags are 'time' or"
-                         " 'freq', not domain={}".format(domain))
+    if domain not in ("time", "freq"):
+        raise ValueError(
+            "Acceptable domain flags are 'time' or 'freq', not domain={}".format(domain)
+        )
 
     x = np.asarray(x)
     Nx = x.shape[axis]
@@ -3025,7 +3086,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     # Check if we can use faster real FFT
     real_input = np.isrealobj(x)
 
-    if domain == 'time':
+    if domain == "time":
         # Forward transform
         if real_input:
             X = sp_fft.rfft(x, axis=axis)
@@ -3040,7 +3101,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             W = window(sp_fft.fftfreq(Nx))
         elif isinstance(window, np.ndarray):
             if window.shape != (Nx,):
-                raise ValueError('window must have the same length as data')
+                raise ValueError("window must have the same length as data")
             W = window
         else:
             W = sp_fft.ifftshift(get_window(window, Nx))
@@ -3052,7 +3113,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
             W_real[1:] *= 0.5
-            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
+            X *= W_real[: newshape_W[axis]].reshape(newshape_W)
         else:
             X *= W.reshape(newshape_W)
 
@@ -3085,21 +3146,21 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if N % 2 == 0:
         if num < Nx:  # downsampling
             if real_input:
-                sl[axis] = slice(N//2, N//2 + 1)
-                Y[tuple(sl)] *= 2.
+                sl[axis] = slice(N // 2, N // 2 + 1)
+                Y[tuple(sl)] *= 2.0
             else:
                 # select the component of Y at frequency +N/2,
                 # add the component of X at -N/2
-                sl[axis] = slice(-N//2, -N//2 + 1)
+                sl[axis] = slice(-N // 2, -N // 2 + 1)
                 Y[tuple(sl)] += X[tuple(sl)]
         elif Nx < num:  # upsampling
             # select the component at frequency +N/2 and halve it
-            sl[axis] = slice(N//2, N//2 + 1)
+            sl[axis] = slice(N // 2, N // 2 + 1)
             Y[tuple(sl)] *= 0.5
             if not real_input:
                 temp = Y[tuple(sl)]
                 # set the component at -N/2 equal to the component at +N/2
-                sl[axis] = slice(num-N//2, num-N//2 + 1)
+                sl[axis] = slice(num - N // 2, num - N // 2 + 1)
                 Y[tuple(sl)] = temp
 
     # Inverse transform
@@ -3108,7 +3169,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     else:
         y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
 
-    y *= (float(num) / float(Nx))
+    y *= float(num) / float(Nx)
 
     if t is None:
         return y
@@ -3117,8 +3178,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         return y, new_t
 
 
-def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
-                  padtype='constant', cval=None):
+def resample_poly(
+    x, up, down, axis=0, window=("kaiser", 5.0), padtype="constant", cval=None
+):
     """
     Resample `x` along the given axis using polyphase filtering.
 
@@ -3252,9 +3314,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     up = int(up)
     down = int(down)
     if up < 1 or down < 1:
-        raise ValueError('up and down must be >= 1')
-    if cval is not None and padtype != 'constant':
-        raise ValueError('cval has no effect when padtype is ', padtype)
+        raise ValueError("up and down must be >= 1")
+    if cval is not None and padtype != "constant":
+        raise ValueError("cval has no effect when padtype is ", padtype)
 
     # Determine our up and down factors
     # Use a rational approximation to save computation time on really long
@@ -3271,52 +3333,62 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     if isinstance(window, (list, np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
-            raise ValueError('window must be 1-D')
+            raise ValueError("window must be 1-D")
         half_len = (window.size - 1) // 2
         h = window
     else:
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
-        f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
+        f_c = 1.0 / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         h = firwin(2 * half_len + 1, f_c, window=window)
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
-    n_pre_pad = (down - half_len % down)
+    n_pre_pad = down - half_len % down
     n_post_pad = 0
     n_pre_remove = (half_len + n_pre_pad) // down
     # We should rarely need to do this given our filter lengths...
-    while _output_len(len(h) + n_pre_pad + n_post_pad, n_in,
-                      up, down) < n_out + n_pre_remove:
+    while (
+        _output_len(len(h) + n_pre_pad + n_post_pad, n_in, up, down)
+        < n_out + n_pre_remove
+    ):
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
-                        np.zeros(n_post_pad, dtype=h.dtype)))
+    h = np.concatenate(
+        (np.zeros(n_pre_pad, dtype=h.dtype), h, np.zeros(n_post_pad, dtype=h.dtype))
+    )
     n_pre_remove_end = n_pre_remove + n_out
 
     # Remove background depending on the padtype option
-    funcs = {'mean': np.mean, 'median': np.median,
-             'minimum': np.amin, 'maximum': np.amax}
-    upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
+    funcs = {
+        "mean": np.mean,
+        "median": np.median,
+        "minimum": np.amin,
+        "maximum": np.amax,
+    }
+    upfirdn_kwargs = {"mode": "constant", "cval": 0}
     if padtype in funcs:
         background_values = funcs[padtype](x, axis=axis, keepdims=True)
     elif padtype in _upfirdn_modes:
-        upfirdn_kwargs = {'mode': padtype}
-        if padtype == 'constant':
+        upfirdn_kwargs = {"mode": padtype}
+        if padtype == "constant":
             if cval is None:
                 cval = 0
-            upfirdn_kwargs['cval'] = cval
+            upfirdn_kwargs["cval"] = cval
     else:
         raise ValueError(
-            'padtype must be one of: maximum, mean, median, minimum, ' +
-            ', '.join(_upfirdn_modes))
+            "padtype must be one of: maximum, mean, median, minimum, "
+            + ", ".join(_upfirdn_modes)
+        )
 
     if padtype in funcs:
         x = x - background_values
 
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis, **upfirdn_kwargs)
-    keep = [slice(None), ]*x.ndim
+    keep = [
+        slice(None),
+    ] * x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
     y_keep = y[tuple(keep)]
 
@@ -3328,7 +3400,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
 
 
 def vectorstrength(events, period):
-    '''
+    """
     Determine the vector strength of the events corresponding to the given
     period.
 
@@ -3373,13 +3445,13 @@ def vectorstrength(events, period):
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
-    '''
+    """
     events = np.asarray(events)
     period = np.asarray(period)
     if events.ndim > 1:
-        raise ValueError('events cannot have dimensions more than 1')
+        raise ValueError("events cannot have dimensions more than 1")
     if period.ndim > 1:
-        raise ValueError('period cannot have dimensions more than 1')
+        raise ValueError("period cannot have dimensions more than 1")
 
     # we need to know later if period was originally a scalar
     scalarperiod = not period.ndim
@@ -3387,10 +3459,10 @@ def vectorstrength(events, period):
     events = np.atleast_2d(events)
     period = np.atleast_2d(period)
     if (period <= 0).any():
-        raise ValueError('periods must be positive')
+        raise ValueError("periods must be positive")
 
     # this converts the times to vectors
-    vectors = np.exp(np.dot(2j*np.pi/period.T, events))
+    vectors = np.exp(np.dot(2j * np.pi / period.T, events))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
@@ -3405,7 +3477,7 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
+def detrend(data, axis=-1, type="linear", bp=0, overwrite_data=False):
     """
     Remove linear trend along axis from data.
 
@@ -3446,13 +3518,13 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     0.06  # random
 
     """
-    if type not in ['linear', 'l', 'constant', 'c']:
+    if type not in ["linear", "l", "constant", "c"]:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
     data = np.asarray(data)
     dtype = data.dtype.char
-    if dtype not in 'dfDF':
-        dtype = 'd'
-    if type in ['constant', 'c']:
+    if dtype not in "dfDF":
+        dtype = "d"
+    if type in ["constant", "c"]:
         ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
@@ -3460,20 +3532,22 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         N = dshape[axis]
         bp = np.sort(np.unique(np.r_[0, bp, N]))
         if np.any(bp > N):
-            raise ValueError("Breakpoints must be less than length "
-                             "of data along given axis.")
+            raise ValueError(
+                "Breakpoints must be less than length of data along given axis."
+            )
         Nreg = len(bp) - 1
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdims = np.r_[axis, 0:axis, axis + 1:rnk]
-        newdata = np.reshape(np.transpose(data, tuple(newdims)),
-                             (N, _prod(dshape) // N))
+        newdims = np.r_[axis, 0:axis, axis + 1 : rnk]
+        newdata = np.reshape(
+            np.transpose(data, tuple(newdims)), (N, _prod(dshape) // N)
+        )
         if not overwrite_data:
             newdata = newdata.copy()  # make sure we have a copy
-        if newdata.dtype.char not in 'dfDF':
+        if newdata.dtype.char not in "dfDF":
             newdata = newdata.astype(dtype)
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):
@@ -3683,9 +3757,9 @@ def sosfilt_zi(sos):
     """
     sos = np.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
-        raise ValueError('sos must be shape (n_sections, 6)')
+        raise ValueError("sos must be shape (n_sections, 6)")
 
-    if sos.dtype.kind in 'bui':
+    if sos.dtype.kind in "bui":
         sos = sos.astype(np.float64)
 
     n_sections = sos.shape[0]
@@ -3758,7 +3832,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     order = max(len(b), len(a)) - 1
     if order == 0:
         # The filter is just scalar multiplication, with no state.
-        scale = (b[0] / a[0])**2
+        scale = (b[0] / a[0]) ** 2
         y = scale * x
         return y, np.array([]), np.array([])
 
@@ -3769,7 +3843,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     # n is the number of samples in the data to be filtered.
     n = x.shape[-1]
 
-    if irlen is None or n <= 2*irlen:
+    if irlen is None or n <= 2 * irlen:
         m = n
     else:
         m = irlen
@@ -3810,7 +3884,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
         M = np.hstack((Sr - Obs, Obsr - S))
     else:
         # Matrix described in section IV of [1].
-        M = np.zeros((2*m, 2*order))
+        M = np.zeros((2 * m, 2 * order))
         M[:m, :order] = Sr - Obs
         M[m:, order:] = Obsr - S
 
@@ -3848,7 +3922,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     if m == n:
         W = np.hstack((Sr, Obsr))
     else:
-        W = np.zeros((2*m, 2*order))
+        W = np.zeros((2 * m, 2 * order))
         W[:m, :order] = Sr
         W[m:, order:] = Obsr
 
@@ -3882,8 +3956,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     return y_opt, x0, x1
 
 
-def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
-             irlen=None):
+def filtfilt(b, a, x, axis=-1, padtype="odd", padlen=None, method="pad", irlen=None):
     """
     Apply a digital filter forward and backward to a signal.
 
@@ -4051,8 +4124,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         return y
 
     # method == "pad"
-    edge, ext = _validate_pad(padtype, padlen, x, axis,
-                              ntaps=max(len(a), len(b)))
+    edge, ext = _validate_pad(padtype, padlen, x, axis, ntaps=max(len(a), len(b)))
 
     # Get the steady state of the filter's step response.
     zi = lfilter_zi(b, a)
@@ -4085,10 +4157,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
-    if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+    if padtype not in ["even", "odd", "constant", None]:
+        raise ValueError(
+            "Unknown value '%s' given to padtype.  padtype "
+            "must be 'even', 'odd', 'constant', or None." % padtype
+        )
 
     if padtype is None:
         padlen = 0
@@ -4101,15 +4174,17 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater "
-                         "than padlen, which is %d." % edge)
+        raise ValueError(
+            "The length of the input vector x must be greater than padlen, which is %d."
+            % edge
+        )
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each
         # end of the input array.
-        if padtype == 'even':
+        if padtype == "even":
             ext = even_ext(x, edge, axis=axis)
-        elif padtype == 'odd':
+        elif padtype == "odd":
             ext = odd_ext(x, edge, axis=axis)
         else:
             ext = const_ext(x, edge, axis=axis)
@@ -4121,7 +4196,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 def _validate_x(x):
     x = np.asarray(x)
     if x.ndim == 0:
-        raise ValueError('x must be at least 1-D')
+        raise ValueError("x must be at least 1-D")
     return x
 
 
@@ -4204,15 +4279,17 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if zi is not None:
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
-    if dtype.char not in 'fdgFDGO':
+    if dtype.char not in "fdgFDGO":
         raise NotImplementedError("input type '%s' not supported" % dtype)
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
-            raise ValueError('Invalid zi shape. With axis=%r, an input with '
-                             'shape %r, and an sos array with %d sections, zi '
-                             'must have shape %r, got %r.' %
-                             (axis, x.shape, n_sections, x_zi_shape, zi.shape))
+            raise ValueError(
+                "Invalid zi shape. With axis=%r, an input with "
+                "shape %r, and an sos array with %d sections, zi "
+                "must have shape %r, got %r."
+                % (axis, x.shape, n_sections, x_zi_shape, zi.shape)
+            )
         return_zi = True
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)
@@ -4222,7 +4299,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
-    x = np.array(x, dtype, order='C')  # make a copy, can modify in place
+    x = np.array(x, dtype, order="C")  # make a copy, can modify in place
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
@@ -4237,7 +4314,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     return out
 
 
-def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
+def sosfiltfilt(sos, x, axis=-1, padtype="odd", padlen=None):
     """
     A forward-backward digital filter using cascaded second-order sections.
 
@@ -4331,8 +4408,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     # `method` is "pad"...
     ntaps = 2 * n_sections + 1
     ntaps -= min((sos[:, 2] == 0).sum(), (sos[:, 5] == 0).sum())
-    edge, ext = _validate_pad(padtype, padlen, x, axis,
-                              ntaps=ntaps)
+    edge, ext = _validate_pad(padtype, padlen, x, axis, ntaps=ntaps)
 
     # These steps follow the same form as filtfilt with modifications
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
@@ -4349,7 +4425,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     return y
 
 
-def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
+def decimate(x, q, n=None, ftype="iir", axis=-1, zero_phase=True):
     """
     Downsample the signal after applying an anti-aliasing filter.
 
@@ -4403,12 +4479,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     if n is not None:
         n = operator.index(n)
 
-    if ftype == 'fir':
+    if ftype == "fir":
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
-        b, a = firwin(n+1, 1. / q, window='hamming'), 1.
-    elif ftype == 'iir':
+        b, a = firwin(n + 1, 1.0 / q, window="hamming"), 1.0
+    elif ftype == "iir":
         if n is None:
             n = 8
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
@@ -4417,10 +4493,10 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         system = ftype._as_tf()  # Avoids copying if already in TF form
         b, a = system.num, system.den
     else:
-        raise ValueError('invalid ftype')
+        raise ValueError("invalid ftype")
 
     result_type = x.dtype
-    if result_type.kind in 'bui':
+    if result_type.kind in "bui":
         result_type = np.float64
     b = np.asarray(b, dtype=result_type)
     a = np.asarray(a, dtype=result_type)

@@ -16,12 +16,7 @@ def test_aliasing():
     by `_clean_inputs` as a side effect.
     """
     lp = _LPProblem(
-        c=1,
-        A_ub=[[1]],
-        b_ub=[1],
-        A_eq=[[1]],
-        b_eq=[1],
-        bounds=(-np.inf, np.inf)
+        c=1, A_ub=[[1]], b_ub=[1], A_eq=[[1]], b_eq=[1], bounds=(-np.inf, np.inf)
     )
     lp_copy = deepcopy(lp)
 
@@ -45,7 +40,7 @@ def test_aliasing2():
         b_ub=np.array([[1], [1]]),
         A_eq=np.array([[1, 1]]),
         b_eq=np.array([1]),
-        bounds=[(-np.inf, np.inf), (None, 1)]
+        bounds=[(-np.inf, np.inf), (None, 1)],
     )
     lp_copy = deepcopy(lp)
 
@@ -112,7 +107,11 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
+    assert_raises(
+        ValueError,
+        _clean_inputs,
+        _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]),
+    )
 
 
 def test_type_errors():
@@ -122,7 +121,7 @@ def test_type_errors():
         b_ub=np.array([1, 1]),
         A_eq=np.array([[1, 1], [2, 2]]),
         b_eq=np.array([1, 1]),
-        bounds=[(0, 1)]
+        bounds=[(0, 1)],
     )
     bad = "hello"
 
@@ -135,10 +134,12 @@ def test_type_errors():
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=bad))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds="hi"))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=["hi"]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[("hi")]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=["hi"]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, "")]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020, 2, 29))]))
+    assert_raises(
+        TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020, 2, 29))])
+    )
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[[[1, 2]]]))
 
 
@@ -149,7 +150,7 @@ def test_non_finite_errors():
         b_ub=np.array([1, 1]),
         A_eq=np.array([[1, 1], [2, 2]]),
         b_eq=np.array([1, 1]),
-        bounds=[(0, 1)]
+        bounds=[(0, 1)],
     )
     assert_raises(ValueError, _clean_inputs, lp._replace(c=[0, None]))
     assert_raises(ValueError, _clean_inputs, lp._replace(c=[np.inf, 0]))
@@ -169,7 +170,7 @@ def test__clean_inputs1():
         b_ub=[1, 1],
         A_eq=[[1, 1], [2, 2]],
         b_eq=[1, 1],
-        bounds=None
+        bounds=None,
     )
 
     lp_cleaned = _clean_inputs(lp)
@@ -189,14 +190,7 @@ def test__clean_inputs1():
 
 
 def test__clean_inputs2():
-    lp = _LPProblem(
-        c=1,
-        A_ub=[[1]],
-        b_ub=1,
-        A_eq=[[1]],
-        b_eq=1,
-        bounds=(0, 1)
-    )
+    lp = _LPProblem(c=1, A_ub=[[1]], b_ub=1, A_eq=[[1]], b_eq=1, bounds=(0, 1))
 
     lp_cleaned = _clean_inputs(lp)
 
@@ -221,7 +215,7 @@ def test__clean_inputs3():
         b_ub=[[1], [2]],
         A_eq=np.random.rand(2, 2),
         b_eq=[[1], [2]],
-        bounds=[(0, 1)]
+        bounds=[(0, 1)],
     )
 
     lp_cleaned = _clean_inputs(lp)
@@ -242,11 +236,15 @@ def test_bad_bounds():
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2, 2)]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2), (1, 2)]))
+    assert_raises(
+        ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2), (1, 2)])
+    )
 
     lp = _LPProblem(c=[1, 2, 3, 4])
 
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 3, 4), (1, 2, 3, 4)]))
+    assert_raises(
+        ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 3, 4), (1, 2, 3, 4)])
+    )
 
 
 def test_good_bounds():
@@ -293,5 +291,9 @@ def test_good_bounds():
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, 1)]))
     assert_equal(lp_cleaned.bounds, [(-np.inf, 1)] * 4)
 
-    lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, None), (-np.inf, None), (None, np.inf), (-np.inf, np.inf)]))
+    lp_cleaned = _clean_inputs(
+        lp._replace(
+            bounds=[(None, None), (-np.inf, None), (None, np.inf), (-np.inf, np.inf)]
+        )
+    )
     assert_equal(lp_cleaned.bounds, [(-np.inf, np.inf)] * 4)

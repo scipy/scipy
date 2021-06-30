@@ -15,18 +15,20 @@ from scipy.linalg.lapack import get_lapack_funcs
 from ._discrete_distns import binom
 from . import mvn
 
-__all__ = ['multivariate_normal',
-           'matrix_normal',
-           'dirichlet',
-           'wishart',
-           'invwishart',
-           'multinomial',
-           'special_ortho_group',
-           'ortho_group',
-           'random_correlation',
-           'unitary_group',
-           'multivariate_t',
-           'multivariate_hypergeom']
+__all__ = [
+    "multivariate_normal",
+    "matrix_normal",
+    "dirichlet",
+    "wishart",
+    "invwishart",
+    "multinomial",
+    "special_ortho_group",
+    "ortho_group",
+    "random_correlation",
+    "unitary_group",
+    "multivariate_t",
+    "multivariate_hypergeom",
+]
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -85,7 +87,7 @@ def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
         cond = rcond
     if cond in [None, -1]:
         t = spectrum.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
+        factor = {"f": 1e3, "d": 1e6}
         cond = factor[t] * np.finfo(t).eps
     eps = cond * np.max(abs(spectrum))
     return eps
@@ -107,7 +109,7 @@ def _pinv_1d(v, eps=1e-5):
         A vector of pseudo-inverted numbers.
 
     """
-    return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
+    return np.array([0 if abs(x) <= eps else 1 / x for x in v], dtype=float)
 
 
 class _PSD:
@@ -150,8 +152,15 @@ class _PSD:
 
     """
 
-    def __init__(self, M, cond=None, rcond=None, lower=True,
-                 check_finite=True, allow_singular=True):
+    def __init__(
+        self,
+        M,
+        cond=None,
+        rcond=None,
+        lower=True,
+        check_finite=True,
+        allow_singular=True,
+    ):
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
@@ -159,10 +168,10 @@ class _PSD:
 
         eps = _eigvalsh_to_eps(s, cond, rcond)
         if np.min(s) < -eps:
-            raise ValueError('the input matrix must be positive semidefinite')
+            raise ValueError("the input matrix must be positive semidefinite")
         d = s[s > eps]
         if len(d) < len(s) and not allow_singular:
-            raise np.linalg.LinAlgError('singular matrix')
+            raise np.linalg.LinAlgError("singular matrix")
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
 
@@ -186,13 +195,14 @@ class multi_rv_generic:
     Class which encapsulates common functionality between all multivariate
     distributions.
     """
+
     def __init__(self, seed=None):
         super().__init__()
         self._random_state = check_random_state(seed)
 
     @property
     def random_state(self):
-        """ Get or set the Generator object for generating random variates.
+        """Get or set the Generator object for generating random variates.
 
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -220,6 +230,7 @@ class multi_rv_frozen:
     Class which encapsulates common functionality between all frozen
     multivariate distributions.
     """
+
     @property
     def random_state(self):
         return self._dist._random_state
@@ -238,8 +249,7 @@ allow_singular : bool, optional
     Whether to allow a singular covariance matrix.  (Default: False)
 """
 
-_mvn_doc_callparams_note = \
-    """Setting the parameter `mean` to `None` is equivalent to having `mean`
+_mvn_doc_callparams_note = """Setting the parameter `mean` to `None` is equivalent to having `mean`
     be the zero-vector. The parameter `cov` can be a scalar, in which case
     the covariance matrix is the identity times that value, a vector of
     diagonal entries for the covariance matrix, or a two-dimensional
@@ -248,19 +258,20 @@ _mvn_doc_callparams_note = \
 
 _mvn_doc_frozen_callparams = ""
 
-_mvn_doc_frozen_callparams_note = \
+_mvn_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 mvn_docdict_params = {
-    '_mvn_doc_default_callparams': _mvn_doc_default_callparams,
-    '_mvn_doc_callparams_note': _mvn_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_mvn_doc_default_callparams": _mvn_doc_default_callparams,
+    "_mvn_doc_callparams_note": _mvn_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 mvn_docdict_noparams = {
-    '_mvn_doc_default_callparams': _mvn_doc_frozen_callparams,
-    '_mvn_doc_callparams_note': _mvn_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_mvn_doc_default_callparams": _mvn_doc_frozen_callparams,
+    "_mvn_doc_callparams_note": _mvn_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -357,9 +368,9 @@ class multivariate_normal_gen(multi_rv_generic):
 
         See `multivariate_normal_frozen` for more information.
         """
-        return multivariate_normal_frozen(mean, cov,
-                                          allow_singular=allow_singular,
-                                          seed=seed)
+        return multivariate_normal_frozen(
+            mean, cov, allow_singular=allow_singular, seed=seed
+        )
 
     def _process_parameters(self, dim, mean, cov):
         """
@@ -382,8 +393,7 @@ class multivariate_normal_gen(multi_rv_generic):
                 dim = mean.size
         else:
             if not np.isscalar(dim):
-                raise ValueError("Dimension of random variable must be "
-                                 "a scalar.")
+                raise ValueError("Dimension of random variable must be a scalar.")
 
         # Check input sizes and return full arrays for mean and cov if
         # necessary
@@ -400,8 +410,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov.shape = (1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
-            raise ValueError("Array 'mean' must be a vector of length %d." %
-                             dim)
+            raise ValueError("Array 'mean' must be a vector of length %d." % dim)
         if cov.ndim == 0:
             cov = cov * np.eye(dim)
         elif cov.ndim == 1:
@@ -409,16 +418,23 @@ class multivariate_normal_gen(multi_rv_generic):
         elif cov.ndim == 2 and cov.shape != (dim, dim):
             rows, cols = cov.shape
             if rows != cols:
-                msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(cov.shape))
+                msg = (
+                    "Array 'cov' must be square if it is two dimensional,"
+                    " but cov.shape = %s."
+                    % str(cov.shape)
+                )
             else:
-                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'mean' is a vector of length %d.")
+                msg = (
+                    "Dimension mismatch: array 'cov' is of shape %s,"
+                    " but 'mean' is a vector of length %d."
+                )
                 msg = msg % (str(cov.shape), len(mean))
             raise ValueError(msg)
         elif cov.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % cov.ndim)
+            raise ValueError(
+                "Array 'cov' must be at most two-dimensional, but cov.ndim = %d"
+                % cov.ndim
+            )
 
         return dim, mean, cov
 
@@ -545,13 +561,22 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         lower = np.full(mean.shape, -np.inf)
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
-                                           maxpts, abseps, releps)[0]
+        func1d = lambda x_slice: mvn.mvnun(
+            lower, x_slice, mean, cov, maxpts, abseps, releps
+        )[0]
         out = np.apply_along_axis(func1d, -1, x)
         return _squeeze_output(out)
 
-    def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5):
+    def logcdf(
+        self,
+        x,
+        mean=None,
+        cov=1,
+        allow_singular=False,
+        maxpts=None,
+        abseps=1e-5,
+        releps=1e-5,
+    ):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -588,8 +613,16 @@ class multivariate_normal_gen(multi_rv_generic):
         out = np.log(self._cdf(x, mean, cov, maxpts, abseps, releps))
         return out
 
-    def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5):
+    def cdf(
+        self,
+        x,
+        mean=None,
+        cov=1,
+        allow_singular=False,
+        maxpts=None,
+        abseps=1e-5,
+        releps=1e-5,
+    ):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -679,8 +712,16 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
-                 maxpts=None, abseps=1e-5, releps=1e-5):
+    def __init__(
+        self,
+        mean=None,
+        cov=1,
+        allow_singular=False,
+        seed=None,
+        maxpts=None,
+        abseps=1e-5,
+        releps=1e-5,
+    ):
         """Create a frozen multivariate normal distribution.
 
         Parameters
@@ -725,8 +766,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
         """
         self._dist = multivariate_normal_gen(seed)
-        self.dim, self.mean, self.cov = self._dist._process_parameters(
-                                                            None, mean, cov)
+        self.dim, self.mean, self.cov = self._dist._process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * self.dim
@@ -736,8 +776,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.mean, self.cov_info.U,
-                                 self.cov_info.log_pdet, self.cov_info.rank)
+        out = self._dist._logpdf(
+            x, self.mean, self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank
+        )
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -748,8 +789,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def cdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
-                              self.releps)
+        out = self._dist._cdf(
+            x, self.mean, self.cov, self.maxpts, self.abseps, self.releps
+        )
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
@@ -771,11 +813,10 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'logcdf', 'cdf', 'rvs']:
+for name in ["logpdf", "pdf", "logcdf", "cdf", "rvs"]:
     method = multivariate_normal_gen.__dict__[name]
     method_frozen = multivariate_normal_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(method.__doc__,
-                                             mvn_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_params)
 
 _matnorm_doc_default_callparams = """\
@@ -787,8 +828,7 @@ colcov : array_like, optional
     Among-column covariance matrix of the distribution (default: `1`)
 """
 
-_matnorm_doc_callparams_note = \
-    """If `mean` is set to `None` then a matrix of zeros is used for the mean.
+_matnorm_doc_callparams_note = """If `mean` is set to `None` then a matrix of zeros is used for the mean.
     The dimensions of this matrix are inferred from the shape of `rowcov` and
     `colcov`, if these are provided, or set to `1` if ambiguous.
 
@@ -801,19 +841,20 @@ _matnorm_doc_callparams_note = \
 
 _matnorm_doc_frozen_callparams = ""
 
-_matnorm_doc_frozen_callparams_note = \
+_matnorm_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 matnorm_docdict_params = {
-    '_matnorm_doc_default_callparams': _matnorm_doc_default_callparams,
-    '_matnorm_doc_callparams_note': _matnorm_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_matnorm_doc_default_callparams": _matnorm_doc_default_callparams,
+    "_matnorm_doc_callparams_note": _matnorm_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 matnorm_docdict_noparams = {
-    '_matnorm_doc_default_callparams': _matnorm_doc_frozen_callparams,
-    '_matnorm_doc_callparams_note': _matnorm_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_matnorm_doc_default_callparams": _matnorm_doc_frozen_callparams,
+    "_matnorm_doc_callparams_note": _matnorm_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -983,11 +1024,13 @@ class matrix_normal_gen(multi_rv_generic):
         # Ensure mean and covariances compatible
         if mean is not None:
             if meanshape[0] != numrows:
-                raise ValueError("Arrays `mean` and `rowcov` must have the "
-                                 "same number of rows.")
+                raise ValueError(
+                    "Arrays `mean` and `rowcov` must have the same number of rows."
+                )
             if meanshape[1] != numcols:
-                raise ValueError("Arrays `mean` and `colcov` must have the "
-                                 "same number of columns.")
+                raise ValueError(
+                    "Arrays `mean` and `colcov` must have the same number of columns."
+                )
         else:
             mean = np.zeros((numrows, numcols))
 
@@ -1004,12 +1047,15 @@ class matrix_normal_gen(multi_rv_generic):
         if X.ndim == 2:
             X = X[np.newaxis, :]
         if X.shape[-2:] != dims:
-            raise ValueError("The shape of array `X` is not compatible "
-                             "with the distribution parameters.")
+            raise ValueError(
+                "The shape of array `X` is not compatible "
+                "with the distribution parameters."
+            )
         return X
 
-    def _logpdf(self, dims, X, mean, row_prec_rt, log_det_rowcov,
-                col_prec_rt, log_det_colcov):
+    def _logpdf(
+        self, dims, X, mean, row_prec_rt, log_det_rowcov, col_prec_rt, log_det_colcov
+    ):
         """Log of the matrix normal probability density function.
 
         Parameters
@@ -1039,12 +1085,15 @@ class matrix_normal_gen(multi_rv_generic):
 
         """
         numrows, numcols = dims
-        roll_dev = np.rollaxis(X-mean, axis=-1, start=0)
-        scale_dev = np.tensordot(col_prec_rt.T,
-                                 np.dot(roll_dev, row_prec_rt), 1)
+        roll_dev = np.rollaxis(X - mean, axis=-1, start=0)
+        scale_dev = np.tensordot(col_prec_rt.T, np.dot(roll_dev, row_prec_rt), 1)
         maha = np.sum(np.sum(np.square(scale_dev), axis=-1), axis=0)
-        return -0.5 * (numrows*numcols*_LOG_2PI + numcols*log_det_rowcov
-                       + numrows*log_det_colcov + maha)
+        return -0.5 * (
+            numrows * numcols * _LOG_2PI
+            + numcols * log_det_rowcov
+            + numrows * log_det_colcov
+            + maha
+        )
 
     def logpdf(self, X, mean=None, rowcov=1, colcov=1):
         """Log of the matrix normal probability density function.
@@ -1065,13 +1114,13 @@ class matrix_normal_gen(multi_rv_generic):
         %(_matnorm_doc_callparams_note)s
 
         """
-        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
-                                                              colcov)
+        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov, colcov)
         X = self._process_quantiles(X, dims)
         rowpsd = _PSD(rowcov, allow_singular=False)
         colpsd = _PSD(colcov, allow_singular=False)
-        out = self._logpdf(dims, X, mean, rowpsd.U, rowpsd.log_pdet, colpsd.U,
-                           colpsd.log_pdet)
+        out = self._logpdf(
+            dims, X, mean, rowpsd.U, rowpsd.log_pdet, colpsd.U, colpsd.log_pdet
+        )
         return _squeeze_output(out)
 
     def pdf(self, X, mean=None, rowcov=1, colcov=1):
@@ -1117,8 +1166,7 @@ class matrix_normal_gen(multi_rv_generic):
 
         """
         size = int(size)
-        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
-                                                              colcov)
+        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov, colcov)
         rowchol = scipy.linalg.cholesky(rowcov, lower=True)
         colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
@@ -1167,33 +1215,38 @@ class matrix_normal_frozen(multi_rv_frozen):
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
 
         self._dist = matrix_normal_gen(seed)
-        self.dims, self.mean, self.rowcov, self.colcov = \
-            self._dist._process_parameters(mean, rowcov, colcov)
+        self.dims, self.mean, self.rowcov, self.colcov = self._dist._process_parameters(
+            mean, rowcov, colcov
+        )
         self.rowpsd = _PSD(self.rowcov, allow_singular=False)
         self.colpsd = _PSD(self.colcov, allow_singular=False)
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
-        out = self._dist._logpdf(self.dims, X, self.mean, self.rowpsd.U,
-                                 self.rowpsd.log_pdet, self.colpsd.U,
-                                 self.colpsd.log_pdet)
+        out = self._dist._logpdf(
+            self.dims,
+            X,
+            self.mean,
+            self.rowpsd.U,
+            self.rowpsd.log_pdet,
+            self.colpsd.U,
+            self.colpsd.log_pdet,
+        )
         return _squeeze_output(out)
 
     def pdf(self, X):
         return np.exp(self.logpdf(X))
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
-                              random_state)
+        return self._dist.rvs(self.mean, self.rowcov, self.colcov, size, random_state)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ["logpdf", "pdf", "rvs"]:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(method.__doc__,
-                                             matnorm_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_params)
 
 _dirichlet_doc_default_callparams = """\
@@ -1203,17 +1256,18 @@ alpha : array_like
 """
 _dirichlet_doc_frozen_callparams = ""
 
-_dirichlet_doc_frozen_callparams_note = \
+_dirichlet_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 dirichlet_docdict_params = {
-    '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
-    '_doc_random_state': _doc_random_state
+    "_dirichlet_doc_default_callparams": _dirichlet_doc_default_callparams,
+    "_doc_random_state": _doc_random_state,
 }
 
 dirichlet_docdict_noparams = {
-    '_dirichlet_doc_default_callparams': _dirichlet_doc_frozen_callparams,
-    '_doc_random_state': _doc_random_state
+    "_dirichlet_doc_default_callparams": _dirichlet_doc_frozen_callparams,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -1222,8 +1276,10 @@ def _dirichlet_check_parameters(alpha):
     if np.min(alpha) <= 0:
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
-        raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = %s." % (alpha.shape, ))
+        raise ValueError(
+            "Parameter vector 'a' must be one dimensional, but a.shape = %s."
+            % (alpha.shape,)
+        )
     return alpha
 
 
@@ -1231,10 +1287,12 @@ def _dirichlet_check_input(alpha, x):
     x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
-        raise ValueError("Vector 'x' must have either the same number "
-                         "of entries as, or one entry fewer than, "
-                         "parameter vector 'a', but alpha.shape = %s "
-                         "and x.shape = %s." % (alpha.shape, x.shape))
+        raise ValueError(
+            "Vector 'x' must have either the same number "
+            "of entries as, or one entry fewer than, "
+            "parameter vector 'a', but alpha.shape = %s "
+            "and x.shape = %s." % (alpha.shape, x.shape)
+        )
 
     if x.shape[0] != alpha.shape[0]:
         xk = np.array([1 - np.sum(x, 0)])
@@ -1243,30 +1301,35 @@ def _dirichlet_check_input(alpha, x):
         elif xk.ndim == 2:
             x = np.vstack((x, xk))
         else:
-            raise ValueError("The input must be one dimensional or a two "
-                             "dimensional matrix containing the entries.")
+            raise ValueError(
+                "The input must be one dimensional or a two "
+                "dimensional matrix containing the entries."
+            )
 
     if np.min(x) < 0:
-        raise ValueError("Each entry in 'x' must be greater than or equal "
-                         "to zero.")
+        raise ValueError("Each entry in 'x' must be greater than or equal to zero.")
 
     if np.max(x) > 1:
         raise ValueError("Each entry in 'x' must be smaller or equal one.")
 
     # Check x_i > 0 or alpha_i > 1
-    xeq0 = (x == 0)
-    alphalt1 = (alpha < 1)
+    xeq0 = x == 0
+    alphalt1 = alpha < 1
     if x.shape != alpha.shape:
         alphalt1 = np.repeat(alphalt1, x.shape[-1], axis=-1).reshape(x.shape)
     chk = np.logical_and(xeq0, alphalt1)
 
     if np.sum(chk):
-        raise ValueError("Each entry in 'x' must be greater than zero if its "
-                         "alpha is less than one.")
+        raise ValueError(
+            "Each entry in 'x' must be greater than zero if its alpha is less than one."
+        )
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
-        raise ValueError("The input vector 'x' must lie within the normal "
-                         "simplex. but np.sum(x, 0) = %s." % np.sum(x, 0))
+        raise ValueError(
+            "The input vector 'x' must lie within the normal "
+            "simplex. but np.sum(x, 0) = %s."
+            % np.sum(x, 0)
+        )
 
     return x
 
@@ -1423,7 +1486,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         lnB = _lnB(alpha)
-        return - lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
+        return -lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
 
     def logpdf(self, x, alpha):
         """Log of the Dirichlet probability density function.
@@ -1525,8 +1588,11 @@ class dirichlet_gen(multi_rv_generic):
         lnB = _lnB(alpha)
         K = alpha.shape[0]
 
-        out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
-            (alpha - 1) * scipy.special.psi(alpha))
+        out = (
+            lnB
+            + (alpha0 - K) * scipy.special.psi(alpha0)
+            - np.sum((alpha - 1) * scipy.special.psi(alpha))
+        )
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
@@ -1580,11 +1646,10 @@ class dirichlet_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+for name in ["logpdf", "pdf", "rvs", "mean", "var", "entropy"]:
     method = dirichlet_gen.__dict__[name]
     method_frozen = dirichlet_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, dirichlet_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)
 
 
@@ -1600,19 +1665,20 @@ _wishart_doc_callparams_note = ""
 
 _wishart_doc_frozen_callparams = ""
 
-_wishart_doc_frozen_callparams_note = \
+_wishart_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 wishart_docdict_params = {
-    '_doc_default_callparams': _wishart_doc_default_callparams,
-    '_doc_callparams_note': _wishart_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _wishart_doc_default_callparams,
+    "_doc_callparams_note": _wishart_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 wishart_docdict_noparams = {
-    '_doc_default_callparams': _wishart_doc_frozen_callparams,
-    '_doc_callparams_note': _wishart_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _wishart_doc_frozen_callparams,
+    "_doc_callparams_note": _wishart_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -1743,12 +1809,16 @@ class wishart_gen(multi_rv_generic):
         elif scale.ndim == 1:
             scale = np.diag(scale)
         elif scale.ndim == 2 and not scale.shape[0] == scale.shape[1]:
-            raise ValueError("Array 'scale' must be square if it is two"
-                             " dimensional, but scale.scale = %s."
-                             % str(scale.shape))
+            raise ValueError(
+                "Array 'scale' must be square if it is two"
+                " dimensional, but scale.scale = %s."
+                % str(scale.shape)
+            )
         elif scale.ndim > 2:
-            raise ValueError("Array 'scale' must be at most two-dimensional,"
-                             " but scale.ndim = %d" % scale.ndim)
+            raise ValueError(
+                "Array 'scale' must be at most two-dimensional, but scale.ndim = %d"
+                % scale.ndim
+            )
 
         dim = scale.shape[0]
 
@@ -1757,8 +1827,10 @@ class wishart_gen(multi_rv_generic):
         elif not np.isscalar(df):
             raise ValueError("Degrees of freedom must be a scalar.")
         elif df <= dim - 1:
-            raise ValueError("Degrees of freedom must be greater than the "
-                             "dimension of scale matrix minus 1.")
+            raise ValueError(
+                "Degrees of freedom must be greater than the "
+                "dimension of scale matrix minus 1."
+            )
 
         return dim, df, scale
 
@@ -1778,24 +1850,34 @@ class wishart_gen(multi_rv_generic):
                 x = np.diag(x)[:, :, np.newaxis]
         elif x.ndim == 2:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square if they are two"
-                                 " dimensional, but x.shape = %s."
-                                 % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square if they are two"
+                    " dimensional, but x.shape = %s."
+                    % str(x.shape)
+                )
             x = x[:, :, np.newaxis]
         elif x.ndim == 3:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square in the first two"
-                                 " dimensions if they are three dimensional"
-                                 ", but x.shape = %s." % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square in the first two"
+                    " dimensions if they are three dimensional"
+                    ", but x.shape = %s."
+                    % str(x.shape)
+                )
         elif x.ndim > 3:
-            raise ValueError("Quantiles must be at most two-dimensional with"
-                             " an additional dimension for multiple"
-                             "components, but x.ndim = %d" % x.ndim)
+            raise ValueError(
+                "Quantiles must be at most two-dimensional with"
+                " an additional dimension for multiple"
+                "components, but x.ndim = %d"
+                % x.ndim
+            )
 
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
-            raise ValueError('Quantiles have incompatible dimensions: should'
-                             ' be %s, got %s.' % ((dim, dim), x.shape[0:2]))
+            raise ValueError(
+                "Quantiles have incompatible dimensions: should be %s, got %s."
+                % ((dim, dim), x.shape[0:2])
+            )
 
         return x
 
@@ -1805,9 +1887,12 @@ class wishart_gen(multi_rv_generic):
         if size.ndim == 0:
             size = size[np.newaxis]
         elif size.ndim > 1:
-            raise ValueError('Size must be an integer or tuple of integers;'
-                             ' thus must have dimension <= 1.'
-                             ' Got size.ndim = %s' % str(tuple(size)))
+            raise ValueError(
+                "Size must be an integer or tuple of integers;"
+                " thus must have dimension <= 1."
+                " Got size.ndim = %s"
+                % str(tuple(size))
+            )
         n = size.prod()
         shape = tuple(size)
 
@@ -1853,9 +1938,11 @@ class wishart_gen(multi_rv_generic):
             tr_scale_inv_x[i] = scale_inv_x[:, :, i].trace()
 
         # Log PDF
-        out = ((0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_scale_inv_x) -
-               (0.5 * df * dim * _LOG_2 + 0.5 * df * log_det_scale +
-                multigammaln(0.5*df, dim)))
+        out = (0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_scale_inv_x) - (
+            0.5 * df * dim * _LOG_2
+            + 0.5 * df * log_det_scale
+            + multigammaln(0.5 * df, dim)
+        )
 
         return out
 
@@ -1959,7 +2046,7 @@ class wishart_gen(multi_rv_generic):
 
         """
         if df >= dim + 1:
-            out = (df-dim-1) * scale
+            out = (df - dim - 1) * scale
         else:
             out = None
         return out
@@ -1998,7 +2085,7 @@ class wishart_gen(multi_rv_generic):
         called directly; use 'var' instead.
 
         """
-        var = scale**2
+        var = scale ** 2
         diag = scale.diagonal()  # 1 x dim array
         var += np.outer(diag, diag)
         var *= df
@@ -2049,20 +2136,26 @@ class wishart_gen(multi_rv_generic):
 
         """
         # Random normal variates for off-diagonal elements
-        n_tril = dim * (dim-1) // 2
-        covariances = random_state.normal(
-            size=n*n_tril).reshape(shape+(n_tril,))
+        n_tril = dim * (dim - 1) // 2
+        covariances = random_state.normal(size=n * n_tril).reshape(shape + (n_tril,))
 
         # Random chi-square variates for diagonal elements
-        variances = (np.r_[[random_state.chisquare(df-(i+1)+1, size=n)**0.5
-                            for i in range(dim)]].reshape((dim,) +
-                                                          shape[::-1]).T)
+        variances = (
+            np.r_[
+                [
+                    random_state.chisquare(df - (i + 1) + 1, size=n) ** 0.5
+                    for i in range(dim)
+                ]
+            ]
+            .reshape((dim,) + shape[::-1])
+            .T
+        )
 
         # Create the A matri(ces) - lower triangular
         A = np.zeros(shape + (dim, dim))
 
         # Input the covariances
-        size_idx = tuple([slice(None, None, None)]*len(shape))
+        size_idx = tuple([slice(None, None, None)] * len(shape))
         tril_idx = np.tril_indices(dim, k=-1)
         A[size_idx + tril_idx] = covariances
 
@@ -2167,13 +2260,13 @@ class wishart_gen(multi_rv_generic):
 
         """
         return (
-            0.5 * (dim+1) * log_det_scale +
-            0.5 * dim * (dim+1) * _LOG_2 +
-            multigammaln(0.5*df, dim) -
-            0.5 * (df - dim - 1) * np.sum(
-                [psi(0.5*(df + 1 - (i+1))) for i in range(dim)]
-            ) +
-            0.5 * df * dim
+            0.5 * (dim + 1) * log_det_scale
+            + 0.5 * dim * (dim + 1) * _LOG_2
+            + multigammaln(0.5 * df, dim)
+            - 0.5
+            * (df - dim - 1)
+            * np.sum([psi(0.5 * (df + 1 - (i + 1))) for i in range(dim)])
+            + 0.5 * df * dim
         )
 
     def entropy(self, df, scale):
@@ -2246,17 +2339,18 @@ class wishart_frozen(multi_rv_frozen):
         that instance is used.
 
     """
+
     def __init__(self, df, scale, seed=None):
         self._dist = wishart_gen(seed)
-        self.dim, self.df, self.scale = self._dist._process_parameters(
-            df, scale)
+        self.dim, self.df, self.scale = self._dist._process_parameters(df, scale)
         self.C, self.log_det_scale = self._dist._cholesky_logdet(self.scale)
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
 
-        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
-                                 self.log_det_scale, self.C)
+        out = self._dist._logpdf(
+            x, self.dim, self.df, self.scale, self.log_det_scale, self.C
+        )
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -2276,8 +2370,7 @@ class wishart_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         n, shape = self._dist._process_size(size)
-        out = self._dist._rvs(n, shape, self.dim, self.df,
-                              self.C, random_state)
+        out = self._dist._rvs(n, shape, self.dim, self.df, self.C, random_state)
         return _squeeze_output(out)
 
     def entropy(self):
@@ -2286,11 +2379,10 @@ class wishart_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # Wishart and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
+for name in ["logpdf", "pdf", "mean", "mode", "var", "rvs", "entropy"]:
     method = wishart_gen.__dict__[name]
     method_frozen = wishart_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, wishart_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
 
 
@@ -2327,29 +2419,29 @@ def _cho_inv_batch(a, check_finite=True):
     else:
         a1 = asarray(a)
     if len(a1.shape) < 2 or a1.shape[-2] != a1.shape[-1]:
-        raise ValueError('expected square matrix in last two dimensions')
+        raise ValueError("expected square matrix in last two dimensions")
 
-    potrf, potri = get_lapack_funcs(('potrf', 'potri'), (a1,))
+    potrf, potri = get_lapack_funcs(("potrf", "potri"), (a1,))
 
     triu_rows, triu_cols = np.triu_indices(a.shape[-2], k=1)
     for index in np.ndindex(a1.shape[:-2]):
 
         # Cholesky decomposition
-        a1[index], info = potrf(a1[index], lower=True, overwrite_a=False,
-                                clean=False)
+        a1[index], info = potrf(a1[index], lower=True, overwrite_a=False, clean=False)
         if info > 0:
-            raise LinAlgError("%d-th leading minor not positive definite"
-                              % info)
+            raise LinAlgError("%d-th leading minor not positive definite" % info)
         if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal'
-                             ' potrf' % -info)
+            raise ValueError(
+                "illegal value in %d-th argument of internal potrf" % -info
+            )
         # Inversion
         a1[index], info = potri(a1[index], lower=True, overwrite_c=False)
         if info > 0:
             raise LinAlgError("the inverse could not be computed")
         if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal'
-                             ' potrf' % -info)
+            raise ValueError(
+                "illegal value in %d-th argument of internal potrf" % -info
+            )
 
         # Make symmetric (dpotri only fills in the lower triangle)
         a1[index][triu_rows, triu_cols] = a1[index][triu_cols, triu_rows]
@@ -2496,7 +2588,7 @@ class invwishart_gen(wishart_gen):
         if dim > 1:
             _cho_inv_batch(x_inv)  # works in-place
         else:
-            x_inv = 1./x_inv
+            x_inv = 1.0 / x_inv
         tr_scale_x_inv = np.empty(x.shape[-1])
 
         for i in range(x.shape[-1]):
@@ -2507,9 +2599,11 @@ class invwishart_gen(wishart_gen):
             tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).trace()
 
         # Log PDF
-        out = ((0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
-               (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
-               multigammaln(0.5*df, dim))
+        out = (
+            (0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv)
+            - (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x)
+            - multigammaln(0.5 * df, dim)
+        )
 
         return out
 
@@ -2652,10 +2746,10 @@ class invwishart_gen(wishart_gen):
 
         """
         if df > dim + 3:
-            var = (df - dim + 1) * scale**2
+            var = (df - dim + 1) * scale ** 2
             diag = scale.diagonal()  # 1 x dim array
             var += (df - dim - 1) * np.outer(diag, diag)
-            var /= (df - dim) * (df - dim - 1)**2 * (df - dim - 3)
+            var /= (df - dim) * (df - dim - 1) ** 2 * (df - dim - 3)
         else:
             var = None
         return var
@@ -2708,7 +2802,7 @@ class invwishart_gen(wishart_gen):
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
         eye = np.eye(dim)
-        trtrs = get_lapack_funcs(('trtrs'), (A,))
+        trtrs = get_lapack_funcs("trtrs", (A,))
 
         for index in np.ndindex(A.shape[:-2]):
             # Calculate CA
@@ -2719,10 +2813,11 @@ class invwishart_gen(wishart_gen):
                 if info > 0:
                     raise LinAlgError("Singular matrix.")
                 if info < 0:
-                    raise ValueError('Illegal value in %d-th argument of'
-                                     ' internal trtrs' % -info)
+                    raise ValueError(
+                        "Illegal value in %d-th argument of internal trtrs" % -info
+                    )
             else:
-                CA = 1. / CA
+                CA = 1.0 / CA
             # Get SA
             A[index] = np.dot(CA.T, CA)
 
@@ -2790,9 +2885,7 @@ class invwishart_frozen(multi_rv_frozen):
 
         """
         self._dist = invwishart_gen(seed)
-        self.dim, self.df, self.scale = self._dist._process_parameters(
-            df, scale
-        )
+        self.dim, self.df, self.scale = self._dist._process_parameters(df, scale)
 
         # Get the determinant via Cholesky factorization
         C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
@@ -2807,8 +2900,7 @@ class invwishart_frozen(multi_rv_frozen):
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
-                                 self.log_det_scale)
+        out = self._dist._logpdf(x, self.dim, self.df, self.scale, self.log_det_scale)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -2829,8 +2921,7 @@ class invwishart_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         n, shape = self._dist._process_size(size)
 
-        out = self._dist._rvs(n, shape, self.dim, self.df,
-                              self.C, random_state)
+        out = self._dist._rvs(n, shape, self.dim, self.df, self.C, random_state)
 
         return _squeeze_output(out)
 
@@ -2841,11 +2932,10 @@ class invwishart_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # inverse Wishart and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs']:
+for name in ["logpdf", "pdf", "mean", "mode", "var", "rvs"]:
     method = invwishart_gen.__dict__[name]
     method_frozen = wishart_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, wishart_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
 
 _multinomial_doc_default_callparams = """\
@@ -2855,8 +2945,7 @@ p : array_like
     Probability of a trial falling into each category; should sum to 1
 """
 
-_multinomial_doc_callparams_note = \
-"""`n` should be a positive integer. Each element of `p` should be in the
+_multinomial_doc_callparams_note = """`n` should be a positive integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
 1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
@@ -2864,19 +2953,20 @@ remaining probability left over from the earlier elements.
 
 _multinomial_doc_frozen_callparams = ""
 
-_multinomial_doc_frozen_callparams_note = \
+_multinomial_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 multinomial_docdict_params = {
-    '_doc_default_callparams': _multinomial_doc_default_callparams,
-    '_doc_callparams_note': _multinomial_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _multinomial_doc_default_callparams,
+    "_doc_callparams_note": _multinomial_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 multinomial_docdict_noparams = {
-    '_doc_default_callparams': _multinomial_doc_frozen_callparams,
-    '_doc_callparams_note': _multinomial_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _multinomial_doc_frozen_callparams,
+    "_doc_callparams_note": _multinomial_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -2985,8 +3075,7 @@ class multinomial_gen(multi_rv_generic):
 
     def __init__(self, seed=None):
         super().__init__(seed)
-        self.__doc__ = \
-            doccer.docformat(self.__doc__, multinomial_docdict_params)
+        self.__doc__ = doccer.docformat(self.__doc__, multinomial_docdict_params)
 
     def __call__(self, n, p, seed=None):
         """Create a frozen multinomial distribution.
@@ -3002,7 +3091,7 @@ class multinomial_gen(multi_rv_generic):
         flagging values out of the domain.
         """
         p = np.array(p, dtype=np.float64, copy=True)
-        p[..., -1] = 1. - p[..., :-1].sum(axis=-1)
+        p[..., -1] = 1.0 - p[..., :-1].sum(axis=-1)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
@@ -3027,9 +3116,10 @@ class multinomial_gen(multi_rv_generic):
             raise ValueError("x must be an array.")
 
         if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
-            raise ValueError("Size of each quantile should be size of p: "
-                             "received %d, but expected %d." %
-                             (xx.shape[-1], p.shape[-1]))
+            raise ValueError(
+                "Size of each quantile should be size of p: "
+                "received %d, but expected %d." % (xx.shape[-1], p.shape[-1])
+            )
 
         # true for x out of the domain
         cond = np.any(xx != x, axis=-1)
@@ -3050,7 +3140,7 @@ class multinomial_gen(multi_rv_generic):
         return result
 
     def _logpmf(self, x, n, p):
-        return gammaln(n+1) + np.sum(xlogy(x, p) - gammaln(x+1), axis=-1)
+        return gammaln(n + 1) + np.sum(xlogy(x, p) - gammaln(x + 1), axis=-1)
 
     def logpmf(self, x, n, p):
         """Log of the Multinomial probability mass function.
@@ -3117,7 +3207,7 @@ class multinomial_gen(multi_rv_generic):
             The mean of the distribution
         """
         n, p, npcond = self._process_parameters(n, p)
-        result = n[..., np.newaxis]*p
+        result = n[..., np.newaxis] * p
         return self._checkresult(result, npcond, np.NAN)
 
     def cov(self, n, p):
@@ -3135,11 +3225,11 @@ class multinomial_gen(multi_rv_generic):
         n, p, npcond = self._process_parameters(n, p)
 
         nn = n[..., np.newaxis, np.newaxis]
-        result = nn * np.einsum('...j,...k->...jk', -p, p)
+        result = nn * np.einsum("...j,...k->...jk", -p, p)
 
         # change the diagonal
         for i in range(p.shape[-1]):
-            result[..., i, i] += n*p[..., i]
+            result[..., i, i] += n * p[..., i]
 
         return self._checkresult(result, npcond, np.nan)
 
@@ -3168,17 +3258,18 @@ class multinomial_gen(multi_rv_generic):
         """
         n, p, npcond = self._process_parameters(n, p)
 
-        x = np.r_[1:np.max(n)+1]
+        x = np.r_[1 : np.max(n) + 1]
 
-        term1 = n*np.sum(entr(p), axis=-1)
-        term1 -= gammaln(n+1)
+        term1 = n * np.sum(entr(p), axis=-1)
+        term1 -= gammaln(n + 1)
 
         n = n[..., np.newaxis]
         new_axes_needed = max(p.ndim, n.ndim) - x.ndim + 1
-        x.shape += (1,)*new_axes_needed
+        x.shape += (1,) * new_axes_needed
 
-        term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
-                       axis=(-1, -1-new_axes_needed))
+        term2 = np.sum(
+            binom.pmf(x, n, p) * gammaln(x + 1), axis=(-1, -1 - new_axes_needed)
+        )
 
         return self._checkresult(term1 + term2, npcond, np.nan)
 
@@ -3228,6 +3319,7 @@ class multinomial_frozen(multi_rv_frozen):
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
     """
+
     def __init__(self, n, p, seed=None):
         self._dist = multinomial_gen(seed)
         self.n, self.p, self.npcond = self._dist._process_parameters(n, p)
@@ -3259,13 +3351,13 @@ class multinomial_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multinomial and fill in default strings in class docstrings
-for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
+for name in ["logpmf", "pmf", "mean", "cov", "rvs"]:
     method = multinomial_gen.__dict__[name]
     method_frozen = multinomial_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, multinomial_docdict_noparams)
-    method.__doc__ = doccer.docformat(method.__doc__,
-                                      multinomial_docdict_params)
+        method.__doc__, multinomial_docdict_noparams
+    )
+    method.__doc__ = doccer.docformat(method.__doc__, multinomial_docdict_params)
 
 
 class special_ortho_group_gen(multi_rv_generic):
@@ -3340,8 +3432,10 @@ class special_ortho_group_gen(multi_rv_generic):
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
-            raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+            raise ValueError(
+                """Dimension of rotation must be specified,
+                                and must be a scalar greater than 1."""
+            )
 
         return dim
 
@@ -3365,25 +3459,26 @@ class special_ortho_group_gen(multi_rv_generic):
 
         size = int(size)
         if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+            return np.array(
+                [self.rvs(dim, size=1, random_state=random_state) for i in range(size)]
+            )
 
         dim = self._process_parameters(dim)
 
         H = np.eye(dim)
         D = np.empty((dim,))
-        for n in range(dim-1):
-            x = random_state.normal(size=(dim-n,))
+        for n in range(dim - 1):
+            x = random_state.normal(size=(dim - n,))
             norm2 = np.dot(x, x)
             x0 = x[0].item()
             D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
+            x[0] += D[n] * np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0 ** 2 + x[0] ** 2) / 2.0)
             # Householder transformation
             H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
-        D[-1] = (-1)**(dim-1)*D[:-1].prod()
+        D[-1] = (-1) ** (dim - 1) * D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
-        H = (D*H.T).T
+        H = (D * H.T).T
         return H
 
 
@@ -3477,8 +3572,10 @@ class ortho_group_gen(multi_rv_generic):
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
-            raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+            raise ValueError(
+                "Dimension of rotation must be specified,"
+                "and must be a scalar greater than 1."
+            )
 
         return dim
 
@@ -3502,20 +3599,21 @@ class ortho_group_gen(multi_rv_generic):
 
         size = int(size)
         if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+            return np.array(
+                [self.rvs(dim, size=1, random_state=random_state) for i in range(size)]
+            )
 
         dim = self._process_parameters(dim)
 
         H = np.eye(dim)
         for n in range(dim):
-            x = random_state.normal(size=(dim-n,))
+            x = random_state.normal(size=(dim - n,))
             norm2 = np.dot(x, x)
             x0 = x[0].item()
             # random sign, 50/50, but chosen carefully to avoid roundoff error
             D = np.sign(x[0]) if x[0] != 0 else 1
             x[0] += D * np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
+            x /= np.sqrt((norm2 - x0 ** 2 + x[0] ** 2) / 2.0)
             # Householder transformation
             H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
         return H
@@ -3584,8 +3682,7 @@ class random_correlation_gen(multi_rv_generic):
         dim = eigs.size
 
         if eigs.ndim != 1 or eigs.shape[0] != dim or dim <= 1:
-            raise ValueError("Array 'eigs' must be a vector of length "
-                             "greater than 1.")
+            raise ValueError("Array 'eigs' must be a vector of length greater than 1.")
 
         if np.fabs(np.sum(eigs) - dim) > tol:
             raise ValueError("Sum of eigenvalues must equal dimensionality.")
@@ -3610,23 +3707,23 @@ class random_correlation_gen(multi_rv_generic):
         valid rotation is returned. When tr(M)==2, also bjj=1.
 
         """
-        aiid = aii - 1.
-        ajjd = ajj - 1.
+        aiid = aii - 1.0
+        ajjd = ajj - 1.0
 
         if ajjd == 0:
             # ajj==1, so swap aii and ajj to avoid division by zero
-            return 0., 1.
+            return 0.0, 1.0
 
-        dd = math.sqrt(max(aij**2 - aiid*ajjd, 0))
+        dd = math.sqrt(max(aij ** 2 - aiid * ajjd, 0))
 
         # The choice of t should be chosen to avoid cancellation [1]
         t = (aij + math.copysign(dd, aij)) / ajjd
-        c = 1. / math.sqrt(1. + t*t)
+        c = 1.0 / math.sqrt(1.0 + t * t)
         if c == 0:
             # Underflow
             s = 1.0
         else:
-            s = c*t
+            s = c * t
         return c, s
 
     def _to_corr(self, m):
@@ -3636,20 +3733,21 @@ class random_correlation_gen(multi_rv_generic):
         dimensionality. Note: modifies input matrix
         """
         # Check requirements for in-place Givens
-        if not (m.flags.c_contiguous and m.dtype == np.float64 and
-                m.shape[0] == m.shape[1]):
+        if not (
+            m.flags.c_contiguous and m.dtype == np.float64 and m.shape[0] == m.shape[1]
+        ):
             raise ValueError()
 
         d = m.shape[0]
-        for i in range(d-1):
+        for i in range(d - 1):
             if m[i, i] == 1:
                 continue
             elif m[i, i] > 1:
-                for j in range(i+1, d):
+                for j in range(i + 1, d):
                     if m[j, j] < 1:
                         break
             else:
-                for j in range(i+1, d):
+                for j in range(i + 1, d):
                     if m[j, j] > 1:
                         break
 
@@ -3661,12 +3759,32 @@ class random_correlation_gen(multi_rv_generic):
             # g[j, i] = -s; g[i, j] = s
             # m = np.dot(g.T, np.dot(m, g))
             mv = m.ravel()
-            drot(mv, mv, c, -s, n=d,
-                 offx=i*d, incx=1, offy=j*d, incy=1,
-                 overwrite_x=True, overwrite_y=True)
-            drot(mv, mv, c, -s, n=d,
-                 offx=i, incx=d, offy=j, incy=d,
-                 overwrite_x=True, overwrite_y=True)
+            drot(
+                mv,
+                mv,
+                c,
+                -s,
+                n=d,
+                offx=i * d,
+                incx=1,
+                offy=j * d,
+                incy=1,
+                overwrite_x=True,
+                overwrite_y=True,
+            )
+            drot(
+                mv,
+                mv,
+                c,
+                -s,
+                n=d,
+                offx=i,
+                incx=d,
+                offy=j,
+                incy=d,
+                overwrite_x=True,
+                overwrite_y=True,
+            )
 
         return m
 
@@ -3762,8 +3880,10 @@ class unitary_group_gen(multi_rv_generic):
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
-            raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+            raise ValueError(
+                "Dimension of rotation must be specified,"
+                "and must be a scalar greater than 1."
+            )
 
         return dim
 
@@ -3787,24 +3907,30 @@ class unitary_group_gen(multi_rv_generic):
 
         size = int(size)
         if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+            return np.array(
+                [self.rvs(dim, size=1, random_state=random_state) for i in range(size)]
+            )
 
         dim = self._process_parameters(dim)
 
-        z = 1/math.sqrt(2)*(random_state.normal(size=(dim, dim)) +
-                            1j*random_state.normal(size=(dim, dim)))
+        z = (
+            1
+            / math.sqrt(2)
+            * (
+                random_state.normal(size=(dim, dim))
+                + 1j * random_state.normal(size=(dim, dim))
+            )
+        )
         q, r = scipy.linalg.qr(z)
         d = r.diagonal()
-        q *= d/abs(d)
+        q *= d / abs(d)
         return q
 
 
 unitary_group = unitary_group_gen()
 
 
-_mvt_doc_default_callparams = \
-"""
+_mvt_doc_default_callparams = """
 loc : array_like, optional
     Location of the distribution. (default ``0``)
 shape : array_like, optional
@@ -3816,26 +3942,26 @@ allow_singular : bool, optional
     Whether to allow a singular matrix. (default ``False``)
 """
 
-_mvt_doc_callparams_note = \
-"""Setting the parameter `loc` to ``None`` is equivalent to having `loc`
+_mvt_doc_callparams_note = """Setting the parameter `loc` to ``None`` is equivalent to having `loc`
 be the zero-vector. The parameter `shape` can be a scalar, in which case
 the shape matrix is the identity times that value, a vector of
 diagonal entries for the shape matrix, or a two-dimensional array_like.
 """
 
-_mvt_doc_frozen_callparams_note = \
-"""See class definition for a detailed description of parameters."""
+_mvt_doc_frozen_callparams_note = (
+    """See class definition for a detailed description of parameters."""
+)
 
 mvt_docdict_params = {
-    '_mvt_doc_default_callparams': _mvt_doc_default_callparams,
-    '_mvt_doc_callparams_note': _mvt_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_mvt_doc_default_callparams": _mvt_doc_default_callparams,
+    "_mvt_doc_callparams_note": _mvt_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 mvt_docdict_noparams = {
-    '_mvt_doc_default_callparams': "",
-    '_mvt_doc_callparams_note': _mvt_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_mvt_doc_default_callparams": "",
+    "_mvt_doc_callparams_note": _mvt_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -3915,18 +4041,18 @@ class multivariate_t_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, mvt_docdict_params)
         self._random_state = check_random_state(seed)
 
-    def __call__(self, loc=None, shape=1, df=1, allow_singular=False,
-                 seed=None):
+    def __call__(self, loc=None, shape=1, df=1, allow_singular=False, seed=None):
         """Create a frozen multivariate t-distribution.
 
         See `multivariate_t_frozen` for parameters.
         """
         if df == np.inf:
-            return multivariate_normal_frozen(mean=loc, cov=shape,
-                                              allow_singular=allow_singular,
-                                              seed=seed)
-        return multivariate_t_frozen(loc=loc, shape=shape, df=df,
-                                     allow_singular=allow_singular, seed=seed)
+            return multivariate_normal_frozen(
+                mean=loc, cov=shape, allow_singular=allow_singular, seed=seed
+            )
+        return multivariate_t_frozen(
+            loc=loc, shape=shape, df=df, allow_singular=allow_singular, seed=seed
+        )
 
     def pdf(self, x, loc=None, shape=1, df=1, allow_singular=False):
         """Multivariate t-distribution probability density function.
@@ -3955,8 +4081,9 @@ class multivariate_t_gen(multi_rv_generic):
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape, allow_singular=allow_singular)
-        logpdf = self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df,
-                              dim, shape_info.rank)
+        logpdf = self._logpdf(
+            x, loc, shape_info.U, shape_info.log_pdet, df, dim, shape_info.rank
+        )
         return np.exp(logpdf)
 
     def logpdf(self, x, loc=None, shape=1, df=1):
@@ -3991,8 +4118,9 @@ class multivariate_t_gen(multi_rv_generic):
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
-        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
-                            shape_info.rank)
+        return self._logpdf(
+            x, loc, shape_info.U, shape_info.log_pdet, df, dim, shape_info.rank
+        )
 
     def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank):
         """Utility method `pdf`, `logpdf` for parameters.
@@ -4031,9 +4159,9 @@ class multivariate_t_gen(multi_rv_generic):
         t = 0.5 * (df + dim)
         A = gammaln(t)
         B = gammaln(0.5 * df)
-        C = dim/2. * np.log(df * np.pi)
+        C = dim / 2.0 * np.log(df * np.pi)
         D = 0.5 * log_pdet
-        E = -t * np.log(1 + (1./df) * maha)
+        E = -t * np.log(1 + (1.0 / df) * maha)
 
         return _squeeze_output(A - B - C - D + E)
 
@@ -4129,8 +4257,7 @@ class multivariate_t_gen(multi_rv_generic):
             shape.shape = (1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
-            raise ValueError("Array 'loc' must be a vector of length %d." %
-                             dim)
+            raise ValueError("Array 'loc' must be a vector of length %d." % dim)
         if shape.ndim == 0:
             shape = shape * np.eye(dim)
         elif shape.ndim == 1:
@@ -4138,16 +4265,23 @@ class multivariate_t_gen(multi_rv_generic):
         elif shape.ndim == 2 and shape.shape != (dim, dim):
             rows, cols = shape.shape
             if rows != cols:
-                msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(shape.shape))
+                msg = (
+                    "Array 'cov' must be square if it is two dimensional,"
+                    " but cov.shape = %s."
+                    % str(shape.shape)
+                )
             else:
-                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'loc' is a vector of length %d.")
+                msg = (
+                    "Dimension mismatch: array 'cov' is of shape %s,"
+                    " but 'loc' is a vector of length %d."
+                )
                 msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % shape.ndim)
+            raise ValueError(
+                "Array 'cov' must be at most two-dimensional, but cov.ndim = %d"
+                % shape.ndim
+            )
 
         # Process degrees of freedom.
         if df is None:
@@ -4161,9 +4295,7 @@ class multivariate_t_gen(multi_rv_generic):
 
 
 class multivariate_t_frozen(multi_rv_frozen):
-
-    def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
-                 seed=None):
+    def __init__(self, loc=None, shape=1, df=1, allow_singular=False, seed=None):
         """Create a frozen multivariate t distribution.
 
         Parameters
@@ -4191,18 +4323,21 @@ class multivariate_t_frozen(multi_rv_frozen):
         x = self._dist._process_quantiles(x, self.dim)
         U = self.shape_info.U
         log_pdet = self.shape_info.log_pdet
-        return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim,
-                                  self.shape_info.rank)
+        return self._dist._logpdf(
+            x, self.loc, U, log_pdet, self.df, self.dim, self.shape_info.rank
+        )
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(loc=self.loc,
-                              shape=self.shape,
-                              df=self.df,
-                              size=size,
-                              random_state=random_state)
+        return self._dist.rvs(
+            loc=self.loc,
+            shape=self.shape,
+            df=self.df,
+            size=size,
+            random_state=random_state,
+        )
 
 
 multivariate_t = multivariate_t_gen()
@@ -4210,11 +4345,10 @@ multivariate_t = multivariate_t_gen()
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ["logpdf", "pdf", "rvs"]:
     method = multivariate_t_gen.__dict__[name]
     method_frozen = multivariate_t_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(method.__doc__,
-                                             mvt_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, mvt_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, mvt_docdict_params)
 
 
@@ -4239,19 +4373,20 @@ values, the result will contain ``nan`` there.
 
 _mhg_doc_frozen_callparams = ""
 
-_mhg_doc_frozen_callparams_note = \
+_mhg_doc_frozen_callparams_note = (
     """See class definition for a detailed description of parameters."""
+)
 
 mhg_docdict_params = {
-    '_doc_default_callparams': _mhg_doc_default_callparams,
-    '_doc_callparams_note': _mhg_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _mhg_doc_default_callparams,
+    "_doc_callparams_note": _mhg_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 mhg_docdict_noparams = {
-    '_doc_default_callparams': _mhg_doc_frozen_callparams,
-    '_doc_callparams_note': _mhg_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
+    "_doc_default_callparams": _mhg_doc_frozen_callparams,
+    "_doc_callparams_note": _mhg_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
 }
 
 
@@ -4368,6 +4503,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            Multivariate Hypergeometric Distribution
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
     """
+
     def __init__(self, seed=None):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
@@ -4391,8 +4527,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if not np.issubdtype(n.dtype, np.integer):
             raise TypeError("'n' must an array of integers.")
         if m.ndim == 0:
-            raise ValueError("'m' must be an array with"
-                             " at least one dimension.")
+            raise ValueError("'m' must be an array with at least one dimension.")
 
         # check for empty arrays
         if m.size != 0:
@@ -4416,12 +4551,13 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if not np.issubdtype(x.dtype, np.integer):
             raise TypeError("'x' must an array of integers.")
         if x.ndim == 0:
-            raise ValueError("'x' must be an array with"
-                             " at least one dimension.")
+            raise ValueError("'x' must be an array with at least one dimension.")
         if not x.shape[-1] == m.shape[-1]:
-            raise ValueError(f"Size of each quantile must be size of 'm': "
-                             f"received {x.shape[-1]}, "
-                             f"but expected {m.shape[-1]}.")
+            raise ValueError(
+                "Size of each quantile must be size of 'm': "
+                f"received {x.shape[-1]}, "
+                f"but expected {m.shape[-1]}."
+            )
 
         # check for empty arrays
         if m.size != 0:
@@ -4435,8 +4571,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             n, M = n[..., 0], M[..., 0]
 
         xcond = (x < 0) | (x > m)
-        return (x, M, m, n, xcond,
-                np.any(xcond, axis=-1) | (x.sum(axis=-1) != n))
+        return (x, M, m, n, xcond, np.any(xcond, axis=-1) | (x.sum(axis=-1) != n))
 
     def _checkresult(self, result, cond, bad_value):
         result = np.asarray(result)
@@ -4455,8 +4590,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         den = np.zeros_like(n, dtype=np.float_)
         m, x = m[~mxcond], x[~mxcond]
         M, n = M[~ncond], n[~ncond]
-        num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))
-        den[~ncond] = (betaln(M+1, 1) - betaln(n+1, M-n+1))
+        num[~mxcond] = betaln(m + 1, 1) - betaln(x + 1, m - x + 1)
+        den[~ncond] = betaln(M + 1, 1) - betaln(n + 1, M - n + 1)
         num[mxcond] = np.nan
         den[ncond] = np.nan
         num = num.sum(axis=-1)
@@ -4481,8 +4616,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         M, m, n, mcond, ncond, mncond = self._process_parameters(m, n)
-        (x, M, m, n, xcond,
-         xcond_reduced) = self._process_quantiles(x, M, m, n)
+        (x, M, m, n, xcond, xcond_reduced) = self._process_quantiles(x, M, m, n)
         mxcond = mcond | xcond
         ncond = ncond | np.zeros(n.shape, dtype=np.bool_)
 
@@ -4535,12 +4669,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # check for empty arrays
         if m.size != 0:
             M, n = M[..., np.newaxis], n[..., np.newaxis]
-        cond = (M == 0)
+        cond = M == 0
         M = np.ma.masked_array(M, mask=cond)
-        mu = n*(m/M)
+        mu = n * (m / M)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis] |
-                      np.zeros(mu.shape, dtype=np.bool_))
+            mncond = mncond[..., np.newaxis] | np.zeros(mu.shape, dtype=np.bool_)
         return self._checkresult(mu, mncond, np.nan)
 
     def var(self, m, n):
@@ -4560,12 +4693,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # check for empty arrays
         if m.size != 0:
             M, n = M[..., np.newaxis], n[..., np.newaxis]
-        cond = (M == 0) & (M-1 == 0)
+        cond = (M == 0) & (M - 1 == 0)
         M = np.ma.masked_array(M, mask=cond)
-        output = n * m/M * (M-m)/M * (M-n)/(M-1)
+        output = n * m / M * (M - m) / M * (M - n) / (M - 1)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis] |
-                      np.zeros(output.shape, dtype=np.bool_))
+            mncond = mncond[..., np.newaxis] | np.zeros(output.shape, dtype=np.bool_)
         return self._checkresult(output, mncond, np.nan)
 
     def cov(self, m, n):
@@ -4587,10 +4719,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if m.size != 0:
             M = M[..., np.newaxis, np.newaxis]
             n = n[..., np.newaxis, np.newaxis]
-        cond = (M == 0) & (M-1 == 0)
+        cond = (M == 0) & (M - 1 == 0)
         M = np.ma.masked_array(M, mask=cond)
-        output = (-n * (M-n)/(M-1) *
-                  np.einsum("...i,...j->...ij", m, m) / (M**2))
+        output = -n * (M - n) / (M - 1) * np.einsum("...i,...j->...ij", m, m) / (M ** 2)
         # check for empty arrays
         if m.size != 0:
             M, n = M[..., 0, 0], n[..., 0, 0]
@@ -4598,12 +4729,13 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         dim = m.shape[-1]
         # diagonal entries need to be computed differently
         for i in range(dim):
-            output[..., i, i] = (n * (M-n) * m[..., i]*(M-m[..., i]))
-            output[..., i, i] = output[..., i, i] / (M-1)
-            output[..., i, i] = output[..., i, i] / (M**2)
+            output[..., i, i] = n * (M - n) * m[..., i] * (M - m[..., i])
+            output[..., i, i] = output[..., i, i] / (M - 1)
+            output[..., i, i] = output[..., i, i] / (M ** 2)
         if m.size != 0:
-            mncond = (mncond[..., np.newaxis, np.newaxis] |
-                      np.zeros(output.shape, dtype=np.bool_))
+            mncond = mncond[..., np.newaxis, np.newaxis] | np.zeros(
+                output.shape, dtype=np.bool_
+            )
         return self._checkresult(output, mncond, np.nan)
 
     def rvs(self, m, n, size=None, random_state=None):
@@ -4635,22 +4767,21 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         if size is not None and isinstance(size, int):
-            size = (size, )
+            size = (size,)
 
         if size is None:
             rvs = np.empty(m.shape, dtype=m.dtype)
         else:
-            rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
+            rvs = np.empty(size + (m.shape[-1],), dtype=m.dtype)
         rem = M
 
         # This sampler has been taken from numpy gh-13794
         # https://github.com/numpy/numpy/pull/13794
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
-            rvs[..., c] = ((n != 0) *
-                           random_state.hypergeometric(m[..., c], rem,
-                                                       n + (n == 0),
-                                                       size=size))
+            rvs[..., c] = (n != 0) * random_state.hypergeometric(
+                m[..., c], rem, n + (n == 0), size=size
+            )
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
 
@@ -4663,15 +4794,19 @@ multivariate_hypergeom = multivariate_hypergeom_gen()
 class multivariate_hypergeom_frozen(multi_rv_frozen):
     def __init__(self, m, n, seed=None):
         self._dist = multivariate_hypergeom_gen(seed)
-        (self.M, self.m, self.n,
-         self.mcond, self.ncond,
-         self.mncond) = self._dist._process_parameters(m, n)
+        (
+            self.M,
+            self.m,
+            self.n,
+            self.mcond,
+            self.ncond,
+            self.mncond,
+        ) = self._dist._process_parameters(m, n)
 
         # monkey patch self._dist
         def _process_parameters(m, n):
-            return (self.M, self.m, self.n,
-                    self.mcond, self.ncond,
-                    self.mncond)
+            return (self.M, self.m, self.n, self.mcond, self.ncond, self.mncond)
+
         self._dist._process_parameters = _process_parameters
 
     def logpmf(self, x):
@@ -4690,17 +4825,13 @@ class multivariate_hypergeom_frozen(multi_rv_frozen):
         return self._dist.cov(self.m, self.n)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.m, self.n,
-                              size=size,
-                              random_state=random_state)
+        return self._dist.rvs(self.m, self.n, size=size, random_state=random_state)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_hypergeom and fill in default strings in class docstrings
-for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
+for name in ["logpmf", "pmf", "mean", "var", "cov", "rvs"]:
     method = multivariate_hypergeom_gen.__dict__[name]
     method_frozen = multivariate_hypergeom_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, mhg_docdict_noparams)
-    method.__doc__ = doccer.docformat(method.__doc__,
-                                      mhg_docdict_params)
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, mhg_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, mhg_docdict_params)

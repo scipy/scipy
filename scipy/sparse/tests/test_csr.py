@@ -19,10 +19,12 @@ def test_csr_rowslice():
     X[X > 0.7] = 0
     Xcsr = csr_matrix(X)
 
-    slices = [slice(None, None, None),
-              slice(None, None, -1),
-              slice(1, -2, 2),
-              slice(-2, 1, -2)]
+    slices = [
+        slice(None, None, None),
+        slice(None, None, -1),
+        slice(1, -2, 2),
+        slice(-2, 1, -2),
+    ]
 
     for i in range(N):
         for sl in slices:
@@ -37,7 +39,7 @@ def test_csr_getrow():
     Xcsr = csr_matrix(X)
 
     for i in range(N):
-        arr_row = X[i:i + 1, :]
+        arr_row = X[i : i + 1, :]
         csr_row = Xcsr.getrow(i)
 
         assert_array_almost_equal(arr_row, csr_row.toarray())
@@ -52,29 +54,22 @@ def test_csr_getcol():
     Xcsr = csr_matrix(X)
 
     for i in range(N):
-        arr_col = X[:, i:i + 1]
+        arr_col = X[:, i : i + 1]
         csr_col = Xcsr.getcol(i)
 
         assert_array_almost_equal(arr_col, csr_col.toarray())
         assert_(type(csr_col) is csr_matrix)
 
-@pytest.mark.parametrize("matrix_input, axis, expected_shape",
-    [(csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      0, (0, 4)),
-     (csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      1, (3, 0)),
-     (csr_matrix([[1, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 2, 3, 0]]),
-      'both', (0, 0)),
-     (csr_matrix([[0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-                [0, 0, 2, 3, 0]]),
-      0, (0, 5))])
+
+@pytest.mark.parametrize(
+    "matrix_input, axis, expected_shape",
+    [
+        (csr_matrix([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 0, (0, 4)),
+        (csr_matrix([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), 1, (3, 0)),
+        (csr_matrix([[1, 0, 0, 0], [0, 0, 0, 0], [0, 2, 3, 0]]), "both", (0, 0)),
+        (csr_matrix([[0, 1, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 2, 3, 0]]), 0, (0, 5)),
+    ],
+)
 def test_csr_empty_slices(matrix_input, axis, expected_shape):
     # see gh-11127 for related discussion
     slice_1 = matrix_input.A.shape[0] - 1
@@ -87,7 +82,7 @@ def test_csr_empty_slices(matrix_input, axis, expected_shape):
     elif axis == 1:
         actual_shape_1 = matrix_input[:, slice_1:slice_2].A.shape
         actual_shape_2 = matrix_input[:, slice_1:slice_3].A.shape
-    elif axis == 'both':
+    elif axis == "both":
         actual_shape_1 = matrix_input[slice_1:slice_2, slice_1:slice_2].A.shape
         actual_shape_2 = matrix_input[slice_1:slice_3, slice_1:slice_3].A.shape
 
@@ -112,4 +107,3 @@ def test_csr_bool_indexing():
     assert (slice_list1 == slice_array1).all()
     assert (slice_list2 == slice_array2).all()
     assert (slice_list3 == slice_array3).all()
-

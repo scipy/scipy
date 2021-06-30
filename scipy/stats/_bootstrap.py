@@ -21,6 +21,7 @@ def _vectorize_statistic(statistic):
             return statistic(*data)
 
         return np.apply_along_axis(stat_1d, axis, z)[()]
+
     return stat_nd
 
 
@@ -31,14 +32,14 @@ def _jackknife_resample(sample, batch=None):
 
     for k in range(0, n, batch_nominal):
         # col_start:col_end are the observations to remove
-        batch_actual = min(batch_nominal, n-k)
+        batch_actual = min(batch_nominal, n - k)
 
         # jackknife - each row leaves out one observation
         j = np.ones((batch_actual, n), dtype=bool)
-        np.fill_diagonal(j[:, k:k+batch_actual], False)
+        np.fill_diagonal(j[:, k : k + batch_actual], False)
         i = np.arange(n)
         i = np.broadcast_to(i, (batch_actual, n))
-        i = i[j].reshape((batch_actual, n-1))
+        i = i[j].reshape((batch_actual, n - 1))
 
         resamples = sample[..., i]
         yield resamples
@@ -95,22 +96,32 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
         theta_hat_i.append(statistic(jackknife_sample, axis=-1))
     theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
-    num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
-    den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
+    num = ((theta_hat_dot - theta_hat_i) ** 3).sum(axis=-1)
+    den = 6 * ((theta_hat_dot - theta_hat_i) ** 2).sum(axis=-1) ** (3 / 2)
     a_hat = num / den
 
     # calculate alpha_1, alpha_2
     z_alpha = ndtri(alpha)
     z_1alpha = -z_alpha
     num1 = z0_hat + z_alpha
-    alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
+    alpha_1 = ndtr(z0_hat + num1 / (1 - a_hat * num1))
     num2 = z0_hat + z_1alpha
-    alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
+    alpha_2 = ndtr(z0_hat + num2 / (1 - a_hat * num2))
     return alpha_1, alpha_2
 
 
-def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+def _bootstrap_iv(
+    data,
+    statistic,
+    vectorized,
+    paired,
+    axis,
+    confidence_level,
+    n_resamples,
+    batch,
+    method,
+    random_state,
+):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False}:
@@ -136,8 +147,10 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     for sample in data:
         sample = np.atleast_1d(sample)
         if sample.shape[axis_int] <= 1:
-            raise ValueError("each sample in `data` must contain two or more "
-                             "observations along `axis`.")
+            raise ValueError(
+                "each sample in `data` must contain two or more "
+                "observations along `axis`."
+            )
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
@@ -148,8 +161,10 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         n = data_iv[0].shape[-1]
         for sample in data_iv[1:]:
             if sample.shape[-1] != n:
-                message = ("When `paired is True`, all samples must have the "
-                           "same length along `axis`")
+                message = (
+                    "When `paired is True`, all samples must have the "
+                    "same length along `axis`"
+                )
                 raise ValueError(message)
 
         # to generate the bootstrap distribution for paired-sample statistics,
@@ -173,29 +188,48 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         if batch != batch_iv or batch_iv <= 0:
             raise ValueError("`batch` must be a positive integer or None.")
 
-    methods = {'percentile', 'basic', 'bca'}
+    methods = {"percentile", "basic", "bca"}
     method = method.lower()
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
     message = "`method = 'BCa' is only available for one-sample statistics"
-    if not paired and n_samples > 1 and method == 'bca':
+    if not paired and n_samples > 1 and method == "bca":
         raise ValueError(message)
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, vectorized, paired, axis_int,
-            confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+    return (
+        data_iv,
+        statistic,
+        vectorized,
+        paired,
+        axis_int,
+        confidence_level_float,
+        n_resamples_int,
+        batch_iv,
+        method,
+        random_state,
+    )
 
 
-fields = ['confidence_interval', 'standard_error']
+fields = ["confidence_interval", "standard_error"]
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
-def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
-              confidence_level=0.95, n_resamples=9999, batch=None,
-              method='BCa', random_state=None):
+def bootstrap(
+    data,
+    statistic,
+    *,
+    vectorized=True,
+    paired=False,
+    axis=0,
+    confidence_level=0.95,
+    n_resamples=9999,
+    batch=None,
+    method="BCa",
+    random_state=None,
+):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -415,9 +449,18 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
 
     """
     # Input validation
-    args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
-                         confidence_level, n_resamples, batch, method,
-                         random_state)
+    args = _bootstrap_iv(
+        data,
+        statistic,
+        vectorized,
+        paired,
+        axis,
+        confidence_level,
+        n_resamples,
+        batch,
+        method,
+        random_state,
+    )
     data, statistic, vectorized, paired, axis = args[:5]
     confidence_level, n_resamples, batch, method, random_state = args[5:]
 
@@ -426,12 +469,13 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     batch_nominal = batch or n_resamples
 
     for k in range(0, n_resamples, batch_nominal):
-        batch_actual = min(batch_nominal, n_resamples-k)
+        batch_actual = min(batch_nominal, n_resamples - k)
         # Generate resamples
         resampled_data = []
         for sample in data:
-            resample = _bootstrap_resample(sample, n_resamples=batch_actual,
-                                           random_state=random_state)
+            resample = _bootstrap_resample(
+                sample, n_resamples=batch_actual, random_state=random_state
+            )
             resampled_data.append(resample)
 
         # Compute bootstrap distribution of statistic
@@ -439,23 +483,26 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2
-    if method == 'bca':
-        interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+    alpha = (1 - confidence_level) / 2
+    if method == "bca":
+        interval = _bca_interval(
+            data, statistic, axis=-1, alpha=alpha, theta_hat_b=theta_hat_b, batch=batch
+        )
         percentile_fun = _percentile_along_axis
     else:
-        interval = alpha, 1-alpha
+        interval = alpha, 1 - alpha
 
         def percentile_fun(a, q):
             return np.percentile(a=a, q=q, axis=-1)
 
     # Calculate confidence interval of statistic
-    ci_l = percentile_fun(theta_hat_b, interval[0]*100)
-    ci_u = percentile_fun(theta_hat_b, interval[1]*100)
-    if method == 'basic':  # see [3]
+    ci_l = percentile_fun(theta_hat_b, interval[0] * 100)
+    ci_u = percentile_fun(theta_hat_b, interval[1] * 100)
+    if method == "basic":  # see [3]
         theta_hat = statistic(*data, axis=-1)
-        ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
+        ci_l, ci_u = 2 * theta_hat - ci_u, 2 * theta_hat - ci_l
 
-    return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
-                           standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
+    return BootstrapResult(
+        confidence_interval=ConfidenceInterval(ci_l, ci_u),
+        standard_error=np.std(theta_hat_b, ddof=1, axis=-1),
+    )

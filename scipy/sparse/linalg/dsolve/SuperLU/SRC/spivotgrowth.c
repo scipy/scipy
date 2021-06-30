@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -44,8 +44,8 @@ at the top-level directory.
  *          Stype = NC; Dtype = SLU_S; Mtype = GE.
  *
  * L        (output) SuperMatrix*
- *          The factor L from the factorization Pr*A=L*U; use compressed row 
- *          subscripts storage for supernodes, i.e., L has type: 
+ *          The factor L from the factorization Pr*A=L*U; use compressed row
+ *          subscripts storage for supernodes, i.e., L has type:
  *          Stype = SC; Dtype = SLU_S; Mtype = TRLU.
  *
  * U        (output) SuperMatrix*
@@ -56,7 +56,7 @@ at the top-level directory.
  */
 
 float
-sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c, 
+sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
              SuperMatrix *L, SuperMatrix *U)
 {
 
@@ -70,7 +70,7 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     float   rpg, maxaj, maxuj;
     float   smlnum;
     float   *luval;
-   
+
     /* Get machine constants. */
     smlnum = smach("S");
     rpg = 1. / smlnum;
@@ -81,7 +81,7 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     Aval = Astore->nzval;
     Lval = Lstore->nzval;
     Uval = Ustore->nzval;
-    
+
     inv_perm_c = (int *) SUPERLU_MALLOC(A->ncol*sizeof(int));
     for (j = 0; j < A->ncol; ++j) inv_perm_c[perm_c[j]] = j;
 
@@ -91,17 +91,17 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
 	luptr = L_NZ_START(fsupc);
 	luval = &Lval[luptr];
 	nz_in_U = 1;
-	
+
 	for (j = fsupc; j < L_FST_SUPC(k+1) && j < ncols; ++j) {
 	    maxaj = 0.;
             oldcol = inv_perm_c[j];
 	    for (i = Astore->colptr[oldcol]; i < Astore->colptr[oldcol+1]; ++i)
 		maxaj = SUPERLU_MAX( maxaj, fabs(Aval[i]) );
-	
+
 	    maxuj = 0.;
 	    for (i = Ustore->colptr[j]; i < Ustore->colptr[j+1]; i++)
 		maxuj = SUPERLU_MAX( maxuj, fabs(Uval[i]) );
-	    
+
 	    /* Supernode */
 	    for (i = 0; i < nz_in_U; ++i)
 		maxuj = SUPERLU_MAX( maxuj, fabs(luval[i]) );
@@ -114,7 +114,7 @@ sPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
 	    else
 		rpg = SUPERLU_MIN( rpg, maxaj / maxuj );
 	}
-	
+
 	if ( j >= ncols ) break;
     }
 

@@ -11,7 +11,7 @@ import numpy as np
 from scipy import special
 from typing import Optional, Union
 
-__all__ = ['entropy', 'differential_entropy']
+__all__ = ["entropy", "differential_entropy"]
 
 
 def entropy(pk, qk=None, base=None, axis=0):
@@ -69,13 +69,13 @@ def entropy(pk, qk=None, base=None, axis=0):
         raise ValueError("`base` must be a positive number or `None`.")
 
     pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    pk = 1.0 * pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = special.entr(pk)
     else:
         qk = np.asarray(qk)
         pk, qk = np.broadcast_arrays(pk, qk)
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        qk = 1.0 * qk / np.sum(qk, axis=axis, keepdims=True)
         vec = special.rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
     if base is not None:
@@ -244,11 +244,13 @@ def differential_entropy(
 
     sorted_data = np.sort(values, axis=-1)
 
-    methods = {"vasicek": _vasicek_entropy,
-               "van es": _van_es_entropy,
-               "correa": _correa_entropy,
-               "ebrahimi": _ebrahimi_entropy,
-               "auto": _vasicek_entropy}
+    methods = {
+        "vasicek": _vasicek_entropy,
+        "van es": _van_es_entropy,
+        "correa": _correa_entropy,
+        "ebrahimi": _ebrahimi_entropy,
+        "auto": _vasicek_entropy,
+    }
     method = method.lower()
     if method not in methods:
         message = f"`method` must be one of {set(methods)}"
@@ -256,11 +258,11 @@ def differential_entropy(
 
     if method == "auto":
         if n <= 10:
-            method = 'van es'
+            method = "van es"
         elif n <= 1000:
-            method = 'ebrahimi'
+            method = "ebrahimi"
         else:
-            method = 'vasicek'
+            method = "vasicek"
 
     res = methods[method](sorted_data, window_length)
 
@@ -284,8 +286,8 @@ def _vasicek_entropy(X, m):
     """Compute the Vasicek estimator as described in [6] Eq. 1.3."""
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
-    differences = X[..., 2 * m:] - X[..., : -2 * m:]
-    logs = np.log(n/(2*m) * differences)
+    differences = X[..., 2 * m :] - X[..., : -2 * m :]
+    logs = np.log(n / (2 * m) * differences)
     return np.mean(logs, axis=-1)
 
 
@@ -295,9 +297,9 @@ def _van_es_entropy(X, m):
     # Typo: there should be a log within the summation.
     n = X.shape[-1]
     difference = X[..., m:] - X[..., :-m]
-    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * difference), axis=-1)
-    k = np.arange(m, n+1)
-    return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
+    term1 = 1 / (n - m) * np.sum(np.log((n + 1) / m * difference), axis=-1)
+    k = np.arange(m, n + 1)
+    return term1 + np.sum(1 / k) + np.log(m) - np.log(n + 1)
 
 
 def _ebrahimi_entropy(X, m):
@@ -306,12 +308,12 @@ def _ebrahimi_entropy(X, m):
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
 
-    differences = X[..., 2 * m:] - X[..., : -2 * m:]
+    differences = X[..., 2 * m :] - X[..., : -2 * m :]
 
-    i = np.arange(1, n+1).astype(float)
-    ci = np.ones_like(i)*2
-    ci[i <= m] = 1 + (i[i <= m] - 1)/m
-    ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
+    i = np.arange(1, n + 1).astype(float)
+    ci = np.ones_like(i) * 2
+    ci[i <= m] = 1 + (i[i <= m] - 1) / m
+    ci[i >= n - m + 1] = 1 + (n - i[i >= n - m + 1]) / m
 
     logs = np.log(n * differences / (ci * m))
     return np.mean(logs, axis=-1)
@@ -323,13 +325,13 @@ def _correa_entropy(X, m):
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
 
-    i = np.arange(1, n+1)
-    dj = np.arange(-m, m+1)[:, None]
+    i = np.arange(1, n + 1)
+    dj = np.arange(-m, m + 1)[:, None]
     j = i + dj
     j0 = j + m - 1  # 0-indexed version of j
 
     Xibar = np.mean(X[..., j0], axis=-2, keepdims=True)
     difference = X[..., j0] - Xibar
-    num = np.sum(difference*dj, axis=-2)  # dj is d-i
-    den = n*np.sum(difference**2, axis=-2)
-    return -np.mean(np.log(num/den), axis=-1)
+    num = np.sum(difference * dj, axis=-2)  # dj is d-i
+    den = n * np.sum(difference ** 2, axis=-2)
+    return -np.mean(np.log(num / den), axis=-1)

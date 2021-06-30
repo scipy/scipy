@@ -25,8 +25,8 @@ def art_2(sample):
     return np.sum(sample, axis=1) ** 2
 
 
-functions = namedtuple('functions', ['name', 'func', 'dim', 'ref'])
-case = functions('Art 2', art_2, 5, 5 / 3 + 5 * (5 - 1) / 4)
+functions = namedtuple("functions", ["name", "func", "dim", "ref"])
+case = functions("Art 2", art_2, 5, 5 / 3 + 5 * (5 - 1) / 4)
 
 
 def conv_method(sampler, func, n_samples, n_conv, ref):
@@ -54,20 +54,20 @@ sample_mc_rmse = np.array(sample_mc_rmse)
 
 # Plot
 fig, ax = plt.subplots(figsize=(5, 3))
-ax.set_aspect('equal')
+ax.set_aspect("equal")
 
 ratio = sample_mc_rmse[0] / ns_gen[0] ** (-1 / 2)
-ax.plot(ns_gen, ns_gen ** (-1 / 2) * ratio, ls='-', c='k')
+ax.plot(ns_gen, ns_gen ** (-1 / 2) * ratio, ls="-", c="k")
 
 ax.scatter(ns_gen, sample_mc_rmse)
 
-ax.set_xlabel(r'$N_s$')
-ax.set_xscale('log')
+ax.set_xlabel(r"$N_s$")
+ax.set_xscale("log")
 ax.set_xticks(ns_gen)
-ax.set_xticklabels([fr'$2^{{{ns}}}$' for ns in np.arange(4, 13)])
+ax.set_xticklabels([fr"$2^{{{ns}}}$" for ns in np.arange(4, 13)])
 
-ax.set_ylabel(r'$\log (\epsilon)$')
-ax.set_yscale('log')
+ax.set_ylabel(r"$\log (\epsilon)$")
+ax.set_yscale("log")
 
 fig.tight_layout()
 plt.show()

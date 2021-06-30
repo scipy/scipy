@@ -22,7 +22,6 @@ from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_MINIMAL,
-
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
     MODEL_STATUS_MODEL_ERROR,
@@ -33,18 +32,14 @@ from ._highs._highs_constants import (
     MODEL_STATUS_PRIMAL_INFEASIBLE,
     MODEL_STATUS_PRIMAL_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
-    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
-    as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND as MODEL_STATUS_RDOVUB,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
     MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE,
     MODEL_STATUS_DUAL_INFEASIBLE,
-
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
-
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
-
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
@@ -56,7 +51,7 @@ from scipy.sparse import csc_matrix, vstack, issparse
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = np.isinf(x)
-    x[infs] = np.sign(x[infs])*CONST_INF
+    x[infs] = np.sign(x[infs]) * CONST_INF
     return x
 
 
@@ -70,20 +65,29 @@ def _convert_to_highs_enum(option, option_str, choices):
     except KeyError:
         sig = inspect.signature(_linprog_highs)
         default_str = sig.parameters[option_str].default
-        warn(f"Option {option_str} is {option}, but only values in "
-             f"{set(choices.keys())} are allowed. Using default: "
-             f"{default_str}.",
-             OptimizeWarning, stacklevel=3)
+        warn(
+            f"Option {option_str} is {option}, but only values in "
+            f"{set(choices.keys())} are allowed. Using default: "
+            f"{default_str}.",
+            OptimizeWarning,
+            stacklevel=3,
+        )
         return choices[default_str]
 
 
-def _linprog_highs(lp, solver, time_limit=None, presolve=True,
-                   disp=False, maxiter=None,
-                   dual_feasibility_tolerance=None,
-                   primal_feasibility_tolerance=None,
-                   ipm_optimality_tolerance=None,
-                   simplex_dual_edge_weight_strategy=None,
-                   **unknown_options):
+def _linprog_highs(
+    lp,
+    solver,
+    time_limit=None,
+    presolve=True,
+    disp=False,
+    maxiter=None,
+    dual_feasibility_tolerance=None,
+    primal_feasibility_tolerance=None,
+    ipm_optimality_tolerance=None,
+    simplex_dual_edge_weight_strategy=None,
+    **unknown_options,
+):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
@@ -259,47 +263,49 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # Map options to HiGHS enum values
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
-        'simplex_dual_edge_weight_strategy',
-        choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-                 'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
-                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
-                 'steepest':
-                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-                 None: None})
+        "simplex_dual_edge_weight_strategy",
+        choices={
+            "dantzig": HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
+            "devex": HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
+            "steepest-devex": HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
+            "steepest": HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+            None: None,
+        },
+    )
 
     statuses = {
         MODEL_STATUS_NOTSET: (
             4,
-            'HiGHS Status Code 0: HighsModelStatusNOTSET',
+            "HiGHS Status Code 0: HighsModelStatusNOTSET",
         ),
         MODEL_STATUS_LOAD_ERROR: (
             4,
-            'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR',
+            "HiGHS Status Code 1: HighsModelStatusLOAD_ERROR",
         ),
         MODEL_STATUS_MODEL_ERROR: (
             2,
-            'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR',
+            "HiGHS Status Code 2: HighsModelStatusMODEL_ERROR",
         ),
         MODEL_STATUS_PRESOLVE_ERROR: (
             4,
-            'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR',
+            "HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR",
         ),
         MODEL_STATUS_SOLVE_ERROR: (
             4,
-            'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR',
+            "HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR",
         ),
         MODEL_STATUS_POSTSOLVE_ERROR: (
             4,
-            'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR',
+            "HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR",
         ),
         MODEL_STATUS_MODEL_EMPTY: (
             4,
-            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
+            "HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY",
         ),
         MODEL_STATUS_RDOVUB: (
             4,
-            'HiGHS Status Code 10: '
-            'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
+            "HiGHS Status Code 10: "
+            "HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND",
         ),
         MODEL_STATUS_PRIMAL_INFEASIBLE: (
             2,
@@ -335,7 +341,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
-    lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
+    lhs_ub = -np.ones_like(b_ub) * np.inf  # LHS of UB constraints is -inf
     rhs_ub = b_ub  # RHS of UB constraints is b_ub
     lhs_eq = b_eq  # Equality constaint is inequality
     rhs_eq = b_eq  # constraint with LHS=RHS
@@ -349,20 +355,19 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     A = csc_matrix(A)
 
     options = {
-        'presolve': presolve,
-        'sense': 1,  # minimization
-        'solver': solver,
-        'time_limit': time_limit,
-        'message_level': MESSAGE_LEVEL_MINIMAL * disp,
-        'dual_feasibility_tolerance': dual_feasibility_tolerance,
-        'ipm_optimality_tolerance': ipm_optimality_tolerance,
-        'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_dual_edge_weight_strategy':
-            simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
-        'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
-        'ipm_iteration_limit': maxiter,
-        'simplex_iteration_limit': maxiter,
+        "presolve": presolve,
+        "sense": 1,  # minimization
+        "solver": solver,
+        "time_limit": time_limit,
+        "message_level": MESSAGE_LEVEL_MINIMAL * disp,
+        "dual_feasibility_tolerance": dual_feasibility_tolerance,
+        "ipm_optimality_tolerance": ipm_optimality_tolerance,
+        "primal_feasibility_tolerance": primal_feasibility_tolerance,
+        "simplex_dual_edge_weight_strategy": simplex_dual_edge_weight_strategy_enum,
+        "simplex_strategy": HIGHS_SIMPLEX_STRATEGY_DUAL,
+        "simplex_crash_strategy": HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+        "ipm_iteration_limit": maxiter,
+        "simplex_iteration_limit": maxiter,
     }
 
     # np.inf doesn't work; use very large constant
@@ -371,26 +376,25 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                         lb, ub, options)
+    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs, lb, ub, options)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
     # and we need to split up s by A_ub and A_eq
-    if 'slack' in res:
-        slack = res['slack']
-        con = np.array(slack[len(b_ub):])
-        slack = np.array(slack[:len(b_ub)])
+    if "slack" in res:
+        slack = res["slack"]
+        con = np.array(slack[len(b_ub) :])
+        slack = np.array(slack[: len(b_ub)])
     else:
         slack, con = None, None
 
     # lagrange multipliers for equalities/inequalities and upper/lower bounds
-    if 'lambda' in res:
-        lamda = res['lambda']
-        marg_ineqlin = np.array(lamda[:len(b_ub)])
-        marg_eqlin = np.array(lamda[len(b_ub):])
-        marg_upper = res['marg_bnds'][1, :]
-        marg_lower = res['marg_bnds'][0, :]
+    if "lambda" in res:
+        lamda = res["lambda"]
+        marg_ineqlin = np.array(lamda[: len(b_ub)])
+        marg_eqlin = np.array(lamda[len(b_ub) :])
+        marg_upper = res["marg_bnds"][1, :]
+        marg_lower = res["marg_bnds"][0, :]
     else:
         marg_ineqlin, marg_eqlin = None, None
         marg_upper, marg_lower = None, None
@@ -401,42 +405,52 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # HiGHS will report OPTIMAL if the scaled model is solved to optimality
     # even if the unscaled original model is infeasible;
     # Catch that case here and provide a more useful message
-    if ((res['status'] == MODEL_STATUS_OPTIMAL) and
-            (res['unscaled_status'] != res['status'])):
+    if (res["status"] == MODEL_STATUS_OPTIMAL) and (
+        res["unscaled_status"] != res["status"]
+    ):
         _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
-        status, message = 4, ('An optimal solution to the scaled model was '
-                              f'found but was {unscaled_message} in the '
-                              'unscaled model. For more information run with '
-                              'the option `disp: True`.')
+        status, message = (
+            4,
+            "An optimal solution to the scaled model was "
+            f"found but was {unscaled_message} in the "
+            "unscaled model. For more information run with "
+            "the option `disp: True`.",
+        )
     else:
-        status, message = statuses[res['status']]
+        status, message = statuses[res["status"]]
 
-    x = np.array(res['x']) if 'x' in res else None
-    sol = {'x': x,
-           'slack': slack,
-           'con': con,
-           'ineqlin': OptimizeResult({
-               'residual': slack,
-               'marginals': marg_ineqlin,
-           }),
-           'eqlin': OptimizeResult({
-               'residual': con,
-               'marginals': marg_eqlin,
-           }),
-           'lower': OptimizeResult({
-               'residual': None if x is None else x - lb,
-               'marginals': marg_lower,
-           }),
-           'upper': OptimizeResult({
-               'residual': None if x is None else ub - x,
-               'marginals': marg_upper
-            }),
-           'fun': res.get('fun'),
-           'status': status,
-           'success': res['status'] == MODEL_STATUS_OPTIMAL,
-           'message': message,
-           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
-           'crossover_nit': res.get('crossover_nit'),
-           }
+    x = np.array(res["x"]) if "x" in res else None
+    sol = {
+        "x": x,
+        "slack": slack,
+        "con": con,
+        "ineqlin": OptimizeResult(
+            {
+                "residual": slack,
+                "marginals": marg_ineqlin,
+            }
+        ),
+        "eqlin": OptimizeResult(
+            {
+                "residual": con,
+                "marginals": marg_eqlin,
+            }
+        ),
+        "lower": OptimizeResult(
+            {
+                "residual": None if x is None else x - lb,
+                "marginals": marg_lower,
+            }
+        ),
+        "upper": OptimizeResult(
+            {"residual": None if x is None else ub - x, "marginals": marg_upper}
+        ),
+        "fun": res.get("fun"),
+        "status": status,
+        "success": res["status"] == MODEL_STATUS_OPTIMAL,
+        "message": message,
+        "nit": res.get("simplex_nit", 0) or res.get("ipm_nit", 0),
+        "crossover_nit": res.get("crossover_nit"),
+    }
 
     return sol

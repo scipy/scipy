@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,7 +28,7 @@
 #include "_c99compat.h"
 
 trlib_int_t trlib_eigen_inverse(
-        trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag, 
+        trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag,
         trlib_flt_t lam_init, trlib_int_t itmax, trlib_flt_t tol_abs,
         trlib_flt_t *ones, trlib_flt_t *diag_fac, trlib_flt_t *offdiag_fac,
         trlib_flt_t *eig, trlib_int_t verbose, trlib_int_t unicode, char *prefix, FILE *fout,
@@ -69,18 +69,18 @@ trlib_int_t trlib_eigen_inverse(
         TRLIB_DCOPY(&nm, offdiag, &inc, offdiag_fac, &inc) // offdiag_fac <-- offdiag
         TRLIB_DPTTRF(&n, diag_fac, offdiag_fac, &info_fac); // compute factorization
         if (info_fac == 0) { *iter_inv = 0; break; }
-        if (*pert == 0.0) { 
+        if (*pert == 0.0) {
             *pert = TRLIB_EPS_POW_4 * fmax(1.0, -lam_init);
         }
-        else { 
+        else {
             *pert = 10.0*(*pert);
         }
         minuslam = *pert - lam_init;
     }
     *lam_pert = -minuslam;
-    
+
     if ( *iter_inv == TRLIB_EIR_FAIL_FACTOR ) { TRLIB_PRINTLN_2("Failure on factorizing in inverse correction!") TRLIB_RETURN(TRLIB_EIR_FAIL_FACTOR) }
-    
+
     // try with TRLIB_EIR_N_STARTVEC different start vectors and hope that it converges for one
     seeds[0] = time(NULL);
     for(jj = 1; jj < TRLIB_EIR_N_STARTVEC; ++jj ) { seeds[jj] = rand(); }
@@ -141,7 +141,7 @@ trlib_int_t trlib_eigen_inverse(
         // check for convergence
         if (residuals[seedpivot] <= tol_abs ) { TRLIB_RETURN(TRLIB_EIR_CONV) }
     }
-    
+
     TRLIB_RETURN(TRLIB_EIR_ITMAX)
 }
 
@@ -151,4 +151,3 @@ trlib_int_t trlib_eigen_timing_size() {
 #endif
     return 0;
 }
-

@@ -716,7 +716,7 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
  *
  * Note:
  *   Input:  column indices *are not* assumed to be in sorted order or unique
- *   Output: the block column (unsorted) orders, duplicates, 
+ *   Output: the block column (unsorted) orders, duplicates,
  *           and explicit zeros are preserved
  *
  */

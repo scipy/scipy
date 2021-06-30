@@ -6,11 +6,12 @@ import scipy.stats
 from dataclasses import make_dataclass
 
 
-PageTrendTestResult = make_dataclass("PageTrendTestResult",
-                                     ("statistic", "pvalue", "method"))
+PageTrendTestResult = make_dataclass(
+    "PageTrendTestResult", ("statistic", "pvalue", "method")
+)
 
 
-def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
+def page_trend_test(data, ranked=False, predicted_ranks=None, method="auto"):
     r"""
     Perform Page's Test, a measure of trend in observations between treatments.
 
@@ -304,9 +305,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
 
     # Possible values of the method parameter and the corresponding function
     # used to evaluate the p value
-    methods = {"asymptotic": _l_p_asymptotic,
-               "exact": _l_p_exact,
-               "auto": None}
+    methods = {"asymptotic": _l_p_asymptotic, "exact": _l_p_exact, "auto": None}
     if method not in methods:
         raise ValueError(f"`method` must be in {set(methods)}")
 
@@ -316,34 +315,38 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
 
     m, n = ranks.shape
     if m < 2 or n < 3:
-        raise ValueError("Page's L is only appropriate for data with two "
-                         "or more rows and three or more columns.")
+        raise ValueError(
+            "Page's L is only appropriate for data with two "
+            "or more rows and three or more columns."
+        )
 
     if np.any(np.isnan(data)):
-        raise ValueError("`data` contains NaNs, which cannot be ranked "
-                         "meaningfully")
+        raise ValueError("`data` contains NaNs, which cannot be ranked meaningfully")
 
     # ensure NumPy array and rank the data if it's not already ranked
     if ranked:
         # Only a basic check on whether data is ranked. Checking that the data
         # is properly ranked could take as much time as ranking it.
         if not (ranks.min() >= 1 and ranks.max() <= ranks.shape[1]):
-            raise ValueError("`data` is not properly ranked. Rank the data or "
-                             "pass `ranked=False`.")
+            raise ValueError(
+                "`data` is not properly ranked. Rank the data or pass `ranked=False`."
+            )
     else:
         ranks = scipy.stats.rankdata(data, axis=-1)
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:
-        predicted_ranks = np.arange(1, n+1)
+        predicted_ranks = np.arange(1, n + 1)
     else:
         predicted_ranks = np.array(predicted_ranks, copy=False)
-        if (predicted_ranks.ndim < 1 or
-                (set(predicted_ranks) != set(range(1, n+1)) or
-                 len(predicted_ranks) != n)):
-            raise ValueError(f"`predicted_ranks` must include each integer "
-                             f"from 1 to {n} (the number of columns in "
-                             f"`data`) exactly once.")
+        if predicted_ranks.ndim < 1 or (
+            set(predicted_ranks) != set(range(1, n + 1)) or len(predicted_ranks) != n
+        ):
+            raise ValueError(
+                "`predicted_ranks` must include each integer "
+                f"from 1 to {n} (the number of columns in "
+                "`data`) exactly once."
+            )
 
     if type(ranked) is not bool:
         raise TypeError("`ranked` must be boolean.")
@@ -362,7 +365,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
 
 
 def _choose_method(ranks):
-    '''Choose method for computing p-value automatically'''
+    """Choose method for computing p-value automatically"""
     m, n = ranks.shape
     if n > 8 or (m > 12 and n > 3) or m > 20:  # as in [1], [4]
         method = "asymptotic"
@@ -372,7 +375,7 @@ def _choose_method(ranks):
 
 
 def _l_vectorized(ranks, predicted_ranks):
-    '''Calculate's Page's L statistic for each page of a 3d array'''
+    """Calculate's Page's L statistic for each page of a 3d array"""
     colsums = ranks.sum(axis=-2, keepdims=True)
     products = predicted_ranks * colsums
     Ls = products.sum(axis=-1)
@@ -381,16 +384,16 @@ def _l_vectorized(ranks, predicted_ranks):
 
 
 def _l_p_asymptotic(L, m, n):
-    '''Calculate the p-value of Page's L from the asymptotic distribution'''
+    """Calculate the p-value of Page's L from the asymptotic distribution"""
     # Using [1] as a reference, the asymptotic p-value would be calculated as:
     # chi_L = (12*L - 3*m*n*(n+1)**2)**2/(m*n**2*(n**2-1)*(n+1))
     # p = chi2.sf(chi_L, df=1, loc=0, scale=1)/2
     # but this is insentive to the direction of the hypothesized ranking
 
     # See [2] page 151
-    E0 = (m*n*(n+1)**2)/4
-    V0 = (m*n**2*(n+1)*(n**2-1))/144
-    Lambda = (L-E0)/np.sqrt(V0)
+    E0 = (m * n * (n + 1) ** 2) / 4
+    V0 = (m * n ** 2 * (n + 1) * (n ** 2 - 1)) / 144
+    Lambda = (L - E0) / np.sqrt(V0)
     # This is a one-sided "greater" test - calculate the probability that the
     # L statistic under H0 would be greater than the observed L statistic
     p = norm.sf(Lambda)
@@ -398,7 +401,7 @@ def _l_p_asymptotic(L, m, n):
 
 
 def _l_p_exact(L, m, n):
-    '''Calculate the p-value of Page's L exactly'''
+    """Calculate the p-value of Page's L exactly"""
     # [1] uses m, n; [5] uses n, k.
     # Switch convention here because exact calculation code references [5].
     L, n, k = int(L), int(m), int(n)
@@ -407,39 +410,39 @@ def _l_p_exact(L, m, n):
 
 
 class _PageL:
-    '''Maintains state between `page_trend_test` executions'''
+    """Maintains state between `page_trend_test` executions"""
 
     def __init__(self):
-        '''Lightweight initialization'''
+        """Lightweight initialization"""
         self.all_pmfs = {}
 
     def set_k(self, k):
-        '''Calculate lower and upper limits of L for single row'''
+        """Calculate lower and upper limits of L for single row"""
         self.k = k
         # See [5] top of page 52
-        self.a, self.b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+        self.a, self.b = (k * (k + 1) * (k + 2)) // 6, (k * (k + 1) * (2 * k + 1)) // 6
 
     def sf(self, l, n):
-        '''Survival function of Page's L statistic'''
-        ps = [self.pmf(l, n) for l in range(l, n*self.b + 1)]
+        """Survival function of Page's L statistic"""
+        ps = [self.pmf(l, n) for l in range(l, n * self.b + 1)]
         return np.sum(ps)
 
     def p_l_k_1(self):
-        '''Relative frequency of each L value over all possible single rows'''
+        """Relative frequency of each L value over all possible single rows"""
 
         # See [5] Equation (6)
-        ranks = range(1, self.k+1)
+        ranks = range(1, self.k + 1)
         # generate all possible rows of length k
         rank_perms = np.array(list(permutations(ranks)))
         # compute Page's L for all possible rows
-        Ls = (ranks*rank_perms).sum(axis=1)
+        Ls = (ranks * rank_perms).sum(axis=1)
         # count occurences of each L value
-        counts = np.histogram(Ls, np.arange(self.a-0.5, self.b+1.5))[0]
+        counts = np.histogram(Ls, np.arange(self.a - 0.5, self.b + 1.5))[0]
         # factorial(k) is number of possible permutations
-        return counts/math.factorial(self.k)
+        return counts / math.factorial(self.k)
 
     def pmf(self, l, n):
-        '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
+        """Recursive function to evaluate p(l, k, n); see [5] Equation 1"""
 
         if n not in self.all_pmfs:
             self.all_pmfs[n] = {}
@@ -454,20 +457,20 @@ class _PageL:
 
         if n == 1:
             ps = self.p_l_k_1()  # [5] Equation 6
-            ls = range(self.a, self.b+1)
+            ls = range(self.a, self.b + 1)
             # not fast, but we'll only be here once
             self.all_pmfs[n][self.k] = {l: p for l, p in zip(ls, ps)}
             return self.all_pmfs[n][self.k][l]
 
         p = 0
-        low = max(l-(n-1)*self.b, self.a)  # [5] Equation 2
-        high = min(l-(n-1)*self.a, self.b)
+        low = max(l - (n - 1) * self.b, self.a)  # [5] Equation 2
+        high = min(l - (n - 1) * self.a, self.b)
 
         # [5] Equation 1
-        for t in range(low, high+1):
-            p1 = self.pmf(l-t, n-1)
+        for t in range(low, high + 1):
+            p1 = self.pmf(l - t, n - 1)
             p2 = self.pmf(t, 1)
-            p += p1*p2
+            p += p1 * p2
         self.all_pmfs[n][self.k][l] = p
         return p
 

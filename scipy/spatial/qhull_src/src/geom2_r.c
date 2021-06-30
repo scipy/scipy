@@ -1221,7 +1221,7 @@ realT qh_maxouter(qhT *qh) {
     initialize simplex with at least two points
       (find points with max or min x coordinate)
     create a simplex of dim+1 vertices as follows
-      add point from maxpoints that maximizes the determinate of the point and the simplex vertices  
+      add point from maxpoints that maximizes the determinate of the point and the simplex vertices
       if last point and maxdet/prevdet < qh_RATIOmaxsimplex (3.0e-2)
         flag maybe_falsenarrow
       if no maxpoint or maxnearzero or maybe_falsenarrow
@@ -2298,4 +2298,3 @@ pointT *qh_voronoi_center(qhT *qh, int dim, setT *points) {
     qh_settempfree(qh, &simplex);
   return center;
 } /* voronoi_center */
-

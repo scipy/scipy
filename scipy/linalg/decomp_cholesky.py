@@ -6,12 +6,10 @@ from numpy import asarray_chkfinite, asarray, atleast_2d
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-__all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
-           'cho_solve_banded']
+__all__ = ["cholesky", "cho_factor", "cho_solve", "cholesky_banded", "cho_solve_banded"]
 
 
-def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True):
+def _cholesky(a, lower=False, overwrite_a=False, clean=True, check_finite=True):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -19,26 +17,33 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     # Dimension check
     if a1.ndim != 2:
-        raise ValueError('Input array needs to be 2D but received '
-                         'a {}d-array.'.format(a1.ndim))
+        raise ValueError(
+            "Input array needs to be 2D but received a {}d-array.".format(a1.ndim)
+        )
     # Squareness check
     if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input array is expected to be square but has '
-                         'the shape: {}.'.format(a1.shape))
+        raise ValueError(
+            "Input array is expected to be square but has the shape: {}.".format(
+                a1.shape
+            )
+        )
 
     # Quick return for square empty array
     if a1.size == 0:
         return a1.copy(), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    potrf, = get_lapack_funcs(('potrf',), (a1,))
+    (potrf,) = get_lapack_funcs(("potrf",), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
-        raise LinAlgError("%d-th leading minor of the array is not positive "
-                          "definite" % info)
+        raise LinAlgError(
+            "%d-th leading minor of the array is not positive definite" % info
+        )
     if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         'on entry to "POTRF".'.format(-info))
+        raise ValueError(
+            "LAPACK reported an illegal value in {}-th argument"
+            'on entry to "POTRF".'.format(-info)
+        )
     return c, lower
 
 
@@ -85,8 +90,9 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite)
+    c, lower = _cholesky(
+        a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite
+    )
     return c
 
 
@@ -149,8 +155,9 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     True
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
-                         check_finite=check_finite)
+    c, lower = _cholesky(
+        a, lower=lower, overwrite_a=overwrite_a, clean=False, check_finite=check_finite
+    )
     return c, lower
 
 
@@ -199,16 +206,16 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
-        raise ValueError("incompatible dimensions ({} and {})"
-                         .format(c.shape, b1.shape))
+        raise ValueError(
+            "incompatible dimensions ({} and {})".format(c.shape, b1.shape)
+        )
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
-    potrs, = get_lapack_funcs(('potrs',), (c, b1))
+    (potrs,) = get_lapack_funcs(("potrs",), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError('illegal value in %dth argument of internal potrs'
-                         % -info)
+        raise ValueError("illegal value in %dth argument of internal potrs" % -info)
     return x
 
 
@@ -275,13 +282,12 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     else:
         ab = asarray(ab)
 
-    pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
+    (pbtrf,) = get_lapack_funcs(("pbtrf",), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbtrf'
-                         % -info)
+        raise ValueError("illegal value in %d-th argument of internal pbtrf" % -info)
     return c
 
 
@@ -342,11 +348,10 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     if cb.shape[-1] != b.shape[0]:
         raise ValueError("shapes of cb and b are not compatible.")
 
-    pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
+    (pbtrs,) = get_lapack_funcs(("pbtrs",), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
         raise LinAlgError("%dth leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal pbtrs'
-                         % -info)
+        raise ValueError("illegal value in %dth argument of internal pbtrs" % -info)
     return x

@@ -52,12 +52,13 @@ def upfirdn_naive(x, h, up=1, down=1):
     h = np.asarray(h)
     out = np.zeros(len(x) * up, x.dtype)
     out[::up] = x
-    out = np.convolve(h, out)[::down][:_output_len(len(h), len(x), up, down)]
+    out = np.convolve(h, out)[::down][: _output_len(len(h), len(x), up, down)]
     return out
 
 
 class UpFIRDnCase:
     """Test _UpFIRDn object"""
+
     def __init__(self, up, down, h, x_dtype):
         self.up = up
         self.down = down
@@ -89,8 +90,7 @@ class UpFIRDnCase:
             self.scrub(x, axis=axis)
 
     def scrub(self, x, axis=-1):
-        yr = np.apply_along_axis(upfirdn_naive, axis, x,
-                                 self.h, self.up, self.down)
+        yr = np.apply_along_axis(upfirdn_naive, axis, x, self.h, self.up, self.down)
         want_len = _output_len(len(self.h), x.shape[axis], self.up, self.down)
         assert yr.shape[axis] == want_len
         y = upfirdn(self.h, x, self.up, self.down, axis=axis)
@@ -114,53 +114,58 @@ _UPFIRDN_TYPES = (int, np.float32, np.complex64, float, complex)
 
 
 class TestUpfirdn:
-
     def test_valid_input(self):
         assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1
         assert_raises(ValueError, upfirdn, [], [1], 1, 1)  # h.ndim != 1
         assert_raises(ValueError, upfirdn, [[1]], [1], 1, 1)
 
-    @pytest.mark.parametrize('len_h', [1, 2, 3, 4, 5])
-    @pytest.mark.parametrize('len_x', [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize("len_h", [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize("len_x", [1, 2, 3, 4, 5])
     def test_singleton(self, len_h, len_x):
         # gh-9844: lengths producing expected outputs
         h = np.zeros(len_h)
-        h[len_h // 2] = 1.  # make h a delta
+        h[len_h // 2] = 1.0  # make h a delta
         x = np.ones(len_x)
         y = upfirdn(h, x, 1, 1)
-        want = np.pad(x, (len_h // 2, (len_h - 1) // 2), 'constant')
+        want = np.pad(x, (len_h // 2, (len_h - 1) // 2), "constant")
         assert_allclose(y, want)
 
     def test_shift_x(self):
         # gh-9844: shifted x can change values?
-        y = upfirdn([1, 1], [1.], 1, 1)
+        y = upfirdn([1, 1], [1.0], 1, 1)
         assert_allclose(y, [1, 1])  # was [0, 1] in the issue
-        y = upfirdn([1, 1], [0., 1.], 1, 1)
+        y = upfirdn([1, 1], [0.0, 1.0], 1, 1)
         assert_allclose(y, [0, 1, 1])
 
     # A bunch of lengths/factors chosen because they exposed differences
     # between the "old way" and new way of computing length, and then
     # got `expected` from MATLAB
-    @pytest.mark.parametrize('len_h, len_x, up, down, expected', [
-        (2, 2, 5, 2, [1, 0, 0, 0]),
-        (2, 3, 6, 3, [1, 0, 1, 0, 1]),
-        (2, 4, 4, 3, [1, 0, 0, 0, 1]),
-        (3, 2, 6, 2, [1, 0, 0, 1, 0]),
-        (4, 11, 3, 5, [1, 0, 0, 1, 0, 0, 1]),
-    ])
+    @pytest.mark.parametrize(
+        "len_h, len_x, up, down, expected",
+        [
+            (2, 2, 5, 2, [1, 0, 0, 0]),
+            (2, 3, 6, 3, [1, 0, 1, 0, 1]),
+            (2, 4, 4, 3, [1, 0, 0, 0, 1]),
+            (3, 2, 6, 2, [1, 0, 0, 1, 0]),
+            (4, 11, 3, 5, [1, 0, 0, 1, 0, 0, 1]),
+        ],
+    )
     def test_length_factors(self, len_h, len_x, up, down, expected):
         # gh-9844: weird factors
         h = np.zeros(len_h)
-        h[0] = 1.
+        h[0] = 1.0
         x = np.ones(len_x)
         y = upfirdn(h, x, up, down)
         assert_allclose(y, expected)
 
-    @pytest.mark.parametrize('down, want_len', [  # lengths from MATLAB
-        (2, 5015),
-        (11, 912),
-        (79, 127),
-    ])
+    @pytest.mark.parametrize(
+        "down, want_len",
+        [  # lengths from MATLAB
+            (2, 5015),
+            (11, 912),
+            (79, 127),
+        ],
+    )
     def test_vs_convolve(self, down, want_len):
         # Check that up=1.0 gives same answer as convolve + slicing
         random_state = np.random.RandomState(17)
@@ -172,23 +177,22 @@ class TestUpfirdn:
             if dtype in (np.complex64, np.complex128):
                 x += 1j * random_state.randn(size)
 
-            h = firwin(31, 1. / down, window='hamming')
+            h = firwin(31, 1.0 / down, window="hamming")
             yl = upfirdn_naive(x, h, 1, down)
             y = upfirdn(h, x, up=1, down=down)
             assert y.shape == (want_len,)
             assert yl.shape[0] == y.shape[0]
             assert_allclose(yl, y, atol=1e-7, rtol=1e-7)
 
-    @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
-    @pytest.mark.parametrize('h', (1., 1j))
-    @pytest.mark.parametrize('up, down', [(1, 1), (2, 2), (3, 2), (2, 3)])
+    @pytest.mark.parametrize("x_dtype", _UPFIRDN_TYPES)
+    @pytest.mark.parametrize("h", (1.0, 1j))
+    @pytest.mark.parametrize("up, down", [(1, 1), (2, 2), (3, 2), (2, 3)])
     def test_vs_naive_delta(self, x_dtype, h, up, down):
         UpFIRDnCase(up, down, h, x_dtype)()
 
-    @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
-    @pytest.mark.parametrize('h_dtype', _UPFIRDN_TYPES)
-    @pytest.mark.parametrize('p_max, q_max',
-                             list(product((10, 100), (10, 100))))
+    @pytest.mark.parametrize("x_dtype", _UPFIRDN_TYPES)
+    @pytest.mark.parametrize("h_dtype", _UPFIRDN_TYPES)
+    @pytest.mark.parametrize("p_max, q_max", list(product((10, 100), (10, 100))))
     def test_vs_naive(self, x_dtype, h_dtype, p_max, q_max):
         tests = self._random_factors(p_max, q_max, h_dtype, x_dtype)
         for test in tests:
@@ -218,21 +222,22 @@ class TestUpfirdn:
 
         return tests
 
-    @pytest.mark.parametrize('mode', _upfirdn_modes)
+    @pytest.mark.parametrize("mode", _upfirdn_modes)
     def test_extensions(self, mode):
         """Test vs. manually computed results for modes not in numpy's pad."""
         x = np.array([1, 2, 3, 1], dtype=float)
         npre, npost = 6, 6
         y = _pad_test(x, npre=npre, npost=npost, mode=mode)
-        if mode == 'antisymmetric':
+        if mode == "antisymmetric":
             y_expected = np.asarray(
-                [3, 1, -1, -3, -2, -1, 1, 2, 3, 1, -1, -3, -2, -1, 1, 2])
-        elif mode == 'antireflect':
+                [3, 1, -1, -3, -2, -1, 1, 2, 3, 1, -1, -3, -2, -1, 1, 2]
+            )
+        elif mode == "antireflect":
+            y_expected = np.asarray([1, 2, 3, 1, -1, 0, 1, 2, 3, 1, -1, 0, 1, 2, 3, 1])
+        elif mode == "smooth":
             y_expected = np.asarray(
-                [1, 2, 3, 1, -1, 0, 1, 2, 3, 1, -1, 0, 1, 2, 3, 1])
-        elif mode == 'smooth':
-            y_expected = np.asarray(
-                [-5, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11])
+                [-5, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11]
+            )
         elif mode == "line":
             lin_slope = (x[-1] - x[0]) / (len(x) - 1)
             left = x[0] + np.arange(-npre, 0, 1) * lin_slope
@@ -243,13 +248,13 @@ class TestUpfirdn:
         assert_allclose(y, y_expected)
 
     @pytest.mark.parametrize(
-        'size, h_len, mode, dtype',
+        "size, h_len, mode, dtype",
         product(
             [8],
             [4, 5, 26],  # include cases with h_len > 2*size
             _upfirdn_modes,
             [np.float32, np.float64, np.complex64, np.complex128],
-        )
+        ),
     )
     def test_modes(self, size, h_len, mode, dtype):
         random_state = np.random.RandomState(5)
@@ -261,12 +266,12 @@ class TestUpfirdn:
         y = upfirdn(h, x, up=1, down=1, mode=mode)
         # expected result: pad the input, filter with zero padding, then crop
         npad = h_len - 1
-        if mode in ['antisymmetric', 'antireflect', 'smooth', 'line']:
+        if mode in ["antisymmetric", "antireflect", "smooth", "line"]:
             # use _pad_test test function for modes not supported by np.pad.
             xpad = _pad_test(x, npre=npad, npost=npad, mode=mode)
         else:
             xpad = np.pad(x, npad, mode=mode)
-        ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')
+        ypad = upfirdn(h, xpad, up=1, down=1, mode="constant")
         y_expected = ypad[npad:-npad]
 
         atol = rtol = np.finfo(dtype).eps * 1e2

@@ -925,4 +925,3 @@ Pull requests for 1.0.0
 - `#8001 <https://github.com/scipy/scipy/pull/8001>`__: TST: fix test failures from Matplotlib 2.1 update
 - `#8010 <https://github.com/scipy/scipy/pull/8010>`__: BUG: signal: fix crash in lfilter
 - `#8019 <https://github.com/scipy/scipy/pull/8019>`__: MAINT: fix test failures with NumPy master
-

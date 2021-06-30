@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -35,7 +35,7 @@ at the top-level directory.
 #include "slu_sdefs.h"
 
 
-/*! \brief Performs numeric block updates within the relaxed snode. 
+/*! \brief Performs numeric block updates within the relaxed snode.
  */
 int
 ssnode_bmod (
@@ -59,7 +59,7 @@ ssnode_bmod (
 #endif
 
     int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
+    int            isub, irow, i, iptr;
     register int   ufirst, nextlu;
     int            *lsub, *xlsub;
     float         *lusup;
@@ -72,7 +72,7 @@ ssnode_bmod (
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
-    
+
     /*
      *	Process the supernodal portion of L\U[*,j]
      */
@@ -84,7 +84,7 @@ ssnode_bmod (
     }
 
     xlusup[jcol + 1] = nextlu;	/* Initialize xlusup for next column */
-    
+
     if ( fsupc < jcol ) {
 
 	luptr = xlusup[fsupc];
@@ -99,9 +99,9 @@ ssnode_bmod (
 
 #ifdef USE_VENDOR_BLAS
 #ifdef _CRAY
-	STRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr], &nsupr, 
+	STRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
-	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
 #if SCIPY_FIX
@@ -110,14 +110,14 @@ ssnode_bmod (
            ABORT("failed to factorize matrix");
        }
 #endif
-	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
-	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #endif
 #else
 	slsolve ( nsupr, nsupc, &lusup[luptr], &lusup[ufirst] );
-	smatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc], 
+	smatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc],
 			&lusup[ufirst], &tempv[0] );
 
         /* Scatter tempv[*] into lusup[*] */

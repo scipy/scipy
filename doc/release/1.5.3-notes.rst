@@ -70,4 +70,3 @@ Pull requests for 1.5.3
 * `#12867 <https://github.com/scipy/scipy/pull/12867>`__: BUG: Fixes a ValueError yielded upon calling Scipy Interpolator...
 * `#12902 <https://github.com/scipy/scipy/pull/12902>`__: CI: Remove 'env' from pytest.ini
 * `#12913 <https://github.com/scipy/scipy/pull/12913>`__: MAINT: Ignore pytest's PytestConfigWarning
-

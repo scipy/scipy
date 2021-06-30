@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -39,9 +39,9 @@ at the top-level directory.
  * <pre>
  * Purpose
  * =======
- *    ssnode_dfs() - Determine the union of the row structures of those 
+ *    ssnode_dfs() - Determine the union of the row structures of those
  *    columns within the relaxed snode.
- *    Note: The relaxed snodes are leaves of the supernodal etree, therefore, 
+ *    Note: The relaxed snodes are leaves of the supernodal etree, therefore,
  *    the portion outside the rectangular supernode must be zero.
  *
  * Return value
@@ -69,7 +69,7 @@ ssnode_dfs (
     int          *xsup, *supno;
     int          *lsub, *xlsub;
     int          nzlmax;
-    
+
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
@@ -81,7 +81,7 @@ ssnode_dfs (
 
     for (i = jcol; i <= kcol; i++) {
 	/* For each nonzero in A[*,i] */
-	for (k = xa_begin[i]; k < xa_end[i]; k++) {	
+	for (k = xa_begin[i]; k < xa_end[i]; k++) {
 	    krow = asub[k];
 	    kmark = marker[krow];
 	    if ( kmark != kcol ) { /* First time visit krow */
@@ -107,7 +107,7 @@ ssnode_dfs (
 	}
 	ito = nextl;
 	for (ifrom = xlsub[jcol]; ifrom < nextl; )
-	    lsub[ito++] = lsub[ifrom++];	
+	    lsub[ito++] = lsub[ifrom++];
         for (i = jcol+1; i <= kcol; i++) xlsub[i] = nextl;
 	nextl = ito;
     }
@@ -119,4 +119,3 @@ ssnode_dfs (
 
     return 0;
 }
-

@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import List
 
+
 class ReportBase:
     COLUMN_NAMES: List[str] = NotImplemented
     COLUMN_WIDTHS: List[int] = NotImplemented
@@ -10,10 +11,8 @@ class ReportBase:
 
     @classmethod
     def print_header(cls):
-        fmt = ("|"
-               + "|".join(["{{:^{}}}".format(x) for x in cls.COLUMN_WIDTHS])
-               + "|")
-        separators = ['-' * x for x in cls.COLUMN_WIDTHS]
+        fmt = "|" + "|".join(["{{:^{}}}".format(x) for x in cls.COLUMN_WIDTHS]) + "|"
+        separators = ["-" * x for x in cls.COLUMN_WIDTHS]
         print(fmt.format(*cls.COLUMN_NAMES))
         print(fmt.format(*separators))
 
@@ -29,24 +28,68 @@ class ReportBase:
 
 
 class BasicReport(ReportBase):
-    COLUMN_NAMES = ["niter", "f evals", "CG iter", "obj func", "tr radius",
-                    "opt", "c viol"]
+    COLUMN_NAMES = [
+        "niter",
+        "f evals",
+        "CG iter",
+        "obj func",
+        "tr radius",
+        "opt",
+        "c viol",
+    ]
     COLUMN_WIDTHS = [7, 7, 7, 13, 10, 10, 10]
-    ITERATION_FORMATS = ["^7", "^7", "^7", "^+13.4e",
-                         "^10.2e", "^10.2e", "^10.2e"]
+    ITERATION_FORMATS = ["^7", "^7", "^7", "^+13.4e", "^10.2e", "^10.2e", "^10.2e"]
 
 
 class SQPReport(ReportBase):
-    COLUMN_NAMES = ["niter", "f evals", "CG iter", "obj func", "tr radius",
-                    "opt", "c viol", "penalty", "CG stop"]
+    COLUMN_NAMES = [
+        "niter",
+        "f evals",
+        "CG iter",
+        "obj func",
+        "tr radius",
+        "opt",
+        "c viol",
+        "penalty",
+        "CG stop",
+    ]
     COLUMN_WIDTHS = [7, 7, 7, 13, 10, 10, 10, 10, 7]
-    ITERATION_FORMATS = ["^7", "^7", "^7", "^+13.4e", "^10.2e", "^10.2e",
-                         "^10.2e", "^10.2e", "^7"]
+    ITERATION_FORMATS = [
+        "^7",
+        "^7",
+        "^7",
+        "^+13.4e",
+        "^10.2e",
+        "^10.2e",
+        "^10.2e",
+        "^10.2e",
+        "^7",
+    ]
 
 
 class IPReport(ReportBase):
-    COLUMN_NAMES = ["niter", "f evals", "CG iter", "obj func", "tr radius",
-                    "opt", "c viol", "penalty", "barrier param", "CG stop"]
+    COLUMN_NAMES = [
+        "niter",
+        "f evals",
+        "CG iter",
+        "obj func",
+        "tr radius",
+        "opt",
+        "c viol",
+        "penalty",
+        "barrier param",
+        "CG stop",
+    ]
     COLUMN_WIDTHS = [7, 7, 7, 13, 10, 10, 10, 10, 13, 7]
-    ITERATION_FORMATS = ["^7", "^7", "^7", "^+13.4e", "^10.2e", "^10.2e",
-                         "^10.2e", "^10.2e", "^13.2e", "^7"]
+    ITERATION_FORMATS = [
+        "^7",
+        "^7",
+        "^7",
+        "^+13.4e",
+        "^10.2e",
+        "^10.2e",
+        "^10.2e",
+        "^10.2e",
+        "^13.2e",
+        "^7",
+    ]

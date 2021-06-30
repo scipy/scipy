@@ -28,4 +28,3 @@ when running the test suite so they don't pollute the output.
 It's possible that there is reason to want to ignore this deprecation policy
 for a particular deprecation; this can always be discussed on the scipy-dev
 mailing list.
-

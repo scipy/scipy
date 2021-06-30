@@ -22,12 +22,12 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 --------------------------
 
-- `scipy.ndimage` improvements: Fixes and ehancements to boundary extension 
+- `scipy.ndimage` improvements: Fixes and ehancements to boundary extension
   modes for interpolation functions. Support for complex-valued inputs in many
-  filtering and interpolation functions. New ``grid_mode`` option for 
-  `scipy.ndimage.zoom` to enable results consistent with scikit-image's 
+  filtering and interpolation functions. New ``grid_mode`` option for
+  `scipy.ndimage.zoom` to enable results consistent with scikit-image's
   ``rescale``.
-- `scipy.optimize.linprog` has fast, new methods for large, sparse problems 
+- `scipy.optimize.linprog` has fast, new methods for large, sparse problems
   from the ``HiGHS`` library.
 - `scipy.stats` improvements including new distributions, a new test, and
   enhancements to existing distributions and tests
@@ -49,8 +49,8 @@ files may be overwritten.
 
 `scipy.integrate` improvements
 ------------------------------
-Some renames of functions with poor names were done, with the old names 
-retained without being in the reference guide for backwards compatibility 
+Some renames of functions with poor names were done, with the old names
+retained without being in the reference guide for backwards compatibility
 reasons:
 - ``integrate.simps`` was renamed to ``integrate.simpson``
 - ``integrate.trapz`` was renamed to ``integrate.trapezoid``
@@ -58,7 +58,7 @@ reasons:
 
 `scipy.cluster` improvements
 ------------------------------
-`scipy.cluster.hierarchy.DisjointSet` has been added for incremental 
+`scipy.cluster.hierarchy.DisjointSet` has been added for incremental
 connectivity queries.
 
 `scipy.cluster.hierarchy.dendrogram` return value now also includes leaf color
@@ -66,17 +66,17 @@ information in `leaves_color_list`.
 
 `scipy.interpolate` improvements
 --------------------------------
-`scipy.interpolate.interp1d` has a new method ``nearest-up``, similar to the 
+`scipy.interpolate.interp1d` has a new method ``nearest-up``, similar to the
 existing method ``nearest`` but rounds half-integers up instead of down.
 
 `scipy.io` improvements
 -----------------------
-Support has been added for reading arbitrary bit depth integer PCM WAV files 
+Support has been added for reading arbitrary bit depth integer PCM WAV files
 from 1- to 32-bit, including the commonly-requested 24-bit depth.
 
 `scipy.linalg` improvements
 ---------------------------
-The new function `scipy.linalg.matmul_toeplitz` uses the FFT to compute the 
+The new function `scipy.linalg.matmul_toeplitz` uses the FFT to compute the
 product of a Toeplitz matrix with another matrix.
 
 `scipy.linalg.sqrtm` and `scipy.linalg.logm` have performance improvements
@@ -90,60 +90,60 @@ integer backends when available.
 
 `scipy.ndimage` improvements
 ----------------------------
-`scipy.ndimage.convolve`, `scipy.ndimage.correlate` and their 1d counterparts 
-now accept both complex-valued images and/or complex-valued filter kernels. All 
-convolution-based filters also now accept complex-valued inputs 
+`scipy.ndimage.convolve`, `scipy.ndimage.correlate` and their 1d counterparts
+now accept both complex-valued images and/or complex-valued filter kernels. All
+convolution-based filters also now accept complex-valued inputs
 (e.g. ``gaussian_filter``, ``uniform_filter``, etc.).
 
-Multiple fixes and enhancements to boundary handling were introduced to 
+Multiple fixes and enhancements to boundary handling were introduced to
 `scipy.ndimage` interpolation functions (i.e. ``affine_transform``,
 ``geometric_transform``, ``map_coordinates``, ``rotate``, ``shift``, ``zoom``).
 
 A new boundary mode, ``grid-wrap`` was added which wraps images periodically,
-using a period equal to the shape of the input image grid. This is in contrast 
-to the existing ``wrap`` mode which uses a period that is one sample smaller 
+using a period equal to the shape of the input image grid. This is in contrast
+to the existing ``wrap`` mode which uses a period that is one sample smaller
 than the original signal extent along each dimension.
 
-A long-standing bug in the ``reflect`` boundary condition has been fixed and 
+A long-standing bug in the ``reflect`` boundary condition has been fixed and
 the mode ``grid-mirror`` was introduced as a synonym for ``reflect``.
 
-A new boundary mode, ``grid-constant`` is now available. This is similar to 
-the existing ndimage ``constant`` mode, but interpolation will still performed 
-at coordinate values outside of the original image extent. This 
-``grid-constant`` mode is consistent with OpenCV's ``BORDER_CONSTANT`` mode 
+A new boundary mode, ``grid-constant`` is now available. This is similar to
+the existing ndimage ``constant`` mode, but interpolation will still performed
+at coordinate values outside of the original image extent. This
+``grid-constant`` mode is consistent with OpenCV's ``BORDER_CONSTANT`` mode
 and scikit-image's ``constant`` mode.
 
-Spline pre-filtering (used internally by ``ndimage`` interpolation functions 
-when ``order >= 2``), now supports all boundary modes rather than always 
-defaulting to mirror boundary conditions. The standalone functions 
-``spline_filter`` and ``spline_filter1d`` have analytical boundary conditions 
+Spline pre-filtering (used internally by ``ndimage`` interpolation functions
+when ``order >= 2``), now supports all boundary modes rather than always
+defaulting to mirror boundary conditions. The standalone functions
+``spline_filter`` and ``spline_filter1d`` have analytical boundary conditions
 that match modes ``mirror``, ``grid-wrap`` and ``reflect``.
 
 `scipy.ndimage` interpolation functions now accept complex-valued inputs. In
-this case, the interpolation is applied independently to the real and 
+this case, the interpolation is applied independently to the real and
 imaginary components.
 
-The ``ndimage`` tutorials 
-(https://docs.scipy.org/doc/scipy/reference/tutorial/ndimage.html) have been 
-updated with new figures to better clarify the exact behavior of all of the 
+The ``ndimage`` tutorials
+(https://docs.scipy.org/doc/scipy/reference/tutorial/ndimage.html) have been
+updated with new figures to better clarify the exact behavior of all of the
 interpolation boundary modes.
 
-`scipy.ndimage.zoom` now has a ``grid_mode`` option that changes the coordinate 
-of the center of the first pixel along an axis from 0 to 0.5. This allows 
-resizing in a manner that is consistent with the behavior of scikit-image's 
+`scipy.ndimage.zoom` now has a ``grid_mode`` option that changes the coordinate
+of the center of the first pixel along an axis from 0 to 0.5. This allows
+resizing in a manner that is consistent with the behavior of scikit-image's
 ``resize`` and ``rescale`` functions (and OpenCV's ``cv2.resize``).
 
 `scipy.optimize` improvements
 -----------------------------
-`scipy.optimize.linprog` has fast, new methods for large, sparse problems from 
-the ``HiGHS`` C++ library. ``method='highs-ds'`` uses a high performance dual 
-revised simplex implementation (HSOL), ``method='highs-ipm'`` uses an 
-interior-point method with crossover, and ``method='highs'`` chooses between 
-the two automatically. These methods are typically much faster and often exceed 
-the accuracy of other ``linprog`` methods, so we recommend explicitly 
+`scipy.optimize.linprog` has fast, new methods for large, sparse problems from
+the ``HiGHS`` C++ library. ``method='highs-ds'`` uses a high performance dual
+revised simplex implementation (HSOL), ``method='highs-ipm'`` uses an
+interior-point method with crossover, and ``method='highs'`` chooses between
+the two automatically. These methods are typically much faster and often exceed
+the accuracy of other ``linprog`` methods, so we recommend explicitly
 specifying one of these three method values when using ``linprog``.
 
-`scipy.optimize.quadratic_assignment` has been added for approximate solution 
+`scipy.optimize.quadratic_assignment` has been added for approximate solution
 of the quadratic assignment problem.
 
 `scipy.optimize.linear_sum_assignment` now has a substantially reduced overhead
@@ -158,10 +158,10 @@ is available based on the interpolative decomposition approach.
 
 `scipy.signal` improvements
 ---------------------------
-`scipy.signal.gammatone` has been added to design FIR or IIR filters that 
+`scipy.signal.gammatone` has been added to design FIR or IIR filters that
 model the human auditory system.
 
-`scipy.signal.iircomb` has been added to design IIR peaking/notching comb 
+`scipy.signal.iircomb` has been added to design IIR peaking/notching comb
 filters that can boost/attenuate a frequency from a signal.
 
 `scipy.signal.sosfilt` performance has been improved to avoid some previously-
@@ -201,12 +201,12 @@ extensions and has improved thread pool behavior.
 
 `scipy.spatial` improvements
 ----------------------------
-The python implementation of ``KDTree`` has been dropped and ``KDTree`` is now 
-implemented in terms of ``cKDTree``. You can now expect ``cKDTree``-like 
-performance by default. This also means ``sys.setrecursionlimit`` no longer 
+The python implementation of ``KDTree`` has been dropped and ``KDTree`` is now
+implemented in terms of ``cKDTree``. You can now expect ``cKDTree``-like
+performance by default. This also means ``sys.setrecursionlimit`` no longer
 needs to be increased for querying large trees.
 
-``transform.Rotation`` has been updated with support for Modified Rodrigues 
+``transform.Rotation`` has been updated with support for Modified Rodrigues
 Parameters alongside the existing rotation representations (PR gh-12667).
 
 `scipy.spatial.transform.Rotation` has been partially cythonized, with some
@@ -219,33 +219,33 @@ metric, especially for p-norm values of 1 or 2.
 --------------------------
 New distributions have been added to `scipy.stats`:
 
-- The asymmetric Laplace continuous distribution has been added as 
+- The asymmetric Laplace continuous distribution has been added as
   `scipy.stats.laplace_asymmetric`.
 - The negative hypergeometric distribution has been added as `scipy.stats.nhypergeom`.
 - The multivariate t distribution has been added as `scipy.stats.multivariate_t`.
 - The multivariate hypergeometric distribution has been added as `scipy.stats.multivariate_hypergeom`.
 
 The ``fit`` method has been overridden for several distributions (``laplace``,
-``pareto``, ``rayleigh``, ``invgauss``, ``logistic``, ``gumbel_l``, 
-``gumbel_r``); they now use analytical, distribution-specific maximum 
-likelihood estimation results for greater speed and accuracy than the generic 
+``pareto``, ``rayleigh``, ``invgauss``, ``logistic``, ``gumbel_l``,
+``gumbel_r``); they now use analytical, distribution-specific maximum
+likelihood estimation results for greater speed and accuracy than the generic
 (numerical optimization) implementation.
 
-The one-sample Cramér-von Mises test has been added as 
+The one-sample Cramér-von Mises test has been added as
 `scipy.stats.cramervonmises`.
 
-An option to compute one-sided p-values was added to `scipy.stats.ttest_1samp`, 
-`scipy.stats.ttest_ind_from_stats`, `scipy.stats.ttest_ind` and 
+An option to compute one-sided p-values was added to `scipy.stats.ttest_1samp`,
+`scipy.stats.ttest_ind_from_stats`, `scipy.stats.ttest_ind` and
 `scipy.stats.ttest_rel`.
 
-The function `scipy.stats.kendalltau` now has an option to compute Kendall's 
+The function `scipy.stats.kendalltau` now has an option to compute Kendall's
 tau-c (also known as Stuart's tau-c), and support has been added for exact
 p-value calculations for sample sizes ``> 171``.
 
-`stats.trapz` was renamed to `stats.trapezoid`, with the former name retained 
+`stats.trapz` was renamed to `stats.trapezoid`, with the former name retained
 as an alias for backwards compatibility reasons.
 
-The function `scipy.stats.linregress` now includes the standard error of the 
+The function `scipy.stats.linregress` now includes the standard error of the
 intercept in its return value.
 
 The ``_logpdf``, ``_sf``, and ``_isf`` methods have been added to
@@ -258,8 +258,8 @@ for improved precision.
 `scipy.stats.binned_statistic_dd` performance improvements for the following
 computed statistics: ``max``, ``min``, ``median``, and ``std``.
 
-We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source 
-Software for Science program for supporting many of these improvements to 
+We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source
+Software for Science program for supporting many of these improvements to
 `scipy.stats`.
 
 Deprecated features
@@ -267,10 +267,10 @@ Deprecated features
 
 `scipy.spatial` changes
 -----------------------
-Calling ``KDTree.query`` with ``k=None`` to find all neighbours is deprecated. 
+Calling ``KDTree.query`` with ``k=None`` to find all neighbours is deprecated.
 Use ``KDTree.query_ball_point`` instead.
 
-``distance.wminkowski`` was deprecated; use ``distance.minkowski`` and supply 
+``distance.wminkowski`` was deprecated; use ``distance.minkowski`` and supply
 weights with the ``w`` keyword instead.
 
 Backwards incompatible changes
@@ -278,8 +278,8 @@ Backwards incompatible changes
 
 `scipy` changes
 ---------------
-Using `scipy.fft` as a function aliasing ``numpy.fft.fft`` was removed after 
-being deprecated in SciPy ``1.4.0``. As a result, the `scipy.fft` submodule 
+Using `scipy.fft` as a function aliasing ``numpy.fft.fft`` was removed after
+being deprecated in SciPy ``1.4.0``. As a result, the `scipy.fft` submodule
 must be explicitly imported now, in line with other SciPy subpackages.
 
 `scipy.interpolate` changes
@@ -290,10 +290,10 @@ must be explicitly imported now, in line with other SciPy subpackages.
 
 `scipy.signal` changes
 ----------------------
-The output of ``decimate``, ``lfilter_zi``, ``lfiltic``, ``sos2tf``, and 
-``sosfilt_zi`` have been changed to match ``numpy.result_type`` of their inputs. 
+The output of ``decimate``, ``lfilter_zi``, ``lfiltic``, ``sos2tf``, and
+``sosfilt_zi`` have been changed to match ``numpy.result_type`` of their inputs.
 
-The window function ``slepian`` was removed. It had been deprecated since SciPy 
+The window function ``slepian`` was removed. It had been deprecated since SciPy
 ``1.1``.
 
 `scipy.spatial` changes
@@ -304,22 +304,22 @@ making behaviour consistent between platforms (PR gh-12673).
 
 `scipy.stats` changes
 ---------------------
-The ``frechet_l`` and ``frechet_r`` distributions were removed. They were 
+The ``frechet_l`` and ``frechet_r`` distributions were removed. They were
 deprecated since SciPy ``1.0``.
 
 Other changes
 =============
-``setup_requires`` was removed from ``setup.py``. This means that users 
-invoking ``python setup.py install`` without having numpy already installed 
-will now get an error, rather than having numpy installed for them via 
-``easy_install``. This install method was always fragile and problematic, users 
+``setup_requires`` was removed from ``setup.py``. This means that users
+invoking ``python setup.py install`` without having numpy already installed
+will now get an error, rather than having numpy installed for them via
+``easy_install``. This install method was always fragile and problematic, users
 are encouraged to use ``pip`` when installing from source.
 
-- Fixed a bug in `scipy.optimize.dual_annealing` ``accept_reject`` calculation 
+- Fixed a bug in `scipy.optimize.dual_annealing` ``accept_reject`` calculation
   that caused uphill jumps to be accepted less frequently.
-- The time required for (un)pickling of `scipy.stats.rv_continuous`, 
+- The time required for (un)pickling of `scipy.stats.rv_continuous`,
   `scipy.stats.rv_discrete`, and `scipy.stats.rv_frozen` has been significantly
-  reduced (gh12550). Inheriting subclasses should note that ``__setstate__`` no 
+  reduced (gh12550). Inheriting subclasses should note that ``__setstate__`` no
   longer calls ``__init__`` upon unpickling.
 
 Authors

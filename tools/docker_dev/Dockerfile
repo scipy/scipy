@@ -1,12 +1,12 @@
-# 
-# Dockerfile for Scipy development 
-# 
-# Usage: 
+#
+# Dockerfile for Scipy development
+#
+# Usage:
 # -------
-# 
+#
 # To make a local build of the container, from the 'Docker-dev' directory:
-# docker build  --rm -f "Dockerfile" -t <build-tag> "."    
-# 
+# docker build  --rm -f "Dockerfile" -t <build-tag> "."
+#
 # To use the container use the following command. It assumes that you are in
 # the root folder of the scipy git repository, making it available as
 # /home/scipy in the container. Whatever changes you make to that directory
@@ -14,15 +14,15 @@
 # The docker image is retrieved from the scipy dockerhub repository
 #
 # docker run --rm -it -v $(pwd):/home/scipy scipy:<image-tag>
-# 
+#
 # By default the container will activate the conda environment scipy-dev
 # which contains all the dependencies needed for SciPy development
-# 
+#
 # To build Scipy run: python setup.py build_ext --inplace
 # Followed by conda develop . if you need to build the docs
 #
 # To run the tests use: python runtests.py
-# 
+#
 # This image is based on: Ubuntu 20.04 (focal)
 # https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
 # OS/ARCH: linux/amd64
@@ -43,7 +43,7 @@ ARG conda_version="4.9.2"
 ARG miniforge_patch_number="5"
 # Miniforge installer architecture
 ARG miniforge_arch="x86_64"
-# Python implementation to use 
+# Python implementation to use
 # can be either Miniforge3 to use Python or Miniforge-pypy3 to use PyPy
 ARG miniforge_python="Miniforge3"
 
@@ -64,12 +64,12 @@ ENV CONDA_DIR=/opt/conda \
     SHELL=/bin/bash  \
     GP_USER=gitpod \
     GP_GROUP=gitpod \
-    GP_UID=33333 
+    GP_UID=33333
 
 ENV CONDA_VERSION="${conda_version}" \
     MINIFORGE_VERSION="${miniforge_version}" \
     CONDA_ENV=scipy-dev \
-    PATH=${CONDA_DIR}/bin:$PATH 
+    PATH=${CONDA_DIR}/bin:$PATH
 
 # -----------------------------------------------------------------------------
 # ---- OS dependencies ----
@@ -81,7 +81,7 @@ USER root
 SHELL ["/bin/bash", "--login", "-o", "pipefail", "-c"]
 
 # hadolint ignore=DL3008
-RUN apt-get update && \ 
+RUN apt-get update && \
     apt-get install -yq --no-install-recommends \
     ca-certificates \
     ccache \
@@ -92,10 +92,10 @@ RUN apt-get update && \
     vim \
     wget && \
     # this needs to be done after installing dirmngr
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \ 
-    apt-add-repository https://cli.github.com/packages && \ 
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \
+    apt-add-repository https://cli.github.com/packages && \
     apt-get install -yq --no-install-recommends \
-    gh && \ 
+    gh && \
     locale-gen en_US.UTF-8 && \
     apt-get clean && \
     rm -rf /var/cache/apt/* &&\
@@ -104,13 +104,13 @@ RUN apt-get update && \
 
 # -----------------------------------------------------------------------------
 # ---- Copy needed files ----
-# Copy multiple scripts - fix directory permissions and 
+# Copy multiple scripts - fix directory permissions and
 # basic workspace configurations
 COPY ./tools/docker_dev/workspace_config /usr/local/bin/workspace_config
 COPY ./tools/docker_dev/fix_permissions /usr/local/bin/fix_permissions
 
 RUN chmod a+rx /usr/local/bin/workspace_config && \
-    chmod a+rx /usr/local/bin/fix_permissions 
+    chmod a+rx /usr/local/bin/fix_permissions
 
 # -----------------------------------------------------------------------------
 RUN mkdir -p "${CONDA_DIR}" && \
@@ -134,7 +134,7 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     conda config --system --set auto_update_conda false && \
     conda config --system --set show_channel_urls true && \
     # This allows to change the Python version installed by passing the arg `PYTHON_VERSION` at build time
-    # then version is added to conda-meta/pinned 
+    # then version is added to conda-meta/pinned
     if [ ! $PYTHON_VERSION = 'default' ]; then conda install --yes python=$PYTHON_VERSION; fi && \
     conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> $CONDA_DIR/conda-meta/pinned && \
     conda install --quiet --yes \
@@ -147,7 +147,7 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
 
 # -----------------------------------------------------------------------------
 # ---- Create conda environment ----
-# Install SciPy dependencies - since using miniforge no need to add 
+# Install SciPy dependencies - since using miniforge no need to add
 # conda-forge channel
 COPY environment.yml /tmp/environment.yml
 
@@ -160,7 +160,7 @@ RUN conda env create -f /tmp/environment.yml && \
     sudo rm -rf /tmp/* && \
     conda clean --all -f -y && \
     # for good measure after installing things
-    fix_permissions ${CONDA_DIR} 
+    fix_permissions ${CONDA_DIR}
 
 # -----------------------------------------------------------------------------
 USER ${GP_USER}

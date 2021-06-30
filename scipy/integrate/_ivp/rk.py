@@ -1,7 +1,13 @@
 import numpy as np
 from .base import OdeSolver, DenseOutput
-from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, warn_extraneous, validate_first_step)
+from .common import (
+    validate_max_step,
+    validate_tol,
+    select_initial_step,
+    norm,
+    warn_extraneous,
+    validate_first_step,
+)
 from . import dop853_coefficients
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
@@ -73,6 +79,7 @@ def rk_step(fun, t, y, f, h, A, B, C, K):
 
 class RungeKutta(OdeSolver):
     """Base class for explicit Runge-Kutta methods."""
+
     C: np.ndarray = NotImplemented
     A: np.ndarray = NotImplemented
     B: np.ndarray = NotImplemented
@@ -82,20 +89,36 @@ class RungeKutta(OdeSolver):
     error_estimator_order: int = NotImplemented
     n_stages: int = NotImplemented
 
-    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, vectorized=False,
-                 first_step=None, **extraneous):
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        max_step=np.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        vectorized=False,
+        first_step=None,
+        **extraneous,
+    ):
         warn_extraneous(extraneous)
-        super().__init__(fun, t0, y0, t_bound, vectorized,
-                         support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized, support_complex=True)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         self.f = self.fun(self.t, self.y)
         if first_step is None:
             self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, self.f, self.direction,
-                self.error_estimator_order, self.rtol, self.atol)
+                self.fun,
+                self.t,
+                self.y,
+                self.f,
+                self.direction,
+                self.error_estimator_order,
+                self.rtol,
+                self.atol,
+            )
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
@@ -141,8 +164,9 @@ class RungeKutta(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            y_new, f_new = rk_step(self.fun, t, y, self.f, h, self.A,
-                                   self.B, self.C, self.K)
+            y_new, f_new = rk_step(
+                self.fun, t, y, self.f, h, self.A, self.B, self.C, self.K
+            )
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = self._estimate_error_norm(self.K, h, scale)
 
@@ -150,8 +174,7 @@ class RungeKutta(OdeSolver):
                 if error_norm == 0:
                     factor = MAX_FACTOR
                 else:
-                    factor = min(MAX_FACTOR,
-                                 SAFETY * error_norm ** self.error_exponent)
+                    factor = min(MAX_FACTOR, SAFETY * error_norm ** self.error_exponent)
 
                 if step_rejected:
                     factor = min(1, factor)
@@ -160,8 +183,7 @@ class RungeKutta(OdeSolver):
 
                 step_accepted = True
             else:
-                h_abs *= max(MIN_FACTOR,
-                             SAFETY * error_norm ** self.error_exponent)
+                h_abs *= max(MIN_FACTOR, SAFETY * error_norm ** self.error_exponent)
                 step_rejected = True
 
         self.h_previous = h
@@ -256,21 +278,15 @@ class RK23(RungeKutta):
     .. [1] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
+
     order = 3
     error_estimator_order = 2
     n_stages = 3
-    C = np.array([0, 1/2, 3/4])
-    A = np.array([
-        [0, 0, 0],
-        [1/2, 0, 0],
-        [0, 3/4, 0]
-    ])
-    B = np.array([2/9, 1/3, 4/9])
-    E = np.array([5/72, -1/12, -1/9, 1/8])
-    P = np.array([[1, -4 / 3, 5 / 9],
-                  [0, 1, -2/3],
-                  [0, 4/3, -8/9],
-                  [0, -1, 1]])
+    C = np.array([0, 1 / 2, 3 / 4])
+    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
+    B = np.array([2 / 9, 1 / 3, 4 / 9])
+    E = np.array([5 / 72, -1 / 12, -1 / 9, 1 / 8])
+    P = np.array([[1, -4 / 3, 5 / 9], [0, 1, -2 / 3], [0, 4 / 3, -8 / 9], [0, -1, 1]])
 
 
 class RK45(RungeKutta):
@@ -352,34 +368,62 @@ class RK45(RungeKutta):
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     """
+
     order = 5
     error_estimator_order = 4
     n_stages = 6
-    C = np.array([0, 1/5, 3/10, 4/5, 8/9, 1])
-    A = np.array([
-        [0, 0, 0, 0, 0],
-        [1/5, 0, 0, 0, 0],
-        [3/40, 9/40, 0, 0, 0],
-        [44/45, -56/15, 32/9, 0, 0],
-        [19372/6561, -25360/2187, 64448/6561, -212/729, 0],
-        [9017/3168, -355/33, 46732/5247, 49/176, -5103/18656]
-    ])
-    B = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84])
-    E = np.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525,
-                  1/40])
+    C = np.array([0, 1 / 5, 3 / 10, 4 / 5, 8 / 9, 1])
+    A = np.array(
+        [
+            [0, 0, 0, 0, 0],
+            [1 / 5, 0, 0, 0, 0],
+            [3 / 40, 9 / 40, 0, 0, 0],
+            [44 / 45, -56 / 15, 32 / 9, 0, 0],
+            [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729, 0],
+            [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656],
+        ]
+    )
+    B = np.array([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84])
+    E = np.array(
+        [-71 / 57600, 0, 71 / 16695, -71 / 1920, 17253 / 339200, -22 / 525, 1 / 40]
+    )
     # Corresponds to the optimum value of c_6 from [2]_.
-    P = np.array([
-        [1, -8048581381/2820520608, 8663915743/2820520608,
-         -12715105075/11282082432],
-        [0, 0, 0, 0],
-        [0, 131558114200/32700410799, -68118460800/10900136933,
-         87487479700/32700410799],
-        [0, -1754552775/470086768, 14199869525/1410260304,
-         -10690763975/1880347072],
-        [0, 127303824393/49829197408, -318862633887/49829197408,
-         701980252875 / 199316789632],
-        [0, -282668133/205662961, 2019193451/616988883, -1453857185/822651844],
-        [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]])
+    P = np.array(
+        [
+            [
+                1,
+                -8048581381 / 2820520608,
+                8663915743 / 2820520608,
+                -12715105075 / 11282082432,
+            ],
+            [0, 0, 0, 0],
+            [
+                0,
+                131558114200 / 32700410799,
+                -68118460800 / 10900136933,
+                87487479700 / 32700410799,
+            ],
+            [
+                0,
+                -1754552775 / 470086768,
+                14199869525 / 1410260304,
+                -10690763975 / 1880347072,
+            ],
+            [
+                0,
+                127303824393 / 49829197408,
+                -318862633887 / 49829197408,
+                701980252875 / 199316789632,
+            ],
+            [
+                0,
+                -282668133 / 205662961,
+                2019193451 / 616988883,
+                -1453857185 / 822651844,
+            ],
+            [0, 40617522 / 29380423, -110615467 / 29380423, 69997945 / 29380423],
+        ]
+    )
 
 
 class DOP853(RungeKutta):
@@ -460,6 +504,7 @@ class DOP853(RungeKutta):
     .. [2] `Page with original Fortran code of DOP853
             <http://www.unige.ch/~hairer/software.html>`_.
     """
+
     n_stages = dop853_coefficients.N_STAGES
     order = 8
     error_estimator_order = 7
@@ -470,17 +515,38 @@ class DOP853(RungeKutta):
     E5 = dop853_coefficients.E5
     D = dop853_coefficients.D
 
-    A_EXTRA = dop853_coefficients.A[n_stages + 1:]
-    C_EXTRA = dop853_coefficients.C[n_stages + 1:]
+    A_EXTRA = dop853_coefficients.A[n_stages + 1 :]
+    C_EXTRA = dop853_coefficients.C[n_stages + 1 :]
 
-    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, vectorized=False,
-                 first_step=None, **extraneous):
-        super().__init__(fun, t0, y0, t_bound, max_step, rtol, atol,
-                         vectorized, first_step, **extraneous)
-        self.K_extended = np.empty((dop853_coefficients.N_STAGES_EXTENDED,
-                                    self.n), dtype=self.y.dtype)
-        self.K = self.K_extended[:self.n_stages + 1]
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        max_step=np.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        vectorized=False,
+        first_step=None,
+        **extraneous,
+    ):
+        super().__init__(
+            fun,
+            t0,
+            y0,
+            t_bound,
+            max_step,
+            rtol,
+            atol,
+            vectorized,
+            first_step,
+            **extraneous,
+        )
+        self.K_extended = np.empty(
+            (dop853_coefficients.N_STAGES_EXTENDED, self.n), dtype=self.y.dtype
+        )
+        self.K = self.K_extended[: self.n_stages + 1]
 
     def _estimate_error(self, K, h):  # Left for testing purposes.
         err5 = np.dot(K.T, self.E5)
@@ -494,8 +560,8 @@ class DOP853(RungeKutta):
     def _estimate_error_norm(self, K, h, scale):
         err5 = np.dot(K.T, self.E5) / scale
         err3 = np.dot(K.T, self.E3) / scale
-        err5_norm_2 = np.linalg.norm(err5)**2
-        err3_norm_2 = np.linalg.norm(err3)**2
+        err5_norm_2 = np.linalg.norm(err5) ** 2
+        err3_norm_2 = np.linalg.norm(err3) ** 2
         if err5_norm_2 == 0 and err3_norm_2 == 0:
             return 0.0
         denom = err5_norm_2 + 0.01 * err3_norm_2
@@ -504,13 +570,15 @@ class DOP853(RungeKutta):
     def _dense_output_impl(self):
         K = self.K_extended
         h = self.h_previous
-        for s, (a, c) in enumerate(zip(self.A_EXTRA, self.C_EXTRA),
-                                   start=self.n_stages + 1):
+        for s, (a, c) in enumerate(
+            zip(self.A_EXTRA, self.C_EXTRA), start=self.n_stages + 1
+        ):
             dy = np.dot(K[:s].T, a[:s]) * h
             K[s] = self.fun(self.t_old + c * h, self.y_old + dy)
 
-        F = np.empty((dop853_coefficients.INTERPOLATOR_POWER, self.n),
-                     dtype=self.y_old.dtype)
+        F = np.empty(
+            (dop853_coefficients.INTERPOLATOR_POWER, self.n), dtype=self.y_old.dtype
+        )
 
         f_old = K[0]
         delta_y = self.y - self.y_old

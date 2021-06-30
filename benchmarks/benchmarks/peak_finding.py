@@ -16,7 +16,7 @@ class FindPeaks(Benchmark):
     the actual speed of the underlying maxima finding function.
     """
 
-    param_names = ['distance']
+    param_names = ["distance"]
     params = [[None, 8, 64, 512, 4096]]
 
     def setup(self, distance):
@@ -29,7 +29,7 @@ class FindPeaks(Benchmark):
 class PeakProminences(Benchmark):
     """Benchmark `scipy.signal.peak_prominences`."""
 
-    param_names = ['wlen']
+    param_names = ["wlen"]
     params = [[None, 8, 64, 512, 4096]]
 
     def setup(self, wlen):
@@ -43,7 +43,7 @@ class PeakProminences(Benchmark):
 class PeakWidths(Benchmark):
     """Benchmark `scipy.signal.peak_widths`."""
 
-    param_names = ['rel_height']
+    param_names = ["rel_height"]
     params = [[0, 0.25, 0.5, 0.75, 1]]
 
     def setup(self, rel_height):

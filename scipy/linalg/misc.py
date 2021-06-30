@@ -3,7 +3,7 @@ from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 
-__all__ = ['LinAlgError', 'LinAlgWarning', 'norm']
+__all__ = ["LinAlgError", "LinAlgWarning", "norm"]
 
 
 class LinAlgWarning(RuntimeWarning):
@@ -11,6 +11,7 @@ class LinAlgWarning(RuntimeWarning):
     The warning emitted when a linear algebra related operation is close
     to fail conditions of the algorithm or loss of accuracy is expected.
     """
+
     pass
 
 
@@ -146,11 +147,11 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     else:
         a = np.asarray(a)
 
-    if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
+    if a.size and a.dtype.char in "fdFD" and axis is None and not keepdims:
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
-            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='preferred')
+            nrm2 = get_blas_funcs("nrm2", dtype=a.dtype, ilp64="preferred")
             return nrm2(a)
 
         if a.ndim == 2:
@@ -161,16 +162,16 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
             # to apply the norm to the transpose.
             if ord == 1:
                 if np.isfortran(a):
-                    lange_args = '1', a
+                    lange_args = "1", a
                 elif np.isfortran(a.T):
-                    lange_args = 'i', a.T
+                    lange_args = "i", a.T
             elif ord == np.inf:
                 if np.isfortran(a):
-                    lange_args = 'i', a
+                    lange_args = "i", a
                 elif np.isfortran(a.T):
-                    lange_args = '1', a.T
+                    lange_args = "1", a.T
             if lange_args:
-                lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
+                lange = get_lapack_funcs("lange", dtype=a.dtype, ilp64="preferred")
                 return lange(*lange_args)
 
     # fall back to numpy in every other case
@@ -185,6 +186,6 @@ def _datacopied(arr, original):
     """
     if arr is original:
         return False
-    if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
+    if not isinstance(original, np.ndarray) and hasattr(original, "__array__"):
         return False
     return arr.base is None

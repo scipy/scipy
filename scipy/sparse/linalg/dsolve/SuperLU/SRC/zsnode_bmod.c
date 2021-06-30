@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -35,7 +35,7 @@ at the top-level directory.
 #include "slu_zdefs.h"
 
 
-/*! \brief Performs numeric block updates within the relaxed snode. 
+/*! \brief Performs numeric block updates within the relaxed snode.
  */
 int
 zsnode_bmod (
@@ -60,7 +60,7 @@ zsnode_bmod (
 
     doublecomplex   comp_zero = {0.0, 0.0};
     int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
+    int            isub, irow, i, iptr;
     register int   ufirst, nextlu;
     int            *lsub, *xlsub;
     doublecomplex         *lusup;
@@ -73,7 +73,7 @@ zsnode_bmod (
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
-    
+
     /*
      *	Process the supernodal portion of L\U[*,j]
      */
@@ -85,7 +85,7 @@ zsnode_bmod (
     }
 
     xlusup[jcol + 1] = nextlu;	/* Initialize xlusup for next column */
-    
+
     if ( fsupc < jcol ) {
 
 	luptr = xlusup[fsupc];
@@ -100,9 +100,9 @@ zsnode_bmod (
 
 #ifdef USE_VENDOR_BLAS
 #ifdef _CRAY
-	CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr], &nsupr, 
+	CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
-	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
 #if SCIPY_FIX
@@ -111,14 +111,14 @@ zsnode_bmod (
            ABORT("failed to factorize matrix");
        }
 #endif
-	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
-	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #endif
 #else
 	zlsolve ( nsupr, nsupc, &lusup[luptr], &lusup[ufirst] );
-	zmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc], 
+	zmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc],
 			&lusup[ufirst], &tempv[0] );
 
         /* Scatter tempv[*] into lusup[*] */

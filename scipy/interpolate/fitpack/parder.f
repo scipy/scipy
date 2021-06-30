@@ -176,4 +176,3 @@ c  we partition the working space and evaluate the partial derivative
      * x,mx,y,my,z,wrk(iwx),wrk(iwy),iwrk(1),iwrk(mx+1))
  400  return
       end
-

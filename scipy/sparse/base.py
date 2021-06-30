@@ -1,12 +1,24 @@
 """Base class for sparse matrices"""
 import numpy as np
 
-from .sputils import (isdense, isscalarlike, isintlike,
-                      get_sum_dtype, validateaxis, check_reshape_kwargs,
-                      check_shape, asmatrix)
+from .sputils import (
+    isdense,
+    isscalarlike,
+    isintlike,
+    get_sum_dtype,
+    validateaxis,
+    check_reshape_kwargs,
+    check_shape,
+    asmatrix,
+)
 
-__all__ = ['spmatrix', 'isspmatrix', 'issparse',
-           'SparseWarning', 'SparseEfficiencyWarning']
+__all__ = [
+    "spmatrix",
+    "isspmatrix",
+    "issparse",
+    "SparseWarning",
+    "SparseEfficiencyWarning",
+]
 
 
 class SparseWarning(Warning):
@@ -22,41 +34,60 @@ class SparseEfficiencyWarning(SparseWarning):
 
 
 # The formats that we might potentially understand.
-_formats = {'csc': [0, "Compressed Sparse Column"],
-            'csr': [1, "Compressed Sparse Row"],
-            'dok': [2, "Dictionary Of Keys"],
-            'lil': [3, "List of Lists"],
-            'dod': [4, "Dictionary of Dictionaries"],
-            'sss': [5, "Symmetric Sparse Skyline"],
-            'coo': [6, "COOrdinate"],
-            'lba': [7, "Linpack BAnded"],
-            'egd': [8, "Ellpack-itpack Generalized Diagonal"],
-            'dia': [9, "DIAgonal"],
-            'bsr': [10, "Block Sparse Row"],
-            'msr': [11, "Modified compressed Sparse Row"],
-            'bsc': [12, "Block Sparse Column"],
-            'msc': [13, "Modified compressed Sparse Column"],
-            'ssk': [14, "Symmetric SKyline"],
-            'nsk': [15, "Nonsymmetric SKyline"],
-            'jad': [16, "JAgged Diagonal"],
-            'uss': [17, "Unsymmetric Sparse Skyline"],
-            'vbr': [18, "Variable Block Row"],
-            'und': [19, "Undefined"]
-            }
+_formats = {
+    "csc": [0, "Compressed Sparse Column"],
+    "csr": [1, "Compressed Sparse Row"],
+    "dok": [2, "Dictionary Of Keys"],
+    "lil": [3, "List of Lists"],
+    "dod": [4, "Dictionary of Dictionaries"],
+    "sss": [5, "Symmetric Sparse Skyline"],
+    "coo": [6, "COOrdinate"],
+    "lba": [7, "Linpack BAnded"],
+    "egd": [8, "Ellpack-itpack Generalized Diagonal"],
+    "dia": [9, "DIAgonal"],
+    "bsr": [10, "Block Sparse Row"],
+    "msr": [11, "Modified compressed Sparse Row"],
+    "bsc": [12, "Block Sparse Column"],
+    "msc": [13, "Modified compressed Sparse Column"],
+    "ssk": [14, "Symmetric SKyline"],
+    "nsk": [15, "Nonsymmetric SKyline"],
+    "jad": [16, "JAgged Diagonal"],
+    "uss": [17, "Unsymmetric Sparse Skyline"],
+    "vbr": [18, "Variable Block Row"],
+    "und": [19, "Undefined"],
+}
 
 
 # These univariate ufuncs preserve zeros.
-_ufuncs_with_fixed_point_at_zero = frozenset([
-        np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
-        np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad,
-        np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt])
+_ufuncs_with_fixed_point_at_zero = frozenset(
+    [
+        np.sin,
+        np.tan,
+        np.arcsin,
+        np.arctan,
+        np.sinh,
+        np.tanh,
+        np.arcsinh,
+        np.arctanh,
+        np.rint,
+        np.sign,
+        np.expm1,
+        np.log1p,
+        np.deg2rad,
+        np.rad2deg,
+        np.floor,
+        np.ceil,
+        np.trunc,
+        np.sqrt,
+    ]
+)
 
 
 MAXPRINT = 50
 
 
 class spmatrix:
-    """ This class provides a base class for all sparse matrices.  It
+    """This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
@@ -65,9 +96,8 @@ class spmatrix:
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == 'spmatrix':
-            raise ValueError("This class is not intended"
-                             " to be instantiated directly.")
+        if self.__class__.__name__ == "spmatrix":
+            raise ValueError("This class is not intended to be instantiated directly.")
         self.maxprint = maxprint
 
     def set_shape(self, shape):
@@ -151,9 +181,10 @@ class spmatrix:
         """
         # As an inplace operation, this requires implementation in each format.
         raise NotImplementedError(
-            '{}.resize is not implemented'.format(type(self).__name__))
+            "{}.resize is not implemented".format(type(self).__name__)
+        )
 
-    def astype(self, dtype, casting='unsafe', copy=True):
+    def astype(self, dtype, casting="unsafe", copy=True):
         """Cast the matrix elements to a specified type.
 
         Parameters
@@ -177,8 +208,11 @@ class spmatrix:
 
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
-            return self.tocsr().astype(
-                dtype, casting=casting, copy=copy).asformat(self.format)
+            return (
+                self.tocsr()
+                .astype(dtype, casting=casting, copy=copy)
+                .asformat(self.format)
+            )
         elif copy:
             return self.copy()
         else:
@@ -187,7 +221,7 @@ class spmatrix:
     def asfptype(self):
         """Upcast matrix to a floating point format (if necessary)"""
 
-        fp_types = ['f', 'd', 'F', 'D']
+        fp_types = ["f", "d", "F", "D"]
 
         if self.dtype.char in fp_types:
             return self
@@ -196,8 +230,9 @@ class spmatrix:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                "cannot upcast [%s] to a floating point format" % self.dtype.name
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -216,8 +251,9 @@ class spmatrix:
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
         """
-        raise NotImplementedError("count_nonzero not implemented for %s." %
-                                  self.__class__.__name__)
+        raise NotImplementedError(
+            "count_nonzero not implemented for %s." % self.__class__.__name__
+        )
 
     def getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
@@ -232,8 +268,9 @@ class spmatrix:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        raise NotImplementedError(
+            "getnnz not implemented for %s." % self.__class__.__name__
+        )
 
     @property
     def nnz(self):
@@ -247,13 +284,14 @@ class spmatrix:
 
     def getformat(self):
         """Format of a matrix representation as a string."""
-        return getattr(self, 'format', 'und')
+        return getattr(self, "format", "und")
 
     def __repr__(self):
         _, format_name = _formats[self.getformat()]
-        return "<%dx%d sparse matrix of type '%s'\n" \
-               "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, self.nnz, format_name))
+        return (
+            "<%dx%d sparse matrix of type '%s'\n\twith %d stored elements in %s format>"
+            % (self.shape + (self.dtype.type, self.nnz, format_name))
+        )
 
     def __str__(self):
         maxprint = self.getmaxprint()
@@ -263,13 +301,13 @@ class spmatrix:
         # helper function, outputs "(i,j)  v"
         def tostr(row, col, data):
             triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  %s\t%s' % t) for t in triples])
+            return "\n".join([("  %s\t%s" % t) for t in triples])
 
         if self.nnz > maxprint:
             half = maxprint // 2
             out = tostr(A.row[:half], A.col[:half], A.data[:half])
             out += "\n  :\t:\n"
-            half = maxprint - maxprint//2
+            half = maxprint - maxprint // 2
             out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
         else:
             out = tostr(A.row, A.col, A.data)
@@ -280,16 +318,18 @@ class spmatrix:
         if self.shape == (1, 1):
             return self.nnz != 0
         else:
-            raise ValueError("The truth value of an array with more than one "
-                             "element is ambiguous. Use a.any() or a.all().")
+            raise ValueError(
+                "The truth value of an array with more than one "
+                "element is ambiguous. Use a.any() or a.all()."
+            )
+
     __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  But for some uses the number of
     # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
-        raise TypeError("sparse matrix length is ambiguous; use getnnz()"
-                        " or shape[0]")
+        raise TypeError("sparse matrix length is ambiguous; use getnnz() or shape[0]")
 
     def asformat(self, format, copy=False):
         """Return this matrix in the passed format.
@@ -313,9 +353,9 @@ class spmatrix:
                 return self
         else:
             try:
-                convert_method = getattr(self, 'to' + format)
+                convert_method = getattr(self, "to" + format)
             except AttributeError as e:
-                raise ValueError('Format {} is unknown.'.format(format)) from e
+                raise ValueError("Format {} is unknown.".format(format)) from e
 
             # Forward the copy kwarg, if it's accepted.
             try:
@@ -331,8 +371,7 @@ class spmatrix:
     ####################################################################
 
     def multiply(self, other):
-        """Point-wise multiplication by another matrix
-        """
+        """Point-wise multiplication by another matrix"""
         return self.tocsr().multiply(other)
 
     def maximum(self, other):
@@ -407,8 +446,9 @@ class spmatrix:
             if other == 0:
                 return self.copy()
             # Now we would add this scalar to every element.
-            raise NotImplementedError('adding a nonzero scalar to a '
-                                      'sparse matrix is not supported')
+            raise NotImplementedError(
+                "adding a nonzero scalar to a sparse matrix is not supported"
+            )
         elif isspmatrix(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
@@ -419,15 +459,16 @@ class spmatrix:
         else:
             return NotImplemented
 
-    def __radd__(self,other):  # other + self
+    def __radd__(self, other):  # other + self
         return self.__add__(other)
 
     def __sub__(self, other):  # self - other
         if isscalarlike(other):
             if other == 0:
                 return self.copy()
-            raise NotImplementedError('subtracting a nonzero scalar from a '
-                                      'sparse matrix is not supported')
+            raise NotImplementedError(
+                "subtracting a nonzero scalar from a sparse matrix is not supported"
+            )
         elif isspmatrix(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
@@ -438,12 +479,13 @@ class spmatrix:
         else:
             return NotImplemented
 
-    def __rsub__(self,other):  # other - self
+    def __rsub__(self, other):  # other - self
         if isscalarlike(other):
             if other == 0:
                 return -self.copy()
-            raise NotImplementedError('subtracting a sparse matrix from a '
-                                      'nonzero scalar is not supported')
+            raise NotImplementedError(
+                "subtracting a sparse matrix from a nonzero scalar is not supported"
+            )
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
             return self._rsub_dense(other)
@@ -476,7 +518,7 @@ class spmatrix:
 
         if issparse(other):
             if self.shape[1] != other.shape[0]:
-                raise ValueError('dimension mismatch')
+                raise ValueError("dimension mismatch")
             return self._mul_sparse_matrix(other)
 
         # If it's a list or whatever, treat it like a matrix
@@ -495,7 +537,7 @@ class spmatrix:
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
             if other.shape != (N,) and other.shape != (N, 1):
-                raise ValueError('dimension mismatch')
+                raise ValueError("dimension mismatch")
 
             result = self._mul_vector(np.ravel(other))
 
@@ -513,7 +555,7 @@ class spmatrix:
             # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != self.shape[1]:
-                raise ValueError('dimension mismatch')
+                raise ValueError("dimension mismatch")
 
             result = self._mul_multivector(np.asarray(other))
 
@@ -523,7 +565,7 @@ class spmatrix:
             return result
 
         else:
-            raise ValueError('could not interpret dimensions')
+            raise ValueError("could not interpret dimensions")
 
     # by default, use CSR for __mul__ handlers
     def _mul_scalar(self, other):
@@ -555,14 +597,12 @@ class spmatrix:
 
     def __matmul__(self, other):
         if isscalarlike(other):
-            raise ValueError("Scalar operands are not allowed, "
-                             "use '*' instead")
+            raise ValueError("Scalar operands are not allowed, use '*' instead")
         return self.__mul__(other)
 
     def __rmatmul__(self, other):
         if isscalarlike(other):
-            raise ValueError("Scalar operands are not allowed, "
-                             "use '*' instead")
+            raise ValueError("Scalar operands are not allowed, use '*' instead")
         return self.__rmul__(other)
 
     ####################
@@ -578,13 +618,14 @@ class spmatrix:
                     return np.divide(other, self.todense())
 
             if true_divide and np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_)._mul_scalar(1./other)
+                return self.astype(np.float_)._mul_scalar(1.0 / other)
             else:
-                r = self._mul_scalar(1./other)
+                r = self._mul_scalar(1.0 / other)
 
                 scalar_dtype = np.asarray(other).dtype
-                if (np.issubdtype(self.dtype, np.integer) and
-                        np.issubdtype(scalar_dtype, np.integer)):
+                if np.issubdtype(self.dtype, np.integer) and np.issubdtype(
+                    scalar_dtype, np.integer
+                ):
                     return r.astype(self.dtype)
                 else:
                     return r
@@ -647,41 +688,42 @@ class spmatrix:
 
     def __pow__(self, other):
         if self.shape[0] != self.shape[1]:
-            raise TypeError('matrix is not square')
+            raise TypeError("matrix is not square")
 
         if isintlike(other):
             other = int(other)
             if other < 0:
-                raise ValueError('exponent must be >= 0')
+                raise ValueError("exponent must be >= 0")
 
             if other == 0:
                 from .construct import eye
+
                 return eye(self.shape[0], dtype=self.dtype)
             elif other == 1:
                 return self.copy()
             else:
-                tmp = self.__pow__(other//2)
-                if (other % 2):
+                tmp = self.__pow__(other // 2)
+                if other % 2:
                     return self * tmp * tmp
                 else:
                     return tmp * tmp
         elif isscalarlike(other):
-            raise ValueError('exponent must be an integer')
+            raise ValueError("exponent must be an integer")
         else:
             return NotImplemented
 
     def __getattr__(self, attr):
-        if attr == 'A':
+        if attr == "A":
             return self.toarray()
-        elif attr == 'T':
+        elif attr == "T":
             return self.transpose()
-        elif attr == 'H':
+        elif attr == "H":
             return self.getH()
-        elif attr == 'real':
+        elif attr == "real":
             return self._real()
-        elif attr == 'imag':
+        elif attr == "imag":
             return self._imag()
-        elif attr == 'size':
+        elif attr == "size":
             return self.getnnz()
         else:
             raise AttributeError(attr + " not found")
@@ -785,13 +827,13 @@ class spmatrix:
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
         from .csc import csc_matrix
+
         n = self.shape[1]
         if j < 0:
             j += n
         if j < 0 or j >= n:
             raise IndexError("index out of bounds")
-        col_selector = csc_matrix(([1], [[j], [0]]),
-                                  shape=(n, 1), dtype=self.dtype)
+        col_selector = csc_matrix(([1], [[j], [0]]), shape=(n, 1), dtype=self.dtype)
         return self * col_selector
 
     def getrow(self, i):
@@ -802,13 +844,13 @@ class spmatrix:
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
         from .csr import csr_matrix
+
         m = self.shape[0]
         if i < 0:
             i += m
         if i < 0 or i >= m:
             raise IndexError("index out of bounds")
-        row_selector = csr_matrix(([1], [[0], [i]]),
-                                  shape=(1, m), dtype=self.dtype)
+        row_selector = csr_matrix(([1], [[0], [i]]), shape=(1, m), dtype=self.dtype)
         return row_selector * self
 
     # The following dunder methods cannot be implemented.
@@ -1015,9 +1057,9 @@ class spmatrix:
 
         if axis is None:
             # sum over rows and columns
-            return (self * asmatrix(np.ones(
-                (n, 1), dtype=res_dtype))).sum(
-                dtype=dtype, out=out)
+            return (self * asmatrix(np.ones((n, 1), dtype=res_dtype))).sum(
+                dtype=dtype, out=out
+            )
 
         if axis < 0:
             axis += 2
@@ -1025,12 +1067,10 @@ class spmatrix:
         # axis = 0 or 1 now
         if axis == 0:
             # sum over columns
-            ret = asmatrix(np.ones(
-                (1, m), dtype=res_dtype)) * self
+            ret = asmatrix(np.ones((1, m), dtype=res_dtype)) * self
         else:
             # sum over rows
-            ret = self * asmatrix(
-                np.ones((n, 1), dtype=res_dtype))
+            ret = self * asmatrix(np.ones((n, 1), dtype=res_dtype))
 
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
@@ -1074,9 +1114,9 @@ class spmatrix:
         numpy.matrix.mean : NumPy's implementation of 'mean' for matrices
 
         """
+
         def _is_integral(dtype):
-            return (np.issubdtype(dtype, np.integer) or
-                    np.issubdtype(dtype, np.bool_))
+            return np.issubdtype(dtype, np.integer) or np.issubdtype(dtype, np.bool_)
 
         validateaxis(axis)
 
@@ -1095,9 +1135,9 @@ class spmatrix:
         inter_self = self.astype(inter_dtype)
 
         if axis is None:
-            return (inter_self / np.array(
-                self.shape[0] * self.shape[1]))\
-                .sum(dtype=res_dtype, out=out)
+            return (inter_self / np.array(self.shape[0] * self.shape[1])).sum(
+                dtype=res_dtype, out=out
+            )
 
         if axis < 0:
             axis += 2
@@ -1105,10 +1145,12 @@ class spmatrix:
         # axis = 0 or 1 now
         if axis == 0:
             return (inter_self * (1.0 / self.shape[0])).sum(
-                axis=0, dtype=res_dtype, out=out)
+                axis=0, dtype=res_dtype, out=out
+            )
         else:
             return (inter_self * (1.0 / self.shape[1])).sum(
-                axis=1, dtype=res_dtype, out=out)
+                axis=1, dtype=res_dtype, out=out
+            )
 
     def diagonal(self, k=0):
         """Returns the kth diagonal of the matrix.
@@ -1166,11 +1208,11 @@ class spmatrix:
         if k < 0:
             if values.ndim == 0:
                 # broadcast
-                max_index = min(M+k, N)
+                max_index = min(M + k, N)
                 for i in range(max_index):
                     self[i - k, i] = values
             else:
-                max_index = min(M+k, N, len(values))
+                max_index = min(M + k, N, len(values))
                 if max_index <= 0:
                     return
                 for i, v in enumerate(values[:max_index]):
@@ -1178,11 +1220,11 @@ class spmatrix:
         else:
             if values.ndim == 0:
                 # broadcast
-                max_index = min(M, N-k)
+                max_index = min(M, N - k)
                 for i in range(max_index):
                     self[i, i + k] = values
             else:
-                max_index = min(M, N-k, len(values))
+                max_index = min(M, N - k, len(values))
                 if max_index <= 0:
                     return
                 for i, v in enumerate(values[:max_index]):
@@ -1191,12 +1233,12 @@ class spmatrix:
     def _process_toarray_args(self, order, out):
         if out is not None:
             if order is not None:
-                raise ValueError('order cannot be specified if out '
-                                 'is not None')
+                raise ValueError("order cannot be specified if out is not None")
             if out.shape != self.shape or out.dtype != self.dtype:
-                raise ValueError('out array must be same dtype and shape as '
-                                 'sparse matrix')
-            out[...] = 0.
+                raise ValueError(
+                    "out array must be same dtype and shape as sparse matrix"
+                )
+            out[...] = 0.0
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)

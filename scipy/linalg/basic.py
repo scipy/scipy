@@ -14,32 +14,59 @@ from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
 
-__all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-           'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
+__all__ = [
+    "solve",
+    "solve_triangular",
+    "solveh_banded",
+    "solve_banded",
+    "solve_toeplitz",
+    "solve_circulant",
+    "inv",
+    "det",
+    "lstsq",
+    "pinv",
+    "pinv2",
+    "pinvh",
+    "matrix_balance",
+    "matmul_toeplitz",
+]
 
 
 # Linear equations
 def _solve_check(n, info, lamch=None, rcond=None):
-    """ Check arguments during the different steps of the solution phase """
+    """Check arguments during the different steps of the solution phase"""
     if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         '.'.format(-info))
+        raise ValueError(
+            "LAPACK reported an illegal value in {}-th argument.".format(-info)
+        )
     elif 0 < info:
-        raise LinAlgError('Matrix is singular.')
+        raise LinAlgError("Matrix is singular.")
 
     if lamch is None:
         return
-    E = lamch('E')
+    E = lamch("E")
     if rcond < E:
-        warn('Ill-conditioned matrix (rcond={:.6g}): '
-             'result may not be accurate.'.format(rcond),
-             LinAlgWarning, stacklevel=3)
+        warn(
+            "Ill-conditioned matrix (rcond={:.6g}): result may not be accurate.".format(
+                rcond
+            ),
+            LinAlgWarning,
+            stacklevel=3,
+        )
 
 
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
-          transposed=False):
+def solve(
+    a,
+    b,
+    sym_pos=False,
+    lower=False,
+    overwrite_a=False,
+    overwrite_b=False,
+    debug=None,
+    check_finite=True,
+    assume_a="gen",
+    transposed=False,
+):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
     for square ``a`` matrix.
@@ -142,13 +169,12 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input a needs to be a square matrix.')
+        raise ValueError("Input a needs to be a square matrix.")
 
     if n != b1.shape[0]:
         # Last chance to catch 1x1 scalar a and 1-D b arrays
         if not (n == 1 and b1.size != 0):
-            raise ValueError('Input b has to have same number of rows as '
-                             'input a')
+            raise ValueError("Input b has to have same number of rows as input a")
 
     # accommodate empty arrays
     if b1.size == 0:
@@ -164,35 +190,38 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Backwards compatibility - old keyword.
     if sym_pos:
-        assume_a = 'pos'
+        assume_a = "pos"
 
-    if assume_a not in ('gen', 'sym', 'her', 'pos'):
-        raise ValueError('{} is not a recognized matrix structure'
-                         ''.format(assume_a))
+    if assume_a not in ("gen", "sym", "her", "pos"):
+        raise ValueError("{} is not a recognized matrix structure".format(assume_a))
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
     # (lapack doesn't know what to do with real hermitian matrices)
-    if assume_a == 'her' and not np.iscomplexobj(a1):
-        assume_a = 'sym'
+    if assume_a == "her" and not np.iscomplexobj(a1):
+        assume_a = "sym"
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
+        warn(
+            'Use of the "debug" keyword is deprecated '
+            "and this keyword will be removed in future "
+            "versions of SciPy.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
     # So for complex values we have to convert to real/double.
-    if a1.dtype.char in 'fF':  # single precision
-        lamch = get_lapack_funcs('lamch', dtype='f')
+    if a1.dtype.char in "fF":  # single precision
+        lamch = get_lapack_funcs("lamch", dtype="f")
     else:
-        lamch = get_lapack_funcs('lamch', dtype='d')
+        lamch = get_lapack_funcs("lamch", dtype="d")
 
     # Currently we do not have the other forms of the norm calculators
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
-    lange = get_lapack_funcs('lange', (a1,))
+    lange = get_lapack_funcs("lange", (a1,))
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -200,56 +229,65 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     # the I-norm should be used
     if transposed:
         trans = 1
-        norm = 'I'
+        norm = "I"
         if np.iscomplexobj(a1):
-            raise NotImplementedError('scipy.linalg.solve can currently '
-                                      'not solve a^T x = b or a^H x = b '
-                                      'for complex matrices.')
+            raise NotImplementedError(
+                "scipy.linalg.solve can currently "
+                "not solve a^T x = b or a^H x = b "
+                "for complex matrices."
+            )
     else:
         trans = 0
-        norm = '1'
+        norm = "1"
 
     anorm = lange(norm, a1)
 
     # Generalized case 'gesv'
-    if assume_a == 'gen':
-        gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
-                                               (a1, b1))
+    if assume_a == "gen":
+        gecon, getrf, getrs = get_lapack_funcs(("gecon", "getrf", "getrs"), (a1, b1))
         lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
         _solve_check(n, info)
-        x, info = getrs(lu, ipvt, b1,
-                        trans=trans, overwrite_b=overwrite_b)
+        x, info = getrs(lu, ipvt, b1, trans=trans, overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = gecon(lu, anorm, norm=norm)
     # Hermitian case 'hesv'
-    elif assume_a == 'her':
-        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
-                                                 'hesv_lwork'), (a1, b1))
+    elif assume_a == "her":
+        hecon, hesv, hesv_lw = get_lapack_funcs(
+            ("hecon", "hesv", "hesv_lwork"), (a1, b1)
+        )
         lwork = _compute_lwork(hesv_lw, n, lower)
-        lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
+        lu, ipvt, x, info = hesv(
+            a1,
+            b1,
+            lwork=lwork,
+            lower=lower,
+            overwrite_a=overwrite_a,
+            overwrite_b=overwrite_b,
+        )
         _solve_check(n, info)
         rcond, info = hecon(lu, ipvt, anorm)
     # Symmetric case 'sysv'
-    elif assume_a == 'sym':
-        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
-                                                 'sysv_lwork'), (a1, b1))
+    elif assume_a == "sym":
+        sycon, sysv, sysv_lw = get_lapack_funcs(
+            ("sycon", "sysv", "sysv_lwork"), (a1, b1)
+        )
         lwork = _compute_lwork(sysv_lw, n, lower)
-        lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
+        lu, ipvt, x, info = sysv(
+            a1,
+            b1,
+            lwork=lwork,
+            lower=lower,
+            overwrite_a=overwrite_a,
+            overwrite_b=overwrite_b,
+        )
         _solve_check(n, info)
         rcond, info = sycon(lu, ipvt, anorm)
     # Positive definite case 'posv'
     else:
-        pocon, posv = get_lapack_funcs(('pocon', 'posv'),
-                                       (a1, b1))
-        lu, x, info = posv(a1, b1, lower=lower,
-                           overwrite_a=overwrite_a,
-                           overwrite_b=overwrite_b)
+        pocon, posv = get_lapack_funcs(("pocon", "posv"), (a1, b1))
+        lu, x, info = posv(
+            a1, b1, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b
+        )
         _solve_check(n, info)
         rcond, info = pocon(lu, anorm)
 
@@ -261,8 +299,16 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     return x
 
 
-def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=None, check_finite=True):
+def solve_triangular(
+    a,
+    b,
+    trans=0,
+    lower=False,
+    unit_diagonal=False,
+    overwrite_b=False,
+    debug=None,
+    check_finite=True,
+):
     """
     Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
@@ -331,41 +377,59 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
+        warn(
+            'Use of the "debug" keyword is deprecated '
+            "and this keyword will be removed in the future "
+            "versions of SciPy.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+        raise ValueError("expected square matrix")
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError('shapes of a {} and b {} are incompatible'
-                         .format(a1.shape, b1.shape))
+        raise ValueError(
+            "shapes of a {} and b {} are incompatible".format(a1.shape, b1.shape)
+        )
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print('solve:overwrite_b=', overwrite_b)
-    trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
-    trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
+        print("solve:overwrite_b=", overwrite_b)
+    trans = {"N": 0, "T": 1, "C": 2}.get(trans, trans)
+    (trtrs,) = get_lapack_funcs(("trtrs",), (a1, b1))
     if a1.flags.f_contiguous or trans == 2:
-        x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
-                        trans=trans, unitdiag=unit_diagonal)
+        x, info = trtrs(
+            a1,
+            b1,
+            overwrite_b=overwrite_b,
+            lower=lower,
+            trans=trans,
+            unitdiag=unit_diagonal,
+        )
     else:
         # transposed system is solved since trtrs expects Fortran ordering
-        x, info = trtrs(a1.T, b1, overwrite_b=overwrite_b, lower=not lower,
-                        trans=not trans, unitdiag=unit_diagonal)
+        x, info = trtrs(
+            a1.T,
+            b1,
+            overwrite_b=overwrite_b,
+            lower=not lower,
+            trans=not trans,
+            unitdiag=unit_diagonal,
+        )
 
     if info == 0:
         return x
     if info > 0:
-        raise LinAlgError("singular matrix: resolution failed at diagonal %d" %
-                          (info-1))
-    raise ValueError('illegal value in %dth argument of internal trtrs' %
-                     (-info))
+        raise LinAlgError(
+            "singular matrix: resolution failed at diagonal %d" % (info - 1)
+        )
+    raise ValueError("illegal value in %dth argument of internal trtrs" % (-info))
 
 
-def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                 debug=None, check_finite=True):
+def solve_banded(
+    l_and_u, ab, b, overwrite_ab=False, overwrite_b=False, debug=None, check_finite=True
+):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
@@ -435,9 +499,13 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
+        warn(
+            'Use of the "debug" keyword is deprecated '
+            "and this keyword will be removed in the future "
+            "versions of SciPy.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -446,9 +514,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         raise ValueError("shapes of ab and b are not compatible.")
     (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
-        raise ValueError("invalid values for the number of lower and upper "
-                         "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
-                         "(%d)" % (nlower + nupper + 1, ab.shape[0]))
+        raise ValueError(
+            "invalid values for the number of lower and upper "
+            "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
+            "(%d)" % (nlower + nupper + 1, ab.shape[0])
+        )
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
@@ -457,28 +527,30 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         return b2
     if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
-        gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
+        (gtsv,) = get_lapack_funcs(("gtsv",), (a1, b1))
         du = a1[0, 1:]
         d = a1[1, :]
         dl = a1[2, :-1]
-        du2, d, du, x, info = gtsv(dl, d, du, b1, overwrite_ab, overwrite_ab,
-                                   overwrite_ab, overwrite_b)
+        du2, d, du, x, info = gtsv(
+            dl, d, du, b1, overwrite_ab, overwrite_ab, overwrite_ab, overwrite_b
+        )
     else:
-        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-        a2 = np.zeros((2*nlower + nupper + 1, a1.shape[1]), dtype=gbsv.dtype)
+        (gbsv,) = get_lapack_funcs(("gbsv",), (a1, b1))
+        a2 = np.zeros((2 * nlower + nupper + 1, a1.shape[1]), dtype=gbsv.dtype)
         a2[nlower:, :] = a1
-        lu, piv, x, info = gbsv(nlower, nupper, a2, b1, overwrite_ab=True,
-                                overwrite_b=overwrite_b)
+        lu, piv, x, info = gbsv(
+            nlower, nupper, a2, b1, overwrite_ab=True, overwrite_b=overwrite_b
+        )
     if info == 0:
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal '
-                     'gbsv/gtsv' % -info)
+    raise ValueError("illegal value in %d-th argument of internal gbsv/gtsv" % -info)
 
 
-def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
-                  check_finite=True):
+def solveh_banded(
+    ab, b, overwrite_ab=False, overwrite_b=False, lower=False, check_finite=True
+):
     """
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
@@ -579,24 +651,23 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     overwrite_ab = overwrite_ab or _datacopied(a1, ab)
 
     if a1.shape[0] == 2:
-        ptsv, = get_lapack_funcs(('ptsv',), (a1, b1))
+        (ptsv,) = get_lapack_funcs(("ptsv",), (a1, b1))
         if lower:
             d = a1[0, :].real
             e = a1[1, :-1]
         else:
             d = a1[1, :].real
             e = a1[0, 1:].conj()
-        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab,
-                              overwrite_b)
+        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
     else:
-        pbsv, = get_lapack_funcs(('pbsv',), (a1, b1))
-        c, x, info = pbsv(a1, b1, lower=lower, overwrite_ab=overwrite_ab,
-                          overwrite_b=overwrite_b)
+        (pbsv,) = get_lapack_funcs(("pbsv",), (a1, b1))
+        c, x, info = pbsv(
+            a1, b1, lower=lower, overwrite_ab=overwrite_ab, overwrite_b=overwrite_b
+        )
     if info > 0:
         raise LinAlgError("%dth leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal '
-                         'pbsv' % -info)
+        raise ValueError("illegal value in %dth argument of internal pbsv" % -info)
     return x
 
 
@@ -672,19 +743,24 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
 
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, b, check_finite, keep_b_shape=True)
+        c_or_cr, b, check_finite, keep_b_shape=True
+    )
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
     vals = np.concatenate((r[-1:0:-1], c))
     if b is None:
-        raise ValueError('illegal value, `b` is a required argument')
+        raise ValueError("illegal value, `b` is a required argument")
 
     if b.ndim == 1:
         x, _ = levinson(vals, np.ascontiguousarray(b))
     else:
-        x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
-                             for i in range(b.shape[1])])
+        x = np.column_stack(
+            [
+                levinson(vals, np.ascontiguousarray(b[:, i]))[0]
+                for i in range(b.shape[1])
+            ]
+        )
         x = x.reshape(*b_shape)
 
     return x
@@ -699,8 +775,7 @@ def _get_axis_len(aname, a, axis):
     raise ValueError("'%saxis' entry is out of bounds" % (aname,))
 
 
-def solve_circulant(c, b, singular='raise', tol=None,
-                    caxis=-1, baxis=0, outaxis=0):
+def solve_circulant(c, b, singular="raise", tol=None, caxis=-1, baxis=0, outaxis=0):
     """Solve C x = b for x, where C is a circulant matrix.
 
     `C` is the circulant matrix associated with the vector `c`.
@@ -852,8 +927,9 @@ def solve_circulant(c, b, singular='raise', tol=None,
     b = np.atleast_1d(b)
     nb = _get_axis_len("b", b, baxis)
     if nc != nb:
-        raise ValueError('Shapes of c {} and b {} are incompatible'
-                         .format(c.shape, b.shape))
+        raise ValueError(
+            "Shapes of c {} and b {} are incompatible".format(c.shape, b.shape)
+        )
 
     fc = np.fft.fft(np.rollaxis(c, caxis, c.ndim), axis=-1)
     abs_fc = np.abs(fc)
@@ -868,7 +944,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
     near_zeros = abs_fc <= tol
     is_near_singular = np.any(near_zeros)
     if is_near_singular:
-        if singular == 'raise':
+        if singular == "raise":
             raise LinAlgError("near singular circulant matrix.")
         else:
             # Replace the small values with 1 to avoid errors in the
@@ -938,20 +1014,20 @@ def inv(a, overwrite_a=False, check_finite=True):
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+        raise ValueError("expected square matrix")
     overwrite_a = overwrite_a or _datacopied(a1, a)
     # XXX: I found no advantage or disadvantage of using finv.
-#     finv, = get_flinalg_funcs(('inv',),(a1,))
-#     if finv is not None:
-#         a_inv,info = finv(a1,overwrite_a=overwrite_a)
-#         if info==0:
-#             return a_inv
-#         if info>0: raise LinAlgError, "singular matrix"
-#         if info<0: raise ValueError('illegal value in %d-th argument of '
-#                                     'internal inv.getrf|getri'%(-info))
-    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
-                                                  'getri_lwork'),
-                                                 (a1,))
+    #     finv, = get_flinalg_funcs(('inv',),(a1,))
+    #     if finv is not None:
+    #         a_inv,info = finv(a1,overwrite_a=overwrite_a)
+    #         if info==0:
+    #             return a_inv
+    #         if info>0: raise LinAlgError, "singular matrix"
+    #         if info<0: raise ValueError('illegal value in %d-th argument of '
+    #                                     'internal inv.getrf|getri'%(-info))
+    getrf, getri, getri_lwork = get_lapack_funcs(
+        ("getrf", "getri", "getri_lwork"), (a1,)
+    )
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
         lwork = _compute_lwork(getri_lwork, a1.shape[0])
@@ -967,12 +1043,14 @@ def inv(a, overwrite_a=False, check_finite=True):
     if info > 0:
         raise LinAlgError("singular matrix")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal '
-                         'getrf|getri' % -info)
+        raise ValueError(
+            "illegal value in %d-th argument of internal getrf|getri" % -info
+        )
     return inv_a
 
 
 # Determinant
+
 
 def det(a, overwrite_a=False, check_finite=True):
     """
@@ -1022,19 +1100,27 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+        raise ValueError("expected square matrix")
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    fdet, = get_flinalg_funcs(('det',), (a1,))
+    (fdet,) = get_flinalg_funcs(("det",), (a1,))
     a_det, info = fdet(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal '
-                         'det.getrf' % -info)
+        raise ValueError(
+            "illegal value in %d-th argument of internal det.getrf" % -info
+        )
     return a_det
 
 
 # Linear Least Squares
-def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
-          check_finite=True, lapack_driver=None):
+def lstsq(
+    a,
+    b,
+    cond=None,
+    overwrite_a=False,
+    overwrite_b=False,
+    check_finite=True,
+    lapack_driver=None,
+):
     """
     Compute least-squares solution to equation Ax = b.
 
@@ -1146,19 +1232,21 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
-        raise ValueError('Input array a should be 2D')
+        raise ValueError("Input array a should be 2D")
     m, n = a1.shape
     if len(b1.shape) == 2:
         nrhs = b1.shape[1]
     else:
         nrhs = 1
     if m != b1.shape[0]:
-        raise ValueError('Shape mismatch: a and b should have the same number'
-                         ' of rows ({} != {}).'.format(m, b1.shape[0]))
+        raise ValueError(
+            "Shape mismatch: a and b should have the same number"
+            " of rows ({} != {}).".format(m, b1.shape[0])
+        )
     if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
         x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
         if n == 0:
-            residues = np.linalg.norm(b1, axis=0)**2
+            residues = np.linalg.norm(b1, axis=0) ** 2
         else:
             residues = np.empty((0,))
         return x, residues, 0, np.empty((0,))
@@ -1166,13 +1254,13 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     driver = lapack_driver
     if driver is None:
         driver = lstsq.default_lapack_driver
-    if driver not in ('gelsd', 'gelsy', 'gelss'):
+    if driver not in ("gelsd", "gelsy", "gelss"):
         raise ValueError('LAPACK driver "%s" is not found' % driver)
 
-    lapack_func, lapack_lwork = get_lapack_funcs((driver,
-                                                 '%s_lwork' % driver),
-                                                 (a1, b1))
-    real_data = True if (lapack_func.dtype.kind == 'f') else False
+    lapack_func, lapack_lwork = get_lapack_funcs(
+        (driver, "%s_lwork" % driver), (a1, b1)
+    )
+    real_data = True if (lapack_func.dtype.kind == "f") else False
 
     if m < n:
         # need to extend b matrix as it will be filled with
@@ -1191,55 +1279,57 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if cond is None:
         cond = np.finfo(lapack_func.dtype).eps
 
-    if driver in ('gelss', 'gelsd'):
-        if driver == 'gelss':
+    if driver in ("gelss", "gelsd"):
+        if driver == "gelss":
             lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-            v, x, s, rank, work, info = lapack_func(a1, b1, cond, lwork,
-                                                    overwrite_a=overwrite_a,
-                                                    overwrite_b=overwrite_b)
+            v, x, s, rank, work, info = lapack_func(
+                a1, b1, cond, lwork, overwrite_a=overwrite_a, overwrite_b=overwrite_b
+            )
 
-        elif driver == 'gelsd':
+        elif driver == "gelsd":
             if real_data:
                 lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork,
-                                               iwork, cond, False, False)
+                x, s, rank, info = lapack_func(a1, b1, lwork, iwork, cond, False, False)
             else:  # complex data
-                lwork, rwork, iwork = _compute_lwork(lapack_lwork, m, n,
-                                                     nrhs, cond)
-                x, s, rank, info = lapack_func(a1, b1, lwork, rwork, iwork,
-                                               cond, False, False)
+                lwork, rwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
+                x, s, rank, info = lapack_func(
+                    a1, b1, lwork, rwork, iwork, cond, False, False
+                )
         if info > 0:
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal %s'
-                             % (-info, lapack_driver))
+            raise ValueError(
+                "illegal value in %d-th argument of internal %s"
+                % (-info, lapack_driver)
+            )
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]
             if rank == n:
-                resids = np.sum(np.abs(x[n:])**2, axis=0)
+                resids = np.sum(np.abs(x[n:]) ** 2, axis=0)
             x = x1
         return x, resids, rank, s
 
-    elif driver == 'gelsy':
+    elif driver == "gelsy":
         lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
         jptv = np.zeros((a1.shape[1], 1), dtype=np.int32)
-        v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
-                                          lwork, False, False)
+        v, x, j, rank, info = lapack_func(a1, b1, jptv, cond, lwork, False, False)
         if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal "
-                             "gelsy" % -info)
+            raise ValueError(
+                "illegal value in %d-th argument of internal gelsy" % -info
+            )
         if m > n:
             x1 = x[:n]
             x = x1
         return x, np.array([], x.dtype), rank, None
 
 
-lstsq.default_lapack_driver = 'gelsd'
+lstsq.default_lapack_driver = "gelsd"
 
 
-def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
-         cond=None, rcond=None):
+def pinv(
+    a, atol=None, rtol=None, return_rank=False, check_finite=True, cond=None, rcond=None
+):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -1318,19 +1408,23 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     maxS = np.max(s)
 
     if rcond or cond:
-        warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in future versions of SciPy. Use "atol" and '
-             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
+        warn(
+            'Use of the "cond" and "rcond" keywords are deprecated and '
+            'will be removed in future versions of SciPy. Use "atol" and '
+            '"rtol" keywords instead',
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # backwards compatible only atol and rtol are both missing
     if (rcond or cond) and (atol is None) and (rtol is None):
         atol = rcond or cond
-        rtol = 0.
+        rtol = 0.0
 
-    atol = 0. if atol is None else atol
+    atol = 0.0 if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
 
-    if (atol < 0.) or (rtol < 0.):
+    if (atol < 0.0) or (rtol < 0.0):
         raise ValueError("atol and rtol values must be positive.")
 
     val = atol + maxS * rtol
@@ -1392,17 +1486,30 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     """
     # SciPy 1.7.0 2021-04-10
-    warn('scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use '
-         'scipy.linalg.pinv instead', DeprecationWarning, stacklevel=2)
+    warn(
+        "scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use "
+        "scipy.linalg.pinv instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if rcond is not None:
         cond = rcond
 
-    return pinv(a=a, atol=cond, rtol=None, return_rank=return_rank,
-                check_finite=check_finite)
+    return pinv(
+        a=a, atol=cond, rtol=None, return_rank=return_rank, check_finite=check_finite
+    )
 
 
-def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
-          check_finite=True, cond=None, rcond=None):
+def pinvh(
+    a,
+    atol=None,
+    rtol=None,
+    lower=True,
+    return_rank=False,
+    check_finite=True,
+    cond=None,
+    rcond=None,
+):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
@@ -1480,23 +1587,27 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     maxS = np.max(np.abs(s))
 
     if rcond or cond:
-        warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in future versions of SciPy. Use "atol" and '
-             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
+        warn(
+            'Use of the "cond" and "rcond" keywords are deprecated and '
+            'will be removed in future versions of SciPy. Use "atol" and '
+            '"rtol" keywords instead',
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # backwards compatible only atol and rtol are both missing
     if (rcond or cond) and (atol is None) and (rtol is None):
         atol = rcond or cond
-        rtol = 0.
+        rtol = 0.0
 
-    atol = 0. if atol is None else atol
+    atol = 0.0 if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
 
-    if (atol < 0.) or (rtol < 0.):
+    if (atol < 0.0) or (rtol < 0.0):
         raise ValueError("atol and rtol values must be positive.")
 
     val = atol + maxS * rtol
-    above_cutoff = (abs(s) > val)
+    above_cutoff = abs(s) > val
 
     psigma_diag = 1.0 / s[above_cutoff]
     u = u[:, above_cutoff]
@@ -1509,8 +1620,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
-def matrix_balance(A, permute=True, scale=True, separate=False,
-                   overwrite_a=False):
+def matrix_balance(A, permute=True, scale=True, separate=False, overwrite_a=False):
     """
     Compute a diagonal similarity transformation for row/column balancing.
 
@@ -1613,21 +1723,24 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
 
     if not np.equal(*A.shape):
-        raise ValueError('The data matrix for balancing should be square.')
+        raise ValueError("The data matrix for balancing should be square.")
 
-    gebal = get_lapack_funcs(('gebal'), (A,))
-    B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute,
-                                overwrite_a=overwrite_a)
+    gebal = get_lapack_funcs("gebal", (A,))
+    B, lo, hi, ps, info = gebal(
+        A, scale=scale, permute=permute, overwrite_a=overwrite_a
+    )
 
     if info < 0:
-        raise ValueError('xGEBAL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the xGEBAL error codes.'
-                         ''.format(-info))
+        raise ValueError(
+            "xGEBAL exited with the internal error "
+            '"illegal value in argument number {}.". See '
+            "LAPACK documentation for the xGEBAL error codes."
+            "".format(-info)
+        )
 
     # Separate the permutations from the scalings and then convert to int
     scaling = np.ones_like(ps, dtype=float)
-    scaling[lo:hi+1] = ps[lo:hi+1]
+    scaling[lo : hi + 1] = ps[lo : hi + 1]
 
     # gebal uses 1-indexing
     ps = ps.astype(int, copy=False) - 1
@@ -1636,10 +1749,10 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     # LAPACK permutes with the ordering n --> hi, then 0--> lo
     if hi < n:
-        for ind, x in enumerate(ps[hi+1:][::-1], 1):
-            if n-ind == x:
+        for ind, x in enumerate(ps[hi + 1 :][::-1], 1):
+            if n - ind == x:
                 continue
-            perm[[x, n-ind]] = perm[[n-ind, x]]
+            perm[[x, n - ind]] = perm[[n - ind, x]]
 
     if lo > 0:
         for ind, x in enumerate(ps[:lo]):
@@ -1657,8 +1770,9 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     return B, np.diag(scaling)[iperm, :]
 
 
-def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
-                                    enforce_square=True):
+def _validate_args_for_toeplitz_ops(
+    c_or_cr, b, check_finite, keep_b_shape, enforce_square=True
+):
     """Validate arguments and format inputs for toeplitz functions
 
     Parameters
@@ -1709,14 +1823,14 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         r = c.conjugate()
 
     if b is None:
-        raise ValueError('`b` must be an array, not None.')
+        raise ValueError("`b` must be an array, not None.")
 
     b = _asarray_validated(b, check_finite=check_finite)
     b_shape = b.shape
 
     is_not_square = r.shape[0] != c.shape[0]
     if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
-        raise ValueError('Incompatible dimensions.')
+        raise ValueError("Incompatible dimensions.")
 
     is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
     dtype = np.complex128 if is_cmplx else np.double
@@ -1856,7 +1970,8 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     from ..fft import fft, ifft, rfft, irfft
 
     r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False)
+        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False
+    )
     n, m = x.shape
 
     T_nrows = len(c)
@@ -1869,15 +1984,13 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
         fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
         fft_x = fft(x, n=p, axis=0, workers=workers)
 
-        mat_times_x = ifft(fft_mat*fft_x, axis=0,
-                           workers=workers)[:T_nrows, :]
+        mat_times_x = ifft(fft_mat * fft_x, axis=0, workers=workers)[:T_nrows, :]
     else:
         # Real inputs; using rfft is faster
         fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
         fft_x = rfft(x, n=p, axis=0, workers=workers)
 
-        mat_times_x = irfft(fft_mat*fft_x, axis=0,
-                            workers=workers, n=p)[:T_nrows, :]
+        mat_times_x = irfft(fft_mat * fft_x, axis=0, workers=workers, n=p)[:T_nrows, :]
 
     return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
     return mat_times_x.reshape(*return_shape)

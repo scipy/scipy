@@ -120,12 +120,18 @@ from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
 __all__ = [
-    'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    "broyden1",
+    "broyden2",
+    "anderson",
+    "linearmixing",
+    "diagbroyden",
+    "excitingmixing",
+    "newton_krylov",
+]
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Utility functions
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class NoConvergence(Exception):
@@ -147,7 +153,7 @@ def _as_inexact(x):
 def _array_like(x, x0):
     """Return ndarray `x` as same array subclass and shape as `x0`"""
     x = np.reshape(x, np.shape(x0))
-    wrap = getattr(x0, '__array_wrap__', x.__array_wrap__)
+    wrap = getattr(x0, "__array_wrap__", x.__array_wrap__)
     return wrap(x)
 
 
@@ -156,9 +162,10 @@ def _safe_norm(v):
         return np.array(np.inf)
     return norm(v)
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 # Generic nonlinear solver machinery
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 _doc_parts = dict(
@@ -209,7 +216,7 @@ _doc_parts = dict(
     NoConvergence
         When a solution was not found.
 
-    """.strip()
+    """.strip(),
 )
 
 
@@ -218,10 +225,23 @@ def _set_doc(obj):
         obj.__doc__ = obj.__doc__ % _doc_parts
 
 
-def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
-                 maxiter=None, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
-                 tol_norm=None, line_search='armijo', callback=None,
-                 full_output=False, raise_exception=True):
+def nonlin_solve(
+    F,
+    x0,
+    jacobian="krylov",
+    iter=None,
+    verbose=False,
+    maxiter=None,
+    f_tol=None,
+    f_rtol=None,
+    x_tol=None,
+    x_rtol=None,
+    tol_norm=None,
+    line_search="armijo",
+    callback=None,
+    full_output=False,
+    raise_exception=True,
+):
     """
     Find a root of a function, in a way suitable for large-scale problems.
 
@@ -264,9 +284,9 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Can't use default parameters because it's being explicitly passed as None
     # from the calling function, so we need to set it here.
     tol_norm = maxnorm if tol_norm is None else tol_norm
-    condition = TerminationCondition(f_tol=f_tol, f_rtol=f_rtol,
-                                     x_tol=x_tol, x_rtol=x_rtol,
-                                     iter=iter, norm=tol_norm)
+    condition = TerminationCondition(
+        f_tol=f_tol, f_rtol=f_rtol, x_tol=x_tol, x_rtol=x_rtol, iter=iter, norm=tol_norm
+    )
 
     x0 = _as_inexact(x0)
     func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
@@ -283,14 +303,14 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
         if iter is not None:
             maxiter = iter + 1
         else:
-            maxiter = 100*(x.size+1)
+            maxiter = 100 * (x.size + 1)
 
     if line_search is True:
-        line_search = 'armijo'
+        line_search = "armijo"
     elif line_search is False:
         line_search = None
 
-    if line_search not in (None, 'armijo', 'wolfe'):
+    if line_search not in (None, "armijo", "wolfe"):
         raise ValueError("Invalid line search")
 
     # Solver tolerance selection
@@ -305,18 +325,19 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
             break
 
         # The tolerance, as computed for scipy.sparse.linalg.* routines
-        tol = min(eta, eta*Fx_norm)
+        tol = min(eta, eta * Fx_norm)
         dx = -jacobian.solve(Fx, tol=tol)
 
         if norm(dx) == 0:
-            raise ValueError("Jacobian inversion yielded zero vector. "
-                             "This indicates a bug in the Jacobian "
-                             "approximation.")
+            raise ValueError(
+                "Jacobian inversion yielded zero vector. "
+                "This indicates a bug in the Jacobian "
+                "approximation."
+            )
 
         # Line search, or Newton step
         if line_search:
-            s, x, Fx, Fx_norm_new = _nonlin_line_search(func, x, Fx, dx,
-                                                        line_search)
+            s, x, Fx, Fx_norm_new = _nonlin_line_search(func, x, Fx, dx, line_search)
         else:
             s = 1.0
             x = x + dx
@@ -329,18 +350,17 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
             callback(x, Fx)
 
         # Adjust forcing parameters for inexact methods
-        eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        eta_A = gamma * Fx_norm_new ** 2 / Fx_norm ** 2
+        if gamma * eta ** 2 < eta_treshold:
             eta = min(eta_max, eta_A)
         else:
-            eta = min(eta_max, max(eta_A, gamma*eta**2))
+            eta = min(eta_max, max(eta_A, gamma * eta ** 2))
 
         Fx_norm = Fx_norm_new
 
         # Print status
         if verbose:
-            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (
-                n, tol_norm(Fx), s))
+            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (n, tol_norm(Fx), s))
             sys.stdout.flush()
     else:
         if raise_exception:
@@ -349,16 +369,16 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
             status = 2
 
     if full_output:
-        info = {'nit': condition.iteration,
-                'fun': Fx,
-                'status': status,
-                'success': status == 1,
-                'message': {1: 'A solution was found at the specified '
-                               'tolerance.',
-                            2: 'The maximum number of iterations allowed '
-                               'has been reached.'
-                            }[status]
-                }
+        info = {
+            "nit": condition.iteration,
+            "fun": Fx,
+            "status": status,
+            "success": status == 1,
+            "message": {
+                1: "A solution was found at the specified tolerance.",
+                2: "The maximum number of iterations allowed has been reached.",
+            }[status],
+        }
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
@@ -367,19 +387,18 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 _set_doc(nonlin_solve)
 
 
-def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
-                        smin=1e-2):
+def _nonlin_line_search(func, x, Fx, dx, search_type="armijo", rdiff=1e-8, smin=1e-2):
     tmp_s = [0]
     tmp_Fx = [Fx]
-    tmp_phi = [norm(Fx)**2]
+    tmp_phi = [norm(Fx) ** 2]
     s_norm = norm(x) / norm(dx)
 
     def phi(s, store=True):
         if s == tmp_s[0]:
             return tmp_phi[0]
-        xt = x + s*dx
+        xt = x + s * dx
         v = func(xt)
-        p = _safe_norm(v)**2
+        p = _safe_norm(v) ** 2
         if store:
             tmp_s[0] = s
             tmp_phi[0] = p
@@ -388,21 +407,21 @@ def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
 
     def derphi(s):
         ds = (abs(s) + s_norm + 1) * rdiff
-        return (phi(s+ds, store=False) - phi(s)) / ds
+        return (phi(s + ds, store=False) - phi(s)) / ds
 
-    if search_type == 'wolfe':
-        s, phi1, phi0 = scalar_search_wolfe1(phi, derphi, tmp_phi[0],
-                                             xtol=1e-2, amin=smin)
-    elif search_type == 'armijo':
-        s, phi1 = scalar_search_armijo(phi, tmp_phi[0], -tmp_phi[0],
-                                       amin=smin)
+    if search_type == "wolfe":
+        s, phi1, phi0 = scalar_search_wolfe1(
+            phi, derphi, tmp_phi[0], xtol=1e-2, amin=smin
+        )
+    elif search_type == "armijo":
+        s, phi1 = scalar_search_armijo(phi, tmp_phi[0], -tmp_phi[0], amin=smin)
 
     if s is None:
         # XXX: No suitable step length found. Take the full Newton step,
         #      and hope for the best.
         s = 1.0
 
-    x = x + s*dx
+    x = x + s * dx
     if s == tmp_s[0]:
         Fx = tmp_Fx[0]
     else:
@@ -425,11 +444,13 @@ class TerminationCondition:
     - |dx| < x_tol
 
     """
-    def __init__(self, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
-                 iter=None, norm=maxnorm):
+
+    def __init__(
+        self, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None, iter=None, norm=maxnorm
+    ):
 
         if f_tol is None:
-            f_tol = np.finfo(np.float_).eps ** (1./3)
+            f_tol = np.finfo(np.float_).eps ** (1.0 / 3)
         if f_rtol is None:
             f_rtol = np.inf
         if x_tol is None:
@@ -466,15 +487,16 @@ class TerminationCondition:
             return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
-        return int((f_norm <= self.f_tol
-                    and f_norm/self.f_rtol <= self.f0_norm)
-                   and (dx_norm <= self.x_tol
-                        and dx_norm/self.x_rtol <= x_norm))
+        return int(
+            (f_norm <= self.f_tol and f_norm / self.f_rtol <= self.f0_norm)
+            and (dx_norm <= self.x_tol and dx_norm / self.x_rtol <= x_norm)
+        )
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Generic Jacobian approximation
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class Jacobian:
     """
@@ -515,15 +537,24 @@ class Jacobian:
     """
 
     def __init__(self, **kw):
-        names = ["solve", "update", "matvec", "rmatvec", "rsolve",
-                 "matmat", "todense", "shape", "dtype"]
+        names = [
+            "solve",
+            "update",
+            "matvec",
+            "rmatvec",
+            "rsolve",
+            "matmat",
+            "todense",
+            "shape",
+            "dtype",
+        ]
         for name, value in kw.items():
             if name not in names:
                 raise ValueError("Unknown keyword argument %s" % name)
             if value is not None:
                 setattr(self, name, kw[name])
 
-        if hasattr(self, 'todense'):
+        if hasattr(self, "todense"):
             self.__array__ = lambda: self.todense()
 
     def aspreconditioner(self):
@@ -549,9 +580,9 @@ class InverseJacobian:
         self.jacobian = jacobian
         self.matvec = jacobian.solve
         self.update = jacobian.update
-        if hasattr(jacobian, 'setup'):
+        if hasattr(jacobian, "setup"):
             self.setup = jacobian.setup
-        if hasattr(jacobian, 'rsolve'):
+        if hasattr(jacobian, "rsolve"):
             self.rmatvec = jacobian.rsolve
 
     @property
@@ -574,33 +605,41 @@ def asjacobian(J):
         return J()
     elif isinstance(J, np.ndarray):
         if J.ndim > 2:
-            raise ValueError('array must have rank <= 2')
+            raise ValueError("array must have rank <= 2")
         J = np.atleast_2d(np.asarray(J))
         if J.shape[0] != J.shape[1]:
-            raise ValueError('array must be square')
+            raise ValueError("array must be square")
 
-        return Jacobian(matvec=lambda v: dot(J, v),
-                        rmatvec=lambda v: dot(J.conj().T, v),
-                        solve=lambda v: solve(J, v),
-                        rsolve=lambda v: solve(J.conj().T, v),
-                        dtype=J.dtype, shape=J.shape)
+        return Jacobian(
+            matvec=lambda v: dot(J, v),
+            rmatvec=lambda v: dot(J.conj().T, v),
+            solve=lambda v: solve(J, v),
+            rsolve=lambda v: solve(J.conj().T, v),
+            dtype=J.dtype,
+            shape=J.shape,
+        )
     elif scipy.sparse.isspmatrix(J):
         if J.shape[0] != J.shape[1]:
-            raise ValueError('matrix must be square')
-        return Jacobian(matvec=lambda v: J*v,
-                        rmatvec=lambda v: J.conj().T * v,
-                        solve=lambda v: spsolve(J, v),
-                        rsolve=lambda v: spsolve(J.conj().T, v),
-                        dtype=J.dtype, shape=J.shape)
-    elif hasattr(J, 'shape') and hasattr(J, 'dtype') and hasattr(J, 'solve'):
-        return Jacobian(matvec=getattr(J, 'matvec'),
-                        rmatvec=getattr(J, 'rmatvec'),
-                        solve=J.solve,
-                        rsolve=getattr(J, 'rsolve'),
-                        update=getattr(J, 'update'),
-                        setup=getattr(J, 'setup'),
-                        dtype=J.dtype,
-                        shape=J.shape)
+            raise ValueError("matrix must be square")
+        return Jacobian(
+            matvec=lambda v: J * v,
+            rmatvec=lambda v: J.conj().T * v,
+            solve=lambda v: spsolve(J, v),
+            rsolve=lambda v: spsolve(J.conj().T, v),
+            dtype=J.dtype,
+            shape=J.shape,
+        )
+    elif hasattr(J, "shape") and hasattr(J, "dtype") and hasattr(J, "solve"):
+        return Jacobian(
+            matvec=getattr(J, "matvec"),
+            rmatvec=getattr(J, "rmatvec"),
+            solve=J.solve,
+            rsolve=getattr(J, "rsolve"),
+            update=getattr(J, "update"),
+            setup=getattr(J, "setup"),
+            dtype=J.dtype,
+            shape=J.shape,
+        )
     elif callable(J):
         # Assume it's a function J(x) that returns the Jacobian
         class Jac(Jacobian):
@@ -621,7 +660,7 @@ def asjacobian(J):
                 if isinstance(m, np.ndarray):
                     return dot(m, v)
                 elif scipy.sparse.isspmatrix(m):
-                    return m*v
+                    return m * v
                 else:
                     raise ValueError("Unknown matrix type")
 
@@ -642,22 +681,26 @@ def asjacobian(J):
                     return m.conj().T * v
                 else:
                     raise ValueError("Unknown matrix type")
+
         return Jac()
     elif isinstance(J, str):
-        return dict(broyden1=BroydenFirst,
-                    broyden2=BroydenSecond,
-                    anderson=Anderson,
-                    diagbroyden=DiagBroyden,
-                    linearmixing=LinearMixing,
-                    excitingmixing=ExcitingMixing,
-                    krylov=KrylovJacobian)[J]()
+        return dict(
+            broyden1=BroydenFirst,
+            broyden2=BroydenSecond,
+            anderson=Anderson,
+            diagbroyden=DiagBroyden,
+            linearmixing=LinearMixing,
+            excitingmixing=ExcitingMixing,
+            krylov=KrylovJacobian,
+        )[J]()
     else:
-        raise TypeError('Cannot convert object to a Jacobian')
+        raise TypeError("Cannot convert object to a Jacobian")
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Broyden
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class GenericBroyden(Jacobian):
     def setup(self, x0, f0, func):
@@ -665,12 +708,12 @@ class GenericBroyden(Jacobian):
         self.last_f = f0
         self.last_x = x0
 
-        if hasattr(self, 'alpha') and self.alpha is None:
+        if hasattr(self, "alpha") and self.alpha is None:
             # Autoscale the initial Jacobian parameter
             # unless we have already guessed the solution.
             normf0 = norm(f0)
             if normf0:
-                self.alpha = 0.5*max(norm(x0), 1) / normf0
+                self.alpha = 0.5 * max(norm(x0), 1) / normf0
             else:
                 self.alpha = 1.0
 
@@ -706,8 +749,7 @@ class LowRankMatrix:
 
     @staticmethod
     def _matvec(v, alpha, cs, ds):
-        axpy, scal, dotc = get_blas_funcs(['axpy', 'scal', 'dotc'],
-                                          cs[:1] + [v])
+        axpy, scal, dotc = get_blas_funcs(["axpy", "scal", "dotc"], cs[:1] + [v])
         w = alpha * v
         for c, d in zip(cs, ds):
             a = dotc(d, v)
@@ -718,17 +760,17 @@ class LowRankMatrix:
     def _solve(v, alpha, cs, ds):
         """Evaluate w = M^-1 v"""
         if len(cs) == 0:
-            return v/alpha
+            return v / alpha
 
         # (B + C D^H)^-1 = B^-1 - B^-1 C (I + D^H B^-1 C)^-1 D^H B^-1
 
-        axpy, dotc = get_blas_funcs(['axpy', 'dotc'], cs[:1] + [v])
+        axpy, dotc = get_blas_funcs(["axpy", "dotc"], cs[:1] + [v])
 
         c0 = cs[0]
         A = alpha * np.identity(len(cs), dtype=c0.dtype)
         for i, d in enumerate(ds):
             for j, c in enumerate(cs):
-                A[i,j] += dotc(d, c)
+                A[i, j] += dotc(d, c)
 
         q = np.zeros(len(cs), dtype=c0.dtype)
         for j, d in enumerate(ds):
@@ -736,7 +778,7 @@ class LowRankMatrix:
         q /= alpha
         q = solve(A, q)
 
-        w = v/alpha
+        w = v / alpha
         for c, qc in zip(cs, q):
             w = axpy(c, w, w.size, -qc)
 
@@ -768,7 +810,7 @@ class LowRankMatrix:
 
     def append(self, c, d):
         if self.collapsed is not None:
-            self.collapsed += c[:,None] * d[None,:].conj()
+            self.collapsed += c[:, None] * d[None, :].conj()
             return
 
         self.cs.append(c)
@@ -781,9 +823,9 @@ class LowRankMatrix:
         if self.collapsed is not None:
             return self.collapsed
 
-        Gm = self.alpha*np.identity(self.n, dtype=self.dtype)
+        Gm = self.alpha * np.identity(self.n, dtype=self.dtype)
         for c, d in zip(self.cs, self.ds):
-            Gm += c[:,None]*d[None,:].conj()
+            Gm += c[:, None] * d[None, :].conj()
         return Gm
 
     def collapse(self):
@@ -855,7 +897,7 @@ class LowRankMatrix:
 
         if self.cs:
             p = min(p, len(self.cs[0]))
-        q = max(0, min(q, p-1))
+        q = max(0, min(q, p - 1))
 
         m = len(self.cs)
         if m < p:
@@ -865,7 +907,7 @@ class LowRankMatrix:
         C = np.array(self.cs).T
         D = np.array(self.ds).T
 
-        D, R = qr(D, mode='economic')
+        D, R = qr(D, mode="economic")
         C = dot(C, R.T.conj())
 
         U, S, WH = svd(C, full_matrices=False, compute_uv=True)
@@ -874,14 +916,16 @@ class LowRankMatrix:
         D = dot(D, WH.T.conj())
 
         for k in range(q):
-            self.cs[k] = C[:,k].copy()
-            self.ds[k] = D[:,k].copy()
+            self.cs[k] = C[:, k].copy()
+            self.ds[k] = D[:, k].copy()
 
         del self.cs[q:]
         del self.ds[q:]
 
 
-_doc_parts['broyden_params'] = """
+_doc_parts[
+    "broyden_params"
+] = """
     alpha : float, optional
         Initial guess for the Jacobian is ``(-1/alpha)``.
     reduction_method : str or tuple, optional
@@ -959,7 +1003,7 @@ class BroydenFirst(GenericBroyden):
 
     """
 
-    def __init__(self, alpha=None, reduction_method='restart', max_rank=None):
+    def __init__(self, alpha=None, reduction_method="restart", max_rank=None):
         GenericBroyden.__init__(self)
         self.alpha = alpha
         self.Gm = None
@@ -975,15 +1019,14 @@ class BroydenFirst(GenericBroyden):
             reduction_method = reduction_method[0]
         reduce_params = (max_rank - 1,) + reduce_params
 
-        if reduction_method == 'svd':
+        if reduction_method == "svd":
             self._reduce = lambda: self.Gm.svd_reduce(*reduce_params)
-        elif reduction_method == 'simple':
+        elif reduction_method == "simple":
             self._reduce = lambda: self.Gm.simple_reduce(*reduce_params)
-        elif reduction_method == 'restart':
+        elif reduction_method == "restart":
             self._reduce = lambda: self.Gm.restart_reduce(*reduce_params)
         else:
-            raise ValueError("Unknown rank reduction method '%s'" %
-                             reduction_method)
+            raise ValueError("Unknown rank reduction method '%s'" % reduction_method)
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
@@ -1074,13 +1117,14 @@ class BroydenSecond(BroydenFirst):
 
         v = df
         c = dx - self.Gm.matvec(df)
-        d = v / df_norm**2
+        d = v / df_norm ** 2
         self.Gm.append(c, d)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Broyden-like (restricted memory)
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class Anderson(GenericBroyden):
     """
@@ -1163,7 +1207,7 @@ class Anderson(GenericBroyden):
         self.w0 = w0
 
     def solve(self, f, tol=0):
-        dx = -self.alpha*f
+        dx = -self.alpha * f
 
         n = len(self.dx)
         if n == 0:
@@ -1182,11 +1226,11 @@ class Anderson(GenericBroyden):
             return dx
 
         for m in range(n):
-            dx += gamma[m]*(self.dx[m] + self.alpha*self.df[m])
+            dx += gamma[m] * (self.dx[m] + self.alpha * self.df[m])
         return dx
 
     def matvec(self, f):
-        dx = -f/self.alpha
+        dx = -f / self.alpha
 
         n = len(self.dx)
         if n == 0:
@@ -1199,13 +1243,13 @@ class Anderson(GenericBroyden):
         b = np.empty((n, n), dtype=f.dtype)
         for i in range(n):
             for j in range(n):
-                b[i,j] = vdot(self.df[i], self.dx[j])
+                b[i, j] = vdot(self.df[i], self.dx[j])
                 if i == j and self.w0 != 0:
-                    b[i,j] -= vdot(self.df[i], self.df[i])*self.w0**2*self.alpha
+                    b[i, j] -= vdot(self.df[i], self.df[i]) * self.w0 ** 2 * self.alpha
         gamma = solve(b, df_f)
 
         for m in range(n):
-            dx += gamma[m]*(self.df[m] + self.dx[m]/self.alpha)
+            dx += gamma[m] * (self.df[m] + self.dx[m] / self.alpha)
         return dx
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
@@ -1225,17 +1269,18 @@ class Anderson(GenericBroyden):
         for i in range(n):
             for j in range(i, n):
                 if i == j:
-                    wd = self.w0**2
+                    wd = self.w0 ** 2
                 else:
                     wd = 0
-                a[i,j] = (1+wd)*vdot(self.df[i], self.df[j])
+                a[i, j] = (1 + wd) * vdot(self.df[i], self.df[j])
 
         a += np.triu(a, 1).T.conj()
         self.a = a
 
-#------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 # Simple iterations
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class DiagBroyden(GenericBroyden):
@@ -1303,7 +1348,7 @@ class DiagBroyden(GenericBroyden):
         return np.diag(-self.d)
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        self.d -= (df + self.d*dx)*dx/dx_norm**2
+        self.d -= (df + self.d * dx) * dx / dx_norm ** 2
 
 
 class LinearMixing(GenericBroyden):
@@ -1334,19 +1379,19 @@ class LinearMixing(GenericBroyden):
         self.alpha = alpha
 
     def solve(self, f, tol=0):
-        return -f*self.alpha
+        return -f * self.alpha
 
     def matvec(self, f):
-        return -f/self.alpha
+        return -f / self.alpha
 
     def rsolve(self, f, tol=0):
-        return -f*np.conj(self.alpha)
+        return -f * np.conj(self.alpha)
 
     def rmatvec(self, f):
-        return -f/np.conj(self.alpha)
+        return -f / np.conj(self.alpha)
 
     def todense(self):
-        return np.diag(np.full(self.shape[0], -1/self.alpha))
+        return np.diag(np.full(self.shape[0], -1 / self.alpha))
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
@@ -1390,30 +1435,31 @@ class ExcitingMixing(GenericBroyden):
         self.beta = np.full((self.shape[0],), self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
-        return -f*self.beta
+        return -f * self.beta
 
     def matvec(self, f):
-        return -f/self.beta
+        return -f / self.beta
 
     def rsolve(self, f, tol=0):
-        return -f*self.beta.conj()
+        return -f * self.beta.conj()
 
     def rmatvec(self, f):
-        return -f/self.beta.conj()
+        return -f / self.beta.conj()
 
     def todense(self):
-        return np.diag(-1/self.beta)
+        return np.diag(-1 / self.beta)
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        incr = f*self.last_f > 0
+        incr = f * self.last_f > 0
         self.beta[incr] += self.alpha
         self.beta[~incr] = self.alpha
         np.clip(self.beta, 0, self.alphamax, out=self.beta)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Iterative/Krylov approximated Jacobians
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class KrylovJacobian(Jacobian):
     r"""
@@ -1512,8 +1558,15 @@ class KrylovJacobian(Jacobian):
 
     """
 
-    def __init__(self, rdiff=None, method='lgmres', inner_maxiter=20,
-                 inner_M=None, outer_k=10, **kw):
+    def __init__(
+        self,
+        rdiff=None,
+        method="lgmres",
+        inner_maxiter=20,
+        inner_M=None,
+        outer_k=10,
+        **kw,
+    ):
         self.preconditioner = inner_M
         self.rdiff = rdiff
         self.method = dict(
@@ -1522,35 +1575,35 @@ class KrylovJacobian(Jacobian):
             lgmres=scipy.sparse.linalg.lgmres,
             cgs=scipy.sparse.linalg.cgs,
             minres=scipy.sparse.linalg.minres,
-            ).get(method, method)
+        ).get(method, method)
 
         self.method_kw = dict(maxiter=inner_maxiter, M=self.preconditioner)
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
-            self.method_kw['maxiter'] = 1
-            self.method_kw.setdefault('atol', 0)
+            self.method_kw["restrt"] = inner_maxiter
+            self.method_kw["maxiter"] = 1
+            self.method_kw.setdefault("atol", 0)
         elif self.method is scipy.sparse.linalg.gcrotmk:
-            self.method_kw.setdefault('atol', 0)
+            self.method_kw.setdefault("atol", 0)
         elif self.method is scipy.sparse.linalg.lgmres:
-            self.method_kw['outer_k'] = outer_k
+            self.method_kw["outer_k"] = outer_k
             # Replace LGMRES's outer iteration with Newton steps
-            self.method_kw['maxiter'] = 1
+            self.method_kw["maxiter"] = 1
             # Carry LGMRES's `outer_v` vectors across nonlinear iterations
-            self.method_kw.setdefault('outer_v', [])
-            self.method_kw.setdefault('prepend_outer_v', True)
+            self.method_kw.setdefault("outer_v", [])
+            self.method_kw.setdefault("prepend_outer_v", True)
             # But don't carry the corresponding Jacobian*v products, in case
             # the Jacobian changes a lot in the nonlinear step
             #
             # XXX: some trust-region inspired ideas might be more efficient...
             #      See e.g., Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
-            self.method_kw.setdefault('store_outer_Av', False)
-            self.method_kw.setdefault('atol', 0)
+            self.method_kw.setdefault("store_outer_Av", False)
+            self.method_kw.setdefault("atol", 0)
 
         for key, value in kw.items():
-            if not key.startswith('inner_'):
+            if not key.startswith("inner_"):
                 raise ValueError("Unknown parameter %s" % key)
             self.method_kw[key[6:]] = value
 
@@ -1562,15 +1615,15 @@ class KrylovJacobian(Jacobian):
     def matvec(self, v):
         nv = norm(v)
         if nv == 0:
-            return 0*v
+            return 0 * v
         sc = self.omega / nv
-        r = (self.func(self.x0 + sc*v) - self.f0) / sc
+        r = (self.func(self.x0 + sc * v) - self.f0) / sc
         if not np.all(np.isfinite(r)) and np.all(np.isfinite(v)):
-            raise ValueError('Function returned non-finite results')
+            raise ValueError("Function returned non-finite results")
         return r
 
     def solve(self, rhs, tol=0):
-        if 'tol' in self.method_kw:
+        if "tol" in self.method_kw:
             sol, info = self.method(self.op, rhs, **self.method_kw)
         else:
             sol, info = self.method(self.op, rhs, tol=tol, **self.method_kw)
@@ -1583,7 +1636,7 @@ class KrylovJacobian(Jacobian):
 
         # Update also the preconditioner, if possible
         if self.preconditioner is not None:
-            if hasattr(self.preconditioner, 'update'):
+            if hasattr(self.preconditioner, "update"):
                 self.preconditioner.update(x, f)
 
     def setup(self, x, f, func):
@@ -1593,19 +1646,20 @@ class KrylovJacobian(Jacobian):
         self.op = scipy.sparse.linalg.aslinearoperator(self)
 
         if self.rdiff is None:
-            self.rdiff = np.finfo(x.dtype).eps ** (1./2)
+            self.rdiff = np.finfo(x.dtype).eps ** (1.0 / 2)
 
         self._update_diff_step()
 
         # Setup also the preconditioner, if possible
         if self.preconditioner is not None:
-            if hasattr(self.preconditioner, 'setup'):
+            if hasattr(self.preconditioner, "setup"):
                 self.preconditioner.setup(x, f, func)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Wrapper functions
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 def _nonlin_wrapper(name, jac):
     """
@@ -1618,7 +1672,7 @@ def _nonlin_wrapper(name, jac):
     """
     signature = _getfullargspec(jac.__init__)
     args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
-    kwargs = list(zip(args[-len(defaults):], defaults))
+    kwargs = list(zip(args[-len(defaults) :], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
@@ -1626,7 +1680,7 @@ def _nonlin_wrapper(name, jac):
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:
-        raise ValueError('Unexpected signature %s' % signature)
+        raise ValueError("Unexpected signature %s" % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
@@ -1640,8 +1694,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                         callback)
 """
 
-    wrapper = wrapper % dict(name=name, kw=kw_str, jac=jac.__name__,
-                             kwkw=kwkw_str)
+    wrapper = wrapper % dict(name=name, kw=kw_str, jac=jac.__name__, kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
     exec(wrapper, ns)
@@ -1651,10 +1704,10 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
     return func
 
 
-broyden1 = _nonlin_wrapper('broyden1', BroydenFirst)
-broyden2 = _nonlin_wrapper('broyden2', BroydenSecond)
-anderson = _nonlin_wrapper('anderson', Anderson)
-linearmixing = _nonlin_wrapper('linearmixing', LinearMixing)
-diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
-excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
-newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
+broyden1 = _nonlin_wrapper("broyden1", BroydenFirst)
+broyden2 = _nonlin_wrapper("broyden2", BroydenSecond)
+anderson = _nonlin_wrapper("anderson", Anderson)
+linearmixing = _nonlin_wrapper("linearmixing", LinearMixing)
+diagbroyden = _nonlin_wrapper("diagbroyden", DiagBroyden)
+excitingmixing = _nonlin_wrapper("excitingmixing", ExcitingMixing)
+newton_krylov = _nonlin_wrapper("newton_krylov", KrylovJacobian)

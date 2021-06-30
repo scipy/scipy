@@ -158,12 +158,12 @@ def test_equal_size_ordering(n, order):
 
 @pytest.mark.parametrize("kmax", [5, 10])
 def test_binary_tree(kmax):
-    n = 2**kmax
+    n = 2 ** kmax
     elements = get_elements(n)
     dis = DisjointSet(elements)
     rng = np.random.RandomState(seed=0)
 
-    for k in 2**np.arange(kmax):
+    for k in 2 ** np.arange(kmax):
         for i in range(0, n, 2 * k):
             r1, r2 = rng.randint(0, k, size=2)
             a, b = elements[i + r1], elements[i + k + r2]

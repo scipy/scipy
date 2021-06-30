@@ -47,10 +47,19 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from scipy.optimize import OptimizeResult
 
 from .common import (
-    step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
-    build_quadratic_1d, minimize_quadratic_1d, compute_grad,
-    compute_jac_scale, check_termination, scale_for_robust_loss_function,
-    print_header_nonlinear, print_iteration_nonlinear)
+    step_size_to_bound,
+    in_bounds,
+    update_tr_radius,
+    evaluate_quadratic,
+    build_quadratic_1d,
+    minimize_quadratic_1d,
+    compute_grad,
+    compute_jac_scale,
+    check_termination,
+    scale_for_robust_loss_function,
+    print_header_nonlinear,
+    print_iteration_nonlinear,
+)
 
 
 def lsmr_operator(Jop, d, active_set):
@@ -137,8 +146,7 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
     cauchy_step = -minimize_quadratic_1d(a, b, 0, to_bounds)[0] * g
 
     step_diff = newton_step - cauchy_step
-    step_size, hits = step_size_to_bound(cauchy_step, step_diff,
-                                         lb_total, ub_total)
+    step_size, hits = step_size_to_bound(cauchy_step, step_diff, lb_total, ub_total)
     bound_hits[(hits < 0) & orig_l] = -1
     bound_hits[(hits > 0) & orig_u] = 1
     tr_hit = np.any((hits < 0) & tr_l | (hits > 0) & tr_u)
@@ -146,8 +154,24 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
     return cauchy_step + step_size * step_diff, bound_hits, tr_hit
 
 
-def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
-           loss_function, tr_solver, tr_options, verbose):
+def dogbox(
+    fun,
+    jac,
+    x0,
+    f0,
+    J0,
+    lb,
+    ub,
+    ftol,
+    xtol,
+    gtol,
+    max_nfev,
+    x_scale,
+    loss_function,
+    tr_solver,
+    tr_options,
+    verbose,
+):
     f = f0
     f_true = f.copy()
     nfev = 1
@@ -164,7 +188,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
 
     g = compute_grad(J, f)
 
-    jac_scale = isinstance(x_scale, str) and x_scale == 'jac'
+    jac_scale = isinstance(x_scale, str) and x_scale == "jac"
     if jac_scale:
         scale, scale_inv = compute_jac_scale(J)
     else:
@@ -205,8 +229,9 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
-                                      step_norm, g_norm)
+            print_iteration_nonlinear(
+                iteration, nfev, cost, actual_reduction, step_norm, g_norm
+            )
 
         if termination_status is not None or nfev == max_nfev:
             break
@@ -217,13 +242,13 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
         scale_free = scale[free_set]
 
         # Compute (Gauss-)Newton and build quadratic model for Cauchy step.
-        if tr_solver == 'exact':
+        if tr_solver == "exact":
             J_free = J[:, free_set]
             newton_step = lstsq(J_free, -f, rcond=-1)[0]
 
             # Coefficients for the quadratic model along the anti-gradient.
             a, b = build_quadratic_1d(J_free, g_free, -g_free)
-        elif tr_solver == 'lsmr':
+        elif tr_solver == "lsmr":
             Jop = aslinearoperator(J)
 
             # We compute lsmr step in scaled variables and then
@@ -249,15 +274,15 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             tr_bounds = Delta * scale_free
 
             step_free, on_bound_free, tr_hit = dogleg_step(
-                x_free, newton_step, g_free, a, b, tr_bounds, lb_free, ub_free)
+                x_free, newton_step, g_free, a, b, tr_bounds, lb_free, ub_free
+            )
 
             step.fill(0.0)
             step[free_set] = step_free
 
-            if tr_solver == 'exact':
-                predicted_reduction = -evaluate_quadratic(J_free, g_free,
-                                                          step_free)
-            elif tr_solver == 'lsmr':
+            if tr_solver == "exact":
+                predicted_reduction = -evaluate_quadratic(J_free, g_free, step_free)
+            elif tr_solver == "lsmr":
                 predicted_reduction = -evaluate_quadratic(Jop, g, step)
 
             # gh11403 ensure that solution is fully within bounds.
@@ -280,13 +305,13 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             actual_reduction = cost - cost_new
 
             Delta, ratio = update_tr_radius(
-                Delta, actual_reduction, predicted_reduction,
-                step_h_norm, tr_hit
+                Delta, actual_reduction, predicted_reduction, step_h_norm, tr_hit
             )
 
             step_norm = norm(step)
             termination_status = check_termination(
-                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
+                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol
+            )
 
             if termination_status is not None:
                 break
@@ -327,5 +352,14 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
         termination_status = 0
 
     return OptimizeResult(
-        x=x, cost=cost, fun=f_true, jac=J, grad=g_full, optimality=g_norm,
-        active_mask=on_bound, nfev=nfev, njev=njev, status=termination_status)
+        x=x,
+        cost=cost,
+        fun=f_true,
+        jac=J,
+        grad=g_full,
+        optimality=g_norm,
+        active_mask=on_bound,
+        nfev=nfev,
+        njev=njev,
+        status=termination_status,
+    )

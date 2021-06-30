@@ -84,7 +84,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
            [0, 0, 0, 0]])
     """
     global NULL_IDX
-    
+
     csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
@@ -123,13 +123,13 @@ cdef void _min_spanning_tree(DTYPE_t[::1] data,
     cdef unsigned int i, j, V1, V2, R1, R2, n_edges_in_mst, n_verts, n_data
     n_verts = predecessors.shape[0]
     n_data = i_sort.shape[0]
-    
+
     # Arrange `row_indices` to contain the row index of each value in `data`.
     # Note that the array `col_indices` already contains the column index.
     for i in range(n_verts):
         for j in range(indptr[i], indptr[i + 1]):
             row_indices[j] = i
-    
+
     # step through the edges from smallest to largest.
     #  V1 and V2 are connected vertices.
     n_edges_in_mst = 0
@@ -152,13 +152,13 @@ cdef void _min_spanning_tree(DTYPE_t[::1] data,
             predecessors[V1] = R1
         while predecessors[V2] != R2:
             predecessors[V2] = R2
-            
+
         # if the subtrees are different, then we connect them and keep the
         # edge.  Otherwise, we remove the edge: it duplicates one already
         # in the spanning tree.
         if R1 != R2:
             n_edges_in_mst += 1
-            
+
             # Use approximate (because of path-compression) rank to try
             # to keep balanced trees.
             if rank[R1] > rank[R2]:
@@ -170,12 +170,11 @@ cdef void _min_spanning_tree(DTYPE_t[::1] data,
                 rank[R1] += 1
         else:
             data[j] = 0
-        
+
         i += 1
-        
+
     # We may have stopped early if we found a full-sized MST so zero out the rest
     while i < n_data:
         j = i_sort[i]
         data[j] = 0
         i += 1
-    

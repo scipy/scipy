@@ -50,4 +50,3 @@ void qh_fprintf_rbox(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) {
     vfprintf(fp, fmt, args);
     va_end(args);
 } /* qh_fprintf_rbox */
-

@@ -8,10 +8,16 @@ import numpy as np
 from .system_info import combine_dict
 
 
-__all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers',
-           'gfortran_legacy_flag_hook', 'blas_ilp64_pre_build_hook',
-           'get_f2py_int64_options', 'generic_pre_build_hook',
-           'write_file_content', 'ilp64_pre_build_hook']
+__all__ = [
+    "needs_g77_abi_wrapper",
+    "get_g77_abi_wrappers",
+    "gfortran_legacy_flag_hook",
+    "blas_ilp64_pre_build_hook",
+    "get_f2py_int64_options",
+    "generic_pre_build_hook",
+    "write_file_content",
+    "ilp64_pre_build_hook",
+]
 
 
 def get_fcompiler_ilp64_flags():
@@ -20,26 +26,26 @@ def get_fcompiler_ilp64_flags():
     size.
     """
     flags = {
-        'absoft': ['-i8'],  # Absoft
-        'compaq': ['-i8'],  # Compaq Fortran
-        'compaqv': ['/integer_size:64'],  # Compaq Visual Fortran
-        'g95': ['-i8'],  # g95
-        'gnu95': ['-fdefault-integer-8'],  # GNU gfortran
-        'ibm': ['-qintsize=8'],  # IBM XL Fortran
-        'intel': ['-i8'],  # Intel Fortran Compiler for 32-bit
-        'intele': ['-i8'],  # Intel Fortran Compiler for Itanium
-        'intelem': ['-i8'],  # Intel Fortran Compiler for 64-bit
-        'intelv': ['-i8'],  # Intel Visual Fortran Compiler for 32-bit
-        'intelev': ['-i8'],  # Intel Visual Fortran Compiler for Itanium
-        'intelvem': ['-i8'],  # Intel Visual Fortran Compiler for 64-bit
-        'lahey': ['--long'],  # Lahey/Fujitsu Fortran 95 Compiler
-        'mips': ['-i8'],  # MIPSpro Fortran Compiler
-        'nag': ['-i8'],  # NAGWare Fortran 95 compiler
-        'nagfor': ['-i8'],  # NAG Fortran compiler
-        'pathf95': ['-i8'],  # PathScale Fortran compiler
-        'pg': ['-i8'],  # Portland Group Fortran Compiler
-        'flang': ['-i8'],  # Portland Group Fortran LLVM Compiler
-        'sun': ['-i8'],  # Sun or Forte Fortran 95 Compiler
+        "absoft": ["-i8"],  # Absoft
+        "compaq": ["-i8"],  # Compaq Fortran
+        "compaqv": ["/integer_size:64"],  # Compaq Visual Fortran
+        "g95": ["-i8"],  # g95
+        "gnu95": ["-fdefault-integer-8"],  # GNU gfortran
+        "ibm": ["-qintsize=8"],  # IBM XL Fortran
+        "intel": ["-i8"],  # Intel Fortran Compiler for 32-bit
+        "intele": ["-i8"],  # Intel Fortran Compiler for Itanium
+        "intelem": ["-i8"],  # Intel Fortran Compiler for 64-bit
+        "intelv": ["-i8"],  # Intel Visual Fortran Compiler for 32-bit
+        "intelev": ["-i8"],  # Intel Visual Fortran Compiler for Itanium
+        "intelvem": ["-i8"],  # Intel Visual Fortran Compiler for 64-bit
+        "lahey": ["--long"],  # Lahey/Fujitsu Fortran 95 Compiler
+        "mips": ["-i8"],  # MIPSpro Fortran Compiler
+        "nag": ["-i8"],  # NAGWare Fortran 95 compiler
+        "nagfor": ["-i8"],  # NAG Fortran compiler
+        "pathf95": ["-i8"],  # PathScale Fortran compiler
+        "pg": ["-i8"],  # Portland Group Fortran Compiler
+        "flang": ["-i8"],  # Portland Group Fortran LLVM Compiler
+        "sun": ["-i8"],  # Sun or Forte Fortran 95 Compiler
     }
     # No support for this:
     # - g77
@@ -55,26 +61,30 @@ def get_fcompiler_macro_include_flags(path):
     an #include search path, and safety options necessary for macro
     expansion.
     """
-    intel_opts = ['-fpp', '-I' + path]
-    nag_opts = ['-fpp', '-I' + path]
+    intel_opts = ["-fpp", "-I" + path]
+    nag_opts = ["-fpp", "-I" + path]
 
     flags = {
-        'absoft': ['-W132', '-cpp', '-I' + path],
-        'gnu95': ['-cpp', '-ffree-line-length-none',
-                  '-ffixed-line-length-none', '-I' + path],
-        'intel': intel_opts,
-        'intele': intel_opts,
-        'intelem': intel_opts,
-        'intelv': intel_opts,
-        'intelev': intel_opts,
-        'intelvem': intel_opts,
-        'lahey': ['-Cpp', '--wide', '-I' + path],
-        'mips': ['-col120', '-I' + path],
-        'nag': nag_opts,
-        'nagfor': nag_opts,
-        'pathf95': ['-ftpp', '-macro-expand', '-I' + path],
-        'flang': ['-Mpreprocess', '-Mextend', '-I' + path],
-        'sun': ['-fpp', '-I' + path],
+        "absoft": ["-W132", "-cpp", "-I" + path],
+        "gnu95": [
+            "-cpp",
+            "-ffree-line-length-none",
+            "-ffixed-line-length-none",
+            "-I" + path,
+        ],
+        "intel": intel_opts,
+        "intele": intel_opts,
+        "intelem": intel_opts,
+        "intelv": intel_opts,
+        "intelev": intel_opts,
+        "intelvem": intel_opts,
+        "lahey": ["-Cpp", "--wide", "-I" + path],
+        "mips": ["-col120", "-I" + path],
+        "nag": nag_opts,
+        "nagfor": nag_opts,
+        "pathf95": ["-ftpp", "-macro-expand", "-I" + path],
+        "flang": ["-Mpreprocess", "-Mextend", "-I" + path],
+        "sun": ["-fpp", "-I" + path],
     }
     # No support for this:
     # - ibm (line length option turns on fixed format)
@@ -85,7 +95,7 @@ def get_fcompiler_macro_include_flags(path):
 
 def uses_mkl(info):
     r_mkl = re.compile("mkl")
-    libraries = info.get('libraries', '')
+    libraries = info.get("libraries", "")
     for library in libraries:
         if r_mkl.search(library):
             return True
@@ -112,12 +122,12 @@ def get_g77_abi_wrappers(info):
     path = os.path.abspath(os.path.dirname(__file__))
     if needs_g77_abi_wrapper(info):
         wrapper_sources += [
-            os.path.join(path, 'src', 'wrap_g77_abi_f.f'),
-            os.path.join(path, 'src', 'wrap_g77_abi_c.c'),
+            os.path.join(path, "src", "wrap_g77_abi_f.f"),
+            os.path.join(path, "src", "wrap_g77_abi_c.c"),
         ]
     else:
         wrapper_sources += [
-            os.path.join(path, 'src', 'wrap_dummy_g77_abi.f'),
+            os.path.join(path, "src", "wrap_dummy_g77_abi.f"),
         ]
     return wrapper_sources
 
@@ -131,12 +141,16 @@ def gfortran_legacy_flag_hook(cmd, ext):
 
     if isinstance(ext, dict):
         # build_clib
-        compilers = ((cmd._f_compiler, ext.setdefault('extra_f77_compile_args', [])),
-                      (cmd._f_compiler, ext.setdefault('extra_f90_compile_args', [])))
+        compilers = (
+            (cmd._f_compiler, ext.setdefault("extra_f77_compile_args", [])),
+            (cmd._f_compiler, ext.setdefault("extra_f90_compile_args", [])),
+        )
     else:
         # build_ext
-        compilers = ((cmd._f77_compiler, ext.extra_f77_compile_args),
-                     (cmd._f90_compiler, ext.extra_f90_compile_args))
+        compilers = (
+            (cmd._f77_compiler, ext.extra_f77_compile_args),
+            (cmd._f90_compiler, ext.extra_f90_compile_args),
+        )
 
     for compiler, args in compilers:
         if compiler is None:
@@ -148,26 +162,25 @@ def gfortran_legacy_flag_hook(cmd, ext):
 
 def _get_build_src_dir():
     plat_specifier = ".{}-{}.{}".format(get_platform(), *sys.version_info[:2])
-    return os.path.join('build', 'src' + plat_specifier)
+    return os.path.join("build", "src" + plat_specifier)
 
 
 def get_f2py_int64_options():
-    if np.dtype('i') == np.dtype(np.int64):
-        int64_name = 'int'
-    elif np.dtype('l') == np.dtype(np.int64):
-        int64_name = 'long'
-    elif np.dtype('q') == np.dtype(np.int64):
-        int64_name = 'long_long'
+    if np.dtype("i") == np.dtype(np.int64):
+        int64_name = "int"
+    elif np.dtype("l") == np.dtype(np.int64):
+        int64_name = "long"
+    elif np.dtype("q") == np.dtype(np.int64):
+        int64_name = "long_long"
     else:
         raise RuntimeError("No 64-bit integer type available in f2py!")
 
-    f2cmap_fn = os.path.join(_get_build_src_dir(), 'int64.f2cmap')
-    text = "{'integer': {'': '%s'}, 'logical': {'': '%s'}}\n" % (
-        int64_name, int64_name)
+    f2cmap_fn = os.path.join(_get_build_src_dir(), "int64.f2cmap")
+    text = "{'integer': {'': '%s'}, 'logical': {'': '%s'}}\n" % (int64_name, int64_name)
 
     write_file_content(f2cmap_fn, text)
 
-    return ['--f2cmap', f2cmap_fn]
+    return ["--f2cmap", f2cmap_fn]
 
 
 def ilp64_pre_build_hook(cmd, ext):
@@ -199,53 +212,57 @@ def blas_ilp64_pre_build_hook(blas_info):
 
 def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
     # Determine BLAS symbol suffix/prefix, if any
-    macros = dict(blas_info.get('define_macros', []))
-    prefix = macros.get('BLAS_SYMBOL_PREFIX', '')
-    suffix = macros.get('BLAS_SYMBOL_SUFFIX', '')
+    macros = dict(blas_info.get("define_macros", []))
+    prefix = macros.get("BLAS_SYMBOL_PREFIX", "")
+    suffix = macros.get("BLAS_SYMBOL_SUFFIX", "")
 
     if suffix:
-        if not suffix.endswith('_'):
+        if not suffix.endswith("_"):
             # Symbol suffix has to end with '_' to be Fortran-compatible
-            raise RuntimeError("BLAS/LAPACK has incompatible symbol suffix: "
-                               "{!r}".format(suffix))
+            raise RuntimeError(
+                "BLAS/LAPACK has incompatible symbol suffix: {!r}".format(suffix)
+            )
 
         suffix = suffix[:-1]
 
     # When symbol prefix/suffix is present, we have to patch sources
     if prefix or suffix:
-        include_dir = os.path.join(_get_build_src_dir(), 'blas64-include')
+        include_dir = os.path.join(_get_build_src_dir(), "blas64-include")
 
-        fcompiler_flags = combine_dict(get_fcompiler_ilp64_flags(),
-                                       get_fcompiler_macro_include_flags(include_dir))
+        fcompiler_flags = combine_dict(
+            get_fcompiler_ilp64_flags(), get_fcompiler_macro_include_flags(include_dir)
+        )
 
         # Add the include dir for C code
         if isinstance(ext, dict):
-            ext.setdefault('include_dirs', [])
-            ext['include_dirs'].append(include_dir)
+            ext.setdefault("include_dirs", [])
+            ext["include_dirs"].append(include_dir)
         else:
             ext.include_dirs.append(include_dir)
 
         # Create name-mapping include files
-        include_name_f = 'blas64-prefix-defines.inc'
-        include_name_c = 'blas64-prefix-defines.h'
+        include_name_f = "blas64-prefix-defines.inc"
+        include_name_c = "blas64-prefix-defines.h"
         include_fn_f = os.path.join(include_dir, include_name_f)
         include_fn_c = os.path.join(include_dir, include_name_c)
 
         text = ""
         for symbol in get_blas_lapack_symbols():
-            text += '#define {} {}{}_{}\n'.format(symbol, prefix, symbol, suffix)
-            text += '#define {} {}{}_{}\n'.format(symbol.upper(), prefix, symbol, suffix)
+            text += "#define {} {}{}_{}\n".format(symbol, prefix, symbol, suffix)
+            text += "#define {} {}{}_{}\n".format(
+                symbol.upper(), prefix, symbol, suffix
+            )
 
             # Code generation may give source codes with mixed-case names
             for j in (1, 2):
                 s = symbol[:j].lower() + symbol[j:].upper()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += "#define {} {}{}_{}\n".format(s, prefix, symbol, suffix)
                 s = symbol[:j].upper() + symbol[j:].lower()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += "#define {} {}{}_{}\n".format(s, prefix, symbol, suffix)
 
         write_file_content(include_fn_f, text)
 
-        ctext = re.sub(r'^#define (.*) (.*)$', r'#define \1_ \2_', text, flags=re.M)
+        ctext = re.sub(r"^#define (.*) (.*)$", r"#define \1_ \2_", text, flags=re.M)
         write_file_content(include_fn_c, text + "\n" + ctext)
 
         # Patch sources to include it
@@ -253,18 +270,23 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
             text = '#include "{}"\n'.format(include_name_f)
             text += old_text
             return text
+
     else:
         fcompiler_flags = get_fcompiler_ilp64_flags()
         patch_source = None
 
-    return generic_pre_build_hook(cmd, ext,
-                                  fcompiler_flags=fcompiler_flags,
-                                  patch_source_func=patch_source,
-                                  source_fnpart="_blas64")
+    return generic_pre_build_hook(
+        cmd,
+        ext,
+        fcompiler_flags=fcompiler_flags,
+        patch_source_func=patch_source,
+        source_fnpart="_blas64",
+    )
 
 
-def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
-                           source_fnpart=None):
+def generic_pre_build_hook(
+    cmd, ext, fcompiler_flags, patch_source_func=None, source_fnpart=None
+):
     """
     Pre-build hook for adding compiler flags and patching sources.
 
@@ -299,12 +321,14 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
 
     # Add compiler flags
     if is_clib:
-        f77_args = build_info.setdefault('extra_f77_compile_args', [])
-        f90_args = build_info.setdefault('extra_f90_compile_args', [])
+        f77_args = build_info.setdefault("extra_f77_compile_args", [])
+        f90_args = build_info.setdefault("extra_f90_compile_args", [])
         compilers = [(f77, f77_args), (f90, f90_args)]
     else:
-        compilers = [(f77, ext.extra_f77_compile_args),
-                     (f90, ext.extra_f90_compile_args)]
+        compilers = [
+            (f77, ext.extra_f77_compile_args),
+            (f90, ext.extra_f90_compile_args),
+        ]
 
     for compiler, args in compilers:
         if compiler is None:
@@ -314,8 +338,9 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
             flags = fcompiler_flags[compiler.compiler_type]
         except KeyError as e:
             raise RuntimeError(
-                "Compiler {!r} is not supported in this "
-                "configuration.".format(compiler.compiler_type)
+                "Compiler {!r} is not supported in this configuration.".format(
+                    compiler.compiler_type
+                )
             ) from e
 
         args.extend(flag for flag in flags if flag not in args)
@@ -323,14 +348,16 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
     # Mangle sources
     if patch_source_func is not None:
         if is_clib:
-            build_info.setdefault('depends', []).extend(build_info['sources'])
-            new_sources = _generic_patch_sources(build_info['sources'], patch_source_func,
-                                                 source_fnpart)
-            build_info['sources'][:] = new_sources
+            build_info.setdefault("depends", []).extend(build_info["sources"])
+            new_sources = _generic_patch_sources(
+                build_info["sources"], patch_source_func, source_fnpart
+            )
+            build_info["sources"][:] = new_sources
         else:
             ext.depends.extend(ext.sources)
-            new_sources = _generic_patch_sources(ext.sources, patch_source_func,
-                                                 source_fnpart)
+            new_sources = _generic_patch_sources(
+                ext.sources, patch_source_func, source_fnpart
+            )
             ext.sources[:] = new_sources
 
 
@@ -368,11 +395,11 @@ def _generic_patch_sources(filenames, patch_source_func, source_fnpart, root_dir
     for src in filenames:
         base, ext = os.path.splitext(os.path.basename(src))
 
-        if ext not in ('.f', '.f90'):
+        if ext not in (".f", ".f90"):
             new_filenames.append(src)
             continue
 
-        with open(src, 'r') as fsrc:
+        with open(src, "r") as fsrc:
             text = patch_source_func(src, fsrc.read())
 
         # Generate useful target directory name under src_dir
@@ -398,7 +425,7 @@ def write_file_content(filename, content):
     Write content to file, but only if it differs from the current one.
     """
     if os.path.isfile(filename):
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             old_content = f.read()
 
         if old_content == content:
@@ -408,23 +435,23 @@ def write_file_content(filename, content):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write(content)
 
 
 def get_blas_lapack_symbols():
-    cached = getattr(get_blas_lapack_symbols, 'cached', None)
+    cached = getattr(get_blas_lapack_symbols, "cached", None)
     if cached is not None:
         return cached
 
     # Obtain symbol list from Cython Blas/Lapack interface
-    srcdir = os.path.join(os.path.dirname(__file__), os.pardir, 'linalg')
+    srcdir = os.path.join(os.path.dirname(__file__), os.pardir, "linalg")
 
     symbols = []
 
     # Get symbols from the generated files
-    for fn in ['cython_blas_signatures.txt', 'cython_lapack_signatures.txt']:
-        with open(os.path.join(srcdir, fn), 'r') as f:
+    for fn in ["cython_blas_signatures.txt", "cython_lapack_signatures.txt"]:
+        with open(os.path.join(srcdir, fn), "r") as f:
             for line in f:
                 m = re.match(r"^\s*[a-z]+\s+([a-z0-9]+)\(", line)
                 if m:
@@ -432,13 +459,13 @@ def get_blas_lapack_symbols():
 
     # Get the rest from the generator script
     # (we cannot import it directly here, so use exec)
-    sig_fn = os.path.join(srcdir, '_cython_signature_generator.py')
-    with open(sig_fn, 'r') as f:
+    sig_fn = os.path.join(srcdir, "_cython_signature_generator.py")
+    with open(sig_fn, "r") as f:
         code = f.read()
-    ns = {'__name__': '<module>'}
+    ns = {"__name__": "<module>"}
     exec(code, ns)
-    symbols.extend(ns['blas_exclusions'])
-    symbols.extend(ns['lapack_exclusions'])
+    symbols.extend(ns["blas_exclusions"])
+    symbols.extend(ns["lapack_exclusions"])
 
     get_blas_lapack_symbols.cached = tuple(sorted(set(symbols)))
     return get_blas_lapack_symbols.cached

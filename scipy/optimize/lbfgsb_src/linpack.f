@@ -71,7 +71,7 @@ c     ......exit
    40 continue
       return
       end
-      
+
 c====================== The end of dpofa ===============================
 
       subroutine dtrsl(t,ldt,n,b,job,info)
@@ -208,7 +208,5 @@ c
   150 continue
       return
       end
-      
+
 c====================== The end of dtrsl ===============================
-
-

@@ -1,4 +1,4 @@
-C------------------------------------------------------------------------ 
+C------------------------------------------------------------------------
 C
       SUBROUTINE COBYLA (CALCFC, N,M,X,RHOBEG,RHOEND,IPRINT,MAXFUN,
      & W,IACT, DINFO)
@@ -16,7 +16,7 @@ C     parameter RHO controls the size of the simplex and it is reduced
 C     automatically from RHOBEG to RHOEND. For each RHO the subroutine tries
 C     to achieve a good vector of variables for the current size, and then
 C     RHO is reduced until the value RHOEND is reached. Therefore RHOBEG and
-C     RHOEND should be set to reasonable initial changes to and the required   
+C     RHOEND should be set to reasonable initial changes to and the required
 C     accuracy in the variables respectively, but this accuracy should be
 C     viewed as a subject for experimentation because it is not guaranteed.
 C     The subroutine has an advantage over many of its competitors, however,
@@ -321,14 +321,14 @@ C
 C     Calculate the step to the new vertex and its sign.
 C
       TEMP=GAMMA*RHO*VSIG(JDROP)
-      IF (IPRINT .EQ. 3) THEN 
+      IF (IPRINT .EQ. 3) THEN
          PRINT *, '  SIMI =', (SIMI(JDROP,I),I=1,N)
       END IF
       DO 290 I=1,N
   290 DX(I)=TEMP*SIMI(JDROP,I)
       IF (IPRINT .EQ. 3) THEN
          PRINT *, '  DX =', (DX(I),I=1,N)
-      END IF         
+      END IF
       CVMAXP=0.0d0
       CVMAXM=0.0d0
       DO 310 K=1,MP
@@ -567,4 +567,3 @@ C
       DINFO(4)=DBLE(RESMAX)
       RETURN
       END
-

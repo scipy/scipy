@@ -12,19 +12,19 @@ MY_DIR = dirname(MY_PATH)
 
 def test_tempdir():
     with tempdir() as tmpdir:
-        fname = pjoin(tmpdir, 'example_file.txt')
-        with open(fname, 'wt') as fobj:
-            fobj.write('a string\\n')
+        fname = pjoin(tmpdir, "example_file.txt")
+        with open(fname, "wt") as fobj:
+            fobj.write("a string\\n")
     assert_(not exists(tmpdir))
 
 
 def test_in_tempdir():
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
-        with open('test.txt', 'wt') as f:
-            f.write('some text')
-        assert_(isfile('test.txt'))
-        assert_(isfile(pjoin(tmpdir, 'test.txt')))
+        with open("test.txt", "wt") as f:
+            f.write("some text")
+        assert_(isfile("test.txt"))
+        assert_(isfile(pjoin(tmpdir, "test.txt")))
     assert_(not exists(tmpdir))
     assert_equal(getcwd(), my_cwd)
 

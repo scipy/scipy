@@ -28,7 +28,7 @@ a(1,:) = 1:5;
 % 2D matrix
 save_matfile('testmatrix', a);
 
-% minus number - tests signed int 
+% minus number - tests signed int
 save_matfile('testminus', -1);
 
 % single character
@@ -47,4 +47,3 @@ save_matfile('testsparsecomplex', b);
 
 % Two variables in same file
 save([FILEPREFIX 'testmulti' FILESUFFIX], 'a', 'theta')
-

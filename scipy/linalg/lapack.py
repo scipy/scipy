@@ -817,6 +817,7 @@ import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 from re import compile as regex_compile
+
 try:
     from scipy.linalg import _clapack
 except ImportError:
@@ -824,6 +825,7 @@ except ImportError:
 
 try:
     from scipy.linalg import _flapack_64
+
     HAS_ILP64 = True
 except ImportError:
     HAS_ILP64 = False
@@ -831,25 +833,27 @@ except ImportError:
 
 # Backward compatibility
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
+
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
 from scipy.linalg._flapack import *
+
 del empty_module
 
-__all__ = ['get_lapack_funcs']
+__all__ = ["get_lapack_funcs"]
 
 _dep_message = """The `*gegv` family of routines has been deprecated in
 LAPACK 3.6.0 in favor of the `*ggev` family of routines.
 The corresponding wrappers will be removed from SciPy in
 a future release."""
 
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
+cgegv = _np.deprecate(cgegv, old_name="cgegv", message=_dep_message)
+dgegv = _np.deprecate(dgegv, old_name="dgegv", message=_dep_message)
+sgegv = _np.deprecate(sgegv, old_name="sgegv", message=_dep_message)
+zgegv = _np.deprecate(zgegv, old_name="zgegv", message=_dep_message)
 
 # Modify _flapack in this scope so the deprecation warnings apply to
 # functions returned by get_lapack_funcs.
@@ -860,33 +864,50 @@ _flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {
-    'corghr': 'cunghr', 'zorghr': 'zunghr',
-    'corghr_lwork': 'cunghr_lwork', 'zorghr_lwork': 'zunghr_lwork',
-    'corgqr': 'cungqr', 'zorgqr': 'zungqr',
-    'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
-    'corgrq': 'cungrq', 'zorgrq': 'zungrq',
+    "corghr": "cunghr",
+    "zorghr": "zunghr",
+    "corghr_lwork": "cunghr_lwork",
+    "zorghr_lwork": "zunghr_lwork",
+    "corgqr": "cungqr",
+    "zorgqr": "zungqr",
+    "cormqr": "cunmqr",
+    "zormqr": "zunmqr",
+    "corgrq": "cungrq",
+    "zorgrq": "zungrq",
 }
 
 
 # Place guards against docstring rendering issues with special characters
-p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
-p2 = regex_compile(r'Default: (?P<d>.*?)\n')
+p1 = regex_compile(r"with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n")
+p2 = regex_compile(r"Default: (?P<d>.*?)\n")
 
 
 def backtickrepl(m):
-    if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+    if m.group("s"):
+        return "with bounds ``{}`` with ``{}`` storage\n".format(
+            m.group("b"), m.group("s")
+        )
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return "with bounds ``{}``\n".format(m.group("b"))
 
 
-for routine in [ssyevr, dsyevr, cheevr, zheevr,
-                ssyevx, dsyevx, cheevx, zheevx,
-                ssygvd, dsygvd, chegvd, zhegvd]:
+for routine in [
+    ssyevr,
+    dsyevr,
+    cheevr,
+    zheevr,
+    ssyevx,
+    dsyevx,
+    cheevx,
+    zheevx,
+    ssygvd,
+    dsygvd,
+    chegvd,
+    zhegvd,
+]:
     if routine.__doc__:
         routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
-        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
+        routine.__doc__ = p2.sub("Default ``\\1``\n", routine.__doc__)
     else:
         continue
 
@@ -967,24 +988,42 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     """
     if isinstance(ilp64, str):
-        if ilp64 == 'preferred':
+        if ilp64 == "preferred":
             ilp64 = HAS_ILP64
         else:
             raise ValueError("Invalid value for 'ilp64'")
 
     if not ilp64:
-        return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack, _clapack,
-                          "flapack", "clapack", _lapack_alias,
-                          ilp64=False)
+        return _get_funcs(
+            names,
+            arrays,
+            dtype,
+            "LAPACK",
+            _flapack,
+            _clapack,
+            "flapack",
+            "clapack",
+            _lapack_alias,
+            ilp64=False,
+        )
     else:
         if not HAS_ILP64:
-            raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
-                               "compiled only with 32-bit BLAS")
-        return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack_64, None,
-                          "flapack_64", None, _lapack_alias,
-                          ilp64=True)
+            raise RuntimeError(
+                "LAPACK ILP64 routine requested, but Scipy "
+                "compiled only with 32-bit BLAS"
+            )
+        return _get_funcs(
+            names,
+            arrays,
+            dtype,
+            "LAPACK",
+            _flapack_64,
+            None,
+            "flapack_64",
+            None,
+            _lapack_alias,
+            ilp64=True,
+        )
 
 
 _int32_max = _np.iinfo(_np.int32).max
@@ -1012,18 +1051,16 @@ def _compute_lwork(routine, *args, **kwargs):
     32000
 
     """
-    dtype = getattr(routine, 'dtype', None)
-    int_dtype = getattr(routine, 'int_dtype', None)
+    dtype = getattr(routine, "dtype", None)
+    int_dtype = getattr(routine, "int_dtype", None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (ret[-1],))
+        raise ValueError("Internal work array size computation failed: %d" % (ret[-1],))
 
     if len(ret) == 2:
         return _check_work_float(ret[0].real, dtype, int_dtype)
     else:
-        return tuple(_check_work_float(x.real, dtype, int_dtype)
-                     for x in ret[:-1])
+        return tuple(_check_work_float(x.real, dtype, int_dtype) for x in ret[:-1])
 
 
 def _check_work_float(value, dtype, int_dtype):
@@ -1040,12 +1077,16 @@ def _check_work_float(value, dtype, int_dtype):
     value = int(value)
     if int_dtype.itemsize == 4:
         if value < 0 or value > _int32_max:
-            raise ValueError("Too large work array required -- computation "
-                             "cannot be performed with standard 32-bit"
-                             " LAPACK.")
+            raise ValueError(
+                "Too large work array required -- computation "
+                "cannot be performed with standard 32-bit"
+                " LAPACK."
+            )
     elif int_dtype.itemsize == 8:
         if value < 0 or value > _int64_max:
-            raise ValueError("Too large work array required -- computation"
-                             " cannot be performed with standard 64-bit"
-                             " LAPACK.")
+            raise ValueError(
+                "Too large work array required -- computation"
+                " cannot be performed with standard 64-bit"
+                " LAPACK."
+            )
     return value

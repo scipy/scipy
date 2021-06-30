@@ -68,7 +68,7 @@ static int init_callback(ccallback_t *callback, PyObject *fcn, PyObject *extra_a
   if (ret == -1) {
     return -1;
   }
-  
+
   callback->info_p = (void *)extra_args;
 
   return 0;
@@ -92,7 +92,7 @@ static int init_jac_callback(ccallback_t *callback, jac_callback_info_t *jac_cal
   jac_callback_info->Dfun = Dfun;
   jac_callback_info->extra_args = extra_args;
   jac_callback_info->jac_transpose = !col_deriv;
-  
+
   callback->info_p = (void *)jac_callback_info;
 
   return 0;
@@ -112,7 +112,7 @@ int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
   PyObject *multipack_extra_arguments = (PyObject *)callback->info_p;
 
   PyArrayObject *result_array = NULL;
- 
+
   result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *n);
   if (result_array == NULL) {
     *iflag = -1;
@@ -181,7 +181,7 @@ int raw_multipack_lm_function(int *m, int *n, double *x, double *fvec, int *ifla
   PyObject *multipack_extra_arguments = (PyObject *)callback->info_p;
 
   PyArrayObject *result_array = NULL;
- 
+
   result_array = (PyArrayObject *)call_python_function(multipack_python_function,*n, x, multipack_extra_arguments, 1, minpack_error, *m);
   if (result_array == NULL) {
     *iflag = -1;
@@ -225,7 +225,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
       *iflag = -1;
       return -1;
     }
-    if (multipack_jac_transpose == 1) 
+    if (multipack_jac_transpose == 1)
       MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
       memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
@@ -256,7 +256,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   double   *wa = NULL;
 
   STORE_VARS_NO_INFO();    /* Define storage variables for global variables. */
-  
+
   if (!PyArg_ParseTuple(args, "OO|OidiiiddO", &fcn, &x0, &extra_args, &full_output, &xtol, &maxfev, &ml, &mu, &epsfcn, &factor, &o_diag)) return NULL;
 
   INIT_FUNC(fcn,extra_args,minpack_error);
@@ -439,7 +439,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_qtf);
   if (allocated) free(wa);
   return NULL;
-  
+
 }
 
 /************************ Levenberg-Marquardt *******************/
@@ -508,13 +508,13 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   /* Call the underlying FORTRAN routines. */
   n_int = n; /* to provide int*-pointed storage for int argument of LMDIF */
   LMDIF(raw_multipack_lm_function, &m, &n_int, x, fvec, &ftol, &xtol, &gtol, &maxfev, &epsfcn, diag, &mode, &factor, &nprint, &info, &nfev, fjac, &ldfjac, ipvt, qtf, wa, wa+n, wa+2*n, wa+3*n);
-    
+
   RESTORE_FUNC();
 
   if (info < 0) goto fail;           /* Python error */
 
   free(wa);
-  Py_DECREF(extra_args); 
+  Py_DECREF(extra_args);
   Py_DECREF(ap_diag);
 
   if (full_output) {
@@ -539,7 +539,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_ipvt);
   Py_XDECREF(ap_qtf);
   if (allocated) free(wa);
-  return NULL;  
+  return NULL;
 }
 
 
@@ -638,7 +638,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_ipvt);
   Py_XDECREF(ap_qtf);
   if (allocated) free(wa);
-  return NULL;  
+  return NULL;
 }
 
 
@@ -693,7 +693,7 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
     Py_DECREF(ap_fjac);
     Py_DECREF(ap_fvecp);
   }
-  else 
+  else
     PYERR(minpack_error,"Invalid mode, must be 1 or 2.");
 
   Py_DECREF(ap_x);
@@ -708,12 +708,3 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
   Py_XDECREF(ap_x);
   return NULL;
 }
-
-
-
-
-
-
-
-
-

@@ -33,20 +33,22 @@ from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 
-__all__ = ['fourier_gaussian', 'fourier_uniform', 'fourier_ellipsoid',
-           'fourier_shift']
+__all__ = ["fourier_gaussian", "fourier_uniform", "fourier_ellipsoid", "fourier_shift"]
 
 
 def _get_output_fourier(output, input):
     if output is None:
-        if input.dtype.type in [numpy.complex64, numpy.complex128,
-                                numpy.float32]:
+        if input.dtype.type in [numpy.complex64, numpy.complex128, numpy.float32]:
             output = numpy.zeros(input.shape, dtype=input.dtype)
         else:
             output = numpy.zeros(input.shape, dtype=numpy.float64)
     elif type(output) is type:
-        if output not in [numpy.complex64, numpy.complex128,
-                          numpy.float32, numpy.float64]:
+        if output not in [
+            numpy.complex64,
+            numpy.complex128,
+            numpy.float32,
+            numpy.float64,
+        ]:
             raise RuntimeError("output type not supported")
         output = numpy.zeros(input.shape, dtype=output)
     elif output.shape != input.shape:

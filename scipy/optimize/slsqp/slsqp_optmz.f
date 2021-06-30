@@ -37,7 +37,7 @@ C
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
      *                  acc, iter, mode, w, l_w, jw, l_jw,
      *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                  iexact, incons, ireset, itermx, line, 
+     *                  iexact, incons, ireset, itermx, line,
      *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
@@ -263,15 +263,15 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
      * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
      * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     * iexact, incons, ireset, itermx, line, 
+     * iexact, incons, ireset, itermx, line,
      * n1, n2, n3)
- 
+
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
      *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
      *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                   iexact, incons, ireset, itermx, line, 
+     *                   iexact, incons, ireset, itermx, line,
      *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS

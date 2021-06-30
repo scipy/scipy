@@ -16,9 +16,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
 
     def __init__(self, A, B):
         if A.ndim != 2 or B.ndim != 2:
-            raise ValueError('expected ndarrays representing matrices')
+            raise ValueError("expected ndarrays representing matrices")
         if A.shape[1] != B.shape[0]:
-            raise ValueError('incompatible shapes')
+            raise ValueError("incompatible shapes")
         self.A = A
         self.B = B
         self.ndim = 2
@@ -39,7 +39,6 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
 
 
 class TestOnenormest:
-
     @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
         # This will take multiple seconds if your computer is slow like mine.
@@ -125,9 +124,9 @@ class TestOnenormest:
         n = 100
         itmax = 5
         alpha = 1 - 1e-6
-        A = -scipy.linalg.inv(np.identity(n) + alpha*np.eye(n, k=1))
-        first_col = np.array([1] + [0]*(n-1))
-        first_row = np.array([(-alpha)**i for i in range(n)])
+        A = -scipy.linalg.inv(np.identity(n) + alpha * np.eye(n, k=1))
+        first_col = np.array([1] + [0] * (n - 1))
+        first_row = np.array([(-alpha) ** i for i in range(n)])
         B = -scipy.linalg.toeplitz(first_col, first_row)
         assert_allclose(A, B)
         est, v, w, nmults, nresamples = _onenormest_core(B, B.T, t, itmax)
@@ -142,9 +141,9 @@ class TestOnenormest:
 
     @pytest.mark.xslow
     def test_onenormest_table_6_t_1(self):
-        #TODO this test seems to give estimates that match the table,
-        #TODO even though no attempt has been made to deal with
-        #TODO complex numbers in the one-norm estimation.
+        # TODO this test seems to give estimates that match the table,
+        # TODO even though no attempt has been made to deal with
+        # TODO complex numbers in the one-norm estimation.
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
         np.random.seed(1234)
@@ -213,8 +212,10 @@ class TestOnenormest:
         B = np.random.randn(k, n)
         fast_estimate = self._help_product_norm_fast(A, B)
         exact_value = self._help_product_norm_slow(A, B)
-        assert_(fast_estimate <= exact_value <= 3*fast_estimate,
-                'fast: %g\nexact:%g' % (fast_estimate, exact_value))
+        assert_(
+            fast_estimate <= exact_value <= 3 * fast_estimate,
+            "fast: %g\nexact:%g" % (fast_estimate, exact_value),
+        )
 
     def test_returns(self):
         np.random.seed(1234)
@@ -226,12 +227,13 @@ class TestOnenormest:
         s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
 
         assert_allclose(s1, s0, rtol=1e-9)
-        assert_allclose(np.linalg.norm(A.dot(v), 1), s0*np.linalg.norm(v, 1), rtol=1e-9)
+        assert_allclose(
+            np.linalg.norm(A.dot(v), 1), s0 * np.linalg.norm(v, 1), rtol=1e-9
+        )
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
 class TestAlgorithm_2_2:
-
     def test_randn_inv(self):
         np.random.seed(1234)
         n = 20
@@ -249,4 +251,3 @@ class TestAlgorithm_2_2:
 
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
-

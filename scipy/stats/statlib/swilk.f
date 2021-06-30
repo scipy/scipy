@@ -22,12 +22,12 @@ C
       REAL SUMM2, SSUMM2, FAC, RSN, AN, AN25, A1, A2, DELTA, RANGE
       REAL SA, SX, SSX, SSA, SAX, ASA, XSX, SSASSX, W1, Y, XX, XI
       REAL GAMMA, M, S, LD, BF, Z90F, Z95F, Z99F, ZFM, ZSD, ZBAR
-C      
+C
 C        Auxiliary routines
 C
       REAL PPND, POLY
       DOUBLE PRECISION ALNORM
-C      
+C
       INTEGER NCENS, NN2, I, I1, J
       LOGICAL INIT, UPPER
 C
@@ -70,7 +70,7 @@ C
            DO 30 I = 1, N2
               A(I) = PPND((REAL(I) - TH)/AN25,IFAULT)
               SUMM2 = SUMM2 + A(I) ** 2
-30          CONTINUE                
+30          CONTINUE
            SUMM2 = SUMM2 * TWO
            SSUMM2 = SQRT(SUMM2)
            RSN = ONE / SQRT(AN)

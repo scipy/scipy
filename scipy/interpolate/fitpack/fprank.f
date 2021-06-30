@@ -233,4 +233,3 @@ c  to zero the small diagonal elements of matrix (a).
       sq = sq+fac
       return
       end
-

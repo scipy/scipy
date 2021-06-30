@@ -17,7 +17,7 @@ import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['tr_interior_point']
+__all__ = ["tr_interior_point"]
 
 
 class BarrierSubproblem:
@@ -28,11 +28,30 @@ class BarrierSubproblem:
                   constr_ineq(x) + s = 0
     """
 
-    def __init__(self, x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
-                 constr, jac, barrier_parameter, tolerance,
-                 enforce_feasibility, global_stop_criteria,
-                 xtol, fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0,
-                 jac_eq0):
+    def __init__(
+        self,
+        x0,
+        s0,
+        fun,
+        grad,
+        lagr_hess,
+        n_vars,
+        n_ineq,
+        n_eq,
+        constr,
+        jac,
+        barrier_parameter,
+        tolerance,
+        enforce_feasibility,
+        global_stop_criteria,
+        xtol,
+        fun0,
+        grad0,
+        constr_ineq0,
+        jac_ineq0,
+        constr_eq0,
+        jac_eq0,
+    ):
         # Store parameters
         self.n_vars = n_vars
         self.x0 = x0
@@ -60,10 +79,10 @@ class BarrierSubproblem:
         self.tolerance = tolerance
 
     def get_slack(self, z):
-        return z[self.n_vars:self.n_vars+self.n_ineq]
+        return z[self.n_vars : self.n_vars + self.n_ineq]
 
     def get_variables(self, z):
-        return z[:self.n_vars]
+        return z[: self.n_vars]
 
     def function_and_constraints(self, z):
         """Returns barrier function and constraints at given point.
@@ -82,8 +101,10 @@ class BarrierSubproblem:
         f = self.fun(x)
         c_eq, c_ineq = self.constr(x)
         # Return objective function and constraints
-        return (self._compute_function(f, c_ineq, s),
-                self._compute_constr(c_ineq, c_eq, s))
+        return (
+            self._compute_function(f, c_ineq, s),
+            self._compute_constr(c_ineq, c_eq, s),
+        )
 
     def _compute_function(self, f, c_ineq, s):
         # Use technique from Nocedal and Wright book, ref [3]_, p.576,
@@ -92,12 +113,11 @@ class BarrierSubproblem:
         s[self.enforce_feasibility] = -c_ineq[self.enforce_feasibility]
         log_s = [np.log(s_i) if s_i > 0 else -np.inf for s_i in s]
         # Compute barrier objective function
-        return f - self.barrier_parameter*np.sum(log_s)
+        return f - self.barrier_parameter * np.sum(log_s)
 
     def _compute_constr(self, c_ineq, c_eq, s):
         # Compute barrier constraint
-        return np.hstack((c_eq,
-                          c_ineq + s))
+        return np.hstack((c_eq, c_ineq + s))
 
     def scaling(self, z):
         """Returns scaling vector.
@@ -109,10 +129,11 @@ class BarrierSubproblem:
 
         # Diagonal matrix
         def matvec(vec):
-            return diag_elements*vec
-        return LinearOperator((self.n_vars+self.n_ineq,
-                               self.n_vars+self.n_ineq),
-                              matvec)
+            return diag_elements * vec
+
+        return LinearOperator(
+            (self.n_vars + self.n_ineq, self.n_vars + self.n_ineq), matvec
+        )
 
     def gradient_and_jacobian(self, z):
         """Returns scaled gradient.
@@ -132,11 +153,10 @@ class BarrierSubproblem:
         g = self.grad(x)
         J_eq, J_ineq = self.jac(x)
         # Return gradient and Jacobian
-        return (self._compute_gradient(g),
-                self._compute_jacobian(J_eq, J_ineq, s))
+        return (self._compute_gradient(g), self._compute_jacobian(J_eq, J_ineq, s))
 
     def _compute_gradient(self, g):
-        return np.hstack((g, -self.barrier_parameter*np.ones(self.n_ineq)))
+        return np.hstack((g, -self.barrier_parameter * np.ones(self.n_ineq)))
 
     def _compute_jacobian(self, J_eq, J_ineq, s):
         if self.n_ineq == 0:
@@ -159,8 +179,7 @@ class BarrierSubproblem:
                 if sps.issparse(J_eq):
                     J_eq = J_eq.toarray()
                 # Concatenate matrices
-                return np.block([[J_eq, zeros],
-                                 [J_ineq, S]])
+                return np.block([[J_eq, zeros], [J_ineq, S]])
 
     def _assemble_sparse_jacobian(self, J_eq, J_ineq, s):
         """Assemble sparse Jacobian given its components.
@@ -178,28 +197,30 @@ class BarrierSubproblem:
         n_vars, n_ineq, n_eq = self.n_vars, self.n_ineq, self.n_eq
         J_aux = sps.vstack([J_eq, J_ineq], "csr")
         indptr, indices, data = J_aux.indptr, J_aux.indices, J_aux.data
-        new_indptr = indptr + np.hstack((np.zeros(n_eq, dtype=int),
-                                         np.arange(n_ineq+1, dtype=int)))
-        size = indices.size+n_ineq
+        new_indptr = indptr + np.hstack(
+            (np.zeros(n_eq, dtype=int), np.arange(n_ineq + 1, dtype=int))
+        )
+        size = indices.size + n_ineq
         new_indices = np.empty(size)
         new_data = np.empty(size)
         mask = np.full(size, False, bool)
-        mask[new_indptr[-n_ineq:]-1] = True
-        new_indices[mask] = n_vars+np.arange(n_ineq)
+        mask[new_indptr[-n_ineq:] - 1] = True
+        new_indices[mask] = n_vars + np.arange(n_ineq)
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = sps.csr_matrix((new_data, new_indices, new_indptr),
-                           (n_eq + n_ineq, n_vars + n_ineq))
+        J = sps.csr_matrix(
+            (new_data, new_indices, new_indptr), (n_eq + n_ineq, n_vars + n_ineq)
+        )
         return J
 
     def lagrangian_hessian_x(self, z, v):
         """Returns Lagrangian Hessian (in relation to `x`) -> Hx"""
         x = self.get_variables(z)
         # Get lagrange multipliers relatated to nonlinear equality constraints
-        v_eq = v[:self.n_eq]
+        v_eq = v[: self.n_eq]
         # Get lagrange multipliers relatated to nonlinear ineq. constraints
-        v_ineq = v[self.n_eq:self.n_eq+self.n_ineq]
+        v_ineq = v[self.n_eq : self.n_eq + self.n_ineq]
         lagr_hess = self.lagr_hess
         return lagr_hess(x, v_eq, v_ineq)
 
@@ -213,11 +234,11 @@ class BarrierSubproblem:
         # Using the primal-dual formulation
         #     S Hs S = diag(s)*diag(v/s)*diag(s)
         # Reference [1]_ p. 883, formula (3.11)
-        primal_dual = v[-self.n_ineq:]*s
+        primal_dual = v[-self.n_ineq :] * s
         # Uses the primal-dual formulation for
         # positives values of v_ineq, and primal
         # formulation for the remaining ones.
-        return np.where(v[-self.n_ineq:] > 0, primal_dual, primal)
+        return np.where(v[-self.n_ineq :] > 0, primal_dual, primal)
 
     def lagrangian_hessian(self, z, v):
         """Returns scaled Lagrangian Hessian"""
@@ -233,46 +254,74 @@ class BarrierSubproblem:
             vec_x = self.get_variables(vec)
             vec_s = self.get_slack(vec)
             if self.n_ineq > 0:
-                return np.hstack((Hx.dot(vec_x), S_Hs_S*vec_s))
+                return np.hstack((Hx.dot(vec_x), S_Hs_S * vec_s))
             else:
                 return Hx.dot(vec_x)
-        return LinearOperator((self.n_vars+self.n_ineq,
-                               self.n_vars+self.n_ineq),
-                              matvec)
 
-    def stop_criteria(self, state, z, last_iteration_failed,
-                      optimality, constr_violation,
-                      trust_radius, penalty, cg_info):
+        return LinearOperator(
+            (self.n_vars + self.n_ineq, self.n_vars + self.n_ineq), matvec
+        )
+
+    def stop_criteria(
+        self,
+        state,
+        z,
+        last_iteration_failed,
+        optimality,
+        constr_violation,
+        trust_radius,
+        penalty,
+        cg_info,
+    ):
         """Stop criteria to the barrier problem.
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
         x = self.get_variables(z)
-        if self.global_stop_criteria(state, x,
-                                     last_iteration_failed,
-                                     trust_radius, penalty,
-                                     cg_info,
-                                     self.barrier_parameter,
-                                     self.tolerance):
+        if self.global_stop_criteria(
+            state,
+            x,
+            last_iteration_failed,
+            trust_radius,
+            penalty,
+            cg_info,
+            self.barrier_parameter,
+            self.tolerance,
+        ):
             self.terminate = True
             return True
         else:
-            g_cond = (optimality < self.tolerance and
-                      constr_violation < self.tolerance)
+            g_cond = optimality < self.tolerance and constr_violation < self.tolerance
             x_cond = trust_radius < self.xtol
             return g_cond or x_cond
 
 
-def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
-                      constr, jac, x0, fun0, grad0,
-                      constr_ineq0, jac_ineq0, constr_eq0,
-                      jac_eq0, stop_criteria,
-                      enforce_feasibility, xtol, state,
-                      initial_barrier_parameter,
-                      initial_tolerance,
-                      initial_penalty,
-                      initial_trust_radius,
-                      factorization_method):
+def tr_interior_point(
+    fun,
+    grad,
+    lagr_hess,
+    n_vars,
+    n_ineq,
+    n_eq,
+    constr,
+    jac,
+    x0,
+    fun0,
+    grad0,
+    constr_ineq0,
+    jac_ineq0,
+    constr_eq0,
+    jac_eq0,
+    stop_criteria,
+    enforce_feasibility,
+    xtol,
+    state,
+    initial_barrier_parameter,
+    initial_tolerance,
+    initial_penalty,
+    initial_trust_radius,
+    factorization_method,
+):
     """Trust-region interior points method.
 
     Solve problem:
@@ -299,21 +348,40 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     tolerance = initial_tolerance
     trust_radius = initial_trust_radius
     # Define initial value for the slack variables
-    s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))
+    s0 = np.maximum(-1.5 * constr_ineq0, np.ones(n_ineq))
     # Define barrier subproblem
     subprob = BarrierSubproblem(
-        x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
-        barrier_parameter, tolerance, enforce_feasibility,
-        stop_criteria, xtol, fun0, grad0, constr_ineq0, jac_ineq0,
-        constr_eq0, jac_eq0)
+        x0,
+        s0,
+        fun,
+        grad,
+        lagr_hess,
+        n_vars,
+        n_ineq,
+        n_eq,
+        constr,
+        jac,
+        barrier_parameter,
+        tolerance,
+        enforce_feasibility,
+        stop_criteria,
+        xtol,
+        fun0,
+        grad0,
+        constr_ineq0,
+        jac_ineq0,
+        constr_eq0,
+        jac_eq0,
+    )
     # Define initial parameter for the first iteration.
     z = np.hstack((x0, s0))
     fun0_subprob, constr0_subprob = subprob.fun0, subprob.constr0
     grad0_subprob, jac0_subprob = subprob.grad0, subprob.jac0
     # Define trust region bounds
-    trust_lb = np.hstack((np.full(subprob.n_vars, -np.inf),
-                          np.full(subprob.n_ineq, -BOUNDARY_PARAMETER)))
-    trust_ub = np.full(subprob.n_vars+subprob.n_ineq, np.inf)
+    trust_lb = np.hstack(
+        (np.full(subprob.n_vars, -np.inf), np.full(subprob.n_ineq, -BOUNDARY_PARAMETER))
+    )
+    trust_ub = np.full(subprob.n_vars + subprob.n_ineq, np.inf)
 
     # Solves a sequence of barrier problems
     while True:
@@ -322,15 +390,24 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
             subprob.function_and_constraints,
             subprob.gradient_and_jacobian,
             subprob.lagrangian_hessian,
-            z, fun0_subprob, grad0_subprob,
-            constr0_subprob, jac0_subprob, subprob.stop_criteria,
-            state, initial_penalty, trust_radius,
-            factorization_method, trust_lb, trust_ub, subprob.scaling)
+            z,
+            fun0_subprob,
+            grad0_subprob,
+            constr0_subprob,
+            jac0_subprob,
+            subprob.stop_criteria,
+            state,
+            initial_penalty,
+            trust_radius,
+            factorization_method,
+            trust_lb,
+            trust_ub,
+            subprob.scaling,
+        )
         if subprob.terminate:
             break
         # Update parameters
-        trust_radius = max(initial_trust_radius,
-                           TRUST_ENLARGEMENT*state.tr_radius)
+        trust_radius = max(initial_trust_radius, TRUST_ENLARGEMENT * state.tr_radius)
         # TODO: Use more advanced strategies from [2]_
         # to update this parameters.
         barrier_parameter *= BARRIER_DECAY_RATIO

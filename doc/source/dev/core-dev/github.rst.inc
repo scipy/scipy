@@ -1,4 +1,4 @@
-Development on GitHub 
+Development on GitHub
 =====================
 SciPy development largely takes place on GitHub; this section describes the
 expected way of working for issues, pull requests and managing the main

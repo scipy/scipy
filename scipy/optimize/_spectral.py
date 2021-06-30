@@ -8,13 +8,28 @@ from scipy.optimize import OptimizeResult
 from scipy.optimize.optimize import _check_unknown_options
 from .linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
 
+
 class _NoConvergence(Exception):
     pass
 
 
-def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
-                  fnorm=None, callback=None, disp=False, M=10, eta_strategy=None,
-                  sigma_eps=1e-10, sigma_0=1.0, line_search='cruz', **unknown_options):
+def _root_df_sane(
+    func,
+    x0,
+    args=(),
+    ftol=1e-8,
+    fatol=1e-300,
+    maxfev=1000,
+    fnorm=None,
+    callback=None,
+    disp=False,
+    M=10,
+    eta_strategy=None,
+    sigma_eps=1e-10,
+    sigma_0=1.0,
+    line_search="cruz",
+    **unknown_options,
+):
     r"""
     Solve nonlinear equation with the DF-SANE method
 
@@ -63,7 +78,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     """
     _check_unknown_options(unknown_options)
 
-    if line_search not in ('cheng', 'cruz'):
+    if line_search not in ("cheng", "cruz"):
         raise ValueError("Invalid value %r for 'line_search'" % (line_search,))
 
     nexp = 2
@@ -73,18 +88,21 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         # vs. scaling of F.
         def eta_strategy(k, x, F):
             # Obtain squared 2-norm of the initial residual from the outer scope
-            return f_0 / (1 + k)**2
+            return f_0 / (1 + k) ** 2
 
     if fnorm is None:
+
         def fnorm(F):
             # Obtain squared 2-norm of the current residual from the outer scope
-            return f_k**(1.0/nexp)
+            return f_k ** (1.0 / nexp)
 
     def fmerit(F):
-        return np.linalg.norm(F)**nexp
+        return np.linalg.norm(F) ** nexp
 
     nfev = [0]
-    f, x_k, x_shape, f_k, F_k, is_complex = _wrap_func(func, x0, fmerit, nfev, maxfev, args)
+    f, x_k, x_shape, f_k, F_k, is_complex = _wrap_func(
+        func, x0, fmerit, nfev, maxfev, args
+    )
 
     k = 0
     f_0 = f_k
@@ -118,8 +136,8 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
             break
 
         # Control spectral parameter, from [2]
-        if abs(sigma_k) > 1/sigma_eps:
-            sigma_k = 1/sigma_eps * np.sign(sigma_k)
+        if abs(sigma_k) > 1 / sigma_eps:
+            sigma_k = 1 / sigma_eps * np.sign(sigma_k)
         elif abs(sigma_k) < sigma_eps:
             sigma_k = sigma_eps
 
@@ -129,10 +147,14 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         # Nonmonotone line search
         eta = eta_strategy(k, x_k, F_k)
         try:
-            if line_search == 'cruz':
-                alpha, xp, fp, Fp = _nonmonotone_line_search_cruz(f, x_k, d, prev_fs, eta=eta)
-            elif line_search == 'cheng':
-                alpha, xp, fp, Fp, C, Q = _nonmonotone_line_search_cheng(f, x_k, d, f_k, C, Q, eta=eta)
+            if line_search == "cruz":
+                alpha, xp, fp, Fp = _nonmonotone_line_search_cruz(
+                    f, x_k, d, prev_fs, eta=eta
+                )
+            elif line_search == "cheng":
+                alpha, xp, fp, Fp, C, Q = _nonmonotone_line_search_cheng(
+                    f, x_k, d, f_k, C, Q, eta=eta
+                )
         except _NoConvergence:
             break
 
@@ -147,7 +169,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         f_k = fp
 
         # Store function value
-        if line_search == 'cruz':
+        if line_search == "cruz":
             prev_fs.append(fp)
 
         k += 1
@@ -155,9 +177,9 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     x = _wrap_result(x_k, is_complex, shape=x_shape)
     F = _wrap_result(F_k, is_complex)
 
-    result = OptimizeResult(x=x, success=converged,
-                            message=message,
-                            fun=F, nfev=nfev[0], nit=k)
+    result = OptimizeResult(
+        x=x, success=converged, message=message, fun=F, nfev=nfev[0], nit=k
+    )
 
     return result
 
@@ -211,6 +233,7 @@ def _wrap_func(func, x0, fmerit, nfev_list, maxfev, args=()):
     nfev_list[0] = 1
 
     if is_complex:
+
         def wrap_func(x):
             if nfev_list[0] >= maxfev:
                 raise _NoConvergence()
@@ -224,6 +247,7 @@ def _wrap_func(func, x0, fmerit, nfev_list, maxfev, args=()):
         x0 = _complex2real(x0)
         F = _complex2real(F)
     else:
+
         def wrap_func(x):
             if nfev_list[0] >= maxfev:
                 raise _NoConvergence()

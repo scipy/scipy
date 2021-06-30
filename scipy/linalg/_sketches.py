@@ -8,7 +8,7 @@ import numpy as np
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.sparse import csc_matrix
 
-__all__ = ['clarkson_woodruff_transform']
+__all__ = ["clarkson_woodruff_transform"]
 
 
 def cwt_matrix(n_rows, n_columns, seed=None):
@@ -49,9 +49,9 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     """
     rng = check_random_state(seed)
     rows = rng_integers(rng, 0, n_rows, n_columns)
-    cols = np.arange(n_columns+1)
+    cols = np.arange(n_columns + 1)
     signs = rng.choice([1, -1], n_columns)
-    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
+    S = csc_matrix((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
 

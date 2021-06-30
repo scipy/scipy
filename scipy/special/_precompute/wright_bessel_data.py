@@ -28,15 +28,16 @@ def rgamma_cached(x, dps):
 
 
 def mp_wright_bessel(a, b, x, dps=50, maxterms=2000):
-    """Compute Wright's generalized Bessel function as Series with mpmath.
-    """
+    """Compute Wright's generalized Bessel function as Series with mpmath."""
     with mp.workdps(dps):
         a, b, x = mp.mpf(a), mp.mpf(b), mp.mpf(x)
-        res = mp.nsum(lambda k: x**k / mp.fac(k)
-                      * rgamma_cached(a * k + b, dps=dps),
-                      [0, mp.inf],
-                      tol=dps, method='s', steps=[maxterms]
-                      )
+        res = mp.nsum(
+            lambda k: x ** k / mp.fac(k) * rgamma_cached(a * k + b, dps=dps),
+            [0, mp.inf],
+            tol=dps,
+            method="s",
+            steps=[maxterms],
+        )
         return mpf2float(res)
 
 
@@ -46,23 +47,58 @@ def main():
     pwd = os.path.dirname(__file__)
     eps = np.finfo(float).eps * 100
 
-    a_range = np.array([eps,
-                        1e-4 * (1 - eps), 1e-4, 1e-4 * (1 + eps),
-                        1e-3 * (1 - eps), 1e-3, 1e-3 * (1 + eps),
-                        0.1, 0.5,
-                        1 * (1 - eps), 1, 1 * (1 + eps),
-                        1.5, 2, 4.999, 5, 10])
+    a_range = np.array(
+        [
+            eps,
+            1e-4 * (1 - eps),
+            1e-4,
+            1e-4 * (1 + eps),
+            1e-3 * (1 - eps),
+            1e-3,
+            1e-3 * (1 + eps),
+            0.1,
+            0.5,
+            1 * (1 - eps),
+            1,
+            1 * (1 + eps),
+            1.5,
+            2,
+            4.999,
+            5,
+            10,
+        ]
+    )
     b_range = np.array([0, eps, 1e-10, 1e-5, 0.1, 1, 2, 10, 20, 100])
-    x_range = np.array([0, eps, 1 - eps, 1, 1 + eps,
-                        1.5,
-                        2 - eps, 2, 2 + eps,
-                        9 - eps, 9, 9 + eps,
-                        10 * (1 - eps), 10, 10 * (1 + eps),
-                        100 * (1 - eps), 100, 100 * (1 + eps),
-                        500, exp_inf, 1e3, 1e5, 1e10, 1e20])
+    x_range = np.array(
+        [
+            0,
+            eps,
+            1 - eps,
+            1,
+            1 + eps,
+            1.5,
+            2 - eps,
+            2,
+            2 + eps,
+            9 - eps,
+            9,
+            9 + eps,
+            10 * (1 - eps),
+            10,
+            10 * (1 + eps),
+            100 * (1 - eps),
+            100,
+            100 * (1 + eps),
+            500,
+            exp_inf,
+            1e3,
+            1e5,
+            1e10,
+            1e20,
+        ]
+    )
 
-    a_range, b_range, x_range = np.meshgrid(a_range, b_range, x_range,
-                                            indexing='ij')
+    a_range, b_range, x_range = np.meshgrid(a_range, b_range, x_range, indexing="ij")
     a_range = a_range.flatten()
     b_range = b_range.flatten()
     x_range = x_range.flatten()
@@ -93,23 +129,25 @@ def main():
 
     # filter out known values that do not meet the required numerical accuracy
     # see test test_wright_data_grid_failures
-    failing = np.array([
-        [0.1, 100, 709.7827128933841],
-        [0.5, 10, 709.7827128933841],
-        [0.5, 10, 1000],
-        [0.5, 100, 1000],
-        [1, 20, 100000],
-        [1, 100, 100000],
-        [1.0000000000000222, 20, 100000],
-        [1.0000000000000222, 100, 100000],
-        [1.5, 0, 500],
-        [1.5, 2.220446049250313e-14, 500],
-        [1.5, 1.e-10, 500],
-        [1.5, 1.e-05, 500],
-        [1.5, 0.1, 500],
-        [1.5, 20, 100000],
-        [1.5, 100, 100000],
-        ]).tolist()
+    failing = np.array(
+        [
+            [0.1, 100, 709.7827128933841],
+            [0.5, 10, 709.7827128933841],
+            [0.5, 10, 1000],
+            [0.5, 100, 1000],
+            [1, 20, 100000],
+            [1, 100, 100000],
+            [1.0000000000000222, 20, 100000],
+            [1.0000000000000222, 100, 100000],
+            [1.5, 0, 500],
+            [1.5, 2.220446049250313e-14, 500],
+            [1.5, 1.0e-10, 500],
+            [1.5, 1.0e-05, 500],
+            [1.5, 0.1, 500],
+            [1.5, 20, 100000],
+            [1.5, 100, 100000],
+        ]
+    ).tolist()
 
     does_fail = np.full_like(a_range, False, dtype=bool)
     for i in range(x_range.size):
@@ -131,21 +169,19 @@ def main():
         x = x_range[i]
         # take care of difficult corner cases
         maxterms = 1000
-        if a < 1e-6 and x >= exp_inf/10:
+        if a < 1e-6 and x >= exp_inf / 10:
             maxterms = 2000
         f = mp_wright_bessel(a, b, x, maxterms=maxterms)
         if does_fail[i]:
-            print("failing data point a, b, x, value = "
-                  f"[{a}, {b}, {x}, {f}]")
+            print(f"failing data point a, b, x, value = [{a}, {b}, {x}, {f}]")
         else:
             dataset.append((a, b, x, f))
     dataset = np.array(dataset)
 
-    filename = os.path.join(pwd, '..', 'tests', 'data', 'local',
-                            'wright_bessel.txt')
+    filename = os.path.join(pwd, "..", "tests", "data", "local", "wright_bessel.txt")
     np.savetxt(filename, dataset)
 
-    print("{:.1f} minutes elapsed".format((time() - t0)/60))
+    print("{:.1f} minutes elapsed".format((time() - t0) / 60))
 
 
 if __name__ == "__main__":

@@ -1,8 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from scipy.stats._tukeylambda_stats import (tukeylambda_variance,
-                                            tukeylambda_kurtosis)
+from scipy.stats._tukeylambda_stats import tukeylambda_variance, tukeylambda_kurtosis
 
 
 def test_tukeylambda_stats_known_exact():
@@ -16,7 +15,7 @@ def test_tukeylambda_stats_known_exact():
 
     # lambda = 0
     var = tukeylambda_variance(0)
-    assert_allclose(var, np.pi**2 / 3, atol=1e-12)
+    assert_allclose(var, np.pi ** 2 / 3, atol=1e-12)
     kurt = tukeylambda_kurtosis(0)
     assert_allclose(kurt, 1.2, atol=1e-10)
 
@@ -24,7 +23,7 @@ def test_tukeylambda_stats_known_exact():
     var = tukeylambda_variance(0.5)
     assert_allclose(var, 4 - np.pi, atol=1e-12)
     kurt = tukeylambda_kurtosis(0.5)
-    desired = (5./3 - np.pi/2) / (np.pi/4 - 1)**2 - 3
+    desired = (5.0 / 3 - np.pi / 2) / (np.pi / 4 - 1) ** 2 - 3
     assert_allclose(kurt, desired, atol=1e-10)
 
     # lambda = 1
@@ -83,4 +82,3 @@ def test_tukeylambda_stats_invalid():
     lam = [-1.0, -0.25]
     kurt = tukeylambda_kurtosis(lam)
     assert_equal(kurt, np.array([np.nan, np.inf]))
-

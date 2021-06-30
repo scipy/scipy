@@ -3,7 +3,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['find', 'tril', 'triu']
+__all__ = ["find", "tril", "triu"]
 
 
 from .coo import coo_matrix

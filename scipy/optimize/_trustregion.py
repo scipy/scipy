@@ -3,10 +3,15 @@ import math
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, _status_message,
-                       OptimizeResult, _prepare_scalar_function)
+from .optimize import (
+    _check_unknown_options,
+    _status_message,
+    OptimizeResult,
+    _prepare_scalar_function,
+)
 from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
 from scipy.optimize._differentiable_functions import FD_METHODS
+
 __all__ = []
 
 
@@ -93,8 +98,8 @@ class BaseQuadraticSubproblem:
         """
         a = np.dot(d, d)
         b = 2 * np.dot(z, d)
-        c = np.dot(z, z) - trust_radius**2
-        sqrt_discriminant = math.sqrt(b*b - 4*a*c)
+        c = np.dot(z, z) - trust_radius ** 2
+        sqrt_discriminant = math.sqrt(b * b - 4 * a * c)
 
         # The following calculation is mathematically
         # equivalent to:
@@ -104,20 +109,35 @@ class BaseQuadraticSubproblem:
         # Look at Matrix Computation p.97
         # for a better justification.
         aux = b + math.copysign(sqrt_discriminant, b)
-        ta = -aux / (2*a)
-        tb = -2*c / aux
+        ta = -aux / (2 * a)
+        tb = -2 * c / aux
         return sorted([ta, tb])
 
     def solve(self, trust_radius):
-        raise NotImplementedError('The solve method should be implemented by '
-                                  'the child class')
+        raise NotImplementedError(
+            "The solve method should be implemented by the child class"
+        )
 
 
-def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                           subproblem=None, initial_trust_radius=1.0,
-                           max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
-                           maxiter=None, disp=False, return_all=False,
-                           callback=None, inexact=True, **unknown_options):
+def _minimize_trust_region(
+    fun,
+    x0,
+    args=(),
+    jac=None,
+    hess=None,
+    hessp=None,
+    subproblem=None,
+    initial_trust_radius=1.0,
+    max_trust_radius=1000.0,
+    eta=0.15,
+    gtol=1e-4,
+    maxiter=None,
+    disp=False,
+    return_all=False,
+    callback=None,
+    inexact=True,
+    **unknown_options,
+):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -147,23 +167,26 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     _check_unknown_options(unknown_options)
 
     if jac is None:
-        raise ValueError('Jacobian is currently required for trust-region '
-                         'methods')
+        raise ValueError("Jacobian is currently required for trust-region methods")
     if hess is None and hessp is None:
-        raise ValueError('Either the Hessian or the Hessian-vector product '
-                         'is currently required for trust-region methods')
+        raise ValueError(
+            "Either the Hessian or the Hessian-vector product "
+            "is currently required for trust-region methods"
+        )
     if subproblem is None:
-        raise ValueError('A subproblem solving strategy is required for '
-                         'trust-region methods')
+        raise ValueError(
+            "A subproblem solving strategy is required for trust-region methods"
+        )
     if not (0 <= eta < 0.25):
-        raise Exception('invalid acceptance stringency')
+        raise Exception("invalid acceptance stringency")
     if max_trust_radius <= 0:
-        raise Exception('the max trust radius must be positive')
+        raise Exception("the max trust radius must be positive")
     if initial_trust_radius <= 0:
-        raise ValueError('the initial trust radius must be positive')
+        raise ValueError("the initial trust radius must be positive")
     if initial_trust_radius >= max_trust_radius:
-        raise ValueError('the initial trust radius must be less than the '
-                         'max trust radius')
+        raise ValueError(
+            "the initial trust radius must be less than the max trust radius"
+        )
 
     # force the initial guess into a nice format
     x0 = np.asarray(x0).flatten()
@@ -179,25 +202,29 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # this elif statement must come before examining whether hess
         # is estimated by FD methods or a HessianUpdateStrategy
         pass
-    elif (hess in FD_METHODS or isinstance(hess, HessianUpdateStrategy)):
+    elif hess in FD_METHODS or isinstance(hess, HessianUpdateStrategy):
         # If the Hessian is being estimated by finite differences or a
         # Hessian update strategy then ScalarFunction.hess returns a
         # LinearOperator or a HessianUpdateStrategy. This enables the
         # calculation/creation of a hessp. BUT you only want to do this
         # if the user *hasn't* provided a callable(hessp) function.
         hess = None
+
         def hessp(x, p, *args):
             return sf.hess(x).dot(p)
+
     else:
-        raise ValueError('Either the Hessian or the Hessian-vector product '
-                         'is currently required for trust-region methods')
+        raise ValueError(
+            "Either the Hessian or the Hessian-vector product "
+            "is currently required for trust-region methods"
+        )
 
     # ScalarFunction doesn't represent hessp
     nhessp, hessp = _wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:
-        maxiter = len(x0)*200
+        maxiter = len(x0) * 200
 
     # init the search status
     warnflag = 0
@@ -243,7 +270,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if rho < 0.25:
             trust_radius *= 0.25
         elif rho > 0.75 and hits_boundary:
-            trust_radius = min(2*trust_radius, max_trust_radius)
+            trust_radius = min(2 * trust_radius, max_trust_radius)
 
         # if the ratio is high enough then accept the proposed step
         if rho > eta:
@@ -269,31 +296,39 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     # print some stuff if requested
     status_messages = (
-            _status_message['success'],
-            _status_message['maxiter'],
-            'A bad approximation caused failure to predict improvement.',
-            'A linalg error occurred, such as a non-psd Hessian.',
-            )
+        _status_message["success"],
+        _status_message["maxiter"],
+        "A bad approximation caused failure to predict improvement.",
+        "A linalg error occurred, such as a non-psd Hessian.",
+    )
     if disp:
         if warnflag == 0:
             print(status_messages[warnflag])
         else:
-            print('Warning: ' + status_messages[warnflag])
+            print("Warning: " + status_messages[warnflag])
         print("         Current function value: %f" % m.fun)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
         print("         Hessian evaluations: %d" % (sf.nhev + nhessp[0]))
 
-    result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
-                            fun=m.fun, jac=m.jac, nfev=sf.nfev, njev=sf.ngev,
-                            nhev=sf.nhev + nhessp[0], nit=k,
-                            message=status_messages[warnflag])
+    result = OptimizeResult(
+        x=x,
+        success=(warnflag == 0),
+        status=warnflag,
+        fun=m.fun,
+        jac=m.jac,
+        nfev=sf.nfev,
+        njev=sf.ngev,
+        nhev=sf.nhev + nhessp[0],
+        nit=k,
+        message=status_messages[warnflag],
+    )
 
     if hess is not None:
-        result['hess'] = m.hess
+        result["hess"] = m.hess
 
     if return_all:
-        result['allvecs'] = allvecs
+        result["allvecs"] = allvecs
 
     return result

@@ -28,7 +28,7 @@ def main():
 
     x, y = np.linspace(-1.5, 1.5, 75), np.linspace(-1.5, 1.5, 75)
     x, y = np.meshgrid(x, y)
-    z = x + 1j*y
+    z = x + 1j * y
     lambertw_std = []
     for z0 in z.flatten():
         lambertw_std.append(complex(mpmath.lambertw(z0)))
@@ -38,7 +38,7 @@ def main():
     # Compare Pade approximation to true result
     p = np.array([float(p0) for p0 in p])
     q = np.array([float(q0) for q0 in q])
-    pade_approx = np.polyval(p, z)/np.polyval(q, z)
+    pade_approx = np.polyval(p, z) / np.polyval(q, z)
     pade_err = abs(pade_approx - lambertw_std)
     axes[0].pcolormesh(x, y, pade_err)
     # Compare two terms of asymptotic series to true result
@@ -47,8 +47,8 @@ def main():
     axes[1].pcolormesh(x, y, asy_err)
     # Compare two terms of the series around the branch point to the
     # true result
-    p = np.sqrt(2*(np.exp(1)*z + 1))
-    series_approx = -1 + p - p**2/3
+    p = np.sqrt(2 * (np.exp(1) * z + 1))
+    series_approx = -1 + p - p ** 2 / 3
     series_err = abs(series_approx - lambertw_std)
     im = axes[2].pcolormesh(x, y, series_err)
 
@@ -59,10 +59,10 @@ def main():
     pade_better = pade_err < asy_err
     im = ax.pcolormesh(x, y, pade_better)
     t = np.linspace(-0.3, 0.3)
-    ax.plot(-2.5*abs(t) - 0.2, t, 'r')
+    ax.plot(-2.5 * abs(t) - 0.2, t, "r")
     fig.colorbar(im, ax=ax)
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -9,14 +9,14 @@ class _KlassMap(NamedTuple):
 # map boost stats classes to scipy class names and
 # constructor arguments; b -> (s, ('ctor', 'args', ...))
 _klass_mapper = {
-    'beta': _KlassMap('beta', ('a', 'b')),
-    'binomial': _KlassMap('binom', ('n', 'p')),
-    'negative_binomial': _KlassMap('nbinom', ('n', 'p')),
-    'hypergeometric': _KlassMap('hypergeom', ('r', 'n', 'N')),
+    "beta": _KlassMap("beta", ("a", "b")),
+    "binomial": _KlassMap("binom", ("n", "p")),
+    "negative_binomial": _KlassMap("nbinom", ("n", "p")),
+    "hypergeometric": _KlassMap("hypergeom", ("r", "n", "N")),
 }
 
 # functions that take ctor params and parameter "x"
-_x_funcs = ('pdf', 'cdf', 'sf', 'ppf', 'isf')
+_x_funcs = ("pdf", "cdf", "sf", "ppf", "isf")
 
 # functions that take only ctor params
-_no_x_funcs = ('mean', 'variance', 'skewness', 'kurtosis_excess')
+_no_x_funcs = ("mean", "variance", "skewness", "kurtosis_excess")

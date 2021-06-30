@@ -15,7 +15,7 @@
 
 #define CIRCULAR 8
 #define REFLECT  4
-#define PAD      0 
+#define PAD      0
 
 #define MAXTYPES 21
 

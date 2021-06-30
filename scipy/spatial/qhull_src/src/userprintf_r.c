@@ -65,11 +65,11 @@ void qh_fprintf(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) {
   va_start(args, fmt);
   vfprintf(fp, fmt, args);
   va_end(args);
-    
+
   if (qh) {
     if (msgcode >= MSG_ERROR && msgcode < MSG_WARNING)
       qh->last_errcode= msgcode;
-    /* Place debugging traps here. Use with trace option 'Tn' 
+    /* Place debugging traps here. Use with trace option 'Tn'
        Set qh.tracefacet_id, qh.traceridge_id, and/or qh.tracevertex_id in global_r.c
     */
     if (False) { /* in production skip test for debugging traps */
@@ -80,7 +80,7 @@ void qh_fprintf(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) {
           if (neighbor != qh_DUPLICATEridge && neighbor != qh_MERGEridge && neighbor->visible)
             qh_errexit2(qh, qh_ERRdebug, qh->tracefacet, neighbor);
         }
-      } 
+      }
       if (qh->traceridge && qh->traceridge->top->id == 234342223) {
         qh_errexit(qh, qh_ERRdebug, qh->tracefacet, qh->traceridge);
       }
@@ -92,4 +92,3 @@ void qh_fprintf(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) {
       fflush(fp);
   }
 } /* qh_fprintf */
-

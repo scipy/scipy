@@ -1,4 +1,4 @@
-#******************************************************************************
+# ******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#******************************************************************************
+# ******************************************************************************
 
 # Python module for interfacing with `id_dist`.
 
@@ -427,9 +427,9 @@ def seed(seed=None):
     # For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
     # and :func:`backend.id_srando`.
 
-    if isinstance(seed, str) and seed == 'default':
+    if isinstance(seed, str) and seed == "default":
         backend.id_srando()
-    elif hasattr(seed, '__len__'):
+    elif hasattr(seed, "__len__"):
         state = np.asfortranarray(seed, dtype=float)
         if state.shape != (55,):
             raise ValueError("invalid input size")
@@ -766,9 +766,10 @@ def estimate_spectral_norm(A, its=20):
         Spectral norm estimate.
     """
     from scipy.sparse.linalg import aslinearoperator
+
     A = aslinearoperator(A)
     m, n = A.shape
-    matvec = lambda x: A. matvec(x)
+    matvec = lambda x: A.matvec(x)
     matveca = lambda x: A.rmatvec(x)
     if _is_real(A):
         return backend.idd_snorm(m, n, matveca, matvec, its=its)
@@ -802,19 +803,22 @@ def estimate_spectral_norm_diff(A, B, its=20):
         Spectral norm estimate of matrix difference.
     """
     from scipy.sparse.linalg import aslinearoperator
+
     A = aslinearoperator(A)
     B = aslinearoperator(B)
     m, n = A.shape
-    matvec1 = lambda x: A. matvec(x)
+    matvec1 = lambda x: A.matvec(x)
     matveca1 = lambda x: A.rmatvec(x)
-    matvec2 = lambda x: B. matvec(x)
+    matvec2 = lambda x: B.matvec(x)
     matveca2 = lambda x: B.rmatvec(x)
     if _is_real(A):
         return backend.idd_diffsnorm(
-            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+            m, n, matveca1, matveca2, matvec1, matvec2, its=its
+        )
     else:
         return backend.idz_diffsnorm(
-            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+            m, n, matveca1, matveca2, matvec1, matvec2, its=its
+        )
 
 
 def svd(A, eps_or_k, rand=True):
@@ -884,8 +888,10 @@ def svd(A, eps_or_k, rand=True):
         else:
             k = int(eps_or_k)
             if k > min(A.shape):
-                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
-                                 " %s " % (k, min(A.shape)))
+                raise ValueError(
+                    "Approximation rank %s exceeds min(A.shape) =  %s "
+                    % (k, min(A.shape))
+                )
             if rand:
                 if real:
                     U, V, S = backend.iddr_asvd(A, k)

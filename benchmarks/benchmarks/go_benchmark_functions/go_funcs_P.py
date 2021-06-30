@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
-from numpy import (abs, sum, sin, cos, sqrt, log, prod, where, pi, exp, arange,
-                   floor, log10, atleast_2d, zeros)
+from numpy import (
+    abs,
+    sum,
+    sin,
+    cos,
+    sqrt,
+    log,
+    prod,
+    where,
+    pi,
+    exp,
+    arange,
+    floor,
+    log10,
+    atleast_2d,
+    zeros,
+)
 from .go_benchmark import Benchmark
 
 
@@ -74,18 +89,17 @@ class Pathological(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-100.0] * self.N,
-                           [100.0] * self.N))
+        self._bounds = list(zip([-100.0] * self.N, [100.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
-        self.fglob = 0.
+        self.fglob = 0.0
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        vec = (0.5 + (sin(sqrt(100 * x[: -1] ** 2 + x[1:] ** 2)) ** 2 - 0.5) /
-               (1. + 0.001 * (x[: -1] ** 2 - 2 * x[: -1] * x[1:]
-                              + x[1:] ** 2) ** 2))
+        vec = 0.5 + (sin(sqrt(100 * x[:-1] ** 2 + x[1:] ** 2)) ** 2 - 0.5) / (
+            1.0 + 0.001 * (x[:-1] ** 2 - 2 * x[:-1] * x[1:] + x[1:] ** 2) ** 2
+        )
         return sum(vec)
 
 
@@ -161,7 +175,7 @@ class Penalty01(Benchmark):
         \begin{cases}
         k(x_i - a)^m & \textrm{if} \hspace{5pt} x_i > a \\
         0 & \textrm{if} \hspace{5pt} -a \leq x_i \leq a \\
-        k(-x_i - a)^m & \textrm{if} \hspace{5pt} x_i < -a 
+        k(-x_i - a)^m & \textrm{if} \hspace{5pt} x_i < -a
         \end{cases}
 
 
@@ -194,10 +208,11 @@ class Penalty01(Benchmark):
 
         y = 1.0 + (x + 1.0) / 4.0
 
-        return (sum(u) + (pi / 30.0) * (10.0 * sin(pi * y[0]) ** 2.0
-                + sum((y[: -1] - 1.0) ** 2.0
-                      * (1.0 + 10.0 * sin(pi * y[1:]) ** 2.0))
-                + (y[-1] - 1) ** 2.0))
+        return sum(u) + (pi / 30.0) * (
+            10.0 * sin(pi * y[0]) ** 2.0
+            + sum((y[:-1] - 1.0) ** 2.0 * (1.0 + 10.0 * sin(pi * y[1:]) ** 2.0))
+            + (y[-1] - 1) ** 2.0
+        )
 
 
 class Penalty02(Benchmark):
@@ -219,7 +234,7 @@ class Penalty02(Benchmark):
 
     .. math::
 
-        u(x_i, a, k, m) = 
+        u(x_i, a, k, m) =
         \begin{cases}
         k(x_i - a)^m & \textrm{if} \hspace{5pt} x_i > a \\
         0 & \textrm{if} \hspace{5pt} -a \leq x_i \leq a \\
@@ -254,10 +269,11 @@ class Penalty02(Benchmark):
         xx = abs(x)
         u = where(xx > a, b * (xx - a) ** c, 0.0)
 
-        return (sum(u) + 0.1 * (10 * sin(3.0 * pi * x[0]) ** 2.0
-                + sum((x[:-1] - 1.0) ** 2.0
-                      * (1.0 + sin(3 * pi * x[1:]) ** 2.0))
-                + (x[-1] - 1) ** 2.0 * (1 + sin(2 * pi * x[-1]) ** 2.0)))
+        return sum(u) + 0.1 * (
+            10 * sin(3.0 * pi * x[0]) ** 2.0
+            + sum((x[:-1] - 1.0) ** 2.0 * (1.0 + sin(3 * pi * x[1:]) ** 2.0))
+            + (x[-1] - 1) ** 2.0 * (1 + sin(2 * pi * x[-1]) ** 2.0)
+        )
 
 
 class PenHolder(Benchmark):
@@ -296,7 +312,7 @@ class PenHolder(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = abs(1. - (sqrt(x[0] ** 2 + x[1] ** 2) / pi))
+        a = abs(1.0 - (sqrt(x[0] ** 2 + x[1] ** 2) / pi))
         b = cos(x[0]) * cos(x[1]) * exp(a)
         return -exp(-abs(b) ** -1)
 
@@ -331,8 +347,7 @@ class PermFunction01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-self.N] * self.N,
-                           [self.N + 1] * self.N))
+        self._bounds = list(zip([-self.N] * self.N, [self.N + 1] * self.N))
 
         self.global_optimum = [list(range(1, self.N + 1))]
         self.fglob = 0.0
@@ -379,11 +394,10 @@ class PermFunction02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-self.N] * self.N,
-                           [self.N + 1] * self.N))
+        self._bounds = list(zip([-self.N] * self.N, [self.N + 1] * self.N))
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
-        self.global_optimum = [1. / arange(1, self.N + 1)]
+        self.global_optimum = [1.0 / arange(1, self.N + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -393,7 +407,7 @@ class PermFunction02(Benchmark):
         b = 10
         k = atleast_2d(arange(self.N) + 1).T
         j = atleast_2d(arange(self.N) + 1)
-        s = (j + b) * (x ** k - (1. / j) ** k)
+        s = (j + b) * (x ** k - (1.0 / j) ** k)
         return sum((sum(s, axis=1) ** 2))
 
 
@@ -446,14 +460,14 @@ class Pinter(Benchmark):
         self.nfev += 1
         i = arange(self.N) + 1
         xx = zeros(self.N + 2)
-        xx[1: - 1] = x
+        xx[1:-1] = x
         xx[0] = x[-1]
         xx[-1] = x[0]
-        A = xx[0: -2] * sin(xx[1: - 1]) + sin(xx[2:])
-        B = xx[0: -2] ** 2 - 2 * xx[1: - 1] + 3 * xx[2:] - cos(xx[1: - 1]) + 1
-        return (sum(i * x ** 2)
-                + sum(20 * i * sin(A) ** 2)
-                + sum(i * log10(1 + i * B ** 2)))
+        A = xx[0:-2] * sin(xx[1:-1]) + sin(xx[2:])
+        B = xx[0:-2] ** 2 - 2 * xx[1:-1] + 3 * xx[2:] - cos(xx[1:-1]) + 1
+        return (
+            sum(i * x ** 2) + sum(20 * i * sin(A) ** 2) + sum(i * log10(1 + i * B ** 2))
+        )
 
 
 class Plateau(Benchmark):
@@ -528,8 +542,12 @@ class Powell(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((x[0] + 10 * x[1]) ** 2 + 5 * (x[2] - x[3]) ** 2
-                + (x[1] - 2 * x[2]) ** 4 + 10 * (x[0] - x[3]) ** 4)
+        return (
+            (x[0] + 10 * x[1]) ** 2
+            + 5 * (x[2] - x[3]) ** 2
+            + (x[1] - 2 * x[2]) ** 4
+            + 10 * (x[0] - x[3]) ** 4
+        )
 
 
 class PowerSum(Benchmark):
@@ -558,8 +576,7 @@ class PowerSum(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([0.0] * self.N,
-                           [4.0] * self.N))
+        self._bounds = list(zip([0.0] * self.N, [4.0] * self.N))
 
         self.global_optimum = [[1.0, 2.0, 2.0, 3.0]]
         self.fglob = 0.0
@@ -599,8 +616,7 @@ class Price01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-500.0] * self.N,
-                           [500.0] * self.N))
+        self._bounds = list(zip([-500.0] * self.N, [500.0] * self.N))
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [[5.0, 5.0]]
@@ -684,8 +700,9 @@ class Price03(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (100 * (x[1] - x[0] ** 2) ** 2
-                + (6.4 * (x[1] - 0.5) ** 2 - x[0] - 0.6) ** 2)
+        return (
+            100 * (x[1] - x[0] ** 2) ** 2 + (6.4 * (x[1] - 0.5) ** 2 - x[0] - 0.6) ** 2
+        )
 
 
 class Price04(Benchmark):
@@ -722,5 +739,6 @@ class Price04(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((2.0 * x[1] * x[0] ** 3.0 - x[1] ** 3.0) ** 2.0
-                + (6.0 * x[0] - x[1] ** 2.0 + x[1]) ** 2.0)
+        return (2.0 * x[1] * x[0] ** 3.0 - x[1] ** 3.0) ** 2.0 + (
+            6.0 * x[0] - x[1] ** 2.0 + x[1]
+        ) ** 2.0

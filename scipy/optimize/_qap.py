@@ -1,12 +1,13 @@
 import numpy as np
 import operator
-from . import (linear_sum_assignment, OptimizeResult)
+from . import linear_sum_assignment, OptimizeResult
 from .optimize import _check_unknown_options
 
 from scipy._lib._util import check_random_state
 import itertools
 
-QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
+QUADRATIC_ASSIGNMENT_METHODS = ["faq", "2opt"]
+
 
 def quadratic_assignment(A, B, method="faq", options=None):
     r"""
@@ -183,8 +184,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
         options = {}
 
     method = method.lower()
-    methods = {"faq": _quadratic_assignment_faq,
-               "2opt": _quadratic_assignment_2opt}
+    methods = {"faq": _quadratic_assignment_faq, "2opt": _quadratic_assignment_2opt}
     if method not in methods:
         raise ValueError(f"method {method} must be in {methods}.")
     res = methods[method](A, B, **options)
@@ -223,8 +223,9 @@ def _common_input_validation(A, B, partial_match):
         msg = "`partial_match` must contain only positive indices"
     elif (partial_match >= len(A)).any():
         msg = "`partial_match` entries must be less than number of nodes"
-    elif (not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or
-          not len(set(partial_match[:, 1])) == len(partial_match[:, 1])):
+    elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not len(
+        set(partial_match[:, 1])
+    ) == len(partial_match[:, 1]):
         msg = "`partial_match` column entries must be unique"
 
     if msg is not None:
@@ -233,10 +234,18 @@ def _common_input_validation(A, B, partial_match):
     return A, B, partial_match
 
 
-def _quadratic_assignment_faq(A, B,
-                              maximize=False, partial_match=None, rng=None,
-                              P0="barycenter", shuffle_input=False, maxiter=30,
-                              tol=0.03, **unknown_options):
+def _quadratic_assignment_faq(
+    A,
+    B,
+    maximize=False,
+    partial_match=None,
+    rng=None,
+    P0="barycenter",
+    shuffle_input=False,
+    maxiter=30,
+    tol=0.03,
+    **unknown_options,
+):
     r"""Solve the quadratic assignment problem (approximately).
 
     This function solves the Quadratic Assignment Problem (QAP) and the
@@ -400,7 +409,7 @@ def _quadratic_assignment_faq(A, B,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
-    if isinstance(P0, str) and P0 not in {'barycenter', 'randomized'}:
+    if isinstance(P0, str) and P0 not in {"barycenter", "randomized"}:
         msg = "Invalid 'P0' parameter string"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
@@ -419,14 +428,17 @@ def _quadratic_assignment_faq(A, B,
         P0 = np.atleast_2d(P0)
         if P0.shape != (n_unseed, n_unseed):
             msg = "`P0` matrix must have shape m' x m', where m'=n-m"
-        elif ((P0 < 0).any() or not np.allclose(np.sum(P0, axis=0), 1)
-              or not np.allclose(np.sum(P0, axis=1), 1)):
+        elif (
+            (P0 < 0).any()
+            or not np.allclose(np.sum(P0, axis=0), 1)
+            or not np.allclose(np.sum(P0, axis=1), 1)
+        ):
             msg = "`P0` matrix must be doubly stochastic"
         if msg is not None:
             raise ValueError(msg)
-    elif P0 == 'barycenter':
+    elif P0 == "barycenter":
         P0 = np.ones((n_unseed, n_unseed)) / n_unseed
-    elif P0 == 'randomized':
+    elif P0 == "randomized":
         J = np.ones((n_unseed, n_unseed)) / n_unseed
         # generate a nxn matrix where each entry is a random number [0, 1]
         # would use rand, but Generators don't have it
@@ -459,9 +471,9 @@ def _quadratic_assignment_faq(A, B,
 
     P = P0
     # [1] Algorithm 1 Line 2 - loop while stopping criteria not met
-    for n_iter in range(1, maxiter+1):
+    for n_iter in range(1, maxiter + 1):
         # [1] Algorithm 1 Line 3 - compute the gradient of f(P) = -tr(APB^tP^t)
-        grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
+        grad_fp = const_sum + A22 @ P @ B22.T + A22.T @ P @ B22
         # [1] Algorithm 1 Line 4 - get direction Q by solving Eq. 8
         _, cols = linear_sum_assignment(grad_fp, maximize=maximize)
         Q = np.eye(n_unseed)[cols]
@@ -483,10 +495,10 @@ def _quadratic_assignment_faq(A, B,
         # critical point of ax^2 + bx + c is at x = -d/(2*e)
         # if a * obj_func_scalar > 0, it is a minimum
         # if minimum is not in [0, 1], only endpoints need to be considered
-        if a*obj_func_scalar > 0 and 0 <= -b/(2*a) <= 1:
-            alpha = -b/(2*a)
+        if a * obj_func_scalar > 0 and 0 <= -b / (2 * a) <= 1:
+            alpha = -b / (2 * a)
         else:
-            alpha = np.argmin([0, (b + a)*obj_func_scalar])
+            alpha = np.argmin([0, (b + a) * obj_func_scalar])
 
         # [1] Algorithm 1 Line 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
@@ -526,8 +538,9 @@ def _doubly_stochastic(P, tol=1e-3):
     P_eps = P
 
     for it in range(max_iter):
-        if ((np.abs(P_eps.sum(axis=1) - 1) < tol).all() and
-                (np.abs(P_eps.sum(axis=0) - 1) < tol).all()):
+        if (np.abs(P_eps.sum(axis=1) - 1) < tol).all() and (
+            np.abs(P_eps.sum(axis=0) - 1) < tol
+        ).all():
             # All column/row sums ~= 1 within threshold
             break
 
@@ -538,10 +551,15 @@ def _doubly_stochastic(P, tol=1e-3):
     return P_eps
 
 
-def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
-                               partial_match=None,
-                               partial_guess=None,
-                               **unknown_options):
+def _quadratic_assignment_2opt(
+    A,
+    B,
+    maximize=False,
+    rng=None,
+    partial_match=None,
+    partial_guess=None,
+    **unknown_options,
+):
     r"""Solve the quadratic assignment problem (approximately).
 
     This function solves the Quadratic Assignment Problem (QAP) and the
@@ -653,8 +671,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
 
     msg = None
     if partial_guess.shape[0] > A.shape[0]:
-        msg = ("`partial_guess` can have only as "
-               "many entries as there are nodes")
+        msg = "`partial_guess` can have only as many entries as there are nodes"
     elif partial_guess.shape[1] != 2:
         msg = "`partial_guess` must have two columns"
     elif partial_guess.ndim != 2:
@@ -663,8 +680,9 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         msg = "`partial_guess` must contain only positive indices"
     elif (partial_guess >= len(A)).any():
         msg = "`partial_guess` entries must be less than number of nodes"
-    elif (not len(set(partial_guess[:, 0])) == len(partial_guess[:, 0]) or
-          not len(set(partial_guess[:, 1])) == len(partial_guess[:, 1])):
+    elif not len(set(partial_guess[:, 0])) == len(partial_guess[:, 0]) or not len(
+        set(partial_guess[:, 1])
+    ) == len(partial_guess[:, 1]):
         msg = "`partial_guess` column entries must be unique"
     if msg is not None:
         raise ValueError(msg)

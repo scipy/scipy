@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -45,12 +45,12 @@ at the top-level directory.
  *   ZCOLUMN_DFS performs a symbolic factorization on column jcol, and
  *   decide the supernode boundary.
  *
- *   This routine does not use numeric values, but only use the RHS 
+ *   This routine does not use numeric values, but only use the RHS
  *   row indices to start the dfs.
  *
  *   A supernode representative is the last column of a supernode.
  *   The nonzeros in U[*,j] are segments that end at supernodal
- *   representatives. The routine returns a list of such supernodal 
+ *   representatives. The routine returns a list of such supernodal
  *   representatives in topological order of the dfs that generates them.
  *   The location of the first nonzero in each such supernodal segment
  *   (supernodal entry location) is also returned.
@@ -102,7 +102,7 @@ zcolumn_dfs(
     int     *xsup, *supno, *lsub, *xlsub;
     int     nzlmax;
     int     maxsuper;
-    
+
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
@@ -122,10 +122,10 @@ zcolumn_dfs(
 
 	krow = lsub_col[k];
     	lsub_col[k] = EMPTY;
-	kmark = marker2[krow];    	
+	kmark = marker2[krow];
 
 	/* krow was visited before, go to the next nonz */
-        if ( kmark == jcol ) continue; 
+        if ( kmark == jcol ) continue;
 
 	/* For each unmarked nbr krow of jcol
 	 *	krow is in L: place it in structure of L[*,jcol]
@@ -161,8 +161,8 @@ zcolumn_dfs(
 	  	maxdfs = xprune[krep];
 
 		do {
-		    /* 
-		     * For each unmarked kchild of krep 
+		    /*
+		     * For each unmarked kchild of krep
 		     */
 		    while ( xdfs < maxdfs ) {
 
@@ -185,8 +185,8 @@ zcolumn_dfs(
 				}
 				if ( chmark != jcolm1 ) jsuper = EMPTY;
 			    } else {
-		    	    	/* Case kchild is in U: 
-				 *   chrep = its supernode-rep. If its rep has 
+		    	    	/* Case kchild is in U:
+				 *   chrep = its supernode-rep. If its rep has
 			         *   been explored, update its repfnz[*]
 			         */
 		   	    	chrep = xsup[supno[chperm]+1] - 1;
@@ -196,12 +196,12 @@ zcolumn_dfs(
      				  	repfnz[chrep] = chperm;
 				} else {
 		        	    /* Continue dfs at super-rep of kchild */
-		   		    xplore[krep] = xdfs;	
+		   		    xplore[krep] = xdfs;
 		   		    oldrep = krep;
 		   		    krep = chrep; /* Go deeper down G(L^t) */
 				    parent[krep] = oldrep;
 		    		    repfnz[krep] = chperm;
-		   		    xdfs = xlsub[krep];     
+		   		    xdfs = xlsub[krep];
 				    maxdfs = xprune[krep];
 				} /* else */
 
@@ -269,8 +269,8 @@ zcolumn_dfs(
 	    supno[jcol] = nsuper;
 	} /* if a new supernode */
 
-    }	/* else: jcol > 0 */ 
-    
+    }	/* else: jcol > 0 */
+
     /* Tidy up the pointers before exit */
     xsup[nsuper+1] = jcolp1;
     supno[jcolp1]  = nsuper;

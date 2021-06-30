@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -33,61 +33,61 @@ at the top-level directory.
 /*! \brief
  *
  * <pre>
- * Purpose   
- *   =======   
+ * Purpose
+ *   =======
  *
- *   CGSEQU computes row and column scalings intended to equilibrate an   
+ *   CGSEQU computes row and column scalings intended to equilibrate an
  *   M-by-N sparse matrix A and reduce its condition number. R returns the row
- *   scale factors and C the column scale factors, chosen to try to make   
- *   the largest element in each row and column of the matrix B with   
- *   elements B(i,j)=R(i)*A(i,j)*C(j) have absolute value 1.   
+ *   scale factors and C the column scale factors, chosen to try to make
+ *   the largest element in each row and column of the matrix B with
+ *   elements B(i,j)=R(i)*A(i,j)*C(j) have absolute value 1.
  *
- *   R(i) and C(j) are restricted to be between SMLNUM = smallest safe   
- *   number and BIGNUM = largest safe number.  Use of these scaling   
- *   factors is not guaranteed to reduce the condition number of A but   
- *   works well in practice.   
+ *   R(i) and C(j) are restricted to be between SMLNUM = smallest safe
+ *   number and BIGNUM = largest safe number.  Use of these scaling
+ *   factors is not guaranteed to reduce the condition number of A but
+ *   works well in practice.
  *
  *   See supermatrix.h for the definition of 'SuperMatrix' structure.
  *
- *   Arguments   
- *   =========   
+ *   Arguments
+ *   =========
  *
  *   A       (input) SuperMatrix*
  *           The matrix of dimension (A->nrow, A->ncol) whose equilibration
  *           factors are to be computed. The type of A can be:
  *           Stype = SLU_NC; Dtype = SLU_C; Mtype = SLU_GE.
- *	    
+ *
  *   R       (output) float*, size A->nrow
- *           If INFO = 0 or INFO > M, R contains the row scale factors   
+ *           If INFO = 0 or INFO > M, R contains the row scale factors
  *           for A.
- *	    
+ *
  *   C       (output) float*, size A->ncol
  *           If INFO = 0,  C contains the column scale factors for A.
- *	    
- *   ROWCND  (output) float*
- *           If INFO = 0 or INFO > M, ROWCND contains the ratio of the   
- *           smallest R(i) to the largest R(i).  If ROWCND >= 0.1 and   
- *           AMAX is neither too large nor too small, it is not worth   
- *           scaling by R.
- *	    
- *   COLCND  (output) float*
- *           If INFO = 0, COLCND contains the ratio of the smallest   
- *           C(i) to the largest C(i).  If COLCND >= 0.1, it is not   
- *           worth scaling by C.
- *	    
- *   AMAX    (output) float*
- *           Absolute value of largest matrix element.  If AMAX is very   
- *           close to overflow or very close to underflow, the matrix   
- *           should be scaled.
- *	    
- *   INFO    (output) int*
- *           = 0:  successful exit   
- *           < 0:  if INFO = -i, the i-th argument had an illegal value   
- *           > 0:  if INFO = i,  and i is   
- *                 <= A->nrow:  the i-th row of A is exactly zero   
- *                 >  A->ncol:  the (i-M)-th column of A is exactly zero   
  *
- *   ===================================================================== 
+ *   ROWCND  (output) float*
+ *           If INFO = 0 or INFO > M, ROWCND contains the ratio of the
+ *           smallest R(i) to the largest R(i).  If ROWCND >= 0.1 and
+ *           AMAX is neither too large nor too small, it is not worth
+ *           scaling by R.
+ *
+ *   COLCND  (output) float*
+ *           If INFO = 0, COLCND contains the ratio of the smallest
+ *           C(i) to the largest C(i).  If COLCND >= 0.1, it is not
+ *           worth scaling by C.
+ *
+ *   AMAX    (output) float*
+ *           Absolute value of largest matrix element.  If AMAX is very
+ *           close to overflow or very close to underflow, the matrix
+ *           should be scaled.
+ *
+ *   INFO    (output) int*
+ *           = 0:  successful exit
+ *           < 0:  if INFO = -i, the i-th argument had an illegal value
+ *           > 0:  if INFO = i,  and i is
+ *                 <= A->nrow:  the i-th row of A is exactly zero
+ *                 >  A->ncol:  the (i-M)-th column of A is exactly zero
+ *
+ *   =====================================================================
  * </pre>
  */
 void
@@ -103,7 +103,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     float rcmin, rcmax;
     float bignum, smlnum;
     extern float smach(char *);
-    
+
     /* Test the input parameters. */
     *info = 0;
     if ( A->nrow < 0 || A->ncol < 0 ||
@@ -125,7 +125,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
 
     Astore = A->Store;
     Aval = Astore->nzval;
-    
+
     /* Get machine constants. */
     smlnum = smach("S");  /* slamch_("S"); */
     bignum = 1. / smlnum;
@@ -201,5 +201,3 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     return;
 
 } /* cgsequ */
-
-

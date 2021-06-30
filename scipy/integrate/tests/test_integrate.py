@@ -3,18 +3,22 @@
 Tests for numerical integration.
 """
 import numpy as np
-from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
-                   allclose)
+from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, allclose
 
 from numpy.testing import (
-    assert_, assert_array_almost_equal,
-    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+    assert_,
+    assert_array_almost_equal,
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+    assert_warns,
+)
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Test ODE integrators
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class TestOdeint:
@@ -28,20 +32,27 @@ class TestOdeint:
         assert_(problem.verify(z, t))
 
         # Use tfirst=True
-        z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
-                             full_output=True, tfirst=True)
+        z, infodict = odeint(
+            lambda t, y: problem.f(y, t), problem.z0, t, full_output=True, tfirst=True
+        )
         assert_(problem.verify(z, t))
 
-        if hasattr(problem, 'jac'):
+        if hasattr(problem, "jac"):
             # Use Dfun
-            z, infodict = odeint(problem.f, problem.z0, t, Dfun=problem.jac,
-                                 full_output=True)
+            z, infodict = odeint(
+                problem.f, problem.z0, t, Dfun=problem.jac, full_output=True
+            )
             assert_(problem.verify(z, t))
 
             # Use Dfun and tfirst=True
-            z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
-                                 Dfun=lambda t, y: problem.jac(y, t),
-                                 full_output=True, tfirst=True)
+            z, infodict = odeint(
+                lambda t, y: problem.f(y, t),
+                problem.z0,
+                t,
+                Dfun=lambda t, y: problem.jac(y, t),
+                full_output=True,
+                tfirst=True,
+            )
             assert_(problem.verify(z, t))
 
     def test_odeint(self):
@@ -54,27 +65,29 @@ class TestOdeint:
 
 class TestODEClass:
 
-    ode_class = None   # Set in subclass.
+    ode_class = None  # Set in subclass.
 
-    def _do_problem(self, problem, integrator, method='adams'):
+    def _do_problem(self, problem, integrator, method="adams"):
 
         # ode has callback arguments in different order than odeint
         f = lambda t, z: problem.f(z, t)
         jac = None
-        if hasattr(problem, 'jac'):
+        if hasattr(problem, "jac"):
             jac = lambda t, z: problem.jac(z, t)
 
         integrator_params = {}
         if problem.lband is not None or problem.uband is not None:
-            integrator_params['uband'] = problem.uband
-            integrator_params['lband'] = problem.lband
+            integrator_params["uband"] = problem.uband
+            integrator_params["lband"] = problem.lband
 
         ig = self.ode_class(f, jac)
-        ig.set_integrator(integrator,
-                          atol=problem.atol/10,
-                          rtol=problem.rtol/10,
-                          method=method,
-                          **integrator_params)
+        ig.set_integrator(
+            integrator,
+            atol=problem.atol / 10,
+            rtol=problem.rtol / 10,
+            method=method,
+            **integrator_params,
+        )
 
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
@@ -96,16 +109,16 @@ class TestOde(TestODEClass):
             if problem.cmplx:
                 continue
             if not problem.stiff:
-                self._do_problem(problem, 'vode', 'adams')
-            self._do_problem(problem, 'vode', 'bdf')
+                self._do_problem(problem, "vode", "adams")
+            self._do_problem(problem, "vode", "bdf")
 
     def test_zvode(self):
         # Check the zvode solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if not problem.stiff:
-                self._do_problem(problem, 'zvode', 'adams')
-            self._do_problem(problem, 'zvode', 'bdf')
+                self._do_problem(problem, "zvode", "adams")
+            self._do_problem(problem, "zvode", "bdf")
 
     def test_lsoda(self):
         # Check the lsoda solver
@@ -113,7 +126,7 @@ class TestOde(TestODEClass):
             problem = problem_cls()
             if problem.cmplx:
                 continue
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, "lsoda")
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -123,9 +136,9 @@ class TestOde(TestODEClass):
                 continue
             if problem.stiff:
                 continue
-            if hasattr(problem, 'jac'):
+            if hasattr(problem, "jac"):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, "dopri5")
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -135,12 +148,12 @@ class TestOde(TestODEClass):
                 continue
             if problem.stiff:
                 continue
-            if hasattr(problem, 'jac'):
+            if hasattr(problem, "jac"):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, "dop853")
 
     def test_concurrent_fail(self):
-        for sol in ('vode', 'zvode', 'lsoda'):
+        for sol in ("vode", "zvode", "lsoda"):
             f = lambda t, y: 1.0
 
             r = ode(f).set_integrator(sol)
@@ -158,7 +171,7 @@ class TestOde(TestODEClass):
         f = lambda t, y: 1.0
 
         for k in range(3):
-            for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
+            for sol in ("vode", "zvode", "lsoda", "dopri5", "dop853"):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
 
@@ -172,7 +185,7 @@ class TestOde(TestODEClass):
                 assert_allclose(r.y, 0.1)
                 assert_allclose(r2.y, 0.2)
 
-            for sol in ('dopri5', 'dop853'):
+            for sol in ("dopri5", "dop853"):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
 
@@ -198,15 +211,15 @@ class TestComplexOde(TestODEClass):
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if not problem.stiff:
-                self._do_problem(problem, 'vode', 'adams')
+                self._do_problem(problem, "vode", "adams")
             else:
-                self._do_problem(problem, 'vode', 'bdf')
+                self._do_problem(problem, "vode", "bdf")
 
     def test_lsoda(self):
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, "lsoda")
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -214,9 +227,9 @@ class TestComplexOde(TestODEClass):
             problem = problem_cls()
             if problem.stiff:
                 continue
-            if hasattr(problem, 'jac'):
+            if hasattr(problem, "jac"):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, "dopri5")
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -224,9 +237,9 @@ class TestComplexOde(TestODEClass):
             problem = problem_cls()
             if problem.stiff:
                 continue
-            if hasattr(problem, 'jac'):
+            if hasattr(problem, "jac"):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, "dop853")
 
 
 class TestSolout:
@@ -244,7 +257,7 @@ class TestSolout:
             ys.append(y.copy())
 
         def rhs(t, y):
-            return [y[0] + y[1], -y[1]**2]
+            return [y[0] + y[1], -y[1] ** 2]
 
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
@@ -256,7 +269,7 @@ class TestSolout:
         assert_equal(ts[-1], tend)
 
     def test_solout(self):
-        for integrator in ('dopri5', 'dop853'):
+        for integrator in ("dopri5", "dop853"):
             self._run_solout_test(integrator)
 
     def _run_solout_after_initial_test(self, integrator):
@@ -272,7 +285,7 @@ class TestSolout:
             ys.append(y.copy())
 
         def rhs(t, y):
-            return [y[0] + y[1], -y[1]**2]
+            return [y[0] + y[1], -y[1] ** 2]
 
         ig = ode(rhs).set_integrator(integrator)
         ig.set_initial_value(y0, t0)
@@ -284,7 +297,7 @@ class TestSolout:
         assert_equal(ts[-1], tend)
 
     def test_solout_after_initial(self):
-        for integrator in ('dopri5', 'dop853'):
+        for integrator in ("dopri5", "dop853"):
             self._run_solout_after_initial_test(integrator)
 
     def _run_solout_break_test(self, integrator):
@@ -298,11 +311,11 @@ class TestSolout:
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
-            if t > tend/2.0:
+            if t > tend / 2.0:
                 return -1
 
         def rhs(t, y):
-            return [y[0] + y[1], -y[1]**2]
+            return [y[0] + y[1], -y[1] ** 2]
 
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
@@ -311,11 +324,11 @@ class TestSolout:
         assert_array_equal(ys[0], y0)
         assert_array_equal(ys[-1], ret)
         assert_equal(ts[0], t0)
-        assert_(ts[-1] > tend/2.0)
+        assert_(ts[-1] > tend / 2.0)
         assert_(ts[-1] < tend)
 
     def test_solout_break(self):
-        for integrator in ('dopri5', 'dop853'):
+        for integrator in ("dopri5", "dop853"):
             self._run_solout_break_test(integrator)
 
 
@@ -334,7 +347,7 @@ class TestComplexSolout:
             ys.append(y.copy())
 
         def rhs(t, y):
-            return [1.0/(t - 10.0 - 1j)]
+            return [1.0 / (t - 10.0 - 1j)]
 
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
@@ -346,7 +359,7 @@ class TestComplexSolout:
         assert_equal(ts[-1], tend)
 
     def test_solout(self):
-        for integrator in ('dopri5', 'dop853'):
+        for integrator in ("dopri5", "dop853"):
             self._run_solout_test(integrator)
 
     def _run_solout_break_test(self, integrator):
@@ -360,11 +373,11 @@ class TestComplexSolout:
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
-            if t > tend/2.0:
+            if t > tend / 2.0:
                 return -1
 
         def rhs(t, y):
-            return [1.0/(t - 10.0 - 1j)]
+            return [1.0 / (t - 10.0 - 1j)]
 
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
@@ -373,23 +386,24 @@ class TestComplexSolout:
         assert_array_equal(ys[0], y0)
         assert_array_equal(ys[-1], ret)
         assert_equal(ts[0], t0)
-        assert_(ts[-1] > tend/2.0)
+        assert_(ts[-1] > tend / 2.0)
         assert_(ts[-1] < tend)
 
     def test_solout_break(self):
-        for integrator in ('dopri5', 'dop853'):
+        for integrator in ("dopri5", "dop853"):
             self._run_solout_break_test(integrator)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Test problems
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 class ODE:
     """
     ODE problem
     """
+
     stiff = False
     cmplx = False
     stop_t = 1
@@ -423,24 +437,24 @@ class SimpleOscillator(ODE):
 
     def verify(self, zs, t):
         omega = sqrt(self.k / self.m)
-        u = self.z0[0]*cos(omega*t) + self.z0[1]*sin(omega*t)/omega
+        u = self.z0[0] * cos(omega * t) + self.z0[1] * sin(omega * t) / omega
         return allclose(u, zs[:, 0], atol=self.atol, rtol=self.rtol)
 
 
 class ComplexExp(ODE):
     r"""The equation :lm:`\dot u = i u`"""
-    stop_t = 1.23*pi
+    stop_t = 1.23 * pi
     z0 = exp([1j, 2j, 3j, 4j, 5j])
     cmplx = True
 
     def f(self, z, t):
-        return 1j*z
+        return 1j * z
 
     def jac(self, z, t):
-        return 1j*eye(5)
+        return 1j * eye(5)
 
     def verify(self, zs, t):
-        u = self.z0 * exp(1j*t)
+        u = self.z0 * exp(1j * t)
         return allclose(u, zs, atol=self.atol, rtol=self.rtol)
 
 
@@ -451,7 +465,7 @@ class Pi(ODE):
     cmplx = True
 
     def f(self, z, t):
-        return array([1./(t - 10 + 1j)])
+        return array([1.0 / (t - 10 + 1j)])
 
     def verify(self, zs, t):
         u = -2j * np.arctan(10)
@@ -474,9 +488,13 @@ class CoupledDecay(ODE):
 
     def f(self, z, t):
         lmbd = self.lmbd
-        return np.array([-lmbd[0]*z[0],
-                         -lmbd[1]*z[1] + lmbd[0]*z[0],
-                         -lmbd[2]*z[2] + lmbd[1]*z[1]])
+        return np.array(
+            [
+                -lmbd[0] * z[0],
+                -lmbd[1] * z[1] + lmbd[0] * z[0],
+                -lmbd[2] * z[2] + lmbd[1] * z[1],
+            ]
+        )
 
     def jac(self, z, t):
         # The full Jacobian is
@@ -492,10 +510,11 @@ class CoupledDecay(ODE):
         #    [ lmbd[0]   lmbd[1]      0   ]
 
         lmbd = self.lmbd
-        j = np.zeros((self.lband + self.uband + 1, 3), order='F')
+        j = np.zeros((self.lband + self.uband + 1, 3), order="F")
 
         def set_j(ri, ci, val):
             j[self.uband + ri - ci, ci] = val
+
         set_j(0, 0, -lmbd[0])
         set_j(1, 0, lmbd[0])
         set_j(1, 1, -lmbd[1])
@@ -512,18 +531,25 @@ class CoupledDecay(ODE):
         e0 = np.exp(-lmbd[0] * t)
         e1 = np.exp(-lmbd[1] * t)
         e2 = np.exp(-lmbd[2] * t)
-        u = np.vstack((
-            self.z0[0] * e0,
-            self.z0[1] * e1 + self.z0[0] * lmbd[0] / d10 * (e0 - e1),
-            self.z0[2] * e2 + self.z0[1] * lmbd[1] / d21 * (e1 - e2) +
-            lmbd[1] * lmbd[0] * self.z0[0] / d10 *
-            (1 / d20 * (e0 - e2) - 1 / d21 * (e1 - e2)))).transpose()
+        u = np.vstack(
+            (
+                self.z0[0] * e0,
+                self.z0[1] * e1 + self.z0[0] * lmbd[0] / d10 * (e0 - e1),
+                self.z0[2] * e2
+                + self.z0[1] * lmbd[1] / d21 * (e1 - e2)
+                + lmbd[1]
+                * lmbd[0]
+                * self.z0[0]
+                / d10
+                * (1 / d20 * (e0 - e2) - 1 / d21 * (e1 - e2)),
+            )
+        ).transpose()
         return allclose(u, zs, atol=self.atol, rtol=self.rtol)
 
 
 PROBLEMS = [SimpleOscillator, ComplexExp, Pi, CoupledDecay]
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def f(t, x):
@@ -532,41 +558,37 @@ def f(t, x):
 
 
 def jac(t, x):
-    j = array([[0.0, 1.0],
-               [-1.0, 0.0]])
+    j = array([[0.0, 1.0], [-1.0, 0.0]])
     return j
 
 
 def f1(t, x, omega):
-    dxdt = [omega*x[1], -omega*x[0]]
+    dxdt = [omega * x[1], -omega * x[0]]
     return dxdt
 
 
 def jac1(t, x, omega):
-    j = array([[0.0, omega],
-               [-omega, 0.0]])
+    j = array([[0.0, omega], [-omega, 0.0]])
     return j
 
 
 def f2(t, x, omega1, omega2):
-    dxdt = [omega1*x[1], -omega2*x[0]]
+    dxdt = [omega1 * x[1], -omega2 * x[0]]
     return dxdt
 
 
 def jac2(t, x, omega1, omega2):
-    j = array([[0.0, omega1],
-               [-omega2, 0.0]])
+    j = array([[0.0, omega1], [-omega2, 0.0]])
     return j
 
 
 def fv(t, x, omega):
-    dxdt = [omega[0]*x[1], -omega[1]*x[0]]
+    dxdt = [omega[0] * x[1], -omega[1] * x[0]]
     return dxdt
 
 
 def jacv(t, x, omega):
-    j = array([[0.0, omega[0]],
-               [-omega[1], 0.0]])
+    j = array([[0.0, omega[0]], [-omega[1], 0.0]])
     return j
 
 
@@ -576,14 +598,18 @@ class ODECheckParameterUse:
     # solver_name must be set before tests can be run with this class.
 
     # Set these in subclasses.
-    solver_name = ''
+    solver_name = ""
     solver_uses_jac = False
 
     def _get_solver(self, f, jac):
         solver = ode(f, jac)
         if self.solver_uses_jac:
-            solver.set_integrator(self.solver_name, atol=1e-9, rtol=1e-7,
-                                  with_jacobian=self.solver_uses_jac)
+            solver.set_integrator(
+                self.solver_name,
+                atol=1e-9,
+                rtol=1e-7,
+                with_jacobian=self.solver_uses_jac,
+            )
         else:
             # XXX Shouldn't set_integrator *always* accept the keyword arg
             # 'with_jacobian', and perhaps raise an exception if it is set
@@ -636,27 +662,27 @@ class ODECheckParameterUse:
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):
-    solver_name = 'dopri5'
+    solver_name = "dopri5"
     solver_uses_jac = False
 
 
 class TestDOP853CheckParameterUse(ODECheckParameterUse):
-    solver_name = 'dop853'
+    solver_name = "dop853"
     solver_uses_jac = False
 
 
 class TestVODECheckParameterUse(ODECheckParameterUse):
-    solver_name = 'vode'
+    solver_name = "vode"
     solver_uses_jac = True
 
 
 class TestZVODECheckParameterUse(ODECheckParameterUse):
-    solver_name = 'zvode'
+    solver_name = "zvode"
     solver_uses_jac = True
 
 
 class TestLSODACheckParameterUse(ODECheckParameterUse):
-    solver_name = 'lsoda'
+    solver_name = "lsoda"
     solver_uses_jac = True
 
 
@@ -679,45 +705,91 @@ def test_odeint_banded_jacobian():
         return c
 
     def jac_transpose(y, t, c):
-        return c.T.copy(order='C')
+        return c.T.copy(order="C")
 
     def bjac_rows(y, t, c):
-        jac = np.row_stack((np.r_[0, np.diag(c, 1)],
-                            np.diag(c),
-                            np.r_[np.diag(c, -1), 0],
-                            np.r_[np.diag(c, -2), 0, 0]))
+        jac = np.row_stack(
+            (
+                np.r_[0, np.diag(c, 1)],
+                np.diag(c),
+                np.r_[np.diag(c, -1), 0],
+                np.r_[np.diag(c, -2), 0, 0],
+            )
+        )
         return jac
 
     def bjac_cols(y, t, c):
-        return bjac_rows(y, t, c).T.copy(order='C')
+        return bjac_rows(y, t, c).T.copy(order="C")
 
-    c = array([[-205, 0.01, 0.00, 0.0],
-               [0.1, -2.50, 0.02, 0.0],
-               [1e-3, 0.01, -2.0, 0.01],
-               [0.00, 0.00, 0.1, -1.0]])
+    c = array(
+        [
+            [-205, 0.01, 0.00, 0.0],
+            [0.1, -2.50, 0.02, 0.0],
+            [1e-3, 0.01, -2.0, 0.01],
+            [0.00, 0.00, 0.1, -1.0],
+        ]
+    )
 
     y0 = np.ones(4)
     t = np.array([0, 5, 10, 100])
 
     # Use the full Jacobian.
-    sol1, info1 = odeint(func, y0, t, args=(c,), full_output=True,
-                         atol=1e-13, rtol=1e-11, mxstep=10000,
-                         Dfun=jac)
+    sol1, info1 = odeint(
+        func,
+        y0,
+        t,
+        args=(c,),
+        full_output=True,
+        atol=1e-13,
+        rtol=1e-11,
+        mxstep=10000,
+        Dfun=jac,
+    )
 
     # Use the transposed full Jacobian, with col_deriv=True.
-    sol2, info2 = odeint(func, y0, t, args=(c,), full_output=True,
-                         atol=1e-13, rtol=1e-11, mxstep=10000,
-                         Dfun=jac_transpose, col_deriv=True)
+    sol2, info2 = odeint(
+        func,
+        y0,
+        t,
+        args=(c,),
+        full_output=True,
+        atol=1e-13,
+        rtol=1e-11,
+        mxstep=10000,
+        Dfun=jac_transpose,
+        col_deriv=True,
+    )
 
     # Use the banded Jacobian.
-    sol3, info3 = odeint(func, y0, t, args=(c,), full_output=True,
-                         atol=1e-13, rtol=1e-11, mxstep=10000,
-                         Dfun=bjac_rows, ml=2, mu=1)
+    sol3, info3 = odeint(
+        func,
+        y0,
+        t,
+        args=(c,),
+        full_output=True,
+        atol=1e-13,
+        rtol=1e-11,
+        mxstep=10000,
+        Dfun=bjac_rows,
+        ml=2,
+        mu=1,
+    )
 
     # Use the transposed banded Jacobian, with col_deriv=True.
-    sol4, info4 = odeint(func, y0, t, args=(c,), full_output=True,
-                         atol=1e-13, rtol=1e-11, mxstep=10000,
-                         Dfun=bjac_cols, ml=2, mu=1, col_deriv=True)
+    sol4, info4 = odeint(
+        func,
+        y0,
+        t,
+        args=(c,),
+        full_output=True,
+        atol=1e-13,
+        rtol=1e-11,
+        mxstep=10000,
+        Dfun=bjac_cols,
+        ml=2,
+        mu=1,
+        col_deriv=True,
+    )
 
     assert_allclose(sol1, sol2, err_msg="sol1 != sol2")
     assert_allclose(sol1, sol3, atol=1e-12, err_msg="sol1 != sol3")
@@ -728,14 +800,22 @@ def test_odeint_banded_jacobian():
     # a regression test--there was a bug in the handling of banded jacobians
     # that resulted in an incorrect jacobian matrix being passed to the LSODA
     # code.  That would cause errors or excessive jacobian evaluations.
-    assert_array_equal(info1['nje'], info2['nje'])
-    assert_array_equal(info3['nje'], info4['nje'])
+    assert_array_equal(info1["nje"], info2["nje"])
+    assert_array_equal(info3["nje"], info4["nje"])
 
     # Test the use of tfirst
-    sol1ty, info1ty = odeint(lambda t, y, c: func(y, t, c), y0, t, args=(c,),
-                             full_output=True, atol=1e-13, rtol=1e-11,
-                             mxstep=10000,
-                             Dfun=lambda t, y, c: jac(y, t, c), tfirst=True)
+    sol1ty, info1ty = odeint(
+        lambda t, y, c: func(y, t, c),
+        y0,
+        t,
+        args=(c,),
+        full_output=True,
+        atol=1e-13,
+        rtol=1e-11,
+        mxstep=10000,
+        Dfun=lambda t, y, c: jac(y, t, c),
+        tfirst=True,
+    )
     # The code should execute the exact same sequence of floating point
     # calculations, so these should be exactly equal. We'll be safe and use
     # a small tolerance.
@@ -744,25 +824,25 @@ def test_odeint_banded_jacobian():
 
 def test_odeint_errors():
     def sys1d(x, t):
-        return -100*x
+        return -100 * x
 
     def bad1(x, t):
-        return 1.0/0
+        return 1.0 / 0
 
     def bad2(x, t):
         return "foo"
 
     def bad_jac1(x, t):
-        return 1.0/0
+        return 1.0 / 0
 
     def bad_jac2(x, t):
         return [["foo"]]
 
     def sys2d(x, t):
-        return [-100*x[0], -0.1*x[1]]
+        return [-100 * x[0], -0.1 * x[1]]
 
     def sys2d_bad_jac(x, t):
-        return [[1.0/0, 0], [0, -0.1]]
+        return [[1.0 / 0, 0], [0, -0.1]]
 
     assert_raises(ZeroDivisionError, odeint, bad1, 1.0, [0, 1])
     assert_raises(ValueError, odeint, bad2, 1.0, [0, 1])
@@ -770,8 +850,9 @@ def test_odeint_errors():
     assert_raises(ZeroDivisionError, odeint, sys1d, 1.0, [0, 1], Dfun=bad_jac1)
     assert_raises(ValueError, odeint, sys1d, 1.0, [0, 1], Dfun=bad_jac2)
 
-    assert_raises(ZeroDivisionError, odeint, sys2d, [1.0, 1.0], [0, 1],
-                  Dfun=sys2d_bad_jac)
+    assert_raises(
+        ZeroDivisionError, odeint, sys2d, [1.0, 1.0], [0, 1], Dfun=sys2d_bad_jac
+    )
 
 
 def test_odeint_bad_shapes():
@@ -781,7 +862,7 @@ def test_odeint_bad_shapes():
         return [1, -1]
 
     def sys1(x, t):
-        return -100*x
+        return -100 * x
 
     def badjac(x, t):
         return [[0, 0, 0]]
@@ -805,26 +886,24 @@ def test_repeated_t_values():
     """Regression test for gh-8217."""
 
     def func(x, t):
-        return -0.25*x
+        return -0.25 * x
 
     t = np.zeros(10)
-    sol = odeint(func, [1.], t)
+    sol = odeint(func, [1.0], t)
     assert_array_equal(sol, np.ones((len(t), 1)))
 
-    tau = 4*np.log(2)
-    t = [0]*9 + [tau, 2*tau, 2*tau, 3*tau]
+    tau = 4 * np.log(2)
+    t = [0] * 9 + [tau, 2 * tau, 2 * tau, 3 * tau]
     sol = odeint(func, [1, 2], t, rtol=1e-12, atol=1e-12)
-    expected_sol = np.array([[1.0, 2.0]]*9 +
-                            [[0.5, 1.0],
-                             [0.25, 0.5],
-                             [0.25, 0.5],
-                             [0.125, 0.25]])
+    expected_sol = np.array(
+        [[1.0, 2.0]] * 9 + [[0.5, 1.0], [0.25, 0.5], [0.25, 0.5], [0.125, 0.25]]
+    )
     assert_allclose(sol, expected_sol)
 
     # Edge case: empty t sequence.
-    sol = odeint(func, [1.], [])
+    sol = odeint(func, [1.0], [])
     assert_array_equal(sol, np.array([], dtype=np.float64).reshape((0, 1)))
 
     # t values are not monotonic.
-    assert_raises(ValueError, odeint, func, [1.], [0, 1, 0.5, 0])
+    assert_raises(ValueError, odeint, func, [1.0], [0, 1, 0.5, 0])
     assert_raises(ValueError, odeint, func, [1, 2, 3], [0, -1, -2, 3])

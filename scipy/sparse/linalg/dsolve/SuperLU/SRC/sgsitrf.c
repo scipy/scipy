@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -113,7 +113,7 @@ int num_drop_L;
  *
  * Glu      (input/output) GlobalLU_t *
  *          If options->Fact == SamePattern_SameRowPerm, it is an input;
- *              The matrix A will be factorized assuming that a 
+ *              The matrix A will be factorized assuming that a
  *              factorization of a matrix with the same sparsity pattern
  *              and similar numerical values was performed prior to this one.
  *              Therefore, this factorization will reuse both row and column
@@ -186,7 +186,7 @@ int num_drop_L;
 void
 sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	int *etree, void *work, int lwork, int *perm_c, int *perm_r,
-	SuperMatrix *L, SuperMatrix *U, 
+	SuperMatrix *L, SuperMatrix *U,
     	GlobalLU_t *Glu, /* persistent to facilitate multiple factorizations */
 	SuperLUStat_t *stat, int *info)
 {
@@ -213,7 +213,7 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       *xsup, *supno;
     int       *xlsub, *xlusup, *xusub;
     int       nzlumax;
-    float    *amax; 
+    float    *amax;
     float    drop_sum;
     float alpha, omega;  /* used in MILU, mimicing DRIC */
     float    *swork2;	   /* used by the second dropping rule */
@@ -249,7 +249,7 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     float zero = 0.0;
     float one = 1.0;
 
-    /* Executable */	   
+    /* Executable */
     iinfo    = 0;
     m	     = A->nrow;
     n	     = A->ncol;

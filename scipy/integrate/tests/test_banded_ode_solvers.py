@@ -8,12 +8,12 @@ def _band_count(a):
     """Returns ml and mu, the lower and upper band sizes of a."""
     nrows, ncols = a.shape
     ml = 0
-    for k in range(-nrows+1, 0):
+    for k in range(-nrows + 1, 0):
         if np.diag(a, k).any():
             ml = -k
             break
     mu = 0
-    for k in range(nrows-1, 0, -1):
+    for k in range(nrows - 1, 0, -1):
         if np.diag(a, k).any():
             mu = k
             break
@@ -35,14 +35,22 @@ def _linear_banded_jac(t, y, a):
     ml, mu = _band_count(a)
     bjac = [np.r_[[0] * k, np.diag(a, k)] for k in range(mu, 0, -1)]
     bjac.append(np.diag(a))
-    for k in range(-1, -ml-1, -1):
+    for k in range(-1, -ml - 1, -1):
         bjac.append(np.r_[np.diag(a, k), [0] * (-k)])
     return bjac
 
 
-def _solve_linear_sys(a, y0, tend=1, dt=0.1,
-                      solver=None, method='bdf', use_jac=True,
-                      with_jacobian=False, banded=False):
+def _solve_linear_sys(
+    a,
+    y0,
+    tend=1,
+    dt=0.1,
+    solver=None,
+    method="bdf",
+    use_jac=True,
+    with_jacobian=False,
+    banded=False,
+):
     """Use scipy.integrate.ode to solve a linear system of ODEs.
 
     a : square ndarray
@@ -86,12 +94,15 @@ def _solve_linear_sys(a, y0, tend=1, dt=0.1,
         else:
             solver = "vode"
 
-    r.set_integrator(solver,
-                     with_jacobian=with_jacobian,
-                     method=method,
-                     lband=lband, uband=uband,
-                     rtol=1e-9, atol=1e-10,
-                     )
+    r.set_integrator(
+        solver,
+        with_jacobian=with_jacobian,
+        method=method,
+        lband=lband,
+        uband=uband,
+        rtol=1e-9,
+        atol=1e-10,
+    )
     t0 = 0
     r.set_initial_value(y0, t0)
     r.set_f_params(a)
@@ -133,11 +144,15 @@ def test_banded_ode_solvers():
     # --- Real arrays for testing the "lsoda" and "vode" solvers ---
 
     # lband = 2, uband = 1:
-    a_real = np.array([[-0.6, 0.1, 0.0, 0.0, 0.0],
-                       [0.2, -0.5, 0.9, 0.0, 0.0],
-                       [0.1, 0.1, -0.4, 0.1, 0.0],
-                       [0.0, 0.3, -0.1, -0.9, -0.3],
-                       [0.0, 0.0, 0.1, 0.1, -0.7]])
+    a_real = np.array(
+        [
+            [-0.6, 0.1, 0.0, 0.0, 0.0],
+            [0.2, -0.5, 0.9, 0.0, 0.0],
+            [0.1, 0.1, -0.4, 0.1, 0.0],
+            [0.0, 0.3, -0.1, -0.9, -0.3],
+            [0.0, 0.0, 0.1, 0.1, -0.7],
+        ]
+    )
 
     # lband = 0, uband = 1:
     a_real_upper = np.triu(a_real)
@@ -159,23 +174,28 @@ def test_banded_ode_solvers():
     def check_real(idx, solver, meth, use_jac, with_jac, banded):
         a = real_matrices[idx]
         y0, t_exact, y_exact = real_solutions[idx]
-        t, y = _solve_linear_sys(a, y0,
-                                 tend=t_exact[-1],
-                                 dt=t_exact[1] - t_exact[0],
-                                 solver=solver,
-                                 method=meth,
-                                 use_jac=use_jac,
-                                 with_jacobian=with_jac,
-                                 banded=banded)
+        t, y = _solve_linear_sys(
+            a,
+            y0,
+            tend=t_exact[-1],
+            dt=t_exact[1] - t_exact[0],
+            solver=solver,
+            method=meth,
+            use_jac=use_jac,
+            with_jacobian=with_jac,
+            banded=banded,
+        )
         assert_allclose(t, t_exact)
         assert_allclose(y, y_exact)
 
     for idx in range(len(real_matrices)):
-        p = [['vode', 'lsoda'],  # solver
-             ['bdf', 'adams'],   # method
-             [False, True],      # use_jac
-             [False, True],      # with_jacobian
-             [False, True]]      # banded
+        p = [
+            ["vode", "lsoda"],  # solver
+            ["bdf", "adams"],  # method
+            [False, True],  # use_jac
+            [False, True],  # with_jacobian
+            [False, True],
+        ]  # banded
         for solver, meth, use_jac, with_jac, banded in itertools.product(*p):
             check_real(idx, solver, meth, use_jac, with_jac, banded)
 
@@ -198,21 +218,26 @@ def test_banded_ode_solvers():
     def check_complex(idx, solver, meth, use_jac, with_jac, banded):
         a = complex_matrices[idx]
         y0, t_exact, y_exact = complex_solutions[idx]
-        t, y = _solve_linear_sys(a, y0,
-                                 tend=t_exact[-1],
-                                 dt=t_exact[1] - t_exact[0],
-                                 solver=solver,
-                                 method=meth,
-                                 use_jac=use_jac,
-                                 with_jacobian=with_jac,
-                                 banded=banded)
+        t, y = _solve_linear_sys(
+            a,
+            y0,
+            tend=t_exact[-1],
+            dt=t_exact[1] - t_exact[0],
+            solver=solver,
+            method=meth,
+            use_jac=use_jac,
+            with_jacobian=with_jac,
+            banded=banded,
+        )
         assert_allclose(t, t_exact)
         assert_allclose(y, y_exact)
 
     for idx in range(len(complex_matrices)):
-        p = [['bdf', 'adams'],   # method
-             [False, True],      # use_jac
-             [False, True],      # with_jacobian
-             [False, True]]      # banded
+        p = [
+            ["bdf", "adams"],  # method
+            [False, True],  # use_jac
+            [False, True],  # with_jacobian
+            [False, True],
+        ]  # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
             check_complex(idx, "zvode", meth, use_jac, with_jac, banded)

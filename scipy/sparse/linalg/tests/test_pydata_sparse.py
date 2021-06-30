@@ -11,15 +11,16 @@ try:
 except Exception:
     sparse = None
 
-pytestmark = pytest.mark.skipif(sparse is None,
-                                reason="pydata/sparse not installed")
+pytestmark = pytest.mark.skipif(sparse is None, reason="pydata/sparse not installed")
 
 
 msg = "pydata/sparse (0.8) does not implement necessary operations"
 
 
-sparse_params = [pytest.param("COO"),
-                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
+sparse_params = [
+    pytest.param("COO"),
+    pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]),
+]
 
 scipy_sparse_classes = [
     sp.bsr_matrix,
@@ -27,7 +28,7 @@ scipy_sparse_classes = [
     sp.coo_matrix,
     sp.csc_matrix,
     sp.dia_matrix,
-    sp.dok_matrix
+    sp.dok_matrix,
 ]
 
 
@@ -85,7 +86,7 @@ def test_lsqr(matrices):
 def test_eigs(matrices):
     A_dense, A_sparse, v0 = matrices
 
-    M_dense = np.diag(v0**2)
+    M_dense = np.diag(v0 ** 2)
     M_sparse = A_sparse.__class__(M_dense)
 
     w_dense, v_dense = splin.eigs(A_dense, k=3, v0=v0)
@@ -121,7 +122,7 @@ def test_svds(matrices):
 
 def test_lobpcg(matrices):
     A_dense, A_sparse, x = matrices
-    X = x[:,None]
+    X = x[:, None]
 
     w_dense, v_dense = splin.lobpcg(A_dense, X)
     w, v = splin.lobpcg(A_sparse, X)
@@ -149,8 +150,7 @@ def test_spsolve(matrices):
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
-    x0 = splin.spsolve(sp.csc_matrix(A_dense),
-                       sp.csc_matrix(A_dense))
+    x0 = splin.spsolve(sp.csc_matrix(A_dense), sp.csc_matrix(A_dense))
     x = splin.spsolve(A_sparse, A_sparse)
     assert isinstance(x, type(A_sparse))
     assert_allclose(x.todense(), x0.todense())

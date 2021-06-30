@@ -544,7 +544,7 @@ c          only be at least lin = 20.
 c
 c          the first few words of iwork are used for conditional and
 c          optional inputs and optional outputs.
-c 
+c
 c          the following 2 words in iwork are conditional inputs..
 c            iwork(1) = ml     these are the lower and upper
 c            iwork(2) = mu     half-bandwidths, respectively, of the

@@ -100,29 +100,87 @@ from scipy.sparse.linalg import lsmr
 from scipy.optimize import OptimizeResult
 
 from .common import (
-    step_size_to_bound, find_active_constraints, in_bounds,
-    make_strictly_feasible, intersect_trust_region, solve_lsq_trust_region,
-    solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
-    evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
-    CL_scaling_vector, compute_grad, compute_jac_scale, check_termination,
-    update_tr_radius, scale_for_robust_loss_function, print_header_nonlinear,
-    print_iteration_nonlinear)
+    step_size_to_bound,
+    find_active_constraints,
+    in_bounds,
+    make_strictly_feasible,
+    intersect_trust_region,
+    solve_lsq_trust_region,
+    solve_trust_region_2d,
+    minimize_quadratic_1d,
+    build_quadratic_1d,
+    evaluate_quadratic,
+    right_multiplied_operator,
+    regularized_lsq_operator,
+    CL_scaling_vector,
+    compute_grad,
+    compute_jac_scale,
+    check_termination,
+    update_tr_radius,
+    scale_for_robust_loss_function,
+    print_header_nonlinear,
+    print_iteration_nonlinear,
+)
 
 
-def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
-        loss_function, tr_solver, tr_options, verbose):
+def trf(
+    fun,
+    jac,
+    x0,
+    f0,
+    J0,
+    lb,
+    ub,
+    ftol,
+    xtol,
+    gtol,
+    max_nfev,
+    x_scale,
+    loss_function,
+    tr_solver,
+    tr_options,
+    verbose,
+):
     # For efficiency, it makes sense to run the simplified version of the
     # algorithm when no bounds are imposed. We decided to write the two
     # separate functions. It violates the DRY principle, but the individual
     # functions are kept the most readable.
     if np.all(lb == -np.inf) and np.all(ub == np.inf):
         return trf_no_bounds(
-            fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev, x_scale,
-            loss_function, tr_solver, tr_options, verbose)
+            fun,
+            jac,
+            x0,
+            f0,
+            J0,
+            ftol,
+            xtol,
+            gtol,
+            max_nfev,
+            x_scale,
+            loss_function,
+            tr_solver,
+            tr_options,
+            verbose,
+        )
     else:
         return trf_bounds(
-            fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
-            loss_function, tr_solver, tr_options, verbose)
+            fun,
+            jac,
+            x0,
+            f0,
+            J0,
+            lb,
+            ub,
+            ftol,
+            xtol,
+            gtol,
+            max_nfev,
+            x_scale,
+            loss_function,
+            tr_solver,
+            tr_options,
+            verbose,
+        )
 
 
 def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
@@ -166,8 +224,7 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
     # Check if reflection step is available.
     if r_stride_l <= r_stride_u:
         a, b, c = build_quadratic_1d(J_h, g_h, r_h, s0=p_h, diag=diag_h)
-        r_stride, r_value = minimize_quadratic_1d(
-            a, b, r_stride_l, r_stride_u, c=c)
+        r_stride, r_value = minimize_quadratic_1d(a, b, r_stride_l, r_stride_u, c=c)
         r_h *= r_stride
         r_h += p_h
         r = r_h * d
@@ -202,8 +259,24 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
         return ag, ag_h, -ag_value
 
 
-def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
-               x_scale, loss_function, tr_solver, tr_options, verbose):
+def trf_bounds(
+    fun,
+    jac,
+    x0,
+    f0,
+    J0,
+    lb,
+    ub,
+    ftol,
+    xtol,
+    gtol,
+    max_nfev,
+    x_scale,
+    loss_function,
+    tr_solver,
+    tr_options,
+    verbose,
+):
     x = x0.copy()
 
     f = f0
@@ -223,7 +296,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    jac_scale = isinstance(x_scale, str) and x_scale == 'jac'
+    jac_scale = isinstance(x_scale, str) and x_scale == "jac"
     if jac_scale:
         scale, scale_inv = compute_jac_scale(J)
     else:
@@ -231,18 +304,18 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     v, dv = CL_scaling_vector(x, g, lb, ub)
     v[dv != 0] *= scale_inv[dv != 0]
-    Delta = norm(x0 * scale_inv / v**0.5)
+    Delta = norm(x0 * scale_inv / v ** 0.5)
     if Delta == 0:
         Delta = 1.0
 
     g_norm = norm(g * v, ord=np.inf)
 
     f_augmented = np.zeros((m + n))
-    if tr_solver == 'exact':
+    if tr_solver == "exact":
         J_augmented = np.empty((m + n, n))
-    elif tr_solver == 'lsmr':
+    elif tr_solver == "lsmr":
         reg_term = 0.0
-        regularize = tr_options.pop('regularize', True)
+        regularize = tr_options.pop("regularize", True)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -265,8 +338,9 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
-                                      step_norm, g_norm)
+            print_iteration_nonlinear(
+                iteration, nfev, cost, actual_reduction, step_norm, g_norm
+            )
 
         if termination_status is not None or nfev == max_nfev:
             break
@@ -283,7 +357,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
         v[dv != 0] *= scale_inv[dv != 0]
 
         # Here, we apply two types of scaling.
-        d = v**0.5 * scale
+        d = v ** 0.5 * scale
 
         # C = diag(g * scale) Jv
         diag_h = g * dv * scale
@@ -294,26 +368,26 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
         g_h = d * g
 
         f_augmented[:m] = f
-        if tr_solver == 'exact':
+        if tr_solver == "exact":
             J_augmented[:m] = J * d
             J_h = J_augmented[:m]  # Memory view.
-            J_augmented[m:] = np.diag(diag_h**0.5)
+            J_augmented[m:] = np.diag(diag_h ** 0.5)
             U, s, V = svd(J_augmented, full_matrices=False)
             V = V.T
             uf = U.T.dot(f_augmented)
-        elif tr_solver == 'lsmr':
+        elif tr_solver == "lsmr":
             J_h = right_multiplied_operator(J, d)
 
             if regularize:
                 a, b = build_quadratic_1d(J_h, g_h, -g_h, diag=diag_h)
                 to_tr = Delta / norm(g_h)
                 ag_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
-                reg_term = -ag_value / Delta**2
+                reg_term = -ag_value / Delta ** 2
 
-            lsmr_op = regularized_lsq_operator(J_h, (diag_h + reg_term)**0.5)
+            lsmr_op = regularized_lsq_operator(J_h, (diag_h + reg_term) ** 0.5)
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
-            S, _ = qr(S, mode='economic')
+            S, _ = qr(S, mode="economic")
             JS = J_h.dot(S)  # LinearOperator does dot too.
             B_S = np.dot(JS.T, JS) + np.dot(S.T * diag_h, S)
             g_S = S.T.dot(g_h)
@@ -323,16 +397,18 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
         actual_reduction = -1
         while actual_reduction <= 0 and nfev < max_nfev:
-            if tr_solver == 'exact':
+            if tr_solver == "exact":
                 p_h, alpha, n_iter = solve_lsq_trust_region(
-                    n, m, uf, s, V, Delta, initial_alpha=alpha)
-            elif tr_solver == 'lsmr':
+                    n, m, uf, s, V, Delta, initial_alpha=alpha
+                )
+            elif tr_solver == "lsmr":
                 p_S, _ = solve_trust_region_2d(B_S, g_S, Delta)
                 p_h = S.dot(p_S)
 
             p = d * p_h  # Trust-region solution in the original space.
             step, step_h, predicted_reduction = select_step(
-                x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
+                x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta
+            )
 
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
             f_new = fun(x_new)
@@ -351,12 +427,17 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
                 cost_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = cost - cost_new
             Delta_new, ratio = update_tr_radius(
-                Delta, actual_reduction, predicted_reduction,
-                step_h_norm, step_h_norm > 0.95 * Delta)
+                Delta,
+                actual_reduction,
+                predicted_reduction,
+                step_h_norm,
+                step_h_norm > 0.95 * Delta,
+            )
 
             step_norm = norm(step)
             termination_status = check_termination(
-                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
+                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol
+            )
             if termination_status is not None:
                 break
 
@@ -393,13 +474,35 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
-        x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev,
-        status=termination_status)
+        x=x,
+        cost=cost,
+        fun=f_true,
+        jac=J,
+        grad=g,
+        optimality=g_norm,
+        active_mask=active_mask,
+        nfev=nfev,
+        njev=njev,
+        status=termination_status,
+    )
 
 
-def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
-                  x_scale, loss_function, tr_solver, tr_options, verbose):
+def trf_no_bounds(
+    fun,
+    jac,
+    x0,
+    f0,
+    J0,
+    ftol,
+    xtol,
+    gtol,
+    max_nfev,
+    x_scale,
+    loss_function,
+    tr_solver,
+    tr_options,
+    verbose,
+):
     x = x0.copy()
 
     f = f0
@@ -419,7 +522,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    jac_scale = isinstance(x_scale, str) and x_scale == 'jac'
+    jac_scale = isinstance(x_scale, str) and x_scale == "jac"
     if jac_scale:
         scale, scale_inv = compute_jac_scale(J)
     else:
@@ -429,10 +532,10 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
     if Delta == 0:
         Delta = 1.0
 
-    if tr_solver == 'lsmr':
+    if tr_solver == "lsmr":
         reg_term = 0
-        damp = tr_options.pop('damp', 0.0)
-        regularize = tr_options.pop('regularize', True)
+        damp = tr_options.pop("damp", 0.0)
+        regularize = tr_options.pop("regularize", True)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -453,8 +556,9 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
-                                      step_norm, g_norm)
+            print_iteration_nonlinear(
+                iteration, nfev, cost, actual_reduction, step_norm, g_norm
+            )
 
         if termination_status is not None or nfev == max_nfev:
             break
@@ -462,34 +566,35 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
         d = scale
         g_h = d * g
 
-        if tr_solver == 'exact':
+        if tr_solver == "exact":
             J_h = J * d
             U, s, V = svd(J_h, full_matrices=False)
             V = V.T
             uf = U.T.dot(f)
-        elif tr_solver == 'lsmr':
+        elif tr_solver == "lsmr":
             J_h = right_multiplied_operator(J, d)
 
             if regularize:
                 a, b = build_quadratic_1d(J_h, g_h, -g_h)
                 to_tr = Delta / norm(g_h)
                 ag_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
-                reg_term = -ag_value / Delta**2
+                reg_term = -ag_value / Delta ** 2
 
-            damp_full = (damp**2 + reg_term)**0.5
+            damp_full = (damp ** 2 + reg_term) ** 0.5
             gn_h = lsmr(J_h, f, damp=damp_full, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
-            S, _ = qr(S, mode='economic')
+            S, _ = qr(S, mode="economic")
             JS = J_h.dot(S)
             B_S = np.dot(JS.T, JS)
             g_S = S.T.dot(g_h)
 
         actual_reduction = -1
         while actual_reduction <= 0 and nfev < max_nfev:
-            if tr_solver == 'exact':
+            if tr_solver == "exact":
                 step_h, alpha, n_iter = solve_lsq_trust_region(
-                    n, m, uf, s, V, Delta, initial_alpha=alpha)
-            elif tr_solver == 'lsmr':
+                    n, m, uf, s, V, Delta, initial_alpha=alpha
+                )
+            elif tr_solver == "lsmr":
                 p_S, _ = solve_trust_region_2d(B_S, g_S, Delta)
                 step_h = S.dot(p_S)
 
@@ -513,12 +618,17 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             actual_reduction = cost - cost_new
 
             Delta_new, ratio = update_tr_radius(
-                Delta, actual_reduction, predicted_reduction,
-                step_h_norm, step_h_norm > 0.95 * Delta)
+                Delta,
+                actual_reduction,
+                predicted_reduction,
+                step_h_norm,
+                step_h_norm > 0.95 * Delta,
+            )
 
             step_norm = norm(step)
             termination_status = check_termination(
-                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
+                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol
+            )
             if termination_status is not None:
                 break
 
@@ -555,6 +665,14 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
     active_mask = np.zeros_like(x)
     return OptimizeResult(
-        x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev,
-        status=termination_status)
+        x=x,
+        cost=cost,
+        fun=f_true,
+        jac=J,
+        grad=g,
+        optimality=g_norm,
+        active_mask=active_mask,
+        nfev=nfev,
+        njev=njev,
+        status=termination_status,
+    )

@@ -3,9 +3,16 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, csc_matrix, eye
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
-from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, EPS, num_jac, validate_first_step,
-                     warn_extraneous)
+from .common import (
+    validate_max_step,
+    validate_tol,
+    select_initial_step,
+    norm,
+    EPS,
+    num_jac,
+    validate_first_step,
+    warn_extraneous,
+)
 from .base import OdeSolver, DenseOutput
 
 
@@ -30,7 +37,7 @@ def change_D(D, order, factor):
     R = compute_R(order, factor)
     U = compute_R(order, 1)
     RU = R.dot(U)
-    D[:order + 1] = np.dot(RU.T, D[:order + 1])
+    D[: order + 1] = np.dot(RU.T, D[: order + 1])
 
 
 def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
@@ -52,15 +59,15 @@ def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
         else:
             rate = dy_norm / dy_norm_old
 
-        if (rate is not None and (rate >= 1 or
-                rate ** (NEWTON_MAXITER - k) / (1 - rate) * dy_norm > tol)):
+        if rate is not None and (
+            rate >= 1 or rate ** (NEWTON_MAXITER - k) / (1 - rate) * dy_norm > tol
+        ):
             break
 
         y += dy
         d += dy
 
-        if (dy_norm == 0 or
-                rate is not None and rate / (1 - rate) * dy_norm < tol):
+        if dy_norm == 0 or rate is not None and rate / (1 - rate) * dy_norm < tol:
             converged = True
             break
 
@@ -181,19 +188,31 @@ class BDF(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
-    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, **extraneous):
+
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        max_step=np.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        jac=None,
+        jac_sparsity=None,
+        vectorized=False,
+        first_step=None,
+        **extraneous,
+    ):
         warn_extraneous(extraneous)
-        super().__init__(fun, t0, y0, t_bound, vectorized,
-                         support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized, support_complex=True)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         if first_step is None:
-            self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
-                                             self.direction, 1,
-                                             self.rtol, self.atol)
+            self.h_abs = select_initial_step(
+                self.fun, self.t, self.y, f, self.direction, 1, self.rtol, self.atol
+            )
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
@@ -204,6 +223,7 @@ class BDF(OdeSolver):
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
         if issparse(self.J):
+
             def lu(A):
                 self.nlu += 1
                 return splu(A)
@@ -211,8 +231,9 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc', dtype=self.y.dtype)
+            I = eye(self.n, format="csc", dtype=self.y.dtype)
         else:
+
             def lu(A):
                 self.nlu += 1
                 return lu_factor(A, overwrite_a=True)
@@ -226,7 +247,7 @@ class BDF(OdeSolver):
         self.solve_lu = solve_lu
         self.I = I
 
-        kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
+        kappa = np.array([0, -0.1850, -1 / 9, -0.0823, -0.0415, 0])
         self.gamma = np.hstack((0, np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))
         self.alpha = (1 - kappa) * self.gamma
         self.error_const = kappa * self.gamma + 1 / np.arange(1, MAX_ORDER + 2)
@@ -254,10 +275,11 @@ class BDF(OdeSolver):
             def jac_wrapped(t, y):
                 self.njev += 1
                 f = self.fun_single(t, y)
-                J, self.jac_factor = num_jac(self.fun_vectorized, t, y, f,
-                                             self.atol, self.jac_factor,
-                                             sparsity)
+                J, self.jac_factor = num_jac(
+                    self.fun_vectorized, t, y, f, self.atol, self.jac_factor, sparsity
+                )
                 return J
+
             J = jac_wrapped(t0, y0)
         elif callable(jac):
             J = jac(t0, y0)
@@ -268,6 +290,7 @@ class BDF(OdeSolver):
                 def jac_wrapped(t, y):
                     self.njev += 1
                     return csc_matrix(jac(t, y), dtype=y0.dtype)
+
             else:
                 J = np.asarray(J, dtype=y0.dtype)
 
@@ -276,9 +299,11 @@ class BDF(OdeSolver):
                     return np.asarray(jac(t, y), dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(
+                    "`jac` is expected to have shape {}, but actually has {}.".format(
+                        (self.n, self.n), J.shape
+                    )
+                )
         else:
             if issparse(jac):
                 J = csc_matrix(jac, dtype=y0.dtype)
@@ -286,9 +311,11 @@ class BDF(OdeSolver):
                 J = np.asarray(jac, dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(
+                    "`jac` is expected to have shape {}, but actually has {}.".format(
+                        (self.n, self.n), J.shape
+                    )
+                )
             jac_wrapped = None
 
         return jac_wrapped, J
@@ -339,10 +366,10 @@ class BDF(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            y_predict = np.sum(D[:order + 1], axis=0)
+            y_predict = np.sum(D[: order + 1], axis=0)
 
             scale = atol + rtol * np.abs(y_predict)
-            psi = np.dot(D[1: order + 1].T, gamma[1: order + 1]) / alpha[order]
+            psi = np.dot(D[1 : order + 1].T, gamma[1 : order + 1]) / alpha[order]
 
             converged = False
             c = h / alpha[order]
@@ -351,8 +378,16 @@ class BDF(OdeSolver):
                     LU = self.lu(self.I - c * J)
 
                 converged, n_iter, y_new, d = solve_bdf_system(
-                    self.fun, t_new, y_predict, c, psi, LU, self.solve_lu,
-                    scale, self.newton_tol)
+                    self.fun,
+                    t_new,
+                    y_predict,
+                    c,
+                    psi,
+                    LU,
+                    self.solve_lu,
+                    scale,
+                    self.newton_tol,
+                )
 
                 if not converged:
                     if current_jac:
@@ -369,16 +404,14 @@ class BDF(OdeSolver):
                 LU = None
                 continue
 
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
-                                                       + n_iter)
+            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER + n_iter)
 
             scale = atol + rtol * np.abs(y_new)
             error = error_const[order] * d
             error_norm = norm(error / scale)
 
             if error_norm > 1:
-                factor = max(MIN_FACTOR,
-                             safety * error_norm ** (-1 / (order + 1)))
+                factor = max(MIN_FACTOR, safety * error_norm ** (-1 / (order + 1)))
                 h_abs *= factor
                 change_D(D, order, factor)
                 self.n_equal_steps = 0
@@ -421,7 +454,7 @@ class BDF(OdeSolver):
             error_p_norm = np.inf
 
         error_norms = np.array([error_m_norm, error_norm, error_p_norm])
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             factors = error_norms ** (-1 / np.arange(order, order + 3))
 
         delta_order = np.argmax(factors) - 1
@@ -437,8 +470,13 @@ class BDF(OdeSolver):
         return True, None
 
     def _dense_output_impl(self):
-        return BdfDenseOutput(self.t_old, self.t, self.h_abs * self.direction,
-                              self.order, self.D[:self.order + 1].copy())
+        return BdfDenseOutput(
+            self.t_old,
+            self.t,
+            self.h_abs * self.direction,
+            self.order,
+            self.D[: self.order + 1].copy(),
+        )
 
 
 class BdfDenseOutput(DenseOutput):

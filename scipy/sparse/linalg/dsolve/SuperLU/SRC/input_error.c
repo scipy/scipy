@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -24,20 +24,20 @@ at the top-level directory.
 /*! \brief
  *
  * <pre>
- * Purpose   
- * =======   
+ * Purpose
+ * =======
  *
- * INPUT_ERROR is called if an input parameter has an   
- * invalid value.  A message is printed and execution stops.   
+ * INPUT_ERROR is called if an input parameter has an
+ * invalid value.  A message is printed and execution stops.
  *
- * Arguments   
- * =========   
+ * Arguments
+ * =========
  *
  * srname  (input) character*6
  *         The name of the routine which called INPUT_ERROR.
  *
  * info    (input) int
- *         The position of the invalid parameter in the parameter list   
+ *         The position of the invalid parameter in the parameter list
  *         of the calling routine.
  *
  * </pre>

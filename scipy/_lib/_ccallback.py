@@ -6,8 +6,10 @@ PyCFuncPtr = ctypes.CFUNCTYPE(ctypes.c_void_p).__bases__[0]
 
 ffi = None
 
+
 class CData:
     pass
+
 
 def _import_cffi():
     global ffi, CData
@@ -17,6 +19,7 @@ def _import_cffi():
 
     try:
         import cffi
+
         ffi = cffi.FFI()
         CData = ffi.CData
     except ImportError:
@@ -125,9 +128,13 @@ class LowLevelCallable(tuple):
         try:
             function = module.__pyx_capi__[name]
         except AttributeError as e:
-            raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute") from e
+            raise ValueError(
+                "Given module is not a Cython module with __pyx_capi__ attribute"
+            ) from e
         except KeyError as e:
-            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name)) from e
+            raise ValueError(
+                "No function {!r} found in __pyx_capi__ of the module".format(name)
+            ) from e
         return cls(function, user_data, signature)
 
     @classmethod
@@ -143,7 +150,10 @@ class LowLevelCallable(tuple):
         elif _ccallback_c.check_capsule(obj):
             func = obj
         else:
-            raise ValueError("Given input is not a callable or a low-level callable (pycapsule/ctypes/cffi)")
+            raise ValueError(
+                "Given input is not a callable or a low-level callable"
+                " (pycapsule/ctypes/cffi)"
+            )
 
         if isinstance(user_data, ctypes.c_void_p):
             context = _get_ctypes_data(user_data)
@@ -154,7 +164,10 @@ class LowLevelCallable(tuple):
         elif _ccallback_c.check_capsule(user_data):
             context = user_data
         else:
-            raise ValueError("Given user data is not a valid low-level void* pointer (pycapsule/ctypes/cffi)")
+            raise ValueError(
+                "Given user data is not a valid low-level void* pointer"
+                " (pycapsule/ctypes/cffi)"
+            )
 
         return _ccallback_c.get_raw_capsule(func, signature, context)
 
@@ -162,6 +175,7 @@ class LowLevelCallable(tuple):
 #
 # ctypes helpers
 #
+
 
 def _get_ctypes_func(func, signature=None):
     # Get function pointer
@@ -193,11 +207,11 @@ def _typename_from_ctypes(item):
         pointer_level += 1
         name = name[3:]
 
-    if name.startswith('c_'):
+    if name.startswith("c_"):
         name = name[2:]
 
     if pointer_level > 0:
-        name += " " + "*"*pointer_level
+        name += " " + "*" * pointer_level
 
     return name
 
@@ -211,17 +225,18 @@ def _get_ctypes_data(data):
 # CFFI helpers
 #
 
+
 def _get_cffi_func(func, signature=None):
     # Get function pointer
-    func_ptr = ffi.cast('uintptr_t', func)
+    func_ptr = ffi.cast("uintptr_t", func)
 
     # Get signature
     if signature is None:
-        signature = ffi.getctype(ffi.typeof(func)).replace('(*)', ' ')
+        signature = ffi.getctype(ffi.typeof(func)).replace("(*)", " ")
 
     return func_ptr, signature
 
 
 def _get_cffi_data(data):
     # Get pointer
-    return ffi.cast('uintptr_t', data)
+    return ffi.cast("uintptr_t", data)

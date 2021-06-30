@@ -591,4 +591,3 @@ Pull requests
 - `#4199 <https://github.com/scipy/scipy/pull/4199>`__: ENH: Changed scipy.stats.describe output from datalen to nobs
 - `#4201 <https://github.com/scipy/scipy/pull/4201>`__: DOC: add blas2 and nan* deprecations to the release notes
 - `#4243 <https://github.com/scipy/scipy/pull/4243>`__: TST: bump test tolerances
-

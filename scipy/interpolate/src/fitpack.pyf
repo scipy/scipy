@@ -648,7 +648,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
             :: kwrk=3+mx+my+nxest+nyest
        integer intent(out) :: ier
      end subroutine regrid_smth
- 
+
      subroutine regrid_smth_spher(iopt,ider,mu,u,mv,v,r,r0,r1,s,nuest,nvest,&
         nu,tu,nv,tv,c,fp,wrk,lwrk,iwrk,kwrk,ier)
        !  nu,tu,nv,tv,c,fp,ier = regrid_smth_spher(u,v,r,[r0,r1,s])
@@ -710,4 +710,3 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
      common /types/ intvar
   end interface
 end python module dfitpack
-

@@ -4,7 +4,7 @@ Matrix square root for general matrices and for upper triangular matrices.
 This module exists to avoid cyclic imports.
 
 """
-__all__ = ['sqrtm']
+__all__ = ["sqrtm"]
 
 import numpy as np
 
@@ -73,7 +73,7 @@ def _sqrtm_triu(T, blocksize=64):
     blarge = bsmall + 1
     nsmall = nblocks - nlarge
     if nsmall * bsmall + nlarge * blarge != n:
-        raise Exception('internal inconsistency')
+        raise Exception("internal inconsistency")
 
     # Define the index range covered by each block.
     start_stop_pairs = []
@@ -89,12 +89,11 @@ def _sqrtm_triu(T, blocksize=64):
     # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):
         jstart, jstop = start_stop_pairs[j]
-        for i in range(j-1, -1, -1):
+        for i in range(j - 1, -1, -1):
             istart, istop = start_stop_pairs[i]
             S = T[istart:istop, jstart:jstop]
             if j - i > 1:
-                S = S - R[istart:istop, istop:jstart].dot(R[istop:jstart,
-                                                            jstart:jstop])
+                S = S - R[istart:istop, istop:jstart].dot(R[istop:jstart, jstart:jstop])
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
@@ -166,7 +165,7 @@ def sqrtm(A, disp=True, blocksize=64):
         if not np.array_equal(T, np.triu(T)):
             T, Z = rsf2csf(T, Z)
     else:
-        T, Z = schur(A, output='complex')
+        T, Z = schur(A, output="complex")
     failflag = False
     try:
         R = _sqrtm_triu(T, blocksize=blocksize)
@@ -183,7 +182,7 @@ def sqrtm(A, disp=True, blocksize=64):
         return X
     else:
         try:
-            arg2 = norm(X.dot(X) - A, 'fro')**2 / norm(A, 'fro')
+            arg2 = norm(X.dot(X) - A, "fro") ** 2 / norm(A, "fro")
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf

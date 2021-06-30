@@ -1,4 +1,3 @@
-
 import sys as _sys
 from keyword import iskeyword as _iskeyword
 
@@ -11,27 +10,27 @@ def _validate_names(typename, field_names, extra_field_names):
     """
     for name in [typename] + field_names + extra_field_names:
         if type(name) is not str:
-            raise TypeError('typename and all field names must be strings')
+            raise TypeError("typename and all field names must be strings")
         if not name.isidentifier():
-            raise ValueError('typename and all field names must be valid '
-                             f'identifiers: {name!r}')
+            raise ValueError(
+                f"typename and all field names must be valid identifiers: {name!r}"
+            )
         if _iskeyword(name):
-            raise ValueError('typename and all field names cannot be a '
-                             f'keyword: {name!r}')
+            raise ValueError(
+                f"typename and all field names cannot be a keyword: {name!r}"
+            )
 
     seen = set()
     for name in field_names + extra_field_names:
-        if name.startswith('_'):
-            raise ValueError('Field names cannot start with an underscore: '
-                             f'{name!r}')
+        if name.startswith("_"):
+            raise ValueError(f"Field names cannot start with an underscore: {name!r}")
         if name in seen:
-            raise ValueError(f'Duplicate field name: {name!r}')
+            raise ValueError(f"Duplicate field name: {name!r}")
         seen.add(name)
 
 
 # Note: This code is adapted from CPython:Lib/collections/__init__.py
-def _make_tuple_bunch(typename, field_names, extra_field_names=None,
-                      module=None):
+def _make_tuple_bunch(typename, field_names, extra_field_names=None, module=None):
     """
     Create a namedtuple-like class with additional attributes.
 
@@ -112,7 +111,7 @@ def _make_tuple_bunch(typename, field_names, extra_field_names=None,
     0.5
     """
     if len(field_names) == 0:
-        raise ValueError('field_names must contain at least one name')
+        raise ValueError("field_names must contain at least one name")
 
     if extra_field_names is None:
         extra_field_names = []
@@ -123,11 +122,11 @@ def _make_tuple_bunch(typename, field_names, extra_field_names=None,
     extra_field_names = tuple(map(_sys.intern, extra_field_names))
 
     all_names = field_names + extra_field_names
-    arg_list = ', '.join(field_names)
-    full_list = ', '.join(all_names)
-    repr_fmt = ''.join(('(',
-                        ', '.join(f'{name}=%({name})r' for name in all_names),
-                        ')'))
+    arg_list = ", ".join(field_names)
+    full_list = ", ".join(all_names)
+    repr_fmt = "".join(
+        ("(", ", ".join(f"{name}=%({name})r" for name in all_names), ")")
+    )
     tuple_new = tuple.__new__
     _dict, _tuple, _zip = dict, tuple, zip
 
@@ -151,59 +150,62 @@ def __setattr__(self, key, val):
                          % (key, self.__class__.__name__))
 """
     del arg_list
-    namespace = {'_tuple_new': tuple_new,
-                 '__builtins__': dict(TypeError=TypeError,
-                                      AttributeError=AttributeError),
-                 '__name__': f'namedtuple_{typename}'}
+    namespace = {
+        "_tuple_new": tuple_new,
+        "__builtins__": dict(TypeError=TypeError, AttributeError=AttributeError),
+        "__name__": f"namedtuple_{typename}",
+    }
     exec(s, namespace)
-    __new__ = namespace['__new__']
-    __new__.__doc__ = f'Create new instance of {typename}({full_list})'
-    __init__ = namespace['__init__']
-    __init__.__doc__ = f'Instantiate instance of {typename}({full_list})'
-    __setattr__ = namespace['__setattr__']
+    __new__ = namespace["__new__"]
+    __new__.__doc__ = f"Create new instance of {typename}({full_list})"
+    __init__ = namespace["__init__"]
+    __init__.__doc__ = f"Instantiate instance of {typename}({full_list})"
+    __setattr__ = namespace["__setattr__"]
 
     def __repr__(self):
-        'Return a nicely formatted representation string'
+        "Return a nicely formatted representation string"
         return self.__class__.__name__ + repr_fmt % self._asdict()
 
     def _asdict(self):
-        'Return a new dict which maps field names to their values.'
+        "Return a new dict which maps field names to their values."
         out = _dict(_zip(self._fields, self))
         out.update(self.__dict__)
         return out
 
     def __getnewargs_ex__(self):
-        'Return self as a plain tuple.  Used by copy and pickle.'
+        "Return self as a plain tuple.  Used by copy and pickle."
         return _tuple(self), self.__dict__
 
     # Modify function metadata to help with introspection and debugging
     for method in (__new__, __repr__, _asdict, __getnewargs_ex__):
-        method.__qualname__ = f'{typename}.{method.__name__}'
+        method.__qualname__ = f"{typename}.{method.__name__}"
 
     # Build-up the class namespace dictionary
     # and use type() to build the result class
     class_namespace = {
-        '__doc__': f'{typename}({full_list})',
-        '_fields': field_names,
-        '__new__': __new__,
-        '__init__': __init__,
-        '__repr__': __repr__,
-        '__setattr__': __setattr__,
-        '_asdict': _asdict,
-        '_extra_fields': extra_field_names,
-        '__getnewargs_ex__': __getnewargs_ex__,
+        "__doc__": f"{typename}({full_list})",
+        "_fields": field_names,
+        "__new__": __new__,
+        "__init__": __init__,
+        "__repr__": __repr__,
+        "__setattr__": __setattr__,
+        "_asdict": _asdict,
+        "_extra_fields": extra_field_names,
+        "__getnewargs_ex__": __getnewargs_ex__,
     }
     for index, name in enumerate(field_names):
-        doc = _sys.intern(f'Alias for field number {index}')
+        doc = _sys.intern(f"Alias for field number {index}")
 
         def _get(self, index=index):
             return self[index]
+
         class_namespace[name] = property(_get, doc=doc)
     for name in extra_field_names:
-        doc = _sys.intern(f'Alias for name {name}')
+        doc = _sys.intern(f"Alias for name {name}")
 
         def _get(self, name=name):
             return self.__dict__[name]
+
         class_namespace[name] = property(_get, doc=doc)
 
     result = type(typename, (tuple,), class_namespace)
@@ -215,7 +217,7 @@ def __setattr__(self, key, val):
     # user has specified a particular module.
     if module is None:
         try:
-            module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            module = _sys._getframe(1).f_globals.get("__name__", "__main__")
         except (AttributeError, ValueError):
             pass
     if module is not None:

@@ -7,8 +7,8 @@
 
 #include "model.hpp"
 
-struct Builder { 
-   std::map<std::string, std::shared_ptr<Variable>> variables; 
+struct Builder {
+   std::map<std::string, std::shared_ptr<Variable>> variables;
 
    Model model;
 

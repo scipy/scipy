@@ -79,4 +79,3 @@ c  evaluate s(u,v)
       evapol = f
       return
       end
-

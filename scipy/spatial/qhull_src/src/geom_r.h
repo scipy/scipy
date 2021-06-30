@@ -184,6 +184,3 @@ pointT *qh_voronoi_center(qhT *qh, int dim, setT *points);
 #endif
 
 #endif /* qhDEFgeom */
-
-
-

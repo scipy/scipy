@@ -19,13 +19,16 @@ def add_newdoc(name, doc):
     docdict[name] = doc
 
 
-add_newdoc("_sf_error_test_function",
+add_newdoc(
+    "_sf_error_test_function",
     """
     Private function; do not use.
-    """)
+    """,
+)
 
 
-add_newdoc("_cosine_cdf",
+add_newdoc(
+    "_cosine_cdf",
     """
     _cosine_cdf(x)
 
@@ -45,9 +48,11 @@ add_newdoc("_cosine_cdf",
     float
         The cosine distribution CDF evaluated at `x`.
 
-    """)
+    """,
+)
 
-add_newdoc("_cosine_invcdf",
+add_newdoc(
+    "_cosine_invcdf",
     """
     _cosine_invcdf(p)
 
@@ -71,9 +76,11 @@ add_newdoc("_cosine_invcdf",
     float
         The inverse of the cosine distribution CDF evaluated at `p`.
 
-    """)
+    """,
+)
 
-add_newdoc("sph_harm",
+add_newdoc(
+    "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
 
@@ -135,24 +142,32 @@ add_newdoc("sph_harm",
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
-    """)
+    """,
+)
 
-add_newdoc("_ellip_harm",
+add_newdoc(
+    "_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
-    """)
+    """,
+)
 
-add_newdoc("_ellip_norm",
+add_newdoc(
+    "_ellip_norm",
     """
     Internal function, use `ellip_norm` instead.
-    """)
+    """,
+)
 
-add_newdoc("_lambertw",
+add_newdoc(
+    "_lambertw",
     """
     Internal function, use `lambertw` instead.
-    """)
+    """,
+)
 
-add_newdoc("voigt_profile",
+add_newdoc(
+    "voigt_profile",
     r"""
     voigt_profile(x, sigma, gamma, out=None)
 
@@ -199,9 +214,11 @@ add_newdoc("voigt_profile",
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
 
-    """)
+    """,
+)
 
-add_newdoc("wrightomega",
+add_newdoc(
+    "wrightomega",
     r"""
     wrightomega(z, out=None)
 
@@ -251,10 +268,12 @@ add_newdoc("wrightomega",
            Function." ACM Transactions on Mathematical Software,
            2012. :doi:`10.1145/2168773.2168779`.
 
-    """)
+    """,
+)
 
 
-add_newdoc("agm",
+add_newdoc(
+    "agm",
     """
     agm(a, b)
 
@@ -307,9 +326,11 @@ add_newdoc("agm",
     array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
            [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
            [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
-    """)
+    """,
+)
 
-add_newdoc("airy",
+add_newdoc(
+    "airy",
     r"""
     airy(z)
 
@@ -380,9 +401,11 @@ add_newdoc("airy",
     >>> plt.legend(loc='upper left')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("airye",
+add_newdoc(
+    "airye",
     """
     airye(z)
 
@@ -458,9 +481,11 @@ add_newdoc("airye",
     >>> airye(200)
     (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
 
-    """)
+    """,
+)
 
-add_newdoc("bdtr",
+add_newdoc(
+    "bdtr",
     r"""
     bdtr(k, n, p)
 
@@ -501,9 +526,11 @@ add_newdoc("bdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("bdtrc",
+add_newdoc(
+    "bdtrc",
     r"""
     bdtrc(k, n, p)
 
@@ -550,9 +577,11 @@ add_newdoc("bdtrc",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("bdtri",
+add_newdoc(
+    "bdtri",
     r"""
     bdtri(k, n, y)
 
@@ -595,9 +624,11 @@ add_newdoc("bdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("bdtrik",
+add_newdoc(
+    "bdtrik",
     """
     bdtrik(y, n, p)
 
@@ -645,9 +676,11 @@ add_newdoc("bdtrik",
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
 
-    """)
+    """,
+)
 
-add_newdoc("bdtrin",
+add_newdoc(
+    "bdtrin",
     """
     bdtrin(k, y, p)
 
@@ -694,9 +727,11 @@ add_newdoc("bdtrin",
     .. [2] Barry Brown, James Lovato, and Kathy Russell,
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
-    """)
+    """,
+)
 
-add_newdoc("binom",
+add_newdoc(
+    "binom",
     """
     binom(n, k)
 
@@ -706,9 +741,11 @@ add_newdoc("binom",
     --------
     comb : The number of combinations of N things taken k at a time.
 
-    """)
+    """,
+)
 
-add_newdoc("btdtria",
+add_newdoc(
+    "btdtria",
     r"""
     btdtria(p, b, x)
 
@@ -759,9 +796,11 @@ add_newdoc("btdtria",
            Algorithm 708: Significant Digit Computation of the Incomplete Beta
            Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
 
-    """)
+    """,
+)
 
-add_newdoc("btdtrib",
+add_newdoc(
+    "btdtrib",
     r"""
     btdtria(a, p, x)
 
@@ -813,9 +852,11 @@ add_newdoc("btdtrib",
            Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
 
 
-    """)
+    """,
+)
 
-add_newdoc("bei",
+add_newdoc(
+    "bei",
     r"""
     bei(x, out=None)
 
@@ -864,9 +905,11 @@ add_newdoc("bei",
     >>> sc.bei(x)
     array([0.24956604, 0.97229163, 1.93758679, 2.29269032])
 
-    """)
+    """,
+)
 
-add_newdoc("beip",
+add_newdoc(
+    "beip",
     r"""
     beip(x, out=None)
 
@@ -893,9 +936,11 @@ add_newdoc("beip",
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
-    """)
+    """,
+)
 
-add_newdoc("ber",
+add_newdoc(
+    "ber",
     r"""
     ber(x, out=None)
 
@@ -944,9 +989,11 @@ add_newdoc("ber",
     >>> sc.ber(x)
     array([ 0.98438178,  0.75173418, -0.22138025, -2.56341656])
 
-    """)
+    """,
+)
 
-add_newdoc("berp",
+add_newdoc(
+    "berp",
     r"""
     berp(x, out=None)
 
@@ -973,9 +1020,11 @@ add_newdoc("berp",
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
-    """)
+    """,
+)
 
-add_newdoc("besselpoly",
+add_newdoc(
+    "besselpoly",
     r"""
     besselpoly(a, lmb, nu, out=None)
 
@@ -1006,9 +1055,11 @@ add_newdoc("besselpoly",
     scalar or ndarray
         Value of the integral.
 
-    """)
+    """,
+)
 
-add_newdoc("beta",
+add_newdoc(
+    "beta",
     r"""
     beta(a, b, out=None)
 
@@ -1072,9 +1123,11 @@ add_newdoc("beta",
     >>> sc.beta(1, 4)
     0.25
 
-    """)
+    """,
+)
 
-add_newdoc("betainc",
+add_newdoc(
+    "betainc",
     r"""
     betainc(a, b, x, out=None)
 
@@ -1156,9 +1209,11 @@ add_newdoc("betainc",
     >>> 1 - sc.betainc(3.1, 2.2, 1 - 0.4)
     0.49339638807619446
 
-    """)
+    """,
+)
 
-add_newdoc("betaincinv",
+add_newdoc(
+    "betaincinv",
     r"""
     betaincinv(a, b, y, out=None)
 
@@ -1216,18 +1271,22 @@ add_newdoc("betaincinv",
     >>> sc.betainc(a, b, x)
     0.5
 
-    """)
+    """,
+)
 
-add_newdoc("betaln",
+add_newdoc(
+    "betaln",
     """
     betaln(a, b)
 
     Natural logarithm of absolute value of beta function.
 
     Computes ``ln(abs(beta(a, b)))``.
-    """)
+    """,
+)
 
-add_newdoc("boxcox",
+add_newdoc(
+    "boxcox",
     """
     boxcox(x, lmbda)
 
@@ -1265,9 +1324,11 @@ add_newdoc("boxcox",
     array([   0.        ,   12.4       ,  126.09110641])
     >>> boxcox(2, [0, 1, 2])
     array([ 0.69314718,  1.        ,  1.5       ])
-    """)
+    """,
+)
 
-add_newdoc("boxcox1p",
+add_newdoc(
+    "boxcox1p",
     """
     boxcox1p(x, lmbda)
 
@@ -1305,9 +1366,11 @@ add_newdoc("boxcox1p",
     array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])
     >>> boxcox1p([0.01, 0.1], 0.25)
     array([ 0.00996272,  0.09645476])
-    """)
+    """,
+)
 
-add_newdoc("inv_boxcox",
+add_newdoc(
+    "inv_boxcox",
     """
     inv_boxcox(y, lmbda)
 
@@ -1341,9 +1404,11 @@ add_newdoc("inv_boxcox",
     >>> y = boxcox([1, 4, 10], 2.5)
     >>> inv_boxcox(y, 2.5)
     array([1., 4., 10.])
-    """)
+    """,
+)
 
-add_newdoc("inv_boxcox1p",
+add_newdoc(
+    "inv_boxcox1p",
     """
     inv_boxcox1p(y, lmbda)
 
@@ -1377,9 +1442,11 @@ add_newdoc("inv_boxcox1p",
     >>> y = boxcox1p([1, 4, 10], 2.5)
     >>> inv_boxcox1p(y, 2.5)
     array([1., 4., 10.])
-    """)
+    """,
+)
 
-add_newdoc("btdtr",
+add_newdoc(
+    "btdtr",
     r"""
     btdtr(a, b, x)
 
@@ -1424,9 +1491,11 @@ add_newdoc("btdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("btdtri",
+add_newdoc(
+    "btdtri",
     r"""
     btdtri(a, b, p)
 
@@ -1469,9 +1538,11 @@ add_newdoc("btdtri",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("cbrt",
+add_newdoc(
+    "cbrt",
     """
     cbrt(x)
 
@@ -1496,9 +1567,11 @@ add_newdoc("cbrt",
     >>> cbrt([-8, -3, 0.125, 1.331])
     array([-2.        , -1.44224957,  0.5       ,  1.1       ])
 
-    """)
+    """,
+)
 
-add_newdoc("chdtr",
+add_newdoc(
+    "chdtr",
     r"""
     chdtr(v, x, out=None)
 
@@ -1553,9 +1626,11 @@ add_newdoc("chdtr",
     >>> sc.gammainc(v / 2, x / 2)
     array([0.        , 0.68268949, 0.84270079, 0.91673548])
 
-    """)
+    """,
+)
 
-add_newdoc("chdtrc",
+add_newdoc(
+    "chdtrc",
     r"""
     chdtrc(v, x, out=None)
 
@@ -1611,9 +1686,11 @@ add_newdoc("chdtrc",
     >>> sc.gammaincc(v / 2, x / 2)
     array([1.        , 0.31731051, 0.15729921, 0.08326452])
 
-    """)
+    """,
+)
 
-add_newdoc("chdtri",
+add_newdoc(
+    "chdtri",
     """
     chdtri(v, p, out=None)
 
@@ -1658,9 +1735,11 @@ add_newdoc("chdtri",
     >>> sc.chdtri(v, sc.chdtrc(v, x))
     1.0
 
-    """)
+    """,
+)
 
-add_newdoc("chdtriv",
+add_newdoc(
+    "chdtriv",
     """
     chdtriv(p, x, out=None)
 
@@ -1705,38 +1784,48 @@ add_newdoc("chdtriv",
     >>> sc.chdtriv(sc.chdtr(v, x), v)
     1.0000000000000013
 
-    """)
+    """,
+)
 
-add_newdoc("chndtr",
+add_newdoc(
+    "chndtr",
     """
     chndtr(x, df, nc)
 
     Non-central chi square cumulative distribution function
 
-    """)
+    """,
+)
 
-add_newdoc("chndtrix",
+add_newdoc(
+    "chndtrix",
     """
     chndtrix(p, df, nc)
 
     Inverse to `chndtr` vs `x`
-    """)
+    """,
+)
 
-add_newdoc("chndtridf",
+add_newdoc(
+    "chndtridf",
     """
     chndtridf(x, p, nc)
 
     Inverse to `chndtr` vs `df`
-    """)
+    """,
+)
 
-add_newdoc("chndtrinc",
+add_newdoc(
+    "chndtrinc",
     """
     chndtrinc(x, df, p)
 
     Inverse to `chndtr` vs `nc`
-    """)
+    """,
+)
 
-add_newdoc("cosdg",
+add_newdoc(
+    "cosdg",
     """
     cosdg(x, out=None)
 
@@ -1770,9 +1859,11 @@ add_newdoc("cosdg",
     >>> np.cos(x * np.pi / 180)
     array([ 6.1232340e-17, -1.8369702e-16,  3.0616170e-16])
 
-    """)
+    """,
+)
 
-add_newdoc("cosm1",
+add_newdoc(
+    "cosm1",
     """
     cosm1(x, out=None)
 
@@ -1807,9 +1898,11 @@ add_newdoc("cosm1",
     >>> sc.cosm1(x)
     -5.0000000000000005e-61
 
-    """)
+    """,
+)
 
-add_newdoc("cotdg",
+add_newdoc(
+    "cotdg",
     """
     cotdg(x, out=None)
 
@@ -1843,9 +1936,11 @@ add_newdoc("cotdg",
     >>> 1 / np.tan(x * np.pi / 180)
     array([6.1232340e-17, 1.8369702e-16, 3.0616170e-16])
 
-    """)
+    """,
+)
 
-add_newdoc("dawsn",
+add_newdoc(
+    "dawsn",
     """
     dawsn(x)
 
@@ -1874,9 +1969,11 @@ add_newdoc("dawsn",
     >>> plt.ylabel('$dawsn(x)$')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("ellipe",
+add_newdoc(
+    "ellipe",
     r"""
     ellipe(m)
 
@@ -1957,9 +2054,11 @@ add_newdoc("ellipe",
     >>> 2*np.pi*a  # formula for circle of radius a
     21.991148575128552
 
-    """)
+    """,
+)
 
-add_newdoc("ellipeinc",
+add_newdoc(
+    "ellipeinc",
     r"""
     ellipeinc(phi, m)
 
@@ -2008,9 +2107,11 @@ add_newdoc("ellipeinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
-    """)
+    """,
+)
 
-add_newdoc("ellipj",
+add_newdoc(
+    "ellipj",
     """
     ellipj(u, m)
 
@@ -2060,9 +2161,11 @@ add_newdoc("ellipj",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("ellipkm1",
+add_newdoc(
+    "ellipkm1",
     """
     ellipkm1(p)
 
@@ -2112,9 +2215,11 @@ add_newdoc("ellipkm1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("ellipk",
+add_newdoc(
+    "ellipk",
     r"""
     ellipk(m)
 
@@ -2158,9 +2263,11 @@ add_newdoc("ellipk",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("ellipkinc",
+add_newdoc(
+    "ellipkinc",
     r"""
     ellipkinc(phi, m)
 
@@ -2210,9 +2317,11 @@ add_newdoc("ellipkinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
-    """)
+    """,
+)
 
-add_newdoc("entr",
+add_newdoc(
+    "entr",
     r"""
     entr(x)
 
@@ -2240,9 +2349,11 @@ add_newdoc("entr",
 
     .. versionadded:: 0.15.0
 
-    """)
+    """,
+)
 
-add_newdoc("erf",
+add_newdoc(
+    "erf",
     """
     erf(z)
 
@@ -2289,9 +2400,11 @@ add_newdoc("erf",
     >>> plt.ylabel('$erf(x)$')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("erfc",
+add_newdoc(
+    "erfc",
     """
     erfc(x, out=None)
 
@@ -2328,9 +2441,11 @@ add_newdoc("erfc",
     >>> plt.ylabel('$erfc(x)$')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("erfi",
+add_newdoc(
+    "erfi",
     """
     erfi(z, out=None)
 
@@ -2372,9 +2487,11 @@ add_newdoc("erfi",
     >>> plt.ylabel('$erfi(x)$')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("erfcx",
+add_newdoc(
+    "erfcx",
     """
     erfcx(x, out=None)
 
@@ -2417,9 +2534,11 @@ add_newdoc("erfcx",
     >>> plt.ylabel('$erfcx(x)$')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("erfinv",
+add_newdoc(
+    "erfinv",
     """Inverse of the error function.
 
     Computes the inverse of the error function.
@@ -2461,9 +2580,11 @@ add_newdoc("erfinv",
     array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
             0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
 
-    """)
+    """,
+)
 
-add_newdoc("erfcinv",
+add_newdoc(
+    "erfcinv",
     """Inverse of the complementary error function.
 
     Computes the inverse of the complementary error function.
@@ -2508,9 +2629,11 @@ add_newdoc("erfcinv",
            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
                   -inf])
 
-    """)
+    """,
+)
 
-add_newdoc("eval_jacobi",
+add_newdoc(
+    "eval_jacobi",
     r"""
     eval_jacobi(n, alpha, beta, x, out=None)
 
@@ -2558,9 +2681,11 @@ add_newdoc("eval_jacobi",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_sh_jacobi",
+add_newdoc(
+    "eval_sh_jacobi",
     r"""
     eval_sh_jacobi(n, p, q, x, out=None)
 
@@ -2604,9 +2729,11 @@ add_newdoc("eval_sh_jacobi",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_gegenbauer",
+add_newdoc(
+    "eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
@@ -2652,9 +2779,11 @@ add_newdoc("eval_gegenbauer",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_chebyt",
+add_newdoc(
+    "eval_chebyt",
     r"""
     eval_chebyt(n, x, out=None)
 
@@ -2704,9 +2833,11 @@ add_newdoc("eval_chebyt",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_chebyu",
+add_newdoc(
+    "eval_chebyu",
     r"""
     eval_chebyu(n, x, out=None)
 
@@ -2750,9 +2881,11 @@ add_newdoc("eval_chebyu",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_chebys",
+add_newdoc(
+    "eval_chebys",
     r"""
     eval_chebys(n, x, out=None)
 
@@ -2807,9 +2940,11 @@ add_newdoc("eval_chebys",
     >>> sc.eval_chebyu(3, x / 2)
     array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
 
-    """)
+    """,
+)
 
-add_newdoc("eval_chebyc",
+add_newdoc(
+    "eval_chebyc",
     r"""
     eval_chebyc(n, x, out=None)
 
@@ -2865,9 +3000,11 @@ add_newdoc("eval_chebyc",
     >>> 2 * sc.eval_chebyt(3, x / 2)
     array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
 
-    """)
+    """,
+)
 
-add_newdoc("eval_sh_chebyt",
+add_newdoc(
+    "eval_sh_chebyt",
     r"""
     eval_sh_chebyt(n, x, out=None)
 
@@ -2910,9 +3047,11 @@ add_newdoc("eval_sh_chebyt",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_sh_chebyu",
+add_newdoc(
+    "eval_sh_chebyu",
     r"""
     eval_sh_chebyu(n, x, out=None)
 
@@ -2954,9 +3093,11 @@ add_newdoc("eval_sh_chebyu",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_legendre",
+add_newdoc(
+    "eval_legendre",
     r"""
     eval_legendre(n, x, out=None)
 
@@ -3036,9 +3177,11 @@ add_newdoc("eval_legendre",
     >>> plt.legend(loc='lower right')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("eval_sh_legendre",
+add_newdoc(
+    "eval_sh_legendre",
     r"""
     eval_sh_legendre(n, x, out=None)
 
@@ -3080,9 +3223,11 @@ add_newdoc("eval_sh_legendre",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_genlaguerre",
+add_newdoc(
+    "eval_genlaguerre",
     r"""
     eval_genlaguerre(n, alpha, x, out=None)
 
@@ -3131,9 +3276,11 @@ add_newdoc("eval_genlaguerre",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_laguerre",
+add_newdoc(
+    "eval_laguerre",
     r"""
     eval_laguerre(n, x, out=None)
 
@@ -3177,9 +3324,11 @@ add_newdoc("eval_laguerre",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-     """)
+     """,
+)
 
-add_newdoc("eval_hermite",
+add_newdoc(
+    "eval_hermite",
     r"""
     eval_hermite(n, x, out=None)
 
@@ -3220,9 +3369,11 @@ add_newdoc("eval_hermite",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("eval_hermitenorm",
+add_newdoc(
+    "eval_hermitenorm",
     r"""
     eval_hermitenorm(n, x, out=None)
 
@@ -3264,9 +3415,11 @@ add_newdoc("eval_hermitenorm",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("exp1",
+add_newdoc(
+    "exp1",
     r"""
     exp1(z, out=None)
 
@@ -3344,9 +3497,11 @@ add_newdoc("exp1",
     >>> -sc.expi(-x)
     array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
 
-    """)
+    """,
+)
 
-add_newdoc("exp10",
+add_newdoc(
+    "exp10",
     """
     exp10(x)
 
@@ -3373,9 +3528,11 @@ add_newdoc("exp10",
     array([[  0.1       ,   0.31622777,   1.        ],
            [  3.16227766,  10.        ,  31.6227766 ]])
 
-    """)
+    """,
+)
 
-add_newdoc("exp2",
+add_newdoc(
+    "exp2",
     """
     exp2(x)
 
@@ -3401,9 +3558,11 @@ add_newdoc("exp2",
     >>> exp2(x)
     array([[ 0.5       ,  0.70710678,  1.        ],
            [ 1.41421356,  2.        ,  2.82842712]])
-    """)
+    """,
+)
 
-add_newdoc("expi",
+add_newdoc(
+    "expi",
     r"""
     expi(x, out=None)
 
@@ -3489,9 +3648,11 @@ add_newdoc("expi",
     >>> sc.expi(complex(-1, -0.0))
     (-0.21938393439552062-0j)
 
-    """)
+    """,
+)
 
-add_newdoc('expit',
+add_newdoc(
+    "expit",
     """
     expit(x)
 
@@ -3548,9 +3709,11 @@ add_newdoc('expit',
     >>> plt.title('expit(x)')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("expm1",
+add_newdoc(
+    "expm1",
     """
     expm1(x)
 
@@ -3595,9 +3758,11 @@ add_newdoc("expm1",
     >>> np.exp(7.5e-13) - 1
     7.5006667543675576e-13
 
-    """)
+    """,
+)
 
-add_newdoc("expn",
+add_newdoc(
+    "expn",
     r"""
     expn(n, x, out=None)
 
@@ -3664,9 +3829,11 @@ add_newdoc("expn",
     >>> sc.exp1(x)
     array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
 
-    """)
+    """,
+)
 
-add_newdoc("exprel",
+add_newdoc(
+    "exprel",
     r"""
     exprel(x)
 
@@ -3712,9 +3879,11 @@ add_newdoc("exprel",
 
     >>> (np.exp(5e-9) - 1)/5e-9
     0.99999999392252903
-    """)
+    """,
+)
 
-add_newdoc("fdtr",
+add_newdoc(
+    "fdtr",
     r"""
     fdtr(dfn, dfd, x)
 
@@ -3763,9 +3932,11 @@ add_newdoc("fdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("fdtrc",
+add_newdoc(
+    "fdtrc",
     r"""
     fdtrc(dfn, dfd, x)
 
@@ -3807,9 +3978,11 @@ add_newdoc("fdtrc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("fdtri",
+add_newdoc(
+    "fdtri",
     r"""
     fdtri(dfn, dfd, p)
 
@@ -3855,27 +4028,33 @@ add_newdoc("fdtri",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("fdtridfd",
+add_newdoc(
+    "fdtridfd",
     """
     fdtridfd(dfn, p, x)
 
     Inverse to `fdtr` vs dfd
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
-    """)
+    """,
+)
 
-add_newdoc("fdtridfn",
+add_newdoc(
+    "fdtridfn",
     """
     fdtridfn(p, dfd, x)
 
     Inverse to `fdtr` vs dfn
 
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
-    """)
+    """,
+)
 
-add_newdoc("fresnel",
+add_newdoc(
+    "fresnel",
     r"""
     fresnel(z, out=None)
 
@@ -3935,9 +4114,11 @@ add_newdoc("fresnel",
     array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
            0.60572079+0.496313j  , 0.49842603+0.42051575j])
 
-    """)
+    """,
+)
 
-add_newdoc("gamma",
+add_newdoc(
+    "gamma",
     r"""
     gamma(z)
 
@@ -4010,9 +4191,11 @@ add_newdoc("gamma",
     >>> plt.legend(loc='lower right')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("gammainc",
+add_newdoc(
+    "gammainc",
     r"""
     gammainc(a, x)
 
@@ -4079,9 +4262,11 @@ add_newdoc("gammainc",
     >>> 1 - sc.gammaincc(a, x)
     0.6289066304773024
 
-    """)
+    """,
+)
 
-add_newdoc("gammaincc",
+add_newdoc(
+    "gammaincc",
     r"""
     gammaincc(a, x)
 
@@ -4149,9 +4334,11 @@ add_newdoc("gammaincc",
     >>> 1 - sc.gammainc(a, x)
     0.37109336952269756
 
-    """)
+    """,
+)
 
-add_newdoc("gammainccinv",
+add_newdoc(
+    "gammainccinv",
     """
     gammainccinv(a, y)
 
@@ -4206,9 +4393,11 @@ add_newdoc("gammainccinv",
     >>> sc.gammainccinv(a, sc.gammaincc(a, x))
     array([ 0., 10., 50.])
 
-    """)
+    """,
+)
 
-add_newdoc("gammaincinv",
+add_newdoc(
+    "gammaincinv",
     """
     gammaincinv(a, y)
 
@@ -4263,9 +4452,11 @@ add_newdoc("gammaincinv",
     >>> sc.gammaincinv(a, sc.gammainc(a, x))
     array([ 0.        , 10.        , 25.00001465])
 
-    """)
+    """,
+)
 
-add_newdoc("gammaln",
+add_newdoc(
+    "gammaln",
     r"""
     gammaln(x, out=None)
 
@@ -4336,9 +4527,11 @@ add_newdoc("gammaln",
     >>> x * np.log(x)
     array([2.30258509e+11, 4.60517019e+21, 9.21034037e+41, 1.84206807e+82])
 
-    """)
+    """,
+)
 
-add_newdoc("gammasgn",
+add_newdoc(
+    "gammasgn",
     r"""
     gammasgn(x)
 
@@ -4406,9 +4599,11 @@ add_newdoc("gammasgn",
     >>> sc.gamma(x)
     array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
 
-    """)
+    """,
+)
 
-add_newdoc("gdtr",
+add_newdoc(
+    "gdtr",
     r"""
     gdtr(a, b, x)
 
@@ -4457,9 +4652,11 @@ add_newdoc("gdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("gdtrc",
+add_newdoc(
+    "gdtrc",
     r"""
     gdtrc(a, b, x)
 
@@ -4507,9 +4704,11 @@ add_newdoc("gdtrc",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("gdtria",
+add_newdoc(
+    "gdtria",
     """
     gdtria(p, b, x, out=None)
 
@@ -4576,9 +4775,11 @@ add_newdoc("gdtria",
 
     >>> gdtria(p, 3.4, 5.6)
     1.2
-    """)
+    """,
+)
 
-add_newdoc("gdtrib",
+add_newdoc(
+    "gdtrib",
     """
     gdtrib(a, p, x, out=None)
 
@@ -4645,9 +4846,11 @@ add_newdoc("gdtrib",
 
     >>> gdtrib(1.2, p, 5.6)
     3.3999999999723882
-    """)
+    """,
+)
 
-add_newdoc("gdtrix",
+add_newdoc(
+    "gdtrix",
     """
     gdtrix(a, b, p, out=None)
 
@@ -4715,9 +4918,11 @@ add_newdoc("gdtrix",
 
     >>> gdtrix(1.2, 3.4, p)
     5.5999999999999996
-    """)
+    """,
+)
 
-add_newdoc("hankel1",
+add_newdoc(
+    "hankel1",
     r"""
     hankel1(v, z)
 
@@ -4757,9 +4962,11 @@ add_newdoc("hankel1",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("hankel1e",
+add_newdoc(
+    "hankel1e",
     r"""
     hankel1e(v, z)
 
@@ -4799,9 +5006,11 @@ add_newdoc("hankel1e",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("hankel2",
+add_newdoc(
+    "hankel2",
     r"""
     hankel2(v, z)
 
@@ -4841,9 +5050,11 @@ add_newdoc("hankel2",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("hankel2e",
+add_newdoc(
+    "hankel2e",
     r"""
     hankel2e(v, z)
 
@@ -4884,9 +5095,11 @@ add_newdoc("hankel2e",
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
 
-    """)
+    """,
+)
 
-add_newdoc("huber",
+add_newdoc(
+    "huber",
     r"""
     huber(delta, r)
 
@@ -4912,9 +5125,11 @@ add_newdoc("huber",
 
     .. versionadded:: 0.15.0
 
-    """)
+    """,
+)
 
-add_newdoc("hyp0f1",
+add_newdoc(
+    "hyp0f1",
     r"""
     hyp0f1(v, z, out=None)
 
@@ -4978,9 +5193,11 @@ add_newdoc("hyp0f1",
     >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
     array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
 
-    """)
+    """,
+)
 
-add_newdoc("hyp1f1",
+add_newdoc(
+    "hyp1f1",
     r"""
     hyp1f1(a, b, x, out=None)
 
@@ -5049,9 +5266,11 @@ add_newdoc("hyp1f1",
     >>> np.exp([1, 2, 3, 4])
     array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
 
-    """)
+    """,
+)
 
-add_newdoc("hyp2f1",
+add_newdoc(
+    "hyp2f1",
     r"""
     hyp2f1(a, b, c, z)
 
@@ -5143,9 +5362,11 @@ add_newdoc("hyp2f1",
     >>> np.arctan(z) / z
     0.9272952180016123
 
-    """)
+    """,
+)
 
-add_newdoc("hyperu",
+add_newdoc(
+    "hyperu",
     r"""
     hyperu(a, b, x, out=None)
 
@@ -5208,9 +5429,11 @@ add_newdoc("hyperu",
     >>> x**(1 - b) * sc.hyperu(a - b + 1, 2 - b, x)
     0.1926947246463881
 
-    """)
+    """,
+)
 
-add_newdoc("i0",
+add_newdoc(
+    "i0",
     r"""
     i0(x)
 
@@ -5249,9 +5472,11 @@ add_newdoc("i0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("i0e",
+add_newdoc(
+    "i0e",
     """
     i0e(x)
 
@@ -5290,9 +5515,11 @@ add_newdoc("i0e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("i1",
+add_newdoc(
+    "i1",
     r"""
     i1(x)
 
@@ -5332,9 +5559,11 @@ add_newdoc("i1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("i1e",
+add_newdoc(
+    "i1e",
     """
     i1e(x)
 
@@ -5373,14 +5602,18 @@ add_newdoc("i1e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("_igam_fac",
+add_newdoc(
+    "_igam_fac",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("it2i0k0",
+add_newdoc(
+    "it2i0k0",
     r"""
     it2i0k0(x, out=None)
 
@@ -5407,9 +5640,11 @@ add_newdoc("it2i0k0",
     ik0 : scalar or ndarray
         The integral for `k0`
 
-    """)
+    """,
+)
 
-add_newdoc("it2j0y0",
+add_newdoc(
+    "it2j0y0",
     r"""
     it2j0y0(x, out=None)
 
@@ -5438,9 +5673,11 @@ add_newdoc("it2j0y0",
     iy0 : scalar or ndarray
         The integral for `y0`
 
-    """)
+    """,
+)
 
-add_newdoc("it2struve0",
+add_newdoc(
+    "it2struve0",
     r"""
     it2struve0(x)
 
@@ -5477,9 +5714,11 @@ add_newdoc("it2struve0",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
-    """)
+    """,
+)
 
-add_newdoc("itairy",
+add_newdoc(
+    "itairy",
     """
     itairy(x)
 
@@ -5516,9 +5755,11 @@ add_newdoc("itairy",
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
-    """)
+    """,
+)
 
-add_newdoc("iti0k0",
+add_newdoc(
+    "iti0k0",
     r"""
     iti0k0(x, out=None)
 
@@ -5546,9 +5787,11 @@ add_newdoc("iti0k0",
         The integral for `i0`
     ik0 : scalar or ndarray
         The integral for `k0`
-    """)
+    """,
+)
 
-add_newdoc("itj0y0",
+add_newdoc(
+    "itj0y0",
     r"""
     itj0y0(x, out=None)
 
@@ -5577,9 +5820,11 @@ add_newdoc("itj0y0",
     iy0 : scalar or ndarray
         The integral of `y0`
 
-    """)
+    """,
+)
 
-add_newdoc("itmodstruve0",
+add_newdoc(
+    "itmodstruve0",
     r"""
     itmodstruve0(x)
 
@@ -5609,9 +5854,11 @@ add_newdoc("itmodstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
-    """)
+    """,
+)
 
-add_newdoc("itstruve0",
+add_newdoc(
+    "itstruve0",
     r"""
     itstruve0(x)
 
@@ -5645,9 +5892,11 @@ add_newdoc("itstruve0",
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
-    """)
+    """,
+)
 
-add_newdoc("iv",
+add_newdoc(
+    "iv",
     r"""
     iv(v, z)
 
@@ -5703,9 +5952,11 @@ add_newdoc("iv",
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("ive",
+add_newdoc(
+    "ive",
     r"""
     ive(v, z)
 
@@ -5755,9 +6006,11 @@ add_newdoc("ive",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("j0",
+add_newdoc(
+    "j0",
     r"""
     j0(x)
 
@@ -5802,9 +6055,11 @@ add_newdoc("j0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("j1",
+add_newdoc(
+    "j1",
     """
     j1(x)
 
@@ -5841,9 +6096,11 @@ add_newdoc("j1",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("jn",
+add_newdoc(
+    "jn",
     """
     jn(n, x)
 
@@ -5859,9 +6116,11 @@ add_newdoc("jn",
     jv
     spherical_jn : spherical Bessel functions.
 
-    """)
+    """,
+)
 
-add_newdoc("jv",
+add_newdoc(
+    "jv",
     r"""
     jv(v, z)
 
@@ -5911,9 +6170,11 @@ add_newdoc("jv",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("jve",
+add_newdoc(
+    "jve",
     r"""
     jve(v, z)
 
@@ -5960,9 +6221,11 @@ add_newdoc("jve",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("k0",
+add_newdoc(
+    "k0",
     r"""
     k0(x)
 
@@ -5997,9 +6260,11 @@ add_newdoc("k0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("k0e",
+add_newdoc(
+    "k0e",
     """
     k0e(x)
 
@@ -6036,9 +6301,11 @@ add_newdoc("k0e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("k1",
+add_newdoc(
+    "k1",
     """
     k1(x)
 
@@ -6070,9 +6337,11 @@ add_newdoc("k1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("k1e",
+add_newdoc(
+    "k1e",
     """
     k1e(x)
 
@@ -6109,9 +6378,11 @@ add_newdoc("k1e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("kei",
+add_newdoc(
+    "kei",
     r"""
     kei(x, out=None)
 
@@ -6161,9 +6432,11 @@ add_newdoc("kei",
     >>> sc.kei(x)
     array([-0.49499464, -0.20240007, -0.05112188,  0.0021984 ])
 
-    """)
+    """,
+)
 
-add_newdoc("keip",
+add_newdoc(
+    "keip",
     r"""
     keip(x, out=None)
 
@@ -6190,9 +6463,11 @@ add_newdoc("keip",
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
-    """)
+    """,
+)
 
-add_newdoc("kelvin",
+add_newdoc(
+    "kelvin",
     """
     kelvin(x)
 
@@ -6206,9 +6481,11 @@ add_newdoc("kelvin",
         derivatives evaluated at `x`.  For example, kelvin(x)[0].real =
         ber x and kelvin(x)[0].imag = bei x with similar relationships
         for ker and kei.
-    """)
+    """,
+)
 
-add_newdoc("ker",
+add_newdoc(
+    "ker",
     r"""
     ker(x, out=None)
 
@@ -6258,9 +6535,11 @@ add_newdoc("ker",
     >>> sc.ker(x)
     array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
 
-    """)
+    """,
+)
 
-add_newdoc("kerp",
+add_newdoc(
+    "kerp",
     r"""
     kerp(x, out=None)
 
@@ -6287,9 +6566,11 @@ add_newdoc("kerp",
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/10#PT5
 
-    """)
+    """,
+)
 
-add_newdoc("kl_div",
+add_newdoc(
+    "kl_div",
     r"""
     kl_div(x, y, out=None)
 
@@ -6338,9 +6619,11 @@ add_newdoc("kl_div",
         Programming", http://cvxr.com/cvx/
 
 
-    """)
+    """,
+)
 
-add_newdoc("kn",
+add_newdoc(
+    "kn",
     r"""
     kn(n, x)
 
@@ -6401,9 +6684,11 @@ add_newdoc("kn",
 
     >>> kn([4, 5, 6], 1)
     array([   44.23241585,   360.9605896 ,  3653.83831186])
-    """)
+    """,
+)
 
-add_newdoc("kolmogi",
+add_newdoc(
+    "kolmogi",
     """
     kolmogi(p)
 
@@ -6443,9 +6728,11 @@ add_newdoc("kolmogi",
     array([        inf,  1.22384787,  1.01918472,  0.82757356,  0.67644769,
             0.57117327,  0.        ])
 
-    """)
+    """,
+)
 
-add_newdoc("kolmogorov",
+add_newdoc(
+    "kolmogorov",
     r"""
     kolmogorov(y)
 
@@ -6532,24 +6819,32 @@ add_newdoc("kolmogorov",
     >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
     >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='r', linestyle='dashed', lw=4)
     >>> plt.show()
-    """)
+    """,
+)
 
-add_newdoc("_kolmogc",
+add_newdoc(
+    "_kolmogc",
     r"""
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_kolmogci",
+add_newdoc(
+    "_kolmogci",
     r"""
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_kolmogp",
+add_newdoc(
+    "_kolmogp",
     r"""
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("kv",
+add_newdoc(
+    "kv",
     r"""
     kv(v, z)
 
@@ -6620,9 +6915,11 @@ add_newdoc("kv",
     >>> kv([4, 4.5, 5], 1+2j)
     array([ 0.1992+2.3892j,  2.3493+3.6j   ,  7.2827+3.8104j])
 
-    """)
+    """,
+)
 
-add_newdoc("kve",
+add_newdoc(
+    "kve",
     r"""
     kve(v, z)
 
@@ -6659,19 +6956,25 @@ add_newdoc("kve",
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
-    """)
+    """,
+)
 
-add_newdoc("_lanczos_sum_expg_scaled",
+add_newdoc(
+    "_lanczos_sum_expg_scaled",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_lgam1p",
+add_newdoc(
+    "_lgam1p",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("log1p",
+add_newdoc(
+    "log1p",
     """
     log1p(x, out=None)
 
@@ -6706,14 +7009,18 @@ add_newdoc("log1p",
     >>> np.log(1 + 1e-17)
     0.0
 
-    """)
+    """,
+)
 
-add_newdoc("_log1pmx",
+add_newdoc(
+    "_log1pmx",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc('logit',
+add_newdoc(
+    "logit",
     """
     logit(x)
 
@@ -6770,9 +7077,11 @@ add_newdoc('logit',
     >>> plt.title('logit(x)')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("lpmv",
+add_newdoc(
+    "lpmv",
     r"""
     lpmv(m, v, x)
 
@@ -6825,9 +7134,11 @@ add_newdoc("lpmv",
     .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
            and Sons, Inc, 1996.
 
-    """)
+    """,
+)
 
-add_newdoc("mathieu_a",
+add_newdoc(
+    "mathieu_a",
     """
     mathieu_a(m, q)
 
@@ -6835,9 +7146,11 @@ add_newdoc("mathieu_a",
 
     Returns the characteristic value for the even solution,
     ``ce_m(z, q)``, of Mathieu's equation.
-    """)
+    """,
+)
 
-add_newdoc("mathieu_b",
+add_newdoc(
+    "mathieu_b",
     """
     mathieu_b(m, q)
 
@@ -6845,9 +7158,11 @@ add_newdoc("mathieu_b",
 
     Returns the characteristic value for the odd solution,
     ``se_m(z, q)``, of Mathieu's equation.
-    """)
+    """,
+)
 
-add_newdoc("mathieu_cem",
+add_newdoc(
+    "mathieu_cem",
     """
     mathieu_cem(m, q, x)
 
@@ -6872,9 +7187,11 @@ add_newdoc("mathieu_cem",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("mathieu_modcem1",
+add_newdoc(
+    "mathieu_modcem1",
     """
     mathieu_modcem1(m, q, x)
 
@@ -6890,9 +7207,11 @@ add_newdoc("mathieu_modcem1",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("mathieu_modcem2",
+add_newdoc(
+    "mathieu_modcem2",
     """
     mathieu_modcem2(m, q, x)
 
@@ -6908,9 +7227,11 @@ add_newdoc("mathieu_modcem2",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("mathieu_modsem1",
+add_newdoc(
+    "mathieu_modsem1",
     """
     mathieu_modsem1(m, q, x)
 
@@ -6926,9 +7247,11 @@ add_newdoc("mathieu_modsem1",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("mathieu_modsem2",
+add_newdoc(
+    "mathieu_modsem2",
     """
     mathieu_modsem2(m, q, x)
 
@@ -6944,9 +7267,11 @@ add_newdoc("mathieu_modsem2",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("mathieu_sem",
+add_newdoc(
+    "mathieu_sem",
     """
     mathieu_sem(m, q, x)
 
@@ -6971,9 +7296,11 @@ add_newdoc("mathieu_sem",
         Value of the function
     yp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("modfresnelm",
+add_newdoc(
+    "modfresnelm",
     """
     modfresnelm(x)
 
@@ -6985,9 +7312,11 @@ add_newdoc("modfresnelm",
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km
         Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
-    """)
+    """,
+)
 
-add_newdoc("modfresnelp",
+add_newdoc(
+    "modfresnelp",
     """
     modfresnelp(x)
 
@@ -6999,9 +7328,11 @@ add_newdoc("modfresnelp",
         Integral ``F_+(x)``: ``integral(exp(1j*t*t), t=x..inf)``
     kp
         Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``
-    """)
+    """,
+)
 
-add_newdoc("modstruve",
+add_newdoc(
+    "modstruve",
     r"""
     modstruve(v, x)
 
@@ -7047,9 +7378,11 @@ add_newdoc("modstruve",
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
-    """)
+    """,
+)
 
-add_newdoc("nbdtr",
+add_newdoc(
+    "nbdtr",
     r"""
     nbdtr(k, n, p)
 
@@ -7103,9 +7436,11 @@ add_newdoc("nbdtr",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("nbdtrc",
+add_newdoc(
+    "nbdtrc",
     r"""
     nbdtrc(k, n, p)
 
@@ -7154,9 +7489,11 @@ add_newdoc("nbdtrc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("nbdtri",
+add_newdoc(
+    "nbdtri",
     """
     nbdtri(k, n, y)
 
@@ -7196,9 +7533,11 @@ add_newdoc("nbdtri",
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
+    """,
+)
 
-add_newdoc("nbdtrik",
+add_newdoc(
+    "nbdtrik",
     r"""
     nbdtrik(y, n, p)
 
@@ -7252,9 +7591,11 @@ add_newdoc("nbdtrik",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("nbdtrin",
+add_newdoc(
+    "nbdtrin",
     r"""
     nbdtrin(k, y, p)
 
@@ -7308,9 +7649,11 @@ add_newdoc("nbdtrin",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
-    """)
+    """,
+)
 
-add_newdoc("ncfdtr",
+add_newdoc(
+    "ncfdtr",
     r"""
     ncfdtr(dfn, dfd, nc, f)
 
@@ -7398,9 +7741,11 @@ add_newdoc("ncfdtr",
     >>> ax.plot(x, ncf_special, 'r-')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("ncfdtri",
+add_newdoc(
+    "ncfdtri",
     """
     ncfdtri(dfn, dfd, nc, p)
 
@@ -7448,9 +7793,11 @@ add_newdoc("ncfdtri",
     >>> ncfdtri(2, 3, 1.5, p)
     array([ 0.5,  1. ,  1.5])
 
-    """)
+    """,
+)
 
-add_newdoc("ncfdtridfd",
+add_newdoc(
+    "ncfdtridfd",
     """
     ncfdtridfd(dfn, p, nc, f)
 
@@ -7506,9 +7853,11 @@ add_newdoc("ncfdtridfd",
     >>> ncfdtridfd(2, p, 0.25, 15)
     array([ 1.,  2.,  3.])
 
-    """)
+    """,
+)
 
-add_newdoc("ncfdtridfn",
+add_newdoc(
+    "ncfdtridfn",
     """
     ncfdtridfn(p, dfd, nc, f)
 
@@ -7564,9 +7913,11 @@ add_newdoc("ncfdtridfn",
     >>> ncfdtridfn(p, 2, 0.25, 15)
     array([ 1.,  2.,  3.])
 
-    """)
+    """,
+)
 
-add_newdoc("ncfdtrinc",
+add_newdoc(
+    "ncfdtrinc",
     """
     ncfdtrinc(dfn, dfd, p, f)
 
@@ -7615,9 +7966,11 @@ add_newdoc("ncfdtrinc",
     >>> ncfdtrinc(2, 3, p, 15)
     array([ 0.5,  1.5,  2. ])
 
-    """)
+    """,
+)
 
-add_newdoc("nctdtr",
+add_newdoc(
+    "nctdtr",
     """
     nctdtr(df, nc, t)
 
@@ -7664,9 +8017,11 @@ add_newdoc("nctdtr",
     >>> ax.plot(x, nct_special, 'r-')
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("nctdtridf",
+add_newdoc(
+    "nctdtridf",
     """
     nctdtridf(p, nc, t)
 
@@ -7683,9 +8038,11 @@ add_newdoc("nctdtridf",
     t : array_like
         Quantiles, i.e., the upper limit of integration.
 
-    """)
+    """,
+)
 
-add_newdoc("nctdtrinc",
+add_newdoc(
+    "nctdtrinc",
     """
     nctdtrinc(df, p, t)
 
@@ -7702,9 +8059,11 @@ add_newdoc("nctdtrinc",
     t : array_like
         Quantiles, i.e., the upper limit of integration.
 
-    """)
+    """,
+)
 
-add_newdoc("nctdtrit",
+add_newdoc(
+    "nctdtrit",
     """
     nctdtrit(df, nc, p)
 
@@ -7721,9 +8080,11 @@ add_newdoc("nctdtrit",
     p : array_like
         CDF values, in range (0, 1].
 
-    """)
+    """,
+)
 
-add_newdoc("ndtr",
+add_newdoc(
+    "ndtr",
     r"""
     ndtr(x)
 
@@ -7753,10 +8114,12 @@ add_newdoc("ndtr",
     scipy.stats.norm
     log_ndtr
 
-    """)
+    """,
+)
 
 
-add_newdoc("nrdtrimn",
+add_newdoc(
+    "nrdtrimn",
     """
     nrdtrimn(p, x, std)
 
@@ -7780,9 +8143,11 @@ add_newdoc("nrdtrimn",
     --------
     nrdtrimn, ndtr
 
-    """)
+    """,
+)
 
-add_newdoc("nrdtrisd",
+add_newdoc(
+    "nrdtrisd",
     """
     nrdtrisd(p, x, mn)
 
@@ -7806,9 +8171,11 @@ add_newdoc("nrdtrisd",
     --------
     ndtr
 
-    """)
+    """,
+)
 
-add_newdoc("log_ndtr",
+add_newdoc(
+    "log_ndtr",
     """
     log_ndtr(x)
 
@@ -7836,9 +8203,11 @@ add_newdoc("log_ndtr",
     scipy.stats.norm
     ndtr
 
-    """)
+    """,
+)
 
-add_newdoc("ndtri",
+add_newdoc(
+    "ndtri",
     """
     ndtri(y)
 
@@ -7847,9 +8216,11 @@ add_newdoc("ndtri",
     Returns the argument x for which the area under the Gaussian
     probability density function (integrated from minus infinity to `x`)
     is equal to y.
-    """)
+    """,
+)
 
-add_newdoc("obl_ang1",
+add_newdoc(
+    "obl_ang1",
     """
     obl_ang1(m, n, c, x)
 
@@ -7865,9 +8236,11 @@ add_newdoc("obl_ang1",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("obl_ang1_cv",
+add_newdoc(
+    "obl_ang1_cv",
     """
     obl_ang1_cv(m, n, c, cv, x)
 
@@ -7884,9 +8257,11 @@ add_newdoc("obl_ang1_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("obl_cv",
+add_newdoc(
+    "obl_cv",
     """
     obl_cv(m, n, c)
 
@@ -7894,9 +8269,11 @@ add_newdoc("obl_cv",
 
     Computes the characteristic value of oblate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
-    """)
+    """,
+)
 
-add_newdoc("obl_rad1",
+add_newdoc(
+    "obl_rad1",
     """
     obl_rad1(m, n, c, x)
 
@@ -7912,9 +8289,11 @@ add_newdoc("obl_rad1",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("obl_rad1_cv",
+add_newdoc(
+    "obl_rad1_cv",
     """
     obl_rad1_cv(m, n, c, cv, x)
 
@@ -7931,9 +8310,11 @@ add_newdoc("obl_rad1_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("obl_rad2",
+add_newdoc(
+    "obl_rad2",
     """
     obl_rad2(m, n, c, x)
 
@@ -7949,9 +8330,11 @@ add_newdoc("obl_rad2",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("obl_rad2_cv",
+add_newdoc(
+    "obl_rad2_cv",
     """
     obl_rad2_cv(m, n, c, cv, x)
 
@@ -7968,9 +8351,11 @@ add_newdoc("obl_rad2_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pbdv",
+add_newdoc(
+    "pbdv",
     """
     pbdv(v, x)
 
@@ -7985,9 +8370,11 @@ add_newdoc("pbdv",
         Value of the function
     dp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pbvv",
+add_newdoc(
+    "pbvv",
     """
     pbvv(v, x)
 
@@ -8002,9 +8389,11 @@ add_newdoc("pbvv",
         Value of the function
     vp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pbwa",
+add_newdoc(
+    "pbwa",
     r"""
     pbwa(a, x)
 
@@ -8045,9 +8434,11 @@ add_newdoc("pbwa",
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
-    """)
+    """,
+)
 
-add_newdoc("pdtr",
+add_newdoc(
+    "pdtr",
     r"""
     pdtr(k, m, out=None)
 
@@ -8100,9 +8491,11 @@ add_newdoc("pdtr",
     >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
     array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
 
-    """)
+    """,
+)
 
-add_newdoc("pdtrc",
+add_newdoc(
+    "pdtrc",
     """
     pdtrc(k, m)
 
@@ -8111,9 +8504,11 @@ add_newdoc("pdtrc",
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
     k+1, m). Arguments must both be non-negative doubles.
-    """)
+    """,
+)
 
-add_newdoc("pdtri",
+add_newdoc(
+    "pdtri",
     """
     pdtri(k, y)
 
@@ -8123,18 +8518,22 @@ add_newdoc("pdtri",
     the Poisson density is equal to the given probability `y`:
     calculated by gammaincinv(k+1, y). `k` must be a nonnegative
     integer and `y` between 0 and 1.
-    """)
+    """,
+)
 
-add_newdoc("pdtrik",
+add_newdoc(
+    "pdtrik",
     """
     pdtrik(p, m)
 
     Inverse to `pdtr` vs k
 
     Returns the quantile k such that ``pdtr(k, m) = p``
-    """)
+    """,
+)
 
-add_newdoc("poch",
+add_newdoc(
+    "poch",
     r"""
     poch(z, m)
 
@@ -8193,9 +8592,11 @@ add_newdoc("poch",
     >>> sc.gamma(z + m) / sc.gamma(z)
     20.52958193377696
 
-    """)
+    """,
+)
 
-add_newdoc("pro_ang1",
+add_newdoc(
+    "pro_ang1",
     """
     pro_ang1(m, n, c, x)
 
@@ -8211,9 +8612,11 @@ add_newdoc("pro_ang1",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pro_ang1_cv",
+add_newdoc(
+    "pro_ang1_cv",
     """
     pro_ang1_cv(m, n, c, cv, x)
 
@@ -8230,9 +8633,11 @@ add_newdoc("pro_ang1_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pro_cv",
+add_newdoc(
+    "pro_cv",
     """
     pro_cv(m, n, c)
 
@@ -8240,9 +8645,11 @@ add_newdoc("pro_cv",
 
     Computes the characteristic value of prolate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
-    """)
+    """,
+)
 
-add_newdoc("pro_rad1",
+add_newdoc(
+    "pro_rad1",
     """
     pro_rad1(m, n, c, x)
 
@@ -8258,9 +8665,11 @@ add_newdoc("pro_rad1",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pro_rad1_cv",
+add_newdoc(
+    "pro_rad1_cv",
     """
     pro_rad1_cv(m, n, c, cv, x)
 
@@ -8277,9 +8686,11 @@ add_newdoc("pro_rad1_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pro_rad2",
+add_newdoc(
+    "pro_rad2",
     """
     pro_rad2(m, n, c, x)
 
@@ -8295,9 +8706,11 @@ add_newdoc("pro_rad2",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pro_rad2_cv",
+add_newdoc(
+    "pro_rad2_cv",
     """
     pro_rad2_cv(m, n, c, cv, x)
 
@@ -8314,9 +8727,11 @@ add_newdoc("pro_rad2_cv",
         Value of the function
     sp
         Value of the derivative vs x
-    """)
+    """,
+)
 
-add_newdoc("pseudo_huber",
+add_newdoc(
+    "pseudo_huber",
     r"""
     pseudo_huber(delta, r)
 
@@ -8342,9 +8757,11 @@ add_newdoc("pseudo_huber",
 
     .. versionadded:: 0.15.0
 
-    """)
+    """,
+)
 
-add_newdoc("psi",
+add_newdoc(
+    "psi",
     """
     psi(z, out=None)
 
@@ -8399,9 +8816,11 @@ add_newdoc("psi",
 
     >>> psi(z + 1) - 1/z
     (1.55035981733341+1.0105022091860445j)
-    """)
+    """,
+)
 
-add_newdoc("radian",
+add_newdoc(
+    "radian",
     """
     radian(d, m, s, out=None)
 
@@ -8446,9 +8865,11 @@ add_newdoc("radian",
     >>> sc.radian(1, 30, 0)
     0.02617993877991494
 
-    """)
+    """,
+)
 
-add_newdoc("rel_entr",
+add_newdoc(
+    "rel_entr",
     r"""
     rel_entr(x, y, out=None)
 
@@ -8503,9 +8924,11 @@ add_newdoc("rel_entr",
     .. [2] Kullback-Leibler divergence,
         https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
-    """)
+    """,
+)
 
-add_newdoc("rgamma",
+add_newdoc(
+    "rgamma",
     r"""
     rgamma(z, out=None)
 
@@ -8563,9 +8986,11 @@ add_newdoc("rgamma",
     >>> sc.rgamma([10, 100, 179])
     array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
 
-    """)
+    """,
+)
 
-add_newdoc("round",
+add_newdoc(
+    "round",
     """
     round(x, out=None)
 
@@ -8596,9 +9021,11 @@ add_newdoc("round",
     >>> sc.round([0.5, 1.5])
     array([0., 2.])
 
-    """)
+    """,
+)
 
-add_newdoc("shichi",
+add_newdoc(
+    "shichi",
     r"""
     shichi(x, out=None)
 
@@ -8649,9 +9076,11 @@ add_newdoc("shichi",
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
-    """)
+    """,
+)
 
-add_newdoc("sici",
+add_newdoc(
+    "sici",
     r"""
     sici(x, out=None)
 
@@ -8702,9 +9131,11 @@ add_newdoc("sici",
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
-    """)
+    """,
+)
 
-add_newdoc("sindg",
+add_newdoc(
+    "sindg",
     """
     sindg(x, out=None)
 
@@ -8738,9 +9169,11 @@ add_newdoc("sindg",
     >>> np.sin(x * np.pi / 180)
     array([ 0.0000000e+00,  1.2246468e-16, -2.4492936e-16])
 
-    """)
+    """,
+)
 
-add_newdoc("smirnov",
+add_newdoc(
+    "smirnov",
     r"""
     smirnov(n, d)
 
@@ -8836,9 +9269,11 @@ add_newdoc("smirnov",
     >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
     >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
     >>> plt.show()
-    """)
+    """,
+)
 
-add_newdoc("smirnovi",
+add_newdoc(
+    "smirnovi",
     """
     smirnovi(n, p)
 
@@ -8872,26 +9307,34 @@ add_newdoc("smirnovi",
     smirnov  : The Survival Function (SF) for the distribution
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
-    """)
+    """,
+)
 
-add_newdoc("_smirnovc",
+add_newdoc(
+    "_smirnovc",
     """
     _smirnovc(n, d)
      Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_smirnovci",
+add_newdoc(
+    "_smirnovci",
     """
      Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_smirnovp",
+add_newdoc(
+    "_smirnovp",
     """
     _smirnovp(n, p)
      Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("spence",
+add_newdoc(
+    "spence",
     r"""
     spence(z, out=None)
 
@@ -8926,9 +9369,11 @@ add_newdoc("spence",
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
-    """)
+    """,
+)
 
-add_newdoc("stdtr",
+add_newdoc(
+    "stdtr",
     """
     stdtr(df, t)
 
@@ -8940,27 +9385,33 @@ add_newdoc("stdtr",
        gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) *
        integral((1+x**2/df)**(-df/2-1/2), x=-inf..t)
 
-    """)
+    """,
+)
 
-add_newdoc("stdtridf",
+add_newdoc(
+    "stdtridf",
     """
     stdtridf(p, t)
 
     Inverse of `stdtr` vs df
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
-    """)
+    """,
+)
 
-add_newdoc("stdtrit",
+add_newdoc(
+    "stdtrit",
     """
     stdtrit(df, p)
 
     Inverse of `stdtr` vs `t`
 
     Returns the argument `t` such that stdtr(df, t) is equal to `p`.
-    """)
+    """,
+)
 
-add_newdoc("struve",
+add_newdoc(
+    "struve",
     r"""
     struve(v, x)
 
@@ -9007,9 +9458,11 @@ add_newdoc("struve",
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/11
 
-    """)
+    """,
+)
 
-add_newdoc("tandg",
+add_newdoc(
+    "tandg",
     """
     tandg(x, out=None)
 
@@ -9043,17 +9496,21 @@ add_newdoc("tandg",
     >>> np.tan(x * np.pi / 180)
     array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
 
-    """)
+    """,
+)
 
-add_newdoc("tklmbda",
+add_newdoc(
+    "tklmbda",
     """
     tklmbda(x, lmbda)
 
     Tukey-Lambda cumulative distribution function
 
-    """)
+    """,
+)
 
-add_newdoc("wofz",
+add_newdoc(
+    "wofz",
     """
     wofz(z)
 
@@ -9087,9 +9544,11 @@ add_newdoc("wofz",
     >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
-    """)
+    """,
+)
 
-add_newdoc("xlogy",
+add_newdoc(
+    "xlogy",
     """
     xlogy(x, y)
 
@@ -9112,9 +9571,11 @@ add_newdoc("xlogy",
 
     .. versionadded:: 0.13.0
 
-    """)
+    """,
+)
 
-add_newdoc("xlog1py",
+add_newdoc(
+    "xlog1py",
     """
     xlog1py(x, y)
 
@@ -9137,9 +9598,11 @@ add_newdoc("xlog1py",
 
     .. versionadded:: 0.13.0
 
-    """)
+    """,
+)
 
-add_newdoc("y0",
+add_newdoc(
+    "y0",
     r"""
     y0(x)
 
@@ -9182,9 +9645,11 @@ add_newdoc("y0",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("y1",
+add_newdoc(
+    "y1",
     """
     y1(x)
 
@@ -9221,9 +9686,11 @@ add_newdoc("y1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("yn",
+add_newdoc(
+    "yn",
     r"""
     yn(n, x)
 
@@ -9257,9 +9724,11 @@ add_newdoc("yn",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    """)
+    """,
+)
 
-add_newdoc("yv",
+add_newdoc(
+    "yv",
     r"""
     yv(v, z)
 
@@ -9304,9 +9773,11 @@ add_newdoc("yv",
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
 
-    """)
+    """,
+)
 
-add_newdoc("yve",
+add_newdoc(
+    "yve",
     r"""
     yve(v, z)
 
@@ -9351,17 +9822,21 @@ add_newdoc("yve",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-    """)
+    """,
+)
 
-add_newdoc("_zeta",
+add_newdoc(
+    "_zeta",
     """
     _zeta(x, q)
 
     Internal function, Hurwitz zeta.
 
-    """)
+    """,
+)
 
-add_newdoc("zetac",
+add_newdoc(
+    "zetac",
     """
     zetac(x)
 
@@ -9411,14 +9886,18 @@ add_newdoc("zetac",
     .. [dlmf] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/25
 
-    """)
+    """,
+)
 
-add_newdoc("_riemann_zeta",
+add_newdoc(
+    "_riemann_zeta",
     """
     Internal function, use `zeta` instead.
-    """)
+    """,
+)
 
-add_newdoc("_struve_asymp_large_z",
+add_newdoc(
+    "_struve_asymp_large_z",
     """
     _struve_asymp_large_z(v, z, is_h)
 
@@ -9429,9 +9908,11 @@ add_newdoc("_struve_asymp_large_z",
     Returns
     -------
     v, err
-    """)
+    """,
+)
 
-add_newdoc("_struve_power_series",
+add_newdoc(
+    "_struve_power_series",
     """
     _struve_power_series(v, z, is_h)
 
@@ -9442,9 +9923,11 @@ add_newdoc("_struve_power_series",
     Returns
     -------
     v, err
-    """)
+    """,
+)
 
-add_newdoc("_struve_bessel_series",
+add_newdoc(
+    "_struve_bessel_series",
     """
     _struve_bessel_series(v, z, is_h)
 
@@ -9455,49 +9938,67 @@ add_newdoc("_struve_bessel_series",
     Returns
     -------
     v, err
-    """)
+    """,
+)
 
-add_newdoc("_spherical_jn",
+add_newdoc(
+    "_spherical_jn",
     """
     Internal function, use `spherical_jn` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_jn_d",
+add_newdoc(
+    "_spherical_jn_d",
     """
     Internal function, use `spherical_jn` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_yn",
+add_newdoc(
+    "_spherical_yn",
     """
     Internal function, use `spherical_yn` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_yn_d",
+add_newdoc(
+    "_spherical_yn_d",
     """
     Internal function, use `spherical_yn` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_in",
+add_newdoc(
+    "_spherical_in",
     """
     Internal function, use `spherical_in` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_in_d",
+add_newdoc(
+    "_spherical_in_d",
     """
     Internal function, use `spherical_in` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_kn",
+add_newdoc(
+    "_spherical_kn",
     """
     Internal function, use `spherical_kn` instead.
-    """)
+    """,
+)
 
-add_newdoc("_spherical_kn_d",
+add_newdoc(
+    "_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
-    """)
+    """,
+)
 
-add_newdoc("loggamma",
+add_newdoc(
+    "loggamma",
     r"""
     loggamma(z, out=None)
 
@@ -9554,19 +10055,25 @@ add_newdoc("loggamma",
     .. [hare1997] D.E.G. Hare,
       *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
-    """)
+    """,
+)
 
-add_newdoc("_sinpi",
+add_newdoc(
+    "_sinpi",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("_cospi",
+add_newdoc(
+    "_cospi",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("owens_t",
+add_newdoc(
+    "owens_t",
     """
     owens_t(h, a)
 
@@ -9601,14 +10108,18 @@ add_newdoc("owens_t",
     ----------
     .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
            Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
-    """)
+    """,
+)
 
-add_newdoc("_factorial",
+add_newdoc(
+    "_factorial",
     """
     Internal function, do not use.
-    """)
+    """,
+)
 
-add_newdoc("wright_bessel",
+add_newdoc(
+    "wright_bessel",
     r"""
     wright_bessel(a, b, x)
 
@@ -9652,10 +10163,12 @@ add_newdoc("wright_bessel",
     ----------
     .. [1] Digital Library of Mathematical Functions, 10.46.
            https://dlmf.nist.gov/10.46.E1
-    """)
+    """,
+)
 
 
-add_newdoc("ndtri_exp",
+add_newdoc(
+    "ndtri_exp",
     r"""
     ndtri_exp(y)
 
@@ -9702,4 +10215,5 @@ add_newdoc("ndtri_exp",
     See Also
     --------
     log_ndtr, ndtri, ndtr
-    """)
+    """,
+)

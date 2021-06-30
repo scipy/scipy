@@ -3,9 +3,16 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import csc_matrix, issparse, eye
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
-from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, num_jac, EPS, warn_extraneous,
-                     validate_first_step)
+from .common import (
+    validate_max_step,
+    validate_tol,
+    select_initial_step,
+    norm,
+    num_jac,
+    EPS,
+    warn_extraneous,
+    validate_first_step,
+)
 from .base import OdeSolver, DenseOutput
 
 S6 = 6 ** 0.5
@@ -17,27 +24,37 @@ E = np.array([-13 - 7 * S6, -13 + 7 * S6, -1]) / 3
 # Eigendecomposition of A is done: A = T L T**-1. There is 1 real eigenvalue
 # and a complex conjugate pair. They are written below.
 MU_REAL = 3 + 3 ** (2 / 3) - 3 ** (1 / 3)
-MU_COMPLEX = (3 + 0.5 * (3 ** (1 / 3) - 3 ** (2 / 3))
-              - 0.5j * (3 ** (5 / 6) + 3 ** (7 / 6)))
+MU_COMPLEX = (
+    3 + 0.5 * (3 ** (1 / 3) - 3 ** (2 / 3)) - 0.5j * (3 ** (5 / 6) + 3 ** (7 / 6))
+)
 
 # These are transformation matrices.
-T = np.array([
-    [0.09443876248897524, -0.14125529502095421, 0.03002919410514742],
-    [0.25021312296533332, 0.20412935229379994, -0.38294211275726192],
-    [1, 1, 0]])
-TI = np.array([
-    [4.17871859155190428, 0.32768282076106237, 0.52337644549944951],
-    [-4.17871859155190428, -0.32768282076106237, 0.47662355450055044],
-    [0.50287263494578682, -2.57192694985560522, 0.59603920482822492]])
+T = np.array(
+    [
+        [0.09443876248897524, -0.14125529502095421, 0.03002919410514742],
+        [0.25021312296533332, 0.20412935229379994, -0.38294211275726192],
+        [1, 1, 0],
+    ]
+)
+TI = np.array(
+    [
+        [4.17871859155190428, 0.32768282076106237, 0.52337644549944951],
+        [-4.17871859155190428, -0.32768282076106237, 0.47662355450055044],
+        [0.50287263494578682, -2.57192694985560522, 0.59603920482822492],
+    ]
+)
 # These linear combinations are used in the algorithm.
 TI_REAL = TI[0]
 TI_COMPLEX = TI[1] + 1j * TI[2]
 
 # Interpolator coefficients.
-P = np.array([
-    [13/3 + 7*S6/3, -23/3 - 22*S6/3, 10/3 + 5 * S6],
-    [13/3 - 7*S6/3, -23/3 + 22*S6/3, 10/3 - 5 * S6],
-    [1/3, -8/3, 10/3]])
+P = np.array(
+    [
+        [13 / 3 + 7 * S6 / 3, -23 / 3 - 22 * S6 / 3, 10 / 3 + 5 * S6],
+        [13 / 3 - 7 * S6 / 3, -23 / 3 + 22 * S6 / 3, 10 / 3 - 5 * S6],
+        [1 / 3, -8 / 3, 10 / 3],
+    ]
+)
 
 
 NEWTON_MAXITER = 6  # Maximum number of Newton iterations.
@@ -45,8 +62,9 @@ MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
 MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
 
-def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
-                             LU_real, LU_complex, solve_lu):
+def solve_collocation_system(
+    fun, t, y, h, Z0, scale, tol, LU_real, LU_complex, solve_lu
+):
     """Solve the collocation system.
 
     Parameters
@@ -119,15 +137,15 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         if dW_norm_old is not None:
             rate = dW_norm / dW_norm_old
 
-        if (rate is not None and (rate >= 1 or
-                rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol)):
+        if rate is not None and (
+            rate >= 1 or rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol
+        ):
             break
 
         W += dW
         Z = T.dot(W)
 
-        if (dW_norm == 0 or
-                rate is not None and rate / (1 - rate) * dW_norm < tol):
+        if dW_norm == 0 or rate is not None and rate / (1 - rate) * dW_norm < tol:
             converged = True
             break
 
@@ -170,7 +188,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     else:
         multiplier = h_abs / h_abs_old * (error_norm_old / error_norm) ** 0.25
 
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide="ignore"):
         factor = min(1, multiplier) * error_norm ** -0.25
 
     return factor
@@ -279,9 +297,22 @@ class Radau(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
-    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, **extraneous):
+
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        max_step=np.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        jac=None,
+        jac_sparsity=None,
+        vectorized=False,
+        first_step=None,
+        **extraneous,
+    ):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
@@ -292,8 +323,15 @@ class Radau(OdeSolver):
         # the error.
         if first_step is None:
             self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, self.f, self.direction,
-                3, self.rtol, self.atol)
+                self.fun,
+                self.t,
+                self.y,
+                self.f,
+                self.direction,
+                3,
+                self.rtol,
+                self.atol,
+            )
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
@@ -305,6 +343,7 @@ class Radau(OdeSolver):
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
         if issparse(self.J):
+
             def lu(A):
                 self.nlu += 1
                 return splu(A)
@@ -312,8 +351,9 @@ class Radau(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc')
+            I = eye(self.n, format="csc")
         else:
+
             def lu(A):
                 self.nlu += 1
                 return lu_factor(A, overwrite_a=True)
@@ -345,10 +385,11 @@ class Radau(OdeSolver):
 
             def jac_wrapped(t, y, f):
                 self.njev += 1
-                J, self.jac_factor = num_jac(self.fun_vectorized, t, y, f,
-                                             self.atol, self.jac_factor,
-                                             sparsity)
+                J, self.jac_factor = num_jac(
+                    self.fun_vectorized, t, y, f, self.atol, self.jac_factor, sparsity
+                )
                 return J
+
             J = jac_wrapped(t0, y0, self.f)
         elif callable(jac):
             J = jac(t0, y0)
@@ -368,9 +409,11 @@ class Radau(OdeSolver):
                     return np.asarray(jac(t, y), dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(
+                    "`jac` is expected to have shape {}, but actually has {}.".format(
+                        (self.n, self.n), J.shape
+                    )
+                )
         else:
             if issparse(jac):
                 J = csc_matrix(jac)
@@ -378,9 +421,11 @@ class Radau(OdeSolver):
                 J = np.asarray(jac, dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(
+                    "`jac` is expected to have shape {}, but actually has {}.".format(
+                        (self.n, self.n), J.shape
+                    )
+                )
             jac_wrapped = None
 
         return jac_wrapped, J
@@ -445,8 +490,17 @@ class Radau(OdeSolver):
                     LU_complex = self.lu(MU_COMPLEX / h * self.I - J)
 
                 converged, n_iter, Z, rate = solve_collocation_system(
-                    self.fun, t, y, h, Z0, scale, self.newton_tol,
-                    LU_real, LU_complex, self.solve_lu)
+                    self.fun,
+                    t,
+                    y,
+                    h,
+                    Z0,
+                    scale,
+                    self.newton_tol,
+                    LU_real,
+                    LU_complex,
+                    self.solve_lu,
+                )
 
                 if not converged:
                     if current_jac:
@@ -468,16 +522,14 @@ class Radau(OdeSolver):
             error = self.solve_lu(LU_real, f + ZE)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
-                                                       + n_iter)
+            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER + n_iter)
 
             if rejected and error_norm > 1:
                 error = self.solve_lu(LU_real, self.fun(t, y + error) + ZE)
                 error_norm = norm(error / scale)
 
             if error_norm > 1:
-                factor = predict_factor(h_abs, h_abs_old,
-                                        error_norm, error_norm_old)
+                factor = predict_factor(h_abs, h_abs_old, error_norm, error_norm_old)
                 h_abs *= max(MIN_FACTOR, safety * factor)
 
                 LU_real = None

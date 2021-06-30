@@ -1,5 +1,5 @@
 /* This file is a collection of wrappers around the
- *  Special Function  Fortran library of functions 
+ *  Special Function  Fortran library of functions
  *  to be compiled with the other special functions in cephes
  *
  * Functions written by Shanjie Zhang and Jianming Jin.
@@ -111,15 +111,3 @@ double oblate_segv_wrap(double, double, double);
 int modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 int modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 #endif
-
-
-
-
-  
-
-
-
-
-
-
-

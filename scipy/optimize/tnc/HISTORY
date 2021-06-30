@@ -19,7 +19,7 @@
 03/22/2004, V1.0.5 : Python Module
 10/15/2003, V1.0.4 : Warning: API changes: TNC now returns the number of
                      function evaluations.
-                     Return code messages strings. 
+                     Return code messages strings.
 01/25/2003, V1.0.3 : Default values to remove Visual C++ complaint.
 10/02/2002, V1.0.2 : Make g a facultative parameter.
 09/26/2002, V1.0.1 : Fix bug when |g| is exactly zero at the initial point.

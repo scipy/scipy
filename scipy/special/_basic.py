@@ -5,89 +5,119 @@
 import operator
 import numpy as np
 import math
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
-                   imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, inexact, nan, zeros, sinc)
+from numpy import (
+    pi,
+    asarray,
+    floor,
+    isscalar,
+    iscomplex,
+    real,
+    imag,
+    sqrt,
+    where,
+    mgrid,
+    sin,
+    place,
+    issubdtype,
+    extract,
+    inexact,
+    nan,
+    zeros,
+    sinc,
+)
 from . import _ufuncs as ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1)
+from ._ufuncs import (
+    mathieu_a,
+    mathieu_b,
+    iv,
+    jv,
+    gamma,
+    psi,
+    hankel1,
+    hankel2,
+    yv,
+    kv,
+    ndtri,
+    poch,
+    binom,
+    hyp0f1,
+)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
 
 
 __all__ = [
-    'ai_zeros',
-    'assoc_laguerre',
-    'bei_zeros',
-    'beip_zeros',
-    'ber_zeros',
-    'bernoulli',
-    'berp_zeros',
-    'bi_zeros',
-    'clpmn',
-    'comb',
-    'digamma',
-    'diric',
-    'erf_zeros',
-    'euler',
-    'factorial',
-    'factorial2',
-    'factorialk',
-    'fresnel_zeros',
-    'fresnelc_zeros',
-    'fresnels_zeros',
-    'gamma',
-    'h1vp',
-    'h2vp',
-    'hankel1',
-    'hankel2',
-    'hyp0f1',
-    'iv',
-    'ivp',
-    'jn_zeros',
-    'jnjnp_zeros',
-    'jnp_zeros',
-    'jnyn_zeros',
-    'jv',
-    'jvp',
-    'kei_zeros',
-    'keip_zeros',
-    'kelvin_zeros',
-    'ker_zeros',
-    'kerp_zeros',
-    'kv',
-    'kvp',
-    'lmbda',
-    'lpmn',
-    'lpn',
-    'lqmn',
-    'lqn',
-    'mathieu_a',
-    'mathieu_b',
-    'mathieu_even_coef',
-    'mathieu_odd_coef',
-    'ndtri',
-    'obl_cv_seq',
-    'pbdn_seq',
-    'pbdv_seq',
-    'pbvv_seq',
-    'perm',
-    'polygamma',
-    'pro_cv_seq',
-    'psi',
-    'riccati_jn',
-    'riccati_yn',
-    'sinc',
-    'y0_zeros',
-    'y1_zeros',
-    'y1p_zeros',
-    'yn_zeros',
-    'ynp_zeros',
-    'yv',
-    'yvp',
-    'zeta'
+    "ai_zeros",
+    "assoc_laguerre",
+    "bei_zeros",
+    "beip_zeros",
+    "ber_zeros",
+    "bernoulli",
+    "berp_zeros",
+    "bi_zeros",
+    "clpmn",
+    "comb",
+    "digamma",
+    "diric",
+    "erf_zeros",
+    "euler",
+    "factorial",
+    "factorial2",
+    "factorialk",
+    "fresnel_zeros",
+    "fresnelc_zeros",
+    "fresnels_zeros",
+    "gamma",
+    "h1vp",
+    "h2vp",
+    "hankel1",
+    "hankel2",
+    "hyp0f1",
+    "iv",
+    "ivp",
+    "jn_zeros",
+    "jnjnp_zeros",
+    "jnp_zeros",
+    "jnyn_zeros",
+    "jv",
+    "jvp",
+    "kei_zeros",
+    "keip_zeros",
+    "kelvin_zeros",
+    "ker_zeros",
+    "kerp_zeros",
+    "kv",
+    "kvp",
+    "lmbda",
+    "lpmn",
+    "lpn",
+    "lqmn",
+    "lqn",
+    "mathieu_a",
+    "mathieu_b",
+    "mathieu_even_coef",
+    "mathieu_odd_coef",
+    "ndtri",
+    "obl_cv_seq",
+    "pbdn_seq",
+    "pbdv_seq",
+    "pbvv_seq",
+    "perm",
+    "polygamma",
+    "pro_cv_seq",
+    "psi",
+    "riccati_jn",
+    "riccati_yn",
+    "sinc",
+    "y0_zeros",
+    "y1_zeros",
+    "y1p_zeros",
+    "yn_zeros",
+    "ynp_zeros",
+    "yv",
+    "yvp",
+    "zeta",
 ]
 
 
@@ -103,7 +133,9 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
+        raise err.__class__(
+            "{} must be a non-negative integer".format(var_name)
+        ) from err
     return n
 
 
@@ -172,8 +204,8 @@ def diric(x, n):
            -0.41421356,  1.        ,  2.41421356])
     """
     x, n = asarray(x), asarray(n)
-    n = asarray(n + (x-x))
-    x = asarray(x + (n-n))
+    n = asarray(n + (x - x))
+    x = asarray(x + (n - n))
     if issubdtype(x.dtype, inexact):
         ytype = x.dtype
     else:
@@ -194,17 +226,17 @@ def diric(x, n):
 
     x = x / 2
     denom = sin(x)
-    mask2 = (1-mask1) & (abs(denom) < minval)
+    mask2 = (1 - mask1) & (abs(denom) < minval)
     xsub = extract(mask2, x)
     nsub = extract(mask2, n)
     zsub = xsub / pi
-    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))
+    place(y, mask2, pow(-1, np.round(zsub) * (nsub - 1)))
 
-    mask = (1-mask1) & (1-mask2)
+    mask = (1 - mask1) & (1 - mask2)
     xsub = extract(mask, x)
     nsub = extract(mask, n)
     dsub = extract(mask, denom)
-    place(y, mask, sin(nsub*xsub)/(nsub*dsub))
+    place(y, mask, sin(nsub * xsub) / (nsub * dsub))
     return y
 
 
@@ -246,7 +278,7 @@ def jnjnp_zeros(nt):
         raise ValueError("Number must be integer <= 1200.")
     nt = int(nt)
     n, m, t, zo = specfun.jdzo(nt)
-    return zo[1:nt+1], n[:nt], m[:nt], t[:nt]
+    return zo[1 : nt + 1], n[:nt], m[:nt], t[:nt]
 
 
 def jnyn_zeros(n, nt):
@@ -289,7 +321,7 @@ def jnyn_zeros(n, nt):
         raise ValueError("Arguments must be scalars.")
     if (floor(n) != n) or (floor(nt) != nt):
         raise ValueError("Arguments must be integers.")
-    if (nt <= 0):
+    if nt <= 0:
         raise ValueError("nt > 0")
     return specfun.jyzo(abs(n), nt)
 
@@ -609,11 +641,11 @@ def _bessel_diff_formula(v, z, n, L, phase):
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
     v = asarray(v)
     p = 1.0
-    s = L(v-n, z)
-    for i in range(1, n+1):
-        p = phase * (p * (n-i+1)) / i   # = choose(k, i)
-        s += p*L(v-n + i*2, z)
-    return s / (2.**n)
+    s = L(v - n, z)
+    for i in range(1, n + 1):
+        p = phase * (p * (n - i + 1)) / i  # = choose(k, i)
+        s += p * L(v - n + i * 2, z)
+    return s / (2.0 ** n)
 
 
 def jvp(v, z, n=1):
@@ -650,7 +682,7 @@ def jvp(v, z, n=1):
            https://dlmf.nist.gov/10.6.E7
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return jv(v, z)
     else:
@@ -690,7 +722,7 @@ def yvp(v, z, n=1):
            https://dlmf.nist.gov/10.6.E7
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return yv(v, z)
     else:
@@ -745,11 +777,11 @@ def kvp(v, z, n=1):
            https://dlmf.nist.gov/10.29.E5
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return kv(v, z)
     else:
-        return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
+        return (-1) ** n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
 def ivp(v, z, n=1):
@@ -790,7 +822,7 @@ def ivp(v, z, n=1):
            https://dlmf.nist.gov/10.29.E5
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return iv(v, z)
     else:
@@ -828,7 +860,7 @@ def h1vp(v, z, n=1):
            https://dlmf.nist.gov/10.6.E7
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return hankel1(v, z)
     else:
@@ -866,7 +898,7 @@ def h2vp(v, z, n=1):
            https://dlmf.nist.gov/10.6.E7
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, "n")
     if n == 0:
         return hankel2(v, z)
     else:
@@ -916,13 +948,13 @@ def riccati_jn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n == 0):
+    n = _nonneg_int_or_fail(n, "n", strict=False)
+    if n == 0:
         n1 = 1
     else:
         n1 = n
     nm, jn, jnp = specfun.rctj(n1, x)
-    return jn[:(n+1)], jnp[:(n+1)]
+    return jn[: (n + 1)], jnp[: (n + 1)]
 
 
 def riccati_yn(n, x):
@@ -968,13 +1000,13 @@ def riccati_yn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n == 0):
+    n = _nonneg_int_or_fail(n, "n", strict=False)
+    if n == 0:
         n1 = 1
     else:
         n1 = n
     nm, jn, jnp = specfun.rcty(n1, x)
-    return jn[:(n+1)], jnp[:(n+1)]
+    return jn[: (n + 1)], jnp[: (n + 1)]
 
 
 def erf_zeros(nt):
@@ -1119,7 +1151,7 @@ def polygamma(n, x):
 
     """
     n, x = asarray(n), asarray(x)
-    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
+    fac2 = (-1.0) ** (n + 1) * gamma(n + 1.0) * zeta(n + 1, x)
     return where(n == 0, psi(x), fac2)
 
 
@@ -1160,16 +1192,16 @@ def mathieu_even_coef(m, q):
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
+    if q < 0:
         raise ValueError("q >=0")
     if (m != floor(m)) or (m < 0):
         raise ValueError("m must be an integer >=0.")
 
-    if (q <= 1):
-        qm = 7.5 + 56.1*sqrt(q) - 134.7*q + 90.7*sqrt(q)*q
+    if q <= 1:
+        qm = 7.5 + 56.1 * sqrt(q) - 134.7 * q + 90.7 * sqrt(q) * q
     else:
-        qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
-    km = int(qm + 0.5*m)
+        qm = 17.0 + 3.1 * sqrt(q) - 0.126 * q + 0.0037 * sqrt(q) * q
+    km = int(qm + 0.5 * m)
     if km > 251:
         print("Warning, too many predicted coefficients.")
     kd = 1
@@ -1217,16 +1249,16 @@ def mathieu_odd_coef(m, q):
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
+    if q < 0:
         raise ValueError("q >=0")
     if (m != floor(m)) or (m <= 0):
         raise ValueError("m must be an integer > 0")
 
-    if (q <= 1):
-        qm = 7.5 + 56.1*sqrt(q) - 134.7*q + 90.7*sqrt(q)*q
+    if q <= 1:
+        qm = 7.5 + 56.1 * sqrt(q) - 134.7 * q + 90.7 * sqrt(q) * q
     else:
-        qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
-    km = int(qm + 0.5*m)
+        qm = 17.0 + 3.1 * sqrt(q) - 0.126 * q + 0.0037 * sqrt(q) * q
+    km = int(qm + 0.5 * m)
     if km > 251:
         print("Warning, too many predicted coefficients.")
     kd = 4
@@ -1295,21 +1327,22 @@ def lpmn(m, n, z):
         raise ValueError("z must be scalar.")
     if iscomplex(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
-    if (m < 0):
+    if m < 0:
         mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        mf, nf = mgrid[0 : mp + 1, 0 : n + 1]
+        with ufuncs.errstate(all="ignore"):
             if abs(z) < 1:
                 # Ferrer function; DLMF 14.9.3
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+                fixarr = where(
+                    mf > nf, 0.0, (-1) ** mf * gamma(nf - mf + 1) / gamma(nf + mf + 1)
+                )
             else:
                 # Match to clpmn; DLMF 14.9.13
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+                fixarr = where(mf > nf, 0.0, gamma(nf - mf + 1) / gamma(nf + mf + 1))
     else:
         mp = m
     p, pd = specfun.lpmn(mp, n, z)
-    if (m < 0):
+    if m < 0:
         p = p * fixarr
         pd = pd * fixarr
     return p, pd
@@ -1376,21 +1409,22 @@ def clpmn(m, n, z, type=3):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
-    if not(type == 2 or type == 3):
+    if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
-    if (m < 0):
+    if m < 0:
         mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        mf, nf = mgrid[0 : mp + 1, 0 : n + 1]
+        with ufuncs.errstate(all="ignore"):
             if type == 2:
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+                fixarr = where(
+                    mf > nf, 0.0, (-1) ** mf * gamma(nf - mf + 1) / gamma(nf + mf + 1)
+                )
             else:
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+                fixarr = where(mf > nf, 0.0, gamma(nf - mf + 1) / gamma(nf + mf + 1))
     else:
         mp = m
     p, pd = specfun.clpmn(mp, n, real(z), imag(z), type)
-    if (m < 0):
+    if m < 0:
         p = p * fixarr
         pd = pd * fixarr
     return p, pd
@@ -1446,7 +1480,7 @@ def lqmn(m, n, z):
         q, qd = specfun.clqmn(mm, nn, z)
     else:
         q, qd = specfun.lqmn(mm, nn, z)
-    return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
+    return q[: (m + 1), : (n + 1)], qd[: (m + 1), : (n + 1)]
 
 
 def bernoulli(n):
@@ -1492,11 +1526,11 @@ def bernoulli(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2):
+    if n < 2:
         n1 = 2
     else:
         n1 = n
-    return specfun.bernob(int(n1))[:(n+1)]
+    return specfun.bernob(int(n1))[: (n + 1)]
 
 
 def euler(n):
@@ -1543,11 +1577,11 @@ def euler(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2):
+    if n < 2:
         n1 = 2
     else:
         n1 = n
-    return specfun.eulerb(n1)[:(n+1)]
+    return specfun.eulerb(n1)[: (n + 1)]
 
 
 def lpn(n, z):
@@ -1567,8 +1601,8 @@ def lpn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n < 1):
+    n = _nonneg_int_or_fail(n, "n", strict=False)
+    if n < 1:
         n1 = 1
     else:
         n1 = n
@@ -1576,7 +1610,7 @@ def lpn(n, z):
         pn, pd = specfun.clpn(n1, z)
     else:
         pn, pd = specfun.lpn(n1, z)
-    return pn[:(n+1)], pd[:(n+1)]
+    return pn[: (n + 1)], pd[: (n + 1)]
 
 
 def lqn(n, z):
@@ -1594,8 +1628,8 @@ def lqn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n < 1):
+    n = _nonneg_int_or_fail(n, "n", strict=False)
+    if n < 1:
         n1 = 1
     else:
         n1 = n
@@ -1603,7 +1637,7 @@ def lqn(n, z):
         qn, qd = specfun.clqn(n1, z)
     else:
         qn, qd = specfun.lqnb(n1, z)
-    return qn[:(n+1)], qd[:(n+1)]
+    return qn[: (n + 1)], qd[: (n + 1)]
 
 
 def ai_zeros(nt):
@@ -1742,20 +1776,20 @@ def lmbda(v, x):
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (v < 0):
+    if v < 0:
         raise ValueError("argument must be > 0.")
     n = int(v)
     v0 = v - n
-    if (n < 1):
+    if n < 1:
         n1 = 1
     else:
         n1 = n
     v1 = n1 + v0
-    if (v != floor(v)):
+    if v != floor(v):
         vm, vl, dl = specfun.lamv(v1, x)
     else:
         vm, vl, dl = specfun.lamn(v1, x)
-    return vl[:(n+1)], dl[:(n+1)]
+    return vl[: (n + 1)], dl[: (n + 1)]
 
 
 def pbdv_seq(v, x):
@@ -1785,14 +1819,14 @@ def pbdv_seq(v, x):
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
     n = int(v)
-    v0 = v-n
-    if (n < 1):
+    v0 = v - n
+    if n < 1:
         n1 = 1
     else:
         n1 = n
     v1 = n1 + v0
     dv, dp, pdf, pdd = specfun.pbdv(v1, x)
-    return dv[:n1+1], dp[:n1+1]
+    return dv[: n1 + 1], dp[: n1 + 1]
 
 
 def pbvv_seq(v, x):
@@ -1822,14 +1856,14 @@ def pbvv_seq(v, x):
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
     n = int(v)
-    v0 = v-n
-    if (n <= 1):
+    v0 = v - n
+    if n <= 1:
         n1 = 1
     else:
         n1 = n
     v1 = n1 + v0
     dv, dp, pdf, pdd = specfun.pbvv(v1, x)
-    return dv[:n1+1], dp[:n1+1]
+    return dv[: n1 + 1], dp[: n1 + 1]
 
 
 def pbdn_seq(n, z):
@@ -1858,14 +1892,14 @@ def pbdn_seq(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (floor(n) != n):
+    if floor(n) != n:
         raise ValueError("n must be an integer.")
-    if (abs(n) <= 1):
+    if abs(n) <= 1:
         n1 = 1
     else:
         n1 = n
     cpb, cpd = specfun.cpbdn(n1, z)
-    return cpb[:n1+1], cpd[:n1+1]
+    return cpb[: n1 + 1], cpd[: n1 + 1]
 
 
 def ber_zeros(nt):
@@ -2115,14 +2149,16 @@ def kelvin_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return (specfun.klvnzo(nt, 1),
-            specfun.klvnzo(nt, 2),
-            specfun.klvnzo(nt, 3),
-            specfun.klvnzo(nt, 4),
-            specfun.klvnzo(nt, 5),
-            specfun.klvnzo(nt, 6),
-            specfun.klvnzo(nt, 7),
-            specfun.klvnzo(nt, 8))
+    return (
+        specfun.klvnzo(nt, 1),
+        specfun.klvnzo(nt, 2),
+        specfun.klvnzo(nt, 3),
+        specfun.klvnzo(nt, 4),
+        specfun.klvnzo(nt, 5),
+        specfun.klvnzo(nt, 6),
+        specfun.klvnzo(nt, 7),
+        specfun.klvnzo(nt, 8),
+    )
 
 
 def pro_cv_seq(m, n, c):
@@ -2143,9 +2179,9 @@ def pro_cv_seq(m, n, c):
         raise ValueError("Arguments must be scalars.")
     if (n != floor(n)) or (m != floor(m)):
         raise ValueError("Modes must be integers.")
-    if (n-m > 199):
+    if n - m > 199:
         raise ValueError("Difference between n and m is too large.")
-    maxL = n-m+1
+    maxL = n - m + 1
     return specfun.segv(m, n, c, 1)[1][:maxL]
 
 
@@ -2167,9 +2203,9 @@ def obl_cv_seq(m, n, c):
         raise ValueError("Arguments must be scalars.")
     if (n != floor(n)) or (m != floor(m)):
         raise ValueError("Modes must be integers.")
-    if (n-m > 199):
+    if n - m > 199:
         raise ValueError("Difference between n and m is too large.")
-    maxL = n-m+1
+    maxL = n - m + 1
     return specfun.segv(m, n, c, -1)[1][:maxL]
 
 
@@ -2378,7 +2414,7 @@ def factorial(n, exact=False):
 
             # Handle invalid/trivial values
             # Ignore runtime warning when less operator used w/np.nan
-            with np.errstate(all='ignore'):
+            with np.errstate(all="ignore"):
                 un = un[un > 1]
                 out[n < 2] = 1
                 out[n < 0] = 0
@@ -2447,9 +2483,9 @@ def factorial2(n, exact=False):
         return val
     else:
         n = asarray(n)
-        vals = zeros(n.shape, 'd')
+        vals = zeros(n.shape, "d")
         cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
+        cond2 = (1 - (n % 2)) & (n >= -1)
         oddn = extract(cond1, n)
         evenn = extract(cond2, n)
         nd2o = oddn / 2.0
@@ -2502,13 +2538,13 @@ def factorialk(n, k, exact=True):
 
     """
     if exact:
-        if n < 1-k:
+        if n < 1 - k:
             return 0
         if n <= 0:
             return 1
         val = 1
         for j in range(n, 0, -k):
-            val = val*j
+            val = val * j
         return val
     else:
         raise NotImplementedError

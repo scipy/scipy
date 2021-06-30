@@ -4,15 +4,24 @@
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
+from scipy.linalg import get_blas_funcs, qr, solve, svd, qr_insert, lstsq
 from scipy.sparse.linalg.isolve.utils import make_system
 
 
-__all__ = ['gcrotmk']
+__all__ = ["gcrotmk"]
 
 
-def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
-            prepend_outer_v=False):
+def _fgmres(
+    matvec,
+    v0,
+    m,
+    atol,
+    lpsolve=None,
+    rpsolve=None,
+    cs=(),
+    outer_v=(),
+    prepend_outer_v=False,
+):
     """
     FGMRES Arnoldi process, with optional projection or augmentation
 
@@ -35,7 +44,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     outer_v : list of ndarrays
         Augmentation vectors in LGMRES
     prepend_outer_v : bool, optional
-        Whether augmentation vectors come before or after 
+        Whether augmentation vectors come before or after
         Krylov iterates
 
     Raises
@@ -65,7 +74,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     if rpsolve is None:
         rpsolve = lambda x: x
 
-    axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (v0,))
+    axpy, dot, scal, nrm2 = get_blas_funcs(["axpy", "dot", "scal", "nrm2"], (v0,))
 
     vs = [v0]
     zs = []
@@ -112,20 +121,20 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         # i.e. orthogonalize against C
         for i, c in enumerate(cs):
             alpha = dot(c, w)
-            B[i,j] = alpha
+            B[i, j] = alpha
             w = axpy(c, w, c.shape[0], -alpha)  # w -= alpha*c
 
         # Orthogonalize against V
-        hcur = np.zeros(j+2, dtype=Q.dtype)
+        hcur = np.zeros(j + 2, dtype=Q.dtype)
         for i, v in enumerate(vs):
             alpha = dot(v, w)
             hcur[i] = alpha
             w = axpy(v, w, v.shape[0], -alpha)  # w -= alpha*v
-        hcur[i+1] = nrm2(w)
+        hcur[i + 1] = nrm2(w)
 
-        with np.errstate(over='ignore', divide='ignore'):
+        with np.errstate(over="ignore", divide="ignore"):
             # Careful with denormals
-            alpha = 1/hcur[-1]
+            alpha = 1 / hcur[-1]
 
         if np.isfinite(alpha):
             w = scal(alpha, w)
@@ -142,28 +151,29 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         # Arnoldi LSQ problem
 
         # Add new column to H=Q*R, padding other columns with zeros
-        Q2 = np.zeros((j+2, j+2), dtype=Q.dtype, order='F')
-        Q2[:j+1,:j+1] = Q
-        Q2[j+1,j+1] = 1
+        Q2 = np.zeros((j + 2, j + 2), dtype=Q.dtype, order="F")
+        Q2[: j + 1, : j + 1] = Q
+        Q2[j + 1, j + 1] = 1
 
-        R2 = np.zeros((j+2, j), dtype=R.dtype, order='F')
-        R2[:j+1,:] = R
+        R2 = np.zeros((j + 2, j), dtype=R.dtype, order="F")
+        R2[: j + 1, :] = R
 
-        Q, R = qr_insert(Q2, R2, hcur, j, which='col',
-                         overwrite_qru=True, check_finite=False)
+        Q, R = qr_insert(
+            Q2, R2, hcur, j, which="col", overwrite_qru=True, check_finite=False
+        )
 
         # Transformed least squares problem
         # || Q R y - inner_res_0 * e_1 ||_2 = min!
         # Since R = [R'; 0], solution is y = inner_res_0 (R')^{-1} (Q^H)[:j,0]
 
         # Residual is immediately known
-        res = abs(Q[0,-1])
+        res = abs(Q[0, -1])
 
         # Check for termination
         if res < atol or breakdown:
             break
 
-    if not np.isfinite(R[j,j]):
+    if not np.isfinite(R[j, j]):
         # nans encountered, bail out
         raise LinAlgError()
 
@@ -172,16 +182,33 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     # The problem is triangular, but the condition number may be
     # bad (or in case of breakdown the last diagonal entry may be
     # zero), so use lstsq instead of trtrs.
-    y, _, _, _, = lstsq(R[:j+1,:j+1], Q[0,:j+1].conj())
+    (
+        y,
+        _,
+        _,
+        _,
+    ) = lstsq(R[: j + 1, : j + 1], Q[0, : j + 1].conj())
 
-    B = B[:,:j+1]
+    B = B[:, : j + 1]
 
     return Q, R, B, vs, zs, y, res
 
 
-def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
-            m=20, k=None, CU=None, discard_C=False, truncate='oldest',
-            atol=None):
+def gcrotmk(
+    A,
+    b,
+    x0=None,
+    tol=1e-5,
+    maxiter=1000,
+    M=None,
+    callback=None,
+    m=20,
+    k=None,
+    CU=None,
+    discard_C=False,
+    truncate="oldest",
+    atol=None,
+):
     """
     Solve a matrix equation using flexible GCROT(m,k) algorithm.
 
@@ -261,19 +288,22 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
            SIAM J. Sci. Comput. 28, 1651 (2006).
 
     """
-    A,M,x,b,postprocess = make_system(A,M,x0,b)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
-    if truncate not in ('oldest', 'smallest'):
+    if truncate not in ("oldest", "smallest"):
         raise ValueError("Invalid value for 'truncate': %r" % (truncate,))
 
     if atol is None:
-        warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
+            "The default value will change in the future. To preserve "
+            "current behavior, set ``atol=tol``.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         atol = tol
 
     matvec = A.matvec
@@ -289,7 +319,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     r = b - matvec(x)
 
-    axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
+    axpy, dot, scal, nrm2 = get_blas_funcs(["axpy", "dot", "scal", "nrm2"], (x, r))
 
     b_norm = nrm2(b)
 
@@ -302,7 +332,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         CU.sort(key=lambda cu: cu[0] is not None)
 
         # Fill-in missing ones
-        C = np.empty((A.shape[0], len(CU)), dtype=r.dtype, order='F')
+        C = np.empty((A.shape[0], len(CU)), dtype=r.dtype, order="F")
         us = []
         j = 0
         while CU:
@@ -310,12 +340,12 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             c, u = CU.pop(0)
             if c is None:
                 c = matvec(u)
-            C[:,j] = c
+            C[:, j] = c
             j += 1
             us.append(u)
 
         # Orthogonalize
-        Q, R, P = qr(C, overwrite_a=True, mode='economic', pivoting=True)
+        Q, R, P = qr(C, overwrite_a=True, mode="economic", pivoting=True)
         del C
 
         # C := Q
@@ -326,18 +356,18 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         for j in range(len(cs)):
             u = us[P[j]]
             for i in range(j):
-                u = axpy(us[P[i]], u, u.shape[0], -R[i,j])
-            if abs(R[j,j]) < 1e-12 * abs(R[0,0]):
+                u = axpy(us[P[i]], u, u.shape[0], -R[i, j])
+            if abs(R[j, j]) < 1e-12 * abs(R[0, 0]):
                 # discard rest of the vectors
                 break
-            u = scal(1.0/R[j,j], u)
+            u = scal(1.0 / R[j, j], u)
             new_us.append(u)
 
         # Form the new CU lists
         CU[:] = list(zip(cs, new_us))[::-1]
 
     if CU:
-        axpy, dot = get_blas_funcs(['axpy', 'dot'], (r,))
+        axpy, dot = get_blas_funcs(["axpy", "dot"], (r,))
 
         # Solve first the projection operation with respect to the CU
         # vectors. This corresponds to modifying the initial guess to
@@ -377,12 +407,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         cs = [c for c, u in CU]
 
         try:
-            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
-                                               r/beta,
-                                               ml,
-                                               rpsolve=psolve,
-                                               atol=max(atol, tol*b_norm)/beta,
-                                               cs=cs)
+            Q, R, B, vs, zs, y, pres = _fgmres(
+                matvec,
+                r / beta,
+                ml,
+                rpsolve=psolve,
+                atol=max(atol, tol * b_norm) / beta,
+                cs=cs,
+            )
             y *= beta
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
@@ -409,7 +441,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         # Define new outer vectors
 
         # ux := (Z - U B) y
-        ux = zs[0]*y[0]
+        ux = zs[0] * y[0]
         for z, yc in zip(zs[1:], y[1:]):
             ux = axpy(z, ux, ux.shape[0], yc)  # ux += z*yc
         by = B.dot(y)
@@ -426,7 +458,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         # Normalize cx, maintaining cx = A ux
         # This new cx is orthogonal to the previous C, by construction
         try:
-            alpha = 1/nrm2(cx)
+            alpha = 1 / nrm2(cx)
             if not np.isfinite(alpha):
                 raise FloatingPointError()
         except (FloatingPointError, ZeroDivisionError):
@@ -442,18 +474,18 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         x = axpy(ux, x, x.shape[0], gamma)  # x += gamma*ux
 
         # Truncate CU
-        if truncate == 'oldest':
+        if truncate == "oldest":
             while len(CU) >= k and CU:
                 del CU[0]
-        elif truncate == 'smallest':
+        elif truncate == "smallest":
             if len(CU) >= k and CU:
                 # cf. [1,2]
-                D = solve(R[:-1,:].T, B.T).T
+                D = solve(R[:-1, :].T, B.T).T
                 W, sigma, V = svd(D)
 
                 # C := C W[:,:k-1],  U := U W[:,:k-1]
                 new_CU = []
-                for j, w in enumerate(W[:,:k-1].T):
+                for j, w in enumerate(W[:, : k - 1].T):
                     c, u = CU[0]
                     c = c * w[0]
                     u = u * w[0]
@@ -470,8 +502,8 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                         c = axpy(cp, c, c.shape[0], -alpha)
                         u = axpy(up, u, u.shape[0], -alpha)
                     alpha = nrm2(c)
-                    c = scal(1.0/alpha, c)
-                    u = scal(1.0/alpha, u)
+                    c = scal(1.0 / alpha, c)
+                    u = scal(1.0 / alpha, u)
 
                     new_CU.append((c, u))
                 CU[:] = new_CU

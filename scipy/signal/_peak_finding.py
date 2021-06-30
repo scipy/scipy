@@ -11,15 +11,22 @@ from ._peak_finding_utils import (
     _local_maxima_1d,
     _select_by_peak_distance,
     _peak_prominences,
-    _peak_widths
+    _peak_widths,
 )
 
 
-__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
-           'peak_widths', 'find_peaks', 'find_peaks_cwt']
+__all__ = [
+    "argrelmin",
+    "argrelmax",
+    "argrelextrema",
+    "peak_prominences",
+    "peak_widths",
+    "find_peaks",
+    "find_peaks_cwt",
+]
 
 
-def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
+def _boolrelextrema(data, comparator, axis=0, order=1, mode="clip"):
     """
     Calculate the relative extrema of `data`.
 
@@ -60,8 +67,8 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     array([False, False,  True, False, False], dtype=bool)
 
     """
-    if((int(order) != order) or (order < 1)):
-        raise ValueError('Order must be an int >= 1')
+    if (int(order) != order) or (order < 1):
+        raise ValueError("Order must be an int >= 1")
 
     datalen = data.shape[axis]
     locs = np.arange(0, datalen)
@@ -73,12 +80,12 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         minus = data.take(locs - shift, axis=axis, mode=mode)
         results &= comparator(main, plus)
         results &= comparator(main, minus)
-        if(~results.any()):
+        if ~results.any():
             return results
     return results
 
 
-def argrelmin(data, axis=0, order=1, mode='clip'):
+def argrelmin(data, axis=0, order=1, mode="clip"):
     """
     Calculate the relative minima of `data`.
 
@@ -135,7 +142,7 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     return argrelextrema(data, np.less, axis, order, mode)
 
 
-def argrelmax(data, axis=0, order=1, mode='clip'):
+def argrelmax(data, axis=0, order=1, mode="clip"):
     """
     Calculate the relative maxima of `data`.
 
@@ -191,7 +198,7 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     return argrelextrema(data, np.greater, axis, order, mode)
 
 
-def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
+def argrelextrema(data, comparator, axis=0, order=1, mode="clip"):
     """
     Calculate the relative extrema of `data`.
 
@@ -242,8 +249,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     (array([0, 2]), array([2, 1]))
 
     """
-    results = _boolrelextrema(data, comparator,
-                              axis, order, mode)
+    results = _boolrelextrema(data, comparator, axis, order, mode)
     return np.nonzero(results)
 
 
@@ -258,9 +264,9 @@ def _arg_x_as_expected(value):
     value : ndarray
         A 1-D C-contiguous array with dtype('float64').
     """
-    value = np.asarray(value, order='C', dtype=np.float64)
+    value = np.asarray(value, order="C", dtype=np.float64)
     if value.ndim != 1:
-        raise ValueError('`x` must be a 1-D array')
+        raise ValueError("`x` must be a 1-D array")
     return value
 
 
@@ -281,12 +287,13 @@ def _arg_peaks_as_expected(value):
         value = np.array([], dtype=np.intp)
     try:
         # Safely convert to C-contiguous array of type np.intp
-        value = value.astype(np.intp, order='C', casting='safe',
-                             subok=False, copy=False)
+        value = value.astype(
+            np.intp, order="C", casting="safe", subok=False, copy=False
+        )
     except TypeError as e:
         raise TypeError("cannot safely cast `peaks` to dtype('intp')") from e
     if value.ndim != 1:
-        raise ValueError('`peaks` must be a 1-D array')
+        raise ValueError("`peaks` must be a 1-D array")
     return value
 
 
@@ -311,8 +318,7 @@ def _arg_wlen_as_expected(value):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be larger than 1, was {}'
-                         .format(value))
+        raise ValueError("`wlen` must be larger than 1, was {}".format(value))
     return value
 
 
@@ -627,11 +633,11 @@ def _unpack_condition_args(interval, x, peaks):
     # Reduce arrays if arrays
     if isinstance(imin, np.ndarray):
         if imin.size != x.size:
-            raise ValueError('array size of lower interval border must match x')
+            raise ValueError("array size of lower interval border must match x")
         imin = imin[peaks]
     if isinstance(imax, np.ndarray):
         if imax.size != x.size:
-            raise ValueError('array size of upper interval border must match x')
+            raise ValueError("array size of upper interval border must match x")
         imax = imax[peaks]
 
     return imin, imax
@@ -669,9 +675,9 @@ def _select_by_property(peak_properties, pmin, pmax):
     """
     keep = np.ones(peak_properties.size, dtype=bool)
     if pmin is not None:
-        keep &= (pmin <= peak_properties)
+        keep &= pmin <= peak_properties
     if pmax is not None:
-        keep &= (peak_properties <= pmax)
+        keep &= peak_properties <= pmax
     return keep
 
 
@@ -707,22 +713,29 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     # Stack thresholds on both sides to make min / max operations easier:
     # tmin is compared with the smaller, and tmax with the greater thresold to
     # each peak's side
-    stacked_thresholds = np.vstack([x[peaks] - x[peaks - 1],
-                                    x[peaks] - x[peaks + 1]])
+    stacked_thresholds = np.vstack([x[peaks] - x[peaks - 1], x[peaks] - x[peaks + 1]])
     keep = np.ones(peaks.size, dtype=bool)
     if tmin is not None:
         min_thresholds = np.min(stacked_thresholds, axis=0)
-        keep &= (tmin <= min_thresholds)
+        keep &= tmin <= min_thresholds
     if tmax is not None:
         max_thresholds = np.max(stacked_thresholds, axis=0)
-        keep &= (max_thresholds <= tmax)
+        keep &= max_thresholds <= tmax
 
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
-def find_peaks(x, height=None, threshold=None, distance=None,
-               prominence=None, width=None, wlen=None, rel_height=0.5,
-               plateau_size=None):
+def find_peaks(
+    x,
+    height=None,
+    threshold=None,
+    distance=None,
+    prominence=None,
+    width=None,
+    wlen=None,
+    rel_height=0.5,
+    plateau_size=None,
+):
     """
     Find peaks inside a signal based on peak properties.
 
@@ -931,7 +944,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     # _argmaxima1d expects array of dtype 'float64'
     x = _arg_x_as_expected(x)
     if distance is not None and distance < 1:
-        raise ValueError('`distance` must be greater or equal to 1')
+        raise ValueError("`distance` must be greater or equal to 1")
 
     peaks, left_edges, right_edges = _local_maxima_1d(x)
     properties = {}
@@ -960,7 +973,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         # Evaluate threshold condition
         tmin, tmax = _unpack_condition_args(threshold, x, peaks)
         keep, left_thresholds, right_thresholds = _select_by_peak_threshold(
-            x, peaks, tmin, tmax)
+            x, peaks, tmin, tmax
+        )
         peaks = peaks[keep]
         properties["left_thresholds"] = left_thresholds
         properties["right_thresholds"] = right_thresholds
@@ -975,28 +989,38 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if prominence is not None or width is not None:
         # Calculate prominence (required for both conditions)
         wlen = _arg_wlen_as_expected(wlen)
-        properties.update(zip(
-            ['prominences', 'left_bases', 'right_bases'],
-            _peak_prominences(x, peaks, wlen=wlen)
-        ))
+        properties.update(
+            zip(
+                ["prominences", "left_bases", "right_bases"],
+                _peak_prominences(x, peaks, wlen=wlen),
+            )
+        )
 
     if prominence is not None:
         # Evaluate prominence condition
         pmin, pmax = _unpack_condition_args(prominence, x, peaks)
-        keep = _select_by_property(properties['prominences'], pmin, pmax)
+        keep = _select_by_property(properties["prominences"], pmin, pmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
     if width is not None:
         # Calculate widths
-        properties.update(zip(
-            ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            _peak_widths(x, peaks, rel_height, properties['prominences'],
-                         properties['left_bases'], properties['right_bases'])
-        ))
+        properties.update(
+            zip(
+                ["widths", "width_heights", "left_ips", "right_ips"],
+                _peak_widths(
+                    x,
+                    peaks,
+                    rel_height,
+                    properties["prominences"],
+                    properties["left_bases"],
+                    properties["right_bases"],
+                ),
+            )
+        )
         # Evaluate width condition
         wmin, wmax = _unpack_condition_args(width, x, peaks)
-        keep = _select_by_property(properties['widths'], wmin, wmax)
+        keep = _select_by_property(properties["widths"], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
@@ -1049,21 +1073,20 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     as part of `find_peaks_cwt`.
 
     """
-    if(len(max_distances) < matr.shape[0]):
-        raise ValueError('Max_distances must have at least as many rows '
-                         'as matr')
+    if len(max_distances) < matr.shape[0]:
+        raise ValueError("Max_distances must have at least as many rows as matr")
 
     all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
     # Highest row for which there are any relative maxima
     has_relmax = np.nonzero(all_max_cols.any(axis=1))[0]
-    if(len(has_relmax) == 0):
+    if len(has_relmax) == 0:
         return []
     start_row = has_relmax[-1]
     # Each ridge line is a 3-tuple:
     # rows, cols,Gap number
-    ridge_lines = [[[start_row],
-                   [col],
-                   0] for col in np.nonzero(all_max_cols[start_row])[0]]
+    ridge_lines = [
+        [[start_row], [col], 0] for col in np.nonzero(all_max_cols[start_row])[0]
+    ]
     final_lines = []
     rows = np.arange(start_row - 1, -1, -1)
     cols = np.arange(0, matr.shape[1])
@@ -1086,20 +1109,18 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
             # the max_distance to connect to, do so.
             # Otherwise start a new one.
             line = None
-            if(len(prev_ridge_cols) > 0):
+            if len(prev_ridge_cols) > 0:
                 diffs = np.abs(col - prev_ridge_cols)
                 closest = np.argmin(diffs)
                 if diffs[closest] <= max_distances[row]:
                     line = ridge_lines[closest]
-            if(line is not None):
+            if line is not None:
                 # Found a point close enough, extend current ridge line
                 line[1].append(col)
                 line[0].append(row)
                 line[2] = 0
             else:
-                new_line = [[row],
-                            [col],
-                            0]
+                new_line = [[row], [col], 0]
                 ridge_lines.append(new_line)
 
         # Remove the ridge lines with gap_number too high
@@ -1113,7 +1134,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
                 del ridge_lines[ind]
 
     out_lines = []
-    for line in (final_lines + ridge_lines):
+    for line in final_lines + ridge_lines:
         sortargs = np.array(np.argsort(line[0]))
         rows, cols = np.zeros_like(sortargs), np.zeros_like(sortargs)
         rows[sortargs] = line[0]
@@ -1123,8 +1144,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     return out_lines
 
 
-def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
-                        min_snr=1, noise_perc=10):
+def _filter_ridge_lines(
+    cwt, ridge_lines, window_size=None, min_length=None, min_snr=1, noise_perc=10
+):
     """
     Filter ridge lines according to prescribed criteria. Intended
     to be used for finding relative maxima.
@@ -1173,8 +1195,9 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)
-        noises[ind] = scoreatpercentile(row_one[window_start:window_end],
-                                        per=noise_perc)
+        noises[ind] = scoreatpercentile(
+            row_one[window_start:window_end], per=noise_perc
+        )
 
     def filt_func(line):
         if len(line[0]) < min_length:
@@ -1187,9 +1210,17 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     return list(filter(filt_func, ridge_lines))
 
 
-def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
-                   gap_thresh=None, min_length=None,
-                   min_snr=1, noise_perc=10, window_size=None):
+def find_peaks_cwt(
+    vector,
+    widths,
+    wavelet=None,
+    max_distances=None,
+    gap_thresh=None,
+    min_length=None,
+    min_snr=1,
+    noise_perc=10,
+    window_size=None,
+):
     """
     Find peaks in a 1-D array with wavelet transformation.
 
@@ -1292,9 +1323,14 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
-    filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
-                                   window_size=window_size, min_snr=min_snr,
-                                   noise_perc=noise_perc)
+    filtered = _filter_ridge_lines(
+        cwt_dat,
+        ridge_lines,
+        min_length=min_length,
+        window_size=window_size,
+        min_snr=min_snr,
+        noise_perc=noise_perc,
+    )
     max_locs = np.asarray([x[1][0] for x in filtered])
     max_locs.sort()
 

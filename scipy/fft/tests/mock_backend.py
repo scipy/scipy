@@ -1,7 +1,8 @@
 import numpy as np
 
+
 class _MockFunction:
-    def __init__(self, return_value = None):
+    def __init__(self, return_value=None):
         self.number_calls = 0
         self.return_value = return_value
         self.last_args = ([], {})
@@ -52,5 +53,4 @@ __ua_domain__ = "numpy.scipy.fft"
 
 def __ua_function__(method, args, kwargs):
     fn = globals().get(method.__name__)
-    return (fn(*args, **kwargs) if fn is not None
-            else NotImplemented)
+    return fn(*args, **kwargs) if fn is not None else NotImplemented

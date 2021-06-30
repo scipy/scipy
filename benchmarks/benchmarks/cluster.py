@@ -9,9 +9,8 @@ with safe_import():
 
 
 class HierarchyLinkage(Benchmark):
-    params = ['single', 'complete', 'average', 'weighted', 'centroid',
-              'median', 'ward']
-    param_names = ['method']
+    params = ["single", "complete", "average", "weighted", "centroid", "median", "ward"]
+    param_names = ["method"]
 
     def __init__(self):
         rnd = np.random.RandomState(0)
@@ -23,7 +22,7 @@ class HierarchyLinkage(Benchmark):
 
 class KMeans(Benchmark):
     params = [2, 10, 50]
-    param_names = ['k']
+    param_names = ["k"]
 
     def __init__(self):
         rnd = np.random.RandomState(0)
@@ -34,8 +33,8 @@ class KMeans(Benchmark):
 
 
 class KMeans2(Benchmark):
-    params = [[2, 10, 50], ['random', 'points', '++']]
-    param_names = ['k', 'init']
+    params = [[2, 10, 50], ["random", "points", "++"]]
+    param_names = ["k", "init"]
 
     def __init__(self):
         rnd = np.random.RandomState(0)
@@ -43,15 +42,17 @@ class KMeans2(Benchmark):
 
     def time_kmeans2(self, k, init):
         with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmeans with a "
-                       "different initialization")
+            sup.filter(
+                UserWarning,
+                "One of the clusters is empty. Re-run kmeans with a "
+                "different initialization",
+            )
             kmeans2(self.obs, k, minit=init, iter=10)
 
 
 class VQ(Benchmark):
-    params = [[2, 10, 50], ['float32', 'float64', 'float128']]
-    param_names = ['k', 'dtype']
+    params = [[2, 10, 50], ["float32", "float64", "float128"]]
+    param_names = ["k", "dtype"]
 
     def __init__(self):
         rnd = np.random.RandomState(0)

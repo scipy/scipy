@@ -6,9 +6,9 @@
 *  -- Iterative template routine --
 *     Univ. of Tennessee and Oak Ridge National Laboratory
 *     October 1, 1993
-*     Details of this algorithm are described in "Templates for the 
-*     Solution of Linear Systems: Building Blocks for Iterative 
-*     Methods", Barrett, Berry, Chan, Demmel, Donato, Dongarra, 
+*     Details of this algorithm are described in "Templates for the
+*     Solution of Linear Systems: Building Blocks for Iterative
+*     Methods", Barrett, Berry, Chan, Demmel, Donato, Dongarra,
 *     Eijkhout, Pozo, Romine, and van der Vorst, SIAM Publications,
 *     1993. (ftp netlib2.cs.utk.edu; cd linalg; get templates.ps).
 *
@@ -34,7 +34,7 @@
 *  Arguments
 *  =========
 *
-*  N       (input) INTEGER. 
+*  N       (input) INTEGER.
 *          On entry, the dimension of the matrix.
 *          Unchanged on exit.
 *
@@ -87,7 +87,7 @@
 *
 *                  BREAKTOL is set in func GETBREAK.
 *
-*  NDX1    (input/output) INTEGER. 
+*  NDX1    (input/output) INTEGER.
 *  NDX2    On entry in INIT call contain indices required by interface
 *          level for stopping test.
 *          All other times, used as output, to indicate indices into
@@ -97,7 +97,7 @@
 *  SCLR2   Used to pass the scalars used in MATVEC. Scalars are reqd because
 *          original routines use dgemv.
 *
-*  IJOB    (input/output) INTEGER. 
+*  IJOB    (input/output) INTEGER.
 *          Used to communicate job code between the two levels.
 *
 *  BLAS CALLS:   DAXPY, DCOPY, DDOT, DNRM2,
@@ -110,8 +110,8 @@
 *     .. Local Scalars ..
       INTEGER            R, RTLD, Z, ZTLD, P, PTLD, Q, QTLD, MAXIT,
      $                   NEED1, NEED2
-      <rt>   TOL, RHOTOL, 
-     $       <sdsd=s,d,s,d>GETBREAK,  
+      <rt>   TOL, RHOTOL,
+     $       <sdsd=s,d,s,d>GETBREAK,
      $       <rc=s,d,sc,dz>NRM2
       <_t>  ALPHA, BETA, RHO, RHO1, <xdot=sdot,ddot,wcdotc,wzdotc>,
      $     TMPVAL
@@ -221,7 +221,7 @@
 *     Set breakdown parameters.
 *
       RHOTOL = <sdsd>GETBREAK()
-* 
+*
 *     Set initial residual.
 *
       CALL <_c>COPY( N, B, 1, WORK(1,R), 1 )
@@ -286,7 +286,7 @@
             BETA = RHO / RHO1
             CALL <_c>AXPY( N, BETA, WORK(1,P), 1, WORK(1,Z), 1 )
 *            CALL <_c>AXPY( N, BETA, WORK(1,PTLD), 1, WORK(1,ZTLD), 1 )
-            CALL <_c>AXPY( N, <co= , ,conjg,conjg>(BETA), 
+            CALL <_c>AXPY( N, <co= , ,conjg,conjg>(BETA),
      $           WORK(1,PTLD), 1, WORK(1,ZTLD), 1 )
             CALL <_c>COPY( N, WORK(1,Z), 1, WORK(1,P), 1 )
             CALL <_c>COPY( N, WORK(1,ZTLD), 1, WORK(1,PTLD), 1 )
@@ -394,8 +394,3 @@
 *
       END
 *     END SUBROUTINE <_c>BICGREVCOM
-
-
-
-
-

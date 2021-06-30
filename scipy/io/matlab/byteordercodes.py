@@ -1,20 +1,22 @@
-''' Byteorder utilities for system - numpy byteorder encoding
+""" Byteorder utilities for system - numpy byteorder encoding
 
 Converts a variety of string codes for little endian, big endian,
 native byte order and swapped byte order to explicit NumPy endian
 codes - one of '<' (little endian) or '>' (big endian)
 
-'''
+"""
 import sys
 
-sys_is_le = sys.byteorder == 'little'
-native_code = sys_is_le and '<' or '>'
-swapped_code = sys_is_le and '>' or '<'
+sys_is_le = sys.byteorder == "little"
+native_code = sys_is_le and "<" or ">"
+swapped_code = sys_is_le and ">" or "<"
 
-aliases = {'little': ('little', '<', 'l', 'le'),
-           'big': ('big', '>', 'b', 'be'),
-           'native': ('native', '='),
-           'swapped': ('swapped', 'S')}
+aliases = {
+    "little": ("little", "<", "l", "le"),
+    "big": ("big", ">", "b", "be"),
+    "native": ("native", "="),
+    "swapped": ("swapped", "S"),
+}
 
 
 def to_numpy_code(code):
@@ -55,14 +57,13 @@ def to_numpy_code(code):
     code = code.lower()
     if code is None:
         return native_code
-    if code in aliases['little']:
-        return '<'
-    elif code in aliases['big']:
-        return '>'
-    elif code in aliases['native']:
+    if code in aliases["little"]:
+        return "<"
+    elif code in aliases["big"]:
+        return ">"
+    elif code in aliases["native"]:
         return native_code
-    elif code in aliases['swapped']:
+    elif code in aliases["swapped"]:
         return swapped_code
     else:
-        raise ValueError(
-            'We cannot handle byte order %s' % code)
+        raise ValueError("We cannot handle byte order %s" % code)

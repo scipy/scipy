@@ -51,7 +51,7 @@ MAKE_ONEMULTADD(LONGLONG, npy_longlong)
 MAKE_ONEMULTADD(FLOAT, float)
 MAKE_ONEMULTADD(DOUBLE, double)
 MAKE_ONEMULTADD(LONGDOUBLE, npy_longdouble)
- 
+
 #ifdef __GNUC__
 MAKE_ONEMULTADD(CFLOAT, __complex__ float)
 MAKE_ONEMULTADD(CDOUBLE, __complex__ double)
@@ -108,7 +108,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       char  *out,       /* Output data */
 		       npy_intp   *outstr,    /* Output strides */
 		       char  *hvals,     /* coefficients in filter */
-		       npy_intp   *hstr,      /* coefficients strides */ 
+		       npy_intp   *hstr,      /* coefficients strides */
 		       npy_intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */
 		       npy_intp   *Ns,        /* Size of image Ns[0] x Ns[1] */
 		       int   flag,       /* convolution parameters */

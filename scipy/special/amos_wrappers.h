@@ -38,16 +38,16 @@ double cbesy_wrap_real(double v, double x);
 npy_cdouble cbesy_wrap_e( double v, npy_cdouble z);
 double cbesy_wrap_e_real( double v, double z);
 npy_cdouble cbesk_wrap( double v, npy_cdouble z);
-npy_cdouble cbesk_wrap_e( double v, npy_cdouble z);  
+npy_cdouble cbesk_wrap_e( double v, npy_cdouble z);
 double cbesk_wrap_real( double v, double z);
 double cbesk_wrap_e_real( double v, double z);
 double cbesk_wrap_real_int(int n, double z);
 npy_cdouble cbesh_wrap1( double v, npy_cdouble z);
-npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z);  
+npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z);
 double sin_pi(double x);
-/* 
+/*
 int cairy_(double *, int *, int *, doublecomplex *, int *, int *);
 int cbiry_(doublecomplex *, int *, int *, doublecomplex *, int *, int *);
 int cbesi_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, int *);
@@ -58,14 +58,3 @@ int cbesh_(doublecomplex *, double *, int *, int *, int *, doublecomplex *, int 
 */
 
 #endif
-
-
-
-  
-
-
-
-
-
-
-

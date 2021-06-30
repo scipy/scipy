@@ -1,4 +1,4 @@
-#******************************************************************************
+# ******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#******************************************************************************
+# ******************************************************************************
 
 import scipy.linalg.interpolative as pymatrixid
 import numpy as np
@@ -34,8 +34,7 @@ from scipy.linalg.interpolative import interp_decomp
 import time
 import itertools
 
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           assert_array_equal)
+from numpy.testing import assert_, assert_allclose, assert_equal, assert_array_equal
 from pytest import raises as assert_raises
 
 
@@ -83,7 +82,9 @@ class TestInterpolativeDecomposition:
         _debug_print("-----------------------------------------")
 
         # fixed precision
-        _debug_print("Calling iddp_id / idzp_id  ...",)
+        _debug_print(
+            "Calling iddp_id / idzp_id  ...",
+        )
         t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(A, eps, rand=False)
         t = time.time() - t0
@@ -91,7 +92,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_aid / idzp_aid ...",)
+        _debug_print(
+            "Calling iddp_aid / idzp_aid ...",
+        )
         t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
         t = time.time() - t0
@@ -99,7 +102,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_rid / idzp_rid ...",)
+        _debug_print(
+            "Calling iddp_rid / idzp_rid ...",
+        )
         t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(L, eps)
         t = time.time() - t0
@@ -110,7 +115,9 @@ class TestInterpolativeDecomposition:
         # fixed rank
         k = rank
 
-        _debug_print("Calling iddr_id / idzr_id  ...",)
+        _debug_print(
+            "Calling iddr_id / idzr_id  ...",
+        )
         t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
         t = time.time() - t0
@@ -118,7 +125,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddr_aid / idzr_aid ...",)
+        _debug_print(
+            "Calling iddr_aid / idzr_aid ...",
+        )
         t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(A, k)
         t = time.time() - t0
@@ -126,7 +135,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddr_rid / idzr_rid ...",)
+        _debug_print(
+            "Calling iddr_rid / idzr_rid ...",
+        )
         t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(L, k)
         t = time.time() - t0
@@ -138,7 +149,7 @@ class TestInterpolativeDecomposition:
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
-        assert_allclose(B, A[:,idx[:k]], rtol=eps, atol=1e-08)
+        assert_allclose(B, A[:, idx[:k]], rtol=eps, atol=1e-08)
         assert_allclose(B @ P, A, rtol=eps, atol=1e-08)
 
         # test SVD routines
@@ -147,7 +158,9 @@ class TestInterpolativeDecomposition:
         _debug_print("-----------------------------------------")
 
         # fixed precision
-        _debug_print("Calling iddp_svd / idzp_svd ...",)
+        _debug_print(
+            "Calling iddp_svd / idzp_svd ...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps, rand=False)
         t = time.time() - t0
@@ -155,7 +168,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_asvd / idzp_asvd...",)
+        _debug_print(
+            "Calling iddp_asvd / idzp_asvd...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps)
         t = time.time() - t0
@@ -163,7 +178,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_rsvd / idzp_rsvd...",)
+        _debug_print(
+            "Calling iddp_rsvd / idzp_rsvd...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(L, eps)
         t = time.time() - t0
@@ -174,7 +191,9 @@ class TestInterpolativeDecomposition:
         # fixed rank
         k = rank
 
-        _debug_print("Calling iddr_svd / idzr_svd ...",)
+        _debug_print(
+            "Calling iddr_svd / idzr_svd ...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, k, rand=False)
         t = time.time() - t0
@@ -182,7 +201,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddr_asvd / idzr_asvd ...",)
+        _debug_print(
+            "Calling iddr_asvd / idzr_asvd ...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(A, k)
         t = time.time() - t0
@@ -190,7 +211,9 @@ class TestInterpolativeDecomposition:
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddr_rsvd / idzr_rsvd ...",)
+        _debug_print(
+            "Calling iddr_rsvd / idzr_rsvd ...",
+        )
         t0 = time.time()
         U, S, V = pymatrixid.svd(L, k)
         t = time.time() - t0
@@ -210,7 +233,7 @@ class TestInterpolativeDecomposition:
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
         B = A.copy()
-        B[:,0] *= 1.2
+        B[:, 0] *= 1.2
         s = svdvals(A - B)
         norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B)
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
@@ -221,7 +244,7 @@ class TestInterpolativeDecomposition:
             ML = aslinearoperator(M)
 
             rank_tol = 1e-9
-            rank_np = np.linalg.matrix_rank(M, norm(M, 2)*rank_tol)
+            rank_np = np.linalg.matrix_rank(M, norm(M, 2) * rank_tol)
             rank_est = pymatrixid.estimate_rank(M, rank_tol)
             rank_est_2 = pymatrixid.estimate_rank(ML, rank_tol)
 
@@ -232,9 +255,10 @@ class TestInterpolativeDecomposition:
             assert_(rank_est_2 <= rank_np + 4)
 
     def test_rand(self):
-        pymatrixid.seed('default')
-        assert_allclose(pymatrixid.rand(2), [0.8932059, 0.64500803],
-                        rtol=1e-4, atol=1e-8)
+        pymatrixid.seed("default")
+        assert_allclose(
+            pymatrixid.rand(2), [0.8932059, 0.64500803], rtol=1e-4, atol=1e-8
+        )
 
         pymatrixid.seed(1234)
         x1 = pymatrixid.rand(2)
@@ -287,12 +311,17 @@ class TestInterpolativeDecomposition:
         epss = [1, 0.1]
 
         for dtype, eps, rand in itertools.product(dtypes, epss, rands):
-            A = np.array([[-1, -1, -1, 0, 0, 0],
-                          [0, 0, 0, 1, 1, 1],
-                          [1, 0, 0, 1, 0, 0],
-                          [0, 1, 0, 0, 1, 0],
-                          [0, 0, 1, 0, 0, 1]],
-                         dtype=dtype, order="C")
+            A = np.array(
+                [
+                    [-1, -1, -1, 0, 0, 0],
+                    [0, 0, 0, 1, 1, 1],
+                    [1, 0, 0, 1, 0, 0],
+                    [0, 1, 0, 0, 1, 0],
+                    [0, 0, 1, 0, 0, 1],
+                ],
+                dtype=dtype,
+                order="C",
+            )
             B = A.copy()
             interp_decomp(A.T, eps, rand=rand)
             assert_array_equal(A, B)

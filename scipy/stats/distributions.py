@@ -5,7 +5,7 @@
 # NOTE: To look at history using `git blame`, use `git blame -M -C -C`
 #       instead of `git blame -Lxxx,+x`.
 #
-from ._distn_infrastructure import (rv_discrete, rv_continuous, rv_frozen)
+from ._distn_infrastructure import rv_discrete, rv_continuous, rv_frozen
 
 from . import _continuous_distns
 from . import _discrete_distns
@@ -15,7 +15,7 @@ from ._discrete_distns import *
 from ._entropy import entropy
 
 # For backwards compatibility e.g. pymc expects distributions.__all__.
-__all__ = ['rv_discrete', 'rv_continuous', 'rv_histogram', 'entropy']
+__all__ = ["rv_discrete", "rv_continuous", "rv_histogram", "entropy"]
 
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names

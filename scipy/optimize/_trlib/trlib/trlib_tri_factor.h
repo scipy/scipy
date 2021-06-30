@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,20 +40,20 @@
 /** Solves tridiagonal trust region subproblem
  *
  *  Computes minimizer to
- * 
+ *
  *  :math:`\min \frac 12 \langle h, T h \rangle + \langle g, h \rangle`
  *  subject to the trust region constraint :math:`\Vert h \Vert \le r`,
  *  where :math:`T \in \mathbb R^{n \times n}` is symmetric tridiagonal.
  *
  *  Let :math:`T = \begin{pmatrix} T_1 & & \\ & \ddots & \\ & & T_\ell \end{pmatrix}`
  *  be composed into irreducible blocks :math:`T_i`.
- * 
+ *
  *  The minimizer is a global minimizer (modulo floating point).
- * 
+ *
  *  The algorithm is the Moré-Sorensen-Method as described as Algorithm 5.2 in [Gould1999]_.
  *
  *  **Convergence**
- *  
+ *
  *  Exit with success is reported in several cases:
  *
  *      - interior solution: the stationary point :math:`T h = - g` is suitable, iterative refinement is used in the solution of this system.
@@ -182,7 +182,7 @@
  *
  *      - :c:macro:`TRLIB_TTR_CONV_BOUND`    success with solution on boundary
  *      - :c:macro:`TRLIB_TTR_CONV_INTERIOR` success with interior solution
- *      - :c:macro:`TRLIB_TTR_HARD`          success, but hard case encountered and solution may be approximate  
+ *      - :c:macro:`TRLIB_TTR_HARD`          success, but hard case encountered and solution may be approximate
  *      - :c:macro:`TRLIB_TTR_NEWTON_BREAK`  most likely success with accurate result; premature end of Newton iteration due to tiny step
  *      - :c:macro:`TRLIB_TTR_HARD_INIT_LAM` hard case encountered without being able to find suitable initial :math:`\lambda` for Newton iteration, returned approximate stationary point that maybe suboptimal
  *      - :c:macro:`TRLIB_TTR_ITMAX`         iteration limit exceeded
@@ -195,7 +195,7 @@
 
 trlib_int_t trlib_tri_factor_min(
     trlib_int_t nirblk, trlib_int_t *irblk, trlib_flt_t *diag, trlib_flt_t *offdiag,
-    trlib_flt_t *neglin, trlib_flt_t radius, 
+    trlib_flt_t *neglin, trlib_flt_t radius,
     trlib_int_t itmax, trlib_flt_t tol_rel, trlib_flt_t tol_newton_tiny,
     trlib_int_t pos_def, trlib_int_t equality,
     trlib_int_t *warm0, trlib_flt_t *lam0, trlib_int_t *warm, trlib_flt_t *lam,
@@ -210,7 +210,7 @@ trlib_int_t trlib_tri_factor_min(
 /** Computes minimizer of regularized unconstrained problem
  *
  *  Computes minimizer of
- * 
+ *
  *  :math:`\min \frac 12 \langle h, (T + \lambda I) h \rangle + \langle g, h \rangle`,
  *  where :math:`T \in \mathbb R^{n \times n}` is symmetric tridiagonal and :math:`\lambda` such that :math:`T + \lambda I` is spd.
  *
@@ -390,12 +390,12 @@ trlib_int_t trlib_tri_factor_regularize_posdef(
     trlib_flt_t tol_away, trlib_flt_t security_step, trlib_flt_t *regdiag);
 
 /** Gives information on memory that has to be allocated for :c:func:`trlib_tri_factor_min`
- *  
+ *
  *  :param n: dimension, ensure :math:`n > 0`
  *  :type n: trlib_int_t, input
  *  :param fwork_size: size of floating point workspace fwork that has to be allocated for :c:func:`trlib_tri_factor_min`
  *  :type fwork_size: trlib_flt_t, output
- *  
+ *
  *  :returns: ``0``
  *  :rtype: trlib_int_t
  */

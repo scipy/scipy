@@ -4,9 +4,13 @@ import numpy as np
 import warnings
 from .ckdtree import cKDTree, cKDTreeNode
 
-__all__ = ['minkowski_distance_p', 'minkowski_distance',
-           'distance_matrix',
-           'Rectangle', 'KDTree']
+__all__ = [
+    "minkowski_distance_p",
+    "minkowski_distance",
+    "distance_matrix",
+    "Rectangle",
+    "KDTree",
+]
 
 
 def minkowski_distance_p(x, y, p=2):
@@ -37,18 +41,18 @@ def minkowski_distance_p(x, y, p=2):
 
     # Find smallest common datatype with float64 (return type of this function) - addresses #10262.
     # Don't just cast to float64 for complex input case.
-    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
+    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), "float64")
 
     # Make sure x and y are NumPy arrays of correct datatype.
     x = x.astype(common_datatype)
     y = y.astype(common_datatype)
 
     if p == np.inf:
-        return np.amax(np.abs(y-x), axis=-1)
+        return np.amax(np.abs(y - x), axis=-1)
     elif p == 1:
-        return np.sum(np.abs(y-x), axis=-1)
+        return np.sum(np.abs(y - x), axis=-1)
     else:
-        return np.sum(np.abs(y-x)**p, axis=-1)
+        return np.sum(np.abs(y - x) ** p, axis=-1)
 
 
 def minkowski_distance(x, y, p=2):
@@ -75,7 +79,7 @@ def minkowski_distance(x, y, p=2):
     if p == np.inf or p == 1:
         return minkowski_distance_p(x, y, p)
     else:
-        return minkowski_distance_p(x, y, p)**(1./p)
+        return minkowski_distance_p(x, y, p) ** (1.0 / p)
 
 
 class Rectangle:
@@ -83,18 +87,19 @@ class Rectangle:
 
     Represents a Cartesian product of intervals.
     """
+
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
-        self.maxes = np.maximum(maxes,mins).astype(float)
-        self.mins = np.minimum(maxes,mins).astype(float)
-        self.m, = self.maxes.shape
+        self.maxes = np.maximum(maxes, mins).astype(float)
+        self.mins = np.minimum(maxes, mins).astype(float)
+        (self.m,) = self.maxes.shape
 
     def __repr__(self):
         return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
 
     def volume(self):
         """Total volume."""
-        return np.prod(self.maxes-self.mins)
+        return np.prod(self.maxes - self.mins)
 
     def split(self, d, split):
         """Produce two hyperrectangles by splitting.
@@ -119,7 +124,7 @@ class Rectangle:
         greater = Rectangle(mid, self.maxes)
         return less, greater
 
-    def min_distance_point(self, x, p=2.):
+    def min_distance_point(self, x, p=2.0):
         """
         Return the minimum distance between input and points in the
         hyperrectangle.
@@ -133,11 +138,10 @@ class Rectangle:
 
         """
         return minkowski_distance(
-            0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
-            p
+            0, np.maximum(0, np.maximum(self.mins - x, x - self.maxes)), p
         )
 
-    def max_distance_point(self, x, p=2.):
+    def max_distance_point(self, x, p=2.0):
         """
         Return the maximum distance between input and points in the hyperrectangle.
 
@@ -149,9 +153,9 @@ class Rectangle:
             Input.
 
         """
-        return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
+        return minkowski_distance(0, np.maximum(self.maxes - x, x - self.mins), p)
 
-    def min_distance_rectangle(self, other, p=2.):
+    def min_distance_rectangle(self, other, p=2.0):
         """
         Compute the minimum distance between points in the two hyperrectangles.
 
@@ -165,12 +169,11 @@ class Rectangle:
         """
         return minkowski_distance(
             0,
-            np.maximum(0, np.maximum(self.mins-other.maxes,
-                                     other.mins-self.maxes)),
-            p
+            np.maximum(0, np.maximum(self.mins - other.maxes, other.mins - self.maxes)),
+            p,
         )
 
-    def max_distance_rectangle(self, other, p=2.):
+    def max_distance_rectangle(self, other, p=2.0):
         """
         Compute the maximum distance between points in the two hyperrectangles.
 
@@ -183,7 +186,8 @@ class Rectangle:
 
         """
         return minkowski_distance(
-            0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
+            0, np.maximum(self.maxes - other.mins, other.maxes - self.mins), p
+        )
 
 
 class KDTree(cKDTree):
@@ -333,18 +337,25 @@ class KDTree(cKDTree):
 
         return self._tree
 
-    def __init__(self, data, leafsize=10, compact_nodes=True, copy_data=False,
-                 balanced_tree=True, boxsize=None):
+    def __init__(
+        self,
+        data,
+        leafsize=10,
+        compact_nodes=True,
+        copy_data=False,
+        balanced_tree=True,
+        boxsize=None,
+    ):
         data = np.asarray(data)
-        if data.dtype.kind == 'c':
+        if data.dtype.kind == "c":
             raise TypeError("KDTree does not work with complex data")
 
         # Note KDTree has different default leafsize from cKDTree
-        super().__init__(data, leafsize, compact_nodes, copy_data,
-                         balanced_tree, boxsize)
+        super().__init__(
+            data, leafsize, compact_nodes, copy_data, balanced_tree, boxsize
+        )
 
-    def query(
-            self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
+    def query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
         """Query the kd-tree for nearest neighbors.
 
         Parameters
@@ -445,7 +456,7 @@ class KDTree(cKDTree):
 
         """
         x = np.asarray(x)
-        if x.dtype.kind == 'c':
+        if x.dtype.kind == "c":
             raise TypeError("KDTree does not work with complex data")
 
         if k is None:
@@ -453,7 +464,8 @@ class KDTree(cKDTree):
             warnings.warn(
                 "KDTree.query with k=None is deprecated and will be removed "
                 "in SciPy 1.8.0. Use KDTree.query_ball_point instead.",
-                DeprecationWarning)
+                DeprecationWarning,
+            )
 
             # Convert index query to a lists of distance and index,
             # sorted by distance
@@ -463,8 +475,7 @@ class KDTree(cKDTree):
                 return [d for d, i in hits], [i for d, i in hits]
 
             x = np.asarray(x, dtype=np.float64)
-            inds = super().query_ball_point(
-                x, distance_upper_bound, p, eps, workers)
+            inds = super().query_ball_point(x, distance_upper_bound, p, eps, workers)
 
             if isinstance(inds, list):
                 return inds_to_hits(x, inds)
@@ -480,8 +491,9 @@ class KDTree(cKDTree):
             i = np.intp(i)
         return d, i
 
-    def query_ball_point(self, x, r, p=2., eps=0, workers=1,
-                         return_sorted=None, return_length=False):
+    def query_ball_point(
+        self, x, r, p=2.0, eps=0, workers=1, return_sorted=None, return_length=False
+    ):
         """Find all points within distance r of point(s) x.
 
         Parameters
@@ -551,12 +563,13 @@ class KDTree(cKDTree):
 
         """
         x = np.asarray(x)
-        if x.dtype.kind == 'c':
+        if x.dtype.kind == "c":
             raise TypeError("KDTree does not work with complex data")
         return super().query_ball_point(
-            x, r, p, eps, workers, return_sorted, return_length)
+            x, r, p, eps, workers, return_sorted, return_length
+        )
 
-    def query_ball_tree(self, other, r, p=2., eps=0):
+    def query_ball_tree(self, other, r, p=2.0, eps=0):
         """
         Find all pairs of points between `self` and `other` whose distance is
         at most r.
@@ -607,7 +620,7 @@ class KDTree(cKDTree):
         """
         return super().query_ball_tree(other, r, p, eps)
 
-    def query_pairs(self, r, p=2., eps=0, output_type='set'):
+    def query_pairs(self, r, p=2.0, eps=0, output_type="set"):
         """Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
@@ -655,7 +668,7 @@ class KDTree(cKDTree):
         """
         return super().query_pairs(r, p, eps, output_type)
 
-    def count_neighbors(self, other, r, p=2., weights=None, cumulative=True):
+    def count_neighbors(self, other, r, p=2.0, weights=None, cumulative=True):
         """Count how many nearby pairs can be formed.
 
         Count the number of pairs ``(x1,x2)`` can be formed, with ``x1`` drawn
@@ -804,7 +817,8 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2., output_type='dok_matrix'):
+        self, other, max_distance, p=2.0, output_type="dok_matrix"
+    ):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -864,8 +878,7 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        return super().sparse_distance_matrix(
-            other, max_distance, p, output_type)
+        return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
 def distance_matrix(x, y, p=2, threshold=1000000):
@@ -906,16 +919,19 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     n, kk = y.shape
 
     if k != kk:
-        raise ValueError("x contains %d-dimensional vectors but y contains %d-dimensional vectors" % (k, kk))
+        raise ValueError(
+            "x contains %d-dimensional vectors but y contains %d-dimensional vectors"
+            % (k, kk)
+        )
 
-    if m*n*k <= threshold:
-        return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
+    if m * n * k <= threshold:
+        return minkowski_distance(x[:, np.newaxis, :], y[np.newaxis, :, :], p)
     else:
-        result = np.empty((m,n),dtype=float)  # FIXME: figure out the best dtype
+        result = np.empty((m, n), dtype=float)  # FIXME: figure out the best dtype
         if m < n:
             for i in range(m):
-                result[i,:] = minkowski_distance(x[i],y,p)
+                result[i, :] = minkowski_distance(x[i], y, p)
         else:
             for j in range(n):
-                result[:,j] = minkowski_distance(x,y[j],p)
+                result[:, j] = minkowski_distance(x, y[j], p)
         return result

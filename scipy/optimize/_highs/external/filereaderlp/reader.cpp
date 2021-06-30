@@ -152,7 +152,7 @@ private:
    std::vector<std::unique_ptr<RawToken>> rawtokens;
    std::vector<std::unique_ptr<ProcessedToken>> processedtokens;
    std::map<LpSectionKeyword, std::vector<std::unique_ptr<ProcessedToken>>> sectiontokens;
-   
+
    char linebuffer[LP_MAX_LINE_LENGTH+1];
    bool linebufferrefill;
    char* linebufferpos;
@@ -219,7 +219,7 @@ LpObjectiveSectionKeywordType parseobjectivesectionkeyword(const std::string str
    if (iskeyword(str, LP_KEYWORD_MAX, LP_KEYWORD_MAX_N)) {
       return LpObjectiveSectionKeywordType::MAX;
    }
-   
+
    return LpObjectiveSectionKeywordType::NONE;
 }
 
@@ -284,7 +284,7 @@ void Reader::parseexpression(std::vector<std::unique_ptr<ProcessedToken>>& token
       && tokens[i]->type == ProcessedTokenType::CONST
       && tokens[i+1]->type == ProcessedTokenType::VARID) {
          std::string name = ((ProcessedVarIdToken*)tokens[i+1].get())->name;
-         
+
          std::shared_ptr<LinTerm> linterm = std::shared_ptr<LinTerm>(new LinTerm());
          linterm->coef = ((ProcessedConstantToken*)tokens[i].get())->value;
          linterm->var = builder.getvarbyname(name);
@@ -300,11 +300,11 @@ void Reader::parseexpression(std::vector<std::unique_ptr<ProcessedToken>>& token
          i++;
          continue;
       }
-      
+
       // var
       if (tokens.size() - i  >= 1 && tokens[i]->type == ProcessedTokenType::VARID) {
          std::string name = ((ProcessedVarIdToken*)tokens[i].get())->name;
-         
+
          std::shared_ptr<LinTerm> linterm = std::shared_ptr<LinTerm>(new LinTerm());
          linterm->coef = 1.0;
          linterm->var = builder.getvarbyname(name);
@@ -409,7 +409,7 @@ void Reader::parseexpression(std::vector<std::unique_ptr<ProcessedToken>>& token
 
 void Reader::processobjsec() {
    builder.model.objective = std::shared_ptr<Expression>(new Expression);
-   unsigned int i = 0;   
+   unsigned int i = 0;
    parseexpression(sectiontokens[LpSectionKeyword::OBJ], builder.model.objective, i);
    lpassert(i == sectiontokens[LpSectionKeyword::OBJ].size());
 }
@@ -450,7 +450,7 @@ void Reader::processboundssec() {
          && sectiontokens[LpSectionKeyword::BOUNDS][i+1]->type == ProcessedTokenType::FREE) {
          std::string name = ((ProcessedVarIdToken*)sectiontokens[LpSectionKeyword::BOUNDS][i].get())->name;
          std::shared_ptr<Variable> var = builder.getvarbyname(name);
-         var->lowerbound = -std::numeric_limits<double>::infinity(); 
+         var->lowerbound = -std::numeric_limits<double>::infinity();
          var->upperbound = std::numeric_limits<double>::infinity();
          i += 2;
 		 continue;
@@ -536,7 +536,7 @@ void Reader::processboundssec() {
          i += 3;
          continue;
       }
-      
+
 	  lpassert(false);
    }
 }
@@ -591,11 +591,11 @@ void Reader::processsections() {
 
 void Reader::splittokens() {
    LpSectionKeyword currentsection = LpSectionKeyword::NONE;
-   
+
    for (unsigned int i=0; i < processedtokens.size(); ++i) {
       if (processedtokens[i]->type == ProcessedTokenType::SECID) {
          currentsection = ((ProcessedTokenSectionKeyword*)processedtokens[i].get())->keyword;
-         
+
          if (currentsection == LpSectionKeyword::OBJ) {
             switch(((ProcessedTokenObjectiveSectionKeyword*)processedtokens[i].get())->objsense) {
                case LpObjectiveSectionKeywordType::MIN:
@@ -619,7 +619,7 @@ void Reader::splittokens() {
 
 void Reader::processtokens() {
    unsigned int i = 0;
-   
+
    while (i < this->rawtokens.size()) {
       fflush(stdout);
 
@@ -805,7 +805,7 @@ void Reader::processtokens() {
    }
 }
 
-// reads the entire file and separates 
+// reads the entire file and separates
 void Reader::tokenize() {
    this->linebufferrefill = true;
    bool done = false;
@@ -840,7 +840,7 @@ void Reader::readnexttoken(bool& done) {
       case '\\':
          this->linebufferrefill = true;
          return;
-      
+
       // check for bracket opening
       case '[':
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::BRKOP)));
@@ -870,7 +870,7 @@ void Reader::readnexttoken(bool& done) {
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::EQUAL)));
          this->linebufferpos++;
          return;
-      
+
       // check for colon
       case ':':
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::COLON)));
@@ -900,7 +900,7 @@ void Reader::readnexttoken(bool& done) {
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::ASTERISK)));
          this->linebufferpos++;
          return;
-      
+
       // check for minus
       case '-':
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::MINUS)));
@@ -919,12 +919,12 @@ void Reader::readnexttoken(bool& done) {
          return;
 
       // check for file end (EOF at end of some line)
-      case '\0': 
+      case '\0':
          this->rawtokens.push_back(std::unique_ptr<RawToken>(new RawToken(RawTokenType::FLEND)));
          done = true;
          return;
    }
-   
+
    // check for double value
    double constant;
    int ncharconsumed;
@@ -944,6 +944,6 @@ void Reader::readnexttoken(bool& done) {
       this->linebufferpos += ncharconsumed;
       return;
    }
-   
+
    lpassert(false);
 }

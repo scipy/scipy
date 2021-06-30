@@ -9,29 +9,29 @@ from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 
 arpack_int = _arpack.timing.nbx.dtype
-__all__ = ['svds']
+__all__ = ["svds"]
 
 
 def _augmented_orthonormal_cols(x, k):
     # extract the shape of the x array
     n, m = x.shape
     # create the expanded array and copy x into it
-    y = np.empty((n, m+k), dtype=x.dtype)
+    y = np.empty((n, m + k), dtype=x.dtype)
     y[:, :m] = x
     # do some modified gram schmidt to add k random orthonormal vectors
     for i in range(k):
         # sample a random initial vector
         v = np.random.randn(n)
         if np.iscomplexobj(x):
-            v = v + 1j*np.random.randn(n)
+            v = v + 1j * np.random.randn(n)
         # subtract projections onto the existing unit length vectors
-        for j in range(m+i):
+        for j in range(m + i):
             u = y[:, j]
             v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
         # normalize v
         v /= np.sqrt(np.dot(v, v.conj()))
         # add v into the output array
-        y[:, m+i] = v
+        y[:, m + i] = v
     # return the expanded array
     return y
 
@@ -44,9 +44,18 @@ def _herm(x):
     return x.T.conj()
 
 
-def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-         maxiter=None, return_singular_vectors=True,
-         solver='arpack', options=None):
+def svds(
+    A,
+    k=6,
+    ncv=None,
+    tol=0,
+    which="LM",
+    v0=None,
+    maxiter=None,
+    return_singular_vectors=True,
+    solver="arpack",
+    options=None,
+):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -159,15 +168,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     """
-    if which == 'LM':
+    if which == "LM":
         largest = True
-    elif which == 'SM':
+    elif which == "SM":
         largest = False
     else:
         raise ValueError("which must be either 'LM' or 'SM'.")
 
-    if (not (isinstance(A, LinearOperator) or isspmatrix(A)
-             or is_pydata_spmatrix(A))):
+    if not (isinstance(A, LinearOperator) or isspmatrix(A) or is_pydata_spmatrix(A)):
         A = np.asarray(A)
 
     n, m = A.shape
@@ -187,7 +195,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             XH_dot = A.matvec
             XH_mat = A.matmat
 
-            dtype = getattr(A, 'dtype', None)
+            dtype = getattr(A, "dtype", None)
             if dtype is None:
                 dtype = A.dot(np.zeros([m, 1])).dtype
 
@@ -205,25 +213,30 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     def matmat_XH_X(x):
         return XH_mat(X_matmat(x))
 
-    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
-                          matmat=matmat_XH_X,
-                          shape=(min(A.shape), min(A.shape)))
+    XH_X = LinearOperator(
+        matvec=matvec_XH_X,
+        dtype=A.dtype,
+        matmat=matmat_XH_X,
+        shape=(min(A.shape), min(A.shape)),
+    )
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
-    if solver == 'lobpcg':
+    if solver == "lobpcg":
 
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
             X = np.random.RandomState(52).randn(min(A.shape), k)
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest)
+        eigvals, eigvec = lobpcg(
+            XH_X, X, tol=tol ** 2, maxiter=maxiter, largest=largest
+        )
 
-    elif solver == 'arpack' or solver is None:
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                ncv=ncv, which=which, v0=v0)
+    elif solver == "arpack" or solver is None:
+        eigvals, eigvec = eigsh(
+            XH_X, k=k, tol=tol ** 2, maxiter=maxiter, ncv=ncv, which=which, v0=v0
+        )
 
     else:
         raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
@@ -233,13 +246,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     # Use the sophisticated detection of small eigenvalues from pinvh.
     t = eigvec.dtype.char.lower()
-    factor = {'f': 1E3, 'd': 1E6}
+    factor = {"f": 1e3, "d": 1e6}
     cond = factor[t] * np.finfo(t).eps
     cutoff = cond * np.max(eigvals)
 
     # Get a mask indicating which eigenpairs are not degenerately tiny,
     # and create the re-ordered array of thresholded singular values.
-    above_cutoff = (eigvals > cutoff)
+    above_cutoff = eigvals > cutoff
     nlarge = above_cutoff.sum()
     nsmall = k - nlarge
     slarge = np.sqrt(eigvals[above_cutoff])
@@ -250,18 +263,16 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     if n > m:
         vlarge = eigvec[:, above_cutoff]
-        ularge = (X_matmat(vlarge) / slarge
-                  if return_singular_vectors != 'vh' else None)
+        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != "vh" else None
         vhlarge = _herm(vlarge)
     else:
         ularge = eigvec[:, above_cutoff]
-        vhlarge = (_herm(X_matmat(ularge) / slarge)
-                   if return_singular_vectors != 'u' else None)
+        vhlarge = (
+            _herm(X_matmat(ularge) / slarge) if return_singular_vectors != "u" else None
+        )
 
-    u = (_augmented_orthonormal_cols(ularge, nsmall)
-         if ularge is not None else None)
-    vh = (_augmented_orthonormal_rows(vhlarge, nsmall)
-          if vhlarge is not None else None)
+    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
+    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
 
     indexes_sorted = np.argsort(s)
     s = s[indexes_sorted]

@@ -22,5 +22,3 @@ add_ordered_pair(std::vector<ordered_pair> *results,
 }
 
 #endif
-
-

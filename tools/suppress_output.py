@@ -56,12 +56,14 @@ def main():
         try:
             sleep_time = 0.001
             while p.poll() is None:
-                sleep_time = min(2*sleep_time, 0.5)
+                sleep_time = min(2 * sleep_time, 0.5)
                 time.sleep(sleep_time)
                 if time.time() - last_blip > TIMEOUT:
                     log_size = log.tell()
                     if log_size > last_log_size:
-                        msg = "    ... in progress ({0} elapsed)".format(elapsed(time.time() - start_time))
+                        msg = "    ... in progress ({0} elapsed)".format(
+                            elapsed(time.time() - start_time)
+                        )
                         print(msg, file=sys.stderr)
                         sys.stderr.flush()
                         counter[0] += 1
@@ -75,12 +77,15 @@ def main():
 
         if counter[0] > 0:
             if ret == 0:
-                msg = "    ... ok ({0} elapsed)".format(elapsed(time.time() - start_time))
+                msg = "    ... ok ({0} elapsed)".format(
+                    elapsed(time.time() - start_time)
+                )
                 print(msg, file=sys.stderr)
                 sys.stderr.flush()
             else:
                 msg = "    ... failed ({0} elapsed, exit code {1})".format(
-                    elapsed(time.time() - start_time), ret)
+                    elapsed(time.time() - start_time), ret
+                )
                 print(msg, file=sys.stderr)
                 sys.stderr.flush()
 
@@ -93,10 +98,10 @@ def main():
 
 def elapsed(t):
     if t < 0:
-        sgn = '-'
+        sgn = "-"
         t = abs(t)
     else:
-        sgn = ''
+        sgn = ""
 
     if t < 60:
         return "{0}{1:.0f} s".format(sgn, round(t))
@@ -110,96 +115,131 @@ def elapsed(t):
 
 
 def test_elapsed():
-    assert elapsed(0.4) == '0 s'
-    assert elapsed(30.3) == '30 s'
-    assert elapsed(59.5) == '60 s'
-    assert elapsed(60.5) == '1 min 0 s'
-    assert elapsed(2*60 + 40.51) == '2 min 41 s'
-    assert elapsed(60 * 59.999) == '59 min 60 s'
-    assert elapsed(60 * 60.0) == '1 h 0 min 0 s'
-    assert elapsed(266*3600 + 13*60 + 12.4243) == '266 h 13 min 12 s'
+    assert elapsed(0.4) == "0 s"
+    assert elapsed(30.3) == "30 s"
+    assert elapsed(59.5) == "60 s"
+    assert elapsed(60.5) == "1 min 0 s"
+    assert elapsed(2 * 60 + 40.51) == "2 min 41 s"
+    assert elapsed(60 * 59.999) == "59 min 60 s"
+    assert elapsed(60 * 60.0) == "1 h 0 min 0 s"
+    assert elapsed(266 * 3600 + 13 * 60 + 12.4243) == "266 h 13 min 12 s"
 
 
 def test_exitcode():
-    r0 = subprocess.call([sys.executable, __file__, sys.executable, '-c',
-                          'import sys; sys.exit(0)'])
+    r0 = subprocess.call(
+        [sys.executable, __file__, sys.executable, "-c", "import sys; sys.exit(0)"]
+    )
     assert r0 == 0
-    r1 = subprocess.call([sys.executable, __file__, sys.executable, '-c',
-                          'import sys; sys.exit(1)'])
+    r1 = subprocess.call(
+        [sys.executable, __file__, sys.executable, "-c", "import sys; sys.exit(1)"]
+    )
     assert r1 == 1
-    rs = subprocess.call([sys.executable, __file__, sys.executable, '-c',
-                          'import os; os.kill(os.getpid(), 15)'])
+    rs = subprocess.call(
+        [
+            sys.executable,
+            __file__,
+            sys.executable,
+            "-c",
+            "import os; os.kill(os.getpid(), 15)",
+        ]
+    )
     assert rs != 0
 
 
 def test_suppress(tmpdir):
-    p = subprocess.Popen([sys.executable, __file__, sys.executable, '-c',
-                          'import sys; '
-                          'sys.stdout.write("OUT"); '
-                          'sys.stderr.write("ERR"); '
-                          'sys.exit(0)'],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(
+        [
+            sys.executable,
+            __file__,
+            sys.executable,
+            "-c",
+            'import sys; sys.stdout.write("OUT"); sys.stderr.write("ERR"); sys.exit(0)',
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     out, err = p.communicate()
     assert p.returncode == 0
-    assert out == b''
-    assert err == b''
+    assert out == b""
+    assert err == b""
 
-    p = subprocess.Popen([sys.executable, __file__, sys.executable, '-c',
-                          'import sys; '
-                          'sys.stdout.write("OUT"); '
-                          'sys.stdout.flush(); '
-                          'sys.stderr.write("ERR"); '
-                          'sys.exit(1)'],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(
+        [
+            sys.executable,
+            __file__,
+            sys.executable,
+            "-c",
+            "import sys; "
+            'sys.stdout.write("OUT"); '
+            "sys.stdout.flush(); "
+            'sys.stderr.write("ERR"); '
+            "sys.exit(1)",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     out, err = p.communicate()
     assert p.returncode == 1
-    assert out == b'OUTERR'
-    assert err == b''
+    assert out == b"OUTERR"
+    assert err == b""
 
 
 def run_script_fast(path, script):
-    fn = os.path.join(path, 'suppress_output.py')
+    fn = os.path.join(path, "suppress_output.py")
 
-    with open(__file__, 'rb') as f:
+    with open(__file__, "rb") as f:
         text = f.read()
-        text = text.replace(b'TIMEOUT = 60', b'TIMEOUT = 1')
+        text = text.replace(b"TIMEOUT = 60", b"TIMEOUT = 1")
 
-    with open(fn, 'wb') as f:
+    with open(fn, "wb") as f:
         f.write(text)
 
-    p = subprocess.Popen([sys.executable, fn, sys.executable, '-c', script],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(
+        [sys.executable, fn, sys.executable, "-c", script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     out, err = p.communicate()
     return p.returncode, out, err
 
 
 def test_suppress_long_ok(tmpdir):
-    returncode, out, err = run_script_fast(str(tmpdir),
-                                           'import sys, time; '
-                                           'sys.stdout.write("OUT"); '
-                                           'time.sleep(1.5); '
-                                           'sys.stderr.write("ERR"); '
-                                           'sys.exit(0)')
+    returncode, out, err = run_script_fast(
+        str(tmpdir),
+        "import sys, time; "
+        'sys.stdout.write("OUT"); '
+        "time.sleep(1.5); "
+        'sys.stderr.write("ERR"); '
+        "sys.exit(0)",
+    )
     assert returncode == 0
-    assert out == b''
-    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    rb'    \.\.\. ok \([0-9 sminh]* elapsed\)\n$', err,
-                    re.S)
+    assert out == b""
+    assert re.match(
+        rb"^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n"
+        rb"    \.\.\. ok \([0-9 sminh]* elapsed\)\n$",
+        err,
+        re.S,
+    )
 
 
 def test_suppress_long_failed(tmpdir):
-    returncode, out, err = run_script_fast(str(tmpdir),
-                                           'import sys, time; '
-                                           'sys.stdout.write("OUT"); '
-                                           'time.sleep(1.5); '
-                                           'sys.stdout.flush(); '
-                                           'sys.stderr.write("ERR"); '
-                                           'sys.exit(1)')
+    returncode, out, err = run_script_fast(
+        str(tmpdir),
+        "import sys, time; "
+        'sys.stdout.write("OUT"); '
+        "time.sleep(1.5); "
+        "sys.stdout.flush(); "
+        'sys.stderr.write("ERR"); '
+        "sys.exit(1)",
+    )
     assert returncode == 1
-    assert out == b'OUTERR'
-    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    rb'    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$', err,
-                    re.S)
+    assert out == b"OUTERR"
+    assert re.match(
+        rb"^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n"
+        rb"    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$",
+        err,
+        re.S,
+    )
 
 
 if __name__ == "__main__":

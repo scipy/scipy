@@ -1,5 +1,5 @@
-''' Contexts for *with* statement providing temporary directories
-'''
+""" Contexts for *with* statement providing temporary directories
+"""
 import os
 from contextlib import contextmanager
 from shutil import rmtree
@@ -31,7 +31,7 @@ def tempdir():
 
 @contextmanager
 def in_tempdir():
-    ''' Create, return, and change directory to a temporary directory
+    """Create, return, and change directory to a temporary directory
 
     Examples
     --------
@@ -45,7 +45,7 @@ def in_tempdir():
     False
     >>> os.getcwd() == my_cwd
     True
-    '''
+    """
     pwd = os.getcwd()
     d = mkdtemp()
     os.chdir(d)
@@ -56,7 +56,7 @@ def in_tempdir():
 
 @contextmanager
 def in_dir(dir=None):
-    """ Change directory to given directory for duration of ``with`` block
+    """Change directory to given directory for duration of ``with`` block
 
     Useful when you want to use `in_tempdir` for the final test, but
     you are still debugging. For example, you may want to do this in the end:

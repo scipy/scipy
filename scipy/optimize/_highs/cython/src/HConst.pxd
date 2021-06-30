@@ -42,7 +42,7 @@ cdef extern from "HConst.h" nogil:
         HighsBasisStatusNONBASIC "HighsBasisStatus::NONBASIC" # nonbasic with no specific bound information - useful for users and postsolve
         HighsBasisStatusSUPER "HighsBasisStatus::SUPER" # Super-basic variable: non-basic and either free and
                                                         # nonzero or not at a bound. No SCIP equivalent
-                                        
+
     cdef enum SolverOption:
         SOLVER_OPTION_SIMPLEX "SolverOption::SOLVER_OPTION_SIMPLEX" = -1
         SOLVER_OPTION_CHOOSE "SolverOption::SOLVER_OPTION_CHOOSE"

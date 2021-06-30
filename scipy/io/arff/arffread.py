@@ -9,7 +9,7 @@ import ctypes
 
 """A module to read arff files."""
 
-__all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
+__all__ = ["MetaData", "loadarff", "ArffError", "ParseArffError"]
 
 # An Arff file is basically two parts:
 #   - header
@@ -27,18 +27,18 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 #   - numeric and nominal attributes
 #   - missing values for numeric attributes
 
-r_meta = re.compile(r'^\s*@')
+r_meta = re.compile(r"^\s*@")
 # Match a comment
-r_comment = re.compile(r'^%')
+r_comment = re.compile(r"^%")
 # Match an empty line
-r_empty = re.compile(r'^\s+$')
+r_empty = re.compile(r"^\s+$")
 # Match a header line, that is a line which starts by @ + a word
-r_headerline = re.compile(r'^\s*@\S*')
-r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
-r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
-r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
+r_headerline = re.compile(r"^\s*@\S*")
+r_datameta = re.compile(r"^@[Dd][Aa][Tt][Aa]")
+r_relation = re.compile(r"^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)")
+r_attribute = re.compile(r"^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)")
 
-r_nominal = re.compile(r'{(.+)}')
+r_nominal = re.compile(r"{(.+)}")
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
@@ -89,12 +89,12 @@ class Attribute:
         """
         Parse a value of this type.
         """
-        return self.name + ',' + self.type_name
+        return self.name + "," + self.type_name
 
 
 class NominalAttribute(Attribute):
 
-    type_name = 'nominal'
+    type_name = "nominal"
 
     def __init__(self, name, values):
         super().__init__(name)
@@ -140,7 +140,7 @@ class NominalAttribute(Attribute):
         For nominal attributes, the attribute string would be like '{<attr_1>,
          <attr2>, <attr_3>}'.
         """
-        if attr_string[0] == '{':
+        if attr_string[0] == "{":
             values = cls._get_nom_val(attr_string)
             return cls(name, values)
         else:
@@ -152,15 +152,14 @@ class NominalAttribute(Attribute):
         """
         if data_str in self.values:
             return data_str
-        elif data_str == '?':
+        elif data_str == "?":
             return data_str
         else:
-            raise ValueError("%s value not in %s" % (str(data_str),
-                                                     str(self.values)))
+            raise ValueError("%s value not in %s" % (str(data_str), str(self.values)))
 
     def __str__(self):
         msg = self.name + ",{"
-        for i in range(len(self.values)-1):
+        for i in range(len(self.values) - 1):
             msg += self.values[i] + ","
         msg += self.values[-1]
         msg += "}"
@@ -168,10 +167,9 @@ class NominalAttribute(Attribute):
 
 
 class NumericAttribute(Attribute):
-
     def __init__(self, name):
         super().__init__(name)
-        self.type_name = 'numeric'
+        self.type_name = "numeric"
         self.dtype = np.float_
 
     @classmethod
@@ -186,9 +184,11 @@ class NumericAttribute(Attribute):
 
         attr_string = attr_string.lower().strip()
 
-        if(attr_string[:len('numeric')] == 'numeric' or
-           attr_string[:len('int')] == 'int' or
-           attr_string[:len('real')] == 'real'):
+        if (
+            attr_string[: len("numeric")] == "numeric"
+            or attr_string[: len("int")] == "int"
+            or attr_string[: len("real")] == "real"
+        ):
             return cls(name)
         else:
             return None
@@ -217,22 +217,20 @@ class NumericAttribute(Attribute):
         >>> atr.parse_data('?\\n')
         nan
         """
-        if '?' in data_str:
+        if "?" in data_str:
             return np.nan
         else:
             return float(data_str)
 
     def _basic_stats(self, data):
-        nbfac = data.size * 1. / (data.size - 1)
-        return (np.nanmin(data), np.nanmax(data),
-                np.mean(data), np.std(data) * nbfac)
+        nbfac = data.size * 1.0 / (data.size - 1)
+        return (np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac)
 
 
 class StringAttribute(Attribute):
-
     def __init__(self, name):
         super().__init__(name)
-        self.type_name = 'string'
+        self.type_name = "string"
 
     @classmethod
     def parse_attribute(cls, name, attr_string):
@@ -246,19 +244,18 @@ class StringAttribute(Attribute):
 
         attr_string = attr_string.lower().strip()
 
-        if attr_string[:len('string')] == 'string':
+        if attr_string[: len("string")] == "string":
             return cls(name)
         else:
             return None
 
 
 class DateAttribute(Attribute):
-
     def __init__(self, name, date_format, datetime_unit):
         super().__init__(name)
         self.date_format = date_format
         self.datetime_unit = datetime_unit
-        self.type_name = 'date'
+        self.type_name = "date"
         self.range = date_format
         self.dtype = np.datetime64(0, self.datetime_unit)
 
@@ -291,8 +288,9 @@ class DateAttribute(Attribute):
                 pattern = pattern.replace("ss", "%S")
                 datetime_unit = "s"
             if "z" in pattern or "Z" in pattern:
-                raise ValueError("Date type attributes with time zone not "
-                                 "supported, yet")
+                raise ValueError(
+                    "Date type attributes with time zone not supported, yet"
+                )
 
             if datetime_unit is None:
                 raise ValueError("Invalid or unsupported date format")
@@ -313,7 +311,7 @@ class DateAttribute(Attribute):
 
         attr_string_lower = attr_string.lower().strip()
 
-        if attr_string_lower[:len('date')] == 'date':
+        if attr_string_lower[: len("date")] == "date":
             date_format, datetime_unit = cls._get_date_format(attr_string)
             return cls(name, date_format, datetime_unit)
         else:
@@ -324,22 +322,20 @@ class DateAttribute(Attribute):
         Parse a value of this type.
         """
         date_str = data_str.strip().strip("'").strip('"')
-        if date_str == '?':
-            return np.datetime64('NaT', self.datetime_unit)
+        if date_str == "?":
+            return np.datetime64("NaT", self.datetime_unit)
         else:
             dt = datetime.datetime.strptime(date_str, self.date_format)
-            return np.datetime64(dt).astype(
-                "datetime64[%s]" % self.datetime_unit)
+            return np.datetime64(dt).astype("datetime64[%s]" % self.datetime_unit)
 
     def __str__(self):
-        return super().__str__() + ',' + self.date_format
+        return super().__str__() + "," + self.date_format
 
 
 class RelationalAttribute(Attribute):
-
     def __init__(self, name):
         super().__init__(name)
-        self.type_name = 'relational'
+        self.type_name = "relational"
         self.dtype = np.object_
         self.attributes = []
         self.dialect = None
@@ -356,7 +352,7 @@ class RelationalAttribute(Attribute):
 
         attr_string_lower = attr_string.lower().strip()
 
-        if attr_string_lower[:len('relational')] == 'relational':
+        if attr_string_lower[: len("relational")] == "relational":
             return cls(name)
         else:
             return None
@@ -372,23 +368,27 @@ class RelationalAttribute(Attribute):
         for raw in escaped_string.split("\n"):
             row, self.dialect = split_data_line(raw, self.dialect)
 
-            row_tuples.append(tuple(
-                [self.attributes[i].parse_data(row[i]) for i in elems]))
+            row_tuples.append(
+                tuple([self.attributes[i].parse_data(row[i]) for i in elems])
+            )
 
-        return np.array(row_tuples,
-                        [(a.name, a.dtype) for a in self.attributes])
+        return np.array(row_tuples, [(a.name, a.dtype) for a in self.attributes])
 
     def __str__(self):
-        return (super().__str__() + '\n\t' +
-                '\n\t'.join(str(a) for a in self.attributes))
+        return super().__str__() + "\n\t" + "\n\t".join(str(a) for a in self.attributes)
 
 
 # -----------------
 # Various utilities
 # -----------------
 def to_attribute(name, attr_string):
-    attr_classes = (NominalAttribute, NumericAttribute, DateAttribute,
-                    StringAttribute, RelationalAttribute)
+    attr_classes = (
+        NominalAttribute,
+        NumericAttribute,
+        DateAttribute,
+        StringAttribute,
+        RelationalAttribute,
+    )
 
     for cls in attr_classes:
         attr = cls.parse_attribute(name, attr_string)
@@ -420,12 +420,17 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
     """
     if csv_sniffer_has_bug_last_field():
         # Reuses code from the csv module
-        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
+        right_regex = (
+            r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
+        )
 
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
-                      right_regex,  # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)
+        for restr in (
+            r'(?P<delim>[^\w\n"\'])(?P<space>'
+            r' ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
+            r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
+            right_regex,  # ,".*?"
+            r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',
+        ):  # ".*?" (no delim, no space)
             regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(sniff_line)
             if matches:
@@ -441,18 +446,19 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
         assert len(matches) == 1
         m = matches[0]
 
-        n = groupindex['quote'] - 1
+        n = groupindex["quote"] - 1
         quote = m[n]
 
-        n = groupindex['delim'] - 1
+        n = groupindex["delim"] - 1
         delim = m[n]
 
-        n = groupindex['space'] - 1
+        n = groupindex["space"] - 1
         space = bool(m[n])
 
         dq_regexp = re.compile(
-            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
-            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)"
+            % {"delim": re.escape(delim), "quote": quote},
+            re.MULTILINE,
         )
 
         doublequote = bool(dq_regexp.search(sniff_line))
@@ -472,12 +478,12 @@ def split_data_line(line, dialect=None):
     csv.field_size_limit(int(ctypes.c_ulong(-1).value // 2))
 
     # Remove the line end if any
-    if line[-1] == '\n':
+    if line[-1] == "\n":
         line = line[:-1]
-    
+
     # Remove potential trailing whitespace
     line = line.strip()
-    
+
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -487,9 +493,9 @@ def split_data_line(line, dialect=None):
 
     if dialect is None:
         dialect = csv.Sniffer().sniff(sniff_line, delimiters=delimiters)
-        workaround_csv_sniffer_bug_last_field(sniff_line=sniff_line,
-                                              dialect=dialect,
-                                              delimiters=delimiters)
+        workaround_csv_sniffer_bug_last_field(
+            sniff_line=sniff_line, dialect=dialect, delimiters=delimiters
+        )
 
     row = next(csv.reader([line], dialect))
 
@@ -560,7 +566,7 @@ def tokenize_attribute(iterable, attribute):
 
     attribute = to_attribute(name, type)
 
-    if type.lower() == 'relational':
+    if type.lower() == "relational":
         next_item = read_relational_attribute(iterable, attribute, next_item)
     #    raise ValueError("relational attributes not supported yet")
 
@@ -600,8 +606,9 @@ def tokenize_single_wcomma(val):
 def read_relational_attribute(ofile, relational_attribute, i):
     """Read the nested attributes of a relational attribute"""
 
-    r_end_relational = re.compile(r'^@[Ee][Nn][Dd]\s*' +
-                                  relational_attribute.name + r'\s*$')
+    r_end_relational = re.compile(
+        r"^@[Ee][Nn][Dd]\s*" + relational_attribute.name + r"\s*$"
+    )
 
     while not r_end_relational.match(i):
         m = r_headerline.match(i)
@@ -679,6 +686,7 @@ class MetaData:
     meta, where meta is an instance of MetaData, will return the
     different attribute names in the order they were defined.
     """
+
     def __init__(self, rel, attr):
         self.name = rel
         self._attributes = {a.name: a for a in attr}
@@ -690,7 +698,7 @@ class MetaData:
             msg += "\t%s's type is %s" % (i, self._attributes[i].type_name)
             if self._attributes[i].range:
                 msg += ", range is %s" % str(self._attributes[i].range)
-            msg += '\n'
+            msg += "\n"
         return msg
 
     def __iter__(self):
@@ -719,8 +727,7 @@ class MetaData:
         attr_types : list of str
             The attribute types.
         """
-        attr_types = [self._attributes[name].type_name
-                      for name in self._attributes]
+        attr_types = [self._attributes[name].type_name for name in self._attributes]
         return attr_types
 
 
@@ -794,10 +801,10 @@ def loadarff(f):
     \tcolor's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
 
     """
-    if hasattr(f, 'read'):
+    if hasattr(f, "read"):
         ofile = f
     else:
-        ofile = open(f, 'rt')
+        ofile = open(f, "rt")
     try:
         return _loadarff(ofile)
     finally:
@@ -836,7 +843,7 @@ def _loadarff(ofile):
 
     ni = len(attr)
 
-    def generator(row_iter, delim=','):
+    def generator(row_iter, delim=","):
         # TODO: this is where we are spending time (~80%). I think things
         # could be made more efficiently:
         #   - We could for example "compile" the function, because some values
@@ -874,13 +881,13 @@ def _loadarff(ofile):
 # Misc
 # ----
 def basic_stats(data):
-    nbfac = data.size * 1. / (data.size - 1)
+    nbfac = data.size * 1.0 / (data.size - 1)
     return np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac
 
 
 def print_attribute(name, tp, data):
     type = tp.type_name
-    if type == 'numeric' or type == 'real' or type == 'integer':
+    if type == "numeric" or type == "real" or type == "integer":
         min, max, mean, std = basic_stats(data)
         print("%s,%s,%f,%f,%f,%f" % (name, type, min, max, mean, std))
     else:
@@ -899,7 +906,8 @@ def test_weka(filename):
 test_weka.__test__ = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     filename = sys.argv[1]
     test_weka(filename)

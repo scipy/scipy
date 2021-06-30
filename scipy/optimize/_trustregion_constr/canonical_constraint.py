@@ -39,6 +39,7 @@ class CanonicalConstraint:
     keep_feasible : ndarray, shape (n_ineq,)
         Mask indicating which inequality constraints should be kept feasible.
     """
+
     def __init__(self, n_eq, n_ineq, fun, jac, hess, keep_feasible):
         self.n_eq = n_eq
         self.n_ineq = n_ineq
@@ -98,10 +99,10 @@ class CanonicalConstraint:
         concatenated constraint. Note that items in `canonical_constraints`
         must have their Jacobians in the same format.
         """
+
         def fun(x):
             if canonical_constraints:
-                eq_all, ineq_all = zip(
-                        *[c.fun(x) for c in canonical_constraints])
+                eq_all, ineq_all = zip(*[c.fun(x) for c in canonical_constraints])
             else:
                 eq_all, ineq_all = [], []
 
@@ -114,8 +115,7 @@ class CanonicalConstraint:
 
         def jac(x):
             if canonical_constraints:
-                eq_all, ineq_all = zip(
-                        *[c.jac(x) for c in canonical_constraints])
+                eq_all, ineq_all = zip(*[c.jac(x) for c in canonical_constraints])
             else:
                 eq_all, ineq_all = [], []
 
@@ -126,8 +126,8 @@ class CanonicalConstraint:
             index_eq = 0
             index_ineq = 0
             for c in canonical_constraints:
-                vc_eq = v_eq[index_eq:index_eq + c.n_eq]
-                vc_ineq = v_ineq[index_ineq:index_ineq + c.n_ineq]
+                vc_eq = v_eq[index_eq : index_eq + c.n_eq]
+                vc_ineq = v_ineq[index_ineq : index_ineq + c.n_ineq]
                 hess_all.append(c.hess(x, vc_eq, vc_ineq))
                 index_eq += c.n_eq
                 index_ineq += c.n_ineq
@@ -143,8 +143,7 @@ class CanonicalConstraint:
 
         n_eq = sum(c.n_eq for c in canonical_constraints)
         n_ineq = sum(c.n_ineq for c in canonical_constraints)
-        keep_feasible = np.hstack([c.keep_feasible for c in
-                                   canonical_constraints])
+        keep_feasible = np.hstack([c.keep_feasible for c in canonical_constraints])
 
         return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
@@ -194,6 +193,7 @@ class CanonicalConstraint:
         n_ineq = np.sum(finite_ub)
 
         if np.all(finite_ub):
+
             def fun(x):
                 return empty_fun, cfun.fun(x) - ub
 
@@ -202,6 +202,7 @@ class CanonicalConstraint:
 
             def hess(x, v_eq, v_ineq):
                 return cfun.hess(x, v_ineq)
+
         else:
             finite_ub = np.nonzero(finite_ub)[0]
             keep_feasible = keep_feasible[finite_ub]
@@ -234,6 +235,7 @@ class CanonicalConstraint:
         n_ineq = np.sum(finite_lb)
 
         if np.all(finite_lb):
+
             def fun(x):
                 return empty_fun, lb - cfun.fun(x)
 
@@ -242,6 +244,7 @@ class CanonicalConstraint:
 
             def hess(x, v_eq, v_ineq):
                 return cfun.hess(x, -v_ineq)
+
         else:
             finite_lb = np.nonzero(finite_lb)[0]
             keep_feasible = keep_feasible[finite_lb]
@@ -279,10 +282,14 @@ class CanonicalConstraint:
         n_ineq = n_less + n_greater + 2 * n_interval
         n_eq = equal.shape[0]
 
-        keep_feasible = np.hstack((keep_feasible[less],
-                                   keep_feasible[greater],
-                                   keep_feasible[interval],
-                                   keep_feasible[interval]))
+        keep_feasible = np.hstack(
+            (
+                keep_feasible[less],
+                keep_feasible[greater],
+                keep_feasible[interval],
+                keep_feasible[interval],
+            )
+        )
 
         def fun(x):
             f = cfun.fun(x)
@@ -308,13 +315,13 @@ class CanonicalConstraint:
 
         def hess(x, v_eq, v_ineq):
             n_start = 0
-            v_l = v_ineq[n_start:n_start + n_less]
+            v_l = v_ineq[n_start : n_start + n_less]
             n_start += n_less
-            v_g = v_ineq[n_start:n_start + n_greater]
+            v_g = v_ineq[n_start : n_start + n_greater]
             n_start += n_greater
-            v_il = v_ineq[n_start:n_start + n_interval]
+            v_il = v_ineq[n_start : n_start + n_interval]
             n_start += n_interval
-            v_ig = v_ineq[n_start:n_start + n_interval]
+            v_ig = v_ineq[n_start : n_start + n_interval]
 
             v = np.zeros_like(lb)
             v[equal] = v_eq

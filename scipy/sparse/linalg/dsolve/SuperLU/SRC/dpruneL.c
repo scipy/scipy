@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -72,7 +72,7 @@ dpruneL(
     xlsub      = Glu->xlsub;
     lusup      = (double *) Glu->lusup;
     xlusup     = Glu->xlusup;
-    
+
     /*
      * For each supernode-rep irep in U[*,j]
      */
@@ -87,9 +87,9 @@ dpruneL(
  	if ( repfnz[irep] == EMPTY )
 		continue;
 
-     	/* If a snode overlaps with the next panel, then the U-segment 
+     	/* If a snode overlaps with the next panel, then the U-segment
    	 * is fragmented into two parts -- irep and irep1. We should let
-	 * pruning occur at the rep-column in irep1's snode. 
+	 * pruning occur at the rep-column in irep1's snode.
 	 */
 	if ( supno[irep] == supno[irep1] ) 	/* Don't prune */
 		continue;
@@ -101,13 +101,13 @@ dpruneL(
 	    if ( xprune[irep] >= xlsub[irep1] ) {
 		kmin = xlsub[irep];
 		kmax = xlsub[irep1] - 1;
-		for (krow = kmin; krow <= kmax; krow++) 
+		for (krow = kmin; krow <= kmax; krow++)
 		    if ( lsub[krow] == pivrow ) {
 			do_prune = TRUE;
 			break;
 		    }
 	    }
-	    
+
     	    if ( do_prune ) {
 
 	     	/* Do a quicksort-type partition
@@ -119,7 +119,7 @@ dpruneL(
 
 	        while ( kmin <= kmax ) {
 
-	    	    if ( perm_r[lsub[kmax]] == EMPTY ) 
+	    	    if ( perm_r[lsub[kmax]] == EMPTY )
 			kmax--;
 		    else if ( perm_r[lsub[kmin]] != EMPTY )
 			kmin++;
@@ -131,8 +131,8 @@ dpruneL(
 		        lsub[kmax] = ktemp;
 
 			/* If the supernode has only one column, then we
- 			 * only keep one set of subscripts. For any subscript 
-			 * interchange performed, similar interchange must be 
+ 			 * only keep one set of subscripts. For any subscript
+			 * interchange performed, similar interchange must be
 			 * done on the numerical values.
  			 */
 		        if ( movnum ) {
@@ -153,7 +153,7 @@ dpruneL(
 	        xprune[irep] = kmin;	/* Pruning */
 
 #ifdef CHK_PRUNE
-	printf("    After dpruneL(),using col %d:  xprune[%d] = %d\n", 
+	printf("    After dpruneL(),using col %d:  xprune[%d] = %d\n",
 			jcol, irep, kmin);
 #endif
 	    } /* if do_prune */

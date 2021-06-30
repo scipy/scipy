@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  * Permission is hereby granted to use or copy this program for any
  * purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is
@@ -54,7 +54,7 @@ at the top-level directory.
  *           pivot row = j;
  *       ELSE
  *           pivot row = m;
- * 
+ *
  *   Note: If you absolutely want to use a given pivot order, then set u=0.0.
  *
  *   Return value: 0      success;
@@ -83,7 +83,7 @@ dpivotL(
     int          pivptr, old_pivptr, diag, diagind;
     double       pivmax, rtemp, thresh;
     double       temp;
-    double       *lu_sup_ptr; 
+    double       *lu_sup_ptr;
     double       *lu_col_ptr;
     int          *lsub_ptr;
     int          isub, icol, k, itemp;
@@ -108,11 +108,11 @@ dpivotL(
 #ifdef DEBUG
 if ( jcol == MIN_COL ) {
     printf("Before cdiv: col %d\n", jcol);
-    for (k = nsupc; k < nsupr; k++) 
+    for (k = nsupc; k < nsupr; k++)
 	printf("  lu[%d] %f\n", lsub_ptr[k], lu_col_ptr[k]);
 }
 #endif
-    
+
     /* Determine the largest abs numerical value for partial pivoting;
        Also search for user-specified pivot, and diagonal element. */
     if ( *usepr ) *pivrow = iperm_r[jcol];
@@ -153,7 +153,7 @@ if ( jcol == MIN_COL ) {
     }
 
     thresh = u * pivmax;
-    
+
     /* Choose appropriate pivotal element by our policy. */
     if ( *usepr ) {
         rtemp = fabs (lu_col_ptr[old_pivptr]);
@@ -170,17 +170,17 @@ if ( jcol == MIN_COL ) {
         }
 	*pivrow = lsub_ptr[pivptr];
     }
-    
+
     /* Record pivot row */
     perm_r[*pivrow] = jcol;
-    
+
     /* Interchange row subscripts */
     if ( pivptr != nsupc ) {
 	itemp = lsub_ptr[pivptr];
 	lsub_ptr[pivptr] = lsub_ptr[nsupc];
 	lsub_ptr[nsupc] = itemp;
 
-	/* Interchange numerical values as well, for the whole snode, such 
+	/* Interchange numerical values as well, for the whole snode, such
 	 * that L is indexed the same way as A.
  	 */
 	for (icol = 0; icol <= nsupc; icol++) {
@@ -195,9 +195,8 @@ if ( jcol == MIN_COL ) {
     ops[FACT] += nsupr - nsupc;
 
     temp = 1.0 / lu_col_ptr[nsupc];
-    for (k = nsupc+1; k < nsupr; k++) 
+    for (k = nsupc+1; k < nsupr; k++)
 	lu_col_ptr[k] *= temp;
 
     return 0;
 }
-

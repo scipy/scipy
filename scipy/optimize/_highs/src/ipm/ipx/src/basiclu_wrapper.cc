@@ -82,7 +82,7 @@ void BasicLu::_GetFactors(SparseMatrix* L, SparseMatrix* U, Int* rowperm,
     Int *Lindex = nullptr, *Uindex = nullptr;
     double *Lvalue = nullptr, *Uvalue = nullptr;
     Int dim = xstore_[BASICLU_DIM];
-   
+
     if (L) {
         Int lnz = xstore_[BASICLU_LNZ];
         L->resize(dim, dim, dim+lnz);
@@ -170,7 +170,7 @@ void BasicLu::_FtranForUpdate(Int nzrhs, const Int* bi, const double* bx,
     if (status != BASICLU_OK)
         throw std::logic_error(
             "basiclu_solve_for_update (ftran with lhs) failed");
-    lhs.set_nnz(nzlhs); 
+    lhs.set_nnz(nzlhs);
 }
 
 void BasicLu::_BtranForUpdate(Int j) {

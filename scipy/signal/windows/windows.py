@@ -6,17 +6,39 @@ import warnings
 import numpy as np
 from scipy import linalg, special, fft as sp_fft
 
-__all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_cosine',
-           'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
-           'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
+__all__ = [
+    "boxcar",
+    "triang",
+    "parzen",
+    "bohman",
+    "blackman",
+    "nuttall",
+    "blackmanharris",
+    "flattop",
+    "bartlett",
+    "hanning",
+    "barthann",
+    "hamming",
+    "kaiser",
+    "gaussian",
+    "general_cosine",
+    "general_gaussian",
+    "general_hamming",
+    "chebwin",
+    "cosine",
+    "hann",
+    "exponential",
+    "tukey",
+    "taylor",
+    "dpss",
+    "get_window",
+]
 
 
 def _len_guards(M):
     """Handle small or incorrect window lengths"""
     if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
+        raise ValueError("Window length M must be a non-negative integer")
     return M <= 1
 
 
@@ -292,8 +314,7 @@ def parzen(M, sym=True):
     na = np.extract(n < -(M - 1) / 4.0, n)
     nb = np.extract(abs(n) <= (M - 1) / 4.0, n)
     wa = 2 * (1 - np.abs(na) / (M / 2.0)) ** 3.0
-    wb = (1 - 6 * (np.abs(nb) / (M / 2.0)) ** 2.0 +
-          6 * (np.abs(nb) / (M / 2.0)) ** 3.0)
+    wb = 1 - 6 * (np.abs(nb) / (M / 2.0)) ** 2.0 + 6 * (np.abs(nb) / (M / 2.0)) ** 3.0
     w = np.r_[wa, wb, wa[::-1]]
 
     return _truncate(w, needs_trunc)
@@ -699,8 +720,9 @@ def bartlett(M, sym=True):
     M, needs_trunc = _extend(M, sym)
 
     n = np.arange(0, M)
-    w = np.where(np.less_equal(n, (M - 1) / 2.0),
-                 2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
+    w = np.where(
+        np.less_equal(n, (M - 1) / 2.0), 2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1)
+    )
 
     return _truncate(w, needs_trunc)
 
@@ -787,7 +809,7 @@ def hann(M, sym=True):
     return general_hamming(M, 0.5, sym)
 
 
-@np.deprecate(new_name='scipy.signal.windows.hann')
+@np.deprecate(new_name="scipy.signal.windows.hann")
 def hanning(*args, **kwargs):
     return hann(*args, **kwargs)
 
@@ -854,21 +876,21 @@ def tukey(M, alpha=0.5, sym=True):
         return np.ones(M)
 
     if alpha <= 0:
-        return np.ones(M, 'd')
+        return np.ones(M, "d")
     elif alpha >= 1.0:
         return hann(M, sym=sym)
 
     M, needs_trunc = _extend(M, sym)
 
     n = np.arange(0, M)
-    width = int(np.floor(alpha*(M-1)/2.0))
-    n1 = n[0:width+1]
-    n2 = n[width+1:M-width-1]
-    n3 = n[M-width-1:]
+    width = int(np.floor(alpha * (M - 1) / 2.0))
+    n1 = n[0 : width + 1]
+    n2 = n[width + 1 : M - width - 1]
+    n3 = n[M - width - 1 :]
 
-    w1 = 0.5 * (1 + np.cos(np.pi * (-1 + 2.0*n1/alpha/(M-1))))
+    w1 = 0.5 * (1 + np.cos(np.pi * (-1 + 2.0 * n1 / alpha / (M - 1))))
     w2 = np.ones(n2.shape)
-    w3 = 0.5 * (1 + np.cos(np.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
+    w3 = 0.5 * (1 + np.cos(np.pi * (-2.0 / alpha + 1 + 2.0 * n3 / alpha / (M - 1))))
 
     w = np.concatenate((w1, w2, w3))
 
@@ -1014,7 +1036,7 @@ def general_hamming(M, alpha, sym=True):
     .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
            https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
     """
-    return general_cosine(M, [alpha, 1. - alpha], sym)
+    return general_cosine(M, [alpha, 1.0 - alpha], sym)
 
 
 def hamming(M, sym=True):
@@ -1207,8 +1229,7 @@ def kaiser(M, beta, sym=True):
 
     n = np.arange(0, M)
     alpha = (M - 1) / 2.0
-    w = (special.i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
-         special.i0(beta))
+    w = special.i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) / special.i0(beta)
 
     return _truncate(w, needs_trunc)
 
@@ -1271,7 +1292,7 @@ def gaussian(M, std, sym=True):
 
     n = np.arange(0, M) - (M - 1.0) / 2.0
     sig2 = 2 * std * std
-    w = np.exp(-n ** 2 / sig2)
+    w = np.exp(-(n ** 2) / sig2)
 
     return _truncate(w, needs_trunc)
 
@@ -1433,19 +1454,21 @@ def chebwin(M, at, sym=True):
 
     """
     if np.abs(at) < 45:
-        warnings.warn("This window is not suitable for spectral analysis "
-                      "for attenuation values lower than about 45dB because "
-                      "the equivalent noise bandwidth of a Chebyshev window "
-                      "does not grow monotonically with increasing sidelobe "
-                      "attenuation when the attenuation is smaller than "
-                      "about 45 dB.")
+        warnings.warn(
+            "This window is not suitable for spectral analysis "
+            "for attenuation values lower than about 45dB because "
+            "the equivalent noise bandwidth of a Chebyshev window "
+            "does not grow monotonically with increasing sidelobe "
+            "attenuation when the attenuation is smaller than "
+            "about 45 dB."
+        )
     if _len_guards(M):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
     # compute the parameter beta
     order = M - 1.0
-    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(at) / 20.)))
+    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(at) / 20.0)))
     k = np.r_[0:M] * 1.0
     x = beta * np.cos(np.pi * k / M)
     # Find the window's DFT coefficients
@@ -1462,12 +1485,12 @@ def chebwin(M, at, sym=True):
         w = np.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
-        w = np.concatenate((w[n - 1:0:-1], w))
+        w = np.concatenate((w[n - 1 : 0 : -1], w))
     else:
-        p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
+        p = p * np.exp(1.0j * np.pi / M * np.r_[0:M])
         w = np.real(sp_fft.fft(p))
         n = M // 2 + 1
-        w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+        w = np.concatenate((w[n - 1 : 0 : -1], w[1:n]))
     w = w / max(w)
 
     return _truncate(w, needs_trunc)
@@ -1527,12 +1550,12 @@ def cosine(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    w = np.sin(np.pi / M * (np.arange(0, M) + .5))
+    w = np.sin(np.pi / M * (np.arange(0, M) + 0.5))
 
     return _truncate(w, needs_trunc)
 
 
-def exponential(M, center=None, tau=1., sym=True):
+def exponential(M, center=None, tau=1.0, sym=True):
     r"""Return an exponential (or Poisson) window.
 
     Parameters
@@ -1612,10 +1635,10 @@ def exponential(M, center=None, tau=1., sym=True):
     M, needs_trunc = _extend(M, sym)
 
     if center is None:
-        center = (M-1) / 2
+        center = (M - 1) / 2
 
     n = np.arange(0, M)
-    w = np.exp(-np.abs(n-center) / tau)
+    w = np.exp(-np.abs(n - center) / tau)
 
     return _truncate(w, needs_trunc)
 
@@ -1706,24 +1729,25 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     # Original text uses a negative sidelobe level parameter and then negates
     # it in the calculation of B. To keep consistent with other methods we
     # assume the sidelobe level parameter to be positive.
-    B = 10**(sll / 20)
+    B = 10 ** (sll / 20)
     A = np.arccosh(B) / np.pi
-    s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
+    s2 = nbar ** 2 / (A ** 2 + (nbar - 0.5) ** 2)
     ma = np.arange(1, nbar)
 
-    Fm = np.empty(nbar-1)
+    Fm = np.empty(nbar - 1)
     signs = np.empty_like(ma)
     signs[::2] = 1
     signs[1::2] = -1
-    m2 = ma*ma
+    m2 = ma * ma
     for mi, m in enumerate(ma):
-        numer = signs[mi] * np.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
-        denom = 2 * np.prod(1 - m2[mi]/m2[:mi]) * np.prod(1 - m2[mi]/m2[mi+1:])
+        numer = signs[mi] * np.prod(1 - m2[mi] / s2 / (A ** 2 + (ma - 0.5) ** 2))
+        denom = 2 * np.prod(1 - m2[mi] / m2[:mi]) * np.prod(1 - m2[mi] / m2[mi + 1 :])
         Fm[mi] = numer / denom
 
     def W(n):
-        return 1 + 2*np.dot(Fm, np.cos(
-            2*np.pi*ma[:, np.newaxis]*(n-M/2.+0.5)/M))
+        return 1 + 2 * np.dot(
+            Fm, np.cos(2 * np.pi * ma[:, np.newaxis] * (n - M / 2.0 + 0.5) / M)
+        )
 
     w = W(np.arange(M))
 
@@ -1901,11 +1925,10 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     if _len_guards(M):
         return np.ones(M)
     if norm is None:
-        norm = 'approximate' if Kmax is None else 2
-    known_norms = (2, 'approximate', 'subsample')
+        norm = "approximate" if Kmax is None else 2
+    known_norms = (2, "approximate", "subsample")
     if norm not in known_norms:
-        raise ValueError('norm must be one of %s, got %s'
-                         % (known_norms, norm))
+        raise ValueError("norm must be one of %s, got %s" % (known_norms, norm))
     if Kmax is None:
         singleton = True
         Kmax = 1
@@ -1913,11 +1936,11 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         singleton = False
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
-        raise ValueError('Kmax must be greater than 0 and less than M')
-    if NW >= M/2.:
-        raise ValueError('NW must be less than M/2.')
+        raise ValueError("Kmax must be greater than 0 and less than M")
+    if NW >= M / 2.0:
+        raise ValueError("NW must be less than M/2.")
     if NW <= 0:
-        raise ValueError('NW must be positive')
+        raise ValueError("NW must be positive")
     M, needs_trunc = _extend(M, sym)
     W = float(NW) / M
     nidx = np.arange(M)
@@ -1940,18 +1963,19 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # the main diagonal = ([M-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,M-1]
     # and the first off-diagonal = t(M-t)/2, t=[1,2,...,M-1]
     # [see Percival and Walden, 1993]
-    d = ((M - 1 - 2 * nidx) / 2.) ** 2 * np.cos(2 * np.pi * W)
-    e = nidx[1:] * (M - nidx[1:]) / 2.
+    d = ((M - 1 - 2 * nidx) / 2.0) ** 2 * np.cos(2 * np.pi * W)
+    e = nidx[1:] * (M - nidx[1:]) / 2.0
 
     # only calculate the highest Kmax eigenvalues
     w, windows = linalg.eigh_tridiagonal(
-        d, e, select='i', select_range=(M - Kmax, M - 1))
+        d, e, select="i", select_range=(M - Kmax, M - 1)
+    )
     w = w[::-1]
     windows = windows[:, ::-1].T
 
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
-    fix_even = (windows[::2].sum(axis=1) < 0)
+    fix_even = windows[::2].sum(axis=1) < 0
     for i, f in enumerate(fix_even):
         if f:
             windows[2 * i] *= -1
@@ -1961,7 +1985,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     #   sufficiently smooth functions, and more robust than relying on an
     #   algorithm that uses max(abs(w)), which is susceptible to numerical
     #   noise problems)
-    thresh = max(1e-7, 1. / M)
+    thresh = max(1e-7, 1.0 / M)
     for i, w in enumerate(windows[1::2]):
         if w[w * w > thresh][0] < 0:
             windows[2 * i + 1] *= -1
@@ -1979,11 +2003,11 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     if norm != 2:
         windows /= windows.max()
         if M % 2 == 0:
-            if norm == 'approximate':
-                correction = M**2 / float(M**2 + NW)
+            if norm == "approximate":
+                correction = M ** 2 / float(M ** 2 + NW)
             else:
                 s = sp_fft.rfft(windows[0])
-                shift = -(1 - 1./M) * np.arange(1, M//2 + 1)
+                shift = -(1 - 1.0 / M) * np.arange(1, M // 2 + 1)
                 s[1:] *= 2 * np.exp(-1j * np.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
@@ -1998,7 +2022,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 def _fftautocorr(x):
     """Compute the autocorrelation of a real array and crop the result."""
     N = x.shape[-1]
-    use_N = sp_fft.next_fast_len(2*N-1)
+    use_N = sp_fft.next_fast_len(2 * N - 1)
     x_fft = sp_fft.rfft(x, use_N, axis=-1)
     cxy = sp_fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
     # Or equivalently (but in most cases slower):
@@ -2008,31 +2032,32 @@ def _fftautocorr(x):
 
 
 _win_equiv_raw = {
-    ('barthann', 'brthan', 'bth'): (barthann, False),
-    ('bartlett', 'bart', 'brt'): (bartlett, False),
-    ('blackman', 'black', 'blk'): (blackman, False),
-    ('blackmanharris', 'blackharr', 'bkh'): (blackmanharris, False),
-    ('bohman', 'bman', 'bmn'): (bohman, False),
-    ('boxcar', 'box', 'ones',
-        'rect', 'rectangular'): (boxcar, False),
-    ('chebwin', 'cheb'): (chebwin, True),
-    ('cosine', 'halfcosine'): (cosine, False),
-    ('dpss',): (dpss, True),
-    ('exponential', 'poisson'): (exponential, False),
-    ('flattop', 'flat', 'flt'): (flattop, False),
-    ('gaussian', 'gauss', 'gss'): (gaussian, True),
-    ('general cosine', 'general_cosine'): (general_cosine, True),
-    ('general gaussian', 'general_gaussian',
-        'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
-    ('general hamming', 'general_hamming'): (general_hamming, True),
-    ('hamming', 'hamm', 'ham'): (hamming, False),
-    ('hanning', 'hann', 'han'): (hann, False),
-    ('kaiser', 'ksr'): (kaiser, True),
-    ('nuttall', 'nutl', 'nut'): (nuttall, False),
-    ('parzen', 'parz', 'par'): (parzen, False),
-    ('taylor', 'taylorwin'): (taylor, False),
-    ('triangle', 'triang', 'tri'): (triang, False),
-    ('tukey', 'tuk'): (tukey, False),
+    ("barthann", "brthan", "bth"): (barthann, False),
+    ("bartlett", "bart", "brt"): (bartlett, False),
+    ("blackman", "black", "blk"): (blackman, False),
+    ("blackmanharris", "blackharr", "bkh"): (blackmanharris, False),
+    ("bohman", "bman", "bmn"): (bohman, False),
+    ("boxcar", "box", "ones", "rect", "rectangular"): (boxcar, False),
+    ("chebwin", "cheb"): (chebwin, True),
+    ("cosine", "halfcosine"): (cosine, False),
+    ("dpss",): (dpss, True),
+    ("exponential", "poisson"): (exponential, False),
+    ("flattop", "flat", "flt"): (flattop, False),
+    ("gaussian", "gauss", "gss"): (gaussian, True),
+    ("general cosine", "general_cosine"): (general_cosine, True),
+    ("general gaussian", "general_gaussian", "general gauss", "general_gauss", "ggs"): (
+        general_gaussian,
+        True,
+    ),
+    ("general hamming", "general_hamming"): (general_hamming, True),
+    ("hamming", "hamm", "ham"): (hamming, False),
+    ("hanning", "hann", "han"): (hann, False),
+    ("kaiser", "ksr"): (kaiser, True),
+    ("nuttall", "nutl", "nut"): (nuttall, False),
+    ("parzen", "parz", "par"): (parzen, False),
+    ("taylor", "taylorwin"): (taylor, False),
+    ("triangle", "triang", "tri"): (triang, False),
+    ("tukey", "tuk"): (tukey, False),
 }
 
 # Fill dict with all valid window name strings
@@ -2138,13 +2163,17 @@ def get_window(window, Nx, fftbins=True):
                 args = window[1:]
         elif isinstance(window, str):
             if window in _needs_param:
-                raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters -- pass a tuple.") from e
+                raise ValueError(
+                    "The '"
+                    + window
+                    + "' window needs one or more parameters -- pass a tuple."
+                ) from e
             else:
                 winstr = window
         else:
-            raise ValueError("%s as window type is not supported." %
-                             str(type(window))) from e
+            raise ValueError(
+                "%s as window type is not supported." % str(type(window))
+            ) from e
 
         try:
             winfunc = _win_equiv[winstr]

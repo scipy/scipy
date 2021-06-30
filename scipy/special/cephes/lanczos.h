@@ -5,7 +5,7 @@
  */
 
 /* Both lanczos.h and lanczos.c were formed from Boost's lanczos.hpp
- * 
+ *
  * Scipy changes:
  * - 06-22-2016: Removed all code not related to double precision and
  *   ported to c for use in Cephes. Note that the order of the

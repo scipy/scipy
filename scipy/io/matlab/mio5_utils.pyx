@@ -209,14 +209,14 @@ cdef class VarReader5:
         Called from Python when initiating a variable read
         '''
         self.cstream = streams.make_stream(fobj)
-        
+
     def read_tag(self):
         ''' Read tag mdtype and byte_count
 
         Does necessary swapping and takes account of SDE formats.
 
         See also ``read_full_tag`` method.
-        
+
         Returns
         -------
         mdtype : int
@@ -338,7 +338,7 @@ cdef class VarReader5:
         Notes
         -----
         See ``read_element_into`` for routine to read element into a
-        pre-allocated block of memory.  
+        pre-allocated block of memory.
         '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef char tag_data[4]
@@ -677,7 +677,7 @@ cdef class VarReader5:
            array header object
         process : int, optional
            If not zero, apply post-processing on returned array
-           
+
         Returns
         -------
         arr : array or sparse array

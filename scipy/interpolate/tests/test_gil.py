@@ -22,14 +22,14 @@ class TestGIL:
 
         class WorkerThread(threading.Thread):
             def run(self):
-                log('interpolation started')
+                log("interpolation started")
                 target(*args)
-                log('interpolation complete')
+                log("interpolation complete")
 
         return WorkerThread()
 
     @pytest.mark.slow
-    @pytest.mark.xfail(reason='race conditions, may depend on system load')
+    @pytest.mark.xfail(reason="race conditions, may depend on system load")
     def test_rectbivariatespline(self):
         def generate_params(n_points):
             x = y = np.linspace(0, 1000, n_points)
@@ -53,13 +53,15 @@ class TestGIL:
         worker_thread.start()
         for i in range(3):
             time.sleep(0.5)
-            self.log('working')
+            self.log("working")
         worker_thread.join()
-        assert_equal(self.messages, [
-            'interpolation started',
-            'working',
-            'working',
-            'working',
-            'interpolation complete',
-        ])
-
+        assert_equal(
+            self.messages,
+            [
+                "interpolation started",
+                "working",
+                "working",
+                "working",
+                "interpolation complete",
+            ],
+        )

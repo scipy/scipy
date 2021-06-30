@@ -84,7 +84,7 @@ c  search for knot interval t(l) <= x < t(l+1).
       l = l+1
       if(l.eq.nk) go to 14
       go to 10
-c  if no interval found above, then reverse the search and 
+c  if no interval found above, then reverse the search and
 c  look for knot interval t(l) < x <= t(l+1).
   14  l = nk-1
   16  if(x.gt.t(l)) go to 20

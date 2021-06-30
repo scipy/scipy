@@ -32,9 +32,9 @@ c  ..
           li = l+i
           lj = li-j
           if (t(li).ne.t(lj)) goto 15
-          h(i+1) = 0.0d0 
+          h(i+1) = 0.0d0
           goto 20
-  15      f = hh(i)/(t(li)-t(lj)) 
+  15      f = hh(i)/(t(li)-t(lj))
           h(i) = h(i)+f*(t(li)-x)
           h(i+1) = f*(x-t(lj))
   20  continue

@@ -13,14 +13,13 @@ from numpy.linalg import norm
 
 
 class TestNNLS:
-
     def test_nnls(self):
-        a = arange(25.0).reshape(-1,5)
+        a = arange(25.0).reshape(-1, 5)
         x = arange(5.0)
-        y = dot(a,x)
-        x, res = nnls(a,y)
+        y = dot(a, x)
+        x, res = nnls(a, y)
         assert_(res < 1e-7)
-        assert_(norm(dot(a,x)-y) < 1e-7)
+        assert_(norm(dot(a, x) - y) < 1e-7)
 
     def test_maxiter(self):
         # test that maxiter argument does stop iterations
@@ -31,4 +30,3 @@ class TestNNLS:
         b = rndm.uniform(size=100)
         with assert_raises(RuntimeError):
             nnls(a, b, maxiter=1)
-

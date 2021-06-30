@@ -37,11 +37,11 @@ def intersect_trust_region(x, s, Delta):
 
     b = np.dot(x, s)
 
-    c = np.dot(x, x) - Delta**2
+    c = np.dot(x, x) - Delta ** 2
     if c > 0:
         raise ValueError("`x` is not within the trust region.")
 
-    d = np.sqrt(b*b - a*c)  # Root from one fourth of the discriminant.
+    d = np.sqrt(b * b - a * c)  # Root from one fourth of the discriminant.
 
     # Computations below avoid loss of significance, see "Numerical Recipes".
     q = -(b + copysign(d, b))
@@ -54,8 +54,9 @@ def intersect_trust_region(x, s, Delta):
         return t2, t1
 
 
-def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
-                           rtol=0.01, max_iter=10):
+def solve_lsq_trust_region(
+    n, m, uf, s, V, Delta, initial_alpha=None, rtol=0.01, max_iter=10
+):
     """Solve a trust-region problem arising in least-squares minimization.
 
     This function implements a method described by J. J. More [1]_ and used
@@ -103,16 +104,17 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
            and Theory," Numerical Analysis, ed. G. A. Watson, Lecture Notes
            in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
     """
+
     def phi_and_derivative(alpha, suf, s, Delta):
         """Function of which to find zero.
 
         It is defined as "norm of regularized (by alpha) least-squares
         solution minus `Delta`". Refer to [1]_.
         """
-        denom = s**2 + alpha
+        denom = s ** 2 + alpha
         p_norm = norm(suf / denom)
         phi = p_norm - Delta
-        phi_prime = -np.sum(suf ** 2 / denom**3) / p_norm
+        phi_prime = -np.sum(suf ** 2 / denom ** 3) / p_norm
         return phi, phi_prime
 
     suf = s * uf
@@ -138,13 +140,13 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
         alpha_lower = 0.0
 
     if initial_alpha is None or not full_rank and initial_alpha == 0:
-        alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper)**0.5)
+        alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper) ** 0.5)
     else:
         alpha = initial_alpha
 
     for it in range(max_iter):
         if alpha < alpha_lower or alpha > alpha_upper:
-            alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper)**0.5)
+            alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper) ** 0.5)
 
         phi, phi_prime = phi_and_derivative(alpha, suf, s, Delta)
 
@@ -158,7 +160,7 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
         if np.abs(phi) < rtol * Delta:
             break
 
-    p = -V.dot(suf / (s**2 + alpha))
+    p = -V.dot(suf / (s ** 2 + alpha))
 
     # Make the norm of p equal to Delta, p is changed only slightly during
     # this. It is done to prevent p lie outside the trust region (which can
@@ -194,24 +196,23 @@ def solve_trust_region_2d(B, g, Delta):
     try:
         R, lower = cho_factor(B)
         p = -cho_solve((R, lower), g)
-        if np.dot(p, p) <= Delta**2:
+        if np.dot(p, p) <= Delta ** 2:
             return p, True
     except LinAlgError:
         pass
 
-    a = B[0, 0] * Delta**2
-    b = B[0, 1] * Delta**2
-    c = B[1, 1] * Delta**2
+    a = B[0, 0] * Delta ** 2
+    b = B[0, 1] * Delta ** 2
+    c = B[1, 1] * Delta ** 2
 
     d = g[0] * Delta
     f = g[1] * Delta
 
-    coeffs = np.array(
-        [-b + d, 2 * (a - c + f), 6 * b, 2 * (-a + c + f), -b - d])
+    coeffs = np.array([-b + d, 2 * (a - c + f), 6 * b, 2 * (-a + c + f), -b - d])
     t = np.roots(coeffs)  # Can handle leading zeros.
     t = np.real(t[np.isreal(t)])
 
-    p = Delta * np.vstack((2 * t / (1 + t**2), (1 - t**2) / (1 + t**2)))
+    p = Delta * np.vstack((2 * t / (1 + t ** 2), (1 - t ** 2) / (1 + t ** 2)))
     value = 0.5 * np.sum(p * B.dot(p), axis=0) + np.dot(g, p)
     i = np.argmin(value)
     p = p[:, i]
@@ -219,8 +220,9 @@ def solve_trust_region_2d(B, g, Delta):
     return p, False
 
 
-def update_tr_radius(Delta, actual_reduction, predicted_reduction,
-                     step_norm, bound_hit):
+def update_tr_radius(
+    Delta, actual_reduction, predicted_reduction, step_norm, bound_hit
+):
     """Update the radius of a trust region based on the cost reduction.
 
     Returns
@@ -352,9 +354,9 @@ def evaluate_quadratic(J, g, s, diag=None):
             q += np.dot(s * diag, s)
     else:
         Js = J.dot(s.T)
-        q = np.sum(Js**2, axis=0)
+        q = np.sum(Js ** 2, axis=0)
         if diag is not None:
-            q += np.sum(diag * s**2, axis=1)
+            q += np.sum(diag * s ** 2, axis=1)
 
     l = np.dot(s, g)
 
@@ -391,9 +393,10 @@ def step_size_to_bound(x, s, lb, ub):
     s_non_zero = s[non_zero]
     steps = np.empty_like(x)
     steps.fill(np.inf)
-    with np.errstate(over='ignore'):
-        steps[non_zero] = np.maximum((lb - x)[non_zero] / s_non_zero,
-                                     (ub - x)[non_zero] / s_non_zero)
+    with np.errstate(over="ignore"):
+        steps[non_zero] = np.maximum(
+            (lb - x)[non_zero] / s_non_zero, (ub - x)[non_zero] / s_non_zero
+        )
     min_step = np.min(steps)
     return min_step, np.equal(steps, min_step) * np.sign(s).astype(int)
 
@@ -426,12 +429,14 @@ def find_active_constraints(x, lb, ub, rtol=1e-10):
     lower_threshold = rtol * np.maximum(1, np.abs(lb))
     upper_threshold = rtol * np.maximum(1, np.abs(ub))
 
-    lower_active = (np.isfinite(lb) &
-                    (lower_dist <= np.minimum(upper_dist, lower_threshold)))
+    lower_active = np.isfinite(lb) & (
+        lower_dist <= np.minimum(upper_dist, lower_threshold)
+    )
     active[lower_active] = -1
 
-    upper_active = (np.isfinite(ub) &
-                    (upper_dist <= np.minimum(lower_dist, upper_threshold)))
+    upper_active = np.isfinite(ub) & (
+        upper_dist <= np.minimum(lower_dist, upper_threshold)
+    )
     active[upper_active] = 1
 
     return active
@@ -453,10 +458,12 @@ def make_strictly_feasible(x, lb, ub, rstep=1e-10):
         x_new[lower_mask] = np.nextafter(lb[lower_mask], ub[lower_mask])
         x_new[upper_mask] = np.nextafter(ub[upper_mask], lb[upper_mask])
     else:
-        x_new[lower_mask] = (lb[lower_mask] +
-                             rstep * np.maximum(1, np.abs(lb[lower_mask])))
-        x_new[upper_mask] = (ub[upper_mask] -
-                             rstep * np.maximum(1, np.abs(ub[upper_mask])))
+        x_new[lower_mask] = lb[lower_mask] + rstep * np.maximum(
+            1, np.abs(lb[lower_mask])
+        )
+        x_new[upper_mask] = ub[upper_mask] - rstep * np.maximum(
+            1, np.abs(ub[upper_mask])
+        )
 
     tight_bounds = (x_new < lb) | (x_new > ub)
     x_new[tight_bounds] = 0.5 * (lb[tight_bounds] + ub[tight_bounds])
@@ -543,13 +550,21 @@ def reflective_transformation(y, lb, ub):
 
 
 def print_header_nonlinear():
-    print("{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}{5:^15}"
-          .format("Iteration", "Total nfev", "Cost", "Cost reduction",
-                  "Step norm", "Optimality"))
+    print(
+        "{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}{5:^15}".format(
+            "Iteration",
+            "Total nfev",
+            "Cost",
+            "Cost reduction",
+            "Step norm",
+            "Optimality",
+        )
+    )
 
 
-def print_iteration_nonlinear(iteration, nfev, cost, cost_reduction,
-                              step_norm, optimality):
+def print_iteration_nonlinear(
+    iteration, nfev, cost, cost_reduction, step_norm, optimality
+):
     if cost_reduction is None:
         cost_reduction = " " * 15
     else:
@@ -560,19 +575,22 @@ def print_iteration_nonlinear(iteration, nfev, cost, cost_reduction,
     else:
         step_norm = "{0:^15.2e}".format(step_norm)
 
-    print("{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}"
-          .format(iteration, nfev, cost, cost_reduction,
-                  step_norm, optimality))
+    print(
+        "{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}".format(
+            iteration, nfev, cost, cost_reduction, step_norm, optimality
+        )
+    )
 
 
 def print_header_linear():
-    print("{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}"
-          .format("Iteration", "Cost", "Cost reduction", "Step norm",
-                  "Optimality"))
+    print(
+        "{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}".format(
+            "Iteration", "Cost", "Cost reduction", "Step norm", "Optimality"
+        )
+    )
 
 
-def print_iteration_linear(iteration, cost, cost_reduction, step_norm,
-                           optimality):
+def print_iteration_linear(iteration, cost, cost_reduction, step_norm, optimality):
     if cost_reduction is None:
         cost_reduction = " " * 15
     else:
@@ -583,8 +601,11 @@ def print_iteration_linear(iteration, cost, cost_reduction, step_norm,
     else:
         step_norm = "{0:^15.2e}".format(step_norm)
 
-    print("{0:^15}{1:^15.4e}{2}{3}{4:^15.2e}".format(
-        iteration, cost, cost_reduction, step_norm, optimality))
+    print(
+        "{0:^15}{1:^15.4e}{2}{3}{4:^15.2e}".format(
+            iteration, cost, cost_reduction, step_norm, optimality
+        )
+    )
 
 
 # Simple helper functions.
@@ -601,9 +622,9 @@ def compute_grad(J, f):
 def compute_jac_scale(J, scale_inv_old=None):
     """Compute variables scale based on the Jacobian matrix."""
     if issparse(J):
-        scale_inv = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
+        scale_inv = np.asarray(J.power(2).sum(axis=0)).ravel() ** 0.5
     else:
-        scale_inv = np.sum(J**2, axis=0)**0.5
+        scale_inv = np.sum(J ** 2, axis=0) ** 0.5
 
     if scale_inv_old is None:
         scale_inv[scale_inv == 0] = 1
@@ -626,8 +647,7 @@ def left_multiplied_operator(J, d):
     def rmatvec(x):
         return J.rmatvec(x.ravel() * d)
 
-    return LinearOperator(J.shape, matvec=matvec, matmat=matmat,
-                          rmatvec=rmatvec)
+    return LinearOperator(J.shape, matvec=matvec, matmat=matmat, rmatvec=rmatvec)
 
 
 def right_multiplied_operator(J, d):
@@ -643,8 +663,7 @@ def right_multiplied_operator(J, d):
     def rmatvec(x):
         return d * J.rmatvec(x)
 
-    return LinearOperator(J.shape, matvec=matvec, matmat=matmat,
-                          rmatvec=rmatvec)
+    return LinearOperator(J.shape, matvec=matvec, matmat=matmat, rmatvec=rmatvec)
 
 
 def regularized_lsq_operator(J, diag):
@@ -678,7 +697,7 @@ def right_multiply(J, d, copy=True):
         J = J.copy()
 
     if issparse(J):
-        J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
+        J.data *= d.take(J.indices, mode="clip")  # scikit-learn recipe.
     elif isinstance(J, LinearOperator):
         J = right_multiplied_operator(J, d)
     else:
@@ -725,7 +744,7 @@ def scale_for_robust_loss_function(J, f, rho):
 
     Arrays are modified in place.
     """
-    J_scale = rho[1] + 2 * rho[2] * f**2
+    J_scale = rho[1] + 2 * rho[2] * f ** 2
     J_scale[J_scale < EPS] = EPS
     J_scale **= 0.5
 

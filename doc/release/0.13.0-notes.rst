@@ -370,4 +370,3 @@ one patch to this release, names in alphabetical order):
 
 A total of 65 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
-

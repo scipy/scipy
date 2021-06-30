@@ -837,4 +837,3 @@ c  error codes and messages.
  980  if(ncof.ne.rank) ier = -rank
  990  return
       end
-

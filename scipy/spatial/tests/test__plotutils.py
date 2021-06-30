@@ -1,21 +1,29 @@
 import pytest
 from numpy.testing import assert_, assert_array_equal, suppress_warnings
+
 try:
     import matplotlib
-    matplotlib.rcParams['backend'] = 'Agg'
+
+    matplotlib.rcParams["backend"] = "Agg"
     import matplotlib.pyplot as plt
+
     has_matplotlib = True
 except Exception:
     has_matplotlib = False
 
-from scipy.spatial import \
-     delaunay_plot_2d, voronoi_plot_2d, convex_hull_plot_2d, \
-     Delaunay, Voronoi, ConvexHull
+from scipy.spatial import (
+    delaunay_plot_2d,
+    voronoi_plot_2d,
+    convex_hull_plot_2d,
+    Delaunay,
+    Voronoi,
+    ConvexHull,
+)
 
 
 @pytest.mark.skipif(not has_matplotlib, reason="Matplotlib not available")
 class TestPlotting:
-    points = [(0,0), (0,1), (1,0), (1,1)]
+    points = [(0, 0), (0, 1), (1, 0), (1, 1)]
 
     def test_delaunay(self):
         # Smoke test

@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,7 +35,7 @@
  *
  *  Let :math:`T = \begin{pmatrix} T_1 & & \\ & \ddots & \\ & & T_\ell \end{pmatrix}`
  *  be composed into irreducible blocks :math:`T_i`.
- *  
+ *
  *  Calls :c:func:`trlib_leftmost_irreducible` on every irreducible block in case of coldstart,
  *  in case of warmstart just updates information on :math:`T_\ell`.
  *
@@ -103,14 +103,14 @@ trlib_int_t trlib_leftmost(
 /** Computes smallest eigenvalue of irreducible symmetric tridiagonal matrix
  *  :math:`T \in \mathbb R^{n\times n}`,
  *  using a iteration based on last-pivot function of Parlett and Reid.
- *  
+ *
  *  Method is sketched on p. 516 in [Gould1999]_.
  *
  *  Note that this function most likely will fail in the case of a reducible matrix
  *  (:c:data:`offdiag` contains 0).
  *
  *  **Convergence**
- *  
+ *
  *  Convergence is reported if :math:`\texttt{up}-\texttt{low} \le \texttt{tol}\_\texttt{abs} * \max\{1, \vert \texttt{low} \vert, \vert \texttt{up} \vert \}` or :math:`\texttt{prlp} \le \texttt{tol}\_\texttt{abs}`, :math:`\texttt{low}` and :math:`\texttt{up}` denote bracket values enclosing the leftmost eigenvalue and :math:`\texttt{prlp}` denotes the last-pivot function value used in root finding.
  *
  *  :param n: dimension, ensure :math:`n > 0`

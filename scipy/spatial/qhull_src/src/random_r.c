@@ -5,7 +5,7 @@
      Park & Miller's minimimal standard random number generator
      argc/argv conversion
 
-     Used by rbox.  Do not use 'qh' 
+     Used by rbox.  Do not use 'qh'
 */
 
 #include "libqhull_r.h"

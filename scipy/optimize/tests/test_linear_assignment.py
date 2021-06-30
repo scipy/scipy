@@ -12,7 +12,8 @@ from scipy.sparse import random
 from scipy.sparse.sputils import matrix
 from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 from scipy.sparse.csgraph.tests.test_matching import (
-    linear_sum_assignment_assertions, linear_sum_assignment_test_cases
+    linear_sum_assignment_assertions,
+    linear_sum_assignment_test_cases,
 )
 
 
@@ -23,16 +24,15 @@ def test_linear_sum_assignment_input_shape():
 
 def test_linear_sum_assignment_input_object():
     C = [[1, 2, 3], [4, 5, 6]]
-    assert_array_equal(linear_sum_assignment(C),
-                       linear_sum_assignment(np.asarray(C)))
-    assert_array_equal(linear_sum_assignment(C),
-                       linear_sum_assignment(matrix(C)))
+    assert_array_equal(linear_sum_assignment(C), linear_sum_assignment(np.asarray(C)))
+    assert_array_equal(linear_sum_assignment(C), linear_sum_assignment(matrix(C)))
 
 
 def test_linear_sum_assignment_input_bool():
     I = np.identity(3)
-    assert_array_equal(linear_sum_assignment(I.astype(np.bool_)),
-                       linear_sum_assignment(I))
+    assert_array_equal(
+        linear_sum_assignment(I.astype(np.bool_)), linear_sum_assignment(I)
+    )
 
 
 def test_linear_sum_assignment_input_string():
@@ -69,7 +69,7 @@ def test_constant_cost_matrix():
     assert_array_equal(col_ind, np.arange(n))
 
 
-@pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
+@pytest.mark.parametrize("num_rows,num_cols", [(0, 0), (2, 0), (0, 3)])
 def test_linear_sum_assignment_trivial_cost(num_rows, num_cols):
     C = np.empty(shape=(num_cols, num_rows))
     row_ind, col_ind = linear_sum_assignment(C)
@@ -77,10 +77,9 @@ def test_linear_sum_assignment_trivial_cost(num_rows, num_cols):
     assert len(col_ind) == 0
 
 
-@pytest.mark.parametrize('sign,test_case', linear_sum_assignment_test_cases)
+@pytest.mark.parametrize("sign,test_case", linear_sum_assignment_test_cases)
 def test_linear_sum_assignment_small_inputs(sign, test_case):
-    linear_sum_assignment_assertions(
-        linear_sum_assignment, np.array, sign, test_case)
+    linear_sum_assignment_assertions(linear_sum_assignment, np.array, sign, test_case)
 
 
 # Tests that combine scipy.optimize.linear_sum_assignment and
@@ -94,8 +93,12 @@ def test_two_methods_give_same_result_on_many_sparse_inputs():
     for _ in range(100):
         lsa_raises = False
         mwfbm_raises = False
-        sparse = random(100, 100, density=0.06,
-                        data_rvs=lambda size: np.random.randint(1, 100, size))
+        sparse = random(
+            100,
+            100,
+            density=0.06,
+            data_rvs=lambda size: np.random.randint(1, 100, size),
+        )
         # In csgraph, zeros correspond to missing edges, so we explicitly
         # replace those with infinities
         dense = np.full(sparse.shape, np.inf)

@@ -50,7 +50,7 @@ void qh_exit(int exitcode) {
   notes:
     qh_fprintf_stderr() is called when qh.ferr is not defined, usually due to an initialization error
     if msgcode is a MSG_ERROR (6000), caller should set qh.last_errcode (like qh_fprintf) or variable 'last_errcode'
-    
+
     It is typically followed by qh_errexit().
 
     Redefine this function to avoid using stderr
@@ -75,7 +75,7 @@ void qh_fprintf_stderr(int msgcode, const char *fmt, ... ) {
 
   notes:
     same as free()
-    No calls to qh_errexit() 
+    No calls to qh_errexit()
 */
 void qh_free(void *mem) {
     free(mem);
@@ -93,5 +93,3 @@ void qh_free(void *mem) {
 void *qh_malloc(size_t size) {
     return malloc(size);
 } /* malloc */
-
-

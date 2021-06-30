@@ -28,8 +28,9 @@ from ._linprog_util import _postsolve
 from .optimize import OptimizeResult
 
 
-def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
-               maxupdate, mast, pivot):
+def _phase_one(
+    A, b, x0, callback, postsolve_args, maxiter, tol, disp, maxupdate, mast, pivot
+):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -57,11 +58,22 @@ def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
     # solve auxiliary problem
     phase_one_n = n
     iter_k = 0
-    x, basis, status, iter_k = _phase_two(c, A, x, basis, callback,
-                                          postsolve_args,
-                                          maxiter, tol, disp,
-                                          maxupdate, mast, pivot,
-                                          iter_k, phase_one_n)
+    x, basis, status, iter_k = _phase_two(
+        c,
+        A,
+        x,
+        basis,
+        callback,
+        postsolve_args,
+        maxiter,
+        tol,
+        disp,
+        maxupdate,
+        mast,
+        pivot,
+        iter_k,
+        phase_one_n,
+    )
 
     # check for infeasibility
     residual = c.dot(x)
@@ -80,8 +92,7 @@ def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
             eligible_columns = np.ones(n, dtype=bool)
             eligible_columns[basis[basis < n]] = 0
             eligible_column_indices = np.where(eligible_columns)[0]
-            index = np.argmax(basis_finder[:, :n]
-                              [pertinent_row, eligible_columns])
+            index = np.argmax(basis_finder[:, :n][pertinent_row, eligible_columns])
             new_basis_column = eligible_column_indices[index]
             if basis_finder[pertinent_row, new_basis_column] < tol:
                 keep_rows[pertinent_row] = False
@@ -107,7 +118,7 @@ def _get_more_basis_columns(A, basis):
     m, n = A.shape
 
     # options for inclusion are those that aren't already in the basis
-    a = np.arange(m+n)
+    a = np.arange(m + n)
     bl = np.zeros(len(a), dtype=bool)
     bl[basis] = 1
     options = a[~bl]
@@ -115,18 +126,17 @@ def _get_more_basis_columns(A, basis):
 
     # form basis matrix
     B = np.zeros((m, m))
-    B[:, 0:len(basis)] = A[:, basis]
+    B[:, 0 : len(basis)] = A[:, basis]
 
-    if (basis.size > 0 and
-            np.linalg.matrix_rank(B[:, :len(basis)]) < len(basis)):
+    if basis.size > 0 and np.linalg.matrix_rank(B[:, : len(basis)]) < len(basis):
         raise Exception("Basis has dependent columns")
 
     rank = 0  # just enter the loop
     for i in range(n):  # somewhat arbitrary, but we need another way out
         # permute the options, and take as many as needed
-        new_basis = np.random.permutation(options)[:m-len(basis)]
-        B[:, len(basis):] = A[:, new_basis]  # update the basis matrix
-        rank = np.linalg.matrix_rank(B)      # check the rank
+        new_basis = np.random.permutation(options)[: m - len(basis)]
+        B[:, len(basis) :] = A[:, new_basis]  # update the basis matrix
+        rank = np.linalg.matrix_rank(B)  # check the rank
         if rank == m:
             break
 
@@ -165,7 +175,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     else:
         x = np.zeros(n)
 
-    r = b - A@x  # residual; this must be all zeros for feasibility
+    r = b - A @ x  # residual; this must be all zeros for feasibility
 
     A[r < 0] = -A[r < 0]  # express problem with RHS positive for trivial BFS
     b[r < 0] = -b[r < 0]  # to the auxiliary problem
@@ -187,8 +197,9 @@ def _generate_auxiliary_problem(A, b, x0, tol):
         c = np.zeros(n)
         basis = _get_more_basis_columns(A, basis)
         return A, b, c, basis, x, status
-    elif (len(nonzero_constraints) > m - len(basis) or
-          np.any(x < 0)):  # can't get trivial BFS
+    elif len(nonzero_constraints) > m - len(basis) or np.any(
+        x < 0
+    ):  # can't get trivial BFS
         c = np.zeros(n)
         status = 6
         return A, b, c, basis, x, status
@@ -207,12 +218,11 @@ def _generate_auxiliary_problem(A, b, x0, tol):
 
     # indices of the rows we can only zero with auxiliary variable
     # these rows will get a one in each auxiliary column
-    arows = nonzero_constraints[np.logical_not(
-                                np.isin(nonzero_constraints, rows))]
+    arows = nonzero_constraints[np.logical_not(np.isin(nonzero_constraints, rows))]
     n_aux = len(arows)
-    acols = n + np.arange(n_aux)          # indices of auxiliary columns
+    acols = n + np.arange(n_aux)  # indices of auxiliary columns
 
-    basis_ng = np.concatenate((cols, acols))   # basis columns not from guess
+    basis_ng = np.concatenate((cols, acols))  # basis columns not from guess
     basis_ng_rows = np.concatenate((rows, arows))  # rows we need to zero
 
     # add auxiliary singleton columns
@@ -221,7 +231,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
 
     # generate initial BFS
     x = np.concatenate((x, np.zeros(n_aux)))
-    x[basis_ng] = r[basis_ng_rows]/A[basis_ng_rows, basis_ng]
+    x[basis_ng] = r[basis_ng_rows] / A[basis_ng_rows, basis_ng]
 
     # generate costs to minimize infeasibility
     c = np.zeros(n_aux + n)
@@ -246,14 +256,14 @@ def _select_singleton_columns(A, b):
     """
     # find indices of all singleton columns and corresponding row indicies
     column_indices = np.nonzero(np.sum(np.abs(A) != 0, axis=0) == 1)[0]
-    columns = A[:, column_indices]          # array of singleton columns
+    columns = A[:, column_indices]  # array of singleton columns
     row_indices = np.zeros(len(column_indices), dtype=int)
     nonzero_rows, nonzero_columns = np.nonzero(columns)
-    row_indices[nonzero_columns] = nonzero_rows   # corresponding row indicies
+    row_indices[nonzero_columns] = nonzero_rows  # corresponding row indicies
 
     # keep only singletons with entries that have same sign as RHS
     # this is necessary because all elements of BFS must be non-negative
-    same_sign = A[row_indices, column_indices]*b[row_indices] >= 0
+    same_sign = A[row_indices, column_indices] * b[row_indices] >= 0
     column_indices = column_indices[same_sign][::-1]
     row_indices = row_indices[same_sign][::-1]
     # Reversing the order so that steps below select rightmost columns
@@ -263,8 +273,7 @@ def _select_singleton_columns(A, b):
     # variable must be basic.)
 
     # for each row, keep rightmost singleton column with an entry in that row
-    unique_row_indices, first_columns = np.unique(row_indices,
-                                                  return_index=True)
+    unique_row_indices, first_columns = np.unique(row_indices, return_index=True)
     return column_indices[first_columns], unique_row_indices
 
 
@@ -294,14 +303,16 @@ def _display_iter(phase, iteration, slack, con, fun):
     header = True if not iteration % 20 else False
 
     if header:
-        print("Phase",
-              "Iteration",
-              "Minimum Slack      ",
-              "Constraint Residual",
-              "Objective          ")
+        print(
+            "Phase",
+            "Iteration",
+            "Minimum Slack      ",
+            "Constraint Residual",
+            "Objective          ",
+        )
 
     # :<X.Y left aligns Y digits in X digit spaces
-    fmt = '{0:<6}{1:<10}{2:<20.13}{3:<20.13}{4:<20.13}'
+    fmt = "{0:<6}{1:<10}{2:<20.13}{3:<20.13}{4:<20.13}"
     try:
         slack = np.min(slack)
     except ValueError:
@@ -309,30 +320,53 @@ def _display_iter(phase, iteration, slack, con, fun):
     print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
 
 
-def _display_and_callback(phase_one_n, x, postsolve_args, status,
-                          iteration, disp, callback):
+def _display_and_callback(
+    phase_one_n, x, postsolve_args, status, iteration, disp, callback
+):
     if phase_one_n is not None:
         phase = 1
         x_postsolve = x[:phase_one_n]
     else:
         phase = 2
         x_postsolve = x
-    x_o, fun, slack, con = _postsolve(x_postsolve,
-                                      postsolve_args)
+    x_o, fun, slack, con = _postsolve(x_postsolve, postsolve_args)
 
     if callback is not None:
-        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                              'con': con, 'nit': iteration,
-                              'phase': phase, 'complete': False,
-                              'status': status, 'message': "",
-                              'success': False})
+        res = OptimizeResult(
+            {
+                "x": x_o,
+                "fun": fun,
+                "slack": slack,
+                "con": con,
+                "nit": iteration,
+                "phase": phase,
+                "complete": False,
+                "status": status,
+                "message": "",
+                "success": False,
+            }
+        )
         callback(res)
     if disp:
         _display_iter(phase, iteration, slack, con, fun)
 
 
-def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
-               maxupdate, mast, pivot, iteration=0, phase_one_n=None):
+def _phase_two(
+    c,
+    A,
+    x,
+    b,
+    callback,
+    postsolve_args,
+    maxiter,
+    tol,
+    disp,
+    maxupdate,
+    mast,
+    pivot,
+    iteration=0,
+    phase_one_n=None,
+):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -347,8 +381,8 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
     """
     m, n = A.shape
     status = 0
-    a = np.arange(n)                    # indices of columns of A
-    ab = np.arange(m)                   # indices of columns of B
+    a = np.arange(n)  # indices of columns of A
+    ab = np.arange(m)  # indices of columns of B
     if maxupdate:
         # basis matrix factorization object; similar to B = A[:, b]
         B = BGLU(A, b, maxupdate, mast)
@@ -358,23 +392,24 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
     for iteration in range(iteration, maxiter):
 
         if disp or callback is not None:
-            _display_and_callback(phase_one_n, x, postsolve_args, status,
-                                  iteration, disp, callback)
+            _display_and_callback(
+                phase_one_n, x, postsolve_args, status, iteration, disp, callback
+            )
 
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
-        xb = x[b]       # basic variables
-        cb = c[b]       # basic costs
+        xb = x[b]  # basic variables
+        cb = c[b]  # basic costs
 
         try:
-            v = B.solve(cb, transposed=True)    # similar to v = solve(B.T, cb)
+            v = B.solve(cb, transposed=True)  # similar to v = solve(B.T, cb)
         except LinAlgError:
             status = 4
             break
 
         # TODO: cythonize?
-        c_hat = c - v.dot(A)    # reduced cost
+        c_hat = c - v.dot(A)  # reduced cost
         c_hat = c_hat[~bl]
         # Above is much faster than:
         # N = A[:, ~bl]                 # slow!
@@ -385,21 +420,21 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
             break
 
         j = _select_enter_pivot(c_hat, bl, a, rule=pivot, tol=tol)
-        u = B.solve(A[:, j])        # similar to u = solve(B, A[:, j])
+        u = B.solve(A[:, j])  # similar to u = solve(B, A[:, j])
 
-        i = u > tol                 # if none of the u are positive, unbounded
+        i = u > tol  # if none of the u are positive, unbounded
         if not np.any(i):
             status = 3
             break
 
-        th = xb[i]/u[i]
-        l = np.argmin(th)           # implicitly selects smallest subscript
-        th_star = th[l]             # step size
+        th = xb[i] / u[i]
+        l = np.argmin(th)  # implicitly selects smallest subscript
+        th_star = th[l]  # step size
 
-        x[b] = x[b] - th_star*u     # take step
+        x[b] = x[b] - th_star * u  # take step
         x[j] = th_star
-        B.update(ab[i][l], j)       # modify basis
-        b = B.b                     # similar to b[ab[i][l]] =
+        B.update(ab[i][l], j)  # modify basis
+        b = B.b  # similar to b[ab[i][l]] =
 
     else:
         # If the end of the for loop is reached (without a break statement),
@@ -408,16 +443,29 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
         iteration += 1
         status = 1
         if disp or callback is not None:
-            _display_and_callback(phase_one_n, x, postsolve_args, status,
-                                  iteration, disp, callback)
+            _display_and_callback(
+                phase_one_n, x, postsolve_args, status, iteration, disp, callback
+            )
 
     return x, b, status, iteration
 
 
-def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
-                maxiter=5000, tol=1e-12, disp=False,
-                maxupdate=10, mast=False, pivot="mrc",
-                **unknown_options):
+def _linprog_rs(
+    c,
+    c0,
+    A,
+    b,
+    x0,
+    callback,
+    postsolve_args,
+    maxiter=5000,
+    tol=1e-12,
+    disp=False,
+    maxupdate=10,
+    mast=False,
+    pivot="mrc",
+    **unknown_options,
+):
     """
     Solve the following linear programming problem via a two-phase
     revised simplex algorithm.::
@@ -535,38 +583,46 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
 
     _check_unknown_options(unknown_options)
 
-    messages = ["Optimization terminated successfully.",
-                "Iteration limit reached.",
-                "The problem appears infeasible, as the phase one auxiliary "
-                "problem terminated successfully with a residual of {0:.1e}, "
-                "greater than the tolerance {1} required for the solution to "
-                "be considered feasible. Consider increasing the tolerance to "
-                "be greater than {0:.1e}. If this tolerance is unnaceptably "
-                "large, the problem is likely infeasible.",
-                "The problem is unbounded, as the simplex algorithm found "
-                "a basic feasible solution from which there is a direction "
-                "with negative reduced cost in which all decision variables "
-                "increase.",
-                "Numerical difficulties encountered; consider trying "
-                "method='interior-point'.",
-                "Problems with no constraints are trivially solved; please "
-                "turn presolve on.",
-                "The guess x0 cannot be converted to a basic feasible "
-                "solution. "
-                ]
+    messages = [
+        "Optimization terminated successfully.",
+        "Iteration limit reached.",
+        "The problem appears infeasible, as the phase one auxiliary "
+        "problem terminated successfully with a residual of {0:.1e}, "
+        "greater than the tolerance {1} required for the solution to "
+        "be considered feasible. Consider increasing the tolerance to "
+        "be greater than {0:.1e}. If this tolerance is unnaceptably "
+        "large, the problem is likely infeasible.",
+        "The problem is unbounded, as the simplex algorithm found "
+        "a basic feasible solution from which there is a direction "
+        "with negative reduced cost in which all decision variables "
+        "increase.",
+        "Numerical difficulties encountered; consider trying method='interior-point'.",
+        "Problems with no constraints are trivially solved; please turn presolve on.",
+        "The guess x0 cannot be converted to a basic feasible solution. ",
+    ]
 
     if A.size == 0:  # address test_unbounded_below_no_presolve_corrected
         return np.zeros(c.shape), 5, messages[5], 0
 
-    x, basis, A, b, residual, status, iteration = (
-        _phase_one(A, b, x0, callback, postsolve_args,
-                   maxiter, tol, disp, maxupdate, mast, pivot))
+    x, basis, A, b, residual, status, iteration = _phase_one(
+        A, b, x0, callback, postsolve_args, maxiter, tol, disp, maxupdate, mast, pivot
+    )
 
     if status == 0:
-        x, basis, status, iteration = _phase_two(c, A, x, basis, callback,
-                                                 postsolve_args,
-                                                 maxiter, tol, disp,
-                                                 maxupdate, mast, pivot,
-                                                 iteration)
+        x, basis, status, iteration = _phase_two(
+            c,
+            A,
+            x,
+            basis,
+            callback,
+            postsolve_args,
+            maxiter,
+            tol,
+            disp,
+            maxupdate,
+            mast,
+            pivot,
+            iteration,
+        )
 
     return x, status, messages[status].format(residual, tol), iteration

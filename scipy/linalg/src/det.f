@@ -156,6 +156,3 @@ cf2py callprotoargument complex_float*,complex_float*,int*,int*,int*
       external cdet_c
       call cdet_c(det,a,n,piv,info)
       end
-
-
-

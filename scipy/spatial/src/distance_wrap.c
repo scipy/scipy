@@ -97,16 +97,16 @@ DEFINE_WRAP_CDIST(sokalsneath, char)
 DEFINE_WRAP_CDIST(yule, char)
 
 static PyObject *cdist_hamming_double_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *w;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_hamming_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
     return 0;
@@ -127,7 +127,7 @@ static PyObject *cdist_hamming_double_wrap(
 }
 
 static PyObject *cdist_hamming_char_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
@@ -135,9 +135,9 @@ static PyObject *cdist_hamming_char_wrap(
   const char *XA, *XB;
   const double *w;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_hamming_char_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
     return 0;
@@ -157,17 +157,17 @@ static PyObject *cdist_hamming_char_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n, status;
   double *dm;
   const double *XA, *XB;
   static char *kwlist[] = {"XA", "XB", "dm", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:cdist_cosine_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-            &PyArray_Type, &dm_)) 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
+            &PyArray_Type, &dm_))
   {
     return 0;
   }
@@ -189,7 +189,7 @@ static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n, status;
@@ -197,10 +197,10 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   const double *XA, *XB;
   const double *covinv;
   static char *kwlist[] = {"XA", "XB", "dm", "VI", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_mahalanobis_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-            &PyArray_Type, &dm_, &PyArray_Type, &covinv_)) 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
+            &PyArray_Type, &dm_, &PyArray_Type, &covinv_))
   {
     return 0;
   }
@@ -223,8 +223,8 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args, 
-                                             PyObject *kwargs) 
+static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
+                                             PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
@@ -232,9 +232,9 @@ static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   const double *XA, *XB;
   double p;
   static char *kwlist[] = {"XA", "XB", "dm", "p", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!d:cdist_minkowski_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_,
             &p)) {
     return 0;
@@ -253,17 +253,17 @@ static PyObject *cdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_seuclidean_double_wrap(PyObject *self, PyObject *args, 
-                                              PyObject *kwargs) 
+static PyObject *cdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
+                                              PyObject *kwargs)
 {
   PyArrayObject *XA_, *XB_, *dm_, *var_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *var;
   static char *kwlist[] = {"XA", "XB", "dm", "V", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_seuclidean_double_wrap", kwlist,
-            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_,
             &PyArray_Type, &dm_, &PyArray_Type, &var_)) {
     return 0;
   }
@@ -427,14 +427,14 @@ DEFINE_WRAP_PDIST(sokalsneath, char)
 DEFINE_WRAP_PDIST(yule, char)
 
 static PyObject *pdist_hamming_double_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
   double *dm;
   const double *X, *w;
   static char *kwlist[] = {"X", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_hamming_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -456,7 +456,7 @@ static PyObject *pdist_hamming_double_wrap(
 }
 
 static PyObject *pdist_hamming_char_wrap(
-                            PyObject *self, PyObject *args, PyObject *kwargs) 
+                            PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
@@ -464,7 +464,7 @@ static PyObject *pdist_hamming_char_wrap(
   const double *w;
   double *dm;
   static char *kwlist[] = {"X", "dm", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_hamming_char_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -485,15 +485,15 @@ static PyObject *pdist_hamming_char_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args, 
-                                          PyObject *kwargs) 
+static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
+                                          PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_;
   int m, n, status;
   double *dm;
   const double *X;
   static char *kwlist[] = {"X", "dm", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!:pdist_cosine_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_)) {
@@ -506,7 +506,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
     dm = (double*)PyArray_DATA(dm_);
     m = PyArray_DIMS(X_)[0];
     n = PyArray_DIMS(X_)[1];
-    
+
     status = pdist_cosine(X, dm, m, n);
     NPY_END_THREADS;
     if(status < 0)
@@ -515,7 +515,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
+static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n, status;
@@ -523,10 +523,10 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   const double *X;
   const double *covinv;
   static char *kwlist[] = {"X", "dm", "VI", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_mahalanobis_double_wrap", kwlist,
             &PyArray_Type, &X_,
-            &PyArray_Type, &dm_, 
+            &PyArray_Type, &dm_,
             &PyArray_Type, &covinv_)) {
     return 0;
   }
@@ -547,15 +547,15 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args, 
-                                             PyObject *kwargs) 
+static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args,
+                                             PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm, *X;
   double p;
   static char *kwlist[] = {"X", "dm", "p", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!d:pdist_minkowski_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -575,15 +575,15 @@ static PyObject *pdist_minkowski_double_wrap(PyObject *self, PyObject *args,
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_seuclidean_double_wrap(PyObject *self, PyObject *args, 
-                                              PyObject *kwargs) 
+static PyObject *pdist_seuclidean_double_wrap(PyObject *self, PyObject *args,
+                                              PyObject *kwargs)
 {
   PyArrayObject *X_, *dm_, *var_;
   int m, n;
   double *dm;
   const double *X, *var;
   static char *kwlist[] = {"X", "dm", "V", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!:pdist_seuclidean_double_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
@@ -697,7 +697,7 @@ static PyObject *pdist_weighted_minkowski_double_wrap(
 }
 
 
-static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
+static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
 {
   PyArrayObject *M_, *v_;
   int n, elsize;
@@ -720,7 +720,7 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
   return Py_BuildValue("");
 }
 
-static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
+static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
 {
   PyArrayObject *M_, *v_;
   int n, s;

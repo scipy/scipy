@@ -13,7 +13,7 @@ class Infinity(Benchmark):
 
     .. math::
 
-        f_{\text{Infinity}}(x) = \sum_{i=1}^{n} x_i^{6} 
+        f_{\text{Infinity}}(x) = \sum_{i=1}^{n} x_i^{6}
         \left [ \sin\left ( \frac{1}{x_i} \right ) + 2 \right ]
 
 

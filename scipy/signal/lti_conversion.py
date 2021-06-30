@@ -4,15 +4,13 @@ from one representation to another.
 """
 import numpy
 import numpy as np
-from numpy import (r_, eye, atleast_2d, poly, dot,
-                   asarray, prod, zeros, array, outer)
+from numpy import r_, eye, atleast_2d, poly, dot, asarray, prod, zeros, array, outer
 from scipy import linalg
 
 from .filter_design import tf2zpk, zpk2tf, normalize
 
 
-__all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
-           'cont2discrete']
+__all__ = ["tf2ss", "abcd_normalize", "ss2tf", "zpk2ss", "ss2zpk", "cont2discrete"]
 
 
 def tf2ss(num, den):
@@ -71,7 +69,7 @@ def tf2ss(num, den):
     #
     #   A, B, C, and D follow quite naturally.
     #
-    num, den = normalize(num, den)   # Strips zeros, checks arrays
+    num, den = normalize(num, den)  # Strips zeros, checks arrays
     nn = len(num.shape)
     if nn == 1:
         num = asarray([num], num.dtype)
@@ -81,11 +79,10 @@ def tf2ss(num, den):
         msg = "Improper transfer function. `num` is longer than `den`."
         raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
-        return (array([], float), array([], float), array([], float),
-                array([], float))
+        return (array([], float), array([], float), array([], float), array([], float))
 
     # pad numerator to have same number of columns has denominator
-    num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]
+    num = r_["-1", zeros((num.shape[0], K - M), num.dtype), num]
 
     if num.shape[-1] > 0:
         D = atleast_2d(num[:, 0])
@@ -100,8 +97,7 @@ def tf2ss(num, den):
     if K == 1:
         D = D.reshape(num.shape)
 
-        return (zeros((1, 1)), zeros((1, D.shape[1])),
-                zeros((D.shape[0], 1)), D)
+        return (zeros((1, 1)), zeros((1, D.shape[1])), zeros((D.shape[0], 1)), D)
 
     frow = -array([den[1:]])
     A = r_[frow, eye(K - 2, K - 1)]
@@ -258,8 +254,8 @@ def ss2tf(A, B, C, D, input=0):
         raise ValueError("System does not have the input specified.")
 
     # make SIMO from possibly MIMO system.
-    B = B[:, input:input + 1]
-    D = D[:, input:input + 1]
+    B = B[:, input : input + 1]
+    D = D[:, input : input + 1]
 
     try:
         den = poly(A)
@@ -433,68 +429,76 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     if len(system) == 1:
         return system.to_discrete()
     if len(system) == 2:
-        sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
-                             alpha=alpha)
+        sysd = cont2discrete(
+            tf2ss(system[0], system[1]), dt, method=method, alpha=alpha
+        )
         return ss2tf(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
     elif len(system) == 3:
-        sysd = cont2discrete(zpk2ss(system[0], system[1], system[2]), dt,
-                             method=method, alpha=alpha)
+        sysd = cont2discrete(
+            zpk2ss(system[0], system[1], system[2]), dt, method=method, alpha=alpha
+        )
         return ss2zpk(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
     elif len(system) == 4:
         a, b, c, d = system
     else:
-        raise ValueError("First argument must either be a tuple of 2 (tf), "
-                         "3 (zpk), or 4 (ss) arrays.")
+        raise ValueError(
+            "First argument must either be a tuple of 2 (tf), "
+            "3 (zpk), or 4 (ss) arrays."
+        )
 
-    if method == 'gbt':
+    if method == "gbt":
         if alpha is None:
-            raise ValueError("Alpha parameter must be specified for the "
-                             "generalized bilinear transform (gbt) method")
+            raise ValueError(
+                "Alpha parameter must be specified for the "
+                "generalized bilinear transform (gbt) method"
+            )
         elif alpha < 0 or alpha > 1:
-            raise ValueError("Alpha parameter must be within the interval "
-                             "[0,1] for the gbt method")
+            raise ValueError(
+                "Alpha parameter must be within the interval [0,1] for the gbt method"
+            )
 
-    if method == 'gbt':
+    if method == "gbt":
         # This parameter is used repeatedly - compute once here
-        ima = np.eye(a.shape[0]) - alpha*dt*a
-        ad = linalg.solve(ima, np.eye(a.shape[0]) + (1.0-alpha)*dt*a)
-        bd = linalg.solve(ima, dt*b)
+        ima = np.eye(a.shape[0]) - alpha * dt * a
+        ad = linalg.solve(ima, np.eye(a.shape[0]) + (1.0 - alpha) * dt * a)
+        bd = linalg.solve(ima, dt * b)
 
         # Similarly solve for the output equation matrices
         cd = linalg.solve(ima.transpose(), c.transpose())
         cd = cd.transpose()
-        dd = d + alpha*np.dot(c, bd)
+        dd = d + alpha * np.dot(c, bd)
 
-    elif method == 'bilinear' or method == 'tustin':
+    elif method == "bilinear" or method == "tustin":
         return cont2discrete(system, dt, method="gbt", alpha=0.5)
 
-    elif method == 'euler' or method == 'forward_diff':
+    elif method == "euler" or method == "forward_diff":
         return cont2discrete(system, dt, method="gbt", alpha=0.0)
 
-    elif method == 'backward_diff':
+    elif method == "backward_diff":
         return cont2discrete(system, dt, method="gbt", alpha=1.0)
 
-    elif method == 'zoh':
+    elif method == "zoh":
         # Build an exponential matrix
         em_upper = np.hstack((a, b))
 
         # Need to stack zeros under the a and b matrices
-        em_lower = np.hstack((np.zeros((b.shape[1], a.shape[0])),
-                              np.zeros((b.shape[1], b.shape[1]))))
+        em_lower = np.hstack(
+            (np.zeros((b.shape[1], a.shape[0])), np.zeros((b.shape[1], b.shape[1])))
+        )
 
         em = np.vstack((em_upper, em_lower))
         ms = linalg.expm(dt * em)
 
         # Dispose of the lower rows
-        ms = ms[:a.shape[0], :]
+        ms = ms[: a.shape[0], :]
 
-        ad = ms[:, 0:a.shape[1]]
-        bd = ms[:, a.shape[1]:]
+        ad = ms[:, 0 : a.shape[1]]
+        bd = ms[:, a.shape[1] :]
 
         cd = c
         dd = d
 
-    elif method == 'foh':
+    elif method == "foh":
         # Size parameters for convenience
         n = a.shape[0]
         m = b.shape[1]
@@ -508,18 +512,19 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         # Get the three blocks from upper rows
         ms11 = ms[:n, 0:n]
-        ms12 = ms[:n, n:n + m]
-        ms13 = ms[:n, n + m:]
+        ms12 = ms[:n, n : n + m]
+        ms13 = ms[:n, n + m :]
 
         ad = ms11
         bd = ms12 - ms13 + ms11 @ ms13
         cd = c
         dd = d + c @ ms13
 
-    elif method == 'impulse':
+    elif method == "impulse":
         if not np.allclose(d, 0):
-            raise ValueError("Impulse method is only applicable"
-                             "to strictly proper systems")
+            raise ValueError(
+                "Impulse method is only applicableto strictly proper systems"
+            )
 
         ad = linalg.expm(a * dt)
         bd = ad @ b * dt

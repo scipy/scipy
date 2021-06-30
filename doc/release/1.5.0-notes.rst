@@ -1133,4 +1133,3 @@ Pull requests for 1.5.0
 * `#12318 <https://github.com/scipy/scipy/pull/12318>`__: BUG: sparse: avoid np.prod overflow in check_shape
 * `#12319 <https://github.com/scipy/scipy/pull/12319>`__: BUG: Make cobyla threadsafe
 * `#12335 <https://github.com/scipy/scipy/pull/12335>`__: MAINT: Work around Sphinx bug
-

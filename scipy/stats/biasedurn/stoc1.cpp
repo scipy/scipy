@@ -19,7 +19,7 @@
 * for sampling from these distributions.
 * The file ran-instructions.pdf contains general instructions.
 *
-* Copyright 2002-2008 by Agner Fog. 
+* Copyright 2002-2008 by Agner Fog.
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *****************************************************************************/
 
@@ -40,9 +40,9 @@ double LnFac(int32_t n) {
    // log factorial function. gives natural logarithm of n!
 
    // define constants
-   static const double                 // coefficients in Stirling approximation     
+   static const double                 // coefficients in Stirling approximation
       C0 =  0.918938533204672722,      // ln(sqrt(2*pi))
-      C1 =  1./12., 
+      C1 =  1./12.,
       C3 = -1./360.;
    // C5 =  1./1260.,                  // use r^5 term if FAK_LEN < 50
    // C7 = -1./1680.;                  // use r^7 term if FAK_LEN < 20
@@ -52,7 +52,7 @@ double LnFac(int32_t n) {
 
    if (n < FAK_LEN) {
       if (n <= 1) {
-         if (n < 0) FatalError("Parameter negative in LnFac function");  
+         if (n < 0) FatalError("Parameter negative in LnFac function");
          return 0;
       }
       if (!initialized) {              // first time. Must initialize table
@@ -92,15 +92,15 @@ Hypergeometric distribution
 int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
    /*
    This function generates a random variate with the hypergeometric
-   distribution. This is the distribution you get when drawing balls without 
+   distribution. This is the distribution you get when drawing balls without
    replacement from an urn with two colors. n is the number of balls you take,
-   m is the number of red balls in the urn, N is the total number of balls in 
+   m is the number of red balls in the urn, N is the total number of balls in
    the urn, and the return value is the number of red balls you get.
 
    This function uses inversion by chop-down search from the mode when
    parameters are small, and the ratio-of-uniforms method when the former
    method would be too slow or would give overflow.
-   */   
+   */
 
    int32_t fak, addd;                    // used for undoing transformations
    int32_t x;                            // result
@@ -115,16 +115,16 @@ int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
       // invert m
       m = N - m;
       fak = -1;  addd = n;
-   }    
+   }
    if (n > N/2) {
       // invert n
       n = N - n;
       addd += fak * m;  fak = - fak;
-   }    
+   }
    if (n > m) {
       // swap n and m
       x = n;  n = m;  m = x;
-   }    
+   }
    // cases with only one possible result end here
    if (n == 0)  return addd;
 
@@ -139,7 +139,7 @@ int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
       // inversion method, using chop-down search from mode
       x = HypInversionMod (n, m, N);
    }
-   // undo symmetry transformations  
+   // undo symmetry transformations
    return x * fak + addd;
 }
 
@@ -149,17 +149,17 @@ Subfunctions used by hypergeometric
 ***********************************************************************/
 
 int32_t StochasticLib1::HypInversionMod (int32_t n, int32_t m, int32_t N) {
-   /* 
+   /*
    Subfunction for Hypergeometric distribution. Assumes 0 <= n <= m <= N/2.
    Overflow protection is needed when N > 680 or n > 75.
 
-   Hypergeometric distribution by inversion method, using down-up 
+   Hypergeometric distribution by inversion method, using down-up
    search starting at the mode using the chop-down technique.
 
    This method is faster than the rejection method when the variance is low.
    */
 
-   // Sampling 
+   // Sampling
    int32_t       I;                    // Loop counter
    int32_t       L = N - m - n;        // Parameter
    double        modef;                // mode, float
@@ -181,7 +181,7 @@ int32_t StochasticLib1::HypInversionMod (int32_t n, int32_t m, int32_t N) {
       p  = Mp / (N + 2.);
       modef = np * p;                       // mode, real
       hyp_mode = (int32_t)modef;            // mode, integer
-      if (hyp_mode == modef && p == 0.5) {   
+      if (hyp_mode == modef && p == 0.5) {
          hyp_mp = hyp_mode--;
       }
       else {
@@ -212,7 +212,7 @@ int32_t StochasticLib1::HypInversionMod (int32_t n, int32_t m, int32_t N) {
       for (I = 1; I <= hyp_mode; I++, k1--, k2++) {
          // Downward search from k1 = hyp_mp - 1
          divisor = (np - k1)*(Mp - k1);
-         // Instead of dividing c with divisor, we multiply U and d because 
+         // Instead of dividing c with divisor, we multiply U and d because
          // multiplication is faster. This will give overflow if N > 800
          U *= divisor;  d *= divisor;
          c *= k1 * (L1 + k1);
@@ -221,7 +221,7 @@ int32_t StochasticLib1::HypInversionMod (int32_t n, int32_t m, int32_t N) {
          // Upward search from k2 = hyp_mode + 1
          divisor = k2 * (L1 + k2);
          // re-scale parameters to avoid time-consuming division
-         U *= divisor;  c *= divisor; 
+         U *= divisor;  c *= divisor;
          d *= (np - k2) * (Mp - k2);
          if ((U -= d) <= 0.)  return(hyp_mode + I);  // = k2
          // Values of n > 75 or N > 680 may give overflow if you leave out this..
@@ -279,7 +279,7 @@ int32_t StochasticLib1::HypRatioOfUnifoms (int32_t n, int32_t m, int32_t N) {
       hyp_fm = fc_lnpk(mode, L, m, n);                          // maximum
       hyp_bound = (int32_t)(hyp_a + 4.0 * hyp_h);               // safety-bound
       if (hyp_bound > n) hyp_bound = n;
-   }    
+   }
    while(1) {
       u = Random();                              // uniform random number
       if (u == 0) continue;                      // avoid division by 0
@@ -312,19 +312,19 @@ void StochasticLib1::MultiHypergeometric (int32_t * destination, int32_t * sourc
    This function generates a vector of random variates, each with the
    hypergeometric distribution.
 
-   The multivariate hypergeometric distribution is the distribution you 
+   The multivariate hypergeometric distribution is the distribution you
    get when drawing balls from an urn with more than two colors, without
    replacement.
 
    Parameters:
-   destination:    An output array to receive the number of balls of each 
+   destination:    An output array to receive the number of balls of each
    color. Must have space for at least 'colors' elements.
-   source:         An input array containing the number of balls of each 
+   source:         An input array containing the number of balls of each
    color in the urn. Must have 'colors' elements.
    All elements must be non-negative.
    n:              The number of balls drawn from the urn.
    Can't exceed the total number of balls in the urn.
-   colors:         The number of possible colors. 
+   colors:         The number of possible colors.
    */
    int32_t sum, x, y;
    int i;
@@ -332,14 +332,14 @@ void StochasticLib1::MultiHypergeometric (int32_t * destination, int32_t * sourc
    if (colors == 0) return;
 
    // compute total number of balls
-   for (i=0, sum=0; i<colors; i++) { 
+   for (i=0, sum=0; i<colors; i++) {
       y = source[i];
       if (y < 0) FatalError("Parameter negative in multihypergeo function");
       sum += y;
    }
    if (n > sum) FatalError("n > sum in multihypergeo function");
 
-   for (i=0; i<colors-1; i++) { 
+   for (i=0; i<colors-1; i++) {
       // generate output by calling hypergeometric colors-1 times
       y = source[i];
       x = Hypergeometric(n, y, sum);
@@ -376,11 +376,11 @@ int32_t StochasticLib1::Poisson (double L) {
          // calculate probabilities
          //--------------------------------------------------------------
          // For extremely small L we calculate the probabilities of x = 1
-         // and x = 2 (ignoring higher x). The reason for using this 
+         // and x = 2 (ignoring higher x). The reason for using this
          // method is to prevent numerical inaccuracies in other methods.
          //--------------------------------------------------------------
          return PoissonLow(L);
-      }    
+      }
       else {
          //--------------------------------------------------------------
          // inversion method
@@ -390,7 +390,7 @@ int32_t StochasticLib1::Poisson (double L) {
          //--------------------------------------------------------------
          return PoissonInver(L);
       }
-   }      
+   }
    else {
       if (L > 2.E9) FatalError("Parameter too big in poisson function");
 
@@ -410,15 +410,15 @@ Subfunctions used by poisson
 ***********************************************************************/
 int32_t StochasticLib1::PoissonLow(double L) {
    /*
-   This subfunction generates a random variate with the poisson 
+   This subfunction generates a random variate with the poisson
    distribution for extremely low values of L.
 
    The method is a simple calculation of the probabilities of x = 1
    and x = 2. Higher values are ignored.
 
-   The reason for using this method is to avoid the numerical inaccuracies 
+   The reason for using this method is to avoid the numerical inaccuracies
    in other methods.
-   */   
+   */
    double d, r;
    d = sqrt(L);
    if (Random() >= d) return 0;
@@ -431,13 +431,13 @@ int32_t StochasticLib1::PoissonLow(double L) {
 
 int32_t StochasticLib1::PoissonInver(double L) {
    /*
-   This subfunction generates a random variate with the poisson 
+   This subfunction generates a random variate with the poisson
    distribution using inversion by the chop down method (PIN).
 
    Execution time grows with L. Gives overflow for L > 80.
 
    The value of bound must be adjusted to the maximal value of L.
-   */   
+   */
    const int bound = 130;              // safety bound. Must be > L + 8*sqrt(L).
    double r;                           // uniform random number
    double f;                           // function value
@@ -447,7 +447,7 @@ int32_t StochasticLib1::PoissonInver(double L) {
       pois_L_last = L;
       pois_f0 = exp(-L);               // f(0) = probability of x=0
    }
-   while (1) {  
+   while (1) {
       r = Random();  x = 0;  f = pois_f0;
       do {                             // recursive calculation: f(x) = f(x-1) * L / x
          r -= f;
@@ -458,12 +458,12 @@ int32_t StochasticLib1::PoissonInver(double L) {
       }
       while (x <= bound);
    }
-}  
+}
 
 
 int32_t StochasticLib1::PoissonRatioUniforms(double L) {
    /*
-   This subfunction generates a random variate with the poisson 
+   This subfunction generates a random variate with the poisson
    distribution using the ratio-of-uniforms rejection method (PRUAt).
 
    Execution time does not depend on L, except that it matters whether L
@@ -526,7 +526,7 @@ int32_t StochasticLib1::Binomial (int32_t n, double p) {
          return inv * n;  // only one possible result
       }
       // error exit
-      FatalError("Parameter out of range in binomial function"); 
+      FatalError("Parameter out of range in binomial function");
    }
 
    //------------------------------------------------------------------
@@ -541,7 +541,7 @@ int32_t StochasticLib1::Binomial (int32_t n, double p) {
          // inversion method, using chop-down search from 0
          x = BinomialInver(n, p);
       }
-   }  
+   }
    else {
       // ratio of uniforms method
       x = BinomialRatioOfUniforms(n, p);
@@ -558,18 +558,18 @@ Subfunctions used by binomial
 ***********************************************************************/
 
 int32_t StochasticLib1::BinomialInver (int32_t n, double p) {
-   /* 
+   /*
    Subfunction for Binomial distribution. Assumes p < 0.5.
 
    Uses inversion method by search starting at 0.
 
    Gives overflow for n*p > 60.
 
-   This method is fast when n*p is low. 
-   */   
-   double f0, f, q; 
+   This method is fast when n*p is low.
+   */
+   double f0, f, q;
    int32_t bound;
-   double pn, r, rc; 
+   double pn, r, rc;
    int32_t x, n1, i;
 
    // f(0) = probability of x=0 is (1-p)^n
@@ -582,7 +582,7 @@ int32_t StochasticLib1::BinomialInver (int32_t n, double p) {
    // calculate safety bound
    rc = (n + 1) * p;
    bound = (int32_t)(rc + 11.0*(sqrt(rc) + 1.0));
-   if (bound > n) bound = n; 
+   if (bound > n) bound = n;
    q = p / (1. - p);
 
    while (1) {
@@ -603,19 +603,19 @@ int32_t StochasticLib1::BinomialInver (int32_t n, double p) {
 
 
 int32_t StochasticLib1::BinomialRatioOfUniforms (int32_t n, double p) {
-   /* 
+   /*
    Subfunction for Binomial distribution. Assumes p < 0.5.
 
    Uses the Ratio-of-Uniforms rejection method.
 
    The computation time hardly depends on the parameters, except that it matters
-   a lot whether parameters are within the range where the LnFac function is 
+   a lot whether parameters are within the range where the LnFac function is
    tabulated.
 
    Reference: E. Stadlober: "The ratio of uniforms approach for generating
    discrete random variates". Journal of Computational and Applied Mathematics,
    vol. 31, no. 1, 1990, pp. 181-189.
-   */   
+   */
    double u;                           // uniform random
    double q1;                          // 1-p
    double np;                          // n*p
@@ -666,14 +666,14 @@ void StochasticLib1::Multinomial (int32_t * destination, double * source, int32_
    balls from an urn with more than two colors, with replacement.
 
    Parameters:
-   destination:    An output array to receive the number of balls of each 
+   destination:    An output array to receive the number of balls of each
    color. Must have space for at least 'colors' elements.
-   source:         An input array containing the probability or fraction 
+   source:         An input array containing the probability or fraction
    of each color in the urn. Must have 'colors' elements.
    All elements must be non-negative. The sum doesn't have
    to be 1, but the sum must be positive.
-   n:              The number of balls drawn from the urn.                   
-   colors:         The number of possible colors. 
+   n:              The number of balls drawn from the urn.
+   colors:         The number of possible colors.
    */
    double s, sum;
    int32_t x;
@@ -682,14 +682,14 @@ void StochasticLib1::Multinomial (int32_t * destination, double * source, int32_
    if (colors == 0) return;
 
    // compute sum of probabilities
-   for (i=0, sum=0; i<colors; i++) { 
+   for (i=0, sum=0; i<colors; i++) {
       s = source[i];
       if (s < 0) FatalError("Parameter negative in multinomial function");
       sum += s;
    }
    if (sum == 0 && n > 0) FatalError("Zero sum in multinomial function");
 
-   for (i=0; i<colors-1; i++) { 
+   for (i=0; i<colors-1; i++) {
       // generate output by calling binomial (colors-1) times
       s = source[i];
       if (sum <= s) {
@@ -698,7 +698,7 @@ void StochasticLib1::Multinomial (int32_t * destination, double * source, int32_
          // 2. prevent s/sum getting bigger than 1 in case of rounding errors
          x = n;
       }
-      else {    
+      else {
          x = Binomial(n, s/sum);
       }
       n -= x; sum -= s;
@@ -717,14 +717,14 @@ void StochasticLib1::Multinomial (int32_t * destination, int32_t * source, int32
    if (colors == 0) return;
 
    // compute sum of probabilities
-   for (i=0, sum=0; i<colors; i++) { 
+   for (i=0, sum=0; i<colors; i++) {
       p = source[i];
       if (p < 0) FatalError("Parameter negative in multinomial function");
       sum += p;
    }
    if (sum == 0 && n > 0) FatalError("Zero sum in multinomial function");
 
-   for (i=0; i<colors-1; i++) { 
+   for (i=0; i<colors-1; i++) {
       // generate output by calling binomial (colors-1) times
       if (sum == 0) {
          destination[i] = 0; continue;
@@ -750,7 +750,7 @@ double StochasticLib1::Normal(double m, double s) {
    if (normal_x2_valid) {              // we have a valid result from last call
       normal_x2_valid = 0;
       return normal_x2 * s + m;
-   }    
+   }
    // make two normally distributed variates by Box-Muller transformation
    do {
       normal_x1 = 2. * Random() - 1.;
@@ -781,7 +781,7 @@ double StochasticLib1::NormalTrunc(double m, double s, double limit) {
 Bernoulli distribution
 ***********************************************************************/
 int StochasticLib1::Bernoulli(double p) {
-   // Bernoulli distribution with parameter p. This function returns 
+   // Bernoulli distribution with parameter p. This function returns
    // 0 or 1 with probability (1-p) and p, respectively.
    if (p < 0 || p > 1) FatalError("Parameter out of range in Bernoulli function");
    return Random() < p;
@@ -799,7 +799,7 @@ void StochasticLib1::Shuffle(int * list, int min, int n) {
    The parameter 'list' must be an array with at least n elements.
    The array index goes from 0 to n-1.
 
-   If you want to shuffle something else than integers then use the 
+   If you want to shuffle something else than integers then use the
    integers in list as an index into a table of the items you want to shuffle.
    */
 

@@ -5,7 +5,7 @@ from scipy.linalg import get_blas_funcs
 from warnings import warn
 
 
-__all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
+__all__ = ["HessianUpdateStrategy", "BFGS", "SR1"]
 
 
 class HessianUpdateStrategy:
@@ -48,8 +48,9 @@ class HessianUpdateStrategy:
             When set to 'hess' the Hessian will be stored and updated.
             When set to 'inv_hess' its inverse will be used instead.
         """
-        raise NotImplementedError("The method ``initialize(n, approx_type)``"
-                                  " is not implemented.")
+        raise NotImplementedError(
+            "The method ``initialize(n, approx_type)`` is not implemented."
+        )
 
     def update(self, delta_x, delta_grad):
         """Update internal matrix.
@@ -66,8 +67,9 @@ class HessianUpdateStrategy:
             The difference between the gradients:
             ``delta_grad = grad(x2) - grad(x1)``.
         """
-        raise NotImplementedError("The method ``update(delta_x, delta_grad)``"
-                                  " is not implemented.")
+        raise NotImplementedError(
+            "The method ``update(delta_x, delta_grad)`` is not implemented."
+        )
 
     def dot(self, p):
         """Compute the product of the internal matrix with the given vector.
@@ -83,8 +85,7 @@ class HessianUpdateStrategy:
             1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
-        raise NotImplementedError("The method ``dot(p)``"
-                                  " is not implemented.")
+        raise NotImplementedError("The method ``dot(p)`` is not implemented.")
 
     def get_matrix(self):
         """Return current internal matrix.
@@ -96,19 +97,18 @@ class HessianUpdateStrategy:
             or its inverse (depending on how 'approx_type'
             is defined).
         """
-        raise NotImplementedError("The method ``get_matrix(p)``"
-                                  " is not implemented.")
+        raise NotImplementedError("The method ``get_matrix(p)`` is not implemented.")
 
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
-    """Hessian update strategy with full dimensional internal representation.
-    """
-    _syr = get_blas_funcs('syr', dtype='d')  # Symmetric rank 1 update
-    _syr2 = get_blas_funcs('syr2', dtype='d')  # Symmetric rank 2 update
-    # Symmetric matrix-vector product
-    _symv = get_blas_funcs('symv', dtype='d')
+    """Hessian update strategy with full dimensional internal representation."""
 
-    def __init__(self, init_scale='auto'):
+    _syr = get_blas_funcs("syr", dtype="d")  # Symmetric rank 1 update
+    _syr2 = get_blas_funcs("syr2", dtype="d")  # Symmetric rank 2 update
+    # Symmetric matrix-vector product
+    _symv = get_blas_funcs("symv", dtype="d")
+
+    def __init__(self, init_scale="auto"):
         self.init_scale = init_scale
         # Until initialize is called we can't really use the class,
         # so it makes sense to set everything to None.
@@ -135,10 +135,10 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         self.first_iteration = True
         self.n = n
         self.approx_type = approx_type
-        if approx_type not in ('hess', 'inv_hess'):
+        if approx_type not in ("hess", "inv_hess"):
             raise ValueError("`approx_type` must be 'hess' or 'inv_hess'.")
         # Create matrix
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             self.B = np.eye(n, dtype=float)
         else:
             self.H = np.eye(n, dtype=float)
@@ -152,14 +152,15 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         ys = np.abs(np.dot(delta_grad, delta_x))
         if ys == 0.0 or y_norm2 == 0 or s_norm2 == 0:
             return 1
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             return y_norm2 / ys
         else:
             return ys / y_norm2
 
     def _update_implementation(self, delta_x, delta_grad):
-        raise NotImplementedError("The method ``_update_implementation``"
-                                  " is not implemented.")
+        raise NotImplementedError(
+            "The method ``_update_implementation`` is not implemented."
+        )
 
     def update(self, delta_x, delta_grad):
         """Update internal matrix.
@@ -179,11 +180,14 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         if np.all(delta_x == 0.0):
             return
         if np.all(delta_grad == 0.0):
-            warn('delta_grad == 0.0. Check if the approximated '
-                 'function is linear. If the function is linear '
-                 'better results can be obtained by defining the '
-                 'Hessian as zero instead of using quasi-Newton '
-                 'approximations.', UserWarning)
+            warn(
+                "delta_grad == 0.0. Check if the approximated "
+                "function is linear. If the function is linear "
+                "better results can be obtained by defining the "
+                "Hessian as zero instead of using quasi-Newton "
+                "approximations.",
+                UserWarning,
+            )
             return
         if self.first_iteration:
             # Get user specific scale
@@ -192,7 +196,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             else:
                 scale = float(self.init_scale)
             # Scale initial matrix with ``scale * np.eye(n)``
-            if self.approx_type == 'hess':
+            if self.approx_type == "hess":
                 self.B *= scale
             else:
                 self.H *= scale
@@ -213,7 +217,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             return self._symv(1, self.B, p)
         else:
             return self._symv(1, self.H, p)
@@ -227,7 +231,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             Dense matrix containing either the Hessian or its inverse
             (depending on how `approx_type` was defined).
         """
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             M = np.copy(self.B)
         else:
             M = np.copy(self.H)
@@ -271,21 +275,23 @@ class BFGS(FullHessianUpdateStrategy):
            Second Edition (2006).
     """
 
-    def __init__(self, exception_strategy='skip_update', min_curvature=None,
-                 init_scale='auto'):
-        if exception_strategy == 'skip_update':
+    def __init__(
+        self, exception_strategy="skip_update", min_curvature=None, init_scale="auto"
+    ):
+        if exception_strategy == "skip_update":
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
                 self.min_curvature = 1e-8
-        elif exception_strategy == 'damp_update':
+        elif exception_strategy == "damp_update":
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
                 self.min_curvature = 0.2
         else:
-            raise ValueError("`exception_strategy` must be 'skip_update' "
-                             "or 'damp_update'.")
+            raise ValueError(
+                "`exception_strategy` must be 'skip_update' or 'damp_update'."
+            )
 
         super().__init__(init_scale)
         self.exception_strategy = exception_strategy
@@ -308,7 +314,7 @@ class BFGS(FullHessianUpdateStrategy):
                Second Edition (2006).
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
-        self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
+        self.H = self._syr((ys + yHy) / ys ** 2, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update the Hessian matrix.
@@ -330,7 +336,7 @@ class BFGS(FullHessianUpdateStrategy):
 
     def _update_implementation(self, delta_x, delta_grad):
         # Auxiliary variables w and z
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             w = delta_x
             z = delta_grad
         else:
@@ -346,7 +352,7 @@ class BFGS(FullHessianUpdateStrategy):
         if wMw <= 0.0:
             scale = self._auto_scale(delta_x, delta_grad)
             # Reinitialize matrix
-            if self.approx_type == 'hess':
+            if self.approx_type == "hess":
                 self.B = scale * np.eye(self.n, dtype=float)
             else:
                 self.H = scale * np.eye(self.n, dtype=float)
@@ -358,17 +364,17 @@ class BFGS(FullHessianUpdateStrategy):
             # If the option 'skip_update' is set
             # we just skip the update when the condion
             # is violated.
-            if self.exception_strategy == 'skip_update':
+            if self.exception_strategy == "skip_update":
                 return
             # If the option 'damp_update' is set we
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
-            elif self.exception_strategy == 'damp_update':
-                update_factor = (1-self.min_curvature) / (1 - wz/wMw)
-                z = update_factor*z + (1-update_factor)*Mw
+            elif self.exception_strategy == "damp_update":
+                update_factor = (1 - self.min_curvature) / (1 - wz / wMw)
+                z = update_factor * z + (1 - update_factor) * Mw
                 wz = np.dot(w, z)
         # Update matrix
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             self._update_hessian(wz, Mw, wMw, z)
         else:
             self._update_inverse_hessian(wz, Mw, wMw, z)
@@ -402,13 +408,13 @@ class SR1(FullHessianUpdateStrategy):
            Second Edition (2006).
     """
 
-    def __init__(self, min_denominator=1e-8, init_scale='auto'):
+    def __init__(self, min_denominator=1e-8, init_scale="auto"):
         self.min_denominator = min_denominator
         super().__init__(init_scale)
 
     def _update_implementation(self, delta_x, delta_grad):
         # Auxiliary variables w and z
-        if self.approx_type == 'hess':
+        if self.approx_type == "hess":
             w = delta_x
             z = delta_grad
         else:
@@ -420,10 +426,10 @@ class SR1(FullHessianUpdateStrategy):
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
         # we just skip the update.
-        if np.abs(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
+        if np.abs(denominator) <= self.min_denominator * norm(w) * norm(z_minus_Mw):
             return
         # Update matrix
-        if self.approx_type == 'hess':
-            self.B = self._syr(1/denominator, z_minus_Mw, a=self.B)
+        if self.approx_type == "hess":
+            self.B = self._syr(1 / denominator, z_minus_Mw, a=self.B)
         else:
-            self.H = self._syr(1/denominator, z_minus_Mw, a=self.H)
+            self.H = self._syr(1 / denominator, z_minus_Mw, a=self.H)

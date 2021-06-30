@@ -222,7 +222,7 @@ public:
     double time_update() const;       // time LU update
     double mean_fill() const;         // geom. mean of LU fill factors
     double max_fill() const;          // max LU fill factor
-    
+
 private:
     // Basis repair terminates when the maximum absolute entry in inverse(B)
     // is smaller than kBasisRepairThreshold. At most kMaxBasisRepair repair

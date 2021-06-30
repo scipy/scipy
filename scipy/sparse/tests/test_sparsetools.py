@@ -5,8 +5,14 @@ import threading
 
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_allclose
-from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
-                          bsr_matrix, dia_matrix)
+from scipy.sparse import (
+    _sparsetools,
+    coo_matrix,
+    csr_matrix,
+    csc_matrix,
+    bsr_matrix,
+    dia_matrix,
+)
 from scipy.sparse.sputils import supported_dtypes, matrix
 from scipy._lib._testutils import check_free_memory
 
@@ -33,10 +39,19 @@ def test_threads():
         def run(self):
             b = a.copy()
             for j in range(niter):
-                _sparsetools.csr_plus_csr(n, n,
-                                          a.indptr, a.indices, a.data,
-                                          a.indptr, a.indices, a.data,
-                                          b.indptr, b.indices, b.data)
+                _sparsetools.csr_plus_csr(
+                    n,
+                    n,
+                    a.indptr,
+                    a.indices,
+                    a.data,
+                    a.indptr,
+                    a.indices,
+                    a.data,
+                    b.indptr,
+                    b.indices,
+                    b.data,
+                )
             bres.append(b)
 
     threads = [Worker() for _ in range(nthreads)]
@@ -57,7 +72,7 @@ def test_regression_std_vector_dtypes():
         a = csr_matrix(ad, dtype=dtype)
 
         # getcol is one function using std::vector typemaps, and should not fail
-        assert_equal(a.getcol(0).todense(), ad[:,0])
+        assert_equal(a.getcol(0).todense(), ad[:, 0])
 
 
 @pytest.mark.slow
@@ -81,8 +96,10 @@ def test_nnz_overflow():
     assert_allclose(d, [[4]])
 
 
-@pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
-                    reason="test requires 64-bit Linux")
+@pytest.mark.skipif(
+    not (sys.platform.startswith("linux") and np.dtype(np.intp).itemsize >= 8),
+    reason="test requires 64-bit Linux",
+)
 class TestInt32Overflow:
     """
     Some of the sparsetools routines use dense 2D matrices whose
@@ -90,16 +107,17 @@ class TestInt32Overflow:
     routines used to suffer from int32 wraparounds; here, we try to
     check that the wraparounds don't occur any more.
     """
+
     # choose n large enough
     n = 50000
 
     def setup_method(self):
-        assert self.n**2 > np.iinfo(np.int32).max
+        assert self.n ** 2 > np.iinfo(np.int32).max
 
         # check there's enough memory even if everything is run at the
         # same time
         try:
-            parallel_count = int(os.environ.get('PYTEST_XDIST_WORKER_COUNT', '1'))
+            parallel_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", "1"))
         except ValueError:
             parallel_count = np.inf
 
@@ -115,14 +133,14 @@ class TestInt32Overflow:
 
         n = self.n
 
-        i = np.array([0, n-1])
-        j = np.array([0, n-1])
+        i = np.array([0, n - 1])
+        j = np.array([0, n - 1])
         data = np.array([1, 2], dtype=np.int8)
         m = coo_matrix((data, (i, j)))
 
         r = m.todense()
-        assert_equal(r[0,0], 1)
-        assert_equal(r[-1,-1], 2)
+        assert_equal(r[0, 0], 1)
+        assert_equal(r[-1, -1], 2)
         del r
         gc.collect()
 
@@ -131,8 +149,8 @@ class TestInt32Overflow:
         # Check *_matvecs routines
         n = self.n
 
-        i = np.array([0, n-1])
-        j = np.array([0, n-1])
+        i = np.array([0, n - 1])
+        j = np.array([0, n - 1])
         data = np.array([1, 2], dtype=np.int8)
         m = coo_matrix((data, (i, j)))
 
@@ -140,8 +158,8 @@ class TestInt32Overflow:
         for sptype in (csr_matrix, csc_matrix, bsr_matrix):
             m2 = sptype(m)
             r = m2.dot(b)
-            assert_equal(r[0,0], 1)
-            assert_equal(r[-1,-1], 2)
+            assert_equal(r[0, 0], 1)
+            assert_equal(r[-1, -1], 2)
             del r
             gc.collect()
 
@@ -161,12 +179,14 @@ class TestInt32Overflow:
         del data, offsets, m, v, r
         gc.collect()
 
-    _bsr_ops = [pytest.param("matmat", marks=pytest.mark.xslow),
-                pytest.param("matvecs", marks=pytest.mark.xslow),
-                "matvec",
-                "diagonal",
-                "sort_indices",
-                pytest.param("transpose", marks=pytest.mark.xslow)]
+    _bsr_ops = [
+        pytest.param("matmat", marks=pytest.mark.xslow),
+        pytest.param("matvecs", marks=pytest.mark.xslow),
+        "matvec",
+        "diagonal",
+        "sort_indices",
+        pytest.param("transpose", marks=pytest.mark.xslow),
+    ]
 
     @pytest.mark.slow
     @pytest.mark.parametrize("op", _bsr_ops)
@@ -219,7 +239,7 @@ class TestInt32Overflow:
 
         # _matvecs
         r = m.dot(np.ones((n, 2), dtype=np.int8))
-        assert_equal(r[0,0], np.int8(n))
+        assert_equal(r[0, 0], np.int8(n))
 
     def _check_bsr_matvec(self, m):
         m = m()
@@ -264,14 +284,14 @@ class TestInt32Overflow:
 @pytest.mark.skip(reason="64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
     n = 3037000500
-    assert n**2 > np.iinfo(np.int64).max
+    assert n ** 2 > np.iinfo(np.int64).max
 
     # the test would take crazy amounts of memory
-    check_free_memory(n * (8*2 + 1) * 3 / 1e6)
+    check_free_memory(n * (8 * 2 + 1) * 3 / 1e6)
 
     # int64 overflow
     data = np.ones((n,), dtype=np.int8)
-    indptr = np.arange(n+1, dtype=np.int64)
+    indptr = np.arange(n + 1, dtype=np.int64)
     indices = np.zeros(n, dtype=np.int64)
     a = csr_matrix((data, indices, indptr))
     b = a.T
@@ -280,8 +300,8 @@ def test_csr_matmat_int64_overflow():
 
 
 def test_upcast():
-    a0 = csr_matrix([[np.pi, np.pi*1j], [3, 4]], dtype=complex)
-    b0 = np.array([256+1j, 2**32], dtype=complex)
+    a0 = csr_matrix([[np.pi, np.pi * 1j], [3, 4]], dtype=complex)
+    b0 = np.array([256 + 1j, 2 ** 32], dtype=complex)
 
     for a_dtype in supported_dtypes:
         for b_dtype in supported_dtypes:
@@ -299,16 +319,37 @@ def test_upcast():
 
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):
                 c = np.zeros((2,), dtype=np.bool_)
-                assert_raises(ValueError, _sparsetools.csr_matvec,
-                              2, 2, a.indptr, a.indices, a.data, b, c)
+                assert_raises(
+                    ValueError,
+                    _sparsetools.csr_matvec,
+                    2,
+                    2,
+                    a.indptr,
+                    a.indices,
+                    a.data,
+                    b,
+                    c,
+                )
 
-            if ((np.issubdtype(a_dtype, np.complexfloating) and
-                 not np.issubdtype(b_dtype, np.complexfloating)) or
-                (not np.issubdtype(a_dtype, np.complexfloating) and
-                 np.issubdtype(b_dtype, np.complexfloating))):
+            if (
+                np.issubdtype(a_dtype, np.complexfloating)
+                and not np.issubdtype(b_dtype, np.complexfloating)
+            ) or (
+                not np.issubdtype(a_dtype, np.complexfloating)
+                and np.issubdtype(b_dtype, np.complexfloating)
+            ):
                 c = np.zeros((2,), dtype=np.float64)
-                assert_raises(ValueError, _sparsetools.csr_matvec,
-                              2, 2, a.indptr, a.indices, a.data, b, c)
+                assert_raises(
+                    ValueError,
+                    _sparsetools.csr_matvec,
+                    2,
+                    2,
+                    a.indptr,
+                    a.indices,
+                    a.data,
+                    b,
+                    c,
+                )
 
             c = np.zeros((2,), dtype=np.result_type(a_dtype, b_dtype))
             _sparsetools.csr_matvec(2, 2, a.indptr, a.indices, a.data, b, c)
@@ -316,11 +357,11 @@ def test_upcast():
 
 
 def test_endianness():
-    d = np.ones((3,4))
-    offsets = [-1,0,1]
+    d = np.ones((3, 4))
+    offsets = [-1, 0, 1]
 
-    a = dia_matrix((d.astype('<f8'), offsets), (4, 4))
-    b = dia_matrix((d.astype('>f8'), offsets), (4, 4))
+    a = dia_matrix((d.astype("<f8"), offsets), (4, 4))
+    b = dia_matrix((d.astype(">f8"), offsets), (4, 4))
     v = np.arange(4)
 
     assert_allclose(a.dot(v), [1, 3, 6, 5])

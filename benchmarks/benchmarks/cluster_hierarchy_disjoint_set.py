@@ -10,7 +10,7 @@ from .common import Benchmark
 
 class Bench(Benchmark):
     params = [[100, 1000, 10000]]
-    param_names = ['n']
+    param_names = ["n"]
 
     def setup(self, n):
         # Create random edges

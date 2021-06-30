@@ -1279,6 +1279,3 @@ void qh_sethyperplane_gauss(qhT *qh, int dim, coordT **rows, pointT *point0,
   for (k=dim-1; k--; )
     *offset -= *pointcoord++ * *normalcoef++;
 } /* sethyperplane_gauss */
-
-
-

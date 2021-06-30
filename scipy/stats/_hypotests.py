@@ -10,11 +10,18 @@ from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 
-__all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
+__all__ = [
+    "epps_singleton_2samp",
+    "cramervonmises",
+    "somersd",
+    "barnard_exact",
+    "boschloo_exact",
+    "cramervonmises_2samp",
+]
 
-Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
-                                        ('statistic', 'pvalue'))
+Epps_Singleton_2sampResult = namedtuple(
+    "Epps_Singleton_2sampResult", ("statistic", "pvalue")
+)
 
 
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
@@ -86,51 +93,56 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
     # check if x and y are valid inputs
     if x.ndim > 1:
-        raise ValueError('x must be 1d, but x.ndim equals {}.'.format(x.ndim))
+        raise ValueError("x must be 1d, but x.ndim equals {}.".format(x.ndim))
     if y.ndim > 1:
-        raise ValueError('y must be 1d, but y.ndim equals {}.'.format(y.ndim))
+        raise ValueError("y must be 1d, but y.ndim equals {}.".format(y.ndim))
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
-        raise ValueError('x and y should have at least 5 elements, but len(x) '
-                         '= {} and len(y) = {}.'.format(nx, ny))
+        raise ValueError(
+            "x and y should have at least 5 elements, but len(x) "
+            "= {} and len(y) = {}.".format(nx, ny)
+        )
     if not np.isfinite(x).all():
-        raise ValueError('x must not contain nonfinite values.')
+        raise ValueError("x must not contain nonfinite values.")
     if not np.isfinite(y).all():
-        raise ValueError('y must not contain nonfinite values.')
+        raise ValueError("y must not contain nonfinite values.")
     n = nx + ny
 
     # check if t is valid
     if t.ndim > 1:
-        raise ValueError('t must be 1d, but t.ndim equals {}.'.format(t.ndim))
+        raise ValueError("t must be 1d, but t.ndim equals {}.".format(t.ndim))
     if np.less_equal(t, 0).any():
-        raise ValueError('t must contain positive elements only.')
+        raise ValueError("t must contain positive elements only.")
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
     from scipy.stats import iqr
+
     sigma = iqr(np.hstack((x, y))) / 2
     ts = np.reshape(t, (-1, 1)) / sigma
 
     # covariance estimation of ES test
-    gx = np.vstack((np.cos(ts*x), np.sin(ts*x))).T  # shape = (nx, 2*len(t))
-    gy = np.vstack((np.cos(ts*y), np.sin(ts*y))).T
+    gx = np.vstack((np.cos(ts * x), np.sin(ts * x))).T  # shape = (nx, 2*len(t))
+    gy = np.vstack((np.cos(ts * y), np.sin(ts * y))).T
     cov_x = np.cov(gx.T, bias=True)  # the test uses biased cov-estimate
     cov_y = np.cov(gy.T, bias=True)
-    est_cov = (n/nx)*cov_x + (n/ny)*cov_y
+    est_cov = (n / nx) * cov_x + (n / ny) * cov_y
     est_cov_inv = np.linalg.pinv(est_cov)
     r = np.linalg.matrix_rank(est_cov_inv)
-    if r < 2*len(t):
-        warnings.warn('Estimated covariance matrix does not have full rank. '
-                      'This indicates a bad choice of the input t and the '
-                      'test might not be consistent.')  # see p. 183 in [1]_
+    if r < 2 * len(t):
+        warnings.warn(
+            "Estimated covariance matrix does not have full rank. "
+            "This indicates a bad choice of the input t and the "
+            "test might not be consistent."
+        )  # see p. 183 in [1]_
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)
-    w = n*np.dot(g_diff.T, np.dot(est_cov_inv, g_diff))
+    w = n * np.dot(g_diff.T, np.dot(est_cov_inv, g_diff))
 
     # apply small-sample correction
-    if (max(nx, ny) < 25):
-        corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
+    if max(nx, ny) < 25:
+        corr = 1.0 / (1.0 + n ** (-0.45) + 10.1 * (nx ** (-1.7) + ny ** (-1.7)))
         w = corr * w
 
     p = chi2.sf(w, r)
@@ -144,8 +156,10 @@ class CramerVonMisesResult:
         self.pvalue = pvalue
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(statistic={self.statistic}, "
-                f"pvalue={self.pvalue})")
+        return (
+            f"{self.__class__.__name__}(statistic={self.statistic}, "
+            f"pvalue={self.pvalue})"
+        )
 
 
 def _psi1_mod(x):
@@ -162,32 +176,36 @@ def _psi1_mod(x):
     """
 
     def _ed2(y):
-        z = y**2 / 4
-        b = kv(1/4, z) + kv(3/4, z)
-        return np.exp(-z) * (y/2)**(3/2) * b / np.sqrt(np.pi)
+        z = y ** 2 / 4
+        b = kv(1 / 4, z) + kv(3 / 4, z)
+        return np.exp(-z) * (y / 2) ** (3 / 2) * b / np.sqrt(np.pi)
 
     def _ed3(y):
-        z = y**2 / 4
+        z = y ** 2 / 4
         c = np.exp(-z) / np.sqrt(np.pi)
-        return c * (y/2)**(5/2) * (2*kv(1/4, z) + 3*kv(3/4, z) - kv(5/4, z))
+        return (
+            c
+            * (y / 2) ** (5 / 2)
+            * (2 * kv(1 / 4, z) + 3 * kv(3 / 4, z) - kv(5 / 4, z))
+        )
 
     def _Ak(k, x):
-        m = 2*k + 1
+        m = 2 * k + 1
         sx = 2 * np.sqrt(x)
-        y1 = x**(3/4)
-        y2 = x**(5/4)
+        y1 = x ** (3 / 4)
+        y2 = x ** (5 / 4)
 
-        e1 = m * gamma(k + 1/2) * _ed2((4 * k + 3)/sx) / (9 * y1)
-        e2 = gamma(k + 1/2) * _ed3((4 * k + 1) / sx) / (72 * y2)
-        e3 = 2 * (m + 2) * gamma(k + 3/2) * _ed3((4 * k + 5) / sx) / (12 * y2)
-        e4 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 1) / sx) / (144 * y1)
-        e5 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 5) / sx) / (144 * y1)
+        e1 = m * gamma(k + 1 / 2) * _ed2((4 * k + 3) / sx) / (9 * y1)
+        e2 = gamma(k + 1 / 2) * _ed3((4 * k + 1) / sx) / (72 * y2)
+        e3 = 2 * (m + 2) * gamma(k + 3 / 2) * _ed3((4 * k + 5) / sx) / (12 * y2)
+        e4 = 7 * m * gamma(k + 1 / 2) * _ed2((4 * k + 1) / sx) / (144 * y1)
+        e5 = 7 * m * gamma(k + 1 / 2) * _ed2((4 * k + 5) / sx) / (144 * y1)
 
         return e1 + e2 + e3 + e4 + e5
 
     x = np.asarray(x)
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    tot = np.zeros_like(x, dtype="float")
+    cond = np.ones_like(x, dtype="bool")
     k = 0
     while np.any(cond):
         z = -_Ak(k, x[cond]) / (np.pi * gamma(k + 1))
@@ -216,14 +234,14 @@ def _cdf_cvm_inf(x):
 
     def term(x, k):
         # this expression can be found in [2], second line of (1.3)
-        u = np.exp(gammaln(k + 0.5) - gammaln(k+1)) / (np.pi**1.5 * np.sqrt(x))
-        y = 4*k + 1
-        q = y**2 / (16*x)
+        u = np.exp(gammaln(k + 0.5) - gammaln(k + 1)) / (np.pi ** 1.5 * np.sqrt(x))
+        y = 4 * k + 1
+        q = y ** 2 / (16 * x)
         b = kv(0.25, q)
         return u * np.sqrt(y) * np.exp(-q) * b
 
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    tot = np.zeros_like(x, dtype="float")
+    cond = np.ones_like(x, dtype="bool")
     k = 0
     while np.any(cond):
         z = term(x[cond], k)
@@ -251,12 +269,12 @@ def _cdf_cvm(x, n=None):
         y = _cdf_cvm_inf(x)
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
-        y = np.zeros_like(x, dtype='float')
-        sup = (1./(12*n) < x) & (x < n/3.)
+        y = np.zeros_like(x, dtype="float")
+        sup = (1.0 / (12 * n) < x) & (x < n / 3.0)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
-        y[sup] = _cdf_cvm_inf(x[sup]) * (1 + 1./(12*n)) + _psi1_mod(x[sup]) / n
-        y[x >= n/3] = 1
+        y[sup] = _cdf_cvm_inf(x[sup]) * (1 + 1.0 / (12 * n)) + _psi1_mod(x[sup]) / n
+        y[x >= n / 3] = 1
 
     if y.ndim == 0:
         return y[()]
@@ -363,18 +381,18 @@ def cramervonmises(rvs, cdf, args=()):
     vals = np.sort(np.asarray(rvs))
 
     if vals.size <= 1:
-        raise ValueError('The sample must contain at least two observations.')
+        raise ValueError("The sample must contain at least two observations.")
     if vals.ndim > 1:
-        raise ValueError('The sample must be one-dimensional.')
+        raise ValueError("The sample must be one-dimensional.")
 
     n = len(vals)
     cdfvals = cdf(vals, *args)
 
-    u = (2*np.arange(1, n+1) - 1)/(2*n)
-    w = 1/(12*n) + np.sum((u - cdfvals)**2)
+    u = (2 * np.arange(1, n + 1) - 1) / (2 * n)
+    w = 1 / (12 * n) + np.sum((u - cdfvals) ** 2)
 
     # avoid small negative values that can occur due to the approximation
-    p = max(0, 1. - _cdf_cvm(w, n))
+    p = max(0, 1.0 - _cdf_cvm(w, n))
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
@@ -389,8 +407,10 @@ def _get_wilcoxon_distr(n):
     cnt = _wilcoxon_data.COUNTS.get(n)
 
     if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
+        raise ValueError(
+            "The exact distribution of the Wilcoxon test "
+            "statistic is not implemented for n={}".format(n)
+        )
 
     return np.array(cnt, dtype=int)
 
@@ -398,13 +418,13 @@ def _get_wilcoxon_distr(n):
 def _Aij(A, i, j):
     """Sum of upper-left and lower right blocks of contingency table."""
     # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
+    return A[:i, :j].sum() + A[i + 1 :, j + 1 :].sum()
 
 
 def _Dij(A, i, j):
     """Sum of lower-left and upper-right blocks of contingency table."""
     # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
+    return A[i + 1 :, :j].sum() + A[:i, j + 1 :].sum()
 
 
 def _P(A):
@@ -414,7 +434,7 @@ def _P(A):
     count = 0
     for i in range(m):
         for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
+            count += A[i, j] * _Aij(A, i, j)
     return count
 
 
@@ -425,7 +445,7 @@ def _Q(A):
     count = 0
     for i in range(m):
         for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
+            count += A[i, j] * _Dij(A, i, j)
     return count
 
 
@@ -436,7 +456,7 @@ def _a_ij_Aij_Dij2(A):
     count = 0
     for i in range(m):
         for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
+            count += A[i, j] * (_Aij(A, i, j) - _Dij(A, i, j)) ** 2
     return count
 
 
@@ -451,18 +471,18 @@ def _tau_b(A):
     NA = A.sum()
     PA = _P(A)
     QA = _Q(A)
-    Sri2 = (A.sum(axis=1)**2).sum()
-    Scj2 = (A.sum(axis=0)**2).sum()
-    denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
+    Sri2 = (A.sum(axis=1) ** 2).sum()
+    Scj2 = (A.sum(axis=0) ** 2).sum()
+    denominator = (NA ** 2 - Sri2) * (NA ** 2 - Scj2)
 
-    tau = (PA-QA)/(denominator)**0.5
+    tau = (PA - QA) / (denominator) ** 0.5
 
-    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
-    s02_tau_b = numerator/denominator
+    numerator = 4 * (_a_ij_Aij_Dij2(A) - (PA - QA) ** 2 / NA)
+    s02_tau_b = numerator / denominator
     if s02_tau_b == 0:  # Avoid divide by zero
         return tau, 0
-    Z = tau/s02_tau_b**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+    Z = tau / s02_tau_b ** 0.5
+    p = 2 * norm.sf(abs(Z))  # 2-sided p-value
 
     return tau, p
 
@@ -476,24 +496,23 @@ def _somers_d(A):
         return np.nan, np.nan
 
     NA = A.sum()
-    NA2 = NA**2
+    NA2 = NA ** 2
     PA = _P(A)
     QA = _Q(A)
-    Sri2 = (A.sum(axis=1)**2).sum()
+    Sri2 = (A.sum(axis=1) ** 2).sum()
 
-    d = (PA - QA)/(NA2 - Sri2)
+    d = (PA - QA) / (NA2 - Sri2)
 
-    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
+    S = _a_ij_Aij_Dij2(A) - (PA - QA) ** 2 / NA
     if S == 0:  # Avoid divide by zero
         return d, 0
-    Z = (PA - QA)/(4*(S))**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+    Z = (PA - QA) / (4 * (S)) ** 0.5
+    p = 2 * norm.sf(abs(Z))  # 2-sided p-value
 
     return d, p
 
 
-SomersDResult = make_dataclass("SomersDResult",
-                               ("statistic", "pvalue", "table"))
+SomersDResult = make_dataclass("SomersDResult", ("statistic", "pvalue", "table"))
 
 
 def somersd(x, y=None):
@@ -652,14 +671,15 @@ def somersd(x, y=None):
         table = scipy.stats.contingency.crosstab(x, y)[1]
     elif x.ndim == 2:
         if np.any(x < 0):
-            raise ValueError("All elements of the contingency table must be "
-                             "non-negative.")
+            raise ValueError(
+                "All elements of the contingency table must be non-negative."
+            )
         if np.any(x != x.astype(int)):
-            raise ValueError("All elements of the contingency table must be "
-                             "integer.")
+            raise ValueError("All elements of the contingency table must be integer.")
         if x.nonzero()[0].size < 2:
-            raise ValueError("At least two elements of the contingency table "
-                             "must be nonzero.")
+            raise ValueError(
+                "At least two elements of the contingency table must be nonzero."
+            )
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
@@ -674,15 +694,15 @@ def _all_partitions(nx, ny):
     Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
     ny in all possible ways (ignoring order of elements).
     """
-    z = np.arange(nx+ny)
+    z = np.arange(nx + ny)
     for c in combinations(z, nx):
         x = np.array(c)
-        mask = np.ones(nx+ny, bool)
+        mask = np.ones(nx + ny, bool)
         mask[x] = False
         y = z[mask]
         yield x, y
 
-        
+
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -885,10 +905,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     """
     if n <= 0:
-        raise ValueError(
-            "Number of points `n` must be strictly positive, "
-            f"found {n!r}"
-        )
+        raise ValueError(f"Number of points `n` must be strictly positive, found {n!r}")
 
     table = np.asarray(table, dtype=np.int64)
 
@@ -1028,8 +1045,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a 
-    statistic, and Boschloo's p-value is the probability under the null 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
     hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
@@ -1093,10 +1110,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     hypergeom = distributions.hypergeom
 
     if n <= 0:
-        raise ValueError(
-            "Number of points `n` must be strictly positive,"
-            f" found {n!r}"
-        )
+        raise ValueError(f"Number of points `n` must be strictly positive, found {n!r}")
 
     table = np.asarray(table, dtype=np.int64)
 
@@ -1117,17 +1131,18 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     x2 = np.arange(total_col_2 + 1, dtype=np.int64).reshape(-1, 1)
     x1_sum_x2 = x1 + x2
 
-    if alternative == 'less':
+    if alternative == "less":
         pvalues = hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T
-    elif alternative == 'greater':
+    elif alternative == "greater":
         # Same formula as the 'less' case, but with the second column.
         pvalues = hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T
-    elif alternative == 'two-sided':
+    elif alternative == "two-sided":
         boschloo_less = boschloo_exact(table, alternative="less", n=n)
         boschloo_greater = boschloo_exact(table, alternative="greater", n=n)
 
         res = (
-            boschloo_less if boschloo_less.pvalue < boschloo_greater.pvalue
+            boschloo_less
+            if boschloo_less.pvalue < boschloo_greater.pvalue
             else boschloo_greater
         )
 
@@ -1147,7 +1162,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     # fisher_stat * (1+1e-13) guards us from small numerical error. It is
     # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
     # For more throughout explanations, see gh-14178
-    index_arr = pvalues <= fisher_stat * (1+1e-13)
+    index_arr = pvalues <= fisher_stat * (1 + 1e-13)
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)
@@ -1232,9 +1247,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
         nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :]] = 0
 
         tmp_log_values_arr = (
-            x1_sum_x2_log_comb
-            + nuisance_power_x1_x2
-            + nuisance_power_n_minus_x1_x2
+            x1_sum_x2_log_comb + nuisance_power_x1_x2 + nuisance_power_n_minus_x1_x2
         )
 
     tmp_values_from_index = tmp_log_values_arr[index_arr]
@@ -1276,8 +1289,8 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     # this does not change the value of the statistic.
     for x, y in _all_partitions(nx, ny):
         # compute the statistic
-        u = nx * np.sum((x - rangex)**2)
-        u += ny * np.sum((y - rangey)**2)
+        u = nx * np.sum((x - rangex) ** 2)
+        u += ny * np.sum((y - rangey) ** 2)
         us.append(u)
 
     # compute the values of u and the frequencies
@@ -1285,7 +1298,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-def cramervonmises_2samp(x, y, method='auto'):
+def cramervonmises_2samp(x, y, method="auto"):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
     This is the two-sample version of the Cramér-von Mises test ([1]_):
@@ -1387,46 +1400,46 @@ def cramervonmises_2samp(x, y, method='auto'):
     ya = np.sort(np.asarray(y))
 
     if xa.size <= 1 or ya.size <= 1:
-        raise ValueError('x and y must contain at least two observations.')
+        raise ValueError("x and y must contain at least two observations.")
     if xa.ndim > 1 or ya.ndim > 1:
-        raise ValueError('The samples must be one-dimensional.')
-    if method not in ['auto', 'exact', 'asymptotic']:
-        raise ValueError('method must be either auto, exact or asymptotic.')
+        raise ValueError("The samples must be one-dimensional.")
+    if method not in ["auto", "exact", "asymptotic"]:
+        raise ValueError("method must be either auto, exact or asymptotic.")
 
     nx = len(xa)
     ny = len(ya)
 
-    if method == 'auto':
+    if method == "auto":
         if max(nx, ny) > 10:
-            method = 'asymptotic'
+            method = "asymptotic"
         else:
-            method = 'exact'
+            method = "exact"
 
     # get ranks of x and y in the pooled sample
     z = np.concatenate([xa, ya])
     # in case of ties, use midrank (see [1])
-    r = scipy.stats.rankdata(z, method='average')
+    r = scipy.stats.rankdata(z, method="average")
     rx = r[:nx]
     ry = r[nx:]
 
     # compute U (eq. 10 in [2])
-    u = nx * np.sum((rx - np.arange(1, nx+1))**2)
-    u += ny * np.sum((ry - np.arange(1, ny+1))**2)
+    u = nx * np.sum((rx - np.arange(1, nx + 1)) ** 2)
+    u += ny * np.sum((ry - np.arange(1, ny + 1)) ** 2)
 
     # compute T (eq. 9 in [2])
-    k, N = nx*ny, nx + ny
-    t = u / (k*N) - (4*k - 1)/(6*N)
+    k, N = nx * ny, nx + ny
+    t = u / (k * N) - (4 * k - 1) / (6 * N)
 
-    if method == 'exact':
+    if method == "exact":
         p = _pval_cvm_2samp_exact(u, nx, ny)
     else:
         # compute expected value and variance of T (eq. 11 and 14 in [2])
-        et = (1 + 1/N)/6
-        vt = (N+1) * (4*k*N - 3*(nx**2 + ny**2) - 2*k)
-        vt = vt / (45 * N**2 * 4 * k)
+        et = (1 + 1 / N) / 6
+        vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
+        vt = vt / (45 * N ** 2 * 4 * k)
 
         # computed the normalized statistic (eq. 15 in [2])
-        tn = 1/6 + (t - et) / np.sqrt(45 * vt)
+        tn = 1 / 6 + (t - et) / np.sqrt(45 * vt)
 
         # approximate distribution of tn with limiting distribution
         # of the one-sample test statistic
@@ -1434,6 +1447,6 @@ def cramervonmises_2samp(x, y, method='auto'):
         if tn < 0.003:
             p = 1.0
         else:
-            p = max(0, 1. - _cdf_cvm_inf(tn))
+            p = max(0, 1.0 - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)

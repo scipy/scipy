@@ -101,8 +101,8 @@ def test_orthogonal_procrustes():
         naive_approx = A_perturbed.dot(R)
         optim_approx = A_perturbed.dot(R_prime)
         # Compute the Frobenius norm errors of the matrix approximations.
-        naive_approx_error = norm(naive_approx - B, ord='fro')
-        optim_approx_error = norm(optim_approx - B, ord='fro')
+        naive_approx_error = norm(naive_approx - B, ord="fro")
+        optim_approx_error = norm(optim_approx - B, ord="fro")
         # Check that the orthogonal Procrustes approximation is better.
         assert_array_less(optim_approx_error, naive_approx_error)
 
@@ -177,11 +177,14 @@ def test_orthogonal_procrustes_skbio_example():
     #
     A_orig = np.array([[4, -2], [4, -4], [4, -6], [2, -6]], dtype=float)
     B_orig = np.array([[1, 3], [1, 2], [1, 1], [2, 1]], dtype=float)
-    B_standardized = np.array([
-        [-0.13363062, 0.6681531],
-        [-0.13363062, 0.13363062],
-        [-0.13363062, -0.40089186],
-        [0.40089186, -0.40089186]])
+    B_standardized = np.array(
+        [
+            [-0.13363062, 0.6681531],
+            [-0.13363062, 0.13363062],
+            [-0.13363062, -0.40089186],
+            [0.40089186, -0.40089186],
+        ]
+    )
     A, A_mu = _centered(A_orig)
     B, B_mu = _centered(B_orig)
     R, s = orthogonal_procrustes(A, B)

@@ -49,7 +49,7 @@
  *    IEEE     -100,-2      50000       5.9e-15     1.4e-15
  *    IEEE     -2,100      500000       2.7e-15     4.9e-17
  */
-
+
 /*                                                     stdtri.c
  *
  *     Functional inverse of Student's t distribution
@@ -77,7 +77,7 @@
  *    IEEE    .001,.999     25000       5.7e-15     8.0e-16
  *    IEEE    10^-6,.001    25000       2.0e-12     2.9e-14
  */
-
+
 
 /*
  * Cephes Math Library Release 2.3:  March, 1995

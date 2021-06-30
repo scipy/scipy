@@ -469,4 +469,3 @@ function i<prefix>amax(n,x,offx,incx) result(k)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
 end function i<prefix>amax
-

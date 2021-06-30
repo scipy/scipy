@@ -7,7 +7,7 @@ File Format:   ASCII
 
 Procedure:     Linear Least Squares Regression
 
-Reference:     Norris, J., NIST.  
+Reference:     Norris, J., NIST.
                Calibration of Ozone Monitors.
 
 Data:          1 Response Variable (y)
@@ -39,20 +39,20 @@ Model:         Linear Class
 
                Certified Analysis of Variance Table
 
-Source of Degrees of    Sums of             Mean  
+Source of Degrees of    Sums of             Mean
 Variation  Freedom      Squares            Squares           F Statistic
-              
+
 Regression    1     4255954.13232369   4255954.13232369   5436385.54079785
 Residual     34     26.6173985294224   0.782864662630069
 
-                 
-                                          
-                                          
-                                                           
 
-                            
-                                   
-                                                       
+
+
+
+
+
+
+
 
 
 
@@ -94,4 +94,3 @@ Data:       y          x
          668.4      669.1
          449.2      448.9
            0.2        0.5
-                                   

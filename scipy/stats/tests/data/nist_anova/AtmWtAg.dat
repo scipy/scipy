@@ -1,10 +1,10 @@
-NIST/ITL StRD 
+NIST/ITL StRD
 Dataset Name:   AtmWtAg   (AtmWtAg.dat)
 
 
 File Format:    ASCII
                 Certified Values   (lines 41 to 47)
-                Data               (lines 61 to 108) 
+                Data               (lines 61 to 108)
 
 
 Procedure:      Analysis of Variance
@@ -35,7 +35,7 @@ Model:          3 Parameters (mu, tau_1, tau_2)
 
 Certified Values:
 
-Source of                  Sums of               Mean               
+Source of                  Sums of               Mean
 Variation          df      Squares              Squares             F Statistic
 
 

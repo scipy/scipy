@@ -8,11 +8,22 @@ from scipy.optimize import OptimizeResult
 
 from .givens_elimination import givens_elimination
 from .common import (
-    EPS, step_size_to_bound, find_active_constraints, in_bounds,
-    make_strictly_feasible, build_quadratic_1d, evaluate_quadratic,
-    minimize_quadratic_1d, CL_scaling_vector, reflective_transformation,
-    print_header_linear, print_iteration_linear, compute_grad,
-    regularized_lsq_operator, right_multiplied_operator)
+    EPS,
+    step_size_to_bound,
+    find_active_constraints,
+    in_bounds,
+    make_strictly_feasible,
+    build_quadratic_1d,
+    evaluate_quadratic,
+    minimize_quadratic_1d,
+    CL_scaling_vector,
+    reflective_transformation,
+    print_header_linear,
+    print_iteration_linear,
+    compute_grad,
+    regularized_lsq_operator,
+    right_multiplied_operator,
+)
 
 
 def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
@@ -56,7 +67,7 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
 
     abs_diag_R = np.abs(np.diag(R))
     threshold = EPS * max(m, n) * np.max(abs_diag_R)
-    nns, = np.nonzero(abs_diag_R > threshold)
+    (nns,) = np.nonzero(abs_diag_R > threshold)
 
     R = R[np.ix_(nns, nns)]
     v = v[nns]
@@ -112,8 +123,7 @@ def select_step(x, A_h, g_h, c_h, p, p_h, d, lb, ub, theta):
 
     if r_stride_u > 0:
         a, b, c = build_quadratic_1d(A_h, g_h, r_h, s0=p_h, diag=c_h)
-        r_stride, r_value = minimize_quadratic_1d(
-            a, b, r_stride_l, r_stride_u, c=c)
+        r_stride, r_value = minimize_quadratic_1d(a, b, r_stride_l, r_stride_u, c=c)
         r_h = p_h + r_h * r_stride
         r = d * r_h
     else:
@@ -140,14 +150,13 @@ def select_step(x, A_h, g_h, c_h, p, p_h, d, lb, ub, theta):
         return ag
 
 
-def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
-               verbose):
+def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter, verbose):
     m, n = A.shape
     x, _ = reflective_transformation(x_lsq, lb, ub)
     x = make_strictly_feasible(x, lb, ub, rstep=0.1)
 
-    if lsq_solver == 'exact':
-        QT, R, perm = qr(A, mode='economic', pivoting=True)
+    if lsq_solver == "exact":
+        QT, R, perm = qr(A, mode="economic", pivoting=True)
         QT = QT.T
 
         if m < n:
@@ -155,12 +164,12 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
 
         QTr = np.zeros(n)
         k = min(m, n)
-    elif lsq_solver == 'lsmr':
+    elif lsq_solver == "lsmr":
         r_aug = np.zeros(m + n)
         auto_lsmr_tol = False
         if lsmr_tol is None:
             lsmr_tol = 1e-2 * tol
-        elif lsmr_tol == 'auto':
+        elif lsmr_tol == "auto":
             auto_lsmr_tol = True
 
     r = A.dot(x) - b
@@ -186,8 +195,7 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration_linear(iteration, cost, cost_change,
-                                   step_norm, g_norm)
+            print_iteration_linear(iteration, cost, cost_change, step_norm, g_norm)
 
         if termination_status is not None:
             break
@@ -198,11 +206,12 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
         g_h = d * g
 
         A_h = right_multiplied_operator(A, d)
-        if lsq_solver == 'exact':
+        if lsq_solver == "exact":
             QTr[:k] = QT.dot(r)
-            p_h = -regularized_lsq_with_qr(m, n, R * d[perm], QTr, perm,
-                                           diag_root_h, copy_R=False)
-        elif lsq_solver == 'lsmr':
+            p_h = -regularized_lsq_with_qr(
+                m, n, R * d[perm], QTr, perm, diag_root_h, copy_R=False
+            )
+        elif lsq_solver == "lsmr":
             lsmr_op = regularized_lsq_operator(A_h, diag_root_h)
             r_aug[:m] = r
             if auto_lsmr_tol:
@@ -224,8 +233,7 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
         # direction thus we must find acceptable cost decrease using simple
         # "backtracking", otherwise the algorithm's logic would break.
         if cost_change < 0:
-            x, step, cost_change = backtracking(
-                A, g, x, p, theta, p_dot_g, lb, ub)
+            x, step, cost_change = backtracking(A, g, x, p, theta, p_dot_g, lb, ub)
         else:
             x = make_strictly_feasible(x + step, lb, ub, rstep=0)
 
@@ -244,6 +252,12 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
     active_mask = find_active_constraints(x, lb, ub, rtol=tol)
 
     return OptimizeResult(
-        x=x, fun=r, cost=cost, optimality=g_norm, active_mask=active_mask,
-        nit=iteration + 1, status=termination_status,
-        initial_cost=initial_cost)
+        x=x,
+        fun=r,
+        cost=cost,
+        optimality=g_norm,
+        active_mask=active_mask,
+        nit=iteration + 1,
+        status=termination_status,
+        initial_cost=initial_cost,
+    )

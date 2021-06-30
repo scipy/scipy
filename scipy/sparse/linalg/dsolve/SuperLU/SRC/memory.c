@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -61,13 +61,13 @@ void superlu_free(void *addr)
     if ( !p )
 	ABORT("superlu_free: tried to free NULL+DWORD pointer");
 
-    { 
+    {
 	int_t n = ((size_t *) p)[0];
-	
+
 	if ( !n )
 	    ABORT("superlu_free: tried to free a freed pointer");
 	*((size_t *) p) = 0; /* Set to zero to detect duplicate free's. */
-#if 0	
+#if 0
 	superlu_malloc_total -= (n + DWORD);
 #else
 	superlu_malloc_total -= n;
@@ -75,7 +75,7 @@ void superlu_free(void *addr)
 
 	if ( superlu_malloc_total < 0 )
 	    ABORT("superlu_malloc_total went negative!");
-	
+
 	/*free (addr);*/
 	free (p);
     }
@@ -198,7 +198,7 @@ PrintStack(char *msg, GlobalLU_t *Glu)
     usub  = Glu->usub;
 
     printf("%s\n", msg);
-    
+
 /*    printf("\nUCOL: ");
     for (i = 0; i < xusub[ndim]; ++i)
 	printf("%f  ", ucol[i]);
@@ -213,8 +213,5 @@ PrintStack(char *msg, GlobalLU_t *Glu)
 
     printf("\n");*/
     return 0;
-}   
+}
 #endif
-
-
-

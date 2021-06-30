@@ -9,7 +9,7 @@ def _x_replacer(args, kwargs, dispatchables):
     if len(args) > 0:
         return (dispatchables[0],) + args[1:], kwargs
     kw = kwargs.copy()
-    kw['x'] = dispatchables[0]
+    kw["x"] = dispatchables[0]
     return args, kw
 
 
@@ -21,8 +21,7 @@ def _dispatch(func):
 
 
 @_dispatch
-def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-        plan=None):
+def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 1-D discrete Fourier Transform.
 
@@ -165,8 +164,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 1-D inverse discrete Fourier Transform.
 
@@ -270,8 +268,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 1-D discrete Fourier Transform for real input.
 
@@ -364,8 +361,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Computes the inverse of `rfft`.
 
@@ -465,8 +461,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
     spectrum.
@@ -547,8 +542,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the inverse FFT of a signal that has Hermitian symmetry.
 
@@ -613,8 +607,9 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def fftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the N-D discrete Fourier Transform.
 
@@ -717,8 +712,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ifftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the N-D inverse discrete Fourier Transform.
 
@@ -820,8 +816,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def fft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the 2-D discrete Fourier Transform
 
@@ -918,8 +915,9 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
 
 
 @_dispatch
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ifft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the 2-D inverse discrete Fourier Transform.
 
@@ -1013,8 +1011,9 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
 
 @_dispatch
-def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def rfftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the N-D discrete Fourier Transform for real input.
 
@@ -1112,8 +1111,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def rfft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the 2-D FFT of a real array.
 
@@ -1162,8 +1162,9 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
 
 @_dispatch
-def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def irfftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Computes the inverse of `rfftn`
 
@@ -1268,8 +1269,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def irfft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Computes the inverse of `rfft2`
 
@@ -1318,8 +1320,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
 
 @_dispatch
-def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def hfftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the N-D FFT of Hermitian symmetric complex input, i.e., a
     signal with a real spectrum.
@@ -1431,8 +1434,9 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def hfft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the 2-D FFT of a Hermitian complex array.
 
@@ -1479,8 +1483,9 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
 
 @_dispatch
-def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def ihfftn(
+    x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the N-D inverse discrete Fourier Transform for a real
     spectrum.
@@ -1573,8 +1578,9 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
 
 @_dispatch
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def ihfft2(
+    x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *, plan=None
+):
     """
     Compute the 2-D inverse FFT of a real spectrum.
 

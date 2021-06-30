@@ -1,5 +1,5 @@
       subroutine splder(t,n,c,k,nu,x,y,m,e,wrk,ier)
-      implicit none  
+      implicit none
 c  subroutine splder evaluates in a number of points x(i),i=1,2,...,m
 c  the derivative of order nu of a spline s(x) of degree k,given in
 c  its b-spline representation.

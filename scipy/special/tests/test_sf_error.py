@@ -9,29 +9,25 @@ from scipy.special._ufuncs import _sf_error_test_function
 
 _sf_error_code_map = {
     # skip 'ok'
-    'singular': 1,
-    'underflow': 2,
-    'overflow': 3,
-    'slow': 4,
-    'loss': 5,
-    'no_result': 6,
-    'domain': 7,
-    'arg': 8,
-    'other': 9
+    "singular": 1,
+    "underflow": 2,
+    "overflow": 3,
+    "slow": 4,
+    "loss": 5,
+    "no_result": 6,
+    "domain": 7,
+    "arg": 8,
+    "other": 9,
 }
 
-_sf_error_actions = [
-    'ignore',
-    'warn',
-    'raise'
-]
+_sf_error_actions = ["ignore", "warn", "raise"]
 
 
 def _check_action(fun, args, action):
-    if action == 'warn':
+    if action == "warn":
         with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)
-    elif action == 'raise':
+    elif action == "raise":
         with assert_raises(sc.SpecialFunctionError):
             fun(*args)
     else:
@@ -68,7 +64,7 @@ def test_seterr():
 
 def test_errstate_pyx_basic():
     olderr = sc.geterr()
-    with sc.errstate(singular='raise'):
+    with sc.errstate(singular="raise"):
         with assert_raises(sc.SpecialFunctionError):
             sc.loggamma(0)
     assert_equal(olderr, sc.geterr())
@@ -76,7 +72,7 @@ def test_errstate_pyx_basic():
 
 def test_errstate_c_basic():
     olderr = sc.geterr()
-    with sc.errstate(domain='raise'):
+    with sc.errstate(domain="raise"):
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1)
     assert_equal(olderr, sc.geterr())
@@ -84,7 +80,7 @@ def test_errstate_c_basic():
 
 def test_errstate_cpp_basic():
     olderr = sc.geterr()
-    with sc.errstate(underflow='raise'):
+    with sc.errstate(underflow="raise"):
         with assert_raises(sc.SpecialFunctionError):
             sc.wrightomega(-1000)
     assert_equal(olderr, sc.geterr())
@@ -101,7 +97,7 @@ def test_errstate():
 
 def test_errstate_all_but_one():
     olderr = sc.geterr()
-    with sc.errstate(all='raise', singular='ignore'):
+    with sc.errstate(all="raise", singular="ignore"):
         sc.gammaln(0)
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)

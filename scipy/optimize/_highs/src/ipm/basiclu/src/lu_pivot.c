@@ -1,4 +1,4 @@
-/* 
+/*
  * lu_pivot.c
  *
  * Copyright (C) 2016-2019  ERGO-Code
@@ -174,7 +174,7 @@ static lu_int lu_pivot_any(struct lu *this)
     double *Wvalue          = this->Wvalue;
     lu_int *marked          = this->iwork0;
     double *work            = this->work0;
-    
+
     lu_int cbeg = Wbegin[pivot_col]; /* changed by file compression */
     lu_int cend = Wend[pivot_col];
     lu_int rbeg = Wbegin[m+pivot_row];
@@ -420,7 +420,7 @@ static lu_int lu_pivot_any(struct lu *this)
     lu_list_remove(colcount_flink, colcount_blink, pivot_col);
     lu_list_remove(rowcount_flink, rowcount_blink, pivot_row);
 
-    /* 
+    /*
      * Check that row file and column file are consistent. Only use when
      * DEBUG_EXTRA since this check is really expensive.
      */
@@ -466,7 +466,7 @@ static lu_int lu_pivot_small(struct lu *this)
     lu_int *marked          = this->iwork0;
     double *work            = this->work0;
     int64_t *cancelled      = (void *) this->row_pivot;
-    
+
     lu_int cbeg = Wbegin[pivot_col]; /* changed by file compression */
     lu_int cend = Wend[pivot_col];
     lu_int rbeg = Wbegin[m+pivot_row];
@@ -773,7 +773,7 @@ static lu_int lu_pivot_singleton_row(struct lu *this)
     double *Lvalue          = this->Lvalue;
     lu_int *Windex          = this->Windex;
     double *Wvalue          = this->Wvalue;
-    
+
     const lu_int cbeg = Wbegin[pivot_col];
     const lu_int cend = Wend[pivot_col];
     const lu_int rbeg = Wbegin[m+pivot_row];
@@ -861,7 +861,7 @@ static lu_int lu_pivot_singleton_col(struct lu *this)
     double *Uvalue          = this->Uvalue;
     lu_int *Windex          = this->Windex;
     double *Wvalue          = this->Wvalue;
-    
+
     const lu_int cbeg = Wbegin[pivot_col];
     const lu_int cend = Wend[pivot_col];
     const lu_int rbeg = Wbegin[m+pivot_row];
@@ -967,7 +967,7 @@ static lu_int lu_pivot_doubleton_col(struct lu *this)
     lu_int *Windex          = this->Windex;
     double *Wvalue          = this->Wvalue;
     lu_int *marked          = this->iwork0;
-    
+
     lu_int cbeg = Wbegin[pivot_col]; /* changed by file compression */
     lu_int cend = Wend[pivot_col];
     lu_int rbeg = Wbegin[m+pivot_row];
@@ -1117,7 +1117,7 @@ static lu_int lu_pivot_doubleton_col(struct lu *this)
     }
     rend = put;
     Ubegin[rank+1] = Uput;
-    
+
 
     /* ---------------------------------------------------------------------- */
     /* Row file update */

@@ -119,5 +119,3 @@ you cloned the source code into, and build SciPy (this takes a while)::
 Optionally, test it::
 
     python runtests.py
-
-

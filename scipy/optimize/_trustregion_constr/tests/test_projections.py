@@ -1,32 +1,41 @@
 import numpy as np
 import scipy.linalg
 from scipy.sparse import csc_matrix
-from scipy.optimize._trustregion_constr.projections \
-    import projections, orthogonality
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_equal, assert_allclose)
+from scipy.optimize._trustregion_constr.projections import projections, orthogonality
+from numpy.testing import (
+    TestCase,
+    assert_array_almost_equal,
+    assert_equal,
+    assert_allclose,
+)
 
 try:
     from sksparse.cholmod import cholesky_AAt
+
     sksparse_available = True
     available_sparse_methods = ("NormalEquation", "AugmentedSystem")
 except ImportError:
     sksparse_available = False
     available_sparse_methods = ("AugmentedSystem",)
-available_dense_methods = ('QRFactorization', 'SVDFactorization')
+available_dense_methods = ("QRFactorization", "SVDFactorization")
 
 
 class TestProjections(TestCase):
-
     def test_nullspace_and_least_squares_sparse(self):
-        A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                            [0, 8, 7, 0, 1, 5, 9, 0],
-                            [1, 0, 0, 0, 0, 1, 2, 3]])
+        A_dense = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
         At_dense = A_dense.T
         A = csc_matrix(A_dense)
-        test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
-                       [1, 10, 3, 0, 1, 6, 7, 8],
-                       [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
+        test_points = (
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            [1, 10, 3, 0, 1, 6, 7, 8],
+            [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
+        )
 
         for method in available_sparse_methods:
             Z, LS, _ = projections(A, method)
@@ -42,14 +51,20 @@ class TestProjections(TestCase):
                 assert_array_almost_equal(x, x2)
 
     def test_iterative_refinements_sparse(self):
-        A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                            [0, 8, 7, 0, 1, 5, 9, 0],
-                            [1, 0, 0, 0, 0, 1, 2, 3]])
+        A_dense = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
         A = csc_matrix(A_dense)
-        test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
-                       [1, 10, 3, 0, 1, 6, 7, 8],
-                       [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
-                       [1, 0, 0, 0, 0, 1, 2, 3+1e-10])
+        test_points = (
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            [1, 10, 3, 0, 1, 6, 7, 8],
+            [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
+            [1, 0, 0, 0, 0, 1, 2, 3 + 1e-10],
+        )
 
         for method in available_sparse_methods:
             Z, LS, _ = projections(A, method, orth_tol=1e-18, max_refin=100)
@@ -62,13 +77,15 @@ class TestProjections(TestCase):
                 assert_allclose(orthogonality(A, x), 0, atol=1e-13)
 
     def test_rowspace_sparse(self):
-        A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                            [0, 8, 7, 0, 1, 5, 9, 0],
-                            [1, 0, 0, 0, 0, 1, 2, 3]])
+        A_dense = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
         A = csc_matrix(A_dense)
-        test_points = ([1, 2, 3],
-                       [1, 10, 3],
-                       [1.12, 10, 0])
+        test_points = ([1, 2, 3], [1, 10, 3], [1.12, 10, 0])
 
         for method in available_sparse_methods:
             _, _, Y = projections(A, method)
@@ -78,17 +95,24 @@ class TestProjections(TestCase):
                 assert_array_almost_equal(A.dot(x), z)
                 # Test if x is in the return row space of A
                 A_ext = np.vstack((A_dense, x))
-                assert_equal(np.linalg.matrix_rank(A_dense),
-                             np.linalg.matrix_rank(A_ext))
+                assert_equal(
+                    np.linalg.matrix_rank(A_dense), np.linalg.matrix_rank(A_ext)
+                )
 
     def test_nullspace_and_least_squares_dense(self):
-        A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                      [0, 8, 7, 0, 1, 5, 9, 0],
-                      [1, 0, 0, 0, 0, 1, 2, 3]])
+        A = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
         At = A.T
-        test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
-                       [1, 10, 3, 0, 1, 6, 7, 8],
-                       [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
+        test_points = (
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            [1, 10, 3, 0, 1, 6, 7, 8],
+            [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
+        )
 
         for method in available_dense_methods:
             Z, LS, _ = projections(A, method)
@@ -136,12 +160,18 @@ class TestProjections(TestCase):
             assert_array_almost_equal(Y.dot(x), Y_sparse.dot(x))
 
     def test_iterative_refinements_dense(self):
-        A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                            [0, 8, 7, 0, 1, 5, 9, 0],
-                            [1, 0, 0, 0, 0, 1, 2, 3]])
-        test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
-                       [1, 10, 3, 0, 1, 6, 7, 8],
-                       [1, 0, 0, 0, 0, 1, 2, 3+1e-10])
+        A = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
+        test_points = (
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            [1, 10, 3, 0, 1, 6, 7, 8],
+            [1, 0, 0, 0, 0, 1, 2, 3 + 1e-10],
+        )
 
         for method in available_dense_methods:
             Z, LS, _ = projections(A, method, orth_tol=1e-18, max_refin=10)
@@ -153,12 +183,14 @@ class TestProjections(TestCase):
                 assert_allclose(orthogonality(A, x), 0, rtol=0, atol=5e-16)
 
     def test_rowspace_dense(self):
-        A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                      [0, 8, 7, 0, 1, 5, 9, 0],
-                      [1, 0, 0, 0, 0, 1, 2, 3]])
-        test_points = ([1, 2, 3],
-                       [1, 10, 3],
-                       [1.12, 10, 0])
+        A = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
+        test_points = ([1, 2, 3], [1, 10, 3], [1.12, 10, 0])
 
         for method in available_dense_methods:
             _, _, Y = projections(A, method)
@@ -168,24 +200,40 @@ class TestProjections(TestCase):
                 assert_array_almost_equal(A.dot(x), z)
                 # Test if x is in the return row space of A
                 A_ext = np.vstack((A, x))
-                assert_equal(np.linalg.matrix_rank(A),
-                             np.linalg.matrix_rank(A_ext))
+                assert_equal(np.linalg.matrix_rank(A), np.linalg.matrix_rank(A_ext))
 
 
 class TestOrthogonality(TestCase):
-
     def test_dense_matrix(self):
-        A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                      [0, 8, 7, 0, 1, 5, 9, 0],
-                      [1, 0, 0, 0, 0, 1, 2, 3]])
-        test_vectors = ([-1.98931144, -1.56363389,
-                         -0.84115584, 2.2864762,
-                         5.599141, 0.09286976,
-                         1.37040802, -0.28145812],
-                        [697.92794044, -4091.65114008,
-                         -3327.42316335, 836.86906951,
-                         99434.98929065, -1285.37653682,
-                         -4109.21503806, 2935.29289083])
+        A = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
+        test_vectors = (
+            [
+                -1.98931144,
+                -1.56363389,
+                -0.84115584,
+                2.2864762,
+                5.599141,
+                0.09286976,
+                1.37040802,
+                -0.28145812,
+            ],
+            [
+                697.92794044,
+                -4091.65114008,
+                -3327.42316335,
+                836.86906951,
+                99434.98929065,
+                -1285.37653682,
+                -4109.21503806,
+                2935.29289083,
+            ],
+        )
         test_expected_orth = (0, 0)
 
         for i in range(len(test_vectors)):
@@ -194,18 +242,36 @@ class TestOrthogonality(TestCase):
             assert_array_almost_equal(orthogonality(A, x), orth)
 
     def test_sparse_matrix(self):
-        A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
-                      [0, 8, 7, 0, 1, 5, 9, 0],
-                      [1, 0, 0, 0, 0, 1, 2, 3]])
+        A = np.array(
+            [
+                [1, 2, 3, 4, 0, 5, 0, 7],
+                [0, 8, 7, 0, 1, 5, 9, 0],
+                [1, 0, 0, 0, 0, 1, 2, 3],
+            ]
+        )
         A = csc_matrix(A)
-        test_vectors = ([-1.98931144, -1.56363389,
-                         -0.84115584, 2.2864762,
-                         5.599141, 0.09286976,
-                         1.37040802, -0.28145812],
-                        [697.92794044, -4091.65114008,
-                         -3327.42316335, 836.86906951,
-                         99434.98929065, -1285.37653682,
-                         -4109.21503806, 2935.29289083])
+        test_vectors = (
+            [
+                -1.98931144,
+                -1.56363389,
+                -0.84115584,
+                2.2864762,
+                5.599141,
+                0.09286976,
+                1.37040802,
+                -0.28145812,
+            ],
+            [
+                697.92794044,
+                -4091.65114008,
+                -3327.42316335,
+                836.86906951,
+                99434.98929065,
+                -1285.37653682,
+                -4109.21503806,
+                2935.29289083,
+            ],
+        )
         test_expected_orth = (0, 0)
 
         for i in range(len(test_vectors)):

@@ -28,8 +28,14 @@ from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association', 'relative_risk']
+__all__ = [
+    "margins",
+    "expected_freq",
+    "chi2_contingency",
+    "crosstab",
+    "association",
+    "relative_risk",
+]
 
 
 def margins(a):
@@ -273,8 +279,10 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         # Include one of the positions where expected is zero in
         # the exception message.
         zeropos = list(zip(*np.nonzero(expected == 0)))[0]
-        raise ValueError("The internally computed table of expected "
-                         "frequencies has a zero element at %s." % (zeropos,))
+        raise ValueError(
+            "The internally computed table of expected "
+            "frequencies has a zero element at %s." % (zeropos,)
+        )
 
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1
@@ -294,9 +302,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
             magnitude = np.minimum(0.5, np.abs(diff))
             observed = observed + magnitude * direction
 
-        chi2, p = power_divergence(observed, expected,
-                                   ddof=observed.size - 1 - dof, axis=None,
-                                   lambda_=lambda_)
+        chi2, p = power_divergence(
+            observed, expected, ddof=observed.size - 1 - dof, axis=None, lambda_=lambda_
+        )
 
     return chi2, p, dof, expected
 
@@ -384,8 +392,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     if len(arr.shape) != 2:
         raise ValueError("method only accepts 2d arrays")
 
-    chi2_stat = chi2_contingency(arr, correction=correction,
-                                 lambda_=lambda_)
+    chi2_stat = chi2_contingency(arr, correction=correction, lambda_=lambda_)
 
     phi2 = chi2_stat[0] / arr.sum()
     n_rows, n_cols = arr.shape
@@ -393,10 +400,12 @@ def association(observed, method="cramer", correction=False, lambda_=None):
         value = phi2 / min(n_cols - 1, n_rows - 1)
     elif method == "tschuprow":
         value = phi2 / math.sqrt((n_rows - 1) * (n_cols - 1))
-    elif method == 'pearson':
+    elif method == "pearson":
         value = phi2 / (1 + phi2)
     else:
-        raise ValueError("Invalid argument value: 'method' argument must "
-                         "be 'cramer', 'tschuprow', or 'pearson'")
+        raise ValueError(
+            "Invalid argument value: 'method' argument must "
+            "be 'cramer', 'tschuprow', or 'pearson'"
+        )
 
     return math.sqrt(value)

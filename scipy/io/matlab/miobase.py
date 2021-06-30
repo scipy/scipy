@@ -26,17 +26,14 @@ class MatReadWarning(UserWarning):
     pass
 
 
-doc_dict = \
-    {'file_arg':
-         '''file_name : str
+doc_dict = {
+    "file_arg": """file_name : str
    Name of the mat file (do not need .mat extension if
-   appendmat==True) Can also pass open file-like object.''',
-     'append_arg':
-         '''appendmat : bool, optional
+   appendmat==True) Can also pass open file-like object.""",
+    "append_arg": """appendmat : bool, optional
    True to append the .mat extension to the end of the given
-   filename, if not already present.''',
-     'load_args':
-         '''byte_order : str or None, optional
+   filename, if not already present.""",
+    "load_args": """byte_order : str or None, optional
    None by default, implying byte order guessed from mat
    file. Otherwise can be one of ('native', '=', 'little', '<',
    'BIG', '>').
@@ -50,37 +47,32 @@ chars_as_strings : bool, optional
 matlab_compatible : bool, optional
    Returns matrices as would be loaded by MATLAB (implies
    squeeze_me=False, chars_as_strings=False, mat_dtype=True,
-   struct_as_record=True).''',
-     'struct_arg':
-         '''struct_as_record : bool, optional
+   struct_as_record=True).""",
+    "struct_arg": """struct_as_record : bool, optional
    Whether to load MATLAB structs as NumPy record arrays, or as
    old-style NumPy arrays with dtype=object. Setting this flag to
    False replicates the behavior of SciPy version 0.7.x (returning
    numpy object arrays). The default setting is True, because it
-   allows easier round-trip load and save of MATLAB files.''',
-     'matstream_arg':
-         '''mat_stream : file-like
-   Object with file API, open for reading.''',
-     'long_fields':
-         '''long_field_names : bool, optional
+   allows easier round-trip load and save of MATLAB files.""",
+    "matstream_arg": """mat_stream : file-like
+   Object with file API, open for reading.""",
+    "long_fields": """long_field_names : bool, optional
    * False - maximum field name length in a structure is 31 characters
      which is the documented maximum length. This is the default.
    * True - maximum field name length in a structure is 63 characters
-     which works for MATLAB 7.6''',
-     'do_compression':
-         '''do_compression : bool, optional
-   Whether to compress matrices on write. Default is False.''',
-     'oned_as':
-         '''oned_as : {'row', 'column'}, optional
+     which works for MATLAB 7.6""",
+    "do_compression": """do_compression : bool, optional
+   Whether to compress matrices on write. Default is False.""",
+    "oned_as": """oned_as : {'row', 'column'}, optional
    If 'column', write 1-D NumPy arrays as column vectors.
-   If 'row', write 1D NumPy arrays as row vectors.''',
-     'unicode_strings':
-         '''unicode_strings : bool, optional
-   If True, write strings as Unicode, else MATLAB usual encoding.'''}
+   If 'row', write 1D NumPy arrays as row vectors.""",
+    "unicode_strings": """unicode_strings : bool, optional
+   If True, write strings as Unicode, else MATLAB usual encoding.""",
+}
 
 docfiller = doccer.filldoc(doc_dict)
 
-'''
+"""
 
  Note on architecture
 ======================
@@ -122,11 +114,11 @@ The file-reading object contains the *file read parameters*. The
 in a single function. The *element read parameters* - the mat_dtype in
 this instance, is passed into a general post-processing function - see
 ``mio_utils`` for details.
-'''
+"""
 
 
 def convert_dtypes(dtype_template, order_code):
-    ''' Convert dtypes in mapping to given order
+    """Convert dtypes in mapping to given order
 
     Parameters
     ----------
@@ -141,7 +133,7 @@ def convert_dtypes(dtype_template, order_code):
        mapping where values have been replaced by
        ``np.dtype(val).newbyteorder(order_code)``
 
-    '''
+    """
     dtypes = dtype_template.copy()
     for k in dtypes:
         dtypes[k] = np.dtype(dtypes[k]).newbyteorder(order_code)
@@ -167,10 +159,9 @@ def read_dtype(mat_stream, a_dtype):
 
     """
     num_bytes = a_dtype.itemsize
-    arr = np.ndarray(shape=(),
-                     dtype=a_dtype,
-                     buffer=mat_stream.read(num_bytes),
-                     order='F')
+    arr = np.ndarray(
+        shape=(), dtype=a_dtype, buffer=mat_stream.read(num_bytes), order="F"
+    )
     return arr
 
 
@@ -215,23 +206,23 @@ def get_matfile_version(fileobj):
     mopt_ints = np.ndarray(shape=(4,), dtype=np.uint8, buffer=mopt_bytes)
     if 0 in mopt_ints:
         fileobj.seek(0)
-        return (0,0)
+        return (0, 0)
     # For 5 format or 7.3 format we need to read an integer in the
     # header. Bytes 124 through 128 contain a version integer and an
     # endian test string
     fileobj.seek(124)
     tst_str = fileobj.read(4)
     fileobj.seek(0)
-    maj_ind = int(tst_str[2] == b'I'[0])
+    maj_ind = int(tst_str[2] == b"I"[0])
     maj_val = int(tst_str[maj_ind])
     min_val = int(tst_str[1 - maj_ind])
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret
-    raise ValueError('Unknown mat file type, version %s, %s' % ret)
+    raise ValueError("Unknown mat file type, version %s, %s" % ret)
 
 
-def matdims(arr, oned_as='column'):
+def matdims(arr, oned_as="column"):
     """
     Determine equivalent MATLAB dimensions for given array
 
@@ -298,32 +289,32 @@ def matdims(arr, oned_as='column'):
     if len(shape) == 1:  # 1D
         if shape[0] == 0:
             return (0, 0)
-        elif oned_as == 'column':
+        elif oned_as == "column":
             return shape + (1,)
-        elif oned_as == 'row':
+        elif oned_as == "row":
             return (1,) + shape
         else:
-            raise ValueError('1-D option "%s" is strange'
-                             % oned_as)
+            raise ValueError('1-D option "%s" is strange' % oned_as)
     return shape
 
 
 class MatVarReader:
-    ''' Abstract class defining required interface for var readers'''
+    """Abstract class defining required interface for var readers"""
+
     def __init__(self, file_reader):
         pass
 
     def read_header(self):
-        ''' Returns header '''
+        """Returns header"""
         pass
 
     def array_from_header(self, header):
-        ''' Reads array given header '''
+        """Reads array given header"""
         pass
 
 
 class MatFileReader:
-    """ Base object for reading mat files
+    """Base object for reading mat files
 
     To make this class functional, you will need to override the
     following methods:
@@ -333,22 +324,25 @@ class MatFileReader:
     """
 
     @docfiller
-    def __init__(self, mat_stream,
-                 byte_order=None,
-                 mat_dtype=False,
-                 squeeze_me=False,
-                 chars_as_strings=True,
-                 matlab_compatible=False,
-                 struct_as_record=True,
-                 verify_compressed_data_integrity=True,
-                 simplify_cells=False):
-        '''
-        Initializer for mat file reader
+    def __init__(
+        self,
+        mat_stream,
+        byte_order=None,
+        mat_dtype=False,
+        squeeze_me=False,
+        chars_as_strings=True,
+        matlab_compatible=False,
+        struct_as_record=True,
+        verify_compressed_data_integrity=True,
+        simplify_cells=False,
+    ):
+        """
+            Initializer for mat file reader
 
-        mat_stream : file-like
-            object with file API, open for reading
-    %(load_args)s
-        '''
+            mat_stream : file-like
+                object with file API, open for reading
+        %(load_args)s
+        """
         # Initialize stream
         self.mat_stream = mat_stream
         self.dtypes = {}
@@ -371,39 +365,37 @@ class MatFileReader:
             self.struct_as_record = False
 
     def set_matlab_compatible(self):
-        ''' Sets options to return arrays as MATLAB loads them '''
+        """Sets options to return arrays as MATLAB loads them"""
         self.mat_dtype = True
         self.squeeze_me = False
         self.chars_as_strings = False
 
     def guess_byte_order(self):
-        ''' As we do not know what file type we have, assume native '''
+        """As we do not know what file type we have, assume native"""
         return boc.native_code
 
     def end_of_stream(self):
         b = self.mat_stream.read(1)
         curpos = self.mat_stream.tell()
-        self.mat_stream.seek(curpos-1)
+        self.mat_stream.seek(curpos - 1)
         return len(b) == 0
 
 
 def arr_dtype_number(arr, num):
-    ''' Return dtype for given number of items per element'''
+    """Return dtype for given number of items per element"""
     return np.dtype(arr.dtype.str[:2] + str(num))
 
 
 def arr_to_chars(arr):
-    ''' Convert string array to char array '''
+    """Convert string array to char array"""
     dims = list(arr.shape)
     if not dims:
         dims = [1]
     dims.append(int(arr.dtype.str[2:]))
-    arr = np.ndarray(shape=dims,
-                     dtype=arr_dtype_number(arr, 1),
-                     buffer=arr)
-    empties = [arr == '']
+    arr = np.ndarray(shape=dims, dtype=arr_dtype_number(arr, 1), buffer=arr)
+    empties = [arr == ""]
     if not np.any(empties):
         return arr
     arr = arr.copy()
-    arr[tuple(empties)] = ' '
+    arr[tuple(empties)] = " "
     return arr

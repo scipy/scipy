@@ -14,16 +14,8 @@ class GetBlasLapackFuncs(Benchmark):
     diverge too much. Hence the results here should be comparable
     """
 
-    param_names = ['dtype1', 'dtype2',
-                   'dtype1_ord', 'dtype2_ord',
-                   'size']
-    params = [
-        ['b', 'G', 'd'],
-        ['d', 'F', '?'],
-        ['C', 'F'],
-        ['C', 'F'],
-        [10, 100, 1000]
-    ]
+    param_names = ["dtype1", "dtype2", "dtype1_ord", "dtype2_ord", "size"]
+    params = [["b", "G", "d"], ["d", "F", "?"], ["C", "F"], ["C", "F"], [10, 100, 1000]]
 
     def setup(self, dtype1, dtype2, dtype1_ord, dtype2_ord, size):
         self.arr1 = np.empty(size, dtype=dtype1, order=dtype1_ord)

@@ -20,34 +20,48 @@ import numpy as np
 if TYPE_CHECKING:
     import numpy.typing as npt
     from typing_extensions import Literal
-    from scipy._lib._util import (
-        DecimalNumber, GeneratorType, IntNumber, SeedType
-    )
+    from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
 
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
 from scipy.stats._sobol import (
-    initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
+    initialize_v,
+    _cscramble,
+    _fill_p_cumulative,
+    _draw,
+    _fast_forward,
+    _categorize,
+    initialize_direction_numbers,
+    _MAXDIM,
+    _MAXBIT,
 )
 from scipy.stats._qmc_cy import (
     _cy_wrapper_centered_discrepancy,
     _cy_wrapper_wrap_around_discrepancy,
     _cy_wrapper_mixture_discrepancy,
     _cy_wrapper_l2_star_discrepancy,
-    _cy_wrapper_update_discrepancy
+    _cy_wrapper_update_discrepancy,
 )
 
 
-__all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
-           'MultinomialQMC', 'MultivariateNormalQMC']
+__all__ = [
+    "scale",
+    "discrepancy",
+    "update_discrepancy",
+    "QMCEngine",
+    "Sobol",
+    "Halton",
+    "LatinHypercube",
+    "MultinomialQMC",
+    "MultivariateNormalQMC",
+]
 
 
 @overload
 def check_random_state(seed: Optional[IntNumber] = ...) -> np.random.Generator:
     ...
+
 
 @overload
 def check_random_state(seed: GeneratorType) -> GeneratorType:
@@ -76,10 +90,12 @@ def check_random_state(seed=None):
 
     """
     if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
-        if not hasattr(np.random, 'Generator'):
+        if not hasattr(np.random, "Generator"):
             # This can be removed once numpy 1.16 is dropped
-            msg = ("NumPy 1.16 doesn't have Generator, use either "
-                   "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`")
+            msg = (
+                "NumPy 1.16 doesn't have Generator, use either "
+                "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`"
+            )
             raise ValueError(msg)
         return np.random.default_rng(seed)
     elif isinstance(seed, np.random.RandomState):
@@ -88,8 +104,9 @@ def check_random_state(seed=None):
         # The two checks can be merged once numpy 1.16 is dropped
         return seed
     else:
-        raise ValueError('%r cannot be used to seed a numpy.random.Generator'
-                         ' instance' % seed)
+        raise ValueError(
+            "%r cannot be used to seed a numpy.random.Generator instance" % seed
+        )
 
 
 def scale(
@@ -97,7 +114,7 @@ def scale(
     l_bounds: npt.ArrayLike,
     u_bounds: npt.ArrayLike,
     *,
-    reverse: bool = False
+    reverse: bool = False,
 ) -> np.ndarray:
     r"""Sample scaling from unit hypercube to different bounds.
 
@@ -157,36 +174,37 @@ def scale(
 
     # Checking bounds and sample
     if not sample.ndim == 2:
-        raise ValueError('Sample is not a 2D array')
+        raise ValueError("Sample is not a 2D array")
 
     lower, upper = np.broadcast_arrays(lower, upper)
 
     if not np.all(lower < upper):
-        raise ValueError('Bounds are not consistent a < b')
+        raise ValueError("Bounds are not consistent a < b")
 
     if len(lower) != sample.shape[1]:
-        raise ValueError('Sample dimension is different than bounds dimension')
+        raise ValueError("Sample dimension is different than bounds dimension")
 
     if not reverse:
         # Checking that sample is within the hypercube
         if not (np.all(sample >= 0) and np.all(sample <= 1)):
-            raise ValueError('Sample is not in unit hypercube')
+            raise ValueError("Sample is not in unit hypercube")
 
         return sample * (upper - lower) + lower
     else:
         # Checking that sample is within the bounds
         if not (np.all(sample >= lower) and np.all(sample <= upper)):
-            raise ValueError('Sample is out of bounds')
+            raise ValueError("Sample is out of bounds")
 
         return (sample - lower) / (upper - lower)
 
 
 def discrepancy(
-        sample: npt.ArrayLike,
-        *,
-        iterative: bool = False,
-        method: Literal["CD", "WD", "MD", "L2-star"] = "CD",
-        workers: IntNumber = 1) -> float:
+    sample: npt.ArrayLike,
+    *,
+    iterative: bool = False,
+    method: Literal["CD", "WD", "MD", "L2-star"] = "CD",
+    workers: IntNumber = 1,
+) -> float:
     """Discrepancy of a given sample.
 
     Parameters
@@ -311,8 +329,7 @@ def discrepancy(
                 "cannot use -1 for the number of workers"
             )
     elif workers <= 0:
-        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
-                         "or > 0")
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 or > 0")
 
     methods = {
         "CD": _cy_wrapper_centered_discrepancy,
@@ -324,14 +341,14 @@ def discrepancy(
     if method in methods:
         return methods[method](sample, iterative, workers=workers)
     else:
-        raise ValueError(f"{method!r} is not a valid method. It must be one of"
-                         f" {set(methods)!r}")
+        raise ValueError(
+            f"{method!r} is not a valid method. It must be one of {set(methods)!r}"
+        )
 
 
 def update_discrepancy(
-        x_new: npt.ArrayLike,
-        sample: npt.ArrayLike,
-        initial_disc: DecimalNumber) -> float:
+    x_new: npt.ArrayLike, sample: npt.ArrayLike, initial_disc: DecimalNumber
+) -> float:
     """Update the centered discrepancy with a new sample.
 
     Parameters
@@ -370,17 +387,17 @@ def update_discrepancy(
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
-        raise ValueError('Sample is not a 2D array')
+        raise ValueError("Sample is not a 2D array")
 
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
-        raise ValueError('Sample is not in unit hypercube')
+        raise ValueError("Sample is not in unit hypercube")
 
     # Checking that x_new is within the hypercube and 1D
     if not x_new.ndim == 1:
-        raise ValueError('x_new is not a 1D array')
+        raise ValueError("x_new is not a 1D array")
 
     if not (np.all(x_new >= 0) and np.all(x_new <= 1)):
-        raise ValueError('x_new is not in unit hypercube')
+        raise ValueError("x_new is not in unit hypercube")
 
     if x_new.shape[0] != sample.shape[1]:
         raise ValueError("x_new and sample must be broadcastable")
@@ -415,8 +432,8 @@ def primes_from_2_to(n: int) -> np.ndarray:
     sieve = np.ones(n // 3 + (n % 6 == 2), dtype=bool)
     for i in range(1, int(n ** 0.5) // 3 + 1):
         k = 3 * i + 1 | 1
-        sieve[k * k // 3::2 * k] = False
-        sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
+        sieve[k * k // 3 :: 2 * k] = False
+        sieve[k * (k - 2 * (i & 1) + 4) // 3 :: 2 * k] = False
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
@@ -434,23 +451,182 @@ def n_primes(n: IntNumber) -> List[int]:
         List of primes.
 
     """
-    primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-              61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127,
-              131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
-              197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269,
-              271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349,
-              353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431,
-              433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503,
-              509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599,
-              601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673,
-              677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
-              769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
-              859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+    primes = [
+        2,
+        3,
+        5,
+        7,
+        11,
+        13,
+        17,
+        19,
+        23,
+        29,
+        31,
+        37,
+        41,
+        43,
+        47,
+        53,
+        59,
+        61,
+        67,
+        71,
+        73,
+        79,
+        83,
+        89,
+        97,
+        101,
+        103,
+        107,
+        109,
+        113,
+        127,
+        131,
+        137,
+        139,
+        149,
+        151,
+        157,
+        163,
+        167,
+        173,
+        179,
+        181,
+        191,
+        193,
+        197,
+        199,
+        211,
+        223,
+        227,
+        229,
+        233,
+        239,
+        241,
+        251,
+        257,
+        263,
+        269,
+        271,
+        277,
+        281,
+        283,
+        293,
+        307,
+        311,
+        313,
+        317,
+        331,
+        337,
+        347,
+        349,
+        353,
+        359,
+        367,
+        373,
+        379,
+        383,
+        389,
+        397,
+        401,
+        409,
+        419,
+        421,
+        431,
+        433,
+        439,
+        443,
+        449,
+        457,
+        461,
+        463,
+        467,
+        479,
+        487,
+        491,
+        499,
+        503,
+        509,
+        521,
+        523,
+        541,
+        547,
+        557,
+        563,
+        569,
+        571,
+        577,
+        587,
+        593,
+        599,
+        601,
+        607,
+        613,
+        617,
+        619,
+        631,
+        641,
+        643,
+        647,
+        653,
+        659,
+        661,
+        673,
+        677,
+        683,
+        691,
+        701,
+        709,
+        719,
+        727,
+        733,
+        739,
+        743,
+        751,
+        757,
+        761,
+        769,
+        773,
+        787,
+        797,
+        809,
+        811,
+        821,
+        823,
+        827,
+        829,
+        839,
+        853,
+        857,
+        859,
+        863,
+        877,
+        881,
+        883,
+        887,
+        907,
+        911,
+        919,
+        929,
+        937,
+        941,
+        947,
+        953,
+        967,
+        971,
+        977,
+        983,
+        991,
+        997,
+    ][
+        :n
+    ]  # type: ignore[misc]
 
     if len(primes) < n:
         big_number = 2000
-        while 'Not enough primes':
+        while "Not enough primes":
             primes = primes_from_2_to(big_number)[:n]  # type: ignore[misc]
             if len(primes) == n:
                 break
@@ -460,12 +636,13 @@ def n_primes(n: IntNumber) -> List[int]:
 
 
 def van_der_corput(
-        n: IntNumber,
-        base: IntNumber = 2,
-        *,
-        start_index: IntNumber = 0,
-        scramble: bool = False,
-        seed: SeedType = None) -> np.ndarray:
+    n: IntNumber,
+    base: IntNumber = 2,
+    *,
+    start_index: IntNumber = 0,
+    scramble: bool = False,
+    seed: SeedType = None,
+) -> np.ndarray:
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -614,14 +791,9 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(
-            self,
-            d: IntNumber,
-            *,
-            seed: SeedType = None
-    ) -> None:
+    def __init__(self, d: IntNumber, *, seed: SeedType = None) -> None:
         if not np.issubdtype(type(d), np.integer):
-            raise ValueError('d must be an integer value')
+            raise ValueError("d must be an integer value")
 
         self.d = d
         self.rng = check_random_state(seed)
@@ -760,8 +932,7 @@ class Halton(QMCEngine):
     """
 
     def __init__(
-            self, d: IntNumber, *, scramble: bool = True,
-            seed: SeedType = None
+        self, d: IntNumber, *, scramble: bool = True, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.seed = seed
@@ -784,10 +955,16 @@ class Halton(QMCEngine):
         """
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
-                                 scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed))
-                  for bdim in self.base]
+        sample = [
+            van_der_corput(
+                n,
+                int(bdim),
+                start_index=self.num_generated,
+                scramble=self.scramble,
+                seed=copy.deepcopy(self.seed),
+            )
+            for bdim in self.base
+        ]
 
         self.num_generated += n
         return np.array(sample).T.reshape(n, self.d)
@@ -863,8 +1040,7 @@ class LatinHypercube(QMCEngine):
     """
 
     def __init__(
-        self, d: IntNumber, *, centered: bool = False,
-        seed: SeedType = None
+        self, d: IntNumber, *, centered: bool = False, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
@@ -1017,8 +1193,7 @@ class Sobol(QMCEngine):
     MAXBIT: ClassVar[int] = _MAXBIT
 
     def __init__(
-            self, d: IntNumber, *, scramble: bool = True,
-            seed: SeedType = None
+        self, d: IntNumber, *, scramble: bool = True, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
@@ -1050,9 +1225,11 @@ class Sobol(QMCEngine):
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(rng_integers(self.rng, 2,
-                                   size=(self.d, self.MAXBIT, self.MAXBIT),
-                                   dtype=int))
+        ltm = np.tril(
+            rng_integers(
+                self.rng, 2, size=(self.d, self.MAXBIT, self.MAXBIT), dtype=int
+            )
+        )
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
@@ -1075,18 +1252,18 @@ class Sobol(QMCEngine):
         if self.num_generated == 0:
             # verify n is 2**n
             if not (n & (n - 1) == 0):
-                warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.")
+                warnings.warn(
+                    "The balance properties of Sobol' points require"
+                    " n to be a power of 2."
+                )
 
             if n == 1:
                 sample = self._first_point
             else:
-                _draw(n - 1, self.num_generated, self.d, self._sv,
-                      self._quasi, sample)
+                _draw(n - 1, self.num_generated, self.d, self._sv, self._quasi, sample)
                 sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
         else:
-            _draw(n, self.num_generated - 1, self.d, self._sv,
-                  self._quasi, sample)
+            _draw(n, self.num_generated - 1, self.d, self._sv, self._quasi, sample)
 
         self.num_generated += n
         return sample
@@ -1112,12 +1289,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError(
+                "The balance properties of Sobol' points require "
+                "n to be a power of 2. {0} points have been "
+                "previously generated, then: n={0}+2**{1}={2}. "
+                "If you still want to do this, the function "
+                "'Sobol.random()' can be used.".format(self.num_generated, m, total_n)
+            )
 
         return self.random(n)
 
@@ -1149,11 +1327,9 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n - 1, self.num_generated, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(n - 1, self.num_generated, self.d, self._sv, self._quasi)
         else:
-            _fast_forward(n, self.num_generated - 1, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(n, self.num_generated - 1, self.d, self._sv, self._quasi)
         self.num_generated += n
         return self
 
@@ -1194,11 +1370,14 @@ class MultivariateNormalQMC(QMCEngine):
     """
 
     def __init__(
-            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None, *,
-            cov_root: Optional[npt.ArrayLike] = None,
-            inv_transform: bool = True,
-            engine: Optional[QMCEngine] = None,
-            seed: SeedType = None
+        self,
+        mean: npt.ArrayLike,
+        cov: Optional[npt.ArrayLike] = None,
+        *,
+        cov_root: Optional[npt.ArrayLike] = None,
+        inv_transform: bool = True,
+        engine: Optional[QMCEngine] = None,
+        seed: SeedType = None,
     ) -> None:
         mean = np.array(mean, copy=False, ndmin=1)
         d = mean.shape[0]
@@ -1208,8 +1387,7 @@ class MultivariateNormalQMC(QMCEngine):
             # check for square/symmetric cov matrix and mean vector has the
             # same d
             if not mean.shape[0] == cov.shape[0]:
-                raise ValueError("Dimension mismatch between mean and "
-                                 "covariance.")
+                raise ValueError("Dimension mismatch between mean and covariance.")
             if not np.allclose(cov, cov.transpose()):
                 raise ValueError("Covariance matrix is not symmetric.")
             # compute Cholesky decomp; if it fails, do the eigen decomposition
@@ -1225,8 +1403,7 @@ class MultivariateNormalQMC(QMCEngine):
             # root decomposition provided
             cov_root = np.atleast_2d(cov_root)
             if not mean.shape[0] == cov_root.shape[0]:
-                raise ValueError("Dimension mismatch between mean and "
-                                 "covariance.")
+                raise ValueError("Dimension mismatch between mean and covariance.")
         else:
             # corresponds to identity covariance matrix
             cov_root = None
@@ -1240,15 +1417,20 @@ class MultivariateNormalQMC(QMCEngine):
         else:
             engine_dim = d
         if engine is None:
-            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
+            self.engine = Sobol(
+                d=engine_dim, scramble=True, seed=seed
+            )  # type: QMCEngine
         elif isinstance(engine, QMCEngine) and engine.d != 1:
             if engine.d != d:
-                raise ValueError("Dimension of `engine` must be consistent"
-                                 " with dimensions of mean and covariance.")
+                raise ValueError(
+                    "Dimension of `engine` must be consistent"
+                    " with dimensions of mean and covariance."
+                )
             self.engine = engine
         else:
-            raise ValueError("`engine` must be an instance of "
-                             "`scipy.stats.qmc.QMCEngine` or `None`.")
+            raise ValueError(
+                "`engine` must be an instance of `scipy.stats.qmc.QMCEngine` or `None`."
+            )
 
         self._mean = mean
         self._corr_matrix = cov_root
@@ -1318,8 +1500,7 @@ class MultivariateNormalQMC(QMCEngine):
             thetas = 2 * math.pi * samples[:, 1 + even]
             cos = np.cos(thetas)
             sin = np.sin(thetas)
-            transf_samples = np.stack([Rs * cos, Rs * sin],
-                                      -1).reshape(n, -1)
+            transf_samples = np.stack([Rs * cos, Rs * sin], -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
             return transf_samples[:, : self.d]  # type: ignore[misc]
 
@@ -1350,14 +1531,17 @@ class MultinomialQMC(QMCEngine):
     """
 
     def __init__(
-            self, pvals: npt.ArrayLike, *, engine: Optional[QMCEngine] = None,
-            seed: SeedType = None
+        self,
+        pvals: npt.ArrayLike,
+        *,
+        engine: Optional[QMCEngine] = None,
+        seed: SeedType = None,
     ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
-            raise ValueError('Elements of pvals must be non-negative.')
+            raise ValueError("Elements of pvals must be non-negative.")
         if not np.isclose(np.sum(pvals), 1):
-            raise ValueError('Elements of pvals must sum to 1.')
+            raise ValueError("Elements of pvals must sum to 1.")
         if engine is None:
             self.engine = Sobol(d=1, scramble=True, seed=seed)  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
@@ -1365,8 +1549,9 @@ class MultinomialQMC(QMCEngine):
                 raise ValueError("Dimension of `engine` must be 1.")
             self.engine = engine
         else:
-            raise ValueError("`engine` must be an instance of "
-                             "`scipy.stats.qmc.QMCEngine` or `None`.")
+            raise ValueError(
+                "`engine` must be an instance of `scipy.stats.qmc.QMCEngine` or `None`."
+            )
 
         super().__init__(d=1, seed=seed)
 

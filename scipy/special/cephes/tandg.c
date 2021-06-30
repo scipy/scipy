@@ -63,7 +63,7 @@
  * cotdg total loss   x > 1.0e14 (IEEE)     0.0
  * cotdg singularity  x = 180 k            NPY_INFINITY
  */
-
+
 /*
  * Cephes Math Library Release 2.0:  April, 1987
  * Copyright 1984, 1987 by Stephen L. Moshier

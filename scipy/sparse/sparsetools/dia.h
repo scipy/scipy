@@ -13,12 +13,12 @@
  *   I  n_col            - number of columns in A
  *   I  n_diags          - number of diagonals
  *   I  L                - length of each diagonal
- *   I  offsets[n_diags] - diagonal offsets 
- *   T  diags[n_diags,L] - nonzeros 
+ *   I  offsets[n_diags] - diagonal offsets
+ *   T  diags[n_diags,L] - nonzeros
  *   T  Xx[n_col]        - input vector
  *
  * Output Arguments:
- *   T  Yx[n_row]        - output vector 
+ *   T  Yx[n_row]        - output vector
  *
  * Note:
  *   Output array Yx must be preallocated
@@ -31,8 +31,8 @@ void dia_matvec(const I n_row,
                 const I n_col,
                 const I n_diags,
                 const I L,
-	            const I offsets[], 
-	            const T diags[], 
+	            const I offsets[],
+	            const T diags[],
 	            const T Xx[],
 	                  T Yx[])
 {
@@ -50,7 +50,7 @@ void dia_matvec(const I n_row,
               T * y = Yx + i_start;
 
         for(I n = 0; n < N; n++){
-            y[n] += diag[n] * x[n]; 
+            y[n] += diag[n] * x[n];
         }
     }
 }

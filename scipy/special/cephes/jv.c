@@ -39,7 +39,7 @@
  *    IEEE   -125,125   -125,125      50000      3.5e-15*   1.9e-16*
  *
  */
-
+
 
 /*
  * Cephes Math Library Release 2.8:  June, 2000
@@ -223,7 +223,7 @@ double jv(double n, double x)
 
   done:return (sign * y);
 }
-
+
 /* Reduce the order by backward recurrence.
  * AMS55 #9.1.27 and 9.1.73.
  */
@@ -455,7 +455,7 @@ static double jvs(double n, double x)
     }
     return (y);
 }
-
+
 /* Hankel's asymptotic expansion
  * for large x.
  * AMS55 #9.2.5.
@@ -515,7 +515,7 @@ static double hankel(double n, double x)
 #endif
     return (t);
 }
-
+
 
 /* Asymptotic expansion for large n.
  * AMS55 #9.3.35.
@@ -741,7 +741,7 @@ static double jnx(double n, double x)
     t *= ai * pp / cbrt(n) + aip * qq / (n23 * n);
     return (t);
 }
-
+
 /* Asymptotic expansion for transition region,
  * n large and x close to n.
  * AMS55 #9.3.23.

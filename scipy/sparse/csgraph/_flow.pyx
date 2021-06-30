@@ -24,7 +24,7 @@ class MaximumFlowResult:
         self.residual = residual
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value 
+        return 'MaximumFlowResult with value of %d' % self.flow_value
 
 
 def maximum_flow(csgraph, source, sink):

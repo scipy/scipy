@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -11,7 +11,7 @@ at the top-level directory.
 
 /*! @file zmyblas2.c
  * \brief Level 2 Blas operations
- * 
+ *
  * <pre>
  * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
@@ -30,9 +30,9 @@ at the top-level directory.
 #include "slu_dcomplex.h"
 
 /*! \brief Solves a dense UNIT lower triangular system
- * 
- * The unit lower 
- * triangular matrix is stored in a 2D array M(1:nrow,1:ncol). 
+ *
+ * The unit lower
+ * triangular matrix is stored in a 2D array M(1:nrow,1:ncol).
  * The solution will be returned in the rhs vector.
  */
 void zlsolve ( int ldm, int ncol, doublecomplex *M, doublecomplex *rhs )
@@ -70,7 +70,7 @@ void zlsolve ( int ldm, int ncol, doublecomplex *M, doublecomplex *rhs )
       	rhs[++firstcol] = x2;
       	rhs[++firstcol] = x3;
       	++firstcol;
-    
+
       	for (k = firstcol; k < ncol; k++) {
 	    zz_mult(&temp, &x0, Mki0); Mki0++;
 	    z_sub(&rhs[k], &rhs[k], &temp);
@@ -95,18 +95,18 @@ void zlsolve ( int ldm, int ncol, doublecomplex *M, doublecomplex *rhs )
 
       	rhs[++firstcol] = x1;
       	++firstcol;
-    
+
       	for (k = firstcol; k < ncol; k++) {
 	    zz_mult(&temp, &x0, Mki0); Mki0++;
 	    z_sub(&rhs[k], &rhs[k], &temp);
 	    zz_mult(&temp, &x1, Mki1); Mki1++;
 	    z_sub(&rhs[k], &rhs[k], &temp);
-	} 
+	}
     }
-    
+
 }
 
-/*! \brief Solves a dense upper triangular system. 
+/*! \brief Solves a dense upper triangular system.
  *
  * The upper triangular matrix is
  * stored in a 2-dim array M(1:ldm,1:ncol). The solution will be returned
@@ -128,7 +128,7 @@ doublecomplex *rhs;	/* modified */
 
 	z_div(&xj, &rhs[jcol], &M[jcol + jcol*ldm]); /* M(jcol, jcol) */
 	rhs[jcol] = xj;
-	
+
 	for (irow = 0; irow < jcol; irow++) {
 	    zz_mult(&temp, &xj, &M[irow+jcol*ldm]); /* M(irow, jcol) */
 	    z_sub(&rhs[irow], &rhs[irow], &temp);
@@ -146,7 +146,7 @@ doublecomplex *rhs;	/* modified */
  */
 void zmatvec ( ldm, nrow, ncol, M, vec, Mxvec )
 int ldm;	/* in -- leading dimension of M */
-int nrow;	/* in */ 
+int nrow;	/* in */
 int ncol;	/* in */
 doublecomplex *M;	/* in */
 doublecomplex *vec;	/* in */
@@ -169,7 +169,7 @@ doublecomplex *Mxvec;	/* in/out */
 	vi0 = vec[firstcol++];
 	vi1 = vec[firstcol++];
 	vi2 = vec[firstcol++];
-	vi3 = vec[firstcol++];	
+	vi3 = vec[firstcol++];
 	for (k = 0; k < nrow; k++) {
 	    zz_mult(&temp, &vi0, Mki0); Mki0++;
 	    z_add(&Mxvec[k], &Mxvec[k], &temp);
@@ -193,6 +193,5 @@ doublecomplex *Mxvec;	/* in/out */
 	}
 	M0 += ldm;
     }
-	
-}
 
+}

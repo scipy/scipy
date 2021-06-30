@@ -32,8 +32,8 @@ def _get_array(shape, dtype):
         x = np.zeros(shape, dtype=dtype)
         j = np.arange(shape[0])
         x[j, j] = 2
-        x[j[:-1], j[:-1]+1] = -1
-        x[j[:-1]+1, j[:-1]] = -1
+        x[j[:-1], j[:-1] + 1] = -1
+        x[j[:-1] + 1, j[:-1]] = -1
         return x
     else:
         np.random.seed(1234)

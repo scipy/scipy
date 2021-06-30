@@ -31,8 +31,9 @@ def check_normalization(distfn, args, distname):
         atol, rtol = 1e-7, 1e-7
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
-            err_msg=distname, verbose=True)
+    npt.assert_allclose(
+        normalization_expect, 1.0, atol=atol, rtol=rtol, err_msg=distname, verbose=True
+    )
 
     _a, _b = distfn.support(*args)
     normalization_cdf = distfn.cdf(_b, *args)
@@ -43,61 +44,66 @@ def check_moment(distfn, arg, m, v, msg):
     m1 = distfn.moment(1, *arg)
     m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
-    else:                     # or np.isnan(m1),
-        npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg + " - 1st moment")
+    else:  # or np.isnan(m1),
+        npt.assert_(np.isinf(m1), msg + " - 1st moment -infinite, m1=%s" % str(m1))
 
     if not np.isinf(v):
-        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
-    else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        npt.assert_almost_equal(
+            m2 - m1 * m1, v, decimal=10, err_msg=msg + " - 2ndt moment"
+        )
+    else:  # or np.isnan(m2),
+        npt.assert_(np.isinf(m2), msg + " - 2nd moment -infinite, m2=%s" % str(m2))
 
 
 def check_mean_expect(distfn, arg, m, msg):
     if np.isfinite(m):
         m1 = distfn.expect(lambda x: x, arg)
-        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
-                            ' - 1st moment (expect)')
+        npt.assert_almost_equal(
+            m1, m, decimal=5, err_msg=msg + " - 1st moment (expect)"
+        )
 
 
 def check_var_expect(distfn, arg, m, v, msg):
     if np.isfinite(v):
-        m2 = distfn.expect(lambda x: x*x, arg)
-        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
-                            ' - 2st moment (expect)')
+        m2 = distfn.expect(lambda x: x * x, arg)
+        npt.assert_almost_equal(
+            m2, v + m * m, decimal=5, err_msg=msg + " - 2st moment (expect)"
+        )
 
 
 def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
-        m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
-        npt.assert_almost_equal(m3e, s * np.power(v, 1.5),
-                decimal=5, err_msg=msg + ' - skew')
+        m3e = distfn.expect(lambda x: np.power(x - m, 3), arg)
+        npt.assert_almost_equal(
+            m3e, s * np.power(v, 1.5), decimal=5, err_msg=msg + " - skew"
+        )
     else:
         npt.assert_(np.isnan(s))
 
 
 def check_kurt_expect(distfn, arg, m, v, k, msg):
     if np.isfinite(k):
-        m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
-        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
-                err_msg=msg + ' - kurtosis')
+        m4e = distfn.expect(lambda x: np.power(x - m, 4), arg)
+        npt.assert_allclose(
+            m4e,
+            (k + 3.0) * np.power(v, 2),
+            atol=1e-5,
+            rtol=1e-5,
+            err_msg=msg + " - kurtosis",
+        )
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
 
 def check_entropy(distfn, arg, msg):
     ent = distfn.entropy(*arg)
-    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
+    npt.assert_(not np.isnan(ent), msg + "test Entropy is nan")
 
 
 def check_private_entropy(distfn, args, superclass):
     # compare a generic _entropy with the distribution-specific implementation
-    npt.assert_allclose(distfn._entropy(*args),
-                        superclass._entropy(distfn, *args))
+    npt.assert_allclose(distfn._entropy(*args), superclass._entropy(distfn, *args))
 
 
 def check_entropy_vect_scale(distfn, arg):
@@ -120,12 +126,12 @@ def check_edge_support(distfn, args):
     # Make sure that x=self.a and self.b are handled correctly.
     x = distfn.support(*args)
     if isinstance(distfn, stats.rv_discrete):
-        x = x[0]-1, x[1]
+        x = x[0] - 1, x[1]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
 
-    if distfn.name not in ('skellam', 'dlaplace'):
+    if distfn.name not in ("skellam", "dlaplace"):
         # with a = -inf, log(0) generates warnings
         npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
         npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
@@ -148,11 +154,11 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     npt.assert_(not signature.kwonlyargs)
     npt.assert_(list(signature.defaults) == list(defaults))
 
-    shape_argnames = signature.args[:-len(defaults)]  # a, b, loc=0, scale=1
+    shape_argnames = signature.args[: -len(defaults)]  # a, b, loc=0, scale=1
     if distfn.shapes:
-        shapes_ = distfn.shapes.replace(',', ' ').split()
+        shapes_ = distfn.shapes.replace(",", " ").split()
     else:
-        shapes_ = ''
+        shapes_ = ""
     npt.assert_(len(shapes_) == distfn.numargs)
     npt.assert_(len(shapes_) == len(shape_argnames))
 
@@ -167,13 +173,12 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         k.update({names.pop(): a.pop()})
         v = [meth(x, *a, **k) for meth in meths]
         npt.assert_array_equal(vals, v)
-        if 'n' not in k.keys():
+        if "n" not in k.keys():
             # `n` is first parameter of moment(), so can't be used as named arg
-            npt.assert_equal(distfn.moment(1, *a, **k),
-                             distfn.moment(1, *shape_args))
+            npt.assert_equal(distfn.moment(1, *a, **k), distfn.moment(1, *shape_args))
 
     # unknown arguments should not go through:
-    k.update({'kaboom': 42})
+    k.update({"kaboom": 42})
     assert_raises(TypeError, distfn.cdf, x, **k)
 
 
@@ -199,7 +204,7 @@ def check_random_state_property(distfn, args):
     npt.assert_equal(r0, r2)
 
     # check that np.random.Generator can be used (numpy >= 1.17)
-    if hasattr(np.random, 'default_rng'):
+    if hasattr(np.random, "default_rng"):
         # obtain a np.random.Generator object
         rng = np.random.default_rng(1234)
         distfn.rvs(*args, size=1, random_state=rng)
@@ -221,8 +226,7 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32, np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -247,11 +251,10 @@ def check_cmplx_deriv(distfn, arg):
     def deriv(f, x, *arg):
         x = np.asarray(x)
         h = 1e-10
-        return (f(x + h*1j, *arg)/h).imag
+        return (f(x + h * 1j, *arg) / h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32, np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -260,14 +263,16 @@ def check_cmplx_deriv(distfn, arg):
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
         assert_allclose(deriv(distfn.cdf, x, *arg), pdf, rtol=1e-5)
-        assert_allclose(deriv(distfn.logcdf, x, *arg), pdf/cdf, rtol=1e-5)
+        assert_allclose(deriv(distfn.logcdf, x, *arg), pdf / cdf, rtol=1e-5)
 
         assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
-        assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
+        assert_allclose(deriv(distfn.logsf, x, *arg), -pdf / sf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.logpdf, x, *arg),
-                        deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
-                        rtol=1e-5)
+        assert_allclose(
+            deriv(distfn.logpdf, x, *arg),
+            deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
+            rtol=1e-5,
+        )
 
 
 def check_pickling(distfn, args):
@@ -290,8 +295,7 @@ def check_pickling(distfn, args):
     # also smoke test some methods
     medians = [distfn.ppf(0.5, *args), unpickled.ppf(0.5, *args)]
     npt.assert_equal(medians[0], medians[1])
-    npt.assert_equal(distfn.cdf(medians[0], *args),
-                     unpickled.cdf(medians[1], *args))
+    npt.assert_equal(distfn.cdf(medians[0], *args), unpickled.cdf(medians[1], *args))
 
     # check frozen pickling/unpickling with rvs
     frozen_dist = distfn(*args)
@@ -310,9 +314,9 @@ def check_freezing(distfn, args):
     # regression test for gh-11089: freezing a distribution fails
     # if loc and/or scale are specified
     if isinstance(distfn, stats.rv_continuous):
-        locscale = {'loc': 1, 'scale': 2}
+        locscale = {"loc": 1, "scale": 2}
     else:
-        locscale = {'loc': 1}
+        locscale = {"loc": 1}
 
     rv = distfn(*args, **locscale)
     assert rv.a == distfn(*args).a

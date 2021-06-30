@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -21,7 +21,7 @@ at the top-level directory.
 #include "slu_ddefs.h"
 #include "colamd.h"
 
-extern int  genmmd_(int *, int *, int *, int *, int *, int *, int *, 
+extern int  genmmd_(int *, int *, int *, int *, int *, int *, int *,
 		    int *, int *, int *, int *, int *);
 
 void
@@ -101,7 +101,7 @@ getata(
     if ( !(t_rowind = (int*) SUPERLU_MALLOC(nz * sizeof(int))) )
 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
 
-    
+
     /* Get counts of each column of T, and set up column pointers */
     for (i = 0; i < m; ++i) marker[i] = 0;
     for (j = 0; j < n; ++j) {
@@ -122,7 +122,7 @@ getata(
 	    ++marker[col];
 	}
 
-    
+
     /* ----------------------------------------------------------------
        compute B = T * A, where column j of B is:
 
@@ -130,7 +130,7 @@ getata(
                         A_kj != 0
 
        do not include the diagonal entry
-   
+
        ( Partition A as: A = (A_*1, ..., A_*n)
          Then B = T * A = (T * A_*1, ..., T * A_*n), where
          T * A_*j = (T_*1, ..., T_*m) * A_*j.  )
@@ -158,7 +158,7 @@ getata(
 	}
     }
     *atanz = num_nz;
-    
+
     /* Allocate storage for A'*A */
     if ( !(*ata_colptr = (int*) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails for ata_colptr[]");
@@ -168,15 +168,15 @@ getata(
     }
     b_colptr = *ata_colptr; /* aliasing */
     b_rowind = *ata_rowind;
-    
+
     /* Zero the diagonal flag */
     for (i = 0; i < n; ++i) marker[i] = -1;
-    
+
     /* Compute each column of B, one at a time */
     num_nz = 0;
     for (j = 0; j < n; ++j) {
 	b_colptr[j] = num_nz;
-	
+
 	/* Flag the diagonal so it's not included in the B matrix */
 	marker[j] = j;
 
@@ -193,7 +193,7 @@ getata(
 	}
     }
     b_colptr[n] = num_nz;
-       
+
     SUPERLU_FREE(marker);
     SUPERLU_FREE(t_colptr);
     SUPERLU_FREE(t_rowind);
@@ -235,7 +235,7 @@ at_plus_a(
     if ( !(t_rowind = (int*) SUPERLU_MALLOC( nz * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails t_rowind[]");
 
-    
+
     /* Get counts of each column of T, and set up column pointers */
     for (i = 0; i < n; ++i) marker[i] = 0;
     for (j = 0; j < n; ++j) {
@@ -293,7 +293,7 @@ at_plus_a(
 	}
     }
     *bnz = num_nz;
-    
+
     /* Allocate storage for A+A' */
     if ( !(*b_colptr = (int*) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails for b_colptr[]");
@@ -301,15 +301,15 @@ at_plus_a(
       if ( !(*b_rowind = (int*) SUPERLU_MALLOC( *bnz * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails for b_rowind[]");
     }
-    
+
     /* Zero the diagonal flag */
     for (i = 0; i < n; ++i) marker[i] = -1;
-    
+
     /* Compute each column of B, one at a time */
     num_nz = 0;
     for (j = 0; j < n; ++j) {
 	(*b_colptr)[j] = num_nz;
-	
+
 	/* Flag the diagonal so it's not included in the B matrix */
 	marker[j] = j;
 
@@ -332,7 +332,7 @@ at_plus_a(
 	}
     }
     (*b_colptr)[n] = num_nz;
-       
+
     SUPERLU_FREE(marker);
     SUPERLU_FREE(t_colptr);
     SUPERLU_FREE(t_rowind);
@@ -347,7 +347,7 @@ at_plus_a(
  * GET_PERM_C obtains a permutation matrix Pc, by applying the multiple
  * minimum degree ordering code by Joseph Liu to matrix A'*A or A+A'.
  * or using approximate minimum degree column ordering by Davis et. al.
- * The LU factorization of A*Pc tends to have less fill than the LU 
+ * The LU factorization of A*Pc tends to have less fill than the LU
  * factorization of A.
  *
  * Arguments
@@ -359,16 +359,16 @@ at_plus_a(
  *         = 2: minimum degree on the structure of A^T + A
  *         = 3: approximate minimum degree for unsymmetric matrices
  *         If ispec == 0, the natural ordering (i.e., Pc = I) is returned.
- * 
+ *
  * A       (input) SuperMatrix*
  *         Matrix A in A*X=B, of dimension (A->nrow, A->ncol). The number
- *         of the linear equations is A->nrow. Currently, the type of A 
+ *         of the linear equations is A->nrow. Currently, the type of A
  *         can be: Stype = NC; Dtype = _D; Mtype = GE. In the future,
  *         more general A can be handled.
  *
  * perm_c  (output) int*
- *	   Column permutation vector of size A->ncol, which defines the 
- *         permutation matrix Pc; perm_c[i] = j means column i of A is 
+ *	   Column permutation vector of size A->ncol, which defines the
+ *         permutation matrix Pc; perm_c[i] = j means column i of A is
  *         in position j in A*Pc.
  * </pre>
  */
@@ -380,7 +380,7 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
     int delta, maxint, nofsub, *invp;
     int *b_rowind, *dhead, *qsize, *llist, *marker;
     double t, SuperLU_timer_();
-    
+
     m = A->nrow;
     n = A->ncol;
 
@@ -416,7 +416,7 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 #if ( PRNTlevel>=1 )
 	printf(".. Use approximate minimum degree column ordering.\n");
 #endif
-	return; 
+	return;
     default:
 	ABORT("Invalid ISPEC");
     }
@@ -442,8 +442,8 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	/* Transform adjacency list into 1-based indexing required by GENMMD.*/
 	for (i = 0; i <= n; ++i) ++b_colptr[i];
 	for (i = 0; i < bnz; ++i) ++b_rowind[i];
-	
-	genmmd_(&n, b_colptr, b_rowind, perm_c, invp, &delta, dhead, 
+
+	genmmd_(&n, b_colptr, b_rowind, perm_c, invp, &delta, dhead,
 		qsize, llist, marker, &maxint, &nofsub);
 
 	/* Transform perm_c into 0-based indexing. */

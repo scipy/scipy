@@ -30,7 +30,7 @@ except ImportError:
     pass
 
 
-def gammainc(a, x, dps=50, maxterms=10**8):
+def gammainc(a, x, dps=50, maxterms=10 ** 8):
     """Compute gammainc exactly like mpmath does but allow for more
     summands in hypercomb. See
 
@@ -45,14 +45,14 @@ def gammainc(a, x, dps=50, maxterms=10**8):
         negb = mp.fneg(b, exact=True)
 
         def h(z):
-            T1 = [mp.exp(negb), b, z], [1, z, -1], [], G, [1], [1+z], b
+            T1 = [mp.exp(negb), b, z], [1, z, -1], [], G, [1], [1 + z], b
             return (T1,)
 
         res = mp.hypercomb(h, [z], maxterms=maxterms)
         return mpf2float(res)
 
 
-def gammaincc(a, x, dps=50, maxterms=10**8):
+def gammaincc(a, x, dps=50, maxterms=10 ** 8):
     """Compute gammaincc exactly like mpmath does but allow for more
     terms in hypercomb. See
 
@@ -74,15 +74,19 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
         G = [z]
         # Use 2F0 series when possible; fall back to lower gamma representation
         try:
+
             def h(z):
-                r = z-1
-                return [([mp.exp(nega), a], [1, r], [], G, [1, -r], [], 1/nega)]
+                r = z - 1
+                return [([mp.exp(nega), a], [1, r], [], G, [1, -r], [], 1 / nega)]
+
             return mpf2float(mp.hypercomb(h, [z], force_series=True))
         except mp.libmp.NoConvergence:
+
             def h(z):
-                T1 = [], [1, z-1], [z], G, [], [], 0
-                T2 = [-mp.exp(nega), a, z], [1, z, -1], [], G, [1], [1+z], a
+                T1 = [], [1, z - 1], [z], G, [], [], 0
+                T2 = [-mp.exp(nega), a, z], [1, z, -1], [], G, [1], [1 + z], a
                 return T1, T2
+
             return mpf2float(mp.hypercomb(h, [z], maxterms=maxterms))
 
 
@@ -96,13 +100,13 @@ def main():
     print(__doc__)
     pwd = os.path.dirname(__file__)
     r = np.logspace(4, 14, 30)
-    ltheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(0.6)), 30)
-    utheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(1.4)), 30)
+    ltheta = np.logspace(np.log10(pi / 4), np.log10(np.arctan(0.6)), 30)
+    utheta = np.logspace(np.log10(pi / 4), np.log10(np.arctan(1.4)), 30)
 
     regimes = [(gammainc, ltheta), (gammaincc, utheta)]
     for func, theta in regimes:
         rg, thetag = np.meshgrid(r, theta)
-        a, x = rg*np.cos(thetag), rg*np.sin(thetag)
+        a, x = rg * np.cos(thetag), rg * np.sin(thetag)
         a, x = a.flatten(), x.flatten()
         dataset = []
         for i, (a0, x0) in enumerate(zip(a, x)):
@@ -113,11 +117,12 @@ def main():
                 a0, x0 = np.floor(a0), np.floor(x0)
             dataset.append((a0, x0, func(a0, x0)))
         dataset = np.array(dataset)
-        filename = os.path.join(pwd, '..', 'tests', 'data', 'local',
-                                '{}.txt'.format(func.__name__))
+        filename = os.path.join(
+            pwd, "..", "tests", "data", "local", "{}.txt".format(func.__name__)
+        )
         np.savetxt(filename, dataset)
 
-    print("{} minutes elapsed".format((time() - t0)/60))
+    print("{} minutes elapsed".format((time() - t0) / 60))
 
 
 if __name__ == "__main__":

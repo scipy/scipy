@@ -2,7 +2,7 @@
 
 Copyright (c) 2002 Travis Oliphant all rights reserved
 Oliphant.Travis@altavista.net
-Permission to use, modify, and distribute this software is given under the 
+Permission to use, modify, and distribute this software is given under the
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
 this distribution for specifics.
 
@@ -15,13 +15,13 @@ common FORTRAN code in the packages MINPACK, ODEPACK, and QUADPACK plus
 some differential algebraic equation solvers.
 
 The wrappers are meant to be nearly direct translations between the
-FORTRAN code and Python.  Some parameters like sizes do not need to be 
-passed since they are available from the objects.  
+FORTRAN code and Python.  Some parameters like sizes do not need to be
+passed since they are available from the objects.
 
 It is anticipated that a pure Python module be written to call these lower
 level routines and make a simpler user interface.  All of the routines define
 default values for little-used parameters so that even the raw routines are
-quite useful without a separate wrapper. 
+quite useful without a separate wrapper.
 
 FORTRAN Outputs that are not either an error indicator or the sought-after
 results are placed in a dictionary and returned as an optional member of
@@ -110,7 +110,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   /*
     This is a generic function to call a python function that takes a 1-D
     sequence as a first argument and optional extra_arguments (should be a
-    zero-length tuple if none desired).  The result of the function is 
+    zero-length tuple if none desired).  The result of the function is
     returned in a multiarray object.
         -- build sequence object from values in x.
 	-- add extra arguments (if any) to an argument list.
@@ -136,7 +136,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     Py_DECREF(sequence);
     return NULL;
   }
-  PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence); 
+  PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence);
                 /* arg1 now owns sequence reference */
   if ((arglist = PySequence_Concat( arg1, args)) == NULL)
     PYERR2(error_obj,"Internal error constructing argument list.");
@@ -151,7 +151,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
       goto fail;
   }
 
-  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
+  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL)
     PYERR2(error_obj,"Result from function call is not a proper array of floats.");
 
   fvec_sz = PyArray_SIZE(result_array);

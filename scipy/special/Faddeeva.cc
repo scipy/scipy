@@ -1,5 +1,5 @@
 /* Copyright (c) 2012 Massachusetts Institute of Technology
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -7,26 +7,26 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
  * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include "Faddeeva.hh"
 
 /* Available at: http://ab-initio.mit.edu/Faddeeva
 
-   Computes various error functions (erf, erfc, erfi, erfcx), 
+   Computes various error functions (erf, erfc, erfi, erfcx),
    including the Dawson integral, in the complex plane, based
-   on algorithms for the computation of the Faddeeva function 
+   on algorithms for the computation of the Faddeeva function
               w(z) = exp(-z^2) * erfc(-i*z).
    Given w(z), the error functions are mostly straightforward
    to compute, except for certain regions where we have to
@@ -55,7 +55,7 @@
 
    (I initially used this algorithm for all z, but it turned out to be
     significantly slower than the continued-fraction expansion for
-    larger |z|.  On the other hand, it is competitive for smaller |z|, 
+    larger |z|.  On the other hand, it is competitive for smaller |z|,
     and is significantly more accurate than the Poppe & Wijers code
     in some regions, e.g. in the vicinity of z=1+1i.)
 
@@ -69,7 +69,7 @@
    http://math.mit.edu/~stevenj
    October 2012.
 
-    -- Note that Algorithm 916 assumes that the erfc(x) function, 
+    -- Note that Algorithm 916 assumes that the erfc(x) function,
        or rather the scaled function erfcx(x) = exp(x*x)*erfc(x),
        is supplied for REAL arguments x.   I originally used an
        erfcx routine derived from DERFC in SLATEC, but I have
@@ -240,11 +240,11 @@ complex<double> Faddeeva::erf(complex<double> z, double relerr)
 			 + mz2 * 0.11283791670955125739));
   }
 
-  /* for small |x| and small |xy|, 
+  /* for small |x| and small |xy|,
      use Taylor series to avoid cancellation inaccuracy:
        erf(x+iy) = erf(iy)
           + 2*exp(y^2)/sqrt(pi) *
-	    [ x * (1 - x^2 * (1+2y^2)/3 + x^4 * (3+12y^2+4y^4)/30 + ... 
+	    [ x * (1 - x^2 * (1+2y^2)/3 + x^4 * (3+12y^2+4y^4)/30 + ...
               - i * x^2 * y * (1 - x^2 * (3+2y^2)/6 + ...) ]
      where:
         erf(iy) = exp(y^2) * Im[w(y)]
@@ -261,8 +261,8 @@ complex<double> Faddeeva::erf(complex<double> z, double relerr)
 			       + y2 * (0.45135166683820502956
 				       + 0.15045055561273500986*y2))),
        expy2 * (Faddeeva::w_im(y)
-		- x2*y * (1.1283791670955125739 
-			  - x2 * (0.56418958354775628695 
+		- x2*y * (1.1283791670955125739
+			  - x2 * (0.56418958354775628695
 				  + 0.37612638903183752464*y2))));
   }
 }
@@ -286,7 +286,7 @@ double Faddeeva::erfc(double x)
 {
   if (x*x > 750) // underflow
     return (x >= 0 ? 0.0 : 2.0);
-  return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x) 
+  return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x)
     : 2. - exp(-x*x) * Faddeeva::erfcx(-x);
 }
 
@@ -305,7 +305,7 @@ complex<double> Faddeeva::erfc(complex<double> z, double relerr)
   if (y == 0.) {
     if (x*x > 750) // underflow
       return (x >= 0 ? 0.0 : 2.0);
-    return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x) 
+    return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x)
       : 2. - exp(-x*x) * Faddeeva::erfcx(-x);
   }
 
@@ -348,7 +348,7 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
 		      + y2 * 0.2666666666666666666666666666666666666667)));
     }
     return complex<double>(x, // preserve sign of 0
-			   spi2 * (y >= 0 
+			   spi2 * (y >= 0
 				   ? exp(y2) - Faddeeva::erfcx(y)
 				   : Faddeeva::erfcx(-y) - exp(y2)));
   }
@@ -390,14 +390,14 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
 	      + mz2 * (0.6666666666666666666666666666666666666667
 		       + mz2 * 0.2666666666666666666666666666666666666667));
 
-  /* for small |y| and small |xy|, 
+  /* for small |y| and small |xy|,
      use Taylor series to avoid cancellation inaccuracy:
        dawson(x + iy)
         = D + y^2 (D + x - 2Dx^2)
             + y^4 (D/2 + 5x/6 - 2Dx^2 - x^3/3 + 2Dx^4/3)
         + iy [ (1-2Dx) + 2/3 y^2 (1 - 3Dx - x^2 + 2Dx^3)
               + y^4/15 (4 - 15Dx - 9x^2 + 20Dx^3 + 2x^4 - 4Dx^5) ] + ...
-     where D = dawson(x) 
+     where D = dawson(x)
 
      However, for large |x|, 2Dx -> 1 which gives cancellation problems in
      this series (many of the leading terms cancel).  So, for large |x|,
@@ -418,7 +418,7 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
      Finally, for |x| > 5e7, we can use a simpler 1-term continued-fraction
      expansion for the real part, and a 2-term expansion for the imaginary
      part.  (This avoids overflow problems for huge |x|.)  This yields:
-     
+
      Re dawson(x + iy) = [1 + y^2 (1 + y^2/2 - (xy)^2/3)] / (2x)
      Im dawson(x + iy) = y [ -1 - 2/3 y^2 + y^4/15 (2x^2 - 4) ] / (2x^2 - 1)
 
@@ -463,10 +463,10 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
 
 /////////////////////////////////////////////////////////////////////////
 
-// return sinc(x) = sin(x)/x, given both x and sin(x) 
+// return sinc(x) = sin(x)/x, given both x and sin(x)
 // [since we only use this in cases where sin(x) has already been computed]
-static inline double sinc(double x, double sinx) { 
-  return fabs(x) < 1e-4 ? 1 - (0.1666666666666666666667)*x*x : sinx / x; 
+static inline double sinc(double x, double sinx) {
+  return fabs(x) < 1e-4 ? 1 - (0.1666666666666666666667)*x*x : sinx / x;
 }
 
 // sinh(x) via Taylor series, accurate to machine precision for |x| < 1e-2
@@ -539,7 +539,7 @@ static const double expa2n2[] = {
 complex<double> Faddeeva::w(complex<double> z, double relerr)
 {
   if (real(z) == 0.0)
-    return complex<double>(Faddeeva::erfcx(imag(z)), 
+    return complex<double>(Faddeeva::erfcx(imag(z)),
 			   real(z)); // give correct sign of 0 in imag(w)
   else if (imag(z) == 0)
     return complex<double>(exp(-sqr(real(z))),
@@ -575,7 +575,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 		    Re w(z) for |x| ~ 6 and small |y|, so use
 		    algorithm 816 in this region: */
 		 && (ya > 0.1 || (x > 8 && ya > 1e-10) || x > 28))) {
-    
+
     /* Poppe & Wijers suggest using a number of terms
            nu = 3 + 1442 / (26*rho + 77)
        where rho = sqrt((x/x0)^2 + (y/y0)^2) where x0=6.3, y0=4.4.
@@ -592,12 +592,12 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
       if (x + ya > 1e7) { // nu == 1, w(z) = i/sqrt(pi) / z
 	// scale to avoid overflow
 	if (x > ya) {
-	  double yax = ya / xs; 
+	  double yax = ya / xs;
 	  double denom = ispi / (xs + yax*ya);
 	  ret = complex<double>(denom*yax, denom);
 	}
 	else if (my_isinf(ya))
-	  return ((my_isnan(x) || y < 0) 
+	  return ((my_isnan(x) || y < 0)
 		  ? complex<double>(NaN,NaN) : complex<double>(0,0));
 	else {
 	  double xya = xs / ya;
@@ -627,9 +627,9 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
       }
     }
     if (y < 0) {
-      // use w(z) = 2.0*exp(-z*z) - w(-z), 
-      // but be careful of overflow in exp(-z*z) 
-      //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya) 
+      // use w(z) = 2.0*exp(-z*z) - w(-z),
+      // but be careful of overflow in exp(-z*z)
+      //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya)
       return 2.0*exp(complex<double>((ya-xs)*(xs+ya), 2*xs*y)) - ret;
     }
     else
@@ -641,7 +641,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     double xs = y < 0 ? -real(z) : real(z); // compute for -z if y < 0
     // scale to avoid overflow
     if (x > ya) {
-      double yax = ya / xs; 
+      double yax = ya / xs;
       double denom = ispi / (xs + yax*ya);
       ret = complex<double>(denom*yax, denom);
     }
@@ -651,15 +651,15 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
       ret = complex<double>(denom, denom*xya);
     }
     if (y < 0) {
-      // use w(z) = 2.0*exp(-z*z) - w(-z), 
-      // but be careful of overflow in exp(-z*z) 
-      //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya) 
+      // use w(z) = 2.0*exp(-z*z) - w(-z),
+      // but be careful of overflow in exp(-z*z)
+      //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya)
       return 2.0*exp(complex<double>((ya-xs)*(xs+ya), 2*xs*y)) - ret;
     }
     else
       return ret;
   }
-#endif // !USE_CONTINUED_FRACTION 
+#endif // !USE_CONTINUED_FRACTION
 
   /* Note: The test that seems to be suggested in the paper is x <
      sqrt(-log(DBL_MIN)), about 26.6, since otherwise exp(-x^2)
@@ -679,7 +679,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 
     if (my_isnan(y))
       return complex<double>(y,y);
-    
+
     /* Somewhat ugly copy-and-paste duplication here, but I see significant
        speedups from using the special-case code with the precomputed
        exponential, and the x < 5e-4 special case is needed for accuracy. */
@@ -701,10 +701,10 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 	  sum1 += coef;
 	  sum2 += coef * prodm2ax;
 	  sum3 += coef * prod2ax;
-	  
+
 	  // really = sum5 - sum4
 	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
-	  
+
 	  // test convergence via sum3
 	  if (coef * prod2ax < relerr * sum3) break;
 	}
@@ -738,10 +738,10 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 	  sum1 += coef;
 	  sum2 += coef * prodm2ax;
 	  sum3 += coef * prod2ax;
-	  
+
 	  // really = sum5 - sum4
 	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
-	  
+
 	  // test convergence via sum3
 	  if (coef * prod2ax < relerr * sum3) break;
 	}
@@ -780,7 +780,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 			    coef2 * sinc(2*xs*y, sin2xy) - coef1 * sin2xy);
     }
   }
-  else { // x large: only sum3 & sum5 contribute (see above note)    
+  else { // x large: only sum3 & sum5 contribute (see above note)
     if (my_isnan(x))
       return complex<double>(x,x);
     if (my_isnan(y))
@@ -826,7 +826,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     }
   }
  finish:
-  return ret + complex<double>((0.5*c)*y*(sum2+sum3), 
+  return ret + complex<double>((0.5*c)*y*(sum2+sum3),
 			       (0.5*c)*my_copysign(sum5-sum4, real(z)));
 }
 
@@ -1292,19 +1292,19 @@ double Faddeeva::erfcx(double x)
     return erfcx_y100(400/(4+x));
   }
   else
-    return x < -26.7 ? HUGE_VAL : (x < -6.1 ? 2*exp(x*x) 
+    return x < -26.7 ? HUGE_VAL : (x < -6.1 ? 2*exp(x*x)
 				   : 2*exp(x*x) - erfcx_y100(400/(4-x)));
 }
 
 /////////////////////////////////////////////////////////////////////////
-/* Compute a scaled Dawson integral 
+/* Compute a scaled Dawson integral
             Faddeeva::w_im(x) = 2*Dawson(x)/sqrt(pi)
    equivalent to the imaginary part w(x) for real x.
 
    Uses methods similar to the erfcx calculation above: continued fractions
    for large |x|, a lookup table of Chebyshev polynomials for smaller |x|,
    and finally a Taylor expansion for |x|<0.01.
-   
+
    Steven G. Johnson, October 2012. */
 
 /* Given y100=100*y, where y = 1/(1+x) for x >= 0, compute w_im(x).
@@ -1713,7 +1713,7 @@ static double w_im_y100(double y100, double x) {
       return 0.17180782722617876655e-1 + (-0.58123419543161127769e-2 + (0.28591841095380959666e-4 + (-0.37642963496443667043e-7 + (-0.86055809047367300024e-9 + (0.11101709356762665578e-10 - 0.86272947493333333334e-13 * t) * t) * t) * t) * t) * t;
     }
   case 99: case 100: { // use Taylor expansion for small x (|x| <= 0.010101...)
-      //  (2/sqrt(pi)) * (x - 2/3 x^3  + 4/15 x^5  - 8/105 x^7) 
+      //  (2/sqrt(pi)) * (x - 2/3 x^3  + 4/15 x^5  - 8/105 x^7)
       double x2 = x*x;
       return x * (1.1283791670955125739
 		  - x2 * (0.75225277806367504925

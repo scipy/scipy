@@ -151,18 +151,15 @@ def crosstab(*args, levels=None, sparse=False):
         raise ValueError("All input sequences must have the same length.")
 
     if sparse and nargs != 2:
-        raise ValueError("When `sparse` is True, only two input sequences "
-                         "are allowed.")
+        raise ValueError("When `sparse` is True, only two input sequences are allowed.")
 
     if levels is None:
         # Call np.unique with return_inverse=True on each argument.
-        actual_levels, indices = zip(*[np.unique(a, return_inverse=True)
-                                       for a in args])
+        actual_levels, indices = zip(*[np.unique(a, return_inverse=True) for a in args])
     else:
         # `levels` is not None...
         if len(levels) != nargs:
-            raise ValueError('len(levels) must equal the number of input '
-                             'sequences')
+            raise ValueError("len(levels) must equal the number of input sequences")
 
         args = [np.asarray(arg) for arg in args]
         mask = np.zeros((nargs, len0), dtype=np.bool_)
@@ -183,8 +180,9 @@ def crosstab(*args, levels=None, sparse=False):
         indices = tuple(inv[:, mask_all])
 
     if sparse:
-        count = coo_matrix((np.ones(len(indices[0]), dtype=int),
-                            (indices[0], indices[1])))
+        count = coo_matrix(
+            (np.ones(len(indices[0]), dtype=int), (indices[0], indices[1]))
+        )
         count.sum_duplicates()
     else:
         shape = [len(u) for u in actual_levels]

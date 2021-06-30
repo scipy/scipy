@@ -3,7 +3,7 @@
 !Date:   3 Feb 2002
 !$Revision$
 
-python module lsoda__user__routines 
+python module lsoda__user__routines
     interface lsoda_user_interface
        subroutine f(n,t,y,ydot)
          integer intent(hide) :: n
@@ -21,7 +21,7 @@ python module lsoda__user__routines
        end subroutine jac
     end interface
 end python module lsoda__user__routines
-  
+
 python module lsoda
     interface
        subroutine lsoda(f,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,jac,jt)
@@ -30,7 +30,7 @@ python module lsoda
          use lsoda__user__routines
          external f
          external jac
-         
+
          integer intent(hide),depend(y) :: neq = len(y)
          double precision dimension(neq),intent(in,out,copy) :: y
          double precision intent(in,out):: t

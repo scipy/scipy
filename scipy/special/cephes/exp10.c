@@ -42,7 +42,7 @@
  * IEEE arithmetic: MAXL10 = 308.2547155599167.
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.2:  January, 1991
  * Copyright 1984, 1991 by Stephen L. Moshier

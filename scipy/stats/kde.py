@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 #
 #  Define classes for (uni/multi)-variate kernel density estimation.
 #
@@ -15,7 +15,7 @@
 #
 #  Copyright 2004-2005 by Enthought, Inc.
 #
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # Standard library imports.
 import warnings
@@ -25,9 +25,25 @@ from scipy import linalg, special
 from scipy.special import logsumexp
 from scipy._lib._util import check_random_state
 
-from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
-                   sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
-                   ones, cov)
+from numpy import (
+    asarray,
+    atleast_2d,
+    reshape,
+    zeros,
+    newaxis,
+    dot,
+    exp,
+    pi,
+    sqrt,
+    ravel,
+    power,
+    atleast_1d,
+    squeeze,
+    sum,
+    transpose,
+    ones,
+    cov,
+)
 import numpy as np
 
 # Local imports.
@@ -35,7 +51,7 @@ from . import mvn
 from ._stats import gaussian_kernel_estimate
 
 
-__all__ = ['gaussian_kde']
+__all__ = ["gaussian_kde"]
 
 
 class gaussian_kde:
@@ -188,6 +204,7 @@ class gaussian_kde:
     >>> plt.show()
 
     """
+
     def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
@@ -202,7 +219,7 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be one-dimensional.")
             if len(self._weights) != self.n:
                 raise ValueError("`weights` input should be of length n")
-            self._neff = 1/sum(self._weights**2)
+            self._neff = 1 / sum(self._weights ** 2)
 
         self.set_bandwidth(bw_method=bw_method)
 
@@ -235,23 +252,22 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = "points have dimension %s, dataset has dimension %s" % (d, self.d)
                 raise ValueError(msg)
 
         output_dtype = np.common_type(self.covariance, points)
         itemsize = np.dtype(output_dtype).itemsize
         if itemsize == 4:
-            spec = 'float'
+            spec = "float"
         elif itemsize == 8:
-            spec = 'double'
+            spec = "double"
         elif itemsize in (12, 16):
-            spec = 'long double'
+            spec = "long double"
         else:
-            raise TypeError('%s has unexpected item size %d' %
-                            (output_dtype, itemsize))
-        result = gaussian_kernel_estimate[spec](self.dataset.T, self.weights[:, None],
-                                                points.T, self.inv_cov, output_dtype)
+            raise TypeError("%s has unexpected item size %d" % (output_dtype, itemsize))
+        result = gaussian_kernel_estimate[spec](
+            self.dataset.T, self.weights[:, None], points.T, self.inv_cov, output_dtype
+        )
         return result[:, 0]
 
     __call__ = evaluate
@@ -305,7 +321,7 @@ class gaussian_kde:
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies)*self.weights, axis=0) / norm_const
+        result = sum(exp(-energies) * self.weights, axis=0) / norm_const
 
         return result
 
@@ -339,9 +355,10 @@ class gaussian_kde:
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.sum(self.weights*(
-                        special.ndtr(normalized_high) -
-                        special.ndtr(normalized_low)))
+        value = np.sum(
+            self.weights
+            * (special.ndtr(normalized_high) - special.ndtr(normalized_low))
+        )
         return value
 
     def integrate_box(self, low_bounds, high_bounds, maxpts=None):
@@ -363,16 +380,22 @@ class gaussian_kde:
 
         """
         if maxpts is not None:
-            extra_kwds = {'maxpts': maxpts}
+            extra_kwds = {"maxpts": maxpts}
         else:
             extra_kwds = {}
 
-        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds,
-                                           self.dataset, self.weights,
-                                           self.covariance, **extra_kwds)
+        value, inform = mvn.mvnun_weighted(
+            low_bounds,
+            high_bounds,
+            self.dataset,
+            self.weights,
+            self.covariance,
+            **extra_kwds,
+        )
         if inform:
-            msg = ('An integral in mvn.mvnun requires more points than %s' %
-                   (self.d * 1000))
+            msg = "An integral in mvn.mvnun requires more points than %s" % (
+                self.d * 1000
+            )
             warnings.warn(msg)
 
         return value
@@ -418,7 +441,7 @@ class gaussian_kde:
             tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
-            result += sum(exp(-energies)*large.weights, axis=0)*small.weights[i]
+            result += sum(exp(-energies) * large.weights, axis=0) * small.weights[i]
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
@@ -456,9 +479,11 @@ class gaussian_kde:
             size = int(self.neff)
 
         random_state = check_random_state(seed)
-        norm = transpose(random_state.multivariate_normal(
-            zeros((self.d,), float), self.covariance, size=size
-        ))
+        norm = transpose(
+            random_state.multivariate_normal(
+                zeros((self.d,), float), self.covariance, size=size
+            )
+        )
         indices = random_state.choice(self.n, size=size, p=self.weights)
         means = self.dataset[:, indices]
 
@@ -472,7 +497,7 @@ class gaussian_kde:
         s : float
             Scott's factor.
         """
-        return power(self.neff, -1./(self.d+4))
+        return power(self.neff, -1.0 / (self.d + 4))
 
     def silverman_factor(self):
         """Compute the Silverman factor.
@@ -482,7 +507,7 @@ class gaussian_kde:
         s : float
             The silverman factor.
         """
-        return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
+        return power(self.neff * (self.d + 2.0) / 4.0, -1.0 / (self.d + 4))
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
@@ -537,19 +562,18 @@ class gaussian_kde:
         """
         if bw_method is None:
             pass
-        elif bw_method == 'scott':
+        elif bw_method == "scott":
             self.covariance_factor = self.scotts_factor
-        elif bw_method == 'silverman':
+        elif bw_method == "silverman":
             self.covariance_factor = self.silverman_factor
         elif np.isscalar(bw_method) and not isinstance(bw_method, str):
-            self._bw_method = 'use constant'
+            self._bw_method = "use constant"
             self.covariance_factor = lambda: bw_method
         elif callable(bw_method):
             self._bw_method = bw_method
             self.covariance_factor = lambda: self._bw_method(self)
         else:
-            msg = "`bw_method` should be 'scott', 'silverman', a scalar " \
-                  "or a callable."
+            msg = "`bw_method` should be 'scott', 'silverman', a scalar or a callable."
             raise ValueError(msg)
 
         self._compute_covariance()
@@ -560,16 +584,16 @@ class gaussian_kde:
         """
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
-        if not hasattr(self, '_data_inv_cov'):
-            self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
-                                               bias=False,
-                                               aweights=self.weights))
+        if not hasattr(self, "_data_inv_cov"):
+            self._data_covariance = atleast_2d(
+                cov(self.dataset, rowvar=1, bias=False, aweights=self.weights)
+            )
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
-        self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = self._data_inv_cov / self.factor**2
-        L = linalg.cholesky(self.covariance*2*pi)
-        self.log_det = 2*np.log(np.diag(L)).sum()
+        self.covariance = self._data_covariance * self.factor ** 2
+        self.inv_cov = self._data_inv_cov / self.factor ** 2
+        L = linalg.cholesky(self.covariance * 2 * pi)
+        self.log_det = 2 * np.log(np.diag(L)).sum()
 
     def pdf(self, x):
         """
@@ -596,8 +620,7 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = "points have dimension %s, dataset has dimension %s" % (d, self.d)
                 raise ValueError(msg)
 
         if m >= self.n:
@@ -606,7 +629,7 @@ class gaussian_kde:
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy[i] = sum(diff*tdiff, axis=0)
+                energy[i] = sum(diff * tdiff, axis=0)
             log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy.T
             result = logsumexp(0.5 * log_to_sum, axis=1)
         else:
@@ -626,7 +649,7 @@ class gaussian_kde:
         try:
             return self._weights
         except AttributeError:
-            self._weights = ones(self.n)/self.n
+            self._weights = ones(self.n) / self.n
             return self._weights
 
     @property
@@ -634,5 +657,5 @@ class gaussian_kde:
         try:
             return self._neff
         except AttributeError:
-            self._neff = 1/sum(self.weights**2)
+            self._neff = 1 / sum(self.weights ** 2)
             return self._neff

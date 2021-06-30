@@ -11,4 +11,3 @@ cdef inline double exprel(double x) nogil:
         return NPY_INFINITY
     else:
         return expm1(x) / x
-

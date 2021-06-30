@@ -34,10 +34,7 @@ class TestNdtriExp:
         scale = test_input
         points = scale * (0.5 * uniform_random_points + 0.5)
         assert_func_equal(
-            log_ndtr_ndtri_exp,
-            lambda y: y, points,
-            rtol=1e-14,
-            nan_ok=True
+            log_ndtr_ndtri_exp, lambda y: y, points, rtol=1e-14, nan_ok=True
         )
 
     @pytest.mark.parametrize(
@@ -53,10 +50,7 @@ class TestNdtriExp:
         left, right = interval
         points = (right - left) * uniform_random_points + left
         assert_func_equal(
-            log_ndtr_ndtri_exp,
-            lambda y: y, points,
-            rtol=expected_rtol,
-            nan_ok=True
+            log_ndtr_ndtri_exp, lambda y: y, points, rtol=expected_rtol, nan_ok=True
         )
 
     def test_extreme(self):
@@ -65,7 +59,7 @@ class TestNdtriExp:
             lambda y: y,
             [-np.finfo(float).max, -np.finfo(float).min],
             rtol=1e-12,
-            nan_ok=True
+            nan_ok=True,
         )
 
     def test_asymptotes(self):

@@ -402,7 +402,7 @@ C
           GOTO 390
       END IF
       IF (MCON .GT. M) VMULTD(NACT)=DMAX1(0.0d0,VMULTD(NACT))
-      IF (IPRINT .EQ. 3) THEN     
+      IF (IPRINT .EQ. 3) THEN
          PRINT *, '  2. VMULTD = ', (VMULTD(I),I=1,M+1)
       END IF
 C
@@ -433,7 +433,7 @@ C     Calculate the fraction of the step from DX to DXNEW that will be taken.
 C
       RATIO=1.0d0
       ICON=0
-C     
+C
       EPS = 2.2E-16
       DO 450 K=1,MCON
       IF (VMULTD(K) .GT. -EPS .AND. VMULTD(K) .LT. EPS) VMULTD(K)=0.0D0
@@ -458,7 +458,7 @@ C
       END IF
       IF (MCON .EQ. M) RESMAX=RESOLD+RATIO*(RESMAX-RESOLD)
       IF (IPRINT .EQ. 3) THEN
-         PRINT *, ' RESMAX, MCON, M, ICON = ', 
+         PRINT *, ' RESMAX, MCON, M, ICON = ',
      1        RESMAX, MCON, M, ICON
       END IF
 C

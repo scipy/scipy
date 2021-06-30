@@ -64,10 +64,10 @@ It is useful to understand how the parameters affect the shape of the distributi
     import numpy as np
     from matplotlib import pyplot as plt
     from scipy import stats
-    
+
     p, a, b, loc, scale = 1, 1, 0, 0, 1
     x = np.linspace(-10, 10, 100)
-    
+
     # plot GH for different values of p
     plt.figure(0)
     plt.title("Generalized Hyperbolic | -10 < p < 10")
@@ -88,7 +88,7 @@ It is useful to understand how the parameters affect the shape of the distributi
     plt.yscale('log')
     plt.legend(bbox_to_anchor=(1.1, 1))
     plt.subplots_adjust(right=0.5)
-    
+
     # plot GH for different values of a
     plt.figure(1)
     plt.title("Generalized Hyperbolic | 0 < a < 10")
@@ -109,7 +109,7 @@ It is useful to understand how the parameters affect the shape of the distributi
     plt.yscale('log')
     plt.legend(bbox_to_anchor=(1.1, 1))
     plt.subplots_adjust(right=0.5)
-    
+
     plt.show()
 
 References

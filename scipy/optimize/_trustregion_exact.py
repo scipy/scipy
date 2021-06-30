@@ -1,17 +1,19 @@
 """Nearly exact trust-region optimization subproblem."""
 import numpy as np
-from scipy.linalg import (norm, get_lapack_funcs, solve_triangular,
-                          cho_solve)
-from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
+from scipy.linalg import norm, get_lapack_funcs, solve_triangular, cho_solve
+from ._trustregion import _minimize_trust_region, BaseQuadraticSubproblem
 
-__all__ = ['_minimize_trustregion_exact',
-           'estimate_smallest_singular_value',
-           'singular_leading_submatrix',
-           'IterativeSubproblem']
+__all__ = [
+    "_minimize_trustregion_exact",
+    "estimate_smallest_singular_value",
+    "singular_leading_submatrix",
+    "IterativeSubproblem",
+]
 
 
-def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
-                                **trust_region_options):
+def _minimize_trustregion_exact(
+    fun, x0, args=(), jac=None, hess=None, **trust_region_options
+):
     """
     Minimization of scalar function of one or more variables using
     a nearly exact trust-region algorithm.
@@ -31,14 +33,20 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     """
 
     if jac is None:
-        raise ValueError('Jacobian is required for trust region '
-                         'exact minimization.')
+        raise ValueError("Jacobian is required for trust region exact minimization.")
     if hess is None:
-        raise ValueError('Hessian matrix is required for trust region '
-                         'exact minimization.')
-    return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
-                                  subproblem=IterativeSubproblem,
-                                  **trust_region_options)
+        raise ValueError(
+            "Hessian matrix is required for trust region exact minimization."
+        )
+    return _minimize_trust_region(
+        fun,
+        x0,
+        args=args,
+        jac=jac,
+        hess=hess,
+        subproblem=IterativeSubproblem,
+        **trust_region_options,
+    )
 
 
 def estimate_smallest_singular_value(U):
@@ -93,17 +101,17 @@ def estimate_smallest_singular_value(U):
     # Implemented according to:  Golub, G. H., Van Loan, C. F. (2013).
     # "Matrix computations". Forth Edition. JHU press. pp. 140-142.
     for k in range(n):
-        wp = (1-p[k]) / U.T[k, k]
-        wm = (-1-p[k]) / U.T[k, k]
-        pp = p[k+1:] + U.T[k+1:, k]*wp
-        pm = p[k+1:] + U.T[k+1:, k]*wm
+        wp = (1 - p[k]) / U.T[k, k]
+        wm = (-1 - p[k]) / U.T[k, k]
+        pp = p[k + 1 :] + U.T[k + 1 :, k] * wp
+        pm = p[k + 1 :] + U.T[k + 1 :, k] * wm
 
         if abs(wp) + norm(pp, 1) >= abs(wm) + norm(pm, 1):
             w[k] = wp
-            p[k+1:] = pp
+            p[k + 1 :] = pp
         else:
             w[k] = wm
-            p[k+1:] = pm
+            p[k + 1 :] = pm
 
     # The system `U v = w` is solved using backward substitution.
     v = solve_triangular(U, w)
@@ -168,17 +176,17 @@ def singular_leading_submatrix(A, U, k):
     """
 
     # Compute delta
-    delta = np.sum(U[:k-1, k-1]**2) - A[k-1, k-1]
+    delta = np.sum(U[: k - 1, k - 1] ** 2) - A[k - 1, k - 1]
 
     n = len(A)
 
     # Inicialize v
     v = np.zeros(n)
-    v[k-1] = 1
+    v[k - 1] = 1
 
     # Compute the remaining values of v by solving a triangular system.
     if k != 1:
-        v[:k-1] = solve_triangular(U[:k-1, :k-1], -U[:k-1, k-1])
+        v[: k - 1] = solve_triangular(U[: k - 1, : k - 1], -U[: k - 1, k - 1])
 
     return delta, v
 
@@ -210,8 +218,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
     EPS = np.finfo(float).eps
 
-    def __init__(self, x, fun, jac, hess, hessp=None,
-                 k_easy=0.1, k_hard=0.2):
+    def __init__(self, x, fun, jac, hess, hessp=None, k_easy=0.1, k_hard=0.2):
 
         super().__init__(x, fun, jac, hess)
 
@@ -236,14 +243,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         # Get Lapack function for cholesky decomposition.
         # The implemented SciPy wrapper does not return
         # the incomplete factorization needed by the method.
-        self.cholesky, = get_lapack_funcs(('potrf',), (self.hess,))
+        (self.cholesky,) = get_lapack_funcs(("potrf",), (self.hess,))
 
         # Get info about Hessian
         self.dimension = len(self.hess)
-        self.hess_gershgorin_lb,\
-            self.hess_gershgorin_ub = gershgorin_bounds(self.hess)
+        self.hess_gershgorin_lb, self.hess_gershgorin_ub = gershgorin_bounds(self.hess)
         self.hess_inf = norm(self.hess, np.Inf)
-        self.hess_fro = norm(self.hess, 'fro')
+        self.hess_fro = norm(self.hess, "fro")
 
         # A constant such that for vectors smaler than that
         # backward substituition is not reliable. It was stabilished
@@ -259,15 +265,19 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         """
 
         # Upper bound for the damping factor
-        lambda_ub = max(0, self.jac_mag/tr_radius + min(-self.hess_gershgorin_lb,
-                                                        self.hess_fro,
-                                                        self.hess_inf))
+        lambda_ub = max(
+            0,
+            self.jac_mag / tr_radius
+            + min(-self.hess_gershgorin_lb, self.hess_fro, self.hess_inf),
+        )
 
         # Lower bound for the damping factor
-        lambda_lb = max(0, -min(self.hess.diagonal()),
-                        self.jac_mag/tr_radius - min(self.hess_gershgorin_ub,
-                                                     self.hess_fro,
-                                                     self.hess_inf))
+        lambda_lb = max(
+            0,
+            -min(self.hess.diagonal()),
+            self.jac_mag / tr_radius
+            - min(self.hess_gershgorin_ub, self.hess_fro, self.hess_inf),
+        )
 
         # Improve bounds with previous info
         if tr_radius < self.previous_tr_radius:
@@ -277,8 +287,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         if lambda_lb == 0:
             lambda_initial = 0
         else:
-            lambda_initial = max(np.sqrt(lambda_lb * lambda_ub),
-                                 lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+            lambda_initial = max(
+                np.sqrt(lambda_lb * lambda_ub),
+                lambda_lb + self.UPDATE_COEFF * (lambda_ub - lambda_lb),
+            )
 
         return lambda_initial, lambda_lb, lambda_ub
 
@@ -297,10 +309,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
             if already_factorized:
                 already_factorized = False
             else:
-                H = self.hess+lambda_current*np.eye(n)
-                U, info = self.cholesky(H, lower=False,
-                                        overwrite_a=False,
-                                        clean=True)
+                H = self.hess + lambda_current * np.eye(n)
+                U, info = self.cholesky(H, lower=False, overwrite_a=False, clean=True)
 
             self.niter += 1
 
@@ -319,20 +329,19 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     break
 
                 # Solve `U.T w = p`
-                w = solve_triangular(U, p, trans='T')
+                w = solve_triangular(U, p, trans="T")
 
                 w_norm = norm(w)
 
                 # Compute Newton step accordingly to
                 # formula (4.44) p.87 from ref [2]_.
-                delta_lambda = (p_norm/w_norm)**2 * (p_norm-tr_radius)/tr_radius
+                delta_lambda = (p_norm / w_norm) ** 2 * (p_norm - tr_radius) / tr_radius
                 lambda_new = lambda_current + delta_lambda
 
                 if p_norm < tr_radius:  # Inside boundary
                     s_min, z_min = estimate_smallest_singular_value(U)
 
-                    ta, tb = self.get_boundaries_intersections(p, z_min,
-                                                               tr_radius)
+                    ta, tb = self.get_boundaries_intersections(p, z_min, tr_radius)
 
                     # Choose `step_len` with the smallest magnitude.
                     # The reason for this choice is explained at
@@ -344,20 +353,22 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     quadratic_term = np.dot(p, np.dot(H, p))
 
                     # Check stop criteria
-                    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_current*tr_radius**2)
+                    relative_error = (step_len ** 2 * s_min ** 2) / (
+                        quadratic_term + lambda_current * tr_radius ** 2
+                    )
                     if relative_error <= self.k_hard:
                         p += step_len * z_min
                         break
 
                     # Update uncertanty bounds
                     lambda_ub = lambda_current
-                    lambda_lb = max(lambda_lb, lambda_current - s_min**2)
+                    lambda_lb = max(lambda_lb, lambda_current - s_min ** 2)
 
                     # Compute Cholesky factorization
-                    H = self.hess + lambda_new*np.eye(n)
-                    c, info = self.cholesky(H, lower=False,
-                                            overwrite_a=False,
-                                            clean=True)
+                    H = self.hess + lambda_new * np.eye(n)
+                    c, info = self.cholesky(
+                        H, lower=False, overwrite_a=False, clean=True
+                    )
 
                     # Check if the factorization have succeeded
                     #
@@ -370,8 +381,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
-                        lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                        lambda_current = max(
+                            np.sqrt(lambda_lb * lambda_ub),
+                            lambda_lb + self.UPDATE_COEFF * (lambda_ub - lambda_lb),
+                        )
 
                 else:  # Outside boundary
                     # Check stop criteria
@@ -398,17 +411,22 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 step_len = tr_radius
 
                 # Check stop criteria
-                if step_len**2 * s_min**2 <= self.k_hard * lambda_current * tr_radius**2:
+                if (
+                    step_len ** 2 * s_min ** 2
+                    <= self.k_hard * lambda_current * tr_radius ** 2
+                ):
                     p = step_len * z_min
                     break
 
                 # Update uncertanty bounds
                 lambda_ub = lambda_current
-                lambda_lb = max(lambda_lb, lambda_current - s_min**2)
+                lambda_lb = max(lambda_lb, lambda_current - s_min ** 2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF * (lambda_ub - lambda_lb),
+                )
 
             else:  # Unsuccessful factorization
 
@@ -417,11 +435,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 v_norm = norm(v)
 
                 # Update uncertanty interval
-                lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
+                lambda_lb = max(lambda_lb, lambda_current + delta / v_norm ** 2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF * (lambda_ub - lambda_lb),
+                )
 
         self.lambda_lb = lambda_lb
         self.lambda_current = lambda_current

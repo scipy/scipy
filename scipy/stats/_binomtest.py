@@ -32,6 +32,7 @@ class BinomTestResult:
         Compute the confidence interval for the estimate of the proportion.
 
     """
+
     def __init__(self, k, n, alternative, pvalue, proportion_estimate):
         self.k = k
         self.n = n
@@ -40,15 +41,17 @@ class BinomTestResult:
         self.pvalue = pvalue
 
     def __repr__(self):
-        s = ("BinomTestResult("
-             f"k={self.k}, "
-             f"n={self.n}, "
-             f"alternative={self.alternative!r}, "
-             f"proportion_estimate={self.proportion_estimate}, "
-             f"pvalue={self.pvalue})")
+        s = (
+            "BinomTestResult("
+            f"k={self.k}, "
+            f"n={self.n}, "
+            f"alternative={self.alternative!r}, "
+            f"proportion_estimate={self.proportion_estimate}, "
+            f"pvalue={self.pvalue})"
+        )
         return s
 
-    def proportion_ci(self, confidence_level=0.95, method='exact'):
+    def proportion_ci(self, confidence_level=0.95, method="exact"):
         """
         Compute the confidence interval for the estimated proportion.
 
@@ -97,22 +100,23 @@ class BinomTestResult:
         >>> result.proportion_ci()
         ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
         """
-        if method not in ('exact', 'wilson', 'wilsoncc'):
-            raise ValueError("method must be one of 'exact', 'wilson' or "
-                             "'wilsoncc'.")
+        if method not in ("exact", "wilson", "wilsoncc"):
+            raise ValueError("method must be one of 'exact', 'wilson' or 'wilsoncc'.")
         if not (0 <= confidence_level <= 1):
-            raise ValueError('confidence_level must be in the interval '
-                             '[0, 1].')
-        if method == 'exact':
-            low, high = _binom_exact_conf_int(self.k, self.n,
-                                              confidence_level,
-                                              self.alternative)
+            raise ValueError("confidence_level must be in the interval [0, 1].")
+        if method == "exact":
+            low, high = _binom_exact_conf_int(
+                self.k, self.n, confidence_level, self.alternative
+            )
         else:
             # method is 'wilson' or 'wilsoncc'
-            low, high = _binom_wilson_conf_int(self.k, self.n,
-                                               confidence_level,
-                                               self.alternative,
-                                               correction=method == 'wilsoncc')
+            low, high = _binom_wilson_conf_int(
+                self.k,
+                self.n,
+                confidence_level,
+                self.alternative,
+                correction=method == "wilsoncc",
+            )
         return ConfidenceInterval(low=low, high=high)
 
 
@@ -120,11 +124,13 @@ def _findp(func):
     try:
         p = brentq(func, 0, 1)
     except RuntimeError:
-        raise RuntimeError('numerical solver failed to converge when '
-                           'computing the confidence limits') from None
+        raise RuntimeError(
+            "numerical solver failed to converge when computing the confidence limits"
+        ) from None
     except ValueError as exc:
-        raise ValueError('brentq raised a ValueError; report this to the '
-                         'SciPy developers') from exc
+        raise ValueError(
+            "brentq raised a ValueError; report this to the SciPy developers"
+        ) from exc
     return p
 
 
@@ -134,29 +140,29 @@ def _binom_exact_conf_int(k, n, confidence_level, alternative):
 
     Returns proportion, prop_low, prop_high
     """
-    if alternative == 'two-sided':
+    if alternative == "two-sided":
         alpha = (1 - confidence_level) / 2
         if k == 0:
             plow = 0.0
         else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
+            plow = _findp(lambda p: binom.sf(k - 1, n, p) - alpha)
         if k == n:
             phigh = 1.0
         else:
             phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'less':
+    elif alternative == "less":
         alpha = 1 - confidence_level
         plow = 0.0
         if k == n:
             phigh = 1.0
         else:
             phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'greater':
+    elif alternative == "greater":
         alpha = 1 - confidence_level
         if k == 0:
             plow = 0.0
         else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
+            plow = _findp(lambda p: binom.sf(k - 1, n, p) - alpha)
         phigh = 1.0
     return plow, phigh
 
@@ -166,34 +172,34 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     # In particular, `alternative` must be one of 'two-sided', 'less' or
     # 'greater'.
     p = k / n
-    if alternative == 'two-sided':
-        z = ndtri(0.5 + 0.5*confidence_level)
+    if alternative == "two-sided":
+        z = ndtri(0.5 + 0.5 * confidence_level)
     else:
         z = ndtri(confidence_level)
 
     # For reference, the formulas implemented here are from
     # Newcombe (1998) (ref. [3] in the proportion_ci docstring).
-    denom = 2*(n + z**2)
-    center = (2*n*p + z**2)/denom
+    denom = 2 * (n + z ** 2)
+    center = (2 * n * p + z ** 2) / denom
     q = 1 - p
     if correction:
-        if alternative == 'less' or k == 0:
+        if alternative == "less" or k == 0:
             lo = 0.0
         else:
-            dlo = (1 + z*sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1))) / denom
+            dlo = (1 + z * sqrt(z ** 2 - 2 - 1 / n + 4 * p * (n * q + 1))) / denom
             lo = center - dlo
-        if alternative == 'greater' or k == n:
+        if alternative == "greater" or k == n:
             hi = 1.0
         else:
-            dhi = (1 + z*sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1))) / denom
+            dhi = (1 + z * sqrt(z ** 2 + 2 - 1 / n + 4 * p * (n * q - 1))) / denom
             hi = center + dhi
     else:
-        delta = z/denom * sqrt(4*n*p*q + z**2)
-        if alternative == 'less' or k == 0:
+        delta = z / denom * sqrt(4 * n * p * q + z ** 2)
+        if alternative == "less" or k == 0:
             lo = 0.0
         else:
             lo = center - delta
-        if alternative == 'greater' or k == n:
+        if alternative == "greater" or k == n:
             hi = 1.0
         else:
             hi = center + delta
@@ -201,7 +207,7 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     return lo, hi
 
 
-def binomtest(k, n, p=0.5, alternative='two-sided'):
+def binomtest(k, n, p=0.5, alternative="two-sided"):
     """
     Perform a test that the probability of success is p.
 
@@ -285,52 +291,56 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
-    k = _validate_int(k, 'k', minimum=0)
-    n = _validate_int(n, 'n', minimum=1)
+    k = _validate_int(k, "k", minimum=0)
+    n = _validate_int(n, "n", minimum=1)
     if k > n:
-        raise ValueError('k must not be greater than n.')
+        raise ValueError("k must not be greater than n.")
 
     if not (0 <= p <= 1):
         raise ValueError("p must be in range [0,1]")
 
-    if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized; \n"
-                         "must be 'two-sided', 'less' or 'greater'")
-    if alternative == 'less':
+    if alternative not in ("two-sided", "less", "greater"):
+        raise ValueError(
+            "alternative not recognized; \nmust be 'two-sided', 'less' or 'greater'"
+        )
+    if alternative == "less":
         pval = binom.cdf(k, n, p)
-    elif alternative == 'greater':
-        pval = binom.sf(k-1, n, p)
+    elif alternative == "greater":
+        pval = binom.sf(k - 1, n, p)
     else:
         # alternative is 'two-sided'
         d = binom.pmf(k, n, p)
         rerr = 1 + 1e-7
         if k == p * n:
             # special case as shortcut, would also be handled by `else` below
-            pval = 1.
+            pval = 1.0
         elif k < p * n:
-            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
-                                              -d*rerr, np.ceil(p * n), n)
+            ix = _binary_search_for_binom_tst(
+                lambda x1: -binom.pmf(x1, n, p), -d * rerr, np.ceil(p * n), n
+            )
             # y is the number of terms between mode and n that are <= d*rerr.
             # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
             # if the first equality doesn't hold, y=n-ix. Otherwise, we
             # need to include ix as well as the equality holds. Note that
             # the equality will hold in very very rare situations due to rerr.
-            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
+            y = n - ix + int(d * rerr == binom.pmf(ix, n, p))
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
-                                              d*rerr, 0, np.floor(p * n))
+            ix = _binary_search_for_binom_tst(
+                lambda x1: binom.pmf(x1, n, p), d * rerr, 0, np.floor(p * n)
+            )
             # y is the number of terms between 0 and mode that are <= d*rerr.
             # we need to add a 1 to account for the 0 index.
             # For comparing this with old behavior, see
             # tst_binary_srch_for_binom_tst method in test_morestats.
             y = ix + 1
-            pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
+            pval = binom.cdf(y - 1, n, p) + binom.sf(k - 1, n, p)
 
         pval = min(1.0, pval)
 
-    result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             proportion_estimate=k/n, pvalue=pval)
+    result = BinomTestResult(
+        k=k, n=n, alternative=alternative, proportion_estimate=k / n, pvalue=pval
+    )
     return result
 
 
@@ -362,15 +372,15 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       such that a(i)<=d<a(i+1)
     """
     while lo < hi:
-        mid = lo + (hi-lo)//2
+        mid = lo + (hi - lo) // 2
         midval = a(mid)
         if midval < d:
-            lo = mid+1
+            lo = mid + 1
         elif midval > d:
-            hi = mid-1
+            hi = mid - 1
         else:
             return mid
     if a(lo) <= d:
         return lo
     else:
-        return lo-1
+        return lo - 1

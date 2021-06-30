@@ -224,7 +224,7 @@ void Model::EvaluateInteriorSolution(const Vector& x_solver,
     // rc = obj-zl+zu-A'y
     Vector rc = scaled_obj_ - zl + zu;
     MultiplyWithScaledMatrix(y, -1.0, rc, 'T');
-    
+
     ScaleBackResiduals(rb, rc, rl, ru);
     double presidual = Infnorm(rb);
     presidual = std::max(presidual, Infnorm(rl));
@@ -1086,7 +1086,7 @@ void Model::DualizeBackInteriorSolution(const Vector& x_solver,
         for (Int j : boxed_vars_)
             xu_user[j] = zl_solver[k++];
         assert(k == n);
-        
+
         for (Int i = 0; i < num_constr_; i++) {
             switch (constr_type_[i]) {
             case '=':

@@ -1,7 +1,7 @@
 from . import __nnls
 from numpy import asarray_chkfinite, zeros, double
 
-__all__ = ['nnls']
+__all__ = ["nnls"]
 
 
 def nnls(A, b, maxiter=None):
@@ -58,18 +58,23 @@ def nnls(A, b, maxiter=None):
     A, b = map(asarray_chkfinite, (A, b))
 
     if len(A.shape) != 2:
-        raise ValueError("Expected a two-dimensional array (matrix)" +
-                         ", but the shape of A is %s" % (A.shape, ))
+        raise ValueError(
+            "Expected a two-dimensional array (matrix)"
+            + ", but the shape of A is %s" % (A.shape,)
+        )
     if len(b.shape) != 1:
-        raise ValueError("Expected a one-dimensional array (vector" +
-                         ", but the shape of b is %s" % (b.shape, ))
+        raise ValueError(
+            "Expected a one-dimensional array (vector"
+            + ", but the shape of b is %s" % (b.shape,)
+        )
 
     m, n = A.shape
 
     if m != b.shape[0]:
         raise ValueError(
-                "Incompatible dimensions. The first dimension of " +
-                "A is %s, while the shape of b is %s" % (m, (b.shape[0], )))
+            "Incompatible dimensions. The first dimension of "
+            + "A is %s, while the shape of b is %s" % (m, (b.shape[0],))
+        )
 
     maxiter = -1 if maxiter is None else int(maxiter)
 

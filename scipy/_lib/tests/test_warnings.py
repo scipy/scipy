@@ -26,6 +26,7 @@ class ParseCall(ast.NodeVisitor):
     def visit_Name(self, node):
         self.ls.append(node.id)
 
+
 class FindFuncs(ast.NodeVisitor):
     def __init__(self, filename):
         super().__init__()
@@ -38,13 +39,11 @@ class FindFuncs(ast.NodeVisitor):
         p.visit(node.func)
         ast.NodeVisitor.generic_visit(self, node)
 
-        if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
+        if p.ls[-1] == "simplefilter" or p.ls[-1] == "filterwarnings":
             if node.args[0].s == "ignore":
-                self.bad_filters.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+                self.bad_filters.append("{}:{}".format(self.__filename, node.lineno))
 
-        if p.ls[-1] == 'warn' and (
-                len(p.ls) == 1 or p.ls[-2] == 'warnings'):
+        if p.ls[-1] == "warn" and (len(p.ls) == 1 or p.ls[-2] == "warnings"):
 
             if self.__filename == "_lib/tests/test_warnings.py":
                 # This file
@@ -56,7 +55,8 @@ class FindFuncs(ast.NodeVisitor):
             args = {kw.arg for kw in node.keywords}
             if "stacklevel" not in args:
                 self.bad_stacklevels.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+                    "{}:{}".format(self.__filename, node.lineno)
+                )
 
 
 @pytest.fixture(scope="session")
@@ -85,19 +85,21 @@ def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
     # There is still one simplefilter occurrence in optimize.py that could be removed.
-    bad_filters = [item for item in bad_filters
-                   if 'optimize.py' not in item]
+    bad_filters = [item for item in bad_filters if "optimize.py" not in item]
     # The filterwarnings calls in sparse are needed.
-    bad_filters = [item for item in bad_filters
-                   if os.path.join('sparse', '__init__.py') not in item
-                   and os.path.join('sparse', 'sputils.py') not in item]
+    bad_filters = [
+        item
+        for item in bad_filters
+        if os.path.join("sparse", "__init__.py") not in item
+        and os.path.join("sparse", "sputils.py") not in item
+    ]
 
     if bad_filters:
         raise AssertionError(
             "warning ignore filter should not be used, instead, use\n"
             "numpy.testing.suppress_warnings (in tests only);\n"
-            "found in:\n    {}".format(
-                "\n    ".join(bad_filters)))
+            "found in:\n    {}".format("\n    ".join(bad_filters))
+        )
 
 
 @pytest.mark.slow
@@ -108,14 +110,17 @@ def test_warning_calls_stacklevels(warning_calls):
     msg = ""
 
     if bad_filters:
-        msg += ("warning ignore filter should not be used, instead, use\n"
-                "numpy.testing.suppress_warnings (in tests only);\n"
-                "found in:\n    {}".format("\n    ".join(bad_filters)))
+        msg += (
+            "warning ignore filter should not be used, instead, use\n"
+            "numpy.testing.suppress_warnings (in tests only);\n"
+            "found in:\n    {}".format("\n    ".join(bad_filters))
+        )
         msg += "\n\n"
 
     if bad_stacklevels:
         msg += "warnings should have an appropriate stacklevel:\n    {}".format(
-                "\n    ".join(bad_stacklevels))
+            "\n    ".join(bad_stacklevels)
+        )
 
     if msg:
         raise AssertionError(msg)

@@ -102,9 +102,24 @@ class LSODA(OdeSolver):
            on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
            1983.
     """
-    def __init__(self, fun, t0, y0, t_bound, first_step=None, min_step=0.0,
-                 max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
-                 uband=None, vectorized=False, **extraneous):
+
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        first_step=None,
+        min_step=0.0,
+        max_step=np.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        jac=None,
+        lband=None,
+        uband=None,
+        vectorized=False,
+        **extraneous,
+    ):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized)
 
@@ -126,9 +141,16 @@ class LSODA(OdeSolver):
         rtol, atol = validate_tol(rtol, atol, self.n)
 
         solver = ode(self.fun, jac)
-        solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
-                              min_step=min_step, first_step=first_step,
-                              lband=lband, uband=uband)
+        solver.set_integrator(
+            "lsoda",
+            rtol=rtol,
+            atol=atol,
+            max_step=max_step,
+            min_step=min_step,
+            first_step=first_step,
+            lband=lband,
+            uband=uband,
+        )
         solver.set_initial_value(y0, t0)
 
         # Inject t_bound into rwork array as needed for itask=5.
@@ -146,8 +168,14 @@ class LSODA(OdeSolver):
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
-            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
-            self.t_bound, solver.f_params, solver.jac_params)
+            solver.f,
+            solver.jac or (lambda: None),
+            solver._y,
+            solver.t,
+            self.t_bound,
+            solver.f_params,
+            solver.jac_params,
+        )
         integrator.call_args[2] = itask
 
         if solver.successful():
@@ -158,7 +186,7 @@ class LSODA(OdeSolver):
             self.nlu = integrator.iwork[12]
             return True, None
         else:
-            return False, 'Unexpected istate in LSODA.'
+            return False, "Unexpected istate in LSODA."
 
     def _dense_output_impl(self):
         iwork = self._lsoda_solver._integrator.iwork
@@ -166,8 +194,9 @@ class LSODA(OdeSolver):
 
         order = iwork[14]
         h = rwork[11]
-        yh = np.reshape(rwork[20:20 + (order + 1) * self.n],
-                        (self.n, order + 1), order='F').copy()
+        yh = np.reshape(
+            rwork[20 : 20 + (order + 1) * self.n], (self.n, order + 1), order="F"
+        ).copy()
 
         return LsodaDenseOutput(self.t_old, self.t, h, order, yh)
 

@@ -99,8 +99,7 @@ class NewFunction01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((abs(cos(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5
-                + 0.01 * (x[0] + x[1]))
+        return (abs(cos(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5 + 0.01 * (x[0] + x[1])
 
 
 class NewFunction02(Benchmark):
@@ -142,8 +141,7 @@ class NewFunction02(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((abs(sin(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5
-                + 0.01 * (x[0] + x[1]))
+        return (abs(sin(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5 + 0.01 * (x[0] + x[1])
 
 
-#Newfunction 3 from Gavana is entered as Mishra05.
+# Newfunction 3 from Gavana is entered as Mishra05.

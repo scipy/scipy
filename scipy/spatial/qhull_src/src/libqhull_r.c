@@ -1750,5 +1750,3 @@ Convex hull of %d points in %d-d:\n\n", size, qh->hull_dim);
   }
   qh_fprintf(qh, fp, 9345, "\n");
 } /* printsummary */
-
-

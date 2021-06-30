@@ -137,7 +137,7 @@
  * bdtri domain     k < 0, n <= k         0.0
  *                  x < 0, x > 1
  */
-
+
 /*                                                             bdtr() */
 
 

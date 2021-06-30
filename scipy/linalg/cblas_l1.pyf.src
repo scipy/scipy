@@ -15,7 +15,7 @@ subroutine <prefix>axpy(n,a,x,incx,y,incy)
   ! Calculate z = a*x+y, where a is scalar.
 
   fortranname cblas_<prefix>axpy
-  
+
   callstatement (*f2py_func)(n,<,,&,&>a,x,incx,y,incy);
   callprotoargument const int,const <ctype><,,*,*>,const <ctype>*,const int,<ctype>*,const int
 

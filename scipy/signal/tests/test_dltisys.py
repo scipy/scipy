@@ -2,18 +2,33 @@
 # April 4, 2011
 
 import numpy as np
-from numpy.testing import (assert_equal,
-                           assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_almost_equal,
-                           suppress_warnings)
+from numpy.testing import (
+    assert_equal,
+    assert_array_almost_equal,
+    assert_array_equal,
+    assert_allclose,
+    assert_,
+    assert_almost_equal,
+    suppress_warnings,
+)
 from pytest import raises as assert_raises
-from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
-                          StateSpace, TransferFunction, ZerosPolesGain,
-                          dfreqresp, dbode, BadCoefficients)
+from scipy.signal import (
+    dlsim,
+    dstep,
+    dimpulse,
+    tf2zpk,
+    lti,
+    dlti,
+    StateSpace,
+    TransferFunction,
+    ZerosPolesGain,
+    dfreqresp,
+    dbode,
+    BadCoefficients,
+)
 
 
 class TestDLTI:
-
     def test_dlsim(self):
 
         a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
@@ -24,22 +39,26 @@ class TestDLTI:
 
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
-        u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
-                       np.full((5, 1), 0.01),
-                       np.full((5, 1), -0.002)))
+        u = np.hstack(
+            (
+                np.linspace(0, 4.0, num=5)[:, np.newaxis],
+                np.full((5, 1), 0.01),
+                np.full((5, 1), -0.002),
+            )
+        )
         t_in = np.linspace(0, 2.0, num=5)
 
         # Define the known result
-        yout_truth = np.array([[-0.001,
-                                -0.00073,
-                                0.039446,
-                                0.0915387,
-                                0.13195948]]).T
-        xout_truth = np.asarray([[0, 0],
-                                 [0.0012, 0.0005],
-                                 [0.40233, 0.00071],
-                                 [1.163368, -0.079327],
-                                 [2.2402985, -0.3035679]])
+        yout_truth = np.array([[-0.001, -0.00073, 0.039446, 0.0915387, 0.13195948]]).T
+        xout_truth = np.asarray(
+            [
+                [0, 0],
+                [0.0012, 0.0005],
+                [0.40233, 0.00071],
+                [1.163368, -0.079327],
+                [2.2402985, -0.3035679],
+            ]
+        )
 
         tout, yout, xout = dlsim((a, b, c, d, dt), u, t_in)
 
@@ -64,11 +83,9 @@ class TestDLTI:
         # Transfer functions (assume dt = 0.5)
         num = np.asarray([1.0, -0.1])
         den = np.asarray([0.3, 1.0, 0.2])
-        yout_truth = np.array([[0.0,
-                                0.0,
-                                3.33333333333333,
-                                -4.77777777777778,
-                                23.0370370370370]]).T
+        yout_truth = np.array(
+            [[0.0, 0.0, 3.33333333333333, -4.77777777777778, 23.0370370370370]]
+        ).T
 
         # Assume use of the first column of the control input built earlier
         tout, yout = dlsim((num, den, 0.5), u[:, 0], t_in)
@@ -86,7 +103,7 @@ class TestDLTI:
 
         # zeros-poles-gain representation
         zd = np.array([0.5, -0.5])
-        pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
+        pd = np.array([1.0j / np.sqrt(2), -1.0j / np.sqrt(2)])
         k = 1.0
         yout_truth = np.array([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
 
@@ -109,16 +126,50 @@ class TestDLTI:
 
         # Because b.shape[1] == 3, dstep should result in a tuple of three
         # result vectors
-        yout_step_truth = (np.asarray([0.0, 0.04, 0.052, 0.0404, 0.00956,
-                                       -0.036324, -0.093318, -0.15782348,
-                                       -0.226628324, -0.2969374948]),
-                           np.asarray([-0.1, -0.075, -0.058, -0.04815,
-                                       -0.04453, -0.0461895, -0.0521812,
-                                       -0.061588875, -0.073549579,
-                                       -0.08727047595]),
-                           np.asarray([0.0, -0.01, -0.013, -0.0101, -0.00239,
-                                       0.009081, 0.0233295, 0.03945587,
-                                       0.056657081, 0.0742343737]))
+        yout_step_truth = (
+            np.asarray(
+                [
+                    0.0,
+                    0.04,
+                    0.052,
+                    0.0404,
+                    0.00956,
+                    -0.036324,
+                    -0.093318,
+                    -0.15782348,
+                    -0.226628324,
+                    -0.2969374948,
+                ]
+            ),
+            np.asarray(
+                [
+                    -0.1,
+                    -0.075,
+                    -0.058,
+                    -0.04815,
+                    -0.04453,
+                    -0.0461895,
+                    -0.0521812,
+                    -0.061588875,
+                    -0.073549579,
+                    -0.08727047595,
+                ]
+            ),
+            np.asarray(
+                [
+                    0.0,
+                    -0.01,
+                    -0.013,
+                    -0.0101,
+                    -0.00239,
+                    0.009081,
+                    0.0233295,
+                    0.03945587,
+                    0.056657081,
+                    0.0742343737,
+                ]
+            ),
+        )
 
         tout, yout = dstep((a, b, c, d, dt), n=10)
 
@@ -154,15 +205,50 @@ class TestDLTI:
 
         # Because b.shape[1] == 3, dimpulse should result in a tuple of three
         # result vectors
-        yout_imp_truth = (np.asarray([0.0, 0.04, 0.012, -0.0116, -0.03084,
-                                      -0.045884, -0.056994, -0.06450548,
-                                      -0.068804844, -0.0703091708]),
-                          np.asarray([-0.1, 0.025, 0.017, 0.00985, 0.00362,
-                                      -0.0016595, -0.0059917, -0.009407675,
-                                      -0.011960704, -0.01372089695]),
-                          np.asarray([0.0, -0.01, -0.003, 0.0029, 0.00771,
-                                      0.011471, 0.0142485, 0.01612637,
-                                      0.017201211, 0.0175772927]))
+        yout_imp_truth = (
+            np.asarray(
+                [
+                    0.0,
+                    0.04,
+                    0.012,
+                    -0.0116,
+                    -0.03084,
+                    -0.045884,
+                    -0.056994,
+                    -0.06450548,
+                    -0.068804844,
+                    -0.0703091708,
+                ]
+            ),
+            np.asarray(
+                [
+                    -0.1,
+                    0.025,
+                    0.017,
+                    0.00985,
+                    0.00362,
+                    -0.0016595,
+                    -0.0059917,
+                    -0.009407675,
+                    -0.011960704,
+                    -0.01372089695,
+                ]
+            ),
+            np.asarray(
+                [
+                    0.0,
+                    -0.01,
+                    -0.003,
+                    0.0029,
+                    0.00771,
+                    0.011471,
+                    0.0142485,
+                    0.01612637,
+                    0.017201211,
+                    0.0175772927,
+                ]
+            ),
+        )
 
         tout, yout = dimpulse((a, b, c, d, dt), n=10)
 
@@ -216,31 +302,24 @@ class TestDLTI:
     def test_dlsim_simple2d(self):
         lambda1 = 0.5
         lambda2 = 0.25
-        a = np.array([[lambda1, 0.0],
-                      [0.0, lambda2]])
-        b = np.array([[0.0],
-                      [0.0]])
-        c = np.array([[1.0, 0.0],
-                      [0.0, 1.0]])
-        d = np.array([[0.0],
-                      [0.0]])
+        a = np.array([[lambda1, 0.0], [0.0, lambda2]])
+        b = np.array([[0.0], [0.0]])
+        c = np.array([[1.0, 0.0], [0.0, 1.0]])
+        d = np.array([[0.0], [0.0]])
         n = 5
         u = np.zeros(n).reshape(-1, 1)
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
         assert_array_equal(tout, np.arange(float(n)))
         # The analytical solution:
-        expected = (np.array([lambda1, lambda2]) **
-                                np.arange(float(n)).reshape(-1, 1))
+        expected = np.array([lambda1, lambda2]) ** np.arange(float(n)).reshape(-1, 1)
         assert_array_equal(yout, expected)
         assert_array_equal(xout, expected)
 
     def test_more_step_and_impulse(self):
         lambda1 = 0.5
         lambda2 = 0.75
-        a = np.array([[lambda1, 0.0],
-                      [0.0, lambda2]])
-        b = np.array([[1.0, 0.0],
-                      [0.0, 1.0]])
+        a = np.array([[lambda1, 0.0], [0.0, lambda2]])
+        b = np.array([[1.0, 0.0], [0.0, 1.0]])
         c = np.array([[1.0, 1.0]])
         d = np.array([[0.0, 0.0]])
 
@@ -261,12 +340,11 @@ class TestDLTI:
         ti, yi = dimpulse((a, b, c, d, 1), n=n, x0=x0)
 
         # Create the exact impulse response.
-        imp = (np.array([lambda1, lambda2]) **
-                            np.arange(-1, n + 1).reshape(-1, 1))
+        imp = np.array([lambda1, lambda2]) ** np.arange(-1, n + 1).reshape(-1, 1)
         imp[0, :] = 0.0
         # Analytical solution to impulse response
-        y0 = imp[:n, 0] + np.dot(imp[1:n + 1, :], x0)
-        y1 = imp[:n, 1] + np.dot(imp[1:n + 1, :], x0)
+        y0 = imp[:n, 0] + np.dot(imp[1 : n + 1, :], x0)
+        y1 = imp[:n, 1] + np.dot(imp[1 : n + 1, :], x0)
 
         assert_allclose(yi[0][:, 0], y0)
         assert_allclose(yi[1][:, 0], y1)
@@ -318,8 +396,13 @@ class TestStateSpaceDisc:
         dt = 0.05
         StateSpace(1, 1, 1, 1, dt=dt)
         StateSpace([1], [2], [3], [4], dt=dt)
-        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                   np.array([[1, 0]]), np.array([[0]]), dt=dt)
+        StateSpace(
+            np.array([[1, 2], [3, 4]]),
+            np.array([[1], [2]]),
+            np.array([[1, 0]]),
+            np.array([[0]]),
+            dt=dt,
+        )
         StateSpace(1, 1, 1, 1, dt=True)
 
     def test_conversion(self):
@@ -395,7 +478,6 @@ class TestZerosPolesGain:
 
 
 class Test_dfreqresp:
-
     def test_manual(self):
         # Test dfreqresp() real part calculation (manual sanity check).
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
@@ -447,7 +529,7 @@ class Test_dfreqresp:
             sup.filter(RuntimeWarning, message="divide by zero")
             sup.filter(RuntimeWarning, message="invalid value encountered")
             w, H = dfreqresp(system, n=2)
-        assert_equal(w[0], 0.)  # a fail would give not-a-number
+        assert_equal(w[0], 0.0)  # a fail would give not-a-number
 
     def test_error(self):
         # Raise an error for continuous-time systems
@@ -459,15 +541,13 @@ class Test_dfreqresp:
 
         system_TF = dlti([2], [1, -0.5, 0, 0])
 
-        A = np.array([[0.5, 0, 0],
-                      [1, 0, 0],
-                      [0, 1, 0]])
+        A = np.array([[0.5, 0, 0], [1, 0, 0], [0, 1, 0]])
         B = np.array([[1, 0, 0]]).T
         C = np.array([[0, 0, 2]])
         D = 0
 
         system_SS = dlti(A, B, C, D)
-        w = 10.0**np.arange(-3,0,.5)
+        w = 10.0 ** np.arange(-3, 0, 0.5)
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
             w1, H1 = dfreqresp(system_TF, w=w)
@@ -477,7 +557,7 @@ class Test_dfreqresp:
 
     def test_from_zpk(self):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
-        system_ZPK = dlti([],[0.2],0.3)
+        system_ZPK = dlti([], [0.2], 0.3)
         system_TF = dlti(0.3, [1, -0.2])
         w = [0.1, 1, 10, 100]
         w1, H1 = dfreqresp(system_ZPK, w=w)
@@ -486,7 +566,6 @@ class Test_dfreqresp:
 
 
 class Test_bode:
-
     def test_manual(self):
         # Test bode() magnitude calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
@@ -543,7 +622,7 @@ class Test_bode:
             sup.filter(RuntimeWarning, message="divide by zero")
             sup.filter(RuntimeWarning, message="invalid value encountered")
             w, mag, phase = dbode(system, n=2)
-        assert_equal(w[0], 0.)  # a fail would give not-a-number
+        assert_equal(w[0], 0.0)  # a fail would give not-a-number
 
     def test_imaginary(self):
         # bode() should not fail on a system with pure imaginary poles.
@@ -595,4 +674,3 @@ class TestTransferFunctionZConversion:
         num2, den2 = TransferFunction._zinv_to_z(num, den)
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
-

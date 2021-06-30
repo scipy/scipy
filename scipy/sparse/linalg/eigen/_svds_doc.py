@@ -1,7 +1,14 @@
-
-def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-                     maxiter=None, return_singular_vectors=True,
-                     solver='arpack'):
+def _svds_arpack_doc(
+    A,
+    k=6,
+    ncv=None,
+    tol=0,
+    which="LM",
+    v0=None,
+    maxiter=None,
+    return_singular_vectors=True,
+    solver="arpack",
+):
     """
     Partial singular value decomposition of a sparse matrix using ARPACK.
 
@@ -112,9 +119,17 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     pass
 
 
-def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-                     maxiter=None, return_singular_vectors=True,
-                     solver='lobpcg'):
+def _svds_lobpcg_doc(
+    A,
+    k=6,
+    ncv=None,
+    tol=0,
+    which="LM",
+    v0=None,
+    maxiter=None,
+    return_singular_vectors=True,
+    solver="lobpcg",
+):
     """
     Partial singular value decomposition of a sparse matrix using LOBPCG.
 

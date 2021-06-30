@@ -2,22 +2,31 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_matrix', 'isspmatrix_dok']
+__all__ = ["dok_matrix", "isspmatrix_dok"]
 
 import itertools
 import numpy as np
 
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin
-from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                      upcast, upcast_scalar, get_index_dtype, check_shape)
+from .sputils import (
+    isdense,
+    getdtype,
+    isshape,
+    isintlike,
+    isscalarlike,
+    upcast,
+    upcast_scalar,
+    get_index_dtype,
+    check_shape,
+)
 
 try:
     from operator import isSequenceType as _is_sequence
 except ImportError:
+
     def _is_sequence(x):
-        return (hasattr(x, '__len__') or hasattr(x, '__next__')
-                or hasattr(x, 'next'))
+        return hasattr(x, "__len__") or hasattr(x, "__next__") or hasattr(x, "next")
 
 
 class dok_matrix(spmatrix, IndexMixin, dict):
@@ -69,7 +78,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     ...         S[i, j] = i + j    # Update element
 
     """
-    format = 'dok'
+
+    format = "dok"
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
@@ -95,12 +105,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise TypeError('Invalid input format.') from e
+                raise TypeError("Invalid input format.") from e
 
             if len(arg1.shape) != 2:
-                raise TypeError('Expected rank <=2 dense array or matrix.')
+                raise TypeError("Expected rank <=2 dense array or matrix.")
 
             from .coo import coo_matrix
+
             d = coo_matrix(arg1, dtype=dtype).todok()
             dict.update(self, d)
             self._shape = check_shape(arg1.shape)
@@ -108,8 +119,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def update(self, val):
         # Prevent direct usage of update
-        raise NotImplementedError("Direct modification to dok_matrix element "
-                                  "is not allowed.")
+        raise NotImplementedError(
+            "Direct modification to dok_matrix element is not allowed."
+        )
 
     def _update(self, data):
         """An update method for dict data defined for direct access to
@@ -127,8 +139,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
-                                      "for DOK format.")
+            raise NotImplementedError(
+                "getnnz over an axis is not implemented for DOK format."
+            )
         return dict.__len__(self)
 
     def count_nonzero(self):
@@ -140,7 +153,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def __len__(self):
         return dict.__len__(self)
 
-    def get(self, key, default=0.):
+    def get(self, key, default=0.0):
         """This overrides the dict.get method, providing type checking
         but otherwise equivalent functionality.
         """
@@ -148,19 +161,19 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             i, j = key
             assert isintlike(i) and isintlike(j)
         except (AssertionError, TypeError, ValueError) as e:
-            raise IndexError('Index must be a pair of integers.') from e
-        if (i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]):
-            raise IndexError('Index out of bounds.')
+            raise IndexError("Index must be a pair of integers.") from e
+        if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
+            raise IndexError("Index out of bounds.")
         return dict.get(self, key, default)
 
     def _get_intXint(self, row, col):
         return dict.get(self, (row, col), self.dtype.type(0))
 
     def _get_intXslice(self, row, col):
-        return self._get_sliceXslice(slice(row, row+1), col)
+        return self._get_sliceXslice(slice(row, row + 1), col)
 
     def _get_sliceXint(self, row, col):
-        return self._get_sliceXslice(row, slice(col, col+1))
+        return self._get_sliceXslice(row, slice(col, col + 1))
 
     def _get_sliceXslice(self, row, col):
         row_start, row_stop, row_step = row.indices(self.shape[0])
@@ -260,9 +273,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             res_dtype = upcast(self.dtype, other.dtype)
             new = dok_matrix(self.shape, dtype=res_dtype)
             dict.update(new, self)
-            with np.errstate(over='ignore'):
-                dict.update(new,
-                           ((k, new[k] + other[k]) for k in other.keys()))
+            with np.errstate(over="ignore"):
+                dict.update(new, ((k, new[k] + other[k]) for k in other.keys()))
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
@@ -285,8 +297,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 raise ValueError("Matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
             dict.update(new, self)
-            dict.update(new,
-                       ((k, self[k] + other[k]) for k in other.keys()))
+            dict.update(new, ((k, self[k] + other[k]) for k in other.keys()))
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
@@ -297,9 +308,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __neg__(self):
-        if self.dtype.kind == 'b':
-            raise NotImplementedError('Negating a sparse boolean matrix is not'
-                                      ' supported.')
+        if self.dtype.kind == "b":
+            raise NotImplementedError(
+                "Negating a sparse boolean matrix is not supported."
+            )
         new = dok_matrix(self.shape, dtype=self.dtype)
         dict.update(new, ((k, -self[k]) for k in self.keys()))
         return new
@@ -324,7 +336,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         result_dtype = upcast(self.dtype, other.dtype)
         result = np.zeros(result_shape, dtype=result_dtype)
         for (i, j), v in self.items():
-            result[i,:] += v * other[j,:]
+            result[i, :] += v * other[j, :]
         return result
 
     def __imul__(self, other):
@@ -359,14 +371,15 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError("Sparse matrices do not support "
-                             "an 'axes' parameter because swapping "
-                             "dimensions is the only logical permutation.")
+            raise ValueError(
+                "Sparse matrices do not support "
+                "an 'axes' parameter because swapping "
+                "dimensions is the only logical permutation."
+            )
 
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
-        dict.update(new, (((right, left), val)
-                          for (left, right), val in self.items()))
+        dict.update(new, (((right, left), val) for (left, right), val in self.items()))
         return new
 
     transpose.__doc__ = spmatrix.transpose.__doc__
@@ -375,8 +388,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         """Return the conjugate transpose."""
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        dict.update(new, (((right, left), np.conj(val))
-                          for (left, right), val in self.items()))
+        dict.update(
+            new, (((right, left), np.conj(val)) for (left, right), val in self.items())
+        )
         return new
 
     def copy(self):
@@ -388,6 +402,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def tocoo(self, copy=False):
         from .coo import coo_matrix
+
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
 

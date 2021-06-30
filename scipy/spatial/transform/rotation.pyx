@@ -1349,7 +1349,7 @@ cdef class Rotation:
         (2, 3)
 
         """
-        
+
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)

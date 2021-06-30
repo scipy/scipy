@@ -6,11 +6,12 @@ from scipy._lib._util import _asarray_validated
 from scipy.linalg import block_diag, LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
 
-__all__ = ['cossin']
+__all__ = ["cossin"]
 
 
-def cossin(X, p=None, q=None, separate=False,
-           swap_sign=False, compute_u=True, compute_vh=True):
+def cossin(
+    X, p=None, q=None, separate=False, swap_sign=False, compute_u=True, compute_vh=True
+):
     """
     Compute the cosine-sine (CS) decomposition of an orthogonal/unitary matrix.
 
@@ -112,68 +113,79 @@ def cossin(X, p=None, q=None, separate=False,
         q = 1 if q is None else int(q)
         X = _asarray_validated(X, check_finite=True)
         if not np.equal(*X.shape):
-            raise ValueError("Cosine Sine decomposition only supports square"
-                             " matrices, got {}".format(X.shape))
+            raise ValueError(
+                "Cosine Sine decomposition only supports square"
+                " matrices, got {}".format(X.shape)
+            )
         m = X.shape[0]
         if p >= m or p <= 0:
-            raise ValueError("invalid p={}, 0<p<{} must hold"
-                             .format(p, X.shape[0]))
+            raise ValueError("invalid p={}, 0<p<{} must hold".format(p, X.shape[0]))
         if q >= m or q <= 0:
-            raise ValueError("invalid q={}, 0<q<{} must hold"
-                             .format(q, X.shape[0]))
+            raise ValueError("invalid q={}, 0<q<{} must hold".format(q, X.shape[0]))
 
         x11, x12, x21, x22 = X[:p, :q], X[:p, q:], X[p:, :q], X[p:, q:]
     elif not isinstance(X, Iterable):
-        raise ValueError("When p and q are None, X must be an Iterable"
-                         " containing the subblocks of X")
+        raise ValueError(
+            "When p and q are None, X must be an Iterable containing the subblocks of X"
+        )
     else:
         if len(X) != 4:
-            raise ValueError("When p and q are None, exactly four arrays"
-                             " should be in X, got {}".format(len(X)))
+            raise ValueError(
+                "When p and q are None, exactly four arrays"
+                " should be in X, got {}".format(len(X))
+            )
 
         x11, x12, x21, x22 = [np.atleast_2d(x) for x in X]
-        for name, block in zip(["x11", "x12", "x21", "x22"],
-                               [x11, x12, x21, x22]):
+        for name, block in zip(["x11", "x12", "x21", "x22"], [x11, x12, x21, x22]):
             if block.shape[1] == 0:
                 raise ValueError("{} can't be empty".format(name))
         p, q = x11.shape
         mmp, mmq = x22.shape
 
         if x12.shape != (p, mmq):
-            raise ValueError("Invalid x12 dimensions: desired {}, "
-                             "got {}".format((p, mmq), x12.shape))
+            raise ValueError(
+                "Invalid x12 dimensions: desired {}, got {}".format((p, mmq), x12.shape)
+            )
 
         if x21.shape != (mmp, q):
-            raise ValueError("Invalid x21 dimensions: desired {}, "
-                             "got {}".format((mmp, q), x21.shape))
+            raise ValueError(
+                "Invalid x21 dimensions: desired {}, got {}".format((mmp, q), x21.shape)
+            )
 
         if p + mmp != q + mmq:
-            raise ValueError("The subblocks have compatible sizes but "
-                             "don't form a square array (instead they form a"
-                             " {}x{} array). This might be due to missing "
-                             "p, q arguments.".format(p + mmp, q + mmq))
+            raise ValueError(
+                "The subblocks have compatible sizes but "
+                "don't form a square array (instead they form a"
+                " {}x{} array). This might be due to missing "
+                "p, q arguments.".format(p + mmp, q + mmq)
+            )
 
         m = p + mmp
 
     cplx = any([np.iscomplexobj(x) for x in [x11, x12, x21, x22]])
     driver = "uncsd" if cplx else "orcsd"
-    csd, csd_lwork = get_lapack_funcs([driver, driver + "_lwork"],
-                                      [x11, x12, x21, x22])
+    csd, csd_lwork = get_lapack_funcs([driver, driver + "_lwork"], [x11, x12, x21, x22])
     lwork = _compute_lwork(csd_lwork, m=m, p=p, q=q)
-    lwork_args = ({'lwork': lwork[0], 'lrwork': lwork[1]} if cplx else
-                  {'lwork': lwork})
-    *_, theta, u1, u2, v1h, v2h, info = csd(x11=x11, x12=x12, x21=x21, x22=x22,
-                                            compute_u1=compute_u,
-                                            compute_u2=compute_u,
-                                            compute_v1t=compute_vh,
-                                            compute_v2t=compute_vh,
-                                            trans=False, signs=swap_sign,
-                                            **lwork_args)
+    lwork_args = {"lwork": lwork[0], "lrwork": lwork[1]} if cplx else {"lwork": lwork}
+    *_, theta, u1, u2, v1h, v2h, info = csd(
+        x11=x11,
+        x12=x12,
+        x21=x21,
+        x22=x22,
+        compute_u1=compute_u,
+        compute_u2=compute_u,
+        compute_v1t=compute_vh,
+        compute_v2t=compute_vh,
+        trans=False,
+        signs=swap_sign,
+        **lwork_args,
+    )
 
     method_name = csd.typecode + driver
     if info < 0:
-        raise ValueError('illegal value in argument {} of internal {}'
-                         .format(-info, method_name))
+        raise ValueError(
+            "illegal value in argument {} of internal {}".format(-info, method_name)
+        )
     if info > 0:
         raise LinAlgError("{} did not converge: {}".format(method_name, info))
 
@@ -200,17 +212,17 @@ def cossin(X, p=None, q=None, separate=False,
     xe = n11 + r + n12
     ys = n11 + n21 + n22 + 2 * r
     ye = n11 + n21 + n22 + 2 * r + n12
-    CS[xs: xe, ys:ye] = Id[:n12, :n12] if swap_sign else -Id[:n12, :n12]
+    CS[xs:xe, ys:ye] = Id[:n12, :n12] if swap_sign else -Id[:n12, :n12]
 
     xs = p + n22 + r
-    xe = p + n22 + r + + n21
+    xe = p + n22 + r + +n21
     ys = n11 + r
     ye = n11 + r + n21
     CS[xs:xe, ys:ye] = -Id[:n21, :n21] if swap_sign else Id[:n21, :n21]
 
-    CS[p:p + n22, q:q + n22] = Id[:n22, :n22]
-    CS[n11:n11 + r, n11:n11 + r] = c
-    CS[p + n22:p + n22 + r, r + n21 + n22:2 * r + n21 + n22] = c
+    CS[p : p + n22, q : q + n22] = Id[:n22, :n22]
+    CS[n11 : n11 + r, n11 : n11 + r] = c
+    CS[p + n22 : p + n22 + r, r + n21 + n22 : 2 * r + n21 + n22] = c
 
     xs = n11
     xe = n11 + r
@@ -218,6 +230,6 @@ def cossin(X, p=None, q=None, separate=False,
     ye = n11 + n21 + n22 + 2 * r
     CS[xs:xe, ys:ye] = s if swap_sign else -s
 
-    CS[p + n22:p + n22 + r, n11:n11 + r] = -s if swap_sign else s
+    CS[p + n22 : p + n22 + r, n11 : n11 + r] = -s if swap_sign else s
 
     return U, CS, VDH

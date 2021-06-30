@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -33,7 +33,7 @@ void z_div(doublecomplex *c, doublecomplex *a, doublecomplex *b)
 {
     double ratio, den;
     double abr, abi, cr, ci;
-  
+
     if( (abr = b->r) < 0.)
 	abr = - abr;
     if( (abi = b->i) < 0.)
@@ -42,7 +42,7 @@ void z_div(doublecomplex *c, doublecomplex *a, doublecomplex *b)
 	if (abi == 0) {
 	    fprintf(stderr, "z_div.c: division by zero\n");
             exit(-1);
-	}	  
+	}
 	ratio = b->r / b->i ;
 	den = b->i * (1 + ratio*ratio);
 	cr = (a->r*ratio + a->i) / den;
@@ -73,7 +73,7 @@ double z_abs(doublecomplex *z)
 	imag = temp;
     }
     if ((real+imag) == real) return(real);
-  
+
     temp = imag/real;
     temp = real*sqrt(1.0 + temp*temp);  /*overflow!!*/
     return (temp);
@@ -85,7 +85,7 @@ double z_abs1(doublecomplex *z)
 {
     double real = z->r;
     double imag = z->i;
-  
+
     if (real < 0) real = -real;
     if (imag < 0) imag = -imag;
 
@@ -153,5 +153,3 @@ doublecomplex z_sqrt(doublecomplex *z)
 
     return retval;
 }
-
-

@@ -22,15 +22,16 @@ DecimalNumber = Union[float, np.floating, np.integer]
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
+    SeedType = Optional[Union[IntNumber, np.random.Generator, np.random.RandomState]]
+    GeneratorType = TypeVar(
+        "GeneratorType", bound=Union[np.random.Generator, np.random.RandomState]
+    )
 
 try:
     from numpy.random import Generator as Generator
 except ImportError:
-    class Generator():  # type: ignore[no-redef]
+
+    class Generator:  # type: ignore[no-redef]
         pass
 
 
@@ -62,7 +63,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -125,16 +126,16 @@ def _aligned_zeros(shape, dtype=float, order="C", align=None):
     dtype = np.dtype(dtype)
     if align is None:
         align = dtype.alignment
-    if not hasattr(shape, '__len__'):
+    if not hasattr(shape, "__len__"):
         shape = (shape,)
     size = functools.reduce(operator.mul, shape) * dtype.itemsize
     buf = np.empty(size + align + 1, np.uint8)
-    offset = buf.__array_interface__['data'][0] % align
+    offset = buf.__array_interface__["data"][0] % align
     if offset != 0:
         offset = align - offset
     # Note: slices producing 0-size arrays do not necessarily change
     # data pointer --- so we use and allocate size+1
-    buf = buf[offset:offset+size+1][:-1]
+    buf = buf[offset : offset + size + 1][:-1]
     data = np.ndarray(shape, dtype, buf, order=order)
     data.fill(0)
     return data
@@ -199,9 +200,11 @@ class DeprecatedImport:
         return dir(self._mod)
 
     def __getattr__(self, name):
-        warnings.warn("Module %s is deprecated, use %s instead"
-                      % (self._old_name, self._new_name),
-                      DeprecationWarning)
+        warnings.warn(
+            "Module %s is deprecated, use %s instead"
+            % (self._old_name, self._new_name),
+            DeprecationWarning,
+        )
         return getattr(self._mod, name)
 
 
@@ -240,13 +243,19 @@ def check_random_state(seed):
             return seed
     except AttributeError:
         pass
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
+    raise ValueError(
+        "%r cannot be used to seed a numpy.random.RandomState instance" % seed
+    )
 
 
-def _asarray_validated(a, check_finite=True,
-                       sparse_ok=False, objects_ok=False, mask_ok=False,
-                       as_inexact=False):
+def _asarray_validated(
+    a,
+    check_finite=True,
+    sparse_ok=False,
+    objects_ok=False,
+    mask_ok=False,
+    as_inexact=False,
+):
     """
     Helper function for SciPy argument validation.
 
@@ -281,19 +290,22 @@ def _asarray_validated(a, check_finite=True,
     """
     if not sparse_ok:
         import scipy.sparse
+
         if scipy.sparse.issparse(a):
-            msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.sparse.linalg functions '
-                   'would work instead.')
+            msg = (
+                "Sparse matrices are not supported by this function. "
+                "Perhaps one of the scipy.sparse.linalg functions "
+                "would work instead."
+            )
             raise ValueError(msg)
     if not mask_ok:
         if np.ma.isMaskedArray(a):
-            raise ValueError('masked arrays are not supported')
+            raise ValueError("masked arrays are not supported")
     toarray = np.asarray_chkfinite if check_finite else np.asarray
     a = toarray(a)
     if not objects_ok:
-        if a.dtype is np.dtype('O'):
-            raise ValueError('object arrays are not supported')
+        if a.dtype is np.dtype("O"):
+            raise ValueError("object arrays are not supported")
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
             a = toarray(a, dtype=np.float_)
@@ -321,10 +333,9 @@ def _validate_int(k, name, minimum=None):
     try:
         k = operator.index(k)
     except TypeError:
-        raise TypeError(f'{name} must be an integer.') from None
+        raise TypeError(f"{name} must be an integer.") from None
     if minimum is not None and k < minimum:
-        raise ValueError(f'{name} must be an integer not less '
-                         f'than {minimum}') from None
+        raise ValueError(f"{name} must be an integer not less than {minimum}") from None
     return k
 
 
@@ -341,9 +352,18 @@ def _validate_int(k, name, minimum=None):
 # This way, the caller code does not need to know whether it uses a legacy
 # .getfullargspec or a bright and shiny .signature.
 
-FullArgSpec = namedtuple('FullArgSpec',
-                         ['args', 'varargs', 'varkw', 'defaults',
-                          'kwonlyargs', 'kwonlydefaults', 'annotations'])
+FullArgSpec = namedtuple(
+    "FullArgSpec",
+    [
+        "args",
+        "varargs",
+        "varkw",
+        "defaults",
+        "kwonlyargs",
+        "kwonlydefaults",
+        "annotations",
+    ],
+)
 
 
 def getfullargspec_no_self(func):
@@ -369,36 +389,52 @@ def getfullargspec_no_self(func):
     """
     sig = inspect.signature(func)
     args = [
-        p.name for p in sig.parameters.values()
-        if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                      inspect.Parameter.POSITIONAL_ONLY]
+        p.name
+        for p in sig.parameters.values()
+        if p.kind
+        in [inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY]
     ]
     varargs = [
-        p.name for p in sig.parameters.values()
+        p.name
+        for p in sig.parameters.values()
         if p.kind == inspect.Parameter.VAR_POSITIONAL
     ]
     varargs = varargs[0] if varargs else None
     varkw = [
-        p.name for p in sig.parameters.values()
+        p.name
+        for p in sig.parameters.values()
         if p.kind == inspect.Parameter.VAR_KEYWORD
     ]
     varkw = varkw[0] if varkw else None
-    defaults = tuple(
-        p.default for p in sig.parameters.values()
-        if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-            p.default is not p.empty)
-    ) or None
+    defaults = (
+        tuple(
+            p.default
+            for p in sig.parameters.values()
+            if (
+                p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                and p.default is not p.empty
+            )
+        )
+        or None
+    )
     kwonlyargs = [
-        p.name for p in sig.parameters.values()
+        p.name
+        for p in sig.parameters.values()
         if p.kind == inspect.Parameter.KEYWORD_ONLY
     ]
-    kwdefaults = {p.name: p.default for p in sig.parameters.values()
-                  if p.kind == inspect.Parameter.KEYWORD_ONLY and
-                  p.default is not p.empty}
-    annotations = {p.name: p.annotation for p in sig.parameters.values()
-                   if p.annotation is not p.empty}
-    return FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
-                       kwdefaults or None, annotations)
+    kwdefaults = {
+        p.name: p.default
+        for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.KEYWORD_ONLY and p.default is not p.empty
+    }
+    annotations = {
+        p.name: p.annotation
+        for p in sig.parameters.values()
+        if p.annotation is not p.empty
+    }
+    return FullArgSpec(
+        args, varargs, varkw, defaults, kwonlyargs, kwdefaults or None, annotations
+    )
 
 
 class MapWrapper:
@@ -417,6 +453,7 @@ class MapWrapper:
         calling sequence as the built-in map function, then this callable is
         used for parallelization.
     """
+
     def __init__(self, pool=1):
         self.pool = None
         self._mapfunc = map
@@ -427,6 +464,7 @@ class MapWrapper:
             self._mapfunc = self.pool
         else:
             from multiprocessing import Pool
+
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
@@ -441,9 +479,11 @@ class MapWrapper:
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             else:
-                raise RuntimeError("Number of workers specified must be -1,"
-                                   " an int >= 1, or an object with a 'map' "
-                                   "method")
+                raise RuntimeError(
+                    "Number of workers specified must be -1,"
+                    " an int >= 1, or an object with a 'map' "
+                    "method"
+                )
 
     def __enter__(self):
         return self
@@ -471,12 +511,12 @@ class MapWrapper:
             return self._mapfunc(func, iterable)
         except TypeError as e:
             # wrong number of arguments
-            raise TypeError("The map-like callable must be of the"
-                            " form f(func, iterable)") from e
+            raise TypeError(
+                "The map-like callable must be of the form f(func, iterable)"
+            ) from e
 
 
-def rng_integers(gen, low, high=None, size=None, dtype='int64',
-                 endpoint=False):
+def rng_integers(gen, low, high=None, size=None, dtype="int64", endpoint=False):
     """
     Return random integers from low (inclusive) to high (exclusive), or if
     endpoint=True, low (inclusive) to high (inclusive). Replaces
@@ -520,8 +560,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         or a single such random int if size not provided.
     """
     if isinstance(gen, Generator):
-        return gen.integers(low, high=high, size=size, dtype=dtype,
-                            endpoint=endpoint)
+        return gen.integers(low, high=high, size=size, dtype=dtype, endpoint=endpoint)
     else:
         if gen is None:
             # default is RandomState singleton used by np.random.

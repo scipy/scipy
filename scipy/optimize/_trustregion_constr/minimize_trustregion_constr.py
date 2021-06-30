@@ -3,13 +3,16 @@ import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from .._differentiable_functions import VectorFunction
 from .._constraints import (
-    NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
+    NonlinearConstraint,
+    LinearConstraint,
+    PreparedConstraint,
+    strict_bounds,
+)
 from .._hessian_update_strategy import BFGS
 from ..optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
-from .canonical_constraint import (CanonicalConstraint,
-                                   initial_constraints_as_canonical)
+from .canonical_constraint import CanonicalConstraint, initial_constraints_as_canonical
 from .tr_interior_point import tr_interior_point
 from .report import BasicReport, SQPReport, IPReport
 
@@ -18,12 +21,13 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination."
+    3: "`callback` function requested termination.",
 }
 
 
 class HessianLinearOperator:
     """Build LinearOperator from hessp"""
+
     def __init__(self, hessp, n):
         self.hessp = hessp
         self.n = n
@@ -41,6 +45,7 @@ class LagrangianHessian:
     The Lagrangian is computed as the objective function plus all the
     constraints multiplied with some numbers (Lagrange multipliers).
     """
+
     def __init__(self, n, objective_hess, constraints_hess):
         self.n = n
         self.objective_hess = objective_hess
@@ -56,18 +61,33 @@ class LagrangianHessian:
         return LinearOperator((self.n, self.n), matvec)
 
 
-def update_state_sqp(state, x, last_iteration_failed, objective, prepared_constraints,
-                     start_time, tr_radius, constr_penalty, cg_info):
+def update_state_sqp(
+    state,
+    x,
+    last_iteration_failed,
+    objective,
+    prepared_constraints,
+    start_time,
+    tr_radius,
+    constr_penalty,
+    cg_info,
+):
     state.nit += 1
     state.nfev = objective.nfev
     state.njev = objective.ngev
     state.nhev = objective.nhev
-    state.constr_nfev = [c.fun.nfev if isinstance(c.fun, VectorFunction) else 0
-                         for c in prepared_constraints]
-    state.constr_njev = [c.fun.njev if isinstance(c.fun, VectorFunction) else 0
-                         for c in prepared_constraints]
-    state.constr_nhev = [c.fun.nhev if isinstance(c.fun, VectorFunction) else 0
-                         for c in prepared_constraints]
+    state.constr_nfev = [
+        c.fun.nfev if isinstance(c.fun, VectorFunction) else 0
+        for c in prepared_constraints
+    ]
+    state.constr_njev = [
+        c.fun.njev if isinstance(c.fun, VectorFunction) else 0
+        for c in prepared_constraints
+    ]
+    state.constr_nhev = [
+        c.fun.nhev if isinstance(c.fun, VectorFunction) else 0
+        for c in prepared_constraints
+    ]
 
     if not last_iteration_failed:
         state.x = x
@@ -86,9 +106,9 @@ def update_state_sqp(state, x, last_iteration_failed, objective, prepared_constr
         for i in range(len(prepared_constraints)):
             lb, ub = prepared_constraints[i].bounds
             c = state.constr[i]
-            state.constr_violation = np.max([state.constr_violation,
-                                             np.max(lb - c),
-                                             np.max(c - ub)])
+            state.constr_violation = np.max(
+                [state.constr_violation, np.max(lb - c), np.max(c - ub)]
+            )
 
     state.execution_time = time.time() - start_time
     state.tr_radius = tr_radius
@@ -99,30 +119,59 @@ def update_state_sqp(state, x, last_iteration_failed, objective, prepared_constr
     return state
 
 
-def update_state_ip(state, x, last_iteration_failed, objective,
-                    prepared_constraints, start_time,
-                    tr_radius, constr_penalty, cg_info,
-                    barrier_parameter, barrier_tolerance):
-    state = update_state_sqp(state, x, last_iteration_failed, objective,
-                             prepared_constraints, start_time, tr_radius,
-                             constr_penalty, cg_info)
+def update_state_ip(
+    state,
+    x,
+    last_iteration_failed,
+    objective,
+    prepared_constraints,
+    start_time,
+    tr_radius,
+    constr_penalty,
+    cg_info,
+    barrier_parameter,
+    barrier_tolerance,
+):
+    state = update_state_sqp(
+        state,
+        x,
+        last_iteration_failed,
+        objective,
+        prepared_constraints,
+        start_time,
+        tr_radius,
+        constr_penalty,
+        cg_info,
+    )
     state.barrier_parameter = barrier_parameter
     state.barrier_tolerance = barrier_tolerance
     return state
 
 
-def _minimize_trustregion_constr(fun, x0, args, grad,
-                                 hess, hessp, bounds, constraints,
-                                 xtol=1e-8, gtol=1e-8,
-                                 barrier_tol=1e-8,
-                                 sparse_jacobian=None,
-                                 callback=None, maxiter=1000,
-                                 verbose=0, finite_diff_rel_step=None,
-                                 initial_constr_penalty=1.0, initial_tr_radius=1.0,
-                                 initial_barrier_parameter=0.1,
-                                 initial_barrier_tolerance=0.1,
-                                 factorization_method=None,
-                                 disp=False):
+def _minimize_trustregion_constr(
+    fun,
+    x0,
+    args,
+    grad,
+    hess,
+    hessp,
+    bounds,
+    constraints,
+    xtol=1e-8,
+    gtol=1e-8,
+    barrier_tol=1e-8,
+    sparse_jacobian=None,
+    callback=None,
+    maxiter=1000,
+    verbose=0,
+    finite_diff_rel_step=None,
+    initial_constr_penalty=1.0,
+    initial_tr_radius=1.0,
+    initial_barrier_parameter=0.1,
+    initial_barrier_tolerance=0.1,
+    factorization_method=None,
+    disp=False,
+):
     """Minimize a scalar function subject to constraints.
 
     Parameters
@@ -323,14 +372,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
-        finite_diff_bounds = strict_bounds(bounds.lb, bounds.ub,
-                                           bounds.keep_feasible, n_vars)
+        finite_diff_bounds = strict_bounds(
+            bounds.lb, bounds.ub, bounds.keep_feasible, n_vars
+        )
     else:
         finite_diff_bounds = (-np.inf, np.inf)
 
     # Define Objective Function
-    objective = ScalarFunction(fun, x0, args, grad, hess,
-                               finite_diff_rel_step, finite_diff_bounds)
+    objective = ScalarFunction(
+        fun, x0, args, grad, hess, finite_diff_rel_step, finite_diff_bounds
+    )
 
     # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint, LinearConstraint)):
@@ -339,54 +390,62 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     # Prepare constraints.
     prepared_constraints = [
         PreparedConstraint(c, x0, sparse_jacobian, finite_diff_bounds)
-        for c in constraints]
+        for c in constraints
+    ]
 
     # Check that all constraints are either sparse or dense.
     n_sparse = sum(c.fun.sparse_jacobian for c in prepared_constraints)
     if 0 < n_sparse < len(prepared_constraints):
-        raise ValueError("All constraints must have the same kind of the "
-                         "Jacobian --- either all sparse or all dense. "
-                         "You can set the sparsity globally by setting "
-                         "`sparse_jacobian` to either True of False.")
+        raise ValueError(
+            "All constraints must have the same kind of the "
+            "Jacobian --- either all sparse or all dense. "
+            "You can set the sparsity globally by setting "
+            "`sparse_jacobian` to either True of False."
+        )
     if prepared_constraints:
         sparse_jacobian = n_sparse > 0
 
     if bounds is not None:
         if sparse_jacobian is None:
             sparse_jacobian = True
-        prepared_constraints.append(PreparedConstraint(bounds, x0,
-                                                       sparse_jacobian))
+        prepared_constraints.append(PreparedConstraint(bounds, x0, sparse_jacobian))
 
     # Concatenate initial constraints to the canonical form.
     c_eq0, c_ineq0, J_eq0, J_ineq0 = initial_constraints_as_canonical(
-        n_vars, prepared_constraints, sparse_jacobian)
+        n_vars, prepared_constraints, sparse_jacobian
+    )
 
     # Prepare all canonical constraints and concatenate it into one.
-    canonical_all = [CanonicalConstraint.from_PreparedConstraint(c)
-                     for c in prepared_constraints]
+    canonical_all = [
+        CanonicalConstraint.from_PreparedConstraint(c) for c in prepared_constraints
+    ]
 
     if len(canonical_all) == 0:
         canonical = CanonicalConstraint.empty(n_vars)
     elif len(canonical_all) == 1:
         canonical = canonical_all[0]
     else:
-        canonical = CanonicalConstraint.concatenate(canonical_all,
-                                                    sparse_jacobian)
+        canonical = CanonicalConstraint.concatenate(canonical_all, sparse_jacobian)
 
     # Generate the Hessian of the Lagrangian.
     lagrangian_hess = LagrangianHessian(n_vars, objective.hess, canonical.hess)
 
     # Choose appropriate method
     if canonical.n_ineq == 0:
-        method = 'equality_constrained_sqp'
+        method = "equality_constrained_sqp"
     else:
-        method = 'tr_interior_point'
+        method = "tr_interior_point"
 
     # Construct OptimizeResult
     state = OptimizeResult(
-        nit=0, nfev=0, njev=0, nhev=0,
-        cg_niter=0, cg_stop_cond=0,
-        fun=objective.f, grad=objective.g,
+        nit=0,
+        nfev=0,
+        njev=0,
+        nhev=0,
+        cg_niter=0,
+        cg_stop_cond=0,
+        fun=objective.f,
+        grad=objective.g,
         lagrangian_grad=np.copy(objective.g),
         constr=[c.fun.f for c in prepared_constraints],
         jac=[c.fun.J for c in prepared_constraints],
@@ -394,38 +453,58 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         constr_njev=[0 for c in prepared_constraints],
         constr_nhev=[0 for c in prepared_constraints],
         v=[c.fun.v for c in prepared_constraints],
-        method=method)
+        method=method,
+    )
 
     # Start counting
     start_time = time.time()
 
     # Define stop criteria
-    if method == 'equality_constrained_sqp':
-        def stop_criteria(state, x, last_iteration_failed,
-                          optimality, constr_violation,
-                          tr_radius, constr_penalty, cg_info):
-            state = update_state_sqp(state, x, last_iteration_failed,
-                                     objective, prepared_constraints,
-                                     start_time, tr_radius, constr_penalty,
-                                     cg_info)
+    if method == "equality_constrained_sqp":
+
+        def stop_criteria(
+            state,
+            x,
+            last_iteration_failed,
+            optimality,
+            constr_violation,
+            tr_radius,
+            constr_penalty,
+            cg_info,
+        ):
+            state = update_state_sqp(
+                state,
+                x,
+                last_iteration_failed,
+                objective,
+                prepared_constraints,
+                start_time,
+                tr_radius,
+                constr_penalty,
+                cg_info,
+            )
             if verbose == 2:
-                BasicReport.print_iteration(state.nit,
-                                            state.nfev,
-                                            state.cg_niter,
-                                            state.fun,
-                                            state.tr_radius,
-                                            state.optimality,
-                                            state.constr_violation)
+                BasicReport.print_iteration(
+                    state.nit,
+                    state.nfev,
+                    state.cg_niter,
+                    state.fun,
+                    state.tr_radius,
+                    state.optimality,
+                    state.constr_violation,
+                )
             elif verbose > 2:
-                SQPReport.print_iteration(state.nit,
-                                          state.nfev,
-                                          state.cg_niter,
-                                          state.fun,
-                                          state.tr_radius,
-                                          state.optimality,
-                                          state.constr_violation,
-                                          state.constr_penalty,
-                                          state.cg_stop_cond)
+                SQPReport.print_iteration(
+                    state.nit,
+                    state.nfev,
+                    state.cg_niter,
+                    state.fun,
+                    state.tr_radius,
+                    state.optimality,
+                    state.constr_violation,
+                    state.constr_penalty,
+                    state.cg_stop_cond,
+                )
             state.status = None
             state.niter = state.nit  # Alias for callback (backward-compatibility)
             if callback is not None and callback(np.copy(state.x), state):
@@ -437,41 +516,62 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
-    elif method == 'tr_interior_point':
-        def stop_criteria(state, x, last_iteration_failed, tr_radius,
-                          constr_penalty, cg_info, barrier_parameter,
-                          barrier_tolerance):
-            state = update_state_ip(state, x, last_iteration_failed,
-                                    objective, prepared_constraints,
-                                    start_time, tr_radius, constr_penalty,
-                                    cg_info, barrier_parameter, barrier_tolerance)
+
+    elif method == "tr_interior_point":
+
+        def stop_criteria(
+            state,
+            x,
+            last_iteration_failed,
+            tr_radius,
+            constr_penalty,
+            cg_info,
+            barrier_parameter,
+            barrier_tolerance,
+        ):
+            state = update_state_ip(
+                state,
+                x,
+                last_iteration_failed,
+                objective,
+                prepared_constraints,
+                start_time,
+                tr_radius,
+                constr_penalty,
+                cg_info,
+                barrier_parameter,
+                barrier_tolerance,
+            )
             if verbose == 2:
-                BasicReport.print_iteration(state.nit,
-                                            state.nfev,
-                                            state.cg_niter,
-                                            state.fun,
-                                            state.tr_radius,
-                                            state.optimality,
-                                            state.constr_violation)
+                BasicReport.print_iteration(
+                    state.nit,
+                    state.nfev,
+                    state.cg_niter,
+                    state.fun,
+                    state.tr_radius,
+                    state.optimality,
+                    state.constr_violation,
+                )
             elif verbose > 2:
-                IPReport.print_iteration(state.nit,
-                                         state.nfev,
-                                         state.cg_niter,
-                                         state.fun,
-                                         state.tr_radius,
-                                         state.optimality,
-                                         state.constr_violation,
-                                         state.constr_penalty,
-                                         state.barrier_parameter,
-                                         state.cg_stop_cond)
+                IPReport.print_iteration(
+                    state.nit,
+                    state.nfev,
+                    state.cg_niter,
+                    state.fun,
+                    state.tr_radius,
+                    state.optimality,
+                    state.constr_violation,
+                    state.constr_penalty,
+                    state.barrier_parameter,
+                    state.cg_stop_cond,
+                )
             state.status = None
             state.niter = state.nit  # Alias for callback (backward compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
-            elif (state.tr_radius < xtol
-                  and state.barrier_parameter < barrier_tol):
+            elif state.tr_radius < xtol and state.barrier_parameter < barrier_tol:
                 state.status = 2
             elif state.nit >= maxiter:
                 state.status = 0
@@ -480,13 +580,14 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     if verbose == 2:
         BasicReport.print_header()
     elif verbose > 2:
-        if method == 'equality_constrained_sqp':
+        if method == "equality_constrained_sqp":
             SQPReport.print_header()
-        elif method == 'tr_interior_point':
+        elif method == "tr_interior_point":
             IPReport.print_header()
 
     # Call inferior function to do the optimization
-    if method == 'equality_constrained_sqp':
+    if method == "equality_constrained_sqp":
+
         def fun_and_constr(x):
             f = objective.fun(x)
             c_eq, _ = canonical.fun(x)
@@ -498,26 +599,48 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             return g, J_eq
 
         _, result = equality_constrained_sqp(
-            fun_and_constr, grad_and_jac, lagrangian_hess,
-            x0, objective.f, objective.g,
-            c_eq0, J_eq0,
-            stop_criteria, state,
-            initial_constr_penalty, initial_tr_radius,
-            factorization_method)
+            fun_and_constr,
+            grad_and_jac,
+            lagrangian_hess,
+            x0,
+            objective.f,
+            objective.g,
+            c_eq0,
+            J_eq0,
+            stop_criteria,
+            state,
+            initial_constr_penalty,
+            initial_tr_radius,
+            factorization_method,
+        )
 
-    elif method == 'tr_interior_point':
+    elif method == "tr_interior_point":
         _, result = tr_interior_point(
-            objective.fun, objective.grad, lagrangian_hess,
-            n_vars, canonical.n_ineq, canonical.n_eq,
-            canonical.fun, canonical.jac,
-            x0, objective.f, objective.g,
-            c_ineq0, J_ineq0, c_eq0, J_eq0,
+            objective.fun,
+            objective.grad,
+            lagrangian_hess,
+            n_vars,
+            canonical.n_ineq,
+            canonical.n_eq,
+            canonical.fun,
+            canonical.jac,
+            x0,
+            objective.f,
+            objective.g,
+            c_ineq0,
+            J_ineq0,
+            c_eq0,
+            J_eq0,
             stop_criteria,
             canonical.keep_feasible,
-            xtol, state, initial_barrier_parameter,
+            xtol,
+            state,
+            initial_barrier_parameter,
             initial_barrier_tolerance,
-            initial_constr_penalty, initial_tr_radius,
-            factorization_method)
+            initial_constr_penalty,
+            initial_tr_radius,
+            factorization_method,
+        )
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.
@@ -530,16 +653,22 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     if verbose == 2:
         BasicReport.print_footer()
     elif verbose > 2:
-        if method == 'equality_constrained_sqp':
+        if method == "equality_constrained_sqp":
             SQPReport.print_footer()
-        elif method == 'tr_interior_point':
+        elif method == "tr_interior_point":
             IPReport.print_footer()
     if verbose >= 1:
         print(result.message)
-        print("Number of iterations: {}, function evaluations: {}, "
-              "CG iterations: {}, optimality: {:.2e}, "
-              "constraint violation: {:.2e}, execution time: {:4.2} s."
-              .format(result.nit, result.nfev, result.cg_niter,
-                      result.optimality, result.constr_violation,
-                      result.execution_time))
+        print(
+            "Number of iterations: {}, function evaluations: {}, "
+            "CG iterations: {}, optimality: {:.2e}, "
+            "constraint violation: {:.2e}, execution time: {:4.2} s.".format(
+                result.nit,
+                result.nfev,
+                result.cg_niter,
+                result.optimality,
+                result.constr_violation,
+                result.execution_time,
+            )
+        )
     return result

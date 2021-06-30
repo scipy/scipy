@@ -6,8 +6,8 @@
 * Source URL:    www.agner.org/random
 *
 * Description:
-* This file contains function prototypes and class declarations for the C++ 
-* library of non-uniform random number generators. Most functions are fast and 
+* This file contains function prototypes and class declarations for the C++
+* library of non-uniform random number generators. Most functions are fast and
 * accurate, even for extreme values of the parameters.
 *
 *
@@ -32,7 +32,7 @@
 * class StochasticLib1:
 * ====================
 * This class can be derived from any of the uniform random number generators
-* defined in randomc.h. StochasticLib1 provides the following non-uniform random 
+* defined in randomc.h. StochasticLib1 provides the following non-uniform random
 * variate generators:
 *
 * int Bernoulli(double p);
@@ -68,7 +68,7 @@
 * =====================
 * This class is derived from class StochasticLib1. It redefines the functions
 * Poisson, Binomial and HyperGeometric.
-* In StochasticLib1, these functions are optimized for being called with 
+* In StochasticLib1, these functions are optimized for being called with
 * parameters that vary. In StochasticLib2, the same functions are optimized
 * for being called repeatedly with the same parameters. If your parameters
 * seldom vary, then StochasticLib2 is faster. The two classes use different
@@ -77,14 +77,14 @@
 *
 * class StochasticLib3:
 * =====================
-* This class can be derived from either StochasticLib1 or StochasticLib2, 
+* This class can be derived from either StochasticLib1 or StochasticLib2,
 * whichever is preferred. It contains functions for generating variates with
 * the univariate and multivariate Wallenius' and Fisher's noncentral
 * hypergeometric distributions.
 *
 * int32_t WalleniusNCHyp (int32_t n, int32_t m, int32_t N, double odds);
-* Sampling from Wallenius' noncentral hypergeometric distribution, which is 
-* what you get when taking n items out N, m of which are colored, without 
+* Sampling from Wallenius' noncentral hypergeometric distribution, which is
+* what you get when taking n items out N, m of which are colored, without
 * replacement, with bias.
 *
 * int32_t FishersNCHyp (int32_t n, int32_t m, int32_t N, double odds);
@@ -105,9 +105,9 @@
 *
 * class CWalleniusNCHypergeometric
 * ================================
-* This class implements various methods for calculating the probability 
-* function and the mean and variance of the univariate Wallenius' noncentral 
-* hypergeometric distribution. It is used by StochasticLib3 and can also be 
+* This class implements various methods for calculating the probability
+* function and the mean and variance of the univariate Wallenius' noncentral
+* hypergeometric distribution. It is used by StochasticLib3 and can also be
 * used independently.
 *
 *
@@ -126,13 +126,13 @@
 *
 * class CFishersNCHypergeometric
 * ==============================
-* This class calculates the probability function and the mean and variance 
+* This class calculates the probability function and the mean and variance
 * of Fisher's noncentral hypergeometric distribution.
 *
 *
 * class CMultiFishersNCHypergeometric
 * ===================================
-* This class calculates the probability function and the mean and variance 
+* This class calculates the probability function and the mean and variance
 * of the multivariate Fisher's noncentral hypergeometric distribution.
 *
 *
@@ -142,10 +142,10 @@
 * The code for the functions in StochasticLib1 is found in the file stoc1.cpp.
 * The code for the functions in StochasticLib2 is found in the file stoc2.cpp.
 * The code for the functions in StochasticLib3 is found in the file stoc3.cpp.
-* The code for the functions in CWalleniusNCHypergeometric, 
+* The code for the functions in CWalleniusNCHypergeometric,
 * CMultiWalleniusNCHypergeometric and CMultiWalleniusNCHypergeometricMoments
 * is found in the file wnchyppr.cpp.
-* The code for the functions in CFishersNCHypergeometric and 
+* The code for the functions in CFishersNCHypergeometric and
 * CMultiFishersNCHypergeometric is found in the file fnchyppr.cpp
 * LnFac is found in stoc1.cpp.
 * Erf is found in wnchyppr.cpp.
@@ -179,7 +179,7 @@
 *
 * Documentation:
 * ==============
-* The file ran-instructions.pdf contains further documentation and 
+* The file ran-instructions.pdf contains further documentation and
 * instructions for these random number generators.
 *
 * The file distrib.pdf contains definitions of the standard statistic distributions:
@@ -189,11 +189,11 @@
 * for sampling from these distributions.
 *
 * The file nchyp.pdf, available from www.agner.org/random/, contains
-* definitions of the univariate and multivariate Wallenius and Fisher's 
-* noncentral hypergeometric distributions and theoretical explanations of 
+* definitions of the univariate and multivariate Wallenius and Fisher's
+* noncentral hypergeometric distributions and theoretical explanations of
 * the methods for calculating and sampling from these.
 *
-* Copyright 2004-2013 by Agner Fog. 
+* Copyright 2004-2013 by Agner Fog.
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *******************************************************************************/
 
@@ -347,7 +347,7 @@ public:
    int32_t Poisson (double L);                             // Poisson distribution
    int32_t Binomial (int32_t n, double p);                 // Binomial distribution
    int32_t Hypergeometric(int32_t n, int32_t M, int32_t N);// Hypergeometric distribution
-   StochasticLib2(int seed):StochasticLib1(seed){};        // Constructor  
+   StochasticLib2(int seed):StochasticLib1(seed){};        // Constructor
 
    // subfunctions for each approximation method:
 protected:
@@ -361,24 +361,24 @@ protected:
 
    // Variables used by Binomial distribution
    int32_t  Bino_k1, Bino_k2, Bino_k4, Bino_k5;
-   double Bino_dl, Bino_dr, Bino_r1, Bino_r2, Bino_r4, Bino_r5, 
+   double Bino_dl, Bino_dr, Bino_r1, Bino_r2, Bino_r4, Bino_r5,
       Bino_ll, Bino_lr, Bino_l_pq, Bino_c_pm,
-      Bino_f1, Bino_f2, Bino_f4, Bino_f5, 
+      Bino_f1, Bino_f2, Bino_f4, Bino_f5,
       Bino_p1, Bino_p2, Bino_p3, Bino_p4, Bino_p5, Bino_p6;
 
    // Variables used by Poisson distribution
    int32_t  Pois_k1, Pois_k2, Pois_k4, Pois_k5;
-   double Pois_dl, Pois_dr, Pois_r1, Pois_r2, Pois_r4, Pois_r5, 
+   double Pois_dl, Pois_dr, Pois_r1, Pois_r2, Pois_r4, Pois_r5,
       Pois_ll, Pois_lr, Pois_l_my, Pois_c_pm,
-      Pois_f1, Pois_f2, Pois_f4, Pois_f5, 
+      Pois_f1, Pois_f2, Pois_f4, Pois_f5,
       Pois_p1, Pois_p2, Pois_p3, Pois_p4, Pois_p5, Pois_p6;
 
    // Variables used by Hypergeometric distribution
    int32_t  Hyp_L, Hyp_k1, Hyp_k2, Hyp_k4, Hyp_k5;
-   double Hyp_dl, Hyp_dr, 
-      Hyp_r1, Hyp_r2, Hyp_r4, Hyp_r5, 
-      Hyp_ll, Hyp_lr, Hyp_c_pm, 
-      Hyp_f1, Hyp_f2, Hyp_f4, Hyp_f5, 
+   double Hyp_dl, Hyp_dr,
+      Hyp_r1, Hyp_r2, Hyp_r4, Hyp_r5,
+      Hyp_ll, Hyp_lr, Hyp_c_pm,
+      Hyp_f1, Hyp_f2, Hyp_f4, Hyp_f5,
       Hyp_p1, Hyp_p2, Hyp_p3, Hyp_p4, Hyp_p5, Hyp_p6;
 };
 
@@ -528,10 +528,10 @@ Class CMultiWalleniusNCHypergeometricMoments
 
 class CMultiWalleniusNCHypergeometricMoments: public CMultiWalleniusNCHypergeometric {
    // This class calculates the exact mean and variance of the multivariate
-   // Wallenius noncentral hypergeometric distribution by calculating all the 
+   // Wallenius noncentral hypergeometric distribution by calculating all the
    // possible x-combinations with probability < accuracy
 public:
-   CMultiWalleniusNCHypergeometricMoments(int32_t n, int32_t * m, double * odds, int colors, double accuracy=1.E-8) 
+   CMultiWalleniusNCHypergeometricMoments(int32_t n, int32_t * m, double * odds, int colors, double accuracy=1.E-8)
       : CMultiWalleniusNCHypergeometric(n, m, odds, colors, accuracy) {};
    double moments(double * mean, double * stddev, int32_t * combinations = 0);
 
@@ -590,8 +590,8 @@ Class CMultiFishersNCHypergeometric
 
 class CMultiFishersNCHypergeometric {
    // This class contains functions for calculating the multivariate
-   // Fisher's noncentral hypergeometric probability function and its mean and 
-   // variance. Warning: the time consumption for first call to 
+   // Fisher's noncentral hypergeometric probability function and its mean and
+   // variance. Warning: the time consumption for first call to
    // probability or moments is proportional to the total number of
    // possible x combinations, which may be extreme!
 public:

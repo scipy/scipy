@@ -12,7 +12,7 @@ subroutine <prefix>pstrf(n,a,lda,piv,rank_c,tol,work,info,lower)
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,<ctypereal>*,<ctypereal>*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)
     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
@@ -78,7 +78,7 @@ subroutine <prefix>posvx(fact,n,nrhs,a,lda,af,ldaf,equed,s,b,ldb,x,ldx,rcond,fer
     threadsafe
     callstatement (*f2py_func)(fact,(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,equed,s,b,&ldb,x,&ldx,&rcond,ferr,berr,work,irwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,char*,<ctypereal>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
- 
+
     character optional,intent(in):: fact = "E"
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -99,7 +99,7 @@ subroutine <prefix>posvx(fact,n,nrhs,a,lda,af,ldaf,equed,s,b,ldb,x,ldx,rcond,fer
     <ftype> intent(hide),dimension(<3*n,3*n,2*n,2*n>),depend(n):: work
     <integer,integer,real,double precision> intent(hide),dimension(n),depend(n):: irwork
     integer intent(out):: info
- 
+
 end subroutine <prefix>posvx
 
 subroutine <prefix>pocon(uplo,n,a,lda,anorm,rcond,work,irwork,info)
@@ -108,7 +108,7 @@ subroutine <prefix>pocon(uplo,n,a,lda,anorm,rcond,work,irwork,info)
     threadsafe
     callstatement (*f2py_func)(uplo,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
- 
+
     character optional,intent(in):: uplo = 'U'
     integer depend(a),intent(hide):: n = shape(a,0)
     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
@@ -118,9 +118,9 @@ subroutine <prefix>pocon(uplo,n,a,lda,anorm,rcond,work,irwork,info)
     <ftype> depend(n),dimension(<3*n,3*n,2*n,2*n>),intent(hide,cache):: work
     <integer,integer,real, double precision> depend(n),dimension(n),intent(hide,cache):: irwork
     integer intent(out):: info
- 
+
 end subroutine <prefix>pocon
- 
+
 subroutine <prefix2>potrf(n,a,lda,info,lower,clean)
     ! c,info = potrf(a,lower=0,clean=1,overwrite_a=0)
     ! Compute Cholesky decomposition of symmetric positive defined matrix:
@@ -128,19 +128,19 @@ subroutine <prefix2>potrf(n,a,lda,info,lower,clean)
     ! A = L * L^T, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
     ! clean==1 zeros strictly lower or upper parts of U or L, respectively
- 
+
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){F_INT i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
     callprotoargument char*,F_INT*,<ctype2>*,F_INT*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
     integer depend(a),intent(hide) :: n = shape(a,0)
     <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
     integer depend(n),intent(hide) :: lda = MAX(1,n)
     integer intent(out) :: info
- 
+
 end subroutine <prefix2>potrf
- 
+
 subroutine <prefix2c>potrf(n,a,lda,info,lower,clean)
     ! c,info = potrf(a,lower=0,clean=1,overwrite_a=0)
     ! Compute Cholesky decomposition of symmetric positive defined matrix:
@@ -148,19 +148,19 @@ subroutine <prefix2c>potrf(n,a,lda,info,lower,clean)
     ! A = L * L^H, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
     ! clean==1 zeros strictly lower or upper parts of U or L, respectively
- 
+
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){F_INT i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
     callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
     integer depend(a),intent(hide):: n = shape(a,0)
     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
     integer depend(n),intent(hide) :: lda = MAX(1,n)
     integer intent(out) :: info
- 
+
 end subroutine <prefix2c>potrf
- 
+
 subroutine <prefix>potrs(n,nrhs,c,b,info,lower)
      ! x,info = potrs(c,b,lower=0=1,overwrite_b=0)
     ! Solve A * X = B.
@@ -168,12 +168,12 @@ subroutine <prefix>potrs(n,nrhs,c,b,info,lower)
     ! A = U^T * U, C = U if lower = 0
     ! A = L * L^T, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
- 
+
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,c,&n,b,&n,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
- 
+
     integer depend(c),intent(hide):: n = shape(c,0)
     integer depend(b),intent(hide):: nrhs = shape(b,1)
     <ftype> dimension(n,n),intent(in) :: c
@@ -181,21 +181,21 @@ subroutine <prefix>potrs(n,nrhs,c,b,info,lower)
     <ftype> dimension(n,nrhs),intent(in,out,copy,out=x),depend(n):: b
     check(shape(c,0)==shape(b,0)) :: b
     integer intent(out) :: info
- 
+
 end subroutine <prefix>potrs
- 
+
 subroutine <prefix>potri(n,c,info,lower)
     ! inv_a,info = potri(c,lower=0,overwrite_c=0)
     ! Compute A inverse A^-1.
     ! A = U^T * U, C = U if lower = 0
     ! A = L * L^T, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
- 
+
     callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
- 
+
     integer depend(c),intent(hide):: n = shape(c,0)
     <ftype> dimension(n,n),intent(in,out,copy,out=inv_a) :: c
     check(shape(c,0)==shape(c,1)) :: c

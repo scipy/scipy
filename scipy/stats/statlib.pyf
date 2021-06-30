@@ -1,5 +1,5 @@
 !%f90 -*- f90 -*-
-python module statlib ! in 
+python module statlib ! in
     interface  ! in :statlib
         subroutine swilk(init,x,n,n1,n2,a,w,pw,ifault) ! in :statlib:swilk.f
             logical intent(optional), intent(in) :: init=0
@@ -29,9 +29,9 @@ python module statlib ! in
            integer intent(in) :: is
            integer intent(out) :: ifault
            double precision intent(out) :: prho
-         end function prho         
-         
-    end interface 
+         end function prho
+
+    end interface
 end python module statlib
 
 ! This file was auto-generated with f2py (version:2.21.184-1308).

@@ -18,6 +18,7 @@ except ImportError:
 # Machinery for systematic tests with mpmath
 # ------------------------------------------------------------------------------
 
+
 class Arg:
     """Generate a set of numbers on the real axis, concentrating on
     'interesting' regions and covering all orders of magnitude.
@@ -28,9 +29,9 @@ class Arg:
         if a > b:
             raise ValueError("a should be less than or equal to b")
         if a == -np.inf:
-            a = -0.5*np.finfo(float).max
+            a = -0.5 * np.finfo(float).max
         if b == np.inf:
-            b = 0.5*np.finfo(float).max
+            b = 0.5 * np.finfo(float).max
         self.a, self.b = a, b
 
         self.inclusive_a, self.inclusive_b = inclusive_a, inclusive_b
@@ -42,10 +43,10 @@ class Arg:
         # Try to put half of the points into a linspace between a and
         # 10 the other half in a logspace.
         if n % 2 == 0:
-            nlogpts = n//2
+            nlogpts = n // 2
             nlinpts = nlogpts
         else:
-            nlogpts = n//2
+            nlogpts = n // 2
             nlinpts = nlogpts + 1
 
         if a >= 10:
@@ -75,10 +76,10 @@ class Arg:
             # smallest positive point of the linspace, and a logspace
             # between 10 and b.
             if nlogpts % 2 == 0:
-                nlogpts1 = nlogpts//2
+                nlogpts1 = nlogpts // 2
                 nlogpts2 = nlogpts1
             else:
-                nlogpts1 = nlogpts//2
+                nlogpts1 = nlogpts // 2
                 nlogpts2 = nlogpts1 + 1
             linpts = np.linspace(0, 10, nlinpts, endpoint=False)
             if linpts.size > 1:
@@ -103,10 +104,10 @@ class Arg:
             n += 1
 
         if n % 2 == 0:
-            n1 = n//2
+            n1 = n // 2
             n2 = n1
         else:
-            n1 = n//2
+            n1 = n // 2
             n2 = n1 + 1
 
         if a >= 0:
@@ -146,7 +147,7 @@ class ComplexArg:
         m = int(np.floor(np.sqrt(n)))
         x = self.real.values(m)
         y = self.imag.values(m + 1)
-        return (x[:,None] + 1j*y[None,:]).ravel()
+        return (x[:, None] + 1j * y[None, :]).ravel()
 
 
 class IntArg:
@@ -155,7 +156,7 @@ class IntArg:
         self.b = b
 
     def values(self, n):
-        v1 = Arg(self.a, self.b).values(max(1 + n//2, n-5)).astype(int)
+        v1 = Arg(self.a, self.b).values(max(1 + n // 2, n - 5)).astype(int)
         v2 = np.arange(-5, 5)
         v = np.unique(np.r_[v1, v2])
         v = v[(v >= self.a) & (v < self.b)]
@@ -167,8 +168,10 @@ def get_args(argspec, n):
         args = argspec.copy()
     else:
         nargs = len(argspec)
-        ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
-        ms = (n**(ms/sum(ms))).astype(int) + 1
+        ms = np.asarray(
+            [1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec]
+        )
+        ms = (n ** (ms / sum(ms))).astype(int) + 1
 
         args = [spec.values(m) for spec, m in zip(argspec, ms)]
         args = np.array(np.broadcast_arrays(*np.ix_(*args))).reshape(nargs, -1).T
@@ -177,17 +180,29 @@ def get_args(argspec, n):
 
 
 class MpmathData:
-    def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
-                 dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
-                 ignore_inf_sign=False, distinguish_nan_and_inf=True,
-                 nan_ok=True, param_filter=None):
+    def __init__(
+        self,
+        scipy_func,
+        mpmath_func,
+        arg_spec,
+        name=None,
+        dps=None,
+        prec=None,
+        n=None,
+        rtol=1e-7,
+        atol=1e-300,
+        ignore_inf_sign=False,
+        distinguish_nan_and_inf=True,
+        nan_ok=True,
+        param_filter=None,
+    ):
 
         # mpmath tests are really slow (see gh-6989).  Use a small number of
         # points by default, increase back to 5000 (old default) if XSLOW is
         # set
         if n is None:
             try:
-                is_xslow = int(os.environ.get('SCIPY_XSLOW', '0'))
+                is_xslow = int(os.environ.get("SCIPY_XSLOW", "0"))
             except ValueError:
                 is_xslow = False
 
@@ -206,13 +221,15 @@ class MpmathData:
         if isinstance(self.arg_spec, np.ndarray):
             self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
         else:
-            self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+            self.is_complex = any(
+                [isinstance(arg, ComplexArg) for arg in self.arg_spec]
+            )
         self.ignore_inf_sign = ignore_inf_sign
         self.distinguish_nan_and_inf = distinguish_nan_and_inf
-        if not name or name == '<lambda>':
-            name = getattr(scipy_func, '__name__', None)
-        if not name or name == '<lambda>':
-            name = getattr(mpmath_func, '__name__', None)
+        if not name or name == "<lambda>":
+            name = getattr(scipy_func, "__name__", None)
+        if not name or name == "<lambda>":
+            name = getattr(mpmath_func, "__name__", None)
         self.name = name
         self.param_filter = param_filter
 
@@ -240,12 +257,14 @@ class MpmathData:
 
                 def mptype(x):
                     return mpmath.mpc(complex(x))
+
             else:
+
                 def mptype(x):
                     return mpmath.mpf(float(x))
 
                 def pytype(x):
-                    if abs(x.imag) > 1e-16*(1 + abs(x.real)):
+                    if abs(x.imag) > 1e-16 * (1 + abs(x.real)):
                         return np.nan
                     else:
                         return mpf2float(x.real)
@@ -255,18 +274,21 @@ class MpmathData:
                 mpmath.mp.dps = dps
 
                 try:
-                    assert_func_equal(self.scipy_func,
-                                      lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
-                                      argarr,
-                                      vectorized=False,
-                                      rtol=self.rtol, atol=self.atol,
-                                      ignore_inf_sign=self.ignore_inf_sign,
-                                      distinguish_nan_and_inf=self.distinguish_nan_and_inf,
-                                      nan_ok=self.nan_ok,
-                                      param_filter=self.param_filter)
+                    assert_func_equal(
+                        self.scipy_func,
+                        lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
+                        argarr,
+                        vectorized=False,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        ignore_inf_sign=self.ignore_inf_sign,
+                        distinguish_nan_and_inf=self.distinguish_nan_and_inf,
+                        nan_ok=self.nan_ok,
+                        param_filter=self.param_filter,
+                    )
                     break
                 except AssertionError:
-                    if j >= len(dps_list)-1:
+                    if j >= len(dps_list) - 1:
                         # reraise the Exception
                         tp, value, tb = sys.exc_info()
                         if value.__traceback__ is not tb:
@@ -288,12 +310,15 @@ def assert_mpmath_equal(*a, **kw):
 
 
 def nonfunctional_tooslow(func):
-    return pytest.mark.skip(reason="    Test not yet functional (too slow), needs more work.")(func)
+    return pytest.mark.skip(
+        reason="    Test not yet functional (too slow), needs more work."
+    )(func)
 
 
 # ------------------------------------------------------------------------------
 # Tools for dealing with mpmath quirks
 # ------------------------------------------------------------------------------
+
 
 def mpf2float(x):
     """
@@ -328,13 +353,15 @@ def trace_args(func):
             sys.stderr.write("\n")
             sys.stderr.flush()
         return r
+
     return wrap
 
 
 try:
     import posix
     import signal
-    POSIX = ('setitimer' in dir(signal))
+
+    POSIX = "setitimer" in dir(signal)
 except ImportError:
     POSIX = False
 
@@ -359,6 +386,7 @@ def time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
     by a factor around 10 is probably typical.
     """
     if POSIX and use_sigalrm:
+
         def sigalrm_handler(signum, frame):
             raise TimeoutError()
 
@@ -373,8 +401,11 @@ def time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
                 finally:
                     signal.setitimer(signal.ITIMER_REAL, 0)
                     signal.signal(signal.SIGALRM, old_handler)
+
             return wrap
+
     else:
+
         def deco(func):
             def wrap(*a, **kw):
                 start_time = time.time()
@@ -383,6 +414,7 @@ def time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
                     if time.time() - start_time > timeout:
                         raise TimeoutError()
                     return trace
+
                 sys.settrace(trace)
                 try:
                     return func(*a, **kw)
@@ -391,27 +423,33 @@ def time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
                     return return_val
                 finally:
                     sys.settrace(None)
+
             return wrap
+
     return deco
 
 
 def exception_to_nan(func):
     """Decorate function to return nan if it raises an exception"""
+
     def wrap(*a, **kw):
         try:
             return func(*a, **kw)
         except Exception:
             return np.nan
+
     return wrap
 
 
 def inf_to_nan(func):
     """Decorate function to return nan if it returns inf"""
+
     def wrap(*a, **kw):
         v = func(*a, **kw)
         if not np.isfinite(v):
             return np.nan
         return v
+
     return wrap
 
 
@@ -433,21 +471,22 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     failures = []
     for k in range(n):
         try:
-            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol*mpmath.fabs(std[k]))
+            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol * mpmath.fabs(std[k]))
         except AssertionError:
             failures.append(k)
 
     ndigits = int(abs(np.log10(rtol)))
     msg = [""]
-    msg.append("Bad results ({} out of {}) for the following points:"
-               .format(len(failures), n))
+    msg.append(
+        "Bad results ({} out of {}) for the following points:".format(len(failures), n)
+    )
     for k in failures:
         resrep = mpmath.nstr(res[k], ndigits, min_fixed=0, max_fixed=0)
         stdrep = mpmath.nstr(std[k], ndigits, min_fixed=0, max_fixed=0)
         if std[k] == 0:
             rdiff = "inf"
         else:
-            rdiff = mpmath.fabs((res[k] - std[k])/std[k])
+            rdiff = mpmath.fabs((res[k] - std[k]) / std[k])
             rdiff = mpmath.nstr(rdiff, 3)
         msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
     if failures:

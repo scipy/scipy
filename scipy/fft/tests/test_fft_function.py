@@ -29,18 +29,20 @@ assert_allclose(y, x)
 
 """
 
+
 def test_fft_function():
     # Historically, scipy.fft was an alias for numpy.fft.fft
     # Ensure there are no conflicts with the FFT module (gh-10253)
 
     # Test must run in a subprocess so scipy.fft is not already imported
-    subprocess.check_call([sys.executable, '-c', TEST_BODY])
+    subprocess.check_call([sys.executable, "-c", TEST_BODY])
 
     # scipy.fft is the correct module
     from scipy import fft
+
     assert not callable(fft)
-    assert fft.__name__ == 'scipy.fft'
+    assert fft.__name__ == "scipy.fft"
 
     from scipy import ifft
-    assert ifft.__wrapped__ is np.fft.ifft
 
+    assert ifft.__wrapped__ is np.fft.ifft

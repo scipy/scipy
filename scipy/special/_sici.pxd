@@ -25,7 +25,7 @@ cdef extern from "specfun_wrappers.h":
 
 DEF MAXITER = 100
 DEF TOL = 2.220446092504131e-16
-    
+
 
 cdef inline double complex zexpi(double complex z) nogil:
     cdef np.npy_cdouble r
@@ -43,10 +43,10 @@ cdef inline void power_series(int sgn, double complex z,
     cdef:
         int n
         double complex fac, term1, term2
-        
+
     fac = z
     s[0] = fac
-    c[0] = 0        
+    c[0] = 0
     for n in range(1, MAXITER):
         fac *= sgn*z/(2*n)
         term2 = fac/(2*n)
@@ -57,7 +57,7 @@ cdef inline void power_series(int sgn, double complex z,
         if zabs(term1) < TOL*zabs(s[0]) and zabs(term2) < TOL*zabs(c[0]):
             break
 
-    
+
 cdef inline int csici(double complex z,
                       double complex *si, double complex *ci) nogil:
     """Compute sin/cos integrals at complex arguments. The algorithm
@@ -83,7 +83,7 @@ cdef inline int csici(double complex z,
         else:
             ci[0] += NPY_EULER + zlog(z)
         return 0
-    
+
     # DLMF 6.5.5/6.5.6 plus DLMF 6.4.4/6.4.6/6.4.7
     jz = 1j*z
     term1 = zexpi(jz)

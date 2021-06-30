@@ -13,7 +13,7 @@ def mgc_plot(x, y, mgc_dict):
 
     # draw heatmap
     ax.set_title("Local Correlation Map", fontsize=20)
-    im = ax.imshow(mgc_map, cmap='YlGnBu')
+    im = ax.imshow(mgc_map, cmap="YlGnBu")
 
     # colorbar
     cbar = ax.figure.colorbar(im, ax=ax)
@@ -26,13 +26,12 @@ def mgc_plot(x, y, mgc_dict):
 
     # optimal scale
     opt_scale = mgc_dict["opt_scale"]
-    ax.scatter(opt_scale[0], opt_scale[1],
-               marker='X', s=200, color='red')
+    ax.scatter(opt_scale[0], opt_scale[1], marker="X", s=200, color="red")
 
     # other formatting
     ax.tick_params(bottom="off", left="off")
-    ax.set_xlabel('#Neighbors for X', fontsize=15)
-    ax.set_ylabel('#Neighbors for Y', fontsize=15)
+    ax.set_xlabel("#Neighbors for X", fontsize=15)
+    ax.set_ylabel("#Neighbors for Y", fontsize=15)
     ax.tick_params(axis="x", labelsize=15)
     ax.tick_params(axis="y", labelsize=15)
     ax.set_xlim(0, 100)

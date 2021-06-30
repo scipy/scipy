@@ -1,7 +1,7 @@
 import numpy as np
 from scipy._lib.decorator import decorator as _decorator
 
-__all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
+__all__ = ["delaunay_plot_2d", "convex_hull_plot_2d", "voronoi_plot_2d"]
 
 
 @_decorator
@@ -15,7 +15,7 @@ def _held_figure(func, obj, ax=None, **kw):
 
     # As of matplotlib 2.0, the "hold" mechanism is deprecated.
     # When matplotlib 1.x is no longer supported, this check can be removed.
-    was_held = getattr(ax, 'ishold', lambda: True)()
+    was_held = getattr(ax, "ishold", lambda: True)()
     if was_held:
         return func(obj, ax=ax, **kw)
     try:
@@ -81,7 +81,7 @@ def delaunay_plot_2d(tri, ax=None):
         raise ValueError("Delaunay triangulation is not 2-D")
 
     x, y = tri.points.T
-    ax.plot(x, y, 'o')
+    ax.plot(x, y, "o")
     ax.triplot(x, y, tri.simplices.copy())
 
     _adjust_bounds(ax, tri.points)
@@ -138,11 +138,9 @@ def convex_hull_plot_2d(hull, ax=None):
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
 
-    ax.plot(hull.points[:,0], hull.points[:,1], 'o')
+    ax.plot(hull.points[:, 0], hull.points[:, 1], "o")
     line_segments = [hull.points[simplex] for simplex in hull.simplices]
-    ax.add_collection(LineCollection(line_segments,
-                                     colors='k',
-                                     linestyle='solid'))
+    ax.add_collection(LineCollection(line_segments, colors="k", linestyle="solid"))
     _adjust_bounds(ax, hull.points)
 
     return ax.figure
@@ -215,15 +213,15 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     if vor.points.shape[1] != 2:
         raise ValueError("Voronoi diagram is not 2-D")
 
-    if kw.get('show_points', True):
-        point_size = kw.get('point_size', None)
-        ax.plot(vor.points[:,0], vor.points[:,1], '.', markersize=point_size)
-    if kw.get('show_vertices', True):
-        ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
+    if kw.get("show_points", True):
+        point_size = kw.get("point_size", None)
+        ax.plot(vor.points[:, 0], vor.points[:, 1], ".", markersize=point_size)
+    if kw.get("show_vertices", True):
+        ax.plot(vor.vertices[:, 0], vor.vertices[:, 1], "o")
 
-    line_colors = kw.get('line_colors', 'k')
-    line_width = kw.get('line_width', 1.0)
-    line_alpha = kw.get('line_alpha', 1.0)
+    line_colors = kw.get("line_colors", "k")
+    line_width = kw.get("line_width", 1.0)
+    line_alpha = kw.get("line_alpha", 1.0)
 
     center = vor.points.mean(axis=0)
     ptp_bound = vor.points.ptp(axis=0)
@@ -243,22 +241,30 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
             midpoint = vor.points[pointidx].mean(axis=0)
             direction = np.sign(np.dot(midpoint - center, n)) * n
-            if (vor.furthest_site):
+            if vor.furthest_site:
                 direction = -direction
             far_point = vor.vertices[i] + direction * ptp_bound.max()
 
             infinite_segments.append([vor.vertices[i], far_point])
 
-    ax.add_collection(LineCollection(finite_segments,
-                                     colors=line_colors,
-                                     lw=line_width,
-                                     alpha=line_alpha,
-                                     linestyle='solid'))
-    ax.add_collection(LineCollection(infinite_segments,
-                                     colors=line_colors,
-                                     lw=line_width,
-                                     alpha=line_alpha,
-                                     linestyle='dashed'))
+    ax.add_collection(
+        LineCollection(
+            finite_segments,
+            colors=line_colors,
+            lw=line_width,
+            alpha=line_alpha,
+            linestyle="solid",
+        )
+    )
+    ax.add_collection(
+        LineCollection(
+            infinite_segments,
+            colors=line_colors,
+            lw=line_width,
+            alpha=line_alpha,
+            linestyle="dashed",
+        )
+    )
 
     _adjust_bounds(ax, vor.points)
 

@@ -239,11 +239,14 @@ from ._matrix_io import *
 # For backward compatibility with v0.19.
 from . import csgraph
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
-_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+_warnings.filterwarnings(
+    "ignore", message="the matrix subclass is not the recommended way"
+)
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

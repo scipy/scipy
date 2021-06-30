@@ -6,11 +6,19 @@ import numpy as np
 import sys
 
 _5_smooth_numbers = [
-    2, 3, 4, 5, 6, 8, 9, 10,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
     2 * 3 * 5,
-    2**3 * 3**5,
-    2**3 * 3**3 * 5**2,
+    2 ** 3 * 3 ** 5,
+    2 ** 3 * 3 ** 3 * 5 ** 2,
 ]
+
 
 def test_next_fast_len():
     for n in _5_smooth_numbers:
@@ -28,25 +36,23 @@ def _assert_n_smooth(x, n):
             break
         x = q
 
-    for d in range(3, n+1, 2):
+    for d in range(3, n + 1, 2):
         while True:
             q, r = divmod(x, d)
             if r != 0:
                 break
             x = q
 
-    assert x == 1, \
-           'x={} is not {}-smooth, remainder={}'.format(x_orig, n, x)
+    assert x == 1, "x={} is not {}-smooth, remainder={}".format(x_orig, n, x)
 
 
 class TestNextFastLen:
-
     def test_next_fast_len(self):
         np.random.seed(1234)
 
         def nums():
             yield from range(1, 1000)
-            yield 2**5 * 3**5 * 4**5 + 1
+            yield 2 ** 5 * 3 ** 5 * 4 ** 5 + 1
 
         for n in nums():
             m = next_fast_len(n)
@@ -65,22 +71,42 @@ class TestNextFastLen:
 
     def testnext_fast_len_small(self):
         hams = {
-            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
-            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000
+            1: 1,
+            2: 2,
+            3: 3,
+            4: 4,
+            5: 5,
+            6: 6,
+            7: 8,
+            8: 8,
+            14: 15,
+            15: 15,
+            16: 16,
+            17: 18,
+            1021: 1024,
+            1536: 1536,
+            51200000: 51200000,
         }
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
-    @pytest.mark.xfail(sys.maxsize < 2**32,
-                       reason="Hamming Numbers too large for 32-bit",
-                       raises=ValueError, strict=True)
+    @pytest.mark.xfail(
+        sys.maxsize < 2 ** 32,
+        reason="Hamming Numbers too large for 32-bit",
+        raises=ValueError,
+        strict=True,
+    )
     def testnext_fast_len_big(self):
         hams = {
-            510183360: 510183360, 510183360 + 1: 512000000,
+            510183360: 510183360,
+            510183360 + 1: 512000000,
             511000000: 512000000,
-            854296875: 854296875, 854296875 + 1: 859963392,
-            196608000000: 196608000000, 196608000000 + 1: 196830000000,
-            8789062500000: 8789062500000, 8789062500000 + 1: 8796093022208,
+            854296875: 854296875,
+            854296875 + 1: 859963392,
+            196608000000: 196608000000,
+            196608000000 + 1: 196830000000,
+            8789062500000: 8789062500000,
+            8789062500000 + 1: 8796093022208,
             206391214080000: 206391214080000,
             206391214080000 + 1: 206624260800000,
             470184984576000: 470184984576000,
@@ -114,7 +140,6 @@ class TestNextFastLen:
 
 
 class Test_init_nd_shape_and_axes:
-
     def test_py_0d_defaults(self):
         x = np.array(4)
         shape = None
@@ -129,7 +154,7 @@ class Test_init_nd_shape_and_axes:
         assert_equal(axes_res, axes_expected)
 
     def test_np_0d_defaults(self):
-        x = np.array(7.)
+        x = np.array(7.0)
         shape = None
         axes = None
 
@@ -155,7 +180,7 @@ class Test_init_nd_shape_and_axes:
         assert_equal(axes_res, axes_expected)
 
     def test_np_1d_defaults(self):
-        x = np.arange(0, 1, .1)
+        x = np.arange(0, 1, 0.1)
         shape = None
         axes = None
 
@@ -168,8 +193,7 @@ class Test_init_nd_shape_and_axes:
         assert_equal(axes_res, axes_expected)
 
     def test_py_2d_defaults(self):
-        x = np.array([[1, 2, 3, 4],
-                      [5, 6, 7, 8]])
+        x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
         shape = None
         axes = None
 
@@ -182,7 +206,7 @@ class Test_init_nd_shape_and_axes:
         assert_equal(axes_res, axes_expected)
 
     def test_np_2d_defaults(self):
-        x = np.arange(0, 1, .1).reshape(5, 2)
+        x = np.arange(0, 1, 0.1).reshape(5, 2)
         shape = None
         axes = None
 
@@ -255,46 +279,47 @@ class Test_init_nd_shape_and_axes:
 
     def test_errors(self):
         x = np.zeros(1)
-        with assert_raises(ValueError, match="axes must be a scalar or "
-                           "iterable of integers"):
+        with assert_raises(
+            ValueError, match="axes must be a scalar or iterable of integers"
+        ):
             _init_nd_shape_and_axes(x, shape=None, axes=[[1, 2], [3, 4]])
 
-        with assert_raises(ValueError, match="axes must be a scalar or "
-                           "iterable of integers"):
-            _init_nd_shape_and_axes(x, shape=None, axes=[1., 2., 3., 4.])
+        with assert_raises(
+            ValueError, match="axes must be a scalar or iterable of integers"
+        ):
+            _init_nd_shape_and_axes(x, shape=None, axes=[1.0, 2.0, 3.0, 4.0])
 
-        with assert_raises(ValueError,
-                           match="axes exceeds dimensionality of input"):
+        with assert_raises(ValueError, match="axes exceeds dimensionality of input"):
             _init_nd_shape_and_axes(x, shape=None, axes=[1])
 
-        with assert_raises(ValueError,
-                           match="axes exceeds dimensionality of input"):
+        with assert_raises(ValueError, match="axes exceeds dimensionality of input"):
             _init_nd_shape_and_axes(x, shape=None, axes=[-2])
 
-        with assert_raises(ValueError,
-                           match="all axes must be unique"):
+        with assert_raises(ValueError, match="all axes must be unique"):
             _init_nd_shape_and_axes(x, shape=None, axes=[0, 0])
 
-        with assert_raises(ValueError, match="shape must be a scalar or "
-                           "iterable of integers"):
+        with assert_raises(
+            ValueError, match="shape must be a scalar or iterable of integers"
+        ):
             _init_nd_shape_and_axes(x, shape=[[1, 2], [3, 4]], axes=None)
 
-        with assert_raises(ValueError, match="shape must be a scalar or "
-                           "iterable of integers"):
-            _init_nd_shape_and_axes(x, shape=[1., 2., 3., 4.], axes=None)
+        with assert_raises(
+            ValueError, match="shape must be a scalar or iterable of integers"
+        ):
+            _init_nd_shape_and_axes(x, shape=[1.0, 2.0, 3.0, 4.0], axes=None)
 
-        with assert_raises(ValueError,
-                           match="when given, axes and shape arguments"
-                           " have to be of the same length"):
-            _init_nd_shape_and_axes(np.zeros([1, 1, 1, 1]),
-                                    shape=[1, 2, 3], axes=[1])
+        with assert_raises(
+            ValueError,
+            match="when given, axes and shape arguments have to be of the same length",
+        ):
+            _init_nd_shape_and_axes(np.zeros([1, 1, 1, 1]), shape=[1, 2, 3], axes=[1])
 
-        with assert_raises(ValueError,
-                           match="invalid number of data points"
-                           r" \(\[0\]\) specified"):
+        with assert_raises(
+            ValueError, match="invalid number of data points" r" \(\[0\]\) specified"
+        ):
             _init_nd_shape_and_axes(x, shape=[0], axes=None)
 
-        with assert_raises(ValueError,
-                           match="invalid number of data points"
-                           r" \(\[-2\]\) specified"):
+        with assert_raises(
+            ValueError, match="invalid number of data points" r" \(\[-2\]\) specified"
+        ):
             _init_nd_shape_and_axes(x, shape=-2, axes=None)

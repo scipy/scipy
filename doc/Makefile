@@ -159,4 +159,3 @@ linkcheck: version-check
 
 show:
 	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
-

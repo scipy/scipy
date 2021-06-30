@@ -15,4 +15,3 @@ all: $(LIB)
 
 clean:
 	rm -f $(LIB) $(OBJS)
-

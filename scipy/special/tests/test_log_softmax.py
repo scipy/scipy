@@ -6,16 +6,25 @@ import pytest
 import scipy.special as sc
 
 
-@pytest.mark.parametrize('x, expected', [
-    (np.array([1000, 1]), np.array([0, -999])),
-
-    # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
-    # converted to float.
-    (np.arange(4), np.array([-3.4401896985611953,
-                             -2.4401896985611953,
-                             -1.4401896985611953,
-                             -0.44018969856119533]))
-])
+@pytest.mark.parametrize(
+    "x, expected",
+    [
+        (np.array([1000, 1]), np.array([0, -999])),
+        # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
+        # converted to float.
+        (
+            np.arange(4),
+            np.array(
+                [
+                    -3.4401896985611953,
+                    -2.4401896985611953,
+                    -1.4401896985611953,
+                    -0.44018969856119533,
+                ]
+            ),
+        ),
+    ],
+)
 def test_log_softmax(x, expected):
     assert_allclose(sc.log_softmax(x), expected, rtol=1e-13)
 
@@ -30,10 +39,14 @@ def log_softmax_x():
 def log_softmax_expected():
     # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
     # converted to float.
-    expected = np.array([-3.4401896985611953,
-                         -2.4401896985611953,
-                         -1.4401896985611953,
-                         -0.44018969856119533])
+    expected = np.array(
+        [
+            -3.4401896985611953,
+            -2.4401896985611953,
+            -1.4401896985611953,
+            -0.44018969856119533,
+        ]
+    )
     return expected
 
 
@@ -53,10 +66,10 @@ def test_log_softmax_noneaxis(log_softmax_x, log_softmax_expected):
     assert_allclose(sc.log_softmax(x), expected, rtol=1e-13)
 
 
-@pytest.mark.parametrize('axis_2d, expected_2d', [
-    (0, np.log(0.5) * np.ones((2, 2))),
-    (1, np.array([[0, -999], [0, -999]]))
-])
+@pytest.mark.parametrize(
+    "axis_2d, expected_2d",
+    [(0, np.log(0.5) * np.ones((2, 2))), (1, np.array([[0, -999], [0, -999]]))],
+)
 def test_axes(axis_2d, expected_2d):
     assert_allclose(
         sc.log_softmax([[1000, 1], [1000, 1]], axis=axis_2d),
@@ -75,14 +88,22 @@ def log_softmax_2d_x():
 def log_softmax_2d_expected():
     # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
     # converted to float.
-    expected = np.array([[-3.4401896985611953,
-                         -2.4401896985611953,
-                         -1.4401896985611953,
-                         -0.44018969856119533],
-                        [-3.4401896985611953,
-                         -2.4401896985611953,
-                         -1.4401896985611953,
-                         -0.44018969856119533]])
+    expected = np.array(
+        [
+            [
+                -3.4401896985611953,
+                -2.4401896985611953,
+                -1.4401896985611953,
+                -0.44018969856119533,
+            ],
+            [
+                -3.4401896985611953,
+                -2.4401896985611953,
+                -1.4401896985611953,
+                -0.44018969856119533,
+            ],
+        ]
+    )
     return expected
 
 

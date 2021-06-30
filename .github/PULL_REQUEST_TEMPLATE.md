@@ -1,4 +1,4 @@
-<!-- 
+<!--
 Thanks for contributing a pull request! Please ensure that
 your PR satisfies the checklist before submitting:
 http://scipy.github.io/devdocs/dev/contributor/development_workflow.html#checklist-before-submitting-a-pr

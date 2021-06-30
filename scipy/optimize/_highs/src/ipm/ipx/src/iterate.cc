@@ -232,7 +232,7 @@ bool Iterate::optimal() const {
     double dobj = dobjective_after_postproc();
     double obj = 0.5 * (pobj + dobj);
     double gap = pobj - dobj;
-    return std::abs(gap) <= optimality_tol_ * (1.0+std::abs(obj)); 
+    return std::abs(gap) <= optimality_tol_ * (1.0+std::abs(obj));
 }
 
 bool Iterate::term_crit_reached() const {
@@ -523,7 +523,7 @@ void Iterate::assert_consistency() {
     (void)(lb);
     (void)(ub);
 }
- 
+
 void Iterate::Evaluate() const {
     if (!evaluated_) {
         ComputeResiduals();

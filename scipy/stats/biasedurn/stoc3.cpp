@@ -11,19 +11,19 @@
 * This file contains source code for the class StochasticLib3 derived
 * from StochasticLib1 or StochasticLib2, defined in stocc.h.
 *
-* This class implements methods for sampling from the noncentral and extended 
+* This class implements methods for sampling from the noncentral and extended
 * hypergeometric distributions, as well as the multivariate versions of these.
 *
 * Documentation:
 * ==============
 * The file stocc.h contains class definitions.
 * The file stocc.htm contains further instructions.
-* The file nchyp.pdf, available from www.agner.org/random/theory contains 
+* The file nchyp.pdf, available from www.agner.org/random/theory contains
 * theoretical description of Wallenius' and Fisher's noncentral hypergeometric
 * distributions and the methods used in this code to sample from these.
 * The file ran-instructions.pdf contains general instructions.
 *
-* Copyright 2002-2008 by Agner Fog. 
+* Copyright 2002-2008 by Agner Fog.
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *****************************************************************************/
 
@@ -55,7 +55,7 @@ StochasticLib3::StochasticLib3(int seed) : StochasticLib1(seed) {
 SetAccuracy
 ***********************************************************************/
 void StochasticLib3::SetAccuracy(double accur) {
-   // define accuracy of calculations for 
+   // define accuracy of calculations for
    // WalleniusNCHyp and MultiWalleniusNCHyp
    if (accur < 0.) accur = 0.;
    if (accur > 0.01) accur = 0.01;
@@ -69,10 +69,10 @@ Wallenius Non-central Hypergeometric distribution
 
 int32_t StochasticLib3::WalleniusNCHyp (int32_t n, int32_t m, int32_t N, double odds) {
    /*
-   This function generates a random variate with Wallenius noncentral 
+   This function generates a random variate with Wallenius noncentral
    hypergeometric distribution.
 
-   Wallenius noncentral hypergeometric distribution is the distribution you 
+   Wallenius noncentral hypergeometric distribution is the distribution you
    get when drawing balls without replacement from an urn containing red and
    white balls, with bias.
 
@@ -84,13 +84,13 @@ int32_t StochasticLib3::WalleniusNCHyp (int32_t n, int32_t m, int32_t N, double 
 
    n is the number of balls you take,
    m is the number of red balls in the urn,
-   N is the total number of balls in the urn, 
+   N is the total number of balls in the urn,
    odds is the odds ratio,
    and the return value is the number of red balls you get.
 
    Four different calculation methods are implemented. This function decides
-   which method to use, based on the parameters. 
-   */   
+   which method to use, based on the parameters.
+   */
 
    // check parameters
    if (n >= N || m >= N || n <= 0 || m <= 0 || odds <= 0.) {
@@ -101,7 +101,7 @@ int32_t StochasticLib3::WalleniusNCHyp (int32_t n, int32_t m, int32_t N, double 
       if (odds == 0.) {
          if (n > N-m) FatalError("Not enough items with nonzero weight in function WalleniusNCHyp");
          return 0;}
-      // illegal parameter    
+      // illegal parameter
       FatalError("Parameter out of range in function WalleniusNCHyp");}
 
    if (odds == 1.) {
@@ -126,7 +126,7 @@ Subfunctions for WalleniusNCHyp
 ***********************************************************************/
 
 int32_t StochasticLib3::WalleniusNCHypUrn (int32_t n, int32_t m, int32_t N, double odds) {
-   // sampling from Wallenius noncentral hypergeometric distribution 
+   // sampling from Wallenius noncentral hypergeometric distribution
    // by simulating urn model
    int32_t x;                           // sample
    int32_t m2;                          // items of color 2 in urn
@@ -153,7 +153,7 @@ int32_t StochasticLib3::WalleniusNCHypUrn (int32_t n, int32_t m, int32_t N, doub
 
 
 int32_t StochasticLib3::WalleniusNCHypTable (int32_t n, int32_t m, int32_t N, double odds) {
-   // Sampling from Wallenius noncentral hypergeometric distribution 
+   // Sampling from Wallenius noncentral hypergeometric distribution
    // using chop-down search from a table created by recursive calculation.
    // This method is fast when n is low or when called repeatedly with
    // the same parameters.
@@ -193,7 +193,7 @@ int32_t StochasticLib3::WalleniusNCHypTable (int32_t n, int32_t m, int32_t N, do
 
 
 int32_t StochasticLib3::WalleniusNCHypRatioOfUnifoms (int32_t n, int32_t m, int32_t N, double odds) {
-   // sampling from Wallenius noncentral hypergeometric distribution 
+   // sampling from Wallenius noncentral hypergeometric distribution
    // using ratio-of-uniforms rejection method.
    int32_t xmin, xmax;                  // x limits
    double mean;                         // mean
@@ -241,7 +241,7 @@ int32_t StochasticLib3::WalleniusNCHypRatioOfUnifoms (int32_t n, int32_t m, int3
             }
          }
          else {
-            if (wnc_mode < xmin) wnc_mode++; 
+            if (wnc_mode < xmin) wnc_mode++;
             x2 = xmax;
             if (odds < 3.4 && N <= 10000000) {
                x2 = wnc_mode + 1;}                    // search for mode can be limited
@@ -292,14 +292,14 @@ int32_t StochasticLib3::WalleniusNCHypRatioOfUnifoms (int32_t n, int32_t m, int3
          continue;                               // reject if outside safety bounds
       }
 #if 0 // use rejection in x-domain
-      if (xi == wnc_mode) break;                 // accept      
+      if (xi == wnc_mode) break;                 // accept
       f = wnch.probability(xi);                  // function value
       if (f > wnc_k * u * u) {
          break;                                  // acceptance
       }
 #else // use rejection in t-domain (this is faster)
       double hx, s2, xma2;                       // compute h(x)
-      s2 = wnc_h * 0.5;  s2 *= s2; 
+      s2 = wnc_h * 0.5;  s2 *= s2;
       xma2 = xi - (wnc_a-0.5);
       xma2 *= xma2;
       hx = (s2 >= xma2) ? 1. : s2 / xma2;
@@ -307,14 +307,14 @@ int32_t StochasticLib3::WalleniusNCHypRatioOfUnifoms (int32_t n, int32_t m, int3
       if (wnch.BernouilliH(xi, hx * wnc_k * 1.01, u * u * wnc_k  * 1.01, this)) {
          break;                                  // acceptance
       }
-#endif      
+#endif
    }                                             // rejection
    return xi;
 }
 
 
 int32_t StochasticLib3::WalleniusNCHypInversion (int32_t n, int32_t m, int32_t N, double odds) {
-   // sampling from Wallenius noncentral hypergeometric distribution 
+   // sampling from Wallenius noncentral hypergeometric distribution
    // using down-up search starting at the mean using the chop-down technique.
    // This method is faster than the rejection method when the variance is low.
    int32_t wall_x1, x2;                          // search values
@@ -374,13 +374,13 @@ int32_t StochasticLib3::WalleniusNCHypInversion (int32_t n, int32_t m, int32_t N
 Multivariate Wallenius noncentral hypergeometric distribution
 ***********************************************************************/
 
-void StochasticLib3::MultiWalleniusNCHyp (int32_t * destination, 
+void StochasticLib3::MultiWalleniusNCHyp (int32_t * destination,
 int32_t * source, double * weights, int32_t n, int colors) {
    /*
-   This function generates a vector of random variables with the 
+   This function generates a vector of random variables with the
    multivariate Wallenius noncentral hypergeometric distribution.
 
-   The multivariate Wallenius noncentral hypergeometric distribution is 
+   The multivariate Wallenius noncentral hypergeometric distribution is
    the distribution you get when drawing colored balls from an urn
    with any number of colors, without replacement, and with bias.
 
@@ -388,9 +388,9 @@ int32_t * source, double * weights, int32_t n, int colors) {
    ball is proportional to its weight.
 
    Parameters:
-   destination:    An output array to receive the number of balls of each 
+   destination:    An output array to receive the number of balls of each
    color. Must have space for at least 'colors' elements.
-   source:         An input array containing the number of balls of each 
+   source:         An input array containing the number of balls of each
    color in the urn. Must have 'colors' elements.
    All elements must be non-negative.
    weights:        The odds of each color. Must have 'colors' elements.
@@ -400,39 +400,39 @@ int32_t * source, double * weights, int32_t n, int colors) {
    in source.
    colors:         The number of possible colors.
 
-   MAXCOLORS  (defined in stocc.h): You may adjust MAXCOLORS to the maximum 
+   MAXCOLORS  (defined in stocc.h): You may adjust MAXCOLORS to the maximum
    number of colors you need.
 
    The function will reduce the number of colors, if possible, by eliminating
-   colors with zero weight or zero number and pooling together colors with the 
-   same weight. The problem thus reduced is handled in the arrays osource, 
+   colors with zero weight or zero number and pooling together colors with the
+   same weight. The problem thus reduced is handled in the arrays osource,
    urn, oweights and osample of size colors2.
 
-   The sampling proceeds by either of two methods: simulating urn experiment, 
+   The sampling proceeds by either of two methods: simulating urn experiment,
    or conditional method followed by Metropolis-Hastings sampling.
 
    Simulating the urn experiment is simply taking one ball at a time, requiring
    n uniform random variates. The problem is reduced whenever a color has been
    exhausted.
 
-   The conditional method divides the colors into groups where the number of 
+   The conditional method divides the colors into groups where the number of
    balls in each group is determined by sampling from the marginal distribution
    which is approximated by the univariate Wallenius distribution. Each group
-   is then subdivided by sampling one color at a time until all colors have 
+   is then subdivided by sampling one color at a time until all colors have
    been sampled.
 
    The sample from the conditional method does not have the exact distribution,
-   but it is used as a starting point for the Metropolis-Hastings sampling, 
-   which proceeds as follows: colors c1 and c2 are re-sampled using the 
+   but it is used as a starting point for the Metropolis-Hastings sampling,
+   which proceeds as follows: colors c1 and c2 are re-sampled using the
    univariate Wallenius distribution, keeping the samples of all other colors
    constant. The new sample is accepted or the old sample retained, according
-   to the Metropolis formula which corrects for the slight error introduced 
+   to the Metropolis formula which corrects for the slight error introduced
    by not using the true conditional distribution. c1 and c2 are rotated in
    an order determined by the variance of each color. This rotation (scan) is
    repeated nHastings times.
    */
 
-   // variables 
+   // variables
    int order1[MAXCOLORS];              // sort order, index into source and destination
    int order2[MAXCOLORS];              // corresponding index into arrays when equal weights pooled together
    int order3[MAXCOLORS];              // secondary index for sorting by variance
@@ -506,7 +506,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
       return;
    }
 
-   // copy source and weights into ordered lists 
+   // copy source and weights into ordered lists
    // and pool together colors with same weight
    for (i=0, c2=-1; i < colors; i++) {
       c = order1[i];
@@ -525,7 +525,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
    colors2 = c2 + 1;
 
    // check number of colors left
-   if (colors2 < 3) {  
+   if (colors2 < 3) {
       // simple cases
       if (colors2 == 1) osample[0] = n;
       if (colors2 == 2) {
@@ -555,7 +555,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
             // get random color according to probability distribution wcum
             p = Random() * wcum[colors2-1];
             // get color from search in probability distribution wcum
-            for (i=0; i < j; i++) { 
+            for (i=0; i < j; i++) {
                if (p < wcum[i]) break;
             }
 
@@ -613,7 +613,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
          a = 0;  b = colors2-1;
          w = sqrt(oweights[0] * oweights[colors2-1]);
          do {
-            c = (a + b) / 2; 
+            c = (a + b) / 2;
             if (oweights[c] > w) a = c; else b = c;
          }
          while (b > a + 1);
@@ -636,14 +636,14 @@ int32_t * source, double * weights, int32_t n, int colors) {
          n2 = n - n1;
 
          // set parameters for first group (heavy)
-         a = 0;  ng = n1; 
+         a = 0;  ng = n1;
 
          // loop twice, for the two groops
          for (k=0; k < 2; k++) {
 
             // split group into single colors by calling univariate distribution b-a-1 times
-            for (i = a; i < b-1; i++) { 
-               m = urn[i];  w = oweights[i];    
+            for (i = a; i < b-1; i++) {
+               m = urn[i];  w = oweights[i];
 
                // calculate mean weight of remaining colors
                for (j=i+1, msum=0, wsum=0; j < b; j++) {
@@ -665,7 +665,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
             a = b;  b = colors2;  ng = n2;
          }
 
-         // finished with conditional method. 
+         // finished with conditional method.
          // osample contains starting point for Metropolis-Hastings sampling
 
          // make object for calculating probabilities and mean
@@ -706,7 +706,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
          f0 = -1.;
          for (k = 0; k < nHastings; k++) {
             for (i = 0; i < colors2; i++) {
-               j = i+1; 
+               j = i+1;
                if (j >= colors2) j = 0;
                c1 = order3[i];  c2 = order3[j];
                w = oweights[c1] / oweights[c2];
@@ -740,7 +740,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
    // un-sort sample into destination and untangle re-orderings
    for (i=0; i < colors; i++) {
       c1 = order1[i];  c2 = order2[i];
-      if (source[c1] == osource[c2]) {    
+      if (source[c1] == osource[c2]) {
          destination[c1] = osample[c2];
       }
       else {
@@ -796,15 +796,15 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    hypergeometric distribution.
 
    This distribution resembles Wallenius noncentral hypergeometric distribution
-   and the two distributions are sometimes confused. A more detailed 
+   and the two distributions are sometimes confused. A more detailed
    explanation of this distribution is given below under the multivariate
-   Fisher's noncentral hypergeometric distribution (MultiFishersNCHyp). 
+   Fisher's noncentral hypergeometric distribution (MultiFishersNCHyp).
    For further documentation see nchyp.pdf, awailable from www.agner.org/random
 
    This function uses inversion by chop-down search from zero when parameters
-   are small, and the ratio-of-uniforms rejection method when the former 
+   are small, and the ratio-of-uniforms rejection method when the former
    method would be too slow or would give overflow.
-   */   
+   */
    int32_t fak, addd;                  // used for undoing transformations
    int32_t x;                          // result
 
@@ -858,7 +858,7 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
       x = FishersNCHypRatioOfUnifoms (n, m, N, odds);
    }
 
-   // undo symmetry transformations  
+   // undo symmetry transformations
    return x * fak + addd;
 }
 
@@ -867,23 +867,23 @@ Subfunctions used by FishersNCHyp
 ***********************************************************************/
 
 int32_t StochasticLib3::FishersNCHypInversion (int32_t n, int32_t m, int32_t N, double odds) {
-   /* 
+   /*
    Subfunction for FishersNCHyp distribution.
-   Implements Fisher's noncentral hypergeometric distribution by inversion 
+   Implements Fisher's noncentral hypergeometric distribution by inversion
    method, using chop-down search starting at zero.
 
    Valid only for 0 <= n <= m <= N/2.
    Without overflow check the parameters must be limited to n < 30, N < 1024,
-   and 1.E-5 < odds < 1.E5. This limitation is acceptable because this method 
+   and 1.E-5 < odds < 1.E5. This limitation is acceptable because this method
    is slow for higher n.
 
    The execution time of this function grows with n.
 
    See the file nchyp.pdf for theoretical explanation.
-   */ 
+   */
    int32_t x;                          // x value
    int32_t L;                          // derived parameter
-   double f;                           // scaled function value 
+   double f;                           // scaled function value
    double sum;                         // scaled sum of function values
    double a1, a2, b1, b2, f1, f2;      // factors in recursive calculation
    double u;                           // uniform random variate
@@ -941,15 +941,15 @@ int32_t StochasticLib3::FishersNCHypInversion (int32_t n, int32_t m, int32_t N, 
 }
 
 int32_t StochasticLib3::FishersNCHypRatioOfUnifoms (int32_t n, int32_t m, int32_t N, double odds) {
-   /* 
-   Subfunction for FishersNCHyp distribution. 
+   /*
+   Subfunction for FishersNCHyp distribution.
    Valid for 0 <= n <= m <= N/2, odds != 1
 
-   Fisher's noncentral hypergeometric distribution by ratio-of-uniforms 
+   Fisher's noncentral hypergeometric distribution by ratio-of-uniforms
    rejection method.
 
    The execution time of this function is almost independent of the parameters.
-   */ 
+   */
    int32_t L;                          // N-m-n
    int32_t mode;                       // mode
    double mean;                        // mean
@@ -1014,23 +1014,23 @@ int32_t StochasticLib3::FishersNCHypRatioOfUnifoms (int32_t n, int32_t m, int32_
 /***********************************************************************
 Multivariate Fisher's noncentral hypergeometric distribution
 ***********************************************************************/
-void StochasticLib3::MultiFishersNCHyp (int32_t * destination, 
+void StochasticLib3::MultiFishersNCHyp (int32_t * destination,
 int32_t * source, double * weights, int32_t n, int colors) {
    /*
-   This function generates a vector of random variates with the 
+   This function generates a vector of random variates with the
    multivariate Fisher's noncentral hypergeometric distribution.
 
-   This distribution is defined as the conditional distribution of 'colors' 
-   independent binomial variates 
-   x[i] = binomial(source[i], p[i]) 
+   This distribution is defined as the conditional distribution of 'colors'
+   independent binomial variates
+   x[i] = binomial(source[i], p[i])
    on the condition that the sum of all x[i] is n.
    p[i] = r * weights[i] / (1 + r * weights[i]),
    r is an arbitrary scale factor.
 
    Parameters:
-   destination:    An output array to receive the number of balls of each 
+   destination:    An output array to receive the number of balls of each
    color. Must have space for at least 'colors' elements.
-   source:         An input array containing the number of balls of each 
+   source:         An input array containing the number of balls of each
    color in the urn. Must have 'colors' elements.
    All elements must be non-negative.
    weights:        The odds of each color. Must have 'colors' elements.
@@ -1046,9 +1046,9 @@ int32_t * source, double * weights, int32_t n, int colors) {
    Gibbs sampler.
 
    The function will reduce the number of colors, if possible, by eliminating
-   colors with zero weight or zero number and pooling together colors with the 
+   colors with zero weight or zero number and pooling together colors with the
    same weight. A symmetry transformation is used if more than half the balls
-   are taken. The problem thus reduced is handled in the arrays osource, 
+   are taken. The problem thus reduced is handled in the arrays osource,
    oweights and osample of dimension colors2.
    */
    int order1[MAXCOLORS];              // sort order, index into source and destination
@@ -1065,7 +1065,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
    int32_t n0;                         // remaining balls to sample
    int32_t n1, n2;                     // sample size for each weight group
    double w = 0.;                      // weight or variance of items of one color
-   double w1, w2;                      // mean weight of each weight group  
+   double w1, w2;                      // mean weight of each weight group
    double wsum;                        // total weight of all items of several or all colors
    double odds;                        // weight ratio
    int i, j, k;                        // loop counters
@@ -1141,7 +1141,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
    }
    colors2 = c2 + 1;
 
-   // simple cases  
+   // simple cases
    if (colors2 == 1) osample[0] = n;
    if (colors2 == 2) {
       x = FishersNCHyp(n, osource[0], msum, oweights[0]/oweights[1]);
@@ -1153,7 +1153,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
       a = 0;  b = colors2-1;
       w = sqrt(oweights[0] * oweights[colors2-1]);
       do {
-         c = (a + b) / 2; 
+         c = (a + b) / 2;
          if (oweights[c] > w) a = c; else b = c;
       }
       while (b > a + 1);
@@ -1180,8 +1180,8 @@ int32_t * source, double * weights, int32_t n, int colors) {
       for (k=0; k < 2; k++) {
 
          // split group into single colors by calling FishersNCHyp b-a-1 times
-         for (i = a; i < b-1; i++) { 
-            m = osource[i];  w = oweights[i];    
+         for (i = a; i < b-1; i++) {
+            m = osource[i];  w = oweights[i];
 
             // calculate mean weight of remaining colors
             for (j=i+1, msum=0, wsum=0; j < b; j++) {
@@ -1192,7 +1192,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
             if (w == w1) {
                x = Hypergeometric(n0, m, msum + m);
             }
-            else {      
+            else {
                if (wsum == 0) {
                   x = n0;
                }
@@ -1213,7 +1213,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
       }
 
       // calculate variance
-      CMultiFishersNCHypergeometric(n, osource, oweights, colors2).variance(var); 
+      CMultiFishersNCHypergeometric(n, osource, oweights, colors2).variance(var);
 
       // sort again, this time by variance
       for (i=0; i < colors2-1; i++) {
@@ -1255,7 +1255,7 @@ int32_t * source, double * weights, int32_t n, int colors) {
    // un-sort sample into destination
    for (i=0; i < colors; i++) {
       c1 = order1[i];  c2 = order2[i];
-      if (source[c1] == osource[c2]) {    
+      if (source[c1] == osource[c2]) {
          destination[c1] = osample[c2];
       }
       else {
@@ -1266,4 +1266,3 @@ int32_t * source, double * weights, int32_t n, int colors) {
       }
    }
 }
-

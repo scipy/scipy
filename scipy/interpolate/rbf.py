@@ -49,7 +49,7 @@ from scipy import linalg
 from scipy.special import xlogy
 from scipy.spatial.distance import cdist, pdist, squareform
 
-__all__ = ['Rbf']
+__all__ = ["Rbf"]
 
 
 class Rbf:
@@ -144,36 +144,39 @@ class Rbf:
     (20,)
 
     """
+
     # Available radial basis functions that can be selected as strings;
     # they all start with _h_ (self._init_function relies on that)
     def _h_multiquadric(self, r):
-        return np.sqrt((1.0/self.epsilon*r)**2 + 1)
+        return np.sqrt((1.0 / self.epsilon * r) ** 2 + 1)
 
     def _h_inverse_multiquadric(self, r):
-        return 1.0/np.sqrt((1.0/self.epsilon*r)**2 + 1)
+        return 1.0 / np.sqrt((1.0 / self.epsilon * r) ** 2 + 1)
 
     def _h_gaussian(self, r):
-        return np.exp(-(1.0/self.epsilon*r)**2)
+        return np.exp(-((1.0 / self.epsilon * r) ** 2))
 
     def _h_linear(self, r):
         return r
 
     def _h_cubic(self, r):
-        return r**3
+        return r ** 3
 
     def _h_quintic(self, r):
-        return r**5
+        return r ** 5
 
     def _h_thin_plate(self, r):
-        return xlogy(r**2, r)
+        return xlogy(r ** 2, r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):
         if isinstance(self.function, str):
             self.function = self.function.lower()
-            _mapped = {'inverse': 'inverse_multiquadric',
-                       'inverse multiquadric': 'inverse_multiquadric',
-                       'thin-plate': 'thin_plate'}
+            _mapped = {
+                "inverse": "inverse_multiquadric",
+                "inverse multiquadric": "inverse_multiquadric",
+                "thin-plate": "thin_plate",
+            }
             if self.function in _mapped:
                 self.function = _mapped[self.function]
 
@@ -181,22 +184,22 @@ class Rbf:
             if hasattr(self, func_name):
                 self._function = getattr(self, func_name)
             else:
-                functionlist = [x[3:] for x in dir(self)
-                                if x.startswith('_h_')]
-                raise ValueError("function must be a callable or one of " +
-                                 ", ".join(functionlist))
-            self._function = getattr(self, "_h_"+self.function)
+                functionlist = [x[3:] for x in dir(self) if x.startswith("_h_")]
+                raise ValueError(
+                    "function must be a callable or one of " + ", ".join(functionlist)
+                )
+            self._function = getattr(self, "_h_" + self.function)
         elif callable(self.function):
             allow_one = False
-            if hasattr(self.function, 'func_code') or \
-               hasattr(self.function, '__code__'):
+            if hasattr(self.function, "func_code") or hasattr(
+                self.function, "__code__"
+            ):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "__call__"):
                 val = self.function.__call__.__func__
             else:
-                raise ValueError("Cannot determine number of arguments to "
-                                 "function")
+                raise ValueError("Cannot determine number of arguments to function")
 
             argcount = val.__code__.co_argcount
             if allow_one and argcount == 1:
@@ -204,13 +207,13 @@ class Rbf:
             elif argcount == 2:
                 self._function = self.function.__get__(self, Rbf)
             else:
-                raise ValueError("Function argument must take 1 or 2 "
-                                 "arguments.")
+                raise ValueError("Function argument must take 1 or 2 arguments.")
 
         a0 = self._function(r)
         if a0.shape != r.shape:
-            raise ValueError("Callable must take array and return array of "
-                             "the same shape")
+            raise ValueError(
+                "Callable must take array and return array of the same shape"
+            )
         return a0
 
     def __init__(self, *args, **kwargs):
@@ -218,16 +221,17 @@ class Rbf:
         # them as a single 2-D array `xi` of shape (n_args-1, array_size),
         # plus a 1-D array `di` for the values.
         # All arrays must have the same number of elements
-        self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
-                              for a in args[:-1]])
+        self.xi = np.asarray(
+            [np.asarray(a, dtype=np.float_).flatten() for a in args[:-1]]
+        )
         self.N = self.xi.shape[-1]
 
-        self.mode = kwargs.pop('mode', '1-D')
+        self.mode = kwargs.pop("mode", "1-D")
 
-        if self.mode == '1-D':
+        if self.mode == "1-D":
             self.di = np.asarray(args[-1]).flatten()
             self._target_dim = 1
-        elif self.mode == 'N-D':
+        elif self.mode == "N-D":
             self.di = np.asarray(args[-1])
             self._target_dim = self.di.shape[-1]
         else:
@@ -236,8 +240,8 @@ class Rbf:
         if not all([x.size == self.di.shape[0] for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
 
-        self.norm = kwargs.pop('norm', 'euclidean')
-        self.epsilon = kwargs.pop('epsilon', None)
+        self.norm = kwargs.pop("norm", "euclidean")
+        self.epsilon = kwargs.pop("epsilon", None)
         if self.epsilon is None:
             # default epsilon is the "the average distance between nodes" based
             # on a bounding hypercube
@@ -245,10 +249,10 @@ class Rbf:
             ximin = np.amin(self.xi, axis=1)
             edges = ximax - ximin
             edges = edges[np.nonzero(edges)]
-            self.epsilon = np.power(np.prod(edges)/self.N, 1.0/edges.size)
+            self.epsilon = np.power(np.prod(edges) / self.N, 1.0 / edges.size)
 
-        self.smooth = kwargs.pop('smooth', 0.0)
-        self.function = kwargs.pop('function', 'multiquadric')
+        self.smooth = kwargs.pop("smooth", 0.0)
+        self.function = kwargs.pop("function", "multiquadric")
 
         # attach anything left in kwargs to self for use by any user-callable
         # function or to save on the object returned.
@@ -270,7 +274,7 @@ class Rbf:
         # this only exists for backwards compatibility: self.A was available
         # and, at least technically, public.
         r = squareform(pdist(self.xi.T, self.norm))  # Pairwise norm
-        return self._init_function(r) - np.eye(self.N)*self.smooth
+        return self._init_function(r) - np.eye(self.N) * self.smooth
 
     def _call_norm(self, x1, x2):
         return cdist(x1.T, x2.T, self.norm)

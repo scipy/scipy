@@ -8,7 +8,7 @@ subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
     ! A is a band matrix of order n with kl subdiagonals and ku superdiagonals
     ! starting at kl-th row.
     ! X, B are n-by-nrhs matrices
- 
+
     callstatement {F_INT i=2*kl+ku+1;(*f2py_func)(&n,&kl,&ku,&nrhs,ab,&i,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
     callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
     integer depend(ab),intent(hide):: n = shape(ab,1)
@@ -23,7 +23,7 @@ subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
     intent(in,out,copy,out=lub) ab
 
 end subroutine <prefix>gbsv
-   
+
 subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info)
     ! in :Band:dgbtrf.f
     ! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
@@ -57,7 +57,7 @@ subroutine <prefix>gbtrs(ab,kl,ku,b,ipiv,trans,n,nrhs,ldab,ldb,info) ! in :Band:
     !  0  = 'N':  A * X =B  (No transpose)
     !  1  = 'T':  A'* X = B  (Transpose)
     !  2  = 'C':  A'* X = B  (Conjugate transpose = Transpose)
-    
+
     callstatement {F_INT i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)((trans>0?(trans==1?"T":"C"):"N"),&n,&kl,&ku,&nrhs,ab,&ldab,ipiv,b,&ldb,&info);for(i=0;i\<n;--ipiv[i++]);}
     callprotoargument char*,F_INT*,F_INT *,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
     !character optional:: trans='N'

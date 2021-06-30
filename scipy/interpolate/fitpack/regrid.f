@@ -350,4 +350,3 @@ c  we partition the working space and determine the spline approximation
      * iwrk(knry),iwrk(kndx),iwrk(kndy),wrk(lww),jwrk,ier)
   70  return
       end
-

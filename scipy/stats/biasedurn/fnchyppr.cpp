@@ -9,16 +9,16 @@
 * Calculation of univariate and multivariate Fisher's noncentral hypergeometric
 * probability distribution.
 *
-* This file contains source code for the class CFishersNCHypergeometric 
+* This file contains source code for the class CFishersNCHypergeometric
 * and CMultiFishersNCHypergeometric defined in stocc.h.
 *
 * Documentation:
 * ==============
 * The file stocc.h contains class definitions.
-* The file ran-instructions.pdf contains further documentation and 
+* The file ran-instructions.pdf contains further documentation and
 * instructions.
 *
-* Copyright 2002-2014 by Agner Fog. 
+* Copyright 2002-2014 by Agner Fog.
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *****************************************************************************/
 
@@ -55,22 +55,22 @@ int32_t CFishersNCHypergeometric::mode(void) {
    // Find mode (exact)
    // Uses the method of Liao and Rosen, The American Statistician, vol 55,
    // no 4, 2001, p. 366-369.
-   // Note that there is an error in Liao and Rosen's formula. 
-   // Replace sgn(b) with -1 in Liao and Rosen's formula. 
+   // Note that there is an error in Liao and Rosen's formula.
+   // Replace sgn(b) with -1 in Liao and Rosen's formula.
 
    double A, B, C, D;                  // coefficients for quadratic equation
    double x;                           // mode
    int32_t L = m + n - N;
    int32_t m1 = m+1, n1 = n+1;
 
-   if (odds == 1.) { 
+   if (odds == 1.) {
       // simple hypergeometric
       x = (m + 1.) * (n + 1.) / (N + 2.);
    }
    else {
       // calculate analogously to Cornfield mean
       A = 1. - odds;
-      B = (m1+n1)*odds - L; 
+      B = (m1+n1)*odds - L;
       C = -(double)m1*n1*odds;
       D = B*B -4*A*C;
       D = D > 0. ? sqrt(D) : 0.;
@@ -90,7 +90,7 @@ double CFishersNCHypergeometric::mean(void) {
       return double(m)*n/N;
    }
    // calculate Cornfield mean
-   a = (m+n)*odds + (N-m-n); 
+   a = (m+n)*odds + (N-m-n);
    b = a*a - 4.*odds*(odds-1.)*m*n;
    b = b > 0. ? sqrt(b) : 0.;
    mean = (a-b)/(2.*(odds-1.));
@@ -99,7 +99,7 @@ double CFishersNCHypergeometric::mean(void) {
 
 
 double CFishersNCHypergeometric::variance(void) {
-   // find approximate variance (poor approximation)    
+   // find approximate variance (poor approximation)
    double my = mean(); // approximate mean
    // find approximate variance from Fisher's noncentral hypergeometric approximation
    double r1 = my * (m-my); double r2 = (n-my)*(my+N-n-m);
@@ -159,7 +159,7 @@ double CFishersNCHypergeometric::probability(int32_t x) {
    }
 
    if (!rsum) {
-      // first time. calculate rsum = reciprocal of sum of proportional 
+      // first time. calculate rsum = reciprocal of sum of proportional
       // function over all probable x values
       int32_t x1, x2;                    // x loop
       double y;                        // value of proportional function
@@ -169,7 +169,7 @@ double CFishersNCHypergeometric::probability(int32_t x) {
       scale = 0.; scale = lng(x1);     // calculate scale to avoid overflow
       rsum = 1.;                       // = exp(lng(x1)) with this scale
       for (x1--; x1 >= xmin; x1--) {
-         rsum += y = exp(lng(x1));     // sum from x1 and down 
+         rsum += y = exp(lng(x1));     // sum from x1 and down
          if (y < accur) break;         // until value becomes negligible
       }
       for (; x2 <= xmax; x2++) {       // sum from x2 and up
@@ -239,13 +239,13 @@ double CFishersNCHypergeometric::MakeTable(double * table, int32_t MaxLength, in
    // is the sum, s, of all the values in the table. The normalized
    // probabilities are obtained by multiplying all values in the table by
    // 1/s.
-   // The tails are cut off where the values are < cutoff, so that 
+   // The tails are cut off where the values are < cutoff, so that
    // *xfirst may be > xmin and *xlast may be < xmax.
    // The value of cutoff will be 0.01 * accuracy if not specified.
-   // The first and last x value represented in the table are returned in 
-   // *xfirst and *xlast. The resulting probability values are returned in the 
+   // The first and last x value represented in the table are returned in
+   // *xfirst and *xlast. The resulting probability values are returned in the
    // first (*xlast - *xfirst + 1) positions of table. If this would require
-   // more than MaxLength values then the table is filled with as many 
+   // more than MaxLength values then the table is filled with as many
    // correct values as possible.
    //
    // The function will return the desired length of table when MaxLength = 0.
@@ -390,7 +390,7 @@ CMultiFishersNCHypergeometric::CMultiFishersNCHypergeometric(int32_t n_, int32_t
    int i;
    // copy parameters
    n = n_;  m = m_;  odds = odds_;  colors = colors_;  accuracy = accuracy_;
-   // check if parameters are valid 
+   // check if parameters are valid
    // (Note: there is a more thorough test for validity in the BiasedUrn package)
    for (N = N1 = 0, i = 0; i < colors; i++) {
       if (m[i] < 0 || odds[i] < 0) FatalError("Parameter negative in constructor for CMultiFishersNCHypergeometric");
@@ -486,7 +486,7 @@ double CMultiFishersNCHypergeometric::probability(int32_t * x) {
    // Note: The first-time call takes very long time because it requires
    // a calculation of all possible x combinations with probability >
    // accuracy, which may be extreme.
-   // The calculation uses logarithms to avoid overflow. 
+   // The calculation uses logarithms to avoid overflow.
    // (Recursive calculation may be faster, but this has not been implemented)
    // Note: The version in BiasedUrn package deals with unused colors
    int32_t xsum;  int i, em;
@@ -509,7 +509,7 @@ double CMultiFishersNCHypergeometric::probability(int32_t * x) {
 
 
 double CMultiFishersNCHypergeometric::moments(double * mean, double * variance, int32_t * combinations) {
-   // calculates mean and variance of the Fisher's noncentral hypergeometric 
+   // calculates mean and variance of the Fisher's noncentral hypergeometric
    // distribution by calculating all combinations of x-values with
    // probability > accuracy.
    // Return value = 1.
@@ -535,7 +535,7 @@ double CMultiFishersNCHypergeometric::moments(double * mean, double * variance, 
 void CMultiFishersNCHypergeometric::SumOfAll() {
    // this function does the very time consuming job of calculating the sum
    // of the proportional function g(x) over all possible combinations of
-   // the x[i] values with probability > accuracy. These combinations are 
+   // the x[i] values with probability > accuracy. These combinations are
    // generated by the recursive function loop().
    // The mean and variance are generated as by-products.
 
@@ -615,7 +615,7 @@ double CMultiFishersNCHypergeometric::loop(int32_t n, int c) {
    else {
       // last color
       xi[c] = n;
-      // sums and squaresums    
+      // sums and squaresums
       s1 = exp(lng(xi));               // proportional function g(x)
       for (i = 0; i < colors; i++) {   // update sums
          sx[i]  += s1 * xi[i];

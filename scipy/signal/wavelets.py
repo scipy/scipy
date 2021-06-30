@@ -3,7 +3,7 @@ from scipy.linalg import eig
 from scipy.special import comb
 from scipy.signal import convolve
 
-__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt']
+__all__ = ["daub", "qmf", "cascade", "morlet", "ricker", "morlet2", "cwt"]
 
 
 def daub(p):
@@ -42,20 +42,24 @@ def daub(p):
         d0 = np.real((1 - z1) * (1 - z1c))
         a0 = np.real(z1 * z1c)
         a1 = 2 * np.real(z1)
-        return f / d0 * np.array([a0, 3 * a0 - a1, 3 * a0 - 3 * a1 + 1,
-                                  a0 - 3 * a1 + 3, 3 - a1, 1])
+        return (
+            f
+            / d0
+            * np.array(
+                [a0, 3 * a0 - a1, 3 * a0 - 3 * a1 + 1, a0 - 3 * a1 + 3, 3 - a1, 1]
+            )
+        )
     elif p < 35:
         # construct polynomial and factor it
         if p < 35:
             P = [comb(p - 1 + k, k, exact=1) for k in range(p)][::-1]
             yj = np.roots(P)
         else:  # try different polynomial --- needs work
-            P = [comb(p - 1 + k, k, exact=1) / 4.0**k
-                 for k in range(p)][::-1]
+            P = [comb(p - 1 + k, k, exact=1) / 4.0 ** k for k in range(p)][::-1]
             yj = np.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
-        c = np.poly1d([1, 1])**p
+        c = np.poly1d([1, 1]) ** p
         q = np.poly1d([1])
         for k in range(p - 1):
             yval = yj[k]
@@ -71,8 +75,7 @@ def daub(p):
         q = q / np.sum(q) * sqrt(2)
         return q.c[::-1]
     else:
-        raise ValueError("Polynomial factorization does not work "
-                         "well for p too large.")
+        raise ValueError("Polynomial factorization does not work well for p too large.")
 
 
 def qmf(hk):
@@ -124,9 +127,9 @@ def cascade(hk, J=7):
     """
     N = len(hk) - 1
 
-    if (J > 30 - np.log2(N + 1)):
+    if J > 30 - np.log2(N + 1):
         raise ValueError("Too many levels.")
-    if (J < 1):
+    if J < 1:
         raise ValueError("Too few levels.")
 
     # construct matrices needed
@@ -139,7 +142,7 @@ def cascade(hk, J=7):
 
     indx1 = np.clip(2 * nn - kk, -1, N + 1)
     indx2 = np.clip(2 * nn - kk + 1, -1, N + 1)
-    m = np.empty((2, 2, N, N), 'd')
+    m = np.empty((2, 2, N, N), "d")
     m[0, 0] = np.take(thk, indx1, 0)
     m[0, 1] = np.take(thk, indx2, 0)
     m[1, 0] = np.take(tgk, indx1, 0)
@@ -164,33 +167,33 @@ def cascade(hk, J=7):
     if sm < 0:  # need scaling function to integrate to 1
         v = -v
         sm = -sm
-    bitdic = {'0': v / sm}
-    bitdic['1'] = np.dot(m[0, 1], bitdic['0'])
+    bitdic = {"0": v / sm}
+    bitdic["1"] = np.dot(m[0, 1], bitdic["0"])
     step = 1 << J
-    phi[::step] = bitdic['0']
-    phi[(1 << (J - 1))::step] = bitdic['1']
-    psi[::step] = np.dot(m[1, 0], bitdic['0'])
-    psi[(1 << (J - 1))::step] = np.dot(m[1, 1], bitdic['0'])
+    phi[::step] = bitdic["0"]
+    phi[(1 << (J - 1)) :: step] = bitdic["1"]
+    psi[::step] = np.dot(m[1, 0], bitdic["0"])
+    psi[(1 << (J - 1)) :: step] = np.dot(m[1, 1], bitdic["0"])
     # descend down the levels inserting more and more values
     #  into bitdic -- store the values in the correct location once we
     #  have computed them -- stored in the dictionary
     #  for quicker use later.
-    prevkeys = ['1']
+    prevkeys = ["1"]
     for level in range(2, J + 1):
-        newkeys = ['%d%s' % (xx, yy) for xx in [0, 1] for yy in prevkeys]
+        newkeys = ["%d%s" % (xx, yy) for xx in [0, 1] for yy in prevkeys]
         fac = 1 << (J - level)
         for key in newkeys:
             # convert key to number
             num = 0
             for pos in range(level):
-                if key[pos] == '1':
-                    num += (1 << (level - 1 - pos))
+                if key[pos] == "1":
+                    num += 1 << (level - 1 - pos)
             pastphi = bitdic[key[1:]]
             ii = int(key[0])
             temp = np.dot(m[0, ii], pastphi)
             bitdic[key] = temp
-            phi[num * fac::step] = temp
-            psi[num * fac::step] = np.dot(m[1, ii], pastphi)
+            phi[num * fac :: step] = temp
+            psi[num * fac :: step] = np.dot(m[1, ii], pastphi)
         prevkeys = newkeys
 
     return x, phi, psi
@@ -252,9 +255,9 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output = np.exp(1j * w * x)
 
     if complete:
-        output -= np.exp(-0.5 * (w**2))
+        output -= np.exp(-0.5 * (w ** 2))
 
-    output *= np.exp(-0.5 * (x**2)) * np.pi**(-0.25)
+    output *= np.exp(-0.5 * (x ** 2)) * np.pi ** (-0.25)
 
     return output
 
@@ -296,11 +299,11 @@ def ricker(points, a):
     >>> plt.show()
 
     """
-    A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
-    wsq = a**2
+    A = 2 / (np.sqrt(3 * a) * (np.pi ** 0.25))
+    wsq = a ** 2
     vec = np.arange(0, points) - (points - 1.0) / 2
-    xsq = vec**2
-    mod = (1 - xsq / wsq)
+    xsq = vec ** 2
+    mod = 1 - xsq / wsq
     gauss = np.exp(-xsq / (2 * wsq))
     total = A * mod * gauss
     return total
@@ -381,8 +384,8 @@ def morlet2(M, s, w=5):
     """
     x = np.arange(0, M) - (M - 1.0) / 2
     x = x / s
-    wavelet = np.exp(1j * w * x) * np.exp(-0.5 * x**2) * np.pi**(-0.25)
-    output = np.sqrt(1/s) * wavelet
+    wavelet = np.exp(1j * w * x) * np.exp(-0.5 * x ** 2) * np.pi ** (-0.25)
+    output = np.sqrt(1 / s) * wavelet
     return output
 
 
@@ -457,10 +460,10 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     >>> plt.show()
     """
     if wavelet == ricker:
-        window_size = kwargs.pop('window_size', None)
+        window_size = kwargs.pop("window_size", None)
     # Determine output type
     if dtype is None:
-        if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in 'FDG':
+        if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in "FDG":
             dtype = np.complex128
         else:
             dtype = np.float64
@@ -477,5 +480,5 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
             if ceil != N:
                 N = int(N)
         wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
-        output[ind] = convolve(data, wavelet_data, mode='same')
+        output[ind] = convolve(data, wavelet_data, mode="same")
     return output

@@ -12,6 +12,7 @@ class _ScipyBackend:
     can install a single backend for ``numpy`` and have it implement
     ``numpy.scipy.fft`` as well.
     """
+
     __ua_domain__ = "numpy.scipy.fft"
 
     @staticmethod
@@ -24,7 +25,7 @@ class _ScipyBackend:
 
 
 _named_backends = {
-    'scipy': _ScipyBackend,
+    "scipy": _ScipyBackend,
 }
 
 
@@ -35,9 +36,9 @@ def _backend_from_arg(backend):
         try:
             backend = _named_backends[backend]
         except KeyError as e:
-            raise ValueError('Unknown backend {}'.format(backend)) from e
+            raise ValueError("Unknown backend {}".format(backend)) from e
 
-    if backend.__ua_domain__ != 'numpy.scipy.fft':
+    if backend.__ua_domain__ != "numpy.scipy.fft":
         raise ValueError('Backend does not implement "numpy.scipy.fft"')
 
     return backend
@@ -177,4 +178,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy')
+set_global_backend("scipy")

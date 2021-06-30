@@ -30,8 +30,7 @@ class Qing(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = list(zip([-500.0] * self.N,
-                           [500.0] * self.N))
+        self._bounds = list(zip([-500.0] * self.N, [500.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
         self.global_optimum = [[sqrt(_) for _ in range(1, self.N + 1)]]
         self.fglob = 0
@@ -80,8 +79,14 @@ class Quadratic(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (-3803.84 - 138.08 * x[0] - 232.92 * x[1] + 128.08 * x[0] ** 2.0
-                + 203.64 * x[1] ** 2.0 + 182.25 * x[0] * x[1])
+        return (
+            -3803.84
+            - 138.08 * x[0]
+            - 232.92 * x[1]
+            + 128.08 * x[0] ** 2.0
+            + 203.64 * x[1] ** 2.0
+            + 182.25 * x[0] * x[1]
+        )
 
 
 class Quintic(Benchmark):
@@ -121,5 +126,4 @@ class Quintic(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return sum(abs(x ** 5 - 3 * x ** 4 + 4 * x ** 3 + 2 * x ** 2
-                       - 10 * x - 4))
+        return sum(abs(x ** 5 - 3 * x ** 4 + 4 * x ** 3 + 2 * x ** 2 - 10 * x - 4))

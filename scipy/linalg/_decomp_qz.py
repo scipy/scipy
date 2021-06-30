@@ -6,75 +6,87 @@ from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
 
-__all__ = ['qz', 'ordqz']
+__all__ = ["qz", "ordqz"]
 
-_double_precision = ['i', 'l', 'd']
+_double_precision = ["i", "l", "d"]
 
 
 def _select_function(sort):
     if callable(sort):
         # assume the user knows what they're doing
         sfunction = sort
-    elif sort == 'lhp':
+    elif sort == "lhp":
         sfunction = _lhp
-    elif sort == 'rhp':
+    elif sort == "rhp":
         sfunction = _rhp
-    elif sort == 'iuc':
+    elif sort == "iuc":
         sfunction = _iuc
-    elif sort == 'ouc':
+    elif sort == "ouc":
         sfunction = _ouc
     else:
-        raise ValueError("sort parameter must be None, a callable, or "
-                         "one of ('lhp','rhp','iuc','ouc')")
+        raise ValueError(
+            "sort parameter must be None, a callable, or "
+            "one of ('lhp','rhp','iuc','ouc')"
+        )
 
     return sfunction
 
 
 def _lhp(x, y):
     out = np.empty_like(x, dtype=bool)
-    nonzero = (y != 0)
+    nonzero = y != 0
     # handles (x, y) = (0, 0) too
     out[~nonzero] = False
-    out[nonzero] = (np.real(x[nonzero]/y[nonzero]) < 0.0)
+    out[nonzero] = np.real(x[nonzero] / y[nonzero]) < 0.0
     return out
 
 
 def _rhp(x, y):
     out = np.empty_like(x, dtype=bool)
-    nonzero = (y != 0)
+    nonzero = y != 0
     # handles (x, y) = (0, 0) too
     out[~nonzero] = False
-    out[nonzero] = (np.real(x[nonzero]/y[nonzero]) > 0.0)
+    out[nonzero] = np.real(x[nonzero] / y[nonzero]) > 0.0
     return out
 
 
 def _iuc(x, y):
     out = np.empty_like(x, dtype=bool)
-    nonzero = (y != 0)
+    nonzero = y != 0
     # handles (x, y) = (0, 0) too
     out[~nonzero] = False
-    out[nonzero] = (abs(x[nonzero]/y[nonzero]) < 1.0)
+    out[nonzero] = abs(x[nonzero] / y[nonzero]) < 1.0
     return out
 
 
 def _ouc(x, y):
     out = np.empty_like(x, dtype=bool)
-    xzero = (x == 0)
-    yzero = (y == 0)
+    xzero = x == 0
+    yzero = y == 0
     out[xzero & yzero] = False
     out[~xzero & yzero] = True
-    out[~yzero] = (abs(x[~yzero]/y[~yzero]) > 1.0)
+    out[~yzero] = abs(x[~yzero] / y[~yzero]) > 1.0
     return out
 
 
-def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
-        overwrite_b=False, check_finite=True):
+def _qz(
+    A,
+    B,
+    output="real",
+    lwork=None,
+    sort=None,
+    overwrite_a=False,
+    overwrite_b=False,
+    check_finite=True,
+):
     if sort is not None:
         # Disabled due to segfaults on win32, see ticket 1717.
-        raise ValueError("The 'sort' input of qz() has to be None and will be "
-                         "removed in a future release. Use ordqz instead.")
+        raise ValueError(
+            "The 'sort' input of qz() has to be None and will be "
+            "removed in a future release. Use ordqz instead."
+        )
 
-    if output not in ['real', 'complex', 'r', 'c']:
+    if output not in ["real", "complex", "r", "c"]:
         raise ValueError("argument must be 'real', or 'complex'")
 
     if check_finite:
@@ -90,26 +102,26 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Array dimensions must be square and agree")
 
     typa = a1.dtype.char
-    if output in ['complex', 'c'] and typa not in ['F', 'D']:
+    if output in ["complex", "c"] and typa not in ["F", "D"]:
         if typa in _double_precision:
-            a1 = a1.astype('D')
-            typa = 'D'
+            a1 = a1.astype("D")
+            typa = "D"
         else:
-            a1 = a1.astype('F')
-            typa = 'F'
+            a1 = a1.astype("F")
+            typa = "F"
     typb = b1.dtype.char
-    if output in ['complex', 'c'] and typb not in ['F', 'D']:
+    if output in ["complex", "c"] and typb not in ["F", "D"]:
         if typb in _double_precision:
-            b1 = b1.astype('D')
-            typb = 'D'
+            b1 = b1.astype("D")
+            typb = "D"
         else:
-            b1 = b1.astype('F')
-            typb = 'F'
+            b1 = b1.astype("F")
+            typb = "F"
 
     overwrite_a = overwrite_a or (_datacopied(a1, A))
     overwrite_b = overwrite_b or (_datacopied(b1, B))
 
-    gges, = get_lapack_funcs(('gges',), (a1, b1))
+    (gges,) = get_lapack_funcs(("gges",), (a1, b1))
 
     if lwork is None or lwork == -1:
         # get optimal work array size
@@ -117,32 +129,52 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         lwork = result[-2][0].real.astype(np.int_)
 
     sfunction = lambda x: None
-    result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
-                  overwrite_b=overwrite_b, sort_t=0)
+    result = gges(
+        sfunction,
+        a1,
+        b1,
+        lwork=lwork,
+        overwrite_a=overwrite_a,
+        overwrite_b=overwrite_b,
+        sort_t=0,
+    )
 
     info = result[-1]
     if info < 0:
         raise ValueError("Illegal value in argument {} of gges".format(-info))
     elif info > 0 and info <= a_n:
-        warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
-                      "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
-                      "correct for J={},...,N".format(info-1), LinAlgWarning,
-                      stacklevel=3)
-    elif info == a_n+1:
+        warnings.warn(
+            "The QZ iteration failed. (a,b) are not in Schur "
+            "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
+            "correct for J={},...,N".format(info - 1),
+            LinAlgWarning,
+            stacklevel=3,
+        )
+    elif info == a_n + 1:
         raise LinAlgError("Something other than QZ iteration failed")
-    elif info == a_n+2:
-        raise LinAlgError("After reordering, roundoff changed values of some "
-                          "complex eigenvalues so that leading eigenvalues "
-                          "in the Generalized Schur form no longer satisfy "
-                          "sort=True. This could also be due to scaling.")
-    elif info == a_n+3:
+    elif info == a_n + 2:
+        raise LinAlgError(
+            "After reordering, roundoff changed values of some "
+            "complex eigenvalues so that leading eigenvalues "
+            "in the Generalized Schur form no longer satisfy "
+            "sort=True. This could also be due to scaling."
+        )
+    elif info == a_n + 3:
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")
 
     return result, gges.typecode
 
 
-def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
-       overwrite_b=False, check_finite=True):
+def qz(
+    A,
+    B,
+    output="real",
+    lwork=None,
+    sort=None,
+    overwrite_a=False,
+    overwrite_b=False,
+    check_finite=True,
+):
     """
     QZ decomposition for generalized eigenvalues of a pair of matrices.
 
@@ -255,14 +287,28 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     # AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
     # output for complex
     # AA, BB, sdim, alpha, beta, vsl, vsr, work, info
-    result, _ = _qz(A, B, output=output, lwork=lwork, sort=sort,
-                    overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                    check_finite=check_finite)
+    result, _ = _qz(
+        A,
+        B,
+        output=output,
+        lwork=lwork,
+        sort=sort,
+        overwrite_a=overwrite_a,
+        overwrite_b=overwrite_b,
+        check_finite=check_finite,
+    )
     return result[0], result[1], result[-4], result[-3]
 
 
-def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
-          overwrite_b=False, check_finite=True):
+def ordqz(
+    A,
+    B,
+    sort="lhp",
+    output="real",
+    overwrite_a=False,
+    overwrite_b=False,
+    check_finite=True,
+):
     """QZ decomposition for a pair of matrices with reordering.
 
     Parameters
@@ -350,43 +396,50 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     array([ True,  True, False, False], dtype=bool)
 
     """
-    (AA, BB, _, *ab, Q, Z, _, _), typ = _qz(A, B, output=output, sort=None,
-                                            overwrite_a=overwrite_a,
-                                            overwrite_b=overwrite_b,
-                                            check_finite=check_finite)
+    (AA, BB, _, *ab, Q, Z, _, _), typ = _qz(
+        A,
+        B,
+        output=output,
+        sort=None,
+        overwrite_a=overwrite_a,
+        overwrite_b=overwrite_b,
+        check_finite=check_finite,
+    )
 
-    if typ == 's':
-        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
-    elif typ == 'd':
-        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
+    if typ == "s":
+        alpha, beta = ab[0] + ab[1] * np.complex64(1j), ab[2]
+    elif typ == "d":
+        alpha, beta = ab[0] + ab[1] * 1.0j, ab[2]
     else:
         alpha, beta = ab
 
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
-    tgsen = get_lapack_funcs('tgsen', (AA, BB))
+    tgsen = get_lapack_funcs("tgsen", (AA, BB))
     # the real case needs 4n + 16 lwork
-    lwork = 4*AA.shape[0] + 16 if typ in 'sd' else 1
-    AAA, BBB, *ab, QQ, ZZ, _, _, _, _, info = tgsen(select, AA, BB, Q, Z,
-                                                    ijob=0,
-                                                    lwork=lwork, liwork=1)
+    lwork = 4 * AA.shape[0] + 16 if typ in "sd" else 1
+    AAA, BBB, *ab, QQ, ZZ, _, _, _, _, info = tgsen(
+        select, AA, BB, Q, Z, ijob=0, lwork=lwork, liwork=1
+    )
 
     # Once more for tgsen output
-    if typ == 's':
-        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
-    elif typ == 'd':
-        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
+    if typ == "s":
+        alpha, beta = ab[0] + ab[1] * np.complex64(1j), ab[2]
+    elif typ == "d":
+        alpha, beta = ab[0] + ab[1] * 1.0j, ab[2]
     else:
         alpha, beta = ab
 
     if info < 0:
         raise ValueError(f"Illegal value in argument {-info} of tgsen")
     elif info == 1:
-        raise ValueError("Reordering of (A, B) failed because the transformed"
-                         " matrix pair (A, B) would be too far from "
-                         "generalized Schur form; the problem is very "
-                         "ill-conditioned. (A, B) may have been partially "
-                         "reordered.")
+        raise ValueError(
+            "Reordering of (A, B) failed because the transformed"
+            " matrix pair (A, B) would be too far from "
+            "generalized Schur form; the problem is very "
+            "ill-conditioned. (A, B) may have been partially "
+            "reordered."
+        )
 
     return AAA, BBB, alpha, beta, QQ, ZZ

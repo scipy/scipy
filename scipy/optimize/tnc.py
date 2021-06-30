@@ -33,13 +33,17 @@ value of the function, and whose second argument is the gradient of the function
 """
 
 from scipy.optimize import moduleTNC
-from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function)
+from .optimize import (
+    MemoizeJac,
+    OptimizeResult,
+    _check_unknown_options,
+    _prepare_scalar_function,
+)
 from ._constraints import old_bound_to_new
 
 from numpy import inf, array, zeros, asfarray
 
-__all__ = ['fmin_tnc']
+__all__ = ["fmin_tnc"]
 
 
 MSG_NONE = 0  # No messages
@@ -50,12 +54,12 @@ MSG_EXIT = 8  # Exit reasons
 MSG_ALL = MSG_ITER + MSG_INFO + MSG_VERS + MSG_EXIT
 
 MSGS = {
-        MSG_NONE: "No messages",
-        MSG_ITER: "One line per iteration",
-        MSG_INFO: "Informational messages",
-        MSG_VERS: "Version info",
-        MSG_EXIT: "Exit reasons",
-        MSG_ALL: "All messages"
+    MSG_NONE: "No messages",
+    MSG_ITER: "One line per iteration",
+    MSG_INFO: "Informational messages",
+    MSG_VERS: "Version info",
+    MSG_EXIT: "Exit reasons",
+    MSG_ALL: "All messages",
 }
 
 INFEASIBLE = -1  # Infeasible (lower bound > upper bound)
@@ -69,26 +73,45 @@ NOPROGRESS = 6  # Unable to progress
 USERABORT = 7  # User requested end of minimization
 
 RCSTRINGS = {
-        INFEASIBLE: "Infeasible (lower bound > upper bound)",
-        LOCALMINIMUM: "Local minimum reached (|pg| ~= 0)",
-        FCONVERGED: "Converged (|f_n-f_(n-1)| ~= 0)",
-        XCONVERGED: "Converged (|x_n-x_(n-1)| ~= 0)",
-        MAXFUN: "Max. number of function evaluations reached",
-        LSFAIL: "Linear search failed",
-        CONSTANT: "All lower bounds are equal to the upper bounds",
-        NOPROGRESS: "Unable to progress",
-        USERABORT: "User requested end of minimization"
+    INFEASIBLE: "Infeasible (lower bound > upper bound)",
+    LOCALMINIMUM: "Local minimum reached (|pg| ~= 0)",
+    FCONVERGED: "Converged (|f_n-f_(n-1)| ~= 0)",
+    XCONVERGED: "Converged (|x_n-x_(n-1)| ~= 0)",
+    MAXFUN: "Max. number of function evaluations reached",
+    LSFAIL: "Linear search failed",
+    CONSTANT: "All lower bounds are equal to the upper bounds",
+    NOPROGRESS: "Unable to progress",
+    USERABORT: "User requested end of minimization",
 }
 
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
 #  SciPy
 
 
-def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
-             bounds=None, epsilon=1e-8, scale=None, offset=None,
-             messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
-             stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
-             rescale=-1, disp=None, callback=None):
+def fmin_tnc(
+    func,
+    x0,
+    fprime=None,
+    args=(),
+    approx_grad=0,
+    bounds=None,
+    epsilon=1e-8,
+    scale=None,
+    offset=None,
+    messages=MSG_ALL,
+    maxCGit=-1,
+    maxfun=None,
+    eta=-1,
+    stepmx=0,
+    accuracy=0,
+    fmin=0,
+    ftol=-1,
+    xtol=-1,
+    pgtol=-1,
+    rescale=-1,
+    disp=None,
+    callback=None,
+):
     """
     Minimize a function with variables subject to bounds, using
     gradient information in a truncated Newton algorithm. This
@@ -254,36 +277,64 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     if disp is not None:  # disp takes precedence over messages
         mesg_num = disp
     else:
-        mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
-                    4:MSG_EXIT, 5:MSG_ALL}.get(messages, MSG_ALL)
+        mesg_num = {
+            0: MSG_NONE,
+            1: MSG_ITER,
+            2: MSG_INFO,
+            3: MSG_VERS,
+            4: MSG_EXIT,
+            5: MSG_ALL,
+        }.get(messages, MSG_ALL)
     # build options
-    opts = {'eps': epsilon,
-            'scale': scale,
-            'offset': offset,
-            'mesg_num': mesg_num,
-            'maxCGit': maxCGit,
-            'maxfun': maxfun,
-            'eta': eta,
-            'stepmx': stepmx,
-            'accuracy': accuracy,
-            'minfev': fmin,
-            'ftol': ftol,
-            'xtol': xtol,
-            'gtol': pgtol,
-            'rescale': rescale,
-            'disp': False}
+    opts = {
+        "eps": epsilon,
+        "scale": scale,
+        "offset": offset,
+        "mesg_num": mesg_num,
+        "maxCGit": maxCGit,
+        "maxfun": maxfun,
+        "eta": eta,
+        "stepmx": stepmx,
+        "accuracy": accuracy,
+        "minfev": fmin,
+        "ftol": ftol,
+        "xtol": xtol,
+        "gtol": pgtol,
+        "rescale": rescale,
+        "disp": False,
+    }
 
     res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback, **opts)
 
-    return res['x'], res['nfev'], res['status']
+    return res["x"], res["nfev"], res["status"]
 
 
-def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
-                  eps=1e-8, scale=None, offset=None, mesg_num=None,
-                  maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
-                  minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
-                  callback=None, finite_diff_rel_step=None, maxfun=None,
-                  **unknown_options):
+def _minimize_tnc(
+    fun,
+    x0,
+    args=(),
+    jac=None,
+    bounds=None,
+    eps=1e-8,
+    scale=None,
+    offset=None,
+    mesg_num=None,
+    maxCGit=-1,
+    maxiter=None,
+    eta=-1,
+    stepmx=0,
+    accuracy=0,
+    minfev=0,
+    ftol=-1,
+    xtol=-1,
+    gtol=-1,
+    rescale=-1,
+    disp=False,
+    callback=None,
+    finite_diff_rel_step=None,
+    maxfun=None,
+    **unknown_options,
+):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -359,22 +410,34 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     n = len(x0)
 
     if bounds is None:
-        bounds = [(None,None)] * n
+        bounds = [(None, None)] * n
     if len(bounds) != n:
-        raise ValueError('length of x0 != length of bounds')
+        raise ValueError("length of x0 != length of bounds")
     new_bounds = old_bound_to_new(bounds)
 
     if mesg_num is not None:
-        messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
-                    4:MSG_EXIT, 5:MSG_ALL}.get(mesg_num, MSG_ALL)
+        messages = {
+            0: MSG_NONE,
+            1: MSG_ITER,
+            2: MSG_INFO,
+            3: MSG_VERS,
+            4: MSG_EXIT,
+            5: MSG_ALL,
+        }.get(mesg_num, MSG_ALL)
     elif disp:
         messages = MSG_ALL
     else:
         messages = MSG_NONE
 
-    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step,
-                                  bounds=new_bounds)
+    sf = _prepare_scalar_function(
+        fun,
+        x0,
+        jac=jac,
+        args=args,
+        epsilon=eps,
+        finite_diff_rel_step=finite_diff_rel_step,
+        bounds=new_bounds,
+    )
     func_and_grad = sf.fun_and_grad
 
     """
@@ -389,7 +452,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         if bounds[i] is None:
             l, u = -inf, inf
         else:
-            l,u = bounds[i]
+            l, u = bounds[i]
             if l is None:
                 low[i] = -inf
             else:
@@ -409,21 +472,44 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         if maxiter is not None:
             maxfun = maxiter
         else:
-            maxfun = max(100, 10*len(x0))
+            maxfun = max(100, 10 * len(x0))
 
-    rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
-                                        offset, messages, maxCGit, maxfun,
-                                        eta, stepmx, accuracy, fmin, ftol,
-                                        xtol, pgtol, rescale, callback)
+    rc, nf, nit, x = moduleTNC.minimize(
+        func_and_grad,
+        x0,
+        low,
+        up,
+        scale,
+        offset,
+        messages,
+        maxCGit,
+        maxfun,
+        eta,
+        stepmx,
+        accuracy,
+        fmin,
+        ftol,
+        xtol,
+        pgtol,
+        rescale,
+        callback,
+    )
 
     funv, jacv = func_and_grad(x)
 
-    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
-                          nit=nit, status=rc, message=RCSTRINGS[rc],
-                          success=(-1 < rc < 3))
+    return OptimizeResult(
+        x=x,
+        fun=funv,
+        jac=jacv,
+        nfev=sf.nfev,
+        nit=nit,
+        status=rc,
+        message=RCSTRINGS[rc],
+        success=(-1 < rc < 3),
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Examples for TNC
 
     def example():
@@ -431,10 +517,10 @@ if __name__ == '__main__':
 
         # A function to minimize
         def function(x):
-            f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
-            g = [0,0]
-            g[0] = 2.0*x[0]
-            g[1] = 3.0*pow(abs(x[1]),2.0)
+            f = pow(x[0], 2.0) + pow(abs(x[1]), 3.0)
+            g = [0, 0]
+            g[0] = 2.0 * x[0]
+            g[1] = 3.0 * pow(abs(x[1]), 2.0)
             if x[1] < 0:
                 g[1] = -g[1]
             return f, g

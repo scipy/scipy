@@ -5,31 +5,31 @@
 C ----------------------------------------------------------
 C     NUMERICAL SOLUTION OF A SYSTEM OF FIRST 0RDER
 C     ORDINARY DIFFERENTIAL EQUATIONS  Y'=F(X,Y).
-C     THIS IS AN EXPLICIT RUNGE-KUTTA METHOD OF ORDER 8(5,3)  
+C     THIS IS AN EXPLICIT RUNGE-KUTTA METHOD OF ORDER 8(5,3)
 C     DUE TO DORMAND & PRINCE (WITH STEPSIZE CONTROL AND
 C     DENSE OUTPUT)
 C
 C     AUTHORS: E. HAIRER AND G. WANNER
 C              UNIVERSITE DE GENEVE, DEPT. DE MATHEMATIQUES
-C              CH-1211 GENEVE 24, SWITZERLAND 
+C              CH-1211 GENEVE 24, SWITZERLAND
 C              E-MAIL:  Ernst.Hairer@math.unige.ch
 C                       Gerhard.Wanner@math.unige.ch
-C     
+C
 C     THIS CODE IS DESCRIBED IN:
 C         E. HAIRER, S.P. NORSETT AND G. WANNER, SOLVING ORDINARY
-C         DIFFERENTIAL EQUATIONS I. NONSTIFF PROBLEMS. 2ND EDITION. 
-C         SPRINGER SERIES IN COMPUTATIONAL MATHEMATICS, 
+C         DIFFERENTIAL EQUATIONS I. NONSTIFF PROBLEMS. 2ND EDITION.
+C         SPRINGER SERIES IN COMPUTATIONAL MATHEMATICS,
 C         SPRINGER-VERLAG (1993)
-C      
+C
 C     VERSION OF APRIL 25, 1996
 C     (latest correction of a small bug: August 8, 2005)
 C
 C     Edited (22 Feb 2009) by J.C. Travers:
 C       renamed HINIT->HINIT853 to avoid name collision with dopri5
 C
-C     INPUT PARAMETERS  
-C     ----------------  
-C     N           DIMENSION OF THE SYSTEM 
+C     INPUT PARAMETERS
+C     ----------------
+C     N           DIMENSION OF THE SYSTEM
 C
 C     FCN         NAME (EXTERNAL) OF SUBROUTINE COMPUTING THE
 C                 VALUE OF F(X,Y):
@@ -56,14 +56,14 @@ C                     THE CODE KEEPS THE LOCAL ERROR OF Y(I) BELOW
 C                     RTOL(I)*ABS(Y(I))+ATOL(I).
 C
 C     SOLOUT      NAME (EXTERNAL) OF SUBROUTINE PROVIDING THE
-C                 NUMERICAL SOLUTION DURING INTEGRATION. 
+C                 NUMERICAL SOLUTION DURING INTEGRATION.
 C                 IF IOUT.GE.1, IT IS CALLED AFTER EVERY SUCCESSFUL STEP.
-C                 SUPPLY A DUMMY SUBROUTINE IF IOUT=0. 
+C                 SUPPLY A DUMMY SUBROUTINE IF IOUT=0.
 C                 IT MUST HAVE THE FORM
 C                    SUBROUTINE SOLOUT (NR,XOLD,X,Y,N,CON,ICOMP,ND,
 C                                       RPAR,IPAR,IRTRN)
 C                    DIMENSION Y(N),CON(8*ND),ICOMP(ND)
-C                    ....  
+C                    ....
 C                 SOLOUT FURNISHES THE SOLUTION "Y" AT THE NR-TH
 C                    GRID-POINT "X" (THEREBY THE INITIAL VALUE IS
 C                    THE FIRST GRID-POINT).
@@ -72,7 +72,7 @@ C                 "IRTRN" SERVES TO INTERRUPT THE INTEGRATION. IF IRTRN
 C                    IS SET <0, DOP853 WILL RETURN TO THE CALLING PROGRAM.
 C                    IF THE NUMERICAL SOLUTION IS ALTERED IN SOLOUT,
 C                    SET  IRTRN = 2
-C           
+C
 C          -----  CONTINUOUS OUTPUT: -----
 C                 DURING CALLS TO "SOLOUT", A CONTINUOUS SOLUTION
 C                 FOR THE INTERVAL [XOLD,X] IS AVAILABLE THROUGH
@@ -81,7 +81,7 @@ C                        >>>   CONTD8(I,S,CON,ICOMP,ND)   <<<
 C                 WHICH PROVIDES AN APPROXIMATION TO THE I-TH
 C                 COMPONENT OF THE SOLUTION AT THE POINT S. THE VALUE
 C                 S SHOULD LIE IN THE INTERVAL [XOLD,X].
-C           
+C
 C     IOUT        SWITCH FOR CALLING THE SUBROUTINE SOLOUT:
 C                    IOUT=0: SUBROUTINE IS NEVER CALLED
 C                    IOUT=1: SUBROUTINE IS USED FOR OUTPUT
@@ -103,12 +103,12 @@ C                 "LIWORK" MUST BE AT LEAST NRDENS+21 .
 C
 C     LIWORK      DECLARED LENGTH OF ARRAY "IWORK".
 C
-C     RPAR, IPAR  REAL AND INTEGER PARAMETERS (OR PARAMETER ARRAYS) WHICH  
+C     RPAR, IPAR  REAL AND INTEGER PARAMETERS (OR PARAMETER ARRAYS) WHICH
 C                 CAN BE USED FOR COMMUNICATION BETWEEN YOUR CALLING
-C                 PROGRAM AND THE FCN, JAC, MAS, SOLOUT SUBROUTINES. 
+C                 PROGRAM AND THE FCN, JAC, MAS, SOLOUT SUBROUTINES.
 C
 C-----------------------------------------------------------------------
-C 
+C
 C     SOPHISTICATED SETTING OF PARAMETERS
 C     -----------------------------------
 C              SEVERAL PARAMETERS (WORK(1),...,IWORK(1),...) ALLOW
@@ -147,7 +147,7 @@ C
 C    IWORK(3)  SWITCH FOR PRINTING ERROR MESSAGES
 C              IF IWORK(3).LT.0 NO MESSAGES ARE BEING PRINTED
 C              IF IWORK(3).GT.0 MESSAGES ARE PRINTED WITH
-C              WRITE (IWORK(3),*) ...  
+C              WRITE (IWORK(3),*) ...
 C              DEFAULT VALUE (FOR IWORK(3)=0) IS IWORK(3)=6
 C
 C    IWORK(4)  TEST FOR STIFFNESS IS ACTIVATED AFTER STEP NUMBER
@@ -164,13 +164,13 @@ C              FOR  NRDENS=N  THIS IS DONE BY THE CODE.
 C
 C----------------------------------------------------------------------
 C
-C     OUTPUT PARAMETERS 
-C     ----------------- 
+C     OUTPUT PARAMETERS
+C     -----------------
 C     X           X-VALUE FOR WHICH THE SOLUTION HAS BEEN COMPUTED
 C                 (AFTER SUCCESSFUL RETURN X=XEND).
 C
 C     Y(N)        NUMERICAL SOLUTION AT X
-C 
+C
 C     H           PREDICTED STEP SIZE OF THE LAST ACCEPTED STEP
 C
 C     IDID        REPORTS ON SUCCESSFULNESS UPON RETURN:
@@ -188,7 +188,7 @@ C   IWORK(20)  NREJCT  NUMBER OF REJECTED STEPS (DUE TO ERROR TEST),
 C                      (STEP REJECTIONS IN THE FIRST STEP ARE NOT COUNTED)
 C-----------------------------------------------------------------------
 C *** *** *** *** *** *** *** *** *** *** *** *** ***
-C          DECLARATIONS 
+C          DECLARATIONS
 C *** *** *** *** *** *** *** *** *** *** *** *** ***
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION Y(N),ATOL(*),RTOL(*),WORK(LWORK),IWORK(LIWORK)
@@ -196,7 +196,7 @@ C *** *** *** *** *** *** *** *** *** *** *** *** ***
       LOGICAL ARRET
       EXTERNAL FCN,SOLOUT
 C *** *** *** *** *** *** ***
-C        SETTING THE PARAMETERS 
+C        SETTING THE PARAMETERS
 C *** *** *** *** *** *** ***
       NFCN=0
       NSTEP=0
@@ -209,7 +209,7 @@ C -------- IPRINT FOR MONITORING THE PRINTING
       ELSE
          IPRINT=IWORK(3)
       END IF
-C -------- NMAX , THE MAXIMAL NUMBER OF STEPS ----- 
+C -------- NMAX , THE MAXIMAL NUMBER OF STEPS -----
       IF(IWORK(1).EQ.0)THEN
          NMAX=100000
       ELSE
@@ -230,9 +230,9 @@ C -------- METH   COEFFICIENTS OF THE METHOD
      &          ' CURIOUS INPUT IWORK(2)=',IWORK(2)
             ARRET=.TRUE.
          END IF
-      END IF  
-C -------- NSTIFF   PARAMETER FOR STIFFNESS DETECTION  
-      NSTIFF=IWORK(4) 
+      END IF
+C -------- NSTIFF   PARAMETER FOR STIFFNESS DETECTION
+      NSTIFF=IWORK(4)
       IF (NSTIFF.EQ.0) NSTIFF=1000
       IF (NSTIFF.LT.0) NSTIFF=NMAX+10
 C -------- NRDENS   NUMBER OF DENSE OUTPUT COMPONENTS
@@ -245,14 +245,14 @@ C -------- NRDENS   NUMBER OF DENSE OUTPUT COMPONENTS
          IF(NRDENS.GT.0.AND.IOUT.LT.2)THEN
             IF (IPRINT.GT.0) WRITE(IPRINT,*)
      &       ' WARNING: PUT IOUT=2 FOR DENSE OUTPUT '
-         END IF 
+         END IF
          IF (NRDENS.EQ.N) THEN
             DO I=1,NRDENS
                IWORK(I+20)=I
             END DO
          END IF
-      END IF       
-C -------- UROUND   SMALLEST NUMBER SATISFYING 1.D0+UROUND>1.D0  
+      END IF
+C -------- UROUND   SMALLEST NUMBER SATISFYING 1.D0+UROUND>1.D0
       IF(WORK(1).EQ.0.D0)THEN
          UROUND=2.3D-16
       ELSE
@@ -366,10 +366,10 @@ C
      &   NFCN,NSTEP,NACCPT,NREJCT)
 C ----------------------------------------------------------
 C     CORE INTEGRATOR FOR DOP853
-C     PARAMETERS SAME AS IN DOP853 WITH WORKSPACE ADDED 
-C ---------------------------------------------------------- 
-C         DECLARATIONS 
-C ---------------------------------------------------------- 
+C     PARAMETERS SAME AS IN DOP853 WITH WORKSPACE ADDED
+C ----------------------------------------------------------
+C         DECLARATIONS
+C ----------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       parameter (
      &  c2  = 0.526001519587677318785587544488D-01,
@@ -539,46 +539,46 @@ C ----------------------------------------------------------
      &  d715 = -0.39177261675615439165231486172D+02,
      &  d716 = -0.14972683625798562581422125276D+03)
       DOUBLE PRECISION Y(N),Y1(N),K1(N),K2(N),K3(N),K4(N),K5(N),K6(N)
-      DOUBLE PRECISION K7(N),K8(N),K9(N),K10(N),ATOL(*),RTOL(*)     
+      DOUBLE PRECISION K7(N),K8(N),K9(N),K10(N),ATOL(*),RTOL(*)
       DIMENSION CONT(8*NRD),ICOMP(NRD),RPAR(*),IPAR(*)
-      LOGICAL REJECT,LAST 
+      LOGICAL REJECT,LAST
       EXTERNAL FCN
       COMMON /CONDO8/XOLD,HOUT
 C *** *** *** *** *** *** ***
 C  INITIALISATIONS
-C *** *** *** *** *** *** *** 
-      FACOLD=1.D-4  
+C *** *** *** *** *** *** ***
+      FACOLD=1.D-4
       EXPO1=1.d0/8.d0-BETA*0.2D0
       FACC1=1.D0/FAC1
       FACC2=1.D0/FAC2
-      POSNEG=SIGN(1.D0,XEND-X) 
-C --- INITIAL PREPARATIONS   
+      POSNEG=SIGN(1.D0,XEND-X)
+C --- INITIAL PREPARATIONS
       ATOLI=ATOL(1)
-      RTOLI=RTOL(1)    
-      LAST=.FALSE. 
+      RTOLI=RTOL(1)
+      LAST=.FALSE.
       HLAMB=0.D0
       IASTI=0
       CALL FCN(N,X,Y,K1,RPAR,IPAR)
-      HMAX=ABS(HMAX)     
-      IORD=8  
+      HMAX=ABS(HMAX)
+      IORD=8
       IF (H.EQ.0.D0) H=HINIT853(N,FCN,X,Y,XEND,POSNEG,K1,K2,K3,IORD,
      &                       HMAX,ATOL,RTOL,ITOL,RPAR,IPAR)
       NFCN=NFCN+2
       REJECT=.FALSE.
       XOLD=X
-      IF (IOUT.GE.1) THEN 
-          IRTRN=1 
+      IF (IOUT.GE.1) THEN
+          IRTRN=1
           HOUT=1.D0
           CALL SOLOUT(NACCPT+1,XOLD,X,Y,N,CONT,ICOMP,NRD,
      &                RPAR,IPAR,IRTRN)
           IF (IRTRN.LT.0) GOTO 79
       END IF
-C --- BASIC INTEGRATION STEP  
+C --- BASIC INTEGRATION STEP
    1  CONTINUE
       IF (NSTEP.GT.NMAX) GOTO 78
       IF (0.1D0*ABS(H).LE.ABS(X)*UROUND)GOTO 77
       IF ((X+1.01D0*H-XEND)*POSNEG.GT.0.D0) THEN
-         H=XEND-X 
+         H=XEND-X
          LAST=.TRUE.
       END IF
       NSTEP=NSTEP+1
@@ -586,54 +586,54 @@ C --- THE TWELVE STAGES
       IF (IRTRN.GE.2) THEN
          CALL FCN(N,X,Y,K1,RPAR,IPAR)
       END IF
-      DO 22 I=1,N 
-  22  Y1(I)=Y(I)+H*A21*K1(I)  
+      DO 22 I=1,N
+  22  Y1(I)=Y(I)+H*A21*K1(I)
       CALL FCN(N,X+C2*H,Y1,K2,RPAR,IPAR)
-      DO 23 I=1,N 
-  23  Y1(I)=Y(I)+H*(A31*K1(I)+A32*K2(I))  
+      DO 23 I=1,N
+  23  Y1(I)=Y(I)+H*(A31*K1(I)+A32*K2(I))
       CALL FCN(N,X+C3*H,Y1,K3,RPAR,IPAR)
-      DO 24 I=1,N 
-  24  Y1(I)=Y(I)+H*(A41*K1(I)+A43*K3(I))  
+      DO 24 I=1,N
+  24  Y1(I)=Y(I)+H*(A41*K1(I)+A43*K3(I))
       CALL FCN(N,X+C4*H,Y1,K4,RPAR,IPAR)
-      DO 25 I=1,N 
+      DO 25 I=1,N
   25  Y1(I)=Y(I)+H*(A51*K1(I)+A53*K3(I)+A54*K4(I))
       CALL FCN(N,X+C5*H,Y1,K5,RPAR,IPAR)
-      DO 26 I=1,N 
+      DO 26 I=1,N
   26  Y1(I)=Y(I)+H*(A61*K1(I)+A64*K4(I)+A65*K5(I))
       CALL FCN(N,X+C6*H,Y1,K6,RPAR,IPAR)
-      DO 27 I=1,N 
+      DO 27 I=1,N
   27  Y1(I)=Y(I)+H*(A71*K1(I)+A74*K4(I)+A75*K5(I)+A76*K6(I))
       CALL FCN(N,X+C7*H,Y1,K7,RPAR,IPAR)
-      DO 28 I=1,N 
-  28  Y1(I)=Y(I)+H*(A81*K1(I)+A84*K4(I)+A85*K5(I)+A86*K6(I)+A87*K7(I))  
+      DO 28 I=1,N
+  28  Y1(I)=Y(I)+H*(A81*K1(I)+A84*K4(I)+A85*K5(I)+A86*K6(I)+A87*K7(I))
       CALL FCN(N,X+C8*H,Y1,K8,RPAR,IPAR)
-      DO 29 I=1,N 
+      DO 29 I=1,N
   29  Y1(I)=Y(I)+H*(A91*K1(I)+A94*K4(I)+A95*K5(I)+A96*K6(I)+A97*K7(I)
      &   +A98*K8(I))
       CALL FCN(N,X+C9*H,Y1,K9,RPAR,IPAR)
-      DO 30 I=1,N 
+      DO 30 I=1,N
   30  Y1(I)=Y(I)+H*(A101*K1(I)+A104*K4(I)+A105*K5(I)+A106*K6(I)
      &   +A107*K7(I)+A108*K8(I)+A109*K9(I))
       CALL FCN(N,X+C10*H,Y1,K10,RPAR,IPAR)
-      DO 31 I=1,N 
+      DO 31 I=1,N
   31  Y1(I)=Y(I)+H*(A111*K1(I)+A114*K4(I)+A115*K5(I)+A116*K6(I)
      &   +A117*K7(I)+A118*K8(I)+A119*K9(I)+A1110*K10(I))
       CALL FCN(N,X+C11*H,Y1,K2,RPAR,IPAR)
       XPH=X+H
-      DO 32 I=1,N 
+      DO 32 I=1,N
   32  Y1(I)=Y(I)+H*(A121*K1(I)+A124*K4(I)+A125*K5(I)+A126*K6(I)
      &   +A127*K7(I)+A128*K8(I)+A129*K9(I)+A1210*K10(I)+A1211*K2(I))
       CALL FCN(N,XPH,Y1,K3,RPAR,IPAR)
       NFCN=NFCN+11
-      DO 35 I=1,N 
+      DO 35 I=1,N
       K4(I)=B1*K1(I)+B6*K6(I)+B7*K7(I)+B8*K8(I)+B9*K9(I)
      &   +B10*K10(I)+B11*K2(I)+B12*K3(I)
   35  K5(I)=Y(I)+H*K4(I)
-C --- ERROR ESTIMATION  
+C --- ERROR ESTIMATION
       ERR=0.D0
       ERR2=0.D0
-      IF (ITOL.EQ.0) THEN   
-        DO 41 I=1,N 
+      IF (ITOL.EQ.0) THEN
+        DO 41 I=1,N
         SK=ATOLI+RTOLI*MAX(ABS(Y(I)),ABS(K5(I)))
         ERRI=K4(I)-BHH1*K1(I)-BHH2*K9(I)-BHH3*K3(I)
         ERR2=ERR2+(ERRI/SK)**2
@@ -641,14 +641,14 @@ C --- ERROR ESTIMATION
      &      +ER10*K10(I)+ER11*K2(I)+ER12*K3(I)
   41    ERR=ERR+(ERRI/SK)**2
       ELSE
-        DO 42 I=1,N 
+        DO 42 I=1,N
         SK=ATOL(I)+RTOL(I)*MAX(ABS(Y(I)),ABS(K5(I)))
         ERRI=K4(I)-BHH1*K1(I)-BHH2*K9(I)-BHH3*K3(I)
         ERR2=ERR2+(ERRI/SK)**2
         ERRI=ER1*K1(I)+ER6*K6(I)+ER7*K7(I)+ER8*K8(I)+ER9*K9(I)
      &      +ER10*K10(I)+ER11*K2(I)+ER12*K3(I)
   42    ERR=ERR+(ERRI/SK)**2
-      END IF  
+      END IF
       DENO=ERR+0.01D0*ERR2
       IF (DENO.LE.0.D0) DENO=1.D0
       ERR=ABS(H)*ERR*SQRT(1.D0/(N*DENO))
@@ -658,9 +658,9 @@ C --- LUND-STABILIZATION
       FAC=FAC11/FACOLD**BETA
 C --- WE REQUIRE  FAC1 <= HNEW/H <= FAC2
       FAC=MAX(FACC2,MIN(FACC1,FAC/SAFE))
-      HNEW=H/FAC  
+      HNEW=H/FAC
       IF(ERR.LE.1.D0)THEN
-C --- STEP IS ACCEPTED  
+C --- STEP IS ACCEPTED
          FACOLD=MAX(ERR,1.0D-4)
          NACCPT=NACCPT+1
          CALL FCN(N,XPH,K5,K4,RPAR,IPAR)
@@ -669,27 +669,27 @@ C ------- STIFFNESS DETECTION
          IF (MOD(NACCPT,NSTIFF).EQ.0.OR.IASTI.GT.0) THEN
             STNUM=0.D0
             STDEN=0.D0
-            DO 64 I=1,N 
+            DO 64 I=1,N
                STNUM=STNUM+(K4(I)-K3(I))**2
                STDEN=STDEN+(K5(I)-Y1(I))**2
- 64         CONTINUE  
-            IF (STDEN.GT.0.D0) HLAMB=ABS(H)*SQRT(STNUM/STDEN) 
+ 64         CONTINUE
+            IF (STDEN.GT.0.D0) HLAMB=ABS(H)*SQRT(STNUM/STDEN)
             IF (HLAMB.GT.6.1D0) THEN
                NONSTI=0
-               IASTI=IASTI+1  
+               IASTI=IASTI+1
                IF (IASTI.EQ.15) THEN
-                  IF (IPRINT.GT.0) WRITE (IPRINT,*) 
-     &               ' THE PROBLEM SEEMS TO BECOME STIFF AT X = ',X   
+                  IF (IPRINT.GT.0) WRITE (IPRINT,*)
+     &               ' THE PROBLEM SEEMS TO BECOME STIFF AT X = ',X
                   IF (IPRINT.LE.0) GOTO 76
                END IF
             ELSE
-               NONSTI=NONSTI+1  
+               NONSTI=NONSTI+1
                IF (NONSTI.EQ.6) IASTI=0
             END IF
-         END IF 
+         END IF
 C ------- FINAL PREPARATION FOR DENSE OUTPUT
          IF (IOUT.GE.2) THEN
-C ----    SAVE THE FIRST FUNCTION EVALUATIONS   
+C ----    SAVE THE FIRST FUNCTION EVALUATIONS
             DO 62 J=1,NRD
                I=ICOMP(J)
                CONT(J)=Y(I)
@@ -706,24 +706,24 @@ C ----    SAVE THE FIRST FUNCTION EVALUATIONS
      &                  +D69*K9(I)+D610*K10(I)+D611*K2(I)+D612*K3(I)
                CONT(J+NRD*7)=D71*K1(I)+D76*K6(I)+D77*K7(I)+D78*K8(I)
      &                  +D79*K9(I)+D710*K10(I)+D711*K2(I)+D712*K3(I)
-   62       CONTINUE 
+   62       CONTINUE
 C ---     THE NEXT THREE FUNCTION EVALUATIONS
-            DO 51 I=1,N 
+            DO 51 I=1,N
   51           Y1(I)=Y(I)+H*(A141*K1(I)+A147*K7(I)+A148*K8(I)
      &            +A149*K9(I)+A1410*K10(I)+A1411*K2(I)+A1412*K3(I)
      &            +A1413*K4(I))
             CALL FCN(N,X+C14*H,Y1,K10,RPAR,IPAR)
-            DO 52 I=1,N 
+            DO 52 I=1,N
   52           Y1(I)=Y(I)+H*(A151*K1(I)+A156*K6(I)+A157*K7(I)
      &            +A158*K8(I)+A1511*K2(I)+A1512*K3(I)+A1513*K4(I)
      &            +A1514*K10(I))
             CALL FCN(N,X+C15*H,Y1,K2,RPAR,IPAR)
-            DO 53 I=1,N 
+            DO 53 I=1,N
   53           Y1(I)=Y(I)+H*(A161*K1(I)+A166*K6(I)+A167*K7(I)
      &            +A168*K8(I)+A169*K9(I)+A1613*K4(I)+A1614*K10(I)
      &            +A1615*K2(I))
             CALL FCN(N,X+C16*H,Y1,K3,RPAR,IPAR)
-            NFCN=NFCN+3 
+            NFCN=NFCN+3
 C ---     FINAL PREPARATION
             DO 63 J=1,NRD
                I=ICOMP(J)
@@ -747,21 +747,21 @@ C ---     FINAL PREPARATION
             CALL SOLOUT(NACCPT+1,XOLD,X,Y,N,CONT,ICOMP,NRD,
      &                  RPAR,IPAR,IRTRN)
             IF (IRTRN.LT.0) GOTO 79
-         END IF 
+         END IF
 C ------- NORMAL EXIT
          IF (LAST) THEN
             H=HNEW
             IDID=1
             RETURN
          END IF
-         IF(ABS(HNEW).GT.HMAX)HNEW=POSNEG*HMAX  
+         IF(ABS(HNEW).GT.HMAX)HNEW=POSNEG*HMAX
          IF(REJECT)HNEW=POSNEG*MIN(ABS(HNEW),ABS(H))
-         REJECT=.FALSE. 
-      ELSE  
-C --- STEP IS REJECTED   
+         REJECT=.FALSE.
+      ELSE
+C --- STEP IS REJECTED
          HNEW=H/MIN(FACC1,FAC11/SAFE)
-         REJECT=.TRUE.  
-         IF(NACCPT.GE.1)NREJCT=NREJCT+1   
+         REJECT=.TRUE.
+         IF(NACCPT.GE.1)NREJCT=NREJCT+1
          LAST=.FALSE.
       END IF
       H=HNEW
@@ -771,19 +771,19 @@ C --- FAIL EXIT
       IDID=-4
       RETURN
   77  CONTINUE
-      IF (IPRINT.GT.0) WRITE(IPRINT,979)X   
+      IF (IPRINT.GT.0) WRITE(IPRINT,979)X
       IF (IPRINT.GT.0) WRITE(IPRINT,*)' STEP SIZE TOO SMALL, H=',H
       IDID=-3
       RETURN
   78  CONTINUE
-      IF (IPRINT.GT.0) WRITE(IPRINT,979)X   
+      IF (IPRINT.GT.0) WRITE(IPRINT,979)X
       IF (IPRINT.GT.0) WRITE(IPRINT,*)
-     &     ' MORE THAN NMAX =',NMAX,'STEPS ARE NEEDED' 
+     &     ' MORE THAN NMAX =',NMAX,'STEPS ARE NEEDED'
       IDID=-2
       RETURN
   79  CONTINUE
       IF (IPRINT.GT.0) WRITE(IPRINT,979)X
- 979  FORMAT(' EXIT OF DOP853 AT X=',E18.4) 
+ 979  FORMAT(' EXIT OF DOP853 AT X=',E18.4)
       IDID=2
       RETURN
       END
@@ -801,41 +801,41 @@ C ----   H = 0.01 * NORM (Y0) / NORM (F0)
 C ---- THE INCREMENT FOR EXPLICIT EULER IS SMALL
 C ---- COMPARED TO THE SOLUTION
       DNF=0.0D0
-      DNY=0.0D0 
+      DNY=0.0D0
       ATOLI=ATOL(1)
-      RTOLI=RTOL(1)    
-      IF (ITOL.EQ.0) THEN   
-        DO 10 I=1,N 
+      RTOLI=RTOL(1)
+      IF (ITOL.EQ.0) THEN
+        DO 10 I=1,N
         SK=ATOLI+RTOLI*ABS(Y(I))
         DNF=DNF+(F0(I)/SK)**2
-  10    DNY=DNY+(Y(I)/SK)**2 
+  10    DNY=DNY+(Y(I)/SK)**2
       ELSE
-        DO 11 I=1,N 
+        DO 11 I=1,N
         SK=ATOL(I)+RTOL(I)*ABS(Y(I))
         DNF=DNF+(F0(I)/SK)**2
-  11    DNY=DNY+(Y(I)/SK)**2 
+  11    DNY=DNY+(Y(I)/SK)**2
       END IF
       IF (DNF.LE.1.D-10.OR.DNY.LE.1.D-10) THEN
          H=1.0D-6
       ELSE
-         H=SQRT(DNY/DNF)*0.01D0 
+         H=SQRT(DNY/DNF)*0.01D0
       END IF
       H=MIN(H,HMAX)
-      H=SIGN(H,POSNEG) 
+      H=SIGN(H,POSNEG)
 C ---- PERFORM AN EXPLICIT EULER STEP
       DO 12 I=1,N
   12  Y1(I)=Y(I)+H*F0(I)
-      CALL FCN(N,X+H,Y1,F1,RPAR,IPAR) 
+      CALL FCN(N,X+H,Y1,F1,RPAR,IPAR)
 C ---- ESTIMATE THE SECOND DERIVATIVE OF THE SOLUTION
       DER2=0.0D0
-      IF (ITOL.EQ.0) THEN   
-        DO 15 I=1,N 
+      IF (ITOL.EQ.0) THEN
+        DO 15 I=1,N
         SK=ATOLI+RTOLI*ABS(Y(I))
-  15    DER2=DER2+((F1(I)-F0(I))/SK)**2   
+  15    DER2=DER2+((F1(I)-F0(I))/SK)**2
       ELSE
-        DO 16 I=1,N 
+        DO 16 I=1,N
         SK=ATOL(I)+RTOL(I)*ABS(Y(I))
-  16    DER2=DER2+((F1(I)-F0(I))/SK)**2   
+  16    DER2=DER2+((F1(I)-F0(I))/SK)**2
       END IF
       DER2=SQRT(DER2)/H
 C ---- STEP SIZE IS COMPUTED SUCH THAT
@@ -844,12 +844,12 @@ C ----  H**IORD * MAX ( NORM (F0), NORM (DER2)) = 0.01
       IF (DER12.LE.1.D-15) THEN
          H1=MAX(1.0D-6,ABS(H)*1.0D-3)
       ELSE
-         H1=(0.01D0/DER12)**(1.D0/IORD) 
+         H1=(0.01D0/DER12)**(1.D0/IORD)
       END IF
       H=MIN(100*ABS(H),H1,HMAX)
-      HINIT853=SIGN(H,POSNEG)  
+      HINIT853=SIGN(H,POSNEG)
       RETURN
-      END 
+      END
 C
       FUNCTION CONTD8(II,X,CON,ICOMP,ND)
 C ----------------------------------------------------------
@@ -860,16 +860,16 @@ C ----------------------------------------------------------
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION CON(8*ND),ICOMP(ND)
       COMMON /CONDO8/XOLD,H
-C ----- COMPUTE PLACE OF II-TH COMPONENT 
-      I=0 
-      DO 5 J=1,ND 
+C ----- COMPUTE PLACE OF II-TH COMPONENT
+      I=0
+      DO 5 J=1,ND
       IF (ICOMP(J).EQ.II) I=J
    5  CONTINUE
       IF (I.EQ.0) THEN
-         WRITE (6,*) ' NO DENSE OUTPUT AVAILABLE FOR COMP.',II 
+         WRITE (6,*) ' NO DENSE OUTPUT AVAILABLE FOR COMP.',II
          CONTD8=-1
          RETURN
-      END IF  
+      END IF
       S=(X-XOLD)/H
       S1=1.D0-S
       CONPAR=CON(I+ND*4)+S*(CON(I+ND*5)+S1*(CON(I+ND*6)+S*CON(I+ND*7)))
@@ -877,4 +877,3 @@ C ----- COMPUTE PLACE OF II-TH COMPONENT
      &        +S1*CONPAR)))
       RETURN
       END
-

@@ -9,7 +9,7 @@ import numpy as np
 from scipy.linalg import orthogonal_procrustes
 
 
-__all__ = ['procrustes']
+__all__ = ["procrustes"]
 
 
 def procrustes(data1, data2):
@@ -128,4 +128,3 @@ def procrustes(data1, data2):
     disparity = np.sum(np.square(mtx1 - mtx2))
 
     return mtx1, mtx2, disparity
-

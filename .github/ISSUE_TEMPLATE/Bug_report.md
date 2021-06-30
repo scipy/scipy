@@ -4,9 +4,9 @@ about: Create a report to help us improve SciPy
 
 ---
 
-<!-- 
-Thank you for taking the time to file a bug report. 
-Please fill in the fields below, deleting the sections that 
+<!--
+Thank you for taking the time to file a bug report.
+Please fill in the fields below, deleting the sections that
 don't apply to your issue. You can view the final output
 by clicking the preview button above.
 Note: This is a comment, and won't appear in the output.
@@ -15,9 +15,9 @@ Note: This is a comment, and won't appear in the output.
 My issue is about ...
 
 #### Reproducing code example:
-<!-- 
-If you place your code between the triple backticks below, 
-it will be rendered as a code block. 
+<!--
+If you place your code between the triple backticks below,
+it will be rendered as a code block.
 -->
 
 ```

@@ -40,8 +40,30 @@ The suite of window functions for filtering and spectral estimation.
 
 from .windows import *
 
-__all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'general_cosine',
-           'general_hamming', 'chebwin', 'cosine', 'hann',
-           'exponential', 'tukey', 'taylor', 'get_window', 'dpss']
+__all__ = [
+    "boxcar",
+    "triang",
+    "parzen",
+    "bohman",
+    "blackman",
+    "nuttall",
+    "blackmanharris",
+    "flattop",
+    "bartlett",
+    "hanning",
+    "barthann",
+    "hamming",
+    "kaiser",
+    "gaussian",
+    "general_gaussian",
+    "general_cosine",
+    "general_hamming",
+    "chebwin",
+    "cosine",
+    "hann",
+    "exponential",
+    "tukey",
+    "taylor",
+    "get_window",
+    "dpss",
+]

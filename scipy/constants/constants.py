@@ -45,31 +45,31 @@ atto = 1e-18
 zepto = 1e-21
 
 # binary prefixes
-kibi = 2**10
-mebi = 2**20
-gibi = 2**30
-tebi = 2**40
-pebi = 2**50
-exbi = 2**60
-zebi = 2**70
-yobi = 2**80
+kibi = 2 ** 10
+mebi = 2 ** 20
+gibi = 2 ** 30
+tebi = 2 ** 40
+pebi = 2 ** 50
+exbi = 2 ** 60
+zebi = 2 ** 70
+yobi = 2 ** 80
 
 # physical constants
-c = speed_of_light = _cd('speed of light in vacuum')
-mu_0 = _cd('vacuum mag. permeability')
-epsilon_0 = _cd('vacuum electric permittivity')
-h = Planck = _cd('Planck constant')
+c = speed_of_light = _cd("speed of light in vacuum")
+mu_0 = _cd("vacuum mag. permeability")
+epsilon_0 = _cd("vacuum electric permittivity")
+h = Planck = _cd("Planck constant")
 hbar = h / (2 * pi)
-G = gravitational_constant = _cd('Newtonian constant of gravitation')
-g = _cd('standard acceleration of gravity')
-e = elementary_charge = _cd('elementary charge')
-R = gas_constant = _cd('molar gas constant')
-alpha = fine_structure = _cd('fine-structure constant')
-N_A = Avogadro = _cd('Avogadro constant')
-k = Boltzmann = _cd('Boltzmann constant')
-sigma = Stefan_Boltzmann = _cd('Stefan-Boltzmann constant')
-Wien = _cd('Wien wavelength displacement law constant')
-Rydberg = _cd('Rydberg constant')
+G = gravitational_constant = _cd("Newtonian constant of gravitation")
+g = _cd("standard acceleration of gravity")
+e = elementary_charge = _cd("elementary charge")
+R = gas_constant = _cd("molar gas constant")
+alpha = fine_structure = _cd("fine-structure constant")
+N_A = Avogadro = _cd("Avogadro constant")
+k = Boltzmann = _cd("Boltzmann constant")
+sigma = Stefan_Boltzmann = _cd("Stefan-Boltzmann constant")
+Wien = _cd("Wien wavelength displacement law constant")
+Rydberg = _cd("Rydberg constant")
 
 # mass in kg
 gram = 1e-3
@@ -87,10 +87,10 @@ troy_ounce = 480 * grain  # only for metals / gems
 troy_pound = 12 * troy_ounce
 carat = 200e-6
 
-m_e = electron_mass = _cd('electron mass')
-m_p = proton_mass = _cd('proton mass')
-m_n = neutron_mass = _cd('neutron mass')
-m_u = u = atomic_mass = _cd('atomic mass constant')
+m_e = electron_mass = _cd("electron mass")
+m_p = proton_mass = _cd("proton mass")
+m_n = neutron_mass = _cd("neutron mass")
+m_u = u = atomic_mass = _cd("atomic mass constant")
 
 # angle in rad
 degree = pi / 180
@@ -123,18 +123,18 @@ light_year = Julian_year * c
 parsec = au / arcsec
 
 # pressure in pascal
-atm = atmosphere = _cd('standard atmosphere')
+atm = atmosphere = _cd("standard atmosphere")
 bar = 1e5
 torr = mmHg = atm / 760
 psi = pound * g / (inch * inch)
 
 # area in meter**2
 hectare = 1e4
-acre = 43560 * foot**2
+acre = 43560 * foot ** 2
 
 # volume in meter**3
 litre = liter = 1e-3
-gallon = gallon_US = 231 * inch**3  # US
+gallon = gallon_US = 231 * inch ** 3  # US
 # pint = gallon_US / 8
 fluid_ounce = fluid_ounce_US = gallon_US / 128
 bbl = barrel = 42 * gallon_US  # for oil
@@ -145,12 +145,14 @@ fluid_ounce_imp = gallon_imp / 160
 # speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
-mach = speed_of_sound = 340.5  # approx value at 15 degrees in 1 atm. Is this a common value?
+mach = (
+    speed_of_sound
+) = 340.5  # approx value at 15 degrees in 1 atm. Is this a common value?
 knot = nautical_mile / hour
 
 # temperature in kelvin
 zero_Celsius = 273.15
-degree_Fahrenheit = 1/1.8  # only for differences
+degree_Fahrenheit = 1 / 1.8  # only for differences
 
 # energy in joule
 eV = electron_volt = elementary_charge  # * 1 Volt
@@ -215,31 +217,35 @@ def convert_temperature(val, old_scale, new_scale):
 
     """
     # Convert from `old_scale` to Kelvin
-    if old_scale.lower() in ['celsius', 'c']:
+    if old_scale.lower() in ["celsius", "c"]:
         tempo = _np.asanyarray(val) + zero_Celsius
-    elif old_scale.lower() in ['kelvin', 'k']:
+    elif old_scale.lower() in ["kelvin", "k"]:
         tempo = _np.asanyarray(val)
-    elif old_scale.lower() in ['fahrenheit', 'f']:
+    elif old_scale.lower() in ["fahrenheit", "f"]:
         tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
-    elif old_scale.lower() in ['rankine', 'r']:
+    elif old_scale.lower() in ["rankine", "r"]:
         tempo = _np.asanyarray(val) * 5 / 9
     else:
-        raise NotImplementedError("%s scale is unsupported: supported scales "
-                                  "are Celsius, Kelvin, Fahrenheit, and "
-                                  "Rankine" % old_scale)
+        raise NotImplementedError(
+            "%s scale is unsupported: supported scales "
+            "are Celsius, Kelvin, Fahrenheit, and "
+            "Rankine" % old_scale
+        )
     # and from Kelvin to `new_scale`.
-    if new_scale.lower() in ['celsius', 'c']:
+    if new_scale.lower() in ["celsius", "c"]:
         res = tempo - zero_Celsius
-    elif new_scale.lower() in ['kelvin', 'k']:
+    elif new_scale.lower() in ["kelvin", "k"]:
         res = tempo
-    elif new_scale.lower() in ['fahrenheit', 'f']:
+    elif new_scale.lower() in ["fahrenheit", "f"]:
         res = (tempo - zero_Celsius) * 9 / 5 + 32
-    elif new_scale.lower() in ['rankine', 'r']:
+    elif new_scale.lower() in ["rankine", "r"]:
         res = tempo * 9 / 5
     else:
-        raise NotImplementedError("'%s' scale is unsupported: supported "
-                                  "scales are 'Celsius', 'Kelvin', "
-                                  "'Fahrenheit', and 'Rankine'" % new_scale)
+        raise NotImplementedError(
+            "'%s' scale is unsupported: supported "
+            "scales are 'Celsius', 'Kelvin', "
+            "'Fahrenheit', and 'Rankine'" % new_scale
+        )
 
     return res
 

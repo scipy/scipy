@@ -1,9 +1,9 @@
-'''Fast Hankel transforms using the FFTLog algorithm.
+"""Fast Hankel transforms using the FFTLog algorithm.
 
 The implementation closely follows the Fortran code of Hamilton (2000).
 
 added: 14/11/2020 Nicolas Tessore <n.tessore@ucl.ac.uk>
-'''
+"""
 
 import numpy as np
 from warnings import warn
@@ -11,8 +11,9 @@ from ._basic import rfft, irfft
 from ..special import loggamma, poch
 
 __all__ = [
-    'fht', 'ifht',
-    'fhtoffset',
+    "fht",
+    "ifht",
+    "fhtoffset",
 ]
 
 
@@ -21,7 +22,7 @@ LN_2 = np.log(2)
 
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
-    r'''Compute the fast Hankel transform.
+    r"""Compute the fast Hankel transform.
 
     Computes the discrete Hankel transform of a logarithmically spaced periodic
     sequence using the FFTLog algorithm [1]_, [2]_.
@@ -110,7 +111,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     .. [1] Talman J. D., 1978, J. Comp. Phys., 29, 35
     .. [2] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
-    '''
+    """
 
     # size of transform
     n = np.shape(a)[-1]
@@ -118,9 +119,9 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     # bias input array
     if bias != 0:
         # a_q(r) = a(r) (r/r_c)^{-q}
-        j_c = (n-1)/2
+        j_c = (n - 1) / 2
         j = np.arange(n)
-        a = a * np.exp(-bias*(j - j_c)*dln)
+        a = a * np.exp(-bias * (j - j_c) * dln)
 
     # compute FHT coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
@@ -131,13 +132,13 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     # bias output array
     if bias != 0:
         # A(k) = A_q(k) (k/k_c)^{-q} (k_c r_c)^{-q}
-        A *= np.exp(-bias*((j - j_c)*dln + offset))
+        A *= np.exp(-bias * ((j - j_c) * dln + offset))
 
     return A
 
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
-    r'''Compute the inverse fast Hankel transform.
+    r"""Compute the inverse fast Hankel transform.
 
     Computes the discrete inverse Hankel transform of a logarithmically spaced
     periodic sequence. This is the inverse operation to `fht`.
@@ -180,7 +181,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
     See `fht` for further details.
 
-    '''
+    """
 
     # size of transform
     n = np.shape(A)[-1]
@@ -188,9 +189,9 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     # bias input array
     if bias != 0:
         # A_q(k) = A(k) (k/k_c)^{q} (k_c r_c)^{q}
-        j_c = (n-1)/2
+        j_c = (n - 1) / 2
         j = np.arange(n)
-        A = A * np.exp(bias*((j - j_c)*dln + offset))
+        A = A * np.exp(bias * ((j - j_c) * dln + offset))
 
     # compute FHT coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
@@ -201,33 +202,32 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     # bias output array
     if bias != 0:
         # a(r) = a_q(r) (r/r_c)^{q}
-        a /= np.exp(-bias*(j - j_c)*dln)
+        a /= np.exp(-bias * (j - j_c) * dln)
 
     return a
 
 
 def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
-    '''Compute the coefficient array for a fast Hankel transform.
-    '''
+    """Compute the coefficient array for a fast Hankel transform."""
 
     lnkr, q = offset, bias
 
     # Hankel transform coefficients
     # u_m = (kr)^{-i 2m pi/(n dlnr)} U_mu(q + i 2m pi/(n dlnr))
     # with U_mu(x) = 2^x Gamma((mu+1+x)/2)/Gamma((mu+1-x)/2)
-    xp = (mu+1+q)/2
-    xm = (mu+1-q)/2
-    y = np.linspace(0, np.pi*(n//2)/(n*dln), n//2+1)
-    u = np.empty(n//2+1, dtype=complex)
-    v = np.empty(n//2+1, dtype=complex)
+    xp = (mu + 1 + q) / 2
+    xm = (mu + 1 - q) / 2
+    y = np.linspace(0, np.pi * (n // 2) / (n * dln), n // 2 + 1)
+    u = np.empty(n // 2 + 1, dtype=complex)
+    v = np.empty(n // 2 + 1, dtype=complex)
     u.imag[:] = y
     u.real[:] = xm
     loggamma(u, out=v)
     u.real[:] = xp
     loggamma(u, out=u)
-    y *= 2*(LN_2 - lnkr)
+    y *= 2 * (LN_2 - lnkr)
     u.real -= v.real
-    u.real += LN_2*q
+    u.real += LN_2 * q
     u.imag += v.imag
     u.imag += y
     np.exp(u, out=u)
@@ -239,7 +239,7 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
     if not np.isfinite(u[0]):
         # write u_0 = 2^q Gamma(xp)/Gamma(xm) = 2^q poch(xm, xp-xm)
         # poch() handles special cases for negative integers correctly
-        u[0] = 2**q * poch(xm, xp-xm)
+        u[0] = 2 ** q * poch(xm, xp - xm)
         # the coefficient may be inf or 0, meaning the transform or the
         # inverse transform, respectively, is singular
 
@@ -247,7 +247,7 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
 
 
 def fhtoffset(dln, mu, initial=0.0, bias=0.0):
-    '''Return optimal offset for a fast Hankel transform.
+    """Return optimal offset for a fast Hankel transform.
 
     Returns an offset close to `initial` that fulfils the low-ringing
     condition of [1]_ for the fast Hankel transform `fht` with logarithmic
@@ -279,36 +279,36 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     ----------
     .. [1] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
-    '''
+    """
 
     lnkr, q = initial, bias
 
-    xp = (mu+1+q)/2
-    xm = (mu+1-q)/2
-    y = np.pi/(2*dln)
-    zp = loggamma(xp + 1j*y)
-    zm = loggamma(xm + 1j*y)
-    arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/np.pi
-    return lnkr + (arg - np.round(arg))*dln
+    xp = (mu + 1 + q) / 2
+    xm = (mu + 1 - q) / 2
+    y = np.pi / (2 * dln)
+    zp = loggamma(xp + 1j * y)
+    zm = loggamma(xm + 1j * y)
+    arg = (LN_2 - lnkr) / dln + (zp.imag + zm.imag) / np.pi
+    return lnkr + (arg - np.round(arg)) * dln
 
 
 def _fhtq(a, u, inverse=False):
-    '''Compute the biased fast Hankel transform.
+    """Compute the biased fast Hankel transform.
 
     This is the basic FFTLog routine.
-    '''
+    """
 
     # size of transform
     n = np.shape(a)[-1]
 
     # check for singular transform or singular inverse transform
     if np.isinf(u[0]) and not inverse:
-        warn(f'singular transform; consider changing the bias')
+        warn(f"singular transform; consider changing the bias")
         # fix coefficient to obtain (potentially correct) transform anyway
         u = u.copy()
         u[0] = 0
     elif u[0] == 0 and inverse:
-        warn(f'singular inverse transform; consider changing the bias')
+        warn(f"singular inverse transform; consider changing the bias")
         # fix coefficient to obtain (potentially correct) inverse anyway
         u = u.copy()
         u[0] = np.inf

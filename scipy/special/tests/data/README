@@ -378,7 +378,7 @@ test_hermite.cpp://  Copyright Paul A. Bristow 2007
 test_hermite.hpp:// Copyright John Maddock 2006.
 test_hermite.hpp:// Copyright Paul A. Bristow 2007, 2009
 test_hypergeometric_dist.cpp:// Copyright John Maddock 2008
-test_hypergeometric_dist.cpp:// Copyright Paul A. Bristow 
+test_hypergeometric_dist.cpp:// Copyright Paul A. Bristow
 test_hypergeometric_dist.cpp:// Copyright Gautam Sewani
 test_ibeta.cpp://  (C) Copyright John Maddock 2006.
 test_ibeta.hpp:// Copyright John Maddock 2006.
@@ -488,7 +488,7 @@ test_nccs_hooks.hpp://  (C) Copyright John Maddock 2008.
 test_negative_binomial.cpp:// Copyright Paul A. Bristow 2007.
 test_negative_binomial.cpp:// Copyright John Maddock 2006.
 test_next.cpp://  (C) Copyright John Maddock 2008.
-test_nonfinite_io.cpp:// Copyright 2011 Paul A. Bristow 
+test_nonfinite_io.cpp:// Copyright 2011 Paul A. Bristow
 test_nonfinite_trap.cpp:// Copyright (c) 2006 Johan Rade
 test_nonfinite_trap.cpp:// Copyright (c) 2011 Paul A. Bristow To incorporate into Boost.Math
 test_normal.cpp:// Copyright Paul A. Bristow 2010.

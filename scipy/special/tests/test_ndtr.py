@@ -9,7 +9,6 @@ def test_ndtr():
 
 
 class TestNdtri:
-
     def test_zero(self):
         assert sc.ndtri(0.5) == 0.0
 

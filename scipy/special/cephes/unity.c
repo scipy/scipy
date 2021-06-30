@@ -172,7 +172,7 @@ static double lgam1p_taylor(double x)
             break;
 	}
     }
-    
+
     return res;
 }
 

@@ -156,17 +156,19 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         v1 = rng.uniform(vmin, vmax, size=k)
         # apply rejection method
         rvs = v1 / u1 + c
-        accept = (u1**2 <= pdf(rvs))
+        accept = u1 ** 2 <= pdf(rvs)
         num_accept = np.sum(accept)
         if num_accept > 0:
-            x[simulated:(simulated + num_accept)] = rvs[accept]
+            x[simulated : (simulated + num_accept)] = rvs[accept]
             simulated += num_accept
 
-        if (simulated == 0) and (i*N >= 50000):
-            msg = ("Not a single random variate could be generated in {} "
-                   "attempts. The ratio of uniforms method does not appear "
-                   "to work for the provided parameters. Please check the "
-                   "pdf and the bounds.".format(i*N))
+        if (simulated == 0) and (i * N >= 50000):
+            msg = (
+                "Not a single random variate could be generated in {} "
+                "attempts. The ratio of uniforms method does not appear "
+                "to work for the provided parameters. Please check the "
+                "pdf and the bounds.".format(i * N)
+            )
             raise RuntimeError(msg)
         i += 1
 
@@ -468,8 +470,10 @@ class NumericalInverseHermite:
             d = 1 if d is None else d
             qmc_engine = stats.qmc.Halton(d)
         else:
-            message = ("`qmc_engine` must be an instance of "
-                       "`scipy.stats.qmc.QMCEngine` or `None`.")
+            message = (
+                "`qmc_engine` must be an instance of "
+                "`scipy.stats.qmc.QMCEngine` or `None`."
+            )
             raise ValueError(message)
 
         # `rvs` is flexible about whether `size` is an int or tuple, so this
@@ -501,17 +505,19 @@ def _fni_input_validation(dist, tol, max_intervals):
 
     """
 
-    has_pdf = hasattr(dist, 'pdf') and callable(dist.pdf)
-    has_cdf = hasattr(dist, 'cdf') and callable(dist.cdf)
-    has_ppf = hasattr(dist, 'ppf') and callable(dist.ppf)
-    has_isf = hasattr(dist, 'isf') and callable(dist.isf)
+    has_pdf = hasattr(dist, "pdf") and callable(dist.pdf)
+    has_cdf = hasattr(dist, "cdf") and callable(dist.cdf)
+    has_ppf = hasattr(dist, "ppf") and callable(dist.ppf)
+    has_isf = hasattr(dist, "isf") and callable(dist.isf)
 
     if not (has_pdf and has_cdf and has_ppf):
         raise ValueError("`dist` must have methods `pdf`, `cdf`, and `ppf`.")
 
     if not has_isf:
+
         def isf(x):
             return 1 - dist.ppf(x)
+
         dist.isf = isf
 
     tol = float(tol)  # if there's an exception, raise it now
@@ -560,17 +566,17 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     # [1] Section 2.1: "For distributions with unbounded domain, we have to
     # chop off its tails at [a] and [b] such that F(a) and 1-F(b) are small
     # compared to the maximal tolerated approximation error."
-    p = np.array([dist.ppf(tol/10), dist.isf(tol/10)])  # initial interval
+    p = np.array([dist.ppf(tol / 10), dist.isf(tol / 10)])  # initial interval
 
     # [1] Section 2.3: "We then halve this interval recursively until
     # |u[i+1]-u[i]| is smaller than some threshold value, for example, 0.05."
     u = dist.cdf(p)
-    while p.size-1 <= np.ceil(max_intervals/2):
+    while p.size - 1 <= np.ceil(max_intervals / 2):
         i = np.nonzero(np.diff(u) > 0.05)[0]
         if not i.size:
             break
 
-        p_mid = (p[i] + p[i+1])/2
+        p_mid = (p[i] + p[i + 1]) / 2
         # Compute only the new values and insert them in the right places
         # [1] uses a linked list; we can't do that efficiently
         u_mid = dist.cdf(p_mid)
@@ -585,27 +591,29 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     # smaller than a given error bound."
     u = dist.cdf(p)
     f = dist.pdf(p)
-    while p.size-1 <= max_intervals:
+    while p.size - 1 <= max_intervals:
         # [1] Equation 4-8
         try:
-            H = CubicHermiteSpline(u, p, 1/f)
+            H = CubicHermiteSpline(u, p, 1 / f)
         except ValueError:
-            message = ("The interpolating spline could not be created. This "
-                       "is often caused by inaccurate CDF evaluation in a "
-                       "tail of the distribution. Increasing `tol` can "
-                       "resolve this error at the expense of lower accuracy.")
+            message = (
+                "The interpolating spline could not be created. This "
+                "is often caused by inaccurate CDF evaluation in a "
+                "tail of the distribution. Increasing `tol` can "
+                "resolve this error at the expense of lower accuracy."
+            )
             raise ValueError(message)
         # To improve performance, add update feature to CubicHermiteSpline
 
         # [1] Equation 12
-        u_mid = (u[:-1] + u[1:])/2
+        u_mid = (u[:-1] + u[1:]) / 2
         eu = np.abs(dist.cdf(H(u_mid)) - u_mid)
 
         i = np.nonzero(eu > tol)[0]
         if not i.size:
             break
 
-        p_mid = (p[i] + p[i+1])/2
+        p_mid = (p[i] + p[i + 1]) / 2
         u_mid = dist.cdf(p_mid)
         f_mid = dist.pdf(p_mid)
         p = np.concatenate((p, p_mid))
@@ -618,4 +626,4 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
 
     # todo: add test for monotonicity [1] Section 2.4
     # todo: deal with vanishing density [1] Section 2.5
-    return H, eu, p.size-1, u[0], u[-1]
+    return H, eu, p.size - 1, u[0], u[-1]

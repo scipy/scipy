@@ -13,7 +13,7 @@ def test_csc_getrow():
     Xcsc = csc_matrix(X)
 
     for i in range(N):
-        arr_row = X[i:i + 1, :]
+        arr_row = X[i : i + 1, :]
         csc_row = Xcsc.getrow(i)
 
         assert_array_almost_equal(arr_row, csc_row.toarray())
@@ -28,29 +28,26 @@ def test_csc_getcol():
     Xcsc = csc_matrix(X)
 
     for i in range(N):
-        arr_col = X[:, i:i + 1]
+        arr_col = X[:, i : i + 1]
         csc_col = Xcsc.getcol(i)
 
         assert_array_almost_equal(arr_col, csc_col.toarray())
         assert_(type(csc_col) is csc_matrix)
 
-@pytest.mark.parametrize("matrix_input, axis, expected_shape",
-    [(csc_matrix([[1, 0],
-                [0, 0],
-                [0, 2]]),
-      0, (0, 2)),
-     (csc_matrix([[1, 0],
-                [0, 0],
-                [0, 2]]),
-      1, (3, 0)),
-     (csc_matrix([[1, 0],
-                [0, 0],
-                [0, 2]]),
-      'both', (0, 0)),
-     (csc_matrix([[0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0],
-                [0, 0, 2, 3, 0, 1]]),
-      0, (0, 6))])
+
+@pytest.mark.parametrize(
+    "matrix_input, axis, expected_shape",
+    [
+        (csc_matrix([[1, 0], [0, 0], [0, 2]]), 0, (0, 2)),
+        (csc_matrix([[1, 0], [0, 0], [0, 2]]), 1, (3, 0)),
+        (csc_matrix([[1, 0], [0, 0], [0, 2]]), "both", (0, 0)),
+        (
+            csc_matrix([[0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 2, 3, 0, 1]]),
+            0,
+            (0, 6),
+        ),
+    ],
+)
 def test_csc_empty_slices(matrix_input, axis, expected_shape):
     # see gh-11127 for related discussion
     slice_1 = matrix_input.A.shape[0] - 1
@@ -63,7 +60,7 @@ def test_csc_empty_slices(matrix_input, axis, expected_shape):
     elif axis == 1:
         actual_shape_1 = matrix_input[:, slice_1:slice_2].A.shape
         actual_shape_2 = matrix_input[:, slice_1:slice_3].A.shape
-    elif axis == 'both':
+    elif axis == "both":
         actual_shape_1 = matrix_input[slice_1:slice_2, slice_1:slice_2].A.shape
         actual_shape_2 = matrix_input[slice_1:slice_3, slice_1:slice_3].A.shape
 
@@ -71,7 +68,7 @@ def test_csc_empty_slices(matrix_input, axis, expected_shape):
     assert actual_shape_1 == actual_shape_2
 
 
-@pytest.mark.parametrize('ax', (-2, -1, 0, 1, None))
+@pytest.mark.parametrize("ax", (-2, -1, 0, 1, None))
 def test_argmax_overflow(ax):
     # See gh-13646: Windows integer overflow for large sparse matrices.
     dim = (100000, 100000)

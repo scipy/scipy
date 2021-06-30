@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -14,8 +14,8 @@ at the top-level directory.
  *
  * <pre>
  * Purpose
- * ======= 
- * 
+ * =======
+ *
  * Returns the time in seconds used by the process.
  *
  * Note: the timer function call is machine dependent. Use conditional
@@ -25,10 +25,10 @@ at the top-level directory.
 
 #undef USE_TIMES
 
-#ifdef SUN 
+#ifdef SUN
 /*
- * 	It uses the system call gethrtime(3C), which is accurate to 
- *	nanoseconds. 
+ * 	It uses the system call gethrtime(3C), which is accurate to
+ *	nanoseconds.
 */
 #include <sys/time.h>
 
@@ -61,7 +61,7 @@ double SuperLU_timer_()
 #define CLK_TCK 60
 #endif
 /*! \brief Timer function
- */ 
+ */
 double SuperLU_timer_()
 {
 #ifdef NO_TIMER
@@ -87,7 +87,7 @@ double SuperLU_timer_()
 #include <stdlib.h>
 
 /*! \brief Timer function
- */ 
+ */
 double SuperLU_timer_()
 {
     struct timeval tp;
@@ -98,4 +98,3 @@ double SuperLU_timer_()
 }
 
 #endif
-

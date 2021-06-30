@@ -2,10 +2,28 @@ import math
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
-__all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
-           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion', 'convolution_matrix']
+__all__ = [
+    "tri",
+    "tril",
+    "triu",
+    "toeplitz",
+    "circulant",
+    "hankel",
+    "hadamard",
+    "leslie",
+    "kron",
+    "block_diag",
+    "companion",
+    "helmert",
+    "hilbert",
+    "invhilbert",
+    "pascal",
+    "invpascal",
+    "dft",
+    "fiedler",
+    "fiedler_companion",
+    "convolution_matrix",
+]
 
 
 # -----------------------------------------------------------------------------
@@ -16,6 +34,7 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 # *Note*: tri{,u,l} is implemented in NumPy, but an important bug was fixed in
 # 2.0.0.dev-1af2f3, the following tri{,u,l} definitions are here for backwards
 # compatibility.
+
 
 def tri(N, M=None, k=0, dtype=None):
     """
@@ -62,7 +81,7 @@ def tri(N, M=None, k=0, dtype=None):
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
         M = N
-    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
+    m = np.greater_equal.outer(np.arange(k, N + k), np.arange(M))
     if dtype is None:
         return m
     else:
@@ -196,7 +215,7 @@ def toeplitz(c, r=None):
     vals = np.concatenate((c[::-1], r[1:]))
     out_shp = len(c), len(r)
     n = vals.strides[0]
-    return as_strided(vals[len(c)-1:], shape=out_shp, strides=(-n, n)).copy()
+    return as_strided(vals[len(c) - 1 :], shape=out_shp, strides=(-n, n)).copy()
 
 
 def circulant(c):
@@ -237,7 +256,7 @@ def circulant(c):
     c_ext = np.concatenate((c[::-1], c[:0:-1]))
     L = len(c)
     n = c_ext.strides[0]
-    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
+    return as_strided(c_ext[L - 1 :], shape=(L, L), strides=(-n, n)).copy()
 
 
 def hankel(c, r=None):
@@ -342,8 +361,7 @@ def hadamard(n, dtype=int):
     else:
         lg2 = int(math.log(n, 2))
     if 2 ** lg2 != n:
-        raise ValueError("n must be an positive integer, and n must be "
-                         "a power of 2")
+        raise ValueError("n must be an positive integer, and n must be a power of 2")
 
     H = np.array([[1]], dtype=dtype)
 
@@ -413,8 +431,10 @@ def leslie(f, s):
     if s.ndim != 1:
         raise ValueError("Incorrect shape for s.  s must be 1D")
     if f.size != s.size + 1:
-        raise ValueError("Incorrect lengths for f and s.  The length"
-                         " of s must be one less than the length of f.")
+        raise ValueError(
+            "Incorrect lengths for f and s.  The length"
+            " of s must be one less than the length of f."
+        )
     if s.size == 0:
         raise ValueError("The length of s must be at least 1.")
 
@@ -458,9 +478,9 @@ def kron(a, b):
            [3, 3, 3, 4, 4, 4]])
 
     """
-    if not a.flags['CONTIGUOUS']:
+    if not a.flags["CONTIGUOUS"]:
         a = np.reshape(a, a.shape)
-    if not b.flags['CONTIGUOUS']:
+    if not b.flags["CONTIGUOUS"]:
         b = np.reshape(b, b.shape)
     o = np.outer(a, b)
     o = o.reshape(a.shape + b.shape)
@@ -534,8 +554,10 @@ def block_diag(*arrs):
 
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
-        raise ValueError("arguments in the following positions have dimension "
-                         "greater than 2: %s" % bad_args)
+        raise ValueError(
+            "arguments in the following positions have dimension greater than 2: %s"
+            % bad_args
+        )
 
     shapes = np.array([a.shape for a in arrs])
     out_dtype = np.find_common_type([arr.dtype for arr in arrs], [])
@@ -543,7 +565,7 @@ def block_diag(*arrs):
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(shapes):
-        out[r:r + rr, c:c + cc] = arrs[i]
+        out[r : r + rr, c : c + cc] = arrs[i]
         r += rr
         c += cc
     return out
@@ -596,8 +618,7 @@ def companion(a):
     a = np.atleast_1d(a)
 
     if a.ndim != 1:
-        raise ValueError("Incorrect shape for `a`.  `a` must be "
-                         "one-dimensional.")
+        raise ValueError("Incorrect shape for `a`.  `a` must be one-dimensional.")
 
     if a.size < 2:
         raise ValueError("The length of `a` must be at least 2.")
@@ -648,7 +669,7 @@ def helmert(n, full=False):
 
     """
     H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
-    d = np.arange(n) * np.arange(1, n+1)
+    d = np.arange(n) * np.arange(1, n + 1)
     H[0] = 1
     d[0] = n
     H_full = H / np.sqrt(d)[:, np.newaxis]
@@ -692,7 +713,7 @@ def hilbert(n):
 
     """
     values = 1.0 / (1.0 + np.arange(2 * n - 1))
-    h = hankel(values[:n], r=values[n - 1:])
+    h = hankel(values[:n], r=values[n - 1 :])
     return h
 
 
@@ -753,6 +774,7 @@ def invhilbert(n, exact=False):
 
     """
     from scipy.special import comb
+
     if exact:
         if n > 14:
             dtype = object
@@ -764,16 +786,19 @@ def invhilbert(n, exact=False):
     for i in range(n):
         for j in range(0, i + 1):
             s = i + j
-            invh[i, j] = ((-1) ** s * (s + 1) *
-                          comb(n + i, n - j - 1, exact) *
-                          comb(n + j, n - i - 1, exact) *
-                          comb(s, i, exact) ** 2)
+            invh[i, j] = (
+                (-1) ** s
+                * (s + 1)
+                * comb(n + i, n - j - 1, exact)
+                * comb(n + j, n - i - 1, exact)
+                * comb(s, i, exact) ** 2
+            )
             if i != j:
                 invh[j, i] = invh[i, j]
     return invh
 
 
-def pascal(n, kind='symmetric', exact=True):
+def pascal(n, kind="symmetric", exact=True):
     """
     Returns the n x n Pascal matrix.
 
@@ -834,7 +859,8 @@ def pascal(n, kind='symmetric', exact=True):
     """
 
     from scipy.special import comb
-    if kind not in ['symmetric', 'lower', 'upper']:
+
+    if kind not in ["symmetric", "lower", "upper"]:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
     if exact:
@@ -849,9 +875,9 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind == 'lower':
+    if kind == "lower":
         p = L_n
-    elif kind == 'upper':
+    elif kind == "upper":
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)
@@ -859,7 +885,7 @@ def pascal(n, kind='symmetric', exact=True):
     return p
 
 
-def invpascal(n, kind='symmetric', exact=True):
+def invpascal(n, kind="symmetric", exact=True):
     """
     Returns the inverse of the n x n Pascal matrix.
 
@@ -933,10 +959,10 @@ def invpascal(n, kind='symmetric', exact=True):
     """
     from scipy.special import comb
 
-    if kind not in ['symmetric', 'lower', 'upper']:
+    if kind not in ["symmetric", "lower", "upper"]:
         raise ValueError("'kind' must be 'symmetric', 'lower' or 'upper'.")
 
-    if kind == 'symmetric':
+    if kind == "symmetric":
         if exact:
             if n > 34:
                 dt = object
@@ -949,9 +975,10 @@ def invpascal(n, kind='symmetric', exact=True):
             for j in range(0, i + 1):
                 v = 0
                 for k in range(n - i):
-                    v += comb(i + k, k, exact=exact) * comb(i + k, i + k - j,
-                                                            exact=exact)
-                invp[i, j] = (-1)**(i - j) * v
+                    v += comb(i + k, k, exact=exact) * comb(
+                        i + k, i + k - j, exact=exact
+                    )
+                invp[i, j] = (-1) ** (i - j) * v
                 if i != j:
                     invp[j, i] = invp[i, j]
     else:
@@ -964,7 +991,7 @@ def invpascal(n, kind='symmetric', exact=True):
             invp = invp.view(np.int64)
 
         # The toeplitz matrix has alternating bands of 1 and -1.
-        invp *= toeplitz((-1)**np.arange(n)).astype(invp.dtype)
+        invp *= toeplitz((-1) ** np.arange(n)).astype(invp.dtype)
 
     return invp
 
@@ -1026,15 +1053,16 @@ def dft(n, scale=None):
     >>> fft(x)     # Same result as m @ x
     array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
     """
-    if scale not in [None, 'sqrtn', 'n']:
-        raise ValueError("scale must be None, 'sqrtn', or 'n'; "
-                         "%r is not valid." % (scale,))
+    if scale not in [None, "sqrtn", "n"]:
+        raise ValueError(
+            "scale must be None, 'sqrtn', or 'n'; %r is not valid." % (scale,)
+        )
 
     omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
     m = omegas ** np.arange(n)
-    if scale == 'sqrtn':
+    if scale == "sqrtn":
         m /= math.sqrt(n)
-    elif scale == 'n':
+    elif scale == "n":
         m /= n
     return m
 
@@ -1110,13 +1138,13 @@ def fiedler(a):
     if a.size == 0:
         return np.array([], dtype=float)
     elif a.size == 1:
-        return np.array([[0.]])
+        return np.array([[0.0]])
     else:
         return np.abs(a[:, None] - a)
 
 
 def fiedler_companion(a):
-    """ Returns a Fiedler companion matrix
+    """Returns a Fiedler companion matrix
 
     Given a polynomial coefficient array ``a``, this function forms a
     pentadiagonal matrix with a special structure whose eigenvalues coincides
@@ -1172,27 +1200,27 @@ def fiedler_companion(a):
 
     if a.size <= 2:
         if a.size == 2:
-            return np.array([[-(a/a[0])[-1]]])
+            return np.array([[-(a / a[0])[-1]]])
         return np.array([], dtype=a.dtype)
 
-    if a[0] == 0.:
-        raise ValueError('Leading coefficient is zero.')
+    if a[0] == 0.0:
+        raise ValueError("Leading coefficient is zero.")
 
-    a = a/a[0]
+    a = a / a[0]
     n = a.size - 1
     c = np.zeros((n, n), dtype=a.dtype)
     # subdiagonals
-    c[range(3, n, 2), range(1, n-2, 2)] = 1.
-    c[range(2, n, 2), range(1, n-1, 2)] = -a[3::2]
+    c[range(3, n, 2), range(1, n - 2, 2)] = 1.0
+    c[range(2, n, 2), range(1, n - 1, 2)] = -a[3::2]
     # superdiagonals
-    c[range(0, n-2, 2), range(2, n, 2)] = 1.
-    c[range(0, n-1, 2), range(1, n, 2)] = -a[2::2]
+    c[range(0, n - 2, 2), range(2, n, 2)] = 1.0
+    c[range(0, n - 1, 2), range(1, n, 2)] = -a[2::2]
     c[[0, 1], 0] = [-a[1], 1]
 
     return c
 
 
-def convolution_matrix(a, n, mode='full'):
+def convolution_matrix(a, n, mode="full"):
     """
     Construct a convolution matrix.
 
@@ -1340,34 +1368,32 @@ def convolution_matrix(a, n, mode='full'):
            [ 0,  0, -2,  4, -1]])
     """
     if n <= 0:
-        raise ValueError('n must be a positive integer.')
+        raise ValueError("n must be a positive integer.")
 
     a = np.asarray(a)
     if a.ndim != 1:
-        raise ValueError('convolution_matrix expects a one-dimensional '
-                         'array as input')
+        raise ValueError("convolution_matrix expects a one-dimensional array as input")
     if a.size == 0:
-        raise ValueError('len(a) must be at least 1.')
+        raise ValueError("len(a) must be at least 1.")
 
-    if mode not in ('full', 'valid', 'same'):
-        raise ValueError(
-            "'mode' argument must be one of ('full', 'valid', 'same')")
+    if mode not in ("full", "valid", "same"):
+        raise ValueError("'mode' argument must be one of ('full', 'valid', 'same')")
 
     # create zero padded versions of the array
-    az = np.pad(a, (0, n-1), 'constant')
-    raz = np.pad(a[::-1], (0, n-1), 'constant')
+    az = np.pad(a, (0, n - 1), "constant")
+    raz = np.pad(a[::-1], (0, n - 1), "constant")
 
-    if mode == 'same':
+    if mode == "same":
         trim = min(n, len(a)) - 1
-        tb = trim//2
+        tb = trim // 2
         te = trim - tb
-        col0 = az[tb:len(az)-te]
-        row0 = raz[-n-tb:len(raz)-tb]
-    elif mode == 'valid':
+        col0 = az[tb : len(az) - te]
+        row0 = raz[-n - tb : len(raz) - tb]
+    elif mode == "valid":
         tb = min(n, len(a)) - 1
         te = tb
-        col0 = az[tb:len(az)-te]
-        row0 = raz[-n-tb:len(raz)-tb]
+        col0 = az[tb : len(az) - te]
+        row0 = raz[-n - tb : len(raz) - tb]
     else:  # 'full'
         col0 = az
         row0 = raz[-n:]

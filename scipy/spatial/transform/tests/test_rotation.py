@@ -10,6 +10,7 @@ from itertools import permutations
 import pickle
 import copy
 
+
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
@@ -33,12 +34,7 @@ def test_from_single_2d_quaternion():
 
 def test_from_square_quat_matrix():
     # Ensure proper norm array broadcasting
-    x = np.array([
-        [3, 0, 0, 4],
-        [5, 0, 12, 0],
-        [0, 0, 0, 1],
-        [0, 0, 0, -1]
-        ])
+    x = np.array([[3, 0, 0, 4], [5, 0, 12, 0], [0, 0, 0, 1], [0, 0, 0, -1]])
     r = Rotation.from_quat(x)
     expected_quat = x / np.array([[5], [13], [1], [1]])
     assert_array_almost_equal(r.as_quat(), expected_quat)
@@ -51,18 +47,11 @@ def test_malformed_1d_from_quat():
 
 def test_malformed_2d_from_quat():
     with pytest.raises(ValueError):
-        Rotation.from_quat(np.array([
-            [1, 2, 3, 4, 5],
-            [4, 5, 6, 7, 8]
-            ]))
+        Rotation.from_quat(np.array([[1, 2, 3, 4, 5], [4, 5, 6, 7, 8]]))
 
 
 def test_zero_norms_from_quat():
-    x = np.array([
-            [3, 4, 0, 0],
-            [0, 0, 0, 0],
-            [5, 0, 12, 0]
-            ])
+    x = np.array([[3, 4, 0, 0], [0, 0, 0, 0], [5, 0, 12, 0]])
     with pytest.raises(ValueError):
         Rotation.from_quat(x)
 
@@ -78,36 +67,19 @@ def test_as_matrix_single_2d_quaternion():
     quat = [[0, 0, 1, 1]]
     mat = Rotation.from_quat(quat).as_matrix()
     assert_equal(mat.shape, (1, 3, 3))
-    expected_mat = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-        ])
+    expected_mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     assert_array_almost_equal(mat[0], expected_mat)
 
 
 def test_as_matrix_from_square_input():
-    quats = [
-            [0, 0, 1, 1],
-            [0, 1, 0, 1],
-            [0, 0, 0, 1],
-            [0, 0, 0, -1]
-            ]
+    quats = [[0, 0, 1, 1], [0, 1, 0, 1], [0, 0, 0, 1], [0, 0, 0, -1]]
     mat = Rotation.from_quat(quats).as_matrix()
     assert_equal(mat.shape, (4, 3, 3))
 
-    expected0 = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-        ])
+    expected0 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     assert_array_almost_equal(mat[0], expected0)
 
-    expected1 = np.array([
-        [0, 0, 1],
-        [0, 1, 0],
-        [-1, 0, 0]
-        ])
+    expected1 = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
     assert_array_almost_equal(mat[1], expected1)
 
     assert_array_almost_equal(mat[2], np.eye(3))
@@ -115,73 +87,46 @@ def test_as_matrix_from_square_input():
 
 
 def test_as_matrix_from_generic_input():
-    quats = [
-            [0, 0, 1, 1],
-            [0, 1, 0, 1],
-            [1, 2, 3, 4]
-            ]
+    quats = [[0, 0, 1, 1], [0, 1, 0, 1], [1, 2, 3, 4]]
     mat = Rotation.from_quat(quats).as_matrix()
     assert_equal(mat.shape, (3, 3, 3))
 
-    expected0 = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-        ])
+    expected0 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     assert_array_almost_equal(mat[0], expected0)
 
-    expected1 = np.array([
-        [0, 0, 1],
-        [0, 1, 0],
-        [-1, 0, 0]
-        ])
+    expected1 = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
     assert_array_almost_equal(mat[1], expected1)
 
-    expected2 = np.array([
-        [0.4, -2, 2.2],
-        [2.8, 1, 0.4],
-        [-1, 2, 2]
-        ]) / 3
+    expected2 = np.array([[0.4, -2, 2.2], [2.8, 1, 0.4], [-1, 2, 2]]) / 3
     assert_array_almost_equal(mat[2], expected2)
 
 
 def test_from_single_2d_matrix():
-    mat = [
-            [0, 0, 1],
-            [1, 0, 0],
-            [0, 1, 0]
-            ]
+    mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
     expected_quat = [0.5, 0.5, 0.5, 0.5]
-    assert_array_almost_equal(
-            Rotation.from_matrix(mat).as_quat(),
-            expected_quat)
+    assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
 def test_from_single_3d_matrix():
-    mat = np.array([
-        [0, 0, 1],
-        [1, 0, 0],
-        [0, 1, 0]
-        ]).reshape((1, 3, 3))
+    mat = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]]).reshape((1, 3, 3))
     expected_quat = np.array([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
-    assert_array_almost_equal(
-            Rotation.from_matrix(mat).as_quat(),
-            expected_quat)
+    assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
 def test_from_matrix_calculation():
     expected_quat = np.array([1, 1, 6, 1]) / np.sqrt(39)
-    mat = np.array([
+    mat = np.array(
+        [
             [-0.8974359, -0.2564103, 0.3589744],
             [0.3589744, -0.8974359, 0.2564103],
-            [0.2564103, 0.3589744, 0.8974359]
-            ])
+            [0.2564103, 0.3589744, 0.8974359],
+        ]
+    )
+    assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
     assert_array_almost_equal(
-            Rotation.from_matrix(mat).as_quat(),
-            expected_quat)
-    assert_array_almost_equal(
-            Rotation.from_matrix(mat.reshape((1, 3, 3))).as_quat(),
-            expected_quat.reshape((1, 4)))
+        Rotation.from_matrix(mat.reshape((1, 3, 3))).as_quat(),
+        expected_quat.reshape((1, 4)),
+    )
 
 
 def test_matrix_calculation_pipeline():
@@ -194,8 +139,9 @@ def test_from_matrix_ortho_output():
     mat = rnd.random_sample((100, 3, 3))
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
-    mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
-                            ortho_mat.transpose((0, 2, 1)))
+    mult_result = np.einsum(
+        "...ij,...jk->...ik", ortho_mat, ortho_mat.transpose((0, 2, 1))
+    )
 
     eye3d = np.zeros((100, 3, 3))
     for i in range(3):
@@ -219,27 +165,25 @@ def test_from_2d_single_rotvec():
 
 
 def test_from_generic_rotvec():
-    rotvec = [
-            [1, 2, 2],
-            [1, -1, 0.5],
-            [0, 0, 0]
-            ]
-    expected_quat = np.array([
-        [0.3324983, 0.6649967, 0.6649967, 0.0707372],
-        [0.4544258, -0.4544258, 0.2272129, 0.7316889],
-        [0, 0, 0, 1]
-        ])
-    assert_array_almost_equal(
-            Rotation.from_rotvec(rotvec).as_quat(),
-            expected_quat)
+    rotvec = [[1, 2, 2], [1, -1, 0.5], [0, 0, 0]]
+    expected_quat = np.array(
+        [
+            [0.3324983, 0.6649967, 0.6649967, 0.0707372],
+            [0.4544258, -0.4544258, 0.2272129, 0.7316889],
+            [0, 0, 0, 1],
+        ]
+    )
+    assert_array_almost_equal(Rotation.from_rotvec(rotvec).as_quat(), expected_quat)
 
 
 def test_from_rotvec_small_angle():
-    rotvec = np.array([
-        [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
-        [0.2, 0.3, 0.4],
-        [0, 0, 0]
-        ])
+    rotvec = np.array(
+        [
+            [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
+            [0.2, 0.3, 0.4],
+            [0, 0, 0],
+        ]
+    )
 
     quat = Rotation.from_rotvec(rotvec).as_quat()
     # cos(theta/2) ~~ 1 for small theta
@@ -249,12 +193,9 @@ def test_from_rotvec_small_angle():
 
     assert_allclose(quat[1, 3], 0.9639685)
     assert_allclose(
-            quat[1, :3],
-            np.array([
-                0.09879603932153465,
-                0.14819405898230198,
-                0.19759207864306931
-                ]))
+        quat[1, :3],
+        np.array([0.09879603932153465, 0.14819405898230198, 0.19759207864306931]),
+    )
 
     assert_equal(quat[2], np.array([0, 0, 0, 1]))
 
@@ -272,30 +213,23 @@ def test_degrees_from_rotvec():
 
 
 def test_malformed_1d_from_rotvec():
-    with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
+    with pytest.raises(ValueError, match="Expected `rot_vec` to have shape"):
         Rotation.from_rotvec([1, 2])
 
 
 def test_malformed_2d_from_rotvec():
-    with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
-        Rotation.from_rotvec([
-            [1, 2, 3, 4],
-            [5, 6, 7, 8]
-            ])
+    with pytest.raises(ValueError, match="Expected `rot_vec` to have shape"):
+        Rotation.from_rotvec([[1, 2, 3, 4], [5, 6, 7, 8]])
 
 
 def test_as_generic_rotvec():
-    quat = np.array([
-            [1, 2, -1, 0.5],
-            [1, -1, 1, 0.0003],
-            [0, 0, 0, 1]
-            ])
+    quat = np.array([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
     quat /= np.linalg.norm(quat, axis=1)[:, None]
 
     rotvec = Rotation.from_quat(quat).as_rotvec()
     angle = np.linalg.norm(rotvec, axis=1)
 
-    assert_allclose(quat[:, 3], np.cos(angle/2))
+    assert_allclose(quat[:, 3], np.cos(angle / 2))
     assert_allclose(np.cross(rotvec, quat[:, :3]), np.zeros((3, 3)))
 
 
@@ -332,13 +266,11 @@ def test_as_rotvec_degrees():
 
 def test_rotvec_calc_pipeline():
     # Include small angles
-    rotvec = np.array([
-        [0, 0, 0],
-        [1, -1, 2],
-        [-3e-4, 3.5e-4, 7.5e-5]
-        ])
+    rotvec = np.array([[0, 0, 0], [1, -1, 2], [-3e-4, 3.5e-4, 7.5e-5]])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
-    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec)
+    assert_allclose(
+        Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec
+    )
 
 
 def test_from_1d_single_mrp():
@@ -356,48 +288,48 @@ def test_from_2d_single_mrp():
 
 
 def test_from_generic_mrp():
-    mrp = np.array([
-        [1, 2, 2],
-        [1, -1, 0.5],
-        [0, 0, 0]])
-    expected_quat = np.array([
-        [0.2, 0.4, 0.4, -0.8],
-        [0.61538462, -0.61538462, 0.30769231, -0.38461538],
-        [0, 0, 0, 1]])
+    mrp = np.array([[1, 2, 2], [1, -1, 0.5], [0, 0, 0]])
+    expected_quat = np.array(
+        [
+            [0.2, 0.4, 0.4, -0.8],
+            [0.61538462, -0.61538462, 0.30769231, -0.38461538],
+            [0, 0, 0, 1],
+        ]
+    )
     assert_array_almost_equal(Rotation.from_mrp(mrp).as_quat(), expected_quat)
 
 
 def test_malformed_1d_from_mrp():
-    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
+    with pytest.raises(ValueError, match="Expected `mrp` to have shape"):
         Rotation.from_mrp([1, 2])
 
 
 def test_malformed_2d_from_mrp():
-    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
-        Rotation.from_mrp([
-            [1, 2, 3, 4],
-            [5, 6, 7, 8]
-            ])
+    with pytest.raises(ValueError, match="Expected `mrp` to have shape"):
+        Rotation.from_mrp([[1, 2, 3, 4], [5, 6, 7, 8]])
 
 
 def test_as_generic_mrp():
-    quat = np.array([
-        [1, 2, -1, 0.5],
-        [1, -1, 1, 0.0003],
-        [0, 0, 0, 1]])
+    quat = np.array([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
     quat /= np.linalg.norm(quat, axis=1)[:, None]
 
-    expected_mrp = np.array([
-        [0.33333333, 0.66666667, -0.33333333],
-        [0.57725028, -0.57725028, 0.57725028],
-        [0, 0, 0]])
+    expected_mrp = np.array(
+        [
+            [0.33333333, 0.66666667, -0.33333333],
+            [0.57725028, -0.57725028, 0.57725028],
+            [0, 0, 0],
+        ]
+    )
     assert_array_almost_equal(Rotation.from_quat(quat).as_mrp(), expected_mrp)
+
 
 def test_past_180_degree_rotation():
     # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
     # in this case 270 should be returned as -90
-    expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
-    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+    expected_mrp = np.array([-np.tan(np.pi / 2 / 4), 0.0, 0])
+    assert_array_almost_equal(
+        Rotation.from_euler("xyz", [270, 0, 0], degrees=True).as_mrp(), expected_mrp
+    )
 
 
 def test_as_mrp_single_1d_input():
@@ -421,28 +353,27 @@ def test_as_mrp_single_2d_input():
 
 
 def test_mrp_calc_pipeline():
-    actual_mrp = np.array([
-        [0, 0, 0],
-        [1, -1, 2],
-        [0.41421356, 0, 0],
-        [0.1, 0.2, 0.1]])
-    expected_mrp = np.array([
-        [0, 0, 0],
-        [-0.16666667, 0.16666667, -0.33333333],
-        [0.41421356, 0, 0],
-        [0.1, 0.2, 0.1]])
+    actual_mrp = np.array([[0, 0, 0], [1, -1, 2], [0.41421356, 0, 0], [0.1, 0.2, 0.1]])
+    expected_mrp = np.array(
+        [
+            [0, 0, 0],
+            [-0.16666667, 0.16666667, -0.33333333],
+            [0.41421356, 0, 0],
+            [0.1, 0.2, 0.1],
+        ]
+    )
     assert_allclose(Rotation.from_mrp(actual_mrp).as_mrp(), expected_mrp)
 
 
 def test_from_euler_single_rotation():
-    quat = Rotation.from_euler('z', 90, degrees=True).as_quat()
+    quat = Rotation.from_euler("z", 90, degrees=True).as_quat()
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
 
 
 def test_single_intrinsic_extrinsic_rotation():
-    extrinsic = Rotation.from_euler('z', 90, degrees=True).as_matrix()
-    intrinsic = Rotation.from_euler('Z', 90, degrees=True).as_matrix()
+    extrinsic = Rotation.from_euler("z", 90, degrees=True).as_matrix()
+    intrinsic = Rotation.from_euler("Z", 90, degrees=True).as_matrix()
     assert_allclose(extrinsic, intrinsic)
 
 
@@ -451,128 +382,168 @@ def test_from_euler_rotation_order():
     rnd = np.random.RandomState(0)
     a = rnd.randint(low=0, high=180, size=(6, 3))
     b = a[:, ::-1]
-    x = Rotation.from_euler('xyz', a, degrees=True).as_quat()
-    y = Rotation.from_euler('ZYX', b, degrees=True).as_quat()
+    x = Rotation.from_euler("xyz", a, degrees=True).as_quat()
+    y = Rotation.from_euler("ZYX", b, degrees=True).as_quat()
     assert_allclose(x, y)
 
 
 def test_from_euler_elementary_extrinsic_rotation():
     # Simple test to check if extrinsic rotations are implemented correctly
-    mat = Rotation.from_euler('zx', [90, 90], degrees=True).as_matrix()
-    expected_mat = np.array([
-        [0, -1, 0],
-        [0, 0, -1],
-        [1, 0, 0]
-    ])
+    mat = Rotation.from_euler("zx", [90, 90], degrees=True).as_matrix()
+    expected_mat = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
     assert_array_almost_equal(mat, expected_mat)
 
 
 def test_from_euler_intrinsic_rotation_312():
-    angles = [
-        [30, 60, 45],
-        [30, 60, 30],
-        [45, 30, 60]
-        ]
-    mat = Rotation.from_euler('ZXY', angles, degrees=True).as_matrix()
+    angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
+    mat = Rotation.from_euler("ZXY", angles, degrees=True).as_matrix()
 
-    assert_array_almost_equal(mat[0], np.array([
-        [0.3061862, -0.2500000, 0.9185587],
-        [0.8838835, 0.4330127, -0.1767767],
-        [-0.3535534, 0.8660254, 0.3535534]
-    ]))
+    assert_array_almost_equal(
+        mat[0],
+        np.array(
+            [
+                [0.3061862, -0.2500000, 0.9185587],
+                [0.8838835, 0.4330127, -0.1767767],
+                [-0.3535534, 0.8660254, 0.3535534],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[1], np.array([
-        [0.5334936, -0.2500000, 0.8080127],
-        [0.8080127, 0.4330127, -0.3995191],
-        [-0.2500000, 0.8660254, 0.4330127]
-    ]))
+    assert_array_almost_equal(
+        mat[1],
+        np.array(
+            [
+                [0.5334936, -0.2500000, 0.8080127],
+                [0.8080127, 0.4330127, -0.3995191],
+                [-0.2500000, 0.8660254, 0.4330127],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[2], np.array([
-        [0.0473672, -0.6123725, 0.7891491],
-        [0.6597396, 0.6123725, 0.4355958],
-        [-0.7500000, 0.5000000, 0.4330127]
-    ]))
+    assert_array_almost_equal(
+        mat[2],
+        np.array(
+            [
+                [0.0473672, -0.6123725, 0.7891491],
+                [0.6597396, 0.6123725, 0.4355958],
+                [-0.7500000, 0.5000000, 0.4330127],
+            ]
+        ),
+    )
 
 
 def test_from_euler_intrinsic_rotation_313():
-    angles = [
-        [30, 60, 45],
-        [30, 60, 30],
-        [45, 30, 60]
-        ]
-    mat = Rotation.from_euler('ZXZ', angles, degrees=True).as_matrix()
+    angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
+    mat = Rotation.from_euler("ZXZ", angles, degrees=True).as_matrix()
 
-    assert_array_almost_equal(mat[0], np.array([
-        [0.43559574, -0.78914913, 0.4330127],
-        [0.65973961, -0.04736717, -0.750000],
-        [0.61237244, 0.61237244, 0.500000]
-    ]))
+    assert_array_almost_equal(
+        mat[0],
+        np.array(
+            [
+                [0.43559574, -0.78914913, 0.4330127],
+                [0.65973961, -0.04736717, -0.750000],
+                [0.61237244, 0.61237244, 0.500000],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[1], np.array([
-        [0.6250000, -0.64951905, 0.4330127],
-        [0.64951905, 0.1250000, -0.750000],
-        [0.4330127, 0.750000, 0.500000]
-    ]))
+    assert_array_almost_equal(
+        mat[1],
+        np.array(
+            [
+                [0.6250000, -0.64951905, 0.4330127],
+                [0.64951905, 0.1250000, -0.750000],
+                [0.4330127, 0.750000, 0.500000],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[2], np.array([
-        [-0.1767767, -0.91855865, 0.35355339],
-        [0.88388348, -0.30618622, -0.35355339],
-        [0.4330127, 0.25000000, 0.8660254]
-    ]))
+    assert_array_almost_equal(
+        mat[2],
+        np.array(
+            [
+                [-0.1767767, -0.91855865, 0.35355339],
+                [0.88388348, -0.30618622, -0.35355339],
+                [0.4330127, 0.25000000, 0.8660254],
+            ]
+        ),
+    )
 
 
 def test_from_euler_extrinsic_rotation_312():
-    angles = [
-        [30, 60, 45],
-        [30, 60, 30],
-        [45, 30, 60]
-        ]
-    mat = Rotation.from_euler('zxy', angles, degrees=True).as_matrix()
+    angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
+    mat = Rotation.from_euler("zxy", angles, degrees=True).as_matrix()
 
-    assert_array_almost_equal(mat[0], np.array([
-        [0.91855865, 0.1767767, 0.35355339],
-        [0.25000000, 0.4330127, -0.8660254],
-        [-0.30618622, 0.88388348, 0.35355339]
-    ]))
+    assert_array_almost_equal(
+        mat[0],
+        np.array(
+            [
+                [0.91855865, 0.1767767, 0.35355339],
+                [0.25000000, 0.4330127, -0.8660254],
+                [-0.30618622, 0.88388348, 0.35355339],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[1], np.array([
-        [0.96650635, -0.0580127, 0.2500000],
-        [0.25000000, 0.4330127, -0.8660254],
-        [-0.0580127, 0.89951905, 0.4330127]
-    ]))
+    assert_array_almost_equal(
+        mat[1],
+        np.array(
+            [
+                [0.96650635, -0.0580127, 0.2500000],
+                [0.25000000, 0.4330127, -0.8660254],
+                [-0.0580127, 0.89951905, 0.4330127],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[2], np.array([
-        [0.65973961, -0.04736717, 0.7500000],
-        [0.61237244, 0.61237244, -0.5000000],
-        [-0.43559574, 0.78914913, 0.4330127]
-    ]))
+    assert_array_almost_equal(
+        mat[2],
+        np.array(
+            [
+                [0.65973961, -0.04736717, 0.7500000],
+                [0.61237244, 0.61237244, -0.5000000],
+                [-0.43559574, 0.78914913, 0.4330127],
+            ]
+        ),
+    )
 
 
 def test_from_euler_extrinsic_rotation_313():
-    angles = [
-        [30, 60, 45],
-        [30, 60, 30],
-        [45, 30, 60]
-        ]
-    mat = Rotation.from_euler('zxz', angles, degrees=True).as_matrix()
+    angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
+    mat = Rotation.from_euler("zxz", angles, degrees=True).as_matrix()
 
-    assert_array_almost_equal(mat[0], np.array([
-        [0.43559574, -0.65973961, 0.61237244],
-        [0.78914913, -0.04736717, -0.61237244],
-        [0.4330127, 0.75000000, 0.500000]
-    ]))
+    assert_array_almost_equal(
+        mat[0],
+        np.array(
+            [
+                [0.43559574, -0.65973961, 0.61237244],
+                [0.78914913, -0.04736717, -0.61237244],
+                [0.4330127, 0.75000000, 0.500000],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[1], np.array([
-        [0.62500000, -0.64951905, 0.4330127],
-        [0.64951905, 0.12500000, -0.750000],
-        [0.4330127, 0.75000000, 0.500000]
-    ]))
+    assert_array_almost_equal(
+        mat[1],
+        np.array(
+            [
+                [0.62500000, -0.64951905, 0.4330127],
+                [0.64951905, 0.12500000, -0.750000],
+                [0.4330127, 0.75000000, 0.500000],
+            ]
+        ),
+    )
 
-    assert_array_almost_equal(mat[2], np.array([
-        [-0.1767767, -0.88388348, 0.4330127],
-        [0.91855865, -0.30618622, -0.250000],
-        [0.35355339, 0.35355339, 0.8660254]
-    ]))
+    assert_array_almost_equal(
+        mat[2],
+        np.array(
+            [
+                [-0.1767767, -0.88388348, 0.4330127],
+                [0.91855865, -0.30618622, -0.250000],
+                [0.35355339, 0.35355339, 0.8660254],
+            ]
+        ),
+    )
 
 
 def test_as_euler_asymmetric_axes():
@@ -583,9 +554,9 @@ def test_as_euler_asymmetric_axes():
     angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    for seq_tuple in permutations('xyz'):
+    for seq_tuple in permutations("xyz"):
         # Extrinsic rotations
-        seq = ''.join(seq_tuple)
+        seq = "".join(seq_tuple)
         assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
         # Intrinsic rotations
         seq = seq.upper()
@@ -600,41 +571,34 @@ def test_as_euler_symmetric_axes():
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    for axis1 in ['x', 'y', 'z']:
-        for axis2 in ['x', 'y', 'z']:
+    for axis1 in ["x", "y", "z"]:
+        for axis2 in ["x", "y", "z"]:
             if axis1 == axis2:
                 continue
             # Extrinsic rotations
             seq = axis1 + axis2 + axis1
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+            assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
             # Intrinsic rotations
             seq = seq.upper()
-            assert_allclose(
-                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+            assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
 
 
 def test_as_euler_degenerate_asymmetric_axes():
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
-    angles = np.array([
-        [45, 90, 35],
-        [35, -90, 20],
-        [35, 90, 25],
-        [25, -90, 15]
-        ])
+    angles = np.array([[45, 90, 35], [35, -90, 20], [35, 90, 25], [25, -90, 15]])
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
+        for seq_tuple in permutations("xyz"):
             # Extrinsic rotations
-            seq = ''.join(seq_tuple)
+            seq = "".join(seq_tuple)
             rotation = Rotation.from_euler(seq, angles, degrees=True)
             mat_expected = rotation.as_matrix()
 
             angle_estimates = rotation.as_euler(seq, degrees=True)
             mat_estimated = Rotation.from_euler(
                 seq, angle_estimates, degrees=True
-                ).as_matrix()
+            ).as_matrix()
 
             assert_array_almost_equal(mat_expected, mat_estimated)
 
@@ -646,7 +610,7 @@ def test_as_euler_degenerate_asymmetric_axes():
             angle_estimates = rotation.as_euler(seq, degrees=True)
             mat_estimated = Rotation.from_euler(
                 seq, angle_estimates, degrees=True
-                ).as_matrix()
+            ).as_matrix()
 
             assert_array_almost_equal(mat_expected, mat_estimated)
 
@@ -654,16 +618,18 @@ def test_as_euler_degenerate_asymmetric_axes():
 def test_as_euler_degenerate_symmetric_axes():
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
-    angles = np.array([
-        [15, 0, 60],
-        [35, 0, 75],
-        [60, 180, 35],
-        [15, -180, 25],
-        ])
+    angles = np.array(
+        [
+            [15, 0, 60],
+            [35, 0, 75],
+            [60, 180, 35],
+            [15, -180, 25],
+        ]
+    )
 
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for axis1 in ['x', 'y', 'z']:
-            for axis2 in ['x', 'y', 'z']:
+        for axis1 in ["x", "y", "z"]:
+            for axis2 in ["x", "y", "z"]:
                 if axis1 == axis2:
                     continue
 
@@ -675,7 +641,7 @@ def test_as_euler_degenerate_symmetric_axes():
                 angle_estimates = rotation.as_euler(seq, degrees=True)
                 mat_estimated = Rotation.from_euler(
                     seq, angle_estimates, degrees=True
-                    ).as_matrix()
+                ).as_matrix()
 
                 assert_array_almost_equal(mat_expected, mat_estimated)
 
@@ -687,7 +653,7 @@ def test_as_euler_degenerate_symmetric_axes():
                 angle_estimates = rotation.as_euler(seq, degrees=True)
                 mat_estimated = Rotation.from_euler(
                     seq, angle_estimates, degrees=True
-                    ).as_matrix()
+                ).as_matrix()
 
                 assert_array_almost_equal(mat_expected, mat_estimated)
 
@@ -700,8 +666,8 @@ def test_inv():
 
     p_mat = p.as_matrix()
     q_mat = q.as_matrix()
-    result1 = np.einsum('...ij,...jk->...ik', p_mat, q_mat)
-    result2 = np.einsum('...ij,...jk->...ik', q_mat, p_mat)
+    result1 = np.einsum("...ij,...jk->...ik", p_mat, q_mat)
+    result2 = np.einsum("...ij,...jk->...ik", q_mat, p_mat)
 
     eye3d = np.empty((n, 3, 3))
     eye3d[:] = np.eye(3)
@@ -730,8 +696,8 @@ def test_inv_single_rotation():
 
     x_matrix = x.as_matrix()
     y_matrix = y.as_matrix()
-    result1 = np.einsum('...ij,...jk->...ik', x_matrix, y_matrix)
-    result2 = np.einsum('...ij,...jk->...ik', y_matrix, x_matrix)
+    result1 = np.einsum("...ij,...jk->...ik", x_matrix, y_matrix)
+    result2 = np.einsum("...ij,...jk->...ik", y_matrix, x_matrix)
 
     eye3d = np.empty((1, 3, 3))
     eye3d[:] = np.eye(3)
@@ -797,7 +763,7 @@ def test_mean():
     thetas = np.linspace(0, np.pi / 2, 100)
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
-        assert_allclose(r.mean().magnitude(), 0, atol=1E-10)
+        assert_allclose(r.mean().magnitude(), 0, atol=1e-10)
 
 
 def test_weighted_mean():
@@ -810,7 +776,7 @@ def test_weighted_mean():
 
         r = Rotation.from_rotvec(t * axes)
         m = r.mean()
-        assert_allclose((m * mw.inv()).magnitude(), 0, atol=1E-10)
+        assert_allclose((m * mw.inv()).magnitude(), 0, atol=1e-10)
 
 
 def test_mean_invalid_weights():
@@ -861,11 +827,7 @@ def test_reduction_scalar_calculation():
 
 
 def test_apply_single_rotation_single_point():
-    mat = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
+    mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r_1d = Rotation.from_matrix(mat)
     r_2d = Rotation.from_matrix(np.expand_dims(mat, axis=0))
 
@@ -889,11 +851,7 @@ def test_apply_single_rotation_single_point():
 
 
 def test_apply_single_rotation_multiple_points():
-    mat = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
+    mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r1 = Rotation.from_matrix(mat)
     r2 = Rotation.from_matrix(np.expand_dims(mat, axis=0))
 
@@ -911,16 +869,8 @@ def test_apply_single_rotation_multiple_points():
 
 def test_apply_multiple_rotations_single_point():
     mat = np.empty((2, 3, 3))
-    mat[0] = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
-    mat[1] = np.array([
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0]
-    ])
+    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
     r = Rotation.from_matrix(mat)
 
     v1 = np.array([1, 2, 3])
@@ -939,16 +889,8 @@ def test_apply_multiple_rotations_single_point():
 
 def test_apply_multiple_rotations_multiple_points():
     mat = np.empty((2, 3, 3))
-    mat[0] = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
-    mat[1] = np.array([
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0]
-    ])
+    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
     r = Rotation.from_matrix(mat)
 
     v = np.array([[1, 2, 3], [4, 5, 6]])
@@ -961,16 +903,8 @@ def test_apply_multiple_rotations_multiple_points():
 
 def test_getitem():
     mat = np.empty((2, 3, 3))
-    mat[0] = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
-    mat[1] = np.array([
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0]
-    ])
+    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
     r = Rotation.from_matrix(mat)
 
     assert_allclose(r[0].as_matrix(), mat[0], atol=1e-15)
@@ -980,16 +914,8 @@ def test_getitem():
 
 def test_n_rotations():
     mat = np.empty((2, 3, 3))
-    mat[0] = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
-    mat[1] = np.array([
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0]
-    ])
+    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
     r = Rotation.from_matrix(mat)
 
     assert_equal(len(r), 2)
@@ -1018,10 +944,12 @@ def test_align_vectors_no_noise():
 
 def test_align_vectors_improper_rotation():
     # Tests correct logic for issue #10444
-    x = np.array([[0.89299824, -0.44372674, 0.0752378],
-                  [0.60221789, -0.47564102, -0.6411702]])
-    y = np.array([[0.02386536, -0.82176463, 0.5693271],
-                  [-0.27654929, -0.95191427, -0.1318321]])
+    x = np.array(
+        [[0.89299824, -0.44372674, 0.0752378], [0.60221789, -0.47564102, -0.6411702]]
+    )
+    y = np.array(
+        [[0.02386536, -0.82176463, 0.5693271], [-0.27654929, -0.95191427, -0.1318321]]
+    )
 
     est, rmsd = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
@@ -1045,26 +973,22 @@ def test_align_vectors_scaled_weights():
 def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
-    rot = Rotation.from_euler('xyz', rnd.normal(size=3))
+    rot = Rotation.from_euler("xyz", rnd.normal(size=3))
     vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
     # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
-    noise = Rotation.from_rotvec(
-        rnd.normal(
-            size=(n_vectors, 3),
-            scale=sigma
-        )
-    )
+    noise = Rotation.from_rotvec(rnd.normal(size=(n_vectors, 3), scale=sigma))
 
     # Attitude errors must preserve norm. Hence apply individual random
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors,
-                                            return_sensitivity=True)
+    est, rmsd, cov = Rotation.align_vectors(
+        noisy_result, vectors, return_sensitivity=True
+    )
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
@@ -1078,7 +1002,7 @@ def test_align_vectors_noise():
     assert_allclose(cov[1, 1], 0, atol=tolerance)
     assert_allclose(cov[2, 2], 0, atol=tolerance)
 
-    assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
+    assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors)) ** 2) ** 0.5)
 
 
 def test_align_vectors_single_vector():
@@ -1094,16 +1018,15 @@ def test_align_vectors_invalid_input():
     with pytest.raises(ValueError, match="Expected input `b` to have shape"):
         Rotation.align_vectors([[1, 2, 3]], [1, 2, 3])
 
-    with pytest.raises(ValueError, match="Expected inputs `a` and `b` "
-                                         "to have same shapes"):
-        Rotation.align_vectors([[1, 2, 3],[4, 5, 6]], [[1, 2, 3]])
+    with pytest.raises(
+        ValueError, match="Expected inputs `a` and `b` to have same shapes"
+    ):
+        Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3]])
 
-    with pytest.raises(ValueError,
-                       match="Expected `weights` to be 1 dimensional"):
+    with pytest.raises(ValueError, match="Expected `weights` to be 1 dimensional"):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
 
-    with pytest.raises(ValueError,
-                       match="Expected `weights` to have number of values"):
+    with pytest.raises(ValueError, match="Expected `weights` to have number of values"):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
 
 
@@ -1154,7 +1077,7 @@ def test_slerp():
     # theta1: 0 -> 0.25, theta3 : 0.5 -> 1
     # Use double angle formula for double the time difference
     cos_theta3 = np.sum(interp_quats[1] * interp_quats[3])
-    assert_allclose(cos_theta3, 2 * (cos_theta1**2) - 1)
+    assert_allclose(cos_theta3, 2 * (cos_theta1 ** 2) - 1)
 
     # Miscellaneous checks
     assert_equal(len(interp_rots), len(times))
@@ -1167,18 +1090,19 @@ def test_slerp_single_rot():
 
 
 def test_slerp_time_dim_mismatch():
-    with pytest.raises(ValueError,
-                       match="times to be specified in a 1 dimensional array"):
+    with pytest.raises(
+        ValueError, match="times to be specified in a 1 dimensional array"
+    ):
         rnd = np.random.RandomState(0)
         r = Rotation.from_quat(rnd.uniform(size=(2, 4)))
-        t = np.array([[1],
-                      [2]])
+        t = np.array([[1], [2]])
         Slerp(t, r)
 
 
 def test_slerp_num_rotations_mismatch():
-    with pytest.raises(ValueError, match="number of rotations to be equal to "
-                                         "number of timestamps"):
+    with pytest.raises(
+        ValueError, match="number of rotations to be equal to number of timestamps"
+    ):
         rnd = np.random.RandomState(0)
         r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = np.arange(7)
@@ -1207,10 +1131,8 @@ def test_slerp_call_time_dim_mismatch():
     t = np.arange(5)
     s = Slerp(t, r)
 
-    with pytest.raises(ValueError,
-                       match="`times` must be at most 1-dimensional."):
-        interp_times = np.array([[3.5],
-                                 [4.2]])
+    with pytest.raises(ValueError, match="`times` must be at most 1-dimensional."):
+        interp_times = np.array([[3.5], [4.2]])
         s(interp_times)
 
 
@@ -1227,11 +1149,11 @@ def test_slerp_call_time_out_of_range():
 
 
 def test_slerp_call_scalar_time():
-    r = Rotation.from_euler('X', [0, 80], degrees=True)
+    r = Rotation.from_euler("X", [0, 80], degrees=True)
     s = Slerp([0, 1], r)
 
     r_interpolated = s(0.25)
-    r_interpolated_expected = Rotation.from_euler('X', 20, degrees=True)
+    r_interpolated_expected = Rotation.from_euler("X", 20, degrees=True)
 
     delta = r_interpolated * r_interpolated_expected.inv()
 
@@ -1277,24 +1199,23 @@ def test_rotation_within_numpy_array():
 
 
 def test_pickling():
-    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    r = Rotation.from_quat([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)])
     pkl = pickle.dumps(r)
     unpickled = pickle.loads(pkl)
     assert_allclose(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
 def test_deepcopy():
-    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    r = Rotation.from_quat([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)])
     r1 = copy.deepcopy(r)
     assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)
 
 
 def test_as_euler_contiguous():
     r = Rotation.from_quat([0, 0, 0, 1])
-    e1 = r.as_euler('xyz')  # extrinsic euler rotation
-    e2 = r.as_euler('XYZ')  # intrinsic
-    assert e1.flags['C_CONTIGUOUS'] is True
-    assert e2.flags['C_CONTIGUOUS'] is True
+    e1 = r.as_euler("xyz")  # extrinsic euler rotation
+    e2 = r.as_euler("XYZ")  # intrinsic
+    assert e1.flags["C_CONTIGUOUS"] is True
+    assert e2.flags["C_CONTIGUOUS"] is True
     assert all(i >= 0 for i in e1.strides)
     assert all(i >= 0 for i in e2.strides)
-

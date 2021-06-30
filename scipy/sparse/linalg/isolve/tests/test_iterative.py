@@ -6,8 +6,13 @@ import platform
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose, suppress_warnings)
+from numpy.testing import (
+    assert_equal,
+    assert_array_equal,
+    assert_,
+    assert_allclose,
+    suppress_warnings,
+)
 import pytest
 from pytest import raises as assert_raises
 
@@ -16,7 +21,17 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
+from scipy.sparse.linalg.isolve import (
+    cg,
+    cgs,
+    bicg,
+    bicgstab,
+    gmres,
+    qmr,
+    minres,
+    lgmres,
+    gcrotmk,
+)
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -58,45 +73,47 @@ class IterativeParams:
 
         # Symmetric and Positive Definite
         N = 40
-        data = ones((3,N))
-        data[0,:] = 2
-        data[1,:] = -1
-        data[2,:] = -1
-        Poisson1D = spdiags(data, [0,-1,1], N, N, format='csr')
+        data = ones((3, N))
+        data[0, :] = 2
+        data[1, :] = -1
+        data[2, :] = -1
+        Poisson1D = spdiags(data, [0, -1, 1], N, N, format="csr")
         self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson1d", Poisson1D.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("poisson1d", Poisson1D.astype("f"), skip=[minres]))
 
         # Symmetric and Negative Definite
-        self.cases.append(Case("neg-poisson1d", -Poisson1D,
-                               skip=posdef_solvers))
+        self.cases.append(Case("neg-poisson1d", -Poisson1D, skip=posdef_solvers))
         # note: minres fails for single precision
-        self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
-                               skip=posdef_solvers + [minres]))
+        self.cases.append(
+            Case(
+                "neg-poisson1d",
+                (-Poisson1D).astype("f"),
+                skip=posdef_solvers + [minres],
+            )
+        )
 
         # Symmetric and Indefinite
-        data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
-        RandDiag = spdiags(data, [0], 10, 10, format='csr')
+        data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]], dtype="d")
+        RandDiag = spdiags(data, [0], 10, 10, format="csr")
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
-        self.cases.append(Case("rand-diag", RandDiag.astype('f'),
-                               skip=posdef_solvers))
+        self.cases.append(Case("rand-diag", RandDiag.astype("f"), skip=posdef_solvers))
 
         # Random real-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4)
-        self.cases.append(Case("rand", data, skip=posdef_solvers+sym_solvers))
-        self.cases.append(Case("rand", data.astype('f'),
-                               skip=posdef_solvers+sym_solvers))
+        self.cases.append(Case("rand", data, skip=posdef_solvers + sym_solvers))
+        self.cases.append(
+            Case("rand", data.astype("f"), skip=posdef_solvers + sym_solvers)
+        )
 
         # Random symmetric real-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4)
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
-        self.cases.append(Case("rand-sym", data.astype('f'),
-                               skip=posdef_solvers))
+        self.cases.append(Case("rand-sym", data.astype("f"), skip=posdef_solvers))
 
         # Random pos-def symmetric real
         np.random.seed(1234)
@@ -104,64 +121,85 @@ class IterativeParams:
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
         # note: minres fails for single precision
-        self.cases.append(Case("rand-sym-pd", data.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("rand-sym-pd", data.astype("f"), skip=[minres]))
 
         # Random complex-valued
         np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
-        self.cases.append(Case("rand-cmplx", data,
-                               skip=posdef_solvers+sym_solvers+real_solvers))
-        self.cases.append(Case("rand-cmplx", data.astype('F'),
-                               skip=posdef_solvers+sym_solvers+real_solvers))
+        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
+        self.cases.append(
+            Case("rand-cmplx", data, skip=posdef_solvers + sym_solvers + real_solvers)
+        )
+        self.cases.append(
+            Case(
+                "rand-cmplx",
+                data.astype("F"),
+                skip=posdef_solvers + sym_solvers + real_solvers,
+            )
+        )
 
         # Random hermitian complex-valued
         np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
+        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
         data = data + data.T.conj()
-        self.cases.append(Case("rand-cmplx-herm", data,
-                               skip=posdef_solvers+real_solvers))
-        self.cases.append(Case("rand-cmplx-herm", data.astype('F'),
-                               skip=posdef_solvers+real_solvers))
+        self.cases.append(
+            Case("rand-cmplx-herm", data, skip=posdef_solvers + real_solvers)
+        )
+        self.cases.append(
+            Case(
+                "rand-cmplx-herm", data.astype("F"), skip=posdef_solvers + real_solvers
+            )
+        )
 
         # Random pos-def hermitian complex-valued
         np.random.seed(1234)
-        data = np.random.rand(9, 9) + 1j*np.random.rand(9, 9)
+        data = np.random.rand(9, 9) + 1j * np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
-        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
-                               skip=real_solvers))
+        self.cases.append(
+            Case("rand-cmplx-sym-pd", data.astype("F"), skip=real_solvers)
+        )
 
         # Non-symmetric and Positive Definite
         #
         # cgs, qmr, and bicg fail to converge on this one
         #   -- algorithmic limitation apparently
-        data = ones((2,10))
-        data[0,:] = 2
-        data[1,:] = -1
-        A = spdiags(data, [0,-1], 10, 10, format='csr')
-        self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs, qmr, bicg]))
-        self.cases.append(Case("nonsymposdef", A.astype('F'),
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+        data = ones((2, 10))
+        data[0, :] = 2
+        data[1, :] = -1
+        A = spdiags(data, [0, -1], 10, 10, format="csr")
+        self.cases.append(Case("nonsymposdef", A, skip=sym_solvers + [cgs, qmr, bicg]))
+        self.cases.append(
+            Case("nonsymposdef", A.astype("F"), skip=sym_solvers + [cgs, qmr, bicg])
+        )
 
         # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
-        A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
-                      [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
-                      [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
-                      [0, 0, 0, 0, 0, 2, -0, -0, -0, -1, -0],
-                      [0, 0, 0, 0, 0, 1, -0, -0, -0, -0, -1],
-                      [1, 2, 2, 2, 1, 0, -0, -0, -0, -0, -0],
-                      [-1, 0, 0, 0, 0, 0, -1, -0, -0, -0, -0],
-                      [0, -1, 0, 0, 0, 0, -0, -1, -0, -0, -0],
-                      [0, 0, -1, 0, 0, 0, -0, -0, -1, -0, -0],
-                      [0, 0, 0, -1, 0, 0, -0, -0, -0, -1, -0],
-                      [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype=float)
+        A = np.array(
+            [
+                [0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
+                [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
+                [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
+                [0, 0, 0, 0, 0, 2, -0, -0, -0, -1, -0],
+                [0, 0, 0, 0, 0, 1, -0, -0, -0, -0, -1],
+                [1, 2, 2, 2, 1, 0, -0, -0, -0, -0, -0],
+                [-1, 0, 0, 0, 0, 0, -1, -0, -0, -0, -0],
+                [0, -1, 0, 0, 0, 0, -0, -1, -0, -0, -0],
+                [0, 0, -1, 0, 0, 0, -0, -0, -1, -0, -0],
+                [0, 0, 0, -1, 0, 0, -0, -0, -0, -1, -0],
+                [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1],
+            ],
+            dtype=float,
+        )
         b = np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float)
         assert (A == A.T).all()
-        self.cases.append(Case("sym-nonpd", A, b,
-                               skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+        self.cases.append(
+            Case(
+                "sym-nonpd",
+                A,
+                b,
+                skip=posdef_solvers,
+                nonconvergence=[cgs, bicg, bicgstab, qmr],
+            )
+        )
 
 
 params = IterativeParams()
@@ -172,12 +210,12 @@ def check_maxiter(solver, case):
     tol = 1e-12
 
     b = case.b
-    x0 = 0*b
+    x0 = 0 * b
 
     residuals = []
 
     def callback(x):
-        residuals.append(norm(b - case.A*x))
+        residuals.append(norm(b - case.A * x))
 
     x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
@@ -197,7 +235,7 @@ def test_maxiter():
 
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
-    tolerance = tol*norm(b)
+    tolerance = tol * norm(b)
     msg = "residual (%g) not smaller than tolerance %g" % (residual, tolerance)
     assert_(residual < tolerance, msg=msg)
 
@@ -211,13 +249,13 @@ def check_convergence(solver, case):
         tol = 1e-2
 
     b = case.b
-    x0 = 0*b
+    x0 = 0 * b
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
-    assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
+    assert_array_equal(x0, 0 * b)  # ensure that x0 is not overwritten
     if solver not in case.nonconvergence:
-        assert_equal(info,0)
+        assert_equal(info, 0)
         assert_normclose(A.dot(x), b, tol=tol)
     else:
         assert_(info != 0)
@@ -237,17 +275,17 @@ def test_convergence():
 def check_precond_dummy(solver, case):
     tol = 1e-8
 
-    def identity(b,which=None):
+    def identity(b, which=None):
         """trivial preconditioner"""
         return b
 
     A = case.A
 
-    M,N = A.shape
-    spdiags([1.0/A.diagonal()], [0], M, N)
+    M, N = A.shape
+    spdiags([1.0 / A.diagonal()], [0], M, N)
 
     b = case.b
-    x0 = 0*b
+    x0 = 0 * b
 
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
 
@@ -255,7 +293,7 @@ def check_precond_dummy(solver, case):
         x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
-    assert_equal(info,0)
+    assert_equal(info, 0)
     assert_normclose(A.dot(x), b, tol)
 
     A = aslinearoperator(A)
@@ -263,8 +301,8 @@ def check_precond_dummy(solver, case):
     A.rpsolve = identity
 
     x, info = solver(A, b, x0=x0, tol=tol)
-    assert_equal(info,0)
-    assert_normclose(A*x, b, tol=tol)
+    assert_equal(info, 0)
+    assert_normclose(A * x, b, tol=tol)
 
 
 def test_precond_dummy():
@@ -280,14 +318,14 @@ def test_precond_dummy():
 def check_precond_inverse(solver, case):
     tol = 1e-8
 
-    def inverse(b,which=None):
+    def inverse(b, which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
             A = A.todense()
         return np.linalg.solve(A, b)
 
-    def rinverse(b,which=None):
+    def rinverse(b, which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
@@ -305,7 +343,7 @@ def check_precond_inverse(solver, case):
         return case.A.T.dot(b)
 
     b = case.b
-    x0 = 0*b
+    x0 = 0 * b
 
     A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
     precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
@@ -361,9 +399,9 @@ def _check_reentrancy(solver, is_reentrant):
         y, info = solver(A, x)
         assert_equal(info, 0)
         return y
-    b = np.array([1, 1./2, 1./3])
-    op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
-                        dtype=b.dtype)
+
+    b = np.array([1, 1.0 / 2, 1.0 / 3])
+    op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec, dtype=b.dtype)
 
     if not is_reentrant:
         assert_raises(RuntimeError, solver, op, b)
@@ -373,7 +411,9 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+@pytest.mark.parametrize(
+    "solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk]
+)
 def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
@@ -412,7 +452,9 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize(
+    "solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+)
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -447,17 +489,29 @@ def test_zero_rhs(solver):
                 assert_allclose(x, 0, atol=1e-300)
 
 
-@pytest.mark.parametrize("solver", [
-    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
-                                                and sys.version_info[1] == 9,
-                                                reason="gh-13019")),
-    qmr,
-    pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
-                                                 reason="fails on ppc64le")),
-    pytest.param(cgs, marks=pytest.mark.xfail),
-    pytest.param(bicg, marks=pytest.mark.xfail),
-    pytest.param(bicgstab, marks=pytest.mark.xfail),
-    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+@pytest.mark.parametrize(
+    "solver",
+    [
+        pytest.param(
+            gmres,
+            marks=pytest.mark.xfail(
+                platform.machine() == "aarch64" and sys.version_info[1] == 9,
+                reason="gh-13019",
+            ),
+        ),
+        qmr,
+        pytest.param(
+            lgmres,
+            marks=pytest.mark.xfail(
+                platform.machine() == "ppc64le", reason="fails on ppc64le"
+            ),
+        ),
+        pytest.param(cgs, marks=pytest.mark.xfail),
+        pytest.param(bicg, marks=pytest.mark.xfail),
+        pytest.param(bicgstab, marks=pytest.mark.xfail),
+        pytest.param(gcrotmk, marks=pytest.mark.xfail),
+    ],
+)
 def test_maxiter_worsening(solver):
     # Check error does not grow (boundlessly) with increasing maxiter.
     # This can occur due to the solvers hitting close to breakdown,
@@ -465,28 +519,34 @@ def test_maxiter_worsening(solver):
     # cf. gh-9100
 
     # Singular matrix, rhs numerically not in range
-    A = np.array([[-0.1112795288033378, 0, 0, 0.16127952880333685],
-                  [0, -0.13627952880333782+6.283185307179586j, 0, 0],
-                  [0, 0, -0.13627952880333782-6.283185307179586j, 0],
-                  [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
+    A = np.array(
+        [
+            [-0.1112795288033378, 0, 0, 0.16127952880333685],
+            [0, -0.13627952880333782 + 6.283185307179586j, 0, 0],
+            [0, 0, -0.13627952880333782 - 6.283185307179586j, 0],
+            [0.1112795288033368, 0j, 0j, -0.16127952880333785],
+        ]
+    )
     v = np.ones(4)
     best_error = np.inf
-    tol = 7 if platform.machine() == 'aarch64' else 5
+    tol = 7 if platform.machine() == "aarch64" else 5
 
     for maxiter in range(1, 20):
         x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
 
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v))
+            assert_(np.linalg.norm(A.dot(x) - v) <= 1e-8 * np.linalg.norm(v))
 
         error = np.linalg.norm(A.dot(x) - v)
         best_error = min(best_error, error)
 
         # Check with slack
-        assert_(error <= tol*best_error)
+        assert_(error <= tol * best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize(
+    "solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+)
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -503,14 +563,15 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, **kw)
     assert_equal(info, 0)
-    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6 * np.linalg.norm(b))
 
     x, info = solver(A, b, x0=x0, **kw)
     assert_equal(info, 0)
-    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6 * np.linalg.norm(b))
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class TestQMR:
     def test_leftright_precond(self):
@@ -522,11 +583,11 @@ class TestQMR:
         n = 100
 
         dat = ones(n)
-        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
-        b = arange(n,dtype='d')
+        A = spdiags([-2 * dat, 4 * dat, -dat], [-1, 0, 1], n, n)
+        b = arange(n, dtype="d")
 
-        L = spdiags([-dat/2, dat], [-1,0], n, n)
-        U = spdiags([4*dat, -dat], [0,1], n, n)
+        L = spdiags([-dat / 2, dat], [-1, 0], n, n)
+        U = spdiags([4 * dat, -dat], [0, 1], n, n)
 
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
@@ -540,45 +601,62 @@ class TestQMR:
             return U_solver.solve(b)
 
         def LT_solve(b):
-            return L_solver.solve(b,'T')
+            return L_solver.solve(b, "T")
 
         def UT_solve(b):
-            return U_solver.solve(b,'T')
+            return U_solver.solve(b, "T")
 
-        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
-        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
+        M1 = LinearOperator((n, n), matvec=L_solve, rmatvec=LT_solve)
+        M2 = LinearOperator((n, n), matvec=U_solve, rmatvec=UT_solve)
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+            x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-        assert_equal(info,0)
-        assert_normclose(A*x, b, tol=1e-8)
+        assert_equal(info, 0)
+        assert_normclose(A * x, b, tol=1e-8)
 
 
 class TestGMRES:
     def test_callback(self):
-
         def store_residual(r, rvec):
-            rvec[rvec.nonzero()[0].max()+1] = r
+            rvec[rvec.nonzero()[0].max() + 1] = r
 
         # Define, A,b
-        A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
+        A = csr_matrix(
+            array(
+                [
+                    [-2, 1, 0, 0, 0, 0],
+                    [1, -2, 1, 0, 0, 0],
+                    [0, 1, -2, 1, 0, 0],
+                    [0, 0, 1, -2, 1, 0],
+                    [0, 0, 0, 1, -2, 1],
+                    [0, 0, 0, 0, 1, -2],
+                ]
+            )
+        )
         b = ones((A.shape[0],))
         maxiter = 1
-        rvec = zeros(maxiter+1)
+        rvec = zeros(maxiter + 1)
         rvec[0] = 1.0
-        callback = lambda r:store_residual(r, rvec)
+        callback = lambda r: store_residual(r, rvec)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+            x, flag = gmres(
+                A,
+                b,
+                x0=zeros(A.shape[0]),
+                tol=1e-16,
+                maxiter=maxiter,
+                callback=callback,
+            )
 
         # Expected output from SciPy 1.0.0
         assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
 
         # Test preconditioned callback
         M = 1e-3 * np.eye(A.shape[0])
-        rvec = zeros(maxiter+1)
+        rvec = zeros(maxiter + 1)
         rvec[0] = 1.0
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -616,7 +694,7 @@ class TestGMRES:
             A = eye(2)
             b = ones(2)
             x, info = gmres(A, b, tol=1e-5)
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5 * np.linalg.norm(b))
             assert_allclose(x, b, atol=0, rtol=1e-8)
 
             rndm = np.random.RandomState(12345)
@@ -628,12 +706,12 @@ class TestGMRES:
         A = eye(2)
         b = 1e-10 * ones(2)
         x, info = gmres(A, b, tol=1e-8, atol=0)
-        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8 * np.linalg.norm(b))
 
     def test_defective_precond_breakdown(self):
         # Breakdown due to defective preconditioner
         M = np.eye(3)
-        M[2,2] = 0
+        M[2, 2] = 0
 
         b = np.array([0, 1, 1])
         x = np.array([1, 0, 0])
@@ -644,7 +722,7 @@ class TestGMRES:
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15 * np.linalg.norm(b))
 
         # The solution should be OK outside null space of M
         assert_allclose(M.dot(A.dot(x)), M.dot(b))
@@ -658,7 +736,7 @@ class TestGMRES:
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8 * np.linalg.norm(b))
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
@@ -683,28 +761,54 @@ class TestGMRES:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             # 2 iterations is not enough to solve the problem
             cb_count = [0]
-            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            x, info = gmres(
+                A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50
+            )
             assert info == 2
             assert cb_count[0] == 2
 
         # With `callback_type` specified, no warning should be raised
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
-                        callback_type='legacy')
+        x, info = gmres(
+            A,
+            b,
+            tol=1e-6,
+            atol=0,
+            callback=pr_norm_cb,
+            maxiter=2,
+            restart=50,
+            callback_type="legacy",
+        )
         assert info == 2
         assert cb_count[0] == 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
-                        callback_type='pr_norm')
+        x, info = gmres(
+            A,
+            b,
+            tol=1e-6,
+            atol=0,
+            callback=pr_norm_cb,
+            maxiter=2,
+            restart=50,
+            callback_type="pr_norm",
+        )
         assert info == 0
         assert cb_count[0] > 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
-                        callback_type='x')
+        x, info = gmres(
+            A,
+            b,
+            tol=1e-6,
+            atol=0,
+            callback=x_cb,
+            maxiter=2,
+            restart=50,
+            callback_type="x",
+        )
         assert info == 0
         assert cb_count[0] == 2
 
@@ -723,8 +827,16 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
-                        callback_type='x')
+        x, info = gmres(
+            A,
+            b,
+            tol=1e-6,
+            atol=0,
+            callback=x_cb,
+            maxiter=20,
+            restart=10,
+            callback_type="x",
+        )
         assert info == 20
         assert count[0] == 21
         x_cb(x)

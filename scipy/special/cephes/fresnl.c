@@ -50,7 +50,7 @@
  *   IEEE       S(x)      0, 10       10000       2.0e-15     3.2e-16
  *   IEEE       C(x)      0, 10       10000       1.8e-15     3.3e-16
  */
-
+
 /*
  * Cephes Math Library Release 2.1:  January, 1989
  * Copyright 1984, 1987, 1989 by Stephen L. Moshier

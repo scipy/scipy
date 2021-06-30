@@ -3,8 +3,16 @@ import copy
 
 
 class Complex:
-    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None,
-                 g_cons=None, g_args=()):
+    def __init__(
+        self,
+        dim,
+        func,
+        func_args=(),
+        symmetry=False,
+        bounds=None,
+        g_cons=None,
+        g_args=(),
+    ):
         self.dim = dim
         self.bounds = bounds
         self.symmetry = symmetry  # TODO: Define the functions to be used
@@ -143,8 +151,7 @@ class Complex:
     def add_centroid(self):
         """Split the central edge between the origin and supremum of
         a cell and add the new vertex to the complex"""
-        self.centroid = list(
-            (np.array(self.origin) + np.array(self.supremum)) / 2.0)
+        self.centroid = list((np.array(self.origin) + np.array(self.supremum)) / 2.0)
         self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
@@ -161,11 +168,9 @@ class Complex:
     # Construct incidence array:
     def incidence(self):
         if self.centroid_added:
-            self.structure = np.zeros([2 ** self.dim + 1, 2 ** self.dim + 1],
-                                         dtype=int)
+            self.structure = np.zeros([2 ** self.dim + 1, 2 ** self.dim + 1], dtype=int)
         else:
-            self.structure = np.zeros([2 ** self.dim, 2 ** self.dim],
-                                         dtype=int)
+            self.structure = np.zeros([2 ** self.dim, 2 ** self.dim], dtype=int)
 
         for v in self.HC.C0():
             for v2 in v.nn:
@@ -175,7 +180,7 @@ class Complex:
 
     # A more sparse incidence generator:
     def graph_map(self):
-        """ Make a list of size 2**n + 1 where an entry is a vertex
+        """Make a list of size 2**n + 1 where an entry is a vertex
         incidence, each list element contains a list of indexes
         corresponding to that entries neighbors"""
 
@@ -206,8 +211,7 @@ class Complex:
         H_new = []  # list storing all the new cubes split from C_i
         for i, v in enumerate(C_i()[:-1]):
             supremum = tuple(v.x)
-            H_new.append(
-                self.construct_hypercube(origin_new, supremum, gen, C_i.hg_n))
+            H_new.append(self.construct_hypercube(origin_new, supremum, gen, C_i.hg_n))
 
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
@@ -242,8 +246,7 @@ class Complex:
         self.gen += 1
         return no_splits  # USED IN SHGO
 
-    def construct_hypercube(self, origin, supremum, gen, hgr,
-                            printout=False):
+    def construct_hypercube(self, origin, supremum, gen, hgr, printout=False):
         """
         Build a hypercube with triangulations symmetric to C0.
 
@@ -259,7 +262,7 @@ class Complex:
         v_s = np.array(supremum)
 
         C_new = Cell(gen, hgr, origin, supremum)
-        C_new.centroid = tuple((v_o + v_s) * .5)
+        C_new.centroid = tuple((v_o + v_s) * 0.5)
 
         # Build new indexed vertex list
         V_new = []
@@ -332,8 +335,7 @@ class Complex:
             v.connect(self.V[V_new.x])
 
         # New "lower" simplex
-        S_new_l = Simplex(gen, S.hg_n, self.generation_cycle,
-                          self.dim)
+        S_new_l = Simplex(gen, S.hg_n, self.generation_cycle, self.dim)
         S_new_l.add_vertex(s[0])
         S_new_l.add_vertex(V_new)  # Add new vertex
         for v in s[1:-1]:  # Add all other vertices
@@ -364,12 +366,13 @@ class Complex:
     # Plots
     def plot_complex(self):
         """
-             Here, C is the LIST of simplexes S in the
-             2- or 3-D complex
+        Here, C is the LIST of simplexes S in the
+        2- or 3-D complex
 
-             To plot a single simplex S in a set C, use e.g., [C[0]]
+        To plot a single simplex S in a set C, use e.g., [C[0]]
         """
         from matplotlib import pyplot  # type: ignore[import]
+
         if self.dim == 2:
             pyplot.figure()
             for C in self.H:
@@ -380,13 +383,14 @@ class Complex:
                         else:
                             x_a = np.array(v.x, dtype=float)
                             for i in range(len(self.bounds)):
-                                x_a[i] = (x_a[i] * (self.bounds[i][1]
-                                                    - self.bounds[i][0])
-                                          + self.bounds[i][0])
+                                x_a[i] = (
+                                    x_a[i] * (self.bounds[i][1] - self.bounds[i][0])
+                                    + self.bounds[i][0]
+                                )
 
                         # logging.info('v.x_a = {}'.format(x_a))
 
-                        pyplot.plot([x_a[0]], [x_a[1]], 'o')
+                        pyplot.plot([x_a[0]], [x_a[1]], "o")
 
                         xlines = []
                         ylines = []
@@ -396,9 +400,11 @@ class Complex:
                             else:
                                 xn_a = np.array(vn.x, dtype=float)
                                 for i in range(len(self.bounds)):
-                                    xn_a[i] = (xn_a[i] * (self.bounds[i][1]
-                                                          - self.bounds[i][0])
-                                               + self.bounds[i][0])
+                                    xn_a[i] = (
+                                        xn_a[i]
+                                        * (self.bounds[i][1] - self.bounds[i][0])
+                                        + self.bounds[i][0]
+                                    )
 
                             # logging.info('vn.x = {}'.format(vn.x))
 
@@ -413,16 +419,14 @@ class Complex:
                 pyplot.ylim([-1e-2, 1 + 1e-2])
                 pyplot.xlim([-1e-2, 1 + 1e-2])
             else:
-                pyplot.ylim(
-                    [self.bounds[1][0] - 1e-2, self.bounds[1][1] + 1e-2])
-                pyplot.xlim(
-                    [self.bounds[0][0] - 1e-2, self.bounds[0][1] + 1e-2])
+                pyplot.ylim([self.bounds[1][0] - 1e-2, self.bounds[1][1] + 1e-2])
+                pyplot.xlim([self.bounds[0][0] - 1e-2, self.bounds[0][1] + 1e-2])
 
             pyplot.show()
 
         elif self.dim == 3:
             fig = pyplot.figure()
-            ax = fig.add_subplot(111, projection='3d')
+            ax = fig.add_subplot(111, projection="3d")
 
             for C in self.H:
                 for c in C:
@@ -443,7 +447,7 @@ class Complex:
                             z.append(v.x[2])
                             # logging.info('vn.x = {}'.format(vn.x))
 
-                        ax.plot(x, y, z, label='simplex')
+                        ax.plot(x, y, z, label="simplex")
 
             pyplot.show()
         else:
@@ -531,8 +535,17 @@ class Simplex(VertexGroup):
 
 
 class Vertex:
-    def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
-                 g_cons_args=(), nn=None, index=None):
+    def __init__(
+        self,
+        x,
+        bounds=None,
+        func=None,
+        func_args=(),
+        g_cons=None,
+        g_cons_args=(),
+        nn=None,
+        index=None,
+    ):
         self.x = x
         self.order = sum(x)
         x_a = np.array(x, dtype=float)
@@ -601,17 +614,18 @@ class Vertex:
 
     def print_out(self):
         print("Vertex: {}".format(self.x))
-        constr = 'Connections: '
+        constr = "Connections: "
         for vc in self.nn:
-            constr += '{} '.format(vc.x)
+            constr += "{} ".format(vc.x)
 
         print(constr)
-        print('Order = {}'.format(self.order))
+        print("Order = {}".format(self.order))
 
 
 class VertexCache:
-    def __init__(self, func, func_args=(), bounds=None, g_cons=None,
-                 g_cons_args=(), indexed=True):
+    def __init__(
+        self, func, func_args=(), bounds=None, g_cons=None, g_cons_args=(), indexed=True
+    ):
 
         self.cache = {}
         self.func = func
@@ -631,16 +645,24 @@ class VertexCache:
         except KeyError:
             if indexed:
                 self.index += 1
-                xval = Vertex(x, bounds=self.bounds,
-                              func=self.func, func_args=self.func_args,
-                              g_cons=self.g_cons,
-                              g_cons_args=self.g_cons_args,
-                              index=self.index)
+                xval = Vertex(
+                    x,
+                    bounds=self.bounds,
+                    func=self.func,
+                    func_args=self.func_args,
+                    g_cons=self.g_cons,
+                    g_cons_args=self.g_cons_args,
+                    index=self.index,
+                )
             else:
-                xval = Vertex(x, bounds=self.bounds,
-                              func=self.func, func_args=self.func_args,
-                              g_cons=self.g_cons,
-                              g_cons_args=self.g_cons_args)
+                xval = Vertex(
+                    x,
+                    bounds=self.bounds,
+                    func=self.func,
+                    func_args=self.func_args,
+                    g_cons=self.g_cons,
+                    g_cons_args=self.g_cons_args,
+                )
 
             # logging.info("New generated vertex at x = {}".format(x))
             # NOTE: Surprisingly high performance increase if logging is commented out

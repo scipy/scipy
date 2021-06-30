@@ -7,8 +7,13 @@ from .polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
 
-__all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
-           "Akima1DInterpolator", "CubicSpline"]
+__all__ = [
+    "CubicHermiteSpline",
+    "PchipInterpolator",
+    "pchip_interpolate",
+    "Akima1DInterpolator",
+    "CubicSpline",
+]
 
 
 def prepare_input(x, y, axis, dydx=None):
@@ -45,8 +50,11 @@ def prepare_input(x, y, axis, dydx=None):
     if x.shape[0] < 2:
         raise ValueError("`x` must contain at least 2 elements.")
     if x.shape[0] != y.shape[axis]:
-        raise ValueError("The length of `y` along `axis`={0} doesn't "
-                         "match the length of `x`".format(axis))
+        raise ValueError(
+            "The length of `y` along `axis`={0} doesn't match the length of `x`".format(
+                axis
+            )
+        )
 
     if not np.all(np.isfinite(x)):
         raise ValueError("`x` must contain only finite values.")
@@ -133,6 +141,7 @@ class CubicHermiteSpline(PPoly):
             <https://en.wikipedia.org/wiki/Cubic_Hermite_spline>`_
             on Wikipedia.
     """
+
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
         if extrapolate is None:
             extrapolate = True
@@ -228,9 +237,10 @@ class PchipInterpolator(CubicHermiteSpline):
 
 
     """
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
-        xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+        xp = x.reshape((x.shape[0],) + (1,) * (y.ndim - 1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -238,15 +248,15 @@ class PchipInterpolator(CubicHermiteSpline):
     @staticmethod
     def _edge_case(h0, h1, m0, m1):
         # one-sided three-point estimate for the derivative
-        d = ((2*h0 + h1)*m0 - h0*m1) / (h0 + h1)
+        d = ((2 * h0 + h1) * m0 - h0 * m1) / (h0 + h1)
 
         # try to preserve shape
         mask = np.sign(d) != np.sign(m0)
-        mask2 = (np.sign(m0) != np.sign(m1)) & (np.abs(d) > 3.*np.abs(m0))
+        mask2 = (np.sign(m0) != np.sign(m1)) & (np.abs(d) > 3.0 * np.abs(m0))
         mmm = (~mask) & mask2
 
-        d[mask] = 0.
-        d[mmm] = 3.*m0[mmm]
+        d[mask] = 0.0
+        d[mmm] = 3.0 * m0[mmm]
 
         return d
 
@@ -280,13 +290,13 @@ class PchipInterpolator(CubicHermiteSpline):
         smk = np.sign(mk)
         condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
 
-        w1 = 2*hk[1:] + hk[:-1]
-        w2 = hk[1:] + 2*hk[:-1]
+        w1 = 2 * hk[1:] + hk[:-1]
+        w2 = hk[1:] + 2 * hk[:-1]
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
-        with np.errstate(divide='ignore', invalid='ignore'):
-            whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            whmean = (w1 / mk[:-1] + w2 / mk[1:]) / (w1 + w2)
 
         dk = np.zeros_like(y)
         dk[1:-1][condition] = 0.0
@@ -415,20 +425,20 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
         # determine slopes between breakpoints
-        m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
+        m = np.empty((x.size + 3,) + y.shape[1:])
+        dx = dx[(slice(None),) + (None,) * (y.ndim - 1)]
         m[2:-2] = np.diff(y, axis=0) / dx
 
         # add two additional points on the left ...
-        m[1] = 2. * m[2] - m[3]
-        m[0] = 2. * m[1] - m[2]
+        m[1] = 2.0 * m[2] - m[3]
+        m[0] = 2.0 * m[1] - m[2]
         # ... and on the right
-        m[-2] = 2. * m[-3] - m[-4]
-        m[-1] = 2. * m[-2] - m[-3]
+        m[-2] = 2.0 * m[-3] - m[-4]
+        m[-1] = 2.0 * m[-2] - m[-3]
 
         # if m1 == m2 != m3 == m4, the slope at the breakpoint is not defined.
         # This is the fill value:
-        t = .5 * (m[3:] + m[:-3])
+        t = 0.5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
         f1 = dm[2:]
@@ -438,27 +448,31 @@ class Akima1DInterpolator(CubicHermiteSpline):
         ind = np.nonzero(f12 > 1e-9 * np.max(f12))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
-        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+        t[ind] = (
+            f1[ind] * m[(x_ind + 1,) + y_ind] + f2[ind] * m[(x_ind + 2,) + y_ind]
+        ) / f12[ind]
 
         super().__init__(x, y, t, axis=0, extrapolate=False)
         self.axis = axis
 
     def extend(self, c, x, right=True):
-        raise NotImplementedError("Extending a 1-D Akima interpolator is not "
-                                  "yet implemented")
+        raise NotImplementedError(
+            "Extending a 1-D Akima interpolator is not yet implemented"
+        )
 
     # These are inherited from PPoly, but they do not produce an Akima
     # interpolator. Hence stub them out.
     @classmethod
     def from_spline(cls, tck, extrapolate=None):
-        raise NotImplementedError("This method does not make sense for "
-                                  "an Akima interpolator.")
+        raise NotImplementedError(
+            "This method does not make sense for an Akima interpolator."
+        )
 
     @classmethod
     def from_bernstein_basis(cls, bp, extrapolate=None):
-        raise NotImplementedError("This method does not make sense for "
-                                  "an Akima interpolator.")
+        raise NotImplementedError(
+            "This method does not make sense for an Akima interpolator."
+        )
 
 
 class CubicSpline(CubicHermiteSpline):
@@ -625,15 +639,16 @@ class CubicSpline(CubicHermiteSpline):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
-    def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
+
+    def __init__(self, x, y, axis=0, bc_type="not-a-knot", extrapolate=None):
         x, dx, y, axis, _ = prepare_input(x, y, axis)
         n = len(x)
 
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
         if extrapolate is None:
-            if bc[0] == 'periodic':
-                extrapolate = 'periodic'
+            if bc[0] == "periodic":
+                extrapolate = "periodic"
             else:
                 extrapolate = True
 
@@ -645,16 +660,16 @@ class CubicSpline(CubicHermiteSpline):
         # and the spline is just a constant, we handle this case in the same
         # way by setting the first derivatives to slope, which is 0.
         if n == 2:
-            if bc[0] in ['not-a-knot', 'periodic']:
+            if bc[0] in ["not-a-knot", "periodic"]:
                 bc[0] = (1, slope[0])
-            if bc[1] in ['not-a-knot', 'periodic']:
+            if bc[1] in ["not-a-knot", "periodic"]:
                 bc[1] = (1, slope[0])
 
         # This is a very special case, when both conditions are 'not-a-knot'
         # and n == 3. In this case 'not-a-knot' can't be handled regularly
         # as the both conditions are identical. We handle this case by
         # constructing a parabola passing through given points.
-        if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
+        if n == 3 and bc[0] == "not-a-knot" and bc[1] == "not-a-knot":
             A = np.zeros((3, 3))  # This is a standard matrix.
             b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
@@ -670,13 +685,12 @@ class CubicSpline(CubicHermiteSpline):
             b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
             b[2] = 2 * slope[1]
 
-            s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                      check_finite=False)
-        elif n == 3 and bc[0] == 'periodic':
+            s = solve(A, b, overwrite_a=True, overwrite_b=True, check_finite=False)
+        elif n == 3 and bc[0] == "periodic":
             # In case when number of points is 3 we should count derivatives
             # manually
             s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-            t = (slope / dxr).sum() / (1. / dxr).sum()
+            t = (slope / dxr).sum() / (1.0 / dxr).sum()
             s.fill(t)
         else:
             # Find derivative values at each x[i] by solving a tridiagonal
@@ -692,14 +706,14 @@ class CubicSpline(CubicHermiteSpline):
             #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
 
             A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
-            A[0, 2:] = dx[:-1]                   # The upper diagonal
-            A[-1, :-2] = dx[1:]                  # The lower diagonal
+            A[0, 2:] = dx[:-1]  # The upper diagonal
+            A[-1, :-2] = dx[1:]  # The lower diagonal
 
             b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
 
             bc_start, bc_end = bc
 
-            if bc_start == 'periodic':
+            if bc_start == "periodic":
                 # Due to the periodicity, and because y[-1] = y[0], the linear
                 # system has (n-1) unknowns/equations instead of n:
                 A = A[:, 0:-1]
@@ -732,15 +746,28 @@ class CubicSpline(CubicHermiteSpline):
                 b2[-1] = -a_m2_m1
 
                 # s1 and s2 are the solutions of (n-2, n-2) system
-                s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
+                s1 = solve_banded(
+                    (1, 1),
+                    Ac,
+                    b1,
+                    overwrite_ab=False,
+                    overwrite_b=False,
+                    check_finite=False,
+                )
 
-                s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
-                                  overwrite_b=False, check_finite=False)
+                s2 = solve_banded(
+                    (1, 1),
+                    Ac,
+                    b2,
+                    overwrite_ab=False,
+                    overwrite_b=False,
+                    check_finite=False,
+                )
 
                 # computing the s[n-2] solution:
-                s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
-                        (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
+                s_m1 = (b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) / (
+                    a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]
+                )
 
                 # s is the solution of the (n, n) system:
                 s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
@@ -748,12 +775,13 @@ class CubicSpline(CubicHermiteSpline):
                 s[-2] = s_m1
                 s[-1] = s[0]
             else:
-                if bc_start == 'not-a-knot':
+                if bc_start == "not-a-knot":
                     A[1, 0] = dx[1]
                     A[0, 1] = x[2] - x[0]
                     d = x[2] - x[0]
-                    b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
-                            dxr[0]**2 * slope[1]) / d
+                    b[0] = (
+                        (dxr[0] + 2 * d) * dxr[1] * slope[0] + dxr[0] ** 2 * slope[1]
+                    ) / d
                 elif bc_start[0] == 1:
                     A[1, 0] = 1
                     A[0, 1] = 0
@@ -761,14 +789,16 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc_start[0] == 2:
                     A[1, 0] = 2 * dx[0]
                     A[0, 1] = dx[0]
-                    b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
+                    b[0] = -0.5 * bc_start[1] * dx[0] ** 2 + 3 * (y[1] - y[0])
 
-                if bc_end == 'not-a-knot':
+                if bc_end == "not-a-knot":
                     A[1, -1] = dx[-2]
                     A[-1, -2] = x[-1] - x[-3]
                     d = x[-1] - x[-3]
-                    b[-1] = ((dxr[-1]**2*slope[-2] +
-                             (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
+                    b[-1] = (
+                        dxr[-1] ** 2 * slope[-2]
+                        + (2 * d + dxr[-1]) * dxr[-2] * slope[-1]
+                    ) / d
                 elif bc_end[0] == 1:
                     A[1, -1] = 1
                     A[-1, -2] = 0
@@ -776,10 +806,16 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc_end[0] == 2:
                     A[1, -1] = 2 * dx[-1]
                     A[-1, -2] = dx[-1]
-                    b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
+                    b[-1] = 0.5 * bc_end[1] * dx[-1] ** 2 + 3 * (y[-1] - y[-2])
 
-                s = solve_banded((1, 1), A, b, overwrite_ab=True,
-                                 overwrite_b=True, check_finite=False)
+                s = solve_banded(
+                    (1, 1),
+                    A,
+                    b,
+                    overwrite_ab=True,
+                    overwrite_b=True,
+                    check_finite=False,
+                )
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -797,33 +833,38 @@ class CubicSpline(CubicHermiteSpline):
             complex dtype.
         """
         if isinstance(bc_type, str):
-            if bc_type == 'periodic':
+            if bc_type == "periodic":
                 if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
                         "The first and last `y` point along axis {} must "
                         "be identical (within machine precision) when "
-                        "bc_type='periodic'.".format(axis))
+                        "bc_type='periodic'.".format(axis)
+                    )
 
             bc_type = (bc_type, bc_type)
 
         else:
             if len(bc_type) != 2:
-                raise ValueError("`bc_type` must contain 2 elements to "
-                                 "specify start and end conditions.")
+                raise ValueError(
+                    "`bc_type` must contain 2 elements to "
+                    "specify start and end conditions."
+                )
 
-            if 'periodic' in bc_type:
-                raise ValueError("'periodic' `bc_type` is defined for both "
-                                 "curve ends and cannot be used with other "
-                                 "boundary conditions.")
+            if "periodic" in bc_type:
+                raise ValueError(
+                    "'periodic' `bc_type` is defined for both "
+                    "curve ends and cannot be used with other "
+                    "boundary conditions."
+                )
 
         validated_bc = []
         for bc in bc_type:
             if isinstance(bc, str):
-                if bc == 'clamped':
+                if bc == "clamped":
                     validated_bc.append((1, np.zeros(expected_deriv_shape)))
-                elif bc == 'natural':
+                elif bc == "natural":
                     validated_bc.append((2, np.zeros(expected_deriv_shape)))
-                elif bc in ['not-a-knot', 'periodic']:
+                elif bc in ["not-a-knot", "periodic"]:
                     validated_bc.append(bc)
                 else:
                     raise ValueError("bc_type={} is not allowed.".format(bc))
@@ -837,14 +878,15 @@ class CubicSpline(CubicHermiteSpline):
                     ) from e
 
                 if deriv_order not in [1, 2]:
-                    raise ValueError("The specified derivative order must "
-                                     "be 1 or 2.")
+                    raise ValueError("The specified derivative order must be 1 or 2.")
 
                 deriv_value = np.asarray(deriv_value)
                 if deriv_value.shape != expected_deriv_shape:
                     raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
+                        "`deriv_value` shape {} is not the expected one {}.".format(
+                            deriv_value.shape, expected_deriv_shape
+                        )
+                    )
 
                 if np.issubdtype(deriv_value.dtype, np.complexfloating):
                     y = y.astype(complex, copy=False)

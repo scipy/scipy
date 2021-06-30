@@ -14,7 +14,7 @@ dim = 2
 sample = {}
 
 # MC
-sample['MC 1'] = rng.random((n_sample, dim))
+sample["MC 1"] = rng.random((n_sample, dim))
 sample["MC 2"] = rng.random((n_sample, dim))
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))
@@ -22,9 +22,9 @@ fig, axs = plt.subplots(1, 2, figsize=(8, 4))
 for i, kind in enumerate(sample):
     axs[i].scatter(sample[kind][:, 0], sample[kind][:, 1])
 
-    axs[i].set_aspect('equal')
-    axs[i].set_xlabel(r'$x_1$')
-    axs[i].set_ylabel(r'$x_2$')
+    axs[i].set_aspect("equal")
+    axs[i].set_xlabel(r"$x_1$")
+    axs[i].set_ylabel(r"$x_2$")
 
 plt.tight_layout()
 plt.show()

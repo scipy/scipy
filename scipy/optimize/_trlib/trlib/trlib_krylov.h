@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -85,12 +85,12 @@
 #define TRLIB_CLT_LANCZOS       (2)
 #define TRLIB_CLT_HOTSTART      (3)
 
-/** 
+/**
  *  Solves trust region subproblem: Computes minimizer to
- * 
+ *
  *  :math:`\min \frac 12 \langle s, H s \rangle + \langle g_0, s \rangle`
  *  subject to the trust region constraint :math:`\Vert s \Vert_M \le r`,
- *  where 
+ *  where
  *
  *  - :math:`H` is available via matrix-vector products :math:`v \mapsto Hv`,
  *  - :math:`\Vert s \Vert_M = \sqrt{\langle s, Ms \rangle}` with :math:`M` positive definite,
@@ -120,7 +120,7 @@
  *  - boundary case: :math:`\Vert g_{i+1} \Vert_{M^{-1}} \le \max\{ \texttt{tol}\_\texttt{abs}\_\texttt{b}, \eta_b \, \Vert g_0 \Vert_{M^{-1}} \}`.
  *  - hard case: :c:data:`ctl_invariant` determines if this is the sole stopping criterion or if further invariant subspaces are going to be explored. See the documentation of this option.
  *
- *  Here 
+ *  Here
  *  :math:`\eta_i = \begin{cases} \texttt{tol}\_\texttt{rel}\_\texttt{i} & \texttt{tol}\_\texttt{rel}\_\texttt{i} > 0 \\ \min\{ 0.5, \sqrt{\Vert g_{i+1} \Vert_{M^{-1}}} \} & \texttt{tol}\_\texttt{rel}\_\texttt{i} = -1 \\ \min\{ 0.5, \Vert g_{i+1} \Vert_{M^{-1}} \} & \texttt{tol}\_\texttt{rel}\_\texttt{i} = -2 \end{cases},`
  *  :math:`\eta_b = \begin{cases} \texttt{tol}\_\texttt{rel}\_\texttt{b} & \texttt{tol}\_\texttt{rel}\_\texttt{b} > 0 \\ \min\{ 0.5, \sqrt{\Vert g_{i+1} \Vert_{M^{-1}}} \} & \texttt{tol}\_\texttt{rel}\_\texttt{b} = -1 \\ \min\{ 0.5, \Vert g_{i+1} \Vert_{M^{-1}} \} & \texttt{tol}\_\texttt{rel}\_\texttt{b} = -2, \\ \max\{10^{-6}, \min\{ 0.5, \sqrt{\Vert g_{i+1} \Vert_{M^{-1}}} \}\} & \texttt{tol}\_\texttt{rel}\_\texttt{b} = -3 \\ \max\{10^{-6}, \min\{ 0.5, \Vert g_{i+1} \Vert_{M^{-1}}\} \} & \texttt{tol}\_\texttt{rel}\_\texttt{b} = -4 \end{cases}.`
  *
@@ -168,7 +168,7 @@
  *  **Resolves**
  *
  *  *Reentry with new radius*
- *  
+ *
  *  You can efficiently hotstart from old results if you have a new problem
  *  with *decreased* trust region radius. Just set `status` to :c:macro:`TRLIB_CLS_HOTSTART`.
  *  Furthermore hotstarting with increased trust region radius should be
@@ -208,7 +208,7 @@
  *  However since this is usually not the case, you are not asked to do this in the reverse communication scheme.
  *
  *  *Reentry with new gradient*
- *  
+ *
  *  You can efficiently hotstart from old results if you have a new problem
  *  with changed :math:`g_0` where the previous sampled Krylov subspace is
  *  large enough to contain the solution to the new problem, convergence will
@@ -252,7 +252,7 @@
  *  :type zero: trlib_flt_t, input
  *  :param obj_lo: lower bound on objective, returns if a point is found with function value :math:`\le \texttt{obj}\_\texttt{lo}`. Set to a positive value to ignore this bound.
  *  :type obj_lo: trlib_flt_t, input
- *  :param ctl_invariant: 
+ *  :param ctl_invariant:
  *
  *                 - set to :c:macro:`TRLIB_CLC_NO_EXP_INV` if you want to search only in the first invariant Krylov subspace
  *                 - set to :c:macro:`TRLIB_CLC_EXP_INV_LOC` if you want to continue to expand the Krylov subspaces but terminate if there is convergence indication in the subspaces sampled so far.
@@ -280,7 +280,7 @@
  *                 0       1                internal status flag
  *                 1       2                iteration counter
  *                 2       3                flag that indicates if :math:`H` is positive definite in sampled Krylov subspace
- *                 3       4                flag that indicates if interior solution is expected 
+ *                 3       4                flag that indicates if interior solution is expected
  *                 4       5                flag that indicates if warmstart information to :c:data:`leftmost` is available
  *                 5       6                index to block with smallest leftmost
  *                 6       7                flag that indicates if warmstart information to :math:`\lambda_0` is available
@@ -352,7 +352,7 @@
  *  :param fout: output stream
  *  :type fout: FILE, input
  *  :param timing: gives timing details, all values are multiples of nanoseconds, provide zero allocated memory of length :c:func:`trlib_krylov_timing_size`
- *                 
+ *
  *                 ====== ============
  *                 block   description
  *                 ====== ============
@@ -439,14 +439,14 @@ trlib_int_t trlib_krylov_min(
 );
 
 /** Prepares floating point workspace for :c:func::`trlib_krylov_min`
- *  
+ *
  *  Initializes floating point workspace :c:data:`fwork` for :c:func:`trlib_krylov_min`
  *
  *  :param itmax: maximum number of iterations
  *  :type itmax: trlib_int_t, input
  *  :param fwork: floating point workspace to be used by :c:func:`trlib_krylov_min`
  *  :type fwork: trlib_flt_t, input/output
- *  
+ *
  *  :returns: ``0``
  *  :rtype: trlib_int_t
  */
@@ -454,7 +454,7 @@ trlib_int_t trlib_krylov_min(
 trlib_int_t trlib_krylov_prepare_memory(trlib_int_t itmax, trlib_flt_t *fwork);
 
 /** Gives information on memory that has to be allocated for :c:func::`trlib_krylov_min`
- *  
+ *
  *  :param itmax: maximum number of iterations
  *  :type itmax: trlib_int_t, input
  *  :param iwork_size: size of integer workspace iwork that has to be allocated for :c:func:`trlib_krylov_min`
@@ -463,7 +463,7 @@ trlib_int_t trlib_krylov_prepare_memory(trlib_int_t itmax, trlib_flt_t *fwork);
  *  :type fwork_size: trlib_int_t, output
  *  :param h_pointer: start index of vector :math:`h` that has to be used in reverse communication in action :c:macro:`TRLIB_CLA_RETRANSF`
  *  :type h_pointer: trlib_int_t, output
- *  
+ *
  *  :returns: ``0``
  *  :rtype: trlib_int_t
  */
@@ -478,7 +478,7 @@ trlib_int_t trlib_krylov_memory_size(trlib_int_t itmax, trlib_int_t *iwork_size,
 trlib_int_t trlib_krylov_timing_size(void);
 
 /** Gives pointer to negative gradient of tridiagonal problem
- *  
+ *
  *  :param itmax: itmax maximum number of iterations
  *  :type itmax: trlib_int_t, input
  *  :param gt_pointer: pointer to negative gradient of tridiagonal subproblem

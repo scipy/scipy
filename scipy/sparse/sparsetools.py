@@ -8,9 +8,13 @@ from numpy import deprecate
 # internally scipy.sparse._sparsetools
 
 
-@deprecate(old_name="scipy.sparse.sparsetools",
-           message=("scipy.sparse.sparsetools is a private module for scipy.sparse, "
-                    "and should not be used."))
+@deprecate(
+    old_name="scipy.sparse.sparsetools",
+    message=(
+        "scipy.sparse.sparsetools is a private module for scipy.sparse, "
+        "and should not be used."
+    ),
+)
 def _deprecated():
     pass
 

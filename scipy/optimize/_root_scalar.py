@@ -10,10 +10,18 @@ import numpy as np
 
 from . import zeros as optzeros
 
-__all__ = ['root_scalar']
+__all__ = ["root_scalar"]
 
-ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
-                       'newton', 'secant', 'halley']
+ROOT_SCALAR_METHODS = [
+    "bisect",
+    "brentq",
+    "brenth",
+    "ridder",
+    "toms748",
+    "newton",
+    "secant",
+    "halley",
+]
 
 
 class MemoizeDer:
@@ -26,6 +34,7 @@ class MemoizeDer:
     It supports the use case of a root-finder where `args` is fixed,
     `x` changes, and only rarely, if at all, does x assume the same value
     more than once."""
+
     def __init__(self, fun):
         self.fun = fun
         self.vals = None
@@ -58,11 +67,20 @@ class MemoizeDer:
         return self.n_calls
 
 
-def root_scalar(f, args=(), method=None, bracket=None,
-                fprime=None, fprime2=None,
-                x0=None, x1=None,
-                xtol=None, rtol=None, maxiter=None,
-                options=None):
+def root_scalar(
+    f,
+    args=(),
+    method=None,
+    bracket=None,
+    fprime=None,
+    fprime2=None,
+    x0=None,
+    x1=None,
+    xtol=None,
+    rtol=None,
+    maxiter=None,
+    options=None,
+):
     """
     Find a root of a scalar function.
 
@@ -204,7 +222,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     # respect solver-specific default tolerances - only pass in if actually set
     kwargs = {}
-    for k in ['xtol', 'rtol', 'maxiter']:
+    for k in ["xtol", "rtol", "maxiter"]:
         v = locals().get(k)
         if v is not None:
             kwargs[k] = v
@@ -220,63 +238,62 @@ def root_scalar(f, args=(), method=None, bracket=None,
     # Use the "best" method available for the situation.
     if not method:
         if bracket:
-            method = 'brentq'
+            method = "brentq"
         elif x0 is not None:
             if fprime:
                 if fprime2:
-                    method = 'halley'
+                    method = "halley"
                 else:
-                    method = 'newton'
+                    method = "newton"
             else:
-                method = 'secant'
+                method = "secant"
     if not method:
-        raise ValueError('Unable to select a solver as neither bracket '
-                         'nor starting point provided.')
+        raise ValueError(
+            "Unable to select a solver as neither bracket nor starting point provided."
+        )
 
     meth = method.lower()
-    map2underlying = {'halley': 'newton', 'secant': 'newton'}
+    map2underlying = {"halley": "newton", "secant": "newton"}
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
     except AttributeError as e:
-        raise ValueError('Unknown solver %s' % meth) from e
+        raise ValueError("Unknown solver %s" % meth) from e
 
-    if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
+    if meth in ["bisect", "ridder", "brentq", "brenth", "toms748"]:
         if not isinstance(bracket, (list, tuple, np.ndarray)):
-            raise ValueError('Bracket needed for %s' % method)
+            raise ValueError("Bracket needed for %s" % method)
 
         a, b = bracket[:2]
         r, sol = methodc(f, a, b, args=args, **kwargs)
-    elif meth in ['secant']:
+    elif meth in ["secant"]:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError("x0 must not be None for %s" % method)
         if x1 is None:
-            raise ValueError('x1 must not be None for %s' % method)
-        if 'xtol' in kwargs:
-            kwargs['tol'] = kwargs.pop('xtol')
-        r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None,
-                         x1=x1, **kwargs)
-    elif meth in ['newton']:
+            raise ValueError("x1 must not be None for %s" % method)
+        if "xtol" in kwargs:
+            kwargs["tol"] = kwargs.pop("xtol")
+        r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None, x1=x1, **kwargs)
+    elif meth in ["newton"]:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError("x0 must not be None for %s" % method)
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
-        if 'xtol' in kwargs:
-            kwargs['tol'] = kwargs.pop('xtol')
-        r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,
-                         **kwargs)
-    elif meth in ['halley']:
+            raise ValueError("fprime must be specified for %s" % method)
+        if "xtol" in kwargs:
+            kwargs["tol"] = kwargs.pop("xtol")
+        r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None, **kwargs)
+    elif meth in ["halley"]:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError("x0 must not be None for %s" % method)
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
+            raise ValueError("fprime must be specified for %s" % method)
         if not fprime2:
-            raise ValueError('fprime2 must be specified for %s' % method)
-        if 'xtol' in kwargs:
-            kwargs['tol'] = kwargs.pop('xtol')
+            raise ValueError("fprime2 must be specified for %s" % method)
+        if "xtol" in kwargs:
+            kwargs["tol"] = kwargs.pop("xtol")
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2, **kwargs)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError("Unknown solver %s" % method)
 
     if is_memoized:
         # Replace the function_calls count with the memoized count.
@@ -323,6 +340,7 @@ def _root_scalar_brenth_doc():
 
     """
     pass
+
 
 def _root_scalar_toms748_doc():
     r"""

@@ -822,4 +822,3 @@ Pull requests for 0.18.0
 - `#6350 <https://github.com/scipy/scipy/pull/6350>`__: BUG: optimize/slsqp: don't overwrite an array out of bounds
 - `#6351 <https://github.com/scipy/scipy/pull/6351>`__: BUG: #6318 Interp1d 'nearest' integer x-axis overflow issue fixed
 - `#6355 <https://github.com/scipy/scipy/pull/6355>`__: Backports for 0.18.0
-

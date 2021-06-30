@@ -44,9 +44,9 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         cdef long equality = 0
         cdef long itmax_lanczos = 100
         cdef double tol_r_i = self.tol_rel_i
-        cdef double tol_a_i =  0.0 
+        cdef double tol_a_i =  0.0
         cdef double tol_r_b = self.tol_rel_b
-        cdef double tol_a_b =  0.0 
+        cdef double tol_a_b =  0.0
         cdef double zero = 2e-16
         cdef double obj_lb = -1e20
         cdef long ctl_invariant = 0

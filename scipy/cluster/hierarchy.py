@@ -137,18 +137,52 @@ import scipy.spatial.distance as distance
 from scipy._lib._disjoint_set import DisjointSet
 
 
-_LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
-                    'median': 4, 'ward': 5, 'weighted': 6}
-_EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
+_LINKAGE_METHODS = {
+    "single": 0,
+    "complete": 1,
+    "average": 2,
+    "centroid": 3,
+    "median": 4,
+    "ward": 5,
+    "weighted": 6,
+}
+_EUCLIDEAN_METHODS = ("centroid", "median", "ward")
 
-__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
-           'cophenet', 'correspond', 'cut_tree', 'dendrogram', 'fcluster',
-           'fclusterdata', 'from_mlab_linkage', 'inconsistent',
-           'is_isomorphic', 'is_monotonic', 'is_valid_im', 'is_valid_linkage',
-           'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
-           'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
-           'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
-           'ward', 'weighted', 'distance']
+__all__ = [
+    "ClusterNode",
+    "DisjointSet",
+    "average",
+    "centroid",
+    "complete",
+    "cophenet",
+    "correspond",
+    "cut_tree",
+    "dendrogram",
+    "fcluster",
+    "fclusterdata",
+    "from_mlab_linkage",
+    "inconsistent",
+    "is_isomorphic",
+    "is_monotonic",
+    "is_valid_im",
+    "is_valid_linkage",
+    "leaders",
+    "leaves_list",
+    "linkage",
+    "maxRstat",
+    "maxdists",
+    "maxinconsts",
+    "median",
+    "num_obs_linkage",
+    "optimal_leaf_ordering",
+    "set_link_color_palette",
+    "single",
+    "to_mlab_linkage",
+    "to_tree",
+    "ward",
+    "weighted",
+    "distance",
+]
 
 
 class ClusterWarning(UserWarning):
@@ -156,7 +190,7 @@ class ClusterWarning(UserWarning):
 
 
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
+    warnings.warn("scipy.cluster: %s" % s, ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -199,8 +233,9 @@ def _randdm(pnts):
     if pnts >= 2:
         D = np.random.rand(pnts * (pnts - 1) / 2)
     else:
-        raise ValueError("The number of points in the distance matrix "
-                         "must be at least 2.")
+        raise ValueError(
+            "The number of points in the distance matrix must be at least 2."
+        )
     return D
 
 
@@ -279,7 +314,7 @@ def single(y):
     Also, `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
     """
-    return linkage(y, method='single', metric='euclidean')
+    return linkage(y, method="single", metric="euclidean")
 
 
 def complete(y):
@@ -361,7 +396,7 @@ def complete(y):
     Also, `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
     """
-    return linkage(y, method='complete', metric='euclidean')
+    return linkage(y, method="complete", metric="euclidean")
 
 
 def average(y):
@@ -443,7 +478,7 @@ def average(y):
     plot of the dendrogram.
 
     """
-    return linkage(y, method='average', metric='euclidean')
+    return linkage(y, method="average", metric="euclidean")
 
 
 def weighted(y):
@@ -528,7 +563,7 @@ def weighted(y):
     plot of the dendrogram.
 
     """
-    return linkage(y, method='weighted', metric='euclidean')
+    return linkage(y, method="weighted", metric="euclidean")
 
 
 def centroid(y):
@@ -630,7 +665,7 @@ def centroid(y):
     plot of the dendrogram.
 
     """
-    return linkage(y, method='centroid', metric='euclidean')
+    return linkage(y, method="centroid", metric="euclidean")
 
 
 def median(y):
@@ -732,7 +767,7 @@ def median(y):
     plot of the dendrogram.
 
     """
-    return linkage(y, method='median', metric='euclidean')
+    return linkage(y, method="median", metric="euclidean")
 
 
 def ward(y):
@@ -831,10 +866,10 @@ def ward(y):
     plot of the dendrogram.
 
     """
-    return linkage(y, method='ward', metric='euclidean')
+    return linkage(y, method="ward", metric="euclidean")
 
 
-def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
+def linkage(y, method="single", metric="euclidean", optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
 
@@ -1043,34 +1078,40 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     if method not in _LINKAGE_METHODS:
         raise ValueError("Invalid method: {0}".format(method))
 
-    y = _convert_to_double(np.asarray(y, order='c'))
+    y = _convert_to_double(np.asarray(y, order="c"))
 
     if y.ndim == 1:
-        distance.is_valid_y(y, throw=True, name='y')
+        distance.is_valid_y(y, throw=True, name="y")
         [y] = _copy_arrays_if_base_present([y])
     elif y.ndim == 2:
-        if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
-            raise ValueError("Method '{0}' requires the distance metric "
-                             "to be Euclidean".format(method))
+        if method in _EUCLIDEAN_METHODS and metric != "euclidean":
+            raise ValueError(
+                "Method '{0}' requires the distance metric to be Euclidean".format(
+                    method
+                )
+            )
         if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
             if np.all(y >= 0) and np.allclose(y, y.T):
-                _warning('The symmetric non-negative hollow observation '
-                         'matrix looks suspiciously like an uncondensed '
-                         'distance matrix')
+                _warning(
+                    "The symmetric non-negative hollow observation "
+                    "matrix looks suspiciously like an uncondensed "
+                    "distance matrix"
+                )
         y = distance.pdist(y, metric)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
     if not np.all(np.isfinite(y)):
-        raise ValueError("The condensed distance matrix must contain only "
-                         "finite values.")
+        raise ValueError(
+            "The condensed distance matrix must contain only finite values."
+        )
 
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
 
-    if method == 'single':
+    if method == "single":
         result = _hierarchy.mst_single_linkage(y, n)
-    elif method in ['complete', 'average', 'weighted', 'ward']:
+    elif method in ["complete", "average", "weighted", "ward"]:
         result = _hierarchy.nn_chain(y, n, method_code)
     else:
         result = _hierarchy.fast_linkage(y, n, method_code)
@@ -1114,16 +1155,18 @@ class ClusterNode:
 
     def __init__(self, id, left=None, right=None, dist=0, count=1):
         if id < 0:
-            raise ValueError('The id must be non-negative.')
+            raise ValueError("The id must be non-negative.")
         if dist < 0:
-            raise ValueError('The distance must be non-negative.')
-        if (left is None and right is not None) or \
-           (left is not None and right is None):
-            raise ValueError('Only full or proper binary trees are permitted.'
-                             '  This node has one child.')
+            raise ValueError("The distance must be non-negative.")
+        if (left is None and right is not None) or (left is not None and right is None):
+            raise ValueError(
+                "Only full or proper binary trees are permitted."
+                "  This node has one child."
+            )
         if count < 1:
-            raise ValueError('A cluster must contain at least one original '
-                             'observation.')
+            raise ValueError(
+                "A cluster must contain at least one original observation."
+            )
         self.id = id
         self.left = left
         self.right = right
@@ -1135,20 +1178,17 @@ class ClusterNode:
 
     def __lt__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError("Can't compare ClusterNode to type {}".format(type(node)))
         return self.dist < node.dist
 
     def __gt__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError("Can't compare ClusterNode to type {}".format(type(node)))
         return self.dist > node.dist
 
     def __eq__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError("Can't compare ClusterNode to type {}".format(type(node)))
         return self.dist == node.dist
 
     def get_id(self):
@@ -1364,8 +1404,7 @@ def cut_tree(Z, n_clusters=None, height=None):
     nodes = _order_cluster_tree(Z)
 
     if height is not None and n_clusters is not None:
-        raise ValueError("At least one of either height or n_clusters "
-                         "must be None")
+        raise ValueError("At least one of either height or n_clusters must be None")
     elif height is None and n_clusters is None:  # return the full cut tree
         cols_idx = np.arange(nobs)
     elif height is not None:
@@ -1456,8 +1495,8 @@ def to_tree(Z, rd=False):
     9
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
 
     # Number of original objects is equal to the number of rows plus 1.
     n = Z.shape[0] + 1
@@ -1475,19 +1514,22 @@ def to_tree(Z, rd=False):
         fi = int(row[0])
         fj = int(row[1])
         if fi > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 0') % fi)
+            raise ValueError(
+                "Corrupt matrix Z. Index to derivative cluster "
+                "is used before it is formed. See row %d, "
+                "column 0" % fi
+            )
         if fj > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 1') % fj)
-        
+            raise ValueError(
+                "Corrupt matrix Z. Index to derivative cluster "
+                "is used before it is formed. See row %d, "
+                "column 1" % fj
+            )
+
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:
-            raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
-                              'incorrect.') % i)
+            raise ValueError("Corrupt matrix Z. The count Z[%d,3] is incorrect." % i)
         d[n + i] = nd
 
     if rd:
@@ -1496,7 +1538,7 @@ def to_tree(Z, rd=False):
         return nd
 
 
-def optimal_leaf_ordering(Z, y, metric='euclidean'):
+def optimal_leaf_ordering(Z, y, metric="euclidean"):
     """
     Given a linkage matrix Z and distance, reorder the cut tree.
 
@@ -1534,27 +1576,30 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     array([3, 0, 2, 5, 7, 4, 8, 6, 9, 1], dtype=int32)
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
 
-    y = _convert_to_double(np.asarray(y, order='c'))
+    y = _convert_to_double(np.asarray(y, order="c"))
 
     if y.ndim == 1:
-        distance.is_valid_y(y, throw=True, name='y')
+        distance.is_valid_y(y, throw=True, name="y")
         [y] = _copy_arrays_if_base_present([y])
     elif y.ndim == 2:
         if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
             if np.all(y >= 0) and np.allclose(y, y.T):
-                _warning('The symmetric non-negative hollow observation '
-                         'matrix looks suspiciously like an uncondensed '
-                         'distance matrix')
+                _warning(
+                    "The symmetric non-negative hollow observation "
+                    "matrix looks suspiciously like an uncondensed "
+                    "distance matrix"
+                )
         y = distance.pdist(y, metric)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
     if not np.all(np.isfinite(y)):
-        raise ValueError("The condensed distance matrix must contain only "
-                         "finite values.")
+        raise ValueError(
+            "The condensed distance matrix must contain only finite values."
+        )
 
     return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
@@ -1680,12 +1725,12 @@ def cophenet(Z, Y=None):
     corners - thus, the distance between these clusters will be larger.
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
     Zs = Z.shape
     n = Zs[0] + 1
 
-    zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
+    zz = np.zeros((n * (n - 1)) // 2, dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     Z = _convert_to_double(Z)
@@ -1694,16 +1739,16 @@ def cophenet(Z, Y=None):
     if Y is None:
         return zz
 
-    Y = np.asarray(Y, order='c')
-    distance.is_valid_y(Y, throw=True, name='Y')
+    Y = np.asarray(Y, order="c")
+    distance.is_valid_y(Y, throw=True, name="Y")
 
     z = zz.mean()
     y = Y.mean()
     Yy = Y - y
     Zz = zz - z
-    numerator = (Yy * Zz)
-    denomA = Yy**2
-    denomB = Zz**2
+    numerator = Yy * Zz
+    denomA = Yy ** 2
+    denomB = Zz ** 2
     c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
     return (c, zz)
 
@@ -1763,13 +1808,12 @@ def inconsistent(Z, d=2):
            [ 6.44583366,  6.76770586,  3.        ,  1.12682288]])
 
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order="c")
 
     Zs = Z.shape
-    is_valid_linkage(Z, throw=True, name='Z')
+    is_valid_linkage(Z, throw=True, name="Z")
     if (not d == np.floor(d)) or d < 0:
-        raise ValueError('The second argument d must be a nonnegative '
-                         'integer value.')
+        raise ValueError("The second argument d must be a nonnegative integer value.")
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -1852,7 +1896,7 @@ def from_mlab_linkage(Z):
     (MATLAB format uses 1-indexing, whereas SciPy uses 0-indexing).
 
     """
-    Z = np.asarray(Z, dtype=np.double, order='c')
+    Z = np.asarray(Z, dtype=np.double, order="c")
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -1868,7 +1912,7 @@ def from_mlab_linkage(Z):
 
     Zpart = Z.copy()
     if Zpart[:, 0:2].min() != 1.0 and Zpart[:, 0:2].max() != 2 * Zs[0]:
-        raise ValueError('The format of the indices is not 1..N')
+        raise ValueError("The format of the indices is not 1..N")
 
     Zpart[:, 0:2] -= 1.0
     CS = np.zeros((Zs[0],), dtype=np.double)
@@ -1951,11 +1995,11 @@ def to_mlab_linkage(Z):
     the original linkage matrix has been dropped.
 
     """
-    Z = np.asarray(Z, order='c', dtype=np.double)
+    Z = np.asarray(Z, order="c", dtype=np.double)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
         return Z.copy()
-    is_valid_linkage(Z, throw=True, name='Z')
+    is_valid_linkage(Z, throw=True, name="Z")
 
     ZP = Z[:, 0:3].copy()
     ZP[:, 0:2] += 1.0
@@ -2041,8 +2085,8 @@ def is_monotonic(Z):
     increasing order.
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
 
     # We expect the i'th value to be greater than its successor.
     return (Z[1:, 2] >= Z[:-1, 2]).all()
@@ -2135,34 +2179,43 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     False
 
     """
-    R = np.asarray(R, order='c')
+    R = np.asarray(R, order="c")
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = "%r " % name if name else ""
     try:
         if type(R) != np.ndarray:
-            raise TypeError('Variable %spassed as inconsistency matrix is not '
-                            'a numpy array.' % name_str)
+            raise TypeError(
+                "Variable %spassed as inconsistency matrix is not a numpy array."
+                % name_str
+            )
         if R.dtype != np.double:
-            raise TypeError('Inconsistency matrix %smust contain doubles '
-                            '(double).' % name_str)
+            raise TypeError(
+                "Inconsistency matrix %smust contain doubles (double)." % name_str
+            )
         if len(R.shape) != 2:
-            raise ValueError('Inconsistency matrix %smust have shape=2 (i.e. '
-                             'be two-dimensional).' % name_str)
+            raise ValueError(
+                "Inconsistency matrix %smust have shape=2 (i.e. be two-dimensional)."
+                % name_str
+            )
         if R.shape[1] != 4:
-            raise ValueError('Inconsistency matrix %smust have 4 columns.' %
-                             name_str)
+            raise ValueError("Inconsistency matrix %smust have 4 columns." % name_str)
         if R.shape[0] < 1:
-            raise ValueError('Inconsistency matrix %smust have at least one '
-                             'row.' % name_str)
+            raise ValueError(
+                "Inconsistency matrix %smust have at least one row." % name_str
+            )
         if (R[:, 0] < 0).any():
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height means.' % name_str)
+            raise ValueError(
+                "Inconsistency matrix %scontains negative link height means." % name_str
+            )
         if (R[:, 1] < 0).any():
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height standard deviations.' % name_str)
+            raise ValueError(
+                "Inconsistency matrix %scontains negative link "
+                "height standard deviations." % name_str
+            )
         if (R[:, 2] < 0).any():
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'counts.' % name_str)
+            raise ValueError(
+                "Inconsistency matrix %scontains negative link counts." % name_str
+            )
     except Exception as e:
         if throw:
             raise
@@ -2254,40 +2307,41 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     False
 
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order="c")
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = "%r " % name if name else ""
     try:
         if type(Z) != np.ndarray:
-            raise TypeError('Passed linkage argument %sis not a valid array.' %
-                            name_str)
+            raise TypeError(
+                "Passed linkage argument %sis not a valid array." % name_str
+            )
         if Z.dtype != np.double:
-            raise TypeError('Linkage matrix %smust contain doubles.' % name_str)
+            raise TypeError("Linkage matrix %smust contain doubles." % name_str)
         if len(Z.shape) != 2:
-            raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
-                             'two-dimensional).' % name_str)
+            raise ValueError(
+                "Linkage matrix %smust have shape=2 (i.e. be two-dimensional)."
+                % name_str
+            )
         if Z.shape[1] != 4:
-            raise ValueError('Linkage matrix %smust have 4 columns.' % name_str)
+            raise ValueError("Linkage matrix %smust have 4 columns." % name_str)
         if Z.shape[0] == 0:
-            raise ValueError('Linkage must be computed on at least two '
-                             'observations.')
+            raise ValueError("Linkage must be computed on at least two observations.")
         n = Z.shape[0]
         if n > 1:
-            if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
-                raise ValueError('Linkage %scontains negative indices.' %
-                                 name_str)
+            if (Z[:, 0] < 0).any() or (Z[:, 1] < 0).any():
+                raise ValueError("Linkage %scontains negative indices." % name_str)
             if (Z[:, 2] < 0).any():
-                raise ValueError('Linkage %scontains negative distances.' %
-                                 name_str)
+                raise ValueError("Linkage %scontains negative distances." % name_str)
             if (Z[:, 3] < 0).any():
-                raise ValueError('Linkage %scontains negative counts.' %
-                                 name_str)
+                raise ValueError("Linkage %scontains negative counts." % name_str)
         if _check_hierarchy_uses_cluster_before_formed(Z):
-            raise ValueError('Linkage %suses non-singleton cluster before '
-                             'it is formed.' % name_str)
+            raise ValueError(
+                "Linkage %suses non-singleton cluster before it is formed." % name_str
+            )
         if _check_hierarchy_uses_cluster_more_than_once(Z):
-            raise ValueError('Linkage %suses the same cluster more than once.'
-                             % name_str)
+            raise ValueError(
+                "Linkage %suses the same cluster more than once." % name_str
+            )
     except Exception as e:
         if throw:
             raise
@@ -2360,9 +2414,9 @@ def num_obs_linkage(Z):
     12
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
-    return (Z.shape[0] + 1)
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
+    return Z.shape[0] + 1
 
 
 def correspond(Z, Y):
@@ -2416,12 +2470,12 @@ def correspond(Z, Y):
     """
     is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
-    Z = np.asarray(Z, order='c')
-    Y = np.asarray(Y, order='c')
+    Z = np.asarray(Z, order="c")
+    Y = np.asarray(Y, order="c")
     return distance.num_obs_y(Y) == num_obs_linkage(Z)
 
 
-def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
+def fcluster(Z, t, criterion="inconsistent", depth=2, R=None, monocrit=None):
     """
     Form flat clusters from the hierarchical clustering defined by
     the given linkage matrix.
@@ -2572,44 +2626,44 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     all data points to be merged together - so a single cluster is returned.
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
 
     n = Z.shape[0] + 1
-    T = np.zeros((n,), dtype='i')
+    T = np.zeros((n,), dtype="i")
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     [Z] = _copy_arrays_if_base_present([Z])
 
-    if criterion == 'inconsistent':
+    if criterion == "inconsistent":
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = np.asarray(R, order='c')
-            is_valid_im(R, throw=True, name='R')
+            R = np.asarray(R, order="c")
+            is_valid_im(R, throw=True, name="R")
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
             [R] = _copy_arrays_if_base_present([R])
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
-    elif criterion == 'distance':
+    elif criterion == "distance":
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
-    elif criterion == 'maxclust':
+    elif criterion == "maxclust":
         _hierarchy.cluster_maxclust_dist(Z, T, int(n), int(t))
-    elif criterion == 'monocrit':
+    elif criterion == "monocrit":
         [monocrit] = _copy_arrays_if_base_present([monocrit])
         _hierarchy.cluster_monocrit(Z, monocrit, T, float(t), int(n))
-    elif criterion == 'maxclust_monocrit':
+    elif criterion == "maxclust_monocrit":
         [monocrit] = _copy_arrays_if_base_present([monocrit])
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
-        raise ValueError('Invalid cluster formation criterion: %s'
-                         % str(criterion))
+        raise ValueError("Invalid cluster formation criterion: %s" % str(criterion))
     return T
 
 
-def fclusterdata(X, t, criterion='inconsistent',
-                 metric='euclidean', depth=2, method='single', R=None):
+def fclusterdata(
+    X, t, criterion="inconsistent", metric="euclidean", depth=2, method="single", R=None
+):
     """
     Cluster observation data using a given metric.
 
@@ -2691,18 +2745,17 @@ def fclusterdata(X, t, criterion='inconsistent',
     default settings) is four clusters with three data points each.
 
     """
-    X = np.asarray(X, order='c', dtype=np.double)
+    X = np.asarray(X, order="c", dtype=np.double)
 
     if type(X) != np.ndarray or len(X.shape) != 2:
-        raise TypeError('The observation matrix X must be an n by m numpy '
-                        'array.')
+        raise TypeError("The observation matrix X must be an n by m numpy array.")
 
     Y = distance.pdist(X, metric=metric)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = np.asarray(R, order='c')
+        R = np.asarray(R, order="c")
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -2755,10 +2808,10 @@ def leaves_list(Z):
     >>> plt.show()
 
     """
-    Z = np.asarray(Z, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
     n = Z.shape[0] + 1
-    ML = np.zeros((n,), dtype='i')
+    ML = np.zeros((n,), dtype="i")
     [Z] = _copy_arrays_if_base_present([Z])
     _hierarchy.prelist(Z, ML, int(n))
     return ML
@@ -2806,10 +2859,22 @@ def _get_tick_rotation(p):
             return _drotation[k]
 
 
-def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
-                     no_labels, color_list, leaf_font_size=None,
-                     leaf_rotation=None, contraction_marks=None,
-                     ax=None, above_threshold_color='C0'):
+def _plot_dendrogram(
+    icoords,
+    dcoords,
+    ivl,
+    p,
+    n,
+    mh,
+    orientation,
+    no_labels,
+    color_list,
+    leaf_font_size=None,
+    leaf_rotation=None,
+    contraction_marks=None,
+    ax=None,
+    above_threshold_color="C0",
+):
     # Import matplotlib here so that it's not imported unless dendrograms
     # are plotted. Raise an informative error if importing fails.
     try:
@@ -2819,9 +2884,11 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         import matplotlib.patches
         import matplotlib.collections
     except ImportError as e:
-        raise ImportError("You must install the matplotlib library to plot "
-                          "the dendrogram. Use no_plot=True to calculate the "
-                          "dendrogram without plotting.") from e
+        raise ImportError(
+            "You must install the matplotlib library to plot "
+            "the dendrogram. Use no_plot=True to calculate the "
+            "dendrogram without plotting."
+        ) from e
 
     if ax is None:
         ax = matplotlib.pylab.gca()
@@ -2836,8 +2903,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     dvw = mh + mh * 0.05
 
     iv_ticks = np.arange(5, len(ivl) * 10 + 5, 10)
-    if orientation in ('top', 'bottom'):
-        if orientation == 'top':
+    if orientation in ("top", "bottom"):
+        if orientation == "top":
             ax.set_ylim([0, dvw])
             ax.set_xlim([0, ivw])
         else:
@@ -2852,23 +2919,29 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         else:
             ax.set_xticks(iv_ticks)
 
-            if orientation == 'top':
-                ax.xaxis.set_ticks_position('bottom')
+            if orientation == "top":
+                ax.xaxis.set_ticks_position("bottom")
             else:
-                ax.xaxis.set_ticks_position('top')
+                ax.xaxis.set_ticks_position("top")
 
             # Make the tick marks invisible because they cover up the links
             for line in ax.get_xticklines():
                 line.set_visible(False)
 
-            leaf_rot = (float(_get_tick_rotation(len(ivl)))
-                        if (leaf_rotation is None) else leaf_rotation)
-            leaf_font = (float(_get_tick_text_size(len(ivl)))
-                         if (leaf_font_size is None) else leaf_font_size)
+            leaf_rot = (
+                float(_get_tick_rotation(len(ivl)))
+                if (leaf_rotation is None)
+                else leaf_rotation
+            )
+            leaf_font = (
+                float(_get_tick_text_size(len(ivl)))
+                if (leaf_font_size is None)
+                else leaf_font_size
+            )
             ax.set_xticklabels(ivl, rotation=leaf_rot, size=leaf_font)
 
-    elif orientation in ('left', 'right'):
-        if orientation == 'left':
+    elif orientation in ("left", "right"):
+        if orientation == "left":
             ax.set_xlim([dvw, 0])
             ax.set_ylim([0, ivw])
         else:
@@ -2883,17 +2956,20 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         else:
             ax.set_yticks(iv_ticks)
 
-            if orientation == 'left':
-                ax.yaxis.set_ticks_position('right')
+            if orientation == "left":
+                ax.yaxis.set_ticks_position("right")
             else:
-                ax.yaxis.set_ticks_position('left')
+                ax.yaxis.set_ticks_position("left")
 
             # Make the tick marks invisible because they cover up the links
             for line in ax.get_yticklines():
                 line.set_visible(False)
 
-            leaf_font = (float(_get_tick_text_size(len(ivl)))
-                         if (leaf_font_size is None) else leaf_font_size)
+            leaf_font = (
+                float(_get_tick_text_size(len(ivl)))
+                if (leaf_font_size is None)
+                else leaf_font_size
+            )
 
             if leaf_rotation is not None:
                 ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
@@ -2912,8 +2988,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     colors_to_collections = {}
     # Construct the collections.
     for color in colors_used:
-        coll = matplotlib.collections.LineCollection(color_to_lines[color],
-                                                     colors=(color,))
+        coll = matplotlib.collections.LineCollection(
+            color_to_lines[color], colors=(color,)
+        )
         colors_to_collections[color] = coll
 
     # Add all the groupings below the color threshold.
@@ -2927,21 +3004,21 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     if contraction_marks is not None:
         Ellipse = matplotlib.patches.Ellipse
         for (x, y) in contraction_marks:
-            if orientation in ('left', 'right'):
+            if orientation in ("left", "right"):
                 e = Ellipse((y, x), width=dvw / 100, height=1.0)
             else:
                 e = Ellipse((x, y), width=1.0, height=dvw / 100)
             ax.add_artist(e)
             e.set_clip_box(ax.bbox)
             e.set_alpha(0.5)
-            e.set_facecolor('k')
+            e.set_facecolor("k")
 
     if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()
 
 
 # C0  is used for above threshhold color
-_link_line_colors_default = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9')
+_link_line_colors_default = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9")
 _link_line_colors = list(_link_line_colors_default)
 
 
@@ -3015,13 +3092,27 @@ def set_link_color_palette(palette):
     _link_line_colors = palette
 
 
-def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
-               get_leaves=True, orientation='top', labels=None,
-               count_sort=False, distance_sort=False, show_leaf_counts=True,
-               no_plot=False, no_labels=False, leaf_font_size=None,
-               leaf_rotation=None, leaf_label_func=None,
-               show_contracted=False, link_color_func=None, ax=None,
-               above_threshold_color='C0'):
+def dendrogram(
+    Z,
+    p=30,
+    truncate_mode=None,
+    color_threshold=None,
+    get_leaves=True,
+    orientation="top",
+    labels=None,
+    count_sort=False,
+    distance_sort=False,
+    show_leaf_counts=True,
+    no_plot=False,
+    no_labels=False,
+    leaf_font_size=None,
+    leaf_rotation=None,
+    leaf_label_func=None,
+    show_contracted=False,
+    link_color_func=None,
+    ax=None,
+    above_threshold_color="C0",
+):
     """
     Plot the hierarchical clustering as a dendrogram.
 
@@ -3289,36 +3380,37 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order="c")
 
     if orientation not in ["top", "left", "bottom", "right"]:
-        raise ValueError("orientation must be one of 'top', 'left', "
-                         "'bottom', or 'right'")
+        raise ValueError(
+            "orientation must be one of 'top', 'left', 'bottom', or 'right'"
+        )
 
     if labels is not None and Z.shape[0] + 1 != len(labels):
         raise ValueError("Dimensions of Z and labels must be consistent.")
 
-    is_valid_linkage(Z, throw=True, name='Z')
+    is_valid_linkage(Z, throw=True, name="Z")
     Zs = Z.shape
     n = Zs[0] + 1
     if type(p) in (int, float):
         p = int(p)
     else:
-        raise TypeError('The second argument must be a number')
+        raise TypeError("The second argument must be a number")
 
-    if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
+    if truncate_mode not in ("lastp", "mlab", "mtica", "level", "none", None):
         # 'mlab' and 'mtica' are kept working for backwards compat.
-        raise ValueError('Invalid truncation mode.')
+        raise ValueError("Invalid truncation mode.")
 
-    if truncate_mode == 'lastp' or truncate_mode == 'mlab':
+    if truncate_mode == "lastp" or truncate_mode == "mlab":
         if p > n or p == 0:
             p = n
 
-    if truncate_mode == 'mtica':
+    if truncate_mode == "mtica":
         # 'mtica' is an alias
-        truncate_mode = 'level'
+        truncate_mode = "level"
 
-    if truncate_mode == 'level':
+    if truncate_mode == "level":
         if p <= 0:
             p = np.inf
 
@@ -3334,18 +3426,25 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     currently_below_threshold = [False]
     ivl = []  # list of leaves
 
-    if color_threshold is None or (isinstance(color_threshold, str) and
-                                   color_threshold == 'default'):
+    if color_threshold is None or (
+        isinstance(color_threshold, str) and color_threshold == "default"
+    ):
         color_threshold = max(Z[:, 2]) * 0.7
 
-    R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
-         'leaves': lvs, 'color_list': color_list}
+    R = {
+        "icoord": icoord_list,
+        "dcoord": dcoord_list,
+        "ivl": ivl,
+        "leaves": lvs,
+        "color_list": color_list,
+    }
 
     # Empty list will be filled in _dendrogram_calculate_info
     contraction_marks = [] if show_contracted else None
 
     _dendrogram_calculate_info(
-        Z=Z, p=p,
+        Z=Z,
+        p=p,
         truncate_mode=truncate_mode,
         color_threshold=color_threshold,
         get_leaves=get_leaves,
@@ -3354,7 +3453,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         count_sort=count_sort,
         distance_sort=distance_sort,
         show_leaf_counts=show_leaf_counts,
-        i=2*n - 2,
+        i=2 * n - 2,
         iv=0.0,
         ivl=ivl,
         n=n,
@@ -3367,17 +3466,27 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         leaf_label_func=leaf_label_func,
         contraction_marks=contraction_marks,
         link_color_func=link_color_func,
-        above_threshold_color=above_threshold_color)
+        above_threshold_color=above_threshold_color,
+    )
 
     if not no_plot:
         mh = max(Z[:, 2])
-        _plot_dendrogram(icoord_list, dcoord_list, ivl, p, n, mh, orientation,
-                         no_labels, color_list,
-                         leaf_font_size=leaf_font_size,
-                         leaf_rotation=leaf_rotation,
-                         contraction_marks=contraction_marks,
-                         ax=ax,
-                         above_threshold_color=above_threshold_color)
+        _plot_dendrogram(
+            icoord_list,
+            dcoord_list,
+            ivl,
+            p,
+            n,
+            mh,
+            orientation,
+            no_labels,
+            color_list,
+            leaf_font_size=leaf_font_size,
+            leaf_rotation=leaf_rotation,
+            contraction_marks=contraction_marks,
+            ax=ax,
+            above_threshold_color=above_threshold_color,
+        )
 
     R["leaves_color_list"] = _get_leaves_color_list(R)
 
@@ -3385,10 +3494,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
 
 def _get_leaves_color_list(R):
-    leaves_color_list = [None] * len(R['leaves'])
-    for link_x, link_y, link_color in zip(R['icoord'],
-                                          R['dcoord'],
-                                          R['color_list']):
+    leaves_color_list = [None] * len(R["leaves"])
+    for link_x, link_y, link_color in zip(R["icoord"], R["dcoord"], R["color_list"]):
         for (xi, yi) in zip(link_x, link_y):
             if yi == 0.0:  # if yi is 0.0, the point is a leaf
                 # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
@@ -3399,8 +3506,7 @@ def _get_leaves_color_list(R):
     return leaves_color_list
 
 
-def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
-                                i, labels):
+def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func, i, labels):
     # If the leaf id structure is not None and is a list then the caller
     # to dendrogram has indicated that cluster id's corresponding to the
     # leaf nodes should be recorded.
@@ -3425,8 +3531,9 @@ def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
                 ivl.append(str(int(i)))
 
 
-def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
-                                   i, labels, show_leaf_counts):
+def _append_nonsingleton_leaf_node(
+    Z, p, n, level, lvs, ivl, leaf_label_func, i, labels, show_leaf_counts
+):
     # If the leaf id structure is not None and is a list then the caller
     # to dendrogram has indicated that cluster id's corresponding to the
     # leaf nodes should be recorded.
@@ -3455,19 +3562,34 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
         _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
 
 
-def _dendrogram_calculate_info(Z, p, truncate_mode,
-                               color_threshold=np.inf, get_leaves=True,
-                               orientation='top', labels=None,
-                               count_sort=False, distance_sort=False,
-                               show_leaf_counts=False, i=-1, iv=0.0,
-                               ivl=[], n=0, icoord_list=[], dcoord_list=[],
-                               lvs=None, mhr=False,
-                               current_color=[], color_list=[],
-                               currently_below_threshold=[],
-                               leaf_label_func=None, level=0,
-                               contraction_marks=None,
-                               link_color_func=None,
-                               above_threshold_color='C0'):
+def _dendrogram_calculate_info(
+    Z,
+    p,
+    truncate_mode,
+    color_threshold=np.inf,
+    get_leaves=True,
+    orientation="top",
+    labels=None,
+    count_sort=False,
+    distance_sort=False,
+    show_leaf_counts=False,
+    i=-1,
+    iv=0.0,
+    ivl=[],
+    n=0,
+    icoord_list=[],
+    dcoord_list=[],
+    lvs=None,
+    mhr=False,
+    current_color=[],
+    color_list=[],
+    currently_below_threshold=[],
+    leaf_label_func=None,
+    level=0,
+    contraction_marks=None,
+    link_color_func=None,
+    above_threshold_color="C0",
+):
     """
     Calculate the endpoints of the links as well as the labels for the
     the dendrogram rooted at the node with index i. iv is the independent
@@ -3510,36 +3632,38 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     if i == -1:
         raise ValueError("Invalid root cluster index i.")
 
-    if truncate_mode == 'lastp':
+    if truncate_mode == "lastp":
         # If the node is a leaf node but corresponds to a non-singleton
         # cluster, its label is either the empty string or the number of
         # original observations belonging to cluster i.
-        if 2*n - p > i >= n:
+        if 2 * n - p > i >= n:
             d = Z[i - n, 2]
-            _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
-                                           leaf_label_func, i, labels,
-                                           show_leaf_counts)
+            _append_nonsingleton_leaf_node(
+                Z, p, n, level, lvs, ivl, leaf_label_func, i, labels, show_leaf_counts
+            )
             if contraction_marks is not None:
                 _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks)
             return (iv + 5.0, 10.0, 0.0, d)
         elif i < n:
-            _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
-                                        leaf_label_func, i, labels)
+            _append_singleton_leaf_node(
+                Z, p, n, level, lvs, ivl, leaf_label_func, i, labels
+            )
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode == 'level':
+    elif truncate_mode == "level":
         if i > n and level > p:
             d = Z[i - n, 2]
-            _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
-                                           leaf_label_func, i, labels,
-                                           show_leaf_counts)
+            _append_nonsingleton_leaf_node(
+                Z, p, n, level, lvs, ivl, leaf_label_func, i, labels, show_leaf_counts
+            )
             if contraction_marks is not None:
                 _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks)
             return (iv + 5.0, 10.0, 0.0, d)
         elif i < n:
-            _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
-                                        leaf_label_func, i, labels)
+            _append_singleton_leaf_node(
+                Z, p, n, level, lvs, ivl, leaf_label_func, i, labels
+            )
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mlab',):
+    elif truncate_mode in ("mlab",):
         msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
         warnings.warn(msg, DeprecationWarning)
 
@@ -3547,8 +3671,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     #
     # Only place leaves if they correspond to original observations.
     if i < n:
-        _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
-                                    leaf_label_func, i, labels)
+        _append_singleton_leaf_node(
+            Z, p, n, level, lvs, ivl, leaf_label_func, i, labels
+        )
         return (iv + 5.0, 10.0, 0.0, 0.0)
 
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
@@ -3571,7 +3696,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort == True:
+    if count_sort == "ascending" or count_sort == True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3582,7 +3707,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = aa
             ub = ab
-    elif count_sort == 'descending':
+    elif count_sort == "descending":
         # If a has a count less than or equal to b, it and its
         # descendents should be drawn to the left. Otherwise, to
         # the right.
@@ -3592,7 +3717,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort == True:
+    elif distance_sort == "ascending" or distance_sort == True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:
@@ -3601,7 +3726,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = aa
             ub = ab
-    elif distance_sort == 'descending':
+    elif distance_sort == "descending":
         # If a has a distance less than or equal to b, it and its
         # descendents should be drawn to the left. Otherwise, to
         # the right.
@@ -3616,27 +3741,33 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         ub = ab
 
     # Updated iv variable and the amount of space used.
-    (uiva, uwa, uah, uamd) = \
-        _dendrogram_calculate_info(
-            Z=Z, p=p,
-            truncate_mode=truncate_mode,
-            color_threshold=color_threshold,
-            get_leaves=get_leaves,
-            orientation=orientation,
-            labels=labels,
-            count_sort=count_sort,
-            distance_sort=distance_sort,
-            show_leaf_counts=show_leaf_counts,
-            i=ua, iv=iv, ivl=ivl, n=n,
-            icoord_list=icoord_list,
-            dcoord_list=dcoord_list, lvs=lvs,
-            current_color=current_color,
-            color_list=color_list,
-            currently_below_threshold=currently_below_threshold,
-            leaf_label_func=leaf_label_func,
-            level=level + 1, contraction_marks=contraction_marks,
-            link_color_func=link_color_func,
-            above_threshold_color=above_threshold_color)
+    (uiva, uwa, uah, uamd) = _dendrogram_calculate_info(
+        Z=Z,
+        p=p,
+        truncate_mode=truncate_mode,
+        color_threshold=color_threshold,
+        get_leaves=get_leaves,
+        orientation=orientation,
+        labels=labels,
+        count_sort=count_sort,
+        distance_sort=distance_sort,
+        show_leaf_counts=show_leaf_counts,
+        i=ua,
+        iv=iv,
+        ivl=ivl,
+        n=n,
+        icoord_list=icoord_list,
+        dcoord_list=dcoord_list,
+        lvs=lvs,
+        current_color=current_color,
+        color_list=color_list,
+        currently_below_threshold=currently_below_threshold,
+        leaf_label_func=leaf_label_func,
+        level=level + 1,
+        contraction_marks=contraction_marks,
+        link_color_func=link_color_func,
+        above_threshold_color=above_threshold_color,
+    )
 
     h = Z[i - n, 2]
     if h >= color_threshold or color_threshold <= 0:
@@ -3649,27 +3780,33 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         currently_below_threshold[0] = True
         c = _link_line_colors[current_color[0]]
 
-    (uivb, uwb, ubh, ubmd) = \
-        _dendrogram_calculate_info(
-            Z=Z, p=p,
-            truncate_mode=truncate_mode,
-            color_threshold=color_threshold,
-            get_leaves=get_leaves,
-            orientation=orientation,
-            labels=labels,
-            count_sort=count_sort,
-            distance_sort=distance_sort,
-            show_leaf_counts=show_leaf_counts,
-            i=ub, iv=iv + uwa, ivl=ivl, n=n,
-            icoord_list=icoord_list,
-            dcoord_list=dcoord_list, lvs=lvs,
-            current_color=current_color,
-            color_list=color_list,
-            currently_below_threshold=currently_below_threshold,
-            leaf_label_func=leaf_label_func,
-            level=level + 1, contraction_marks=contraction_marks,
-            link_color_func=link_color_func,
-            above_threshold_color=above_threshold_color)
+    (uivb, uwb, ubh, ubmd) = _dendrogram_calculate_info(
+        Z=Z,
+        p=p,
+        truncate_mode=truncate_mode,
+        color_threshold=color_threshold,
+        get_leaves=get_leaves,
+        orientation=orientation,
+        labels=labels,
+        count_sort=count_sort,
+        distance_sort=distance_sort,
+        show_leaf_counts=show_leaf_counts,
+        i=ub,
+        iv=iv + uwa,
+        ivl=ivl,
+        n=n,
+        icoord_list=icoord_list,
+        dcoord_list=dcoord_list,
+        lvs=lvs,
+        current_color=current_color,
+        color_list=color_list,
+        currently_below_threshold=currently_below_threshold,
+        leaf_label_func=leaf_label_func,
+        level=level + 1,
+        contraction_marks=contraction_marks,
+        link_color_func=link_color_func,
+        above_threshold_color=above_threshold_color,
+    )
 
     max_dist = max(uamd, ubmd, h)
 
@@ -3678,8 +3815,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     if link_color_func is not None:
         v = link_color_func(int(i))
         if not isinstance(v, str):
-            raise TypeError("link_color_func must return a matplotlib "
-                            "color string!")
+            raise TypeError("link_color_func must return a matplotlib color string!")
         color_list.append(v)
     else:
         color_list.append(c)
@@ -3748,23 +3884,23 @@ def is_isomorphic(T1, T2):
     True
 
     """
-    T1 = np.asarray(T1, order='c')
-    T2 = np.asarray(T2, order='c')
+    T1 = np.asarray(T1, order="c")
+    T2 = np.asarray(T2, order="c")
 
     if type(T1) != np.ndarray:
-        raise TypeError('T1 must be a numpy array.')
+        raise TypeError("T1 must be a numpy array.")
     if type(T2) != np.ndarray:
-        raise TypeError('T2 must be a numpy array.')
+        raise TypeError("T2 must be a numpy array.")
 
     T1S = T1.shape
     T2S = T2.shape
 
     if len(T1S) != 1:
-        raise ValueError('T1 must be one-dimensional.')
+        raise ValueError("T1 must be one-dimensional.")
     if len(T2S) != 1:
-        raise ValueError('T2 must be one-dimensional.')
+        raise ValueError("T2 must be one-dimensional.")
     if T1S[0] != T2S[0]:
-        raise ValueError('T1 and T2 must have the same number of elements.')
+        raise ValueError("T1 and T2 must have the same number of elements.")
     n = T1S[0]
     d1 = {}
     d2 = {}
@@ -3855,8 +3991,8 @@ def maxdists(Z):
     this case.
 
     """
-    Z = np.asarray(Z, order='c', dtype=np.double)
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c", dtype=np.double)
+    is_valid_linkage(Z, throw=True, name="Z")
 
     n = Z.shape[0] + 1
     MD = np.zeros((n - 1,))
@@ -3940,15 +4076,17 @@ def maxinconsts(Z, R):
            1.15470054])
 
     """
-    Z = np.asarray(Z, order='c')
-    R = np.asarray(R, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
-    is_valid_im(R, throw=True, name='R')
+    Z = np.asarray(Z, order="c")
+    R = np.asarray(R, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
+    is_valid_im(R, throw=True, name="R")
 
     n = Z.shape[0] + 1
     if Z.shape[0] != R.shape[0]:
-        raise ValueError("The inconsistency matrix and linkage matrix each "
-                         "have a different number of rows.")
+        raise ValueError(
+            "The inconsistency matrix and linkage matrix each "
+            "have a different number of rows."
+        )
     MI = np.zeros((n - 1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
     _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, int(n), 3)
@@ -4032,18 +4170,20 @@ def maxRstat(Z, R, i):
            1.15470054])
 
     """
-    Z = np.asarray(Z, order='c')
-    R = np.asarray(R, order='c')
-    is_valid_linkage(Z, throw=True, name='Z')
-    is_valid_im(R, throw=True, name='R')
+    Z = np.asarray(Z, order="c")
+    R = np.asarray(R, order="c")
+    is_valid_linkage(Z, throw=True, name="Z")
+    is_valid_im(R, throw=True, name="R")
     if type(i) is not int:
-        raise TypeError('The third argument must be an integer.')
+        raise TypeError("The third argument must be an integer.")
     if i < 0 or i > 3:
-        raise ValueError('i must be an integer between 0 and 3 inclusive.')
+        raise ValueError("i must be an integer between 0 and 3 inclusive.")
 
     if Z.shape[0] != R.shape[0]:
-        raise ValueError("The inconsistency matrix and linkage matrix each "
-                         "have a different number of rows.")
+        raise ValueError(
+            "The inconsistency matrix and linkage matrix each "
+            "have a different number of rows."
+        )
 
     n = Z.shape[0] + 1
     MR = np.zeros((n - 1,))
@@ -4154,22 +4294,24 @@ def leaders(Z, T):
     array([1, 2, 3, 4], dtype=int32)
 
     """
-    Z = np.asarray(Z, order='c')
-    T = np.asarray(T, order='c')
-    if type(T) != np.ndarray or T.dtype != 'i':
-        raise TypeError('T must be a one-dimensional numpy array of integers.')
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = np.asarray(Z, order="c")
+    T = np.asarray(T, order="c")
+    if type(T) != np.ndarray or T.dtype != "i":
+        raise TypeError("T must be a one-dimensional numpy array of integers.")
+    is_valid_linkage(Z, throw=True, name="Z")
     if len(T) != Z.shape[0] + 1:
-        raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
+        raise ValueError("Mismatch: len(T)!=Z.shape[0] + 1.")
 
     Cl = np.unique(T)
     kk = len(Cl)
-    L = np.zeros((kk,), dtype='i')
-    M = np.zeros((kk,), dtype='i')
+    L = np.zeros((kk,), dtype="i")
+    M = np.zeros((kk,), dtype="i")
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
     if s >= 0:
-        raise ValueError(('T is not a valid assignment vector. Error found '
-                          'when examining linkage node %d (< 2n-1).') % s)
+        raise ValueError(
+            "T is not a valid assignment vector. Error found "
+            "when examining linkage node %d (< 2n-1)." % s
+        )
     return (L, M)

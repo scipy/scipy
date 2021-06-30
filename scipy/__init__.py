@@ -59,23 +59,25 @@ Utility tools
 
 
 def __dir__():
-    return ['LowLevelCallable', 'test']
+    return ["LowLevelCallable", "test"]
 
 
 __all__ = __dir__()
 
 from numpy import show_config as show_numpy_config
+
 if show_numpy_config is None:
-    raise ImportError(
-        "Cannot import SciPy when running from NumPy source directory.")
+    raise ImportError("Cannot import SciPy when running from NumPy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space (DEPRECATED)
 from ._lib.deprecation import _deprecated
 import numpy as _num
+
 linalg = None
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.{0} instead')
+_msg = (
+    "scipy.{0} is deprecated and will be removed in SciPy 2.0.0, use numpy.{0} instead"
+)
 # deprecate callable objects, skipping classes
 for _key in _num.__all__:
     _fun = getattr(_num, _key)
@@ -83,17 +85,26 @@ for _key in _num.__all__:
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
 from numpy.random import rand, randn
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.random.{0} instead')
-rand = _deprecated(_msg.format('rand'))(rand)
-randn = _deprecated(_msg.format('randn'))(randn)
+
+_msg = (
+    "scipy.{0} is deprecated and will be removed in SciPy 2.0.0, "
+    "use numpy.random.{0} instead"
+)
+rand = _deprecated(_msg.format("rand"))(rand)
+randn = _deprecated(_msg.format("randn"))(randn)
 # fft is especially problematic, so was removed in SciPy 1.6.0
 from numpy.fft import ifft
-ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
-                   '2.0.0, use scipy.fft.ifft instead')(ifft)
+
+ifft = _deprecated(
+    "scipy.ifft is deprecated and will be removed in SciPy "
+    "2.0.0, use scipy.fft.ifft instead"
+)(ifft)
 import numpy.lib.scimath as _sci
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.lib.scimath.{0} instead')
+
+_msg = (
+    "scipy.{0} is deprecated and will be removed in SciPy 2.0.0, "
+    "use numpy.lib.scimath.{0} instead"
+)
 for _key in _sci.__all__:
     _fun = getattr(_sci, _key)
     if callable(_fun):
@@ -101,13 +112,13 @@ for _key in _sci.__all__:
     globals()[_key] = _fun
 
 __all__ += _num.__all__
-__all__ += ['randn', 'rand', 'ifft']
+__all__ += ["randn", "rand", "ifft"]
 
 del _num
 # Remove the linalg imported from NumPy so that the scipy.linalg package can be
 # imported.
 del linalg
-__all__.remove('linalg')
+__all__.remove("linalg")
 
 # We first need to detect if we're being called as part of the SciPy
 # setup procedure itself in a reliable manner.
@@ -119,7 +130,8 @@ except NameError:
 
 if __SCIPY_SETUP__:
     import sys as _sys
-    _sys.stderr.write('Running from SciPy source directory.\n')
+
+    _sys.stderr.write("Running from SciPy source directory.\n")
     del _sys
 else:
     try:
@@ -136,23 +148,29 @@ else:
     from . import _distributor_init
 
     from scipy._lib import _pep440
+
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.16.5'
-    np_maxversion = '9.9.99'
-    if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
-            _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
+    np_minversion = "1.16.5"
+    np_maxversion = "9.9.99"
+    if _pep440.parse(__numpy_version__) < _pep440.Version(
+        np_minversion
+    ) or _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion):
         import warnings
-        warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
-                      f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
-                      UserWarning)
+
+        warnings.warn(
+            f"A NumPy version >={np_minversion} and <{np_maxversion}"
+            " is required for this version of SciPy (detected "
+            f"version {__numpy_version__}",
+            UserWarning,
+        )
 
     del _pep440
 
     from scipy._lib._ccallback import LowLevelCallable
 
     from scipy._lib._testutils import PytestTester
+
     test = PytestTester(__name__)
     del PytestTester
 

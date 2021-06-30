@@ -5,12 +5,12 @@ estimation. Used by ._numdiff.group_columns and based on the Cython version.
 
 import numpy as np
 
-#pythran export group_dense(int, int, intc[:,:])
-#pythran export group_dense(int, int, int[:,:])
+# pythran export group_dense(int, int, intc[:,:])
+# pythran export group_dense(int, int, int[:,:])
 def group_dense(m, n, A):
     B = A.T  # Transposed view for convenience.
 
-    groups = -np.ones(n, dtype=np.intp)  #FIXME: use np.full once pythran supports it
+    groups = -np.ones(n, dtype=np.intp)  # FIXME: use np.full once pythran supports it
     current_group = 0
 
     union = np.empty(m, dtype=np.intp)
@@ -51,8 +51,8 @@ def group_dense(m, n, A):
     return groups
 
 
-#pythran export group_sparse(int, int, intc[], intc[])
-#pythran export group_sparse(int, int, int[], int[])
+# pythran export group_sparse(int, int, intc[], intc[])
+# pythran export group_sparse(int, int, int[], int[])
 def group_sparse(m, n, indices, indptr):
     groups = -np.ones(n, dtype=np.intp)
     current_group = 0

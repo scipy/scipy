@@ -186,7 +186,7 @@ void qh_memcheck(qhT *qh) {
     qh_exit(qhmem_ERRqhull);  /* can not use qh_errexit() */
   }
   if (qh->qhmem.ferr == 0 || qh->qhmem.IStracing < 0 || qh->qhmem.IStracing > 10 || (((qh->qhmem.ALIGNmask+1) & qh->qhmem.ALIGNmask) != 0)) {
-    qh_fprintf_stderr(6244, "qhull internal error (qh_memcheck): either qh->qhmem is overwritten or qh->qhmem is not initialized.  Call qh_meminit or qh_new_qhull before calling qh_mem routines.  ferr 0x%x, IsTracing %d, ALIGNmask 0x%x\n", 
+    qh_fprintf_stderr(6244, "qhull internal error (qh_memcheck): either qh->qhmem is overwritten or qh->qhmem is not initialized.  Call qh_meminit or qh_new_qhull before calling qh_mem routines.  ferr 0x%x, IsTracing %d, ALIGNmask 0x%x\n",
           qh->qhmem.ferr, qh->qhmem.IStracing, qh->qhmem.ALIGNmask);
     qh_exit(qhmem_ERRqhull);  /* can not use qh_errexit() */
   }
@@ -563,4 +563,3 @@ void qh_memtotal(qhT *qh, int *totlong, int *curlong, int *totshort, int *cursho
     *maxlong= qh->qhmem.maxlong;
     *totbuffer= qh->qhmem.totbuffer;
 } /* memtotlong */
-

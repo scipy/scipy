@@ -6,7 +6,7 @@ import numpy as np
 from .decomp_svd import svd
 
 
-__all__ = ['orthogonal_procrustes']
+__all__ = ["orthogonal_procrustes"]
 
 
 def orthogonal_procrustes(A, B, check_finite=True):
@@ -61,7 +61,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     >>> A = np.array([[ 2,  0,  1], [-2,  0,  0]])
 
     Flip the order of columns and check for the anti-diagonal mapping
-    
+
     >>> R, sca = orthogonal_procrustes(A, np.fliplr(A))
     >>> R
     array([[-5.34384992e-17,  0.00000000e+00,  1.00000000e+00],
@@ -78,10 +78,9 @@ def orthogonal_procrustes(A, B, check_finite=True):
         A = np.asanyarray(A)
         B = np.asanyarray(B)
     if A.ndim != 2:
-        raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
+        raise ValueError("expected ndim to be 2, but observed %s" % A.ndim)
     if A.shape != B.shape:
-        raise ValueError('the shapes of A and B differ (%s vs %s)' % (
-            A.shape, B.shape))
+        raise ValueError("the shapes of A and B differ (%s vs %s)" % (A.shape, B.shape))
     # Be clever with transposes, with the intention to save memory.
     u, w, vt = svd(B.T.dot(A).T)
     R = u.dot(vt)

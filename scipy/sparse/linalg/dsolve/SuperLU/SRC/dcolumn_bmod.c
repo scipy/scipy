@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -22,7 +22,7 @@ at the top-level directory.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
  * EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- * 
+ *
  *  Permission is hereby granted to use or copy this program for any
  *  purpose, provided the above notices are retained on all copies.
  *  Permission to modify the code and to distribute modified code is
@@ -35,8 +35,8 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_ddefs.h"
 
-/* 
- * Function prototypes 
+/*
+ * Function prototypes
  */
 void dusolve(int, int, double*, double*);
 void dlsolve(int, int, double*, double*);
@@ -44,7 +44,7 @@ void dmatvec(int, int, int, double*, double*, double*);
 
 
 
-/*! \brief 
+/*! \brief
  *
  * <pre>
  * Purpose:
@@ -77,7 +77,7 @@ dcolumn_bmod (
 #endif
     int         incx = 1, incy = 1;
     double      alpha, beta;
-    
+
     /* krep = representative of current k-th supernode
      * fsupc = first supernodal column
      * nsupc = no of columns in supernode
@@ -92,7 +92,7 @@ dcolumn_bmod (
     int          nrow;	  /* No of rows in the matrix of matrix-vector */
     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
     register int lptr, kfnz, isub, irow, i;
-    register int no_zeros, new_next; 
+    register int no_zeros, new_next;
     int          ufirst, nextlu;
     int          fst_col; /* First column within small LU update */
     int          d_fsupc; /* Distance between the first column of the current
@@ -118,9 +118,9 @@ dcolumn_bmod (
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
     jsupno = supno[jcol];
-    
-    /* 
-     * For each nonz supernode segment of U[*,j] in topological order 
+
+    /*
+     * For each nonz supernode segment of U[*,j] in topological order
      */
     k = nseg - 1;
     for (ksub = 0; ksub < nseg; ksub++) {
@@ -133,9 +133,9 @@ dcolumn_bmod (
 	    fsupc = xsup[ksupno];
 	    fst_col = SUPERLU_MAX ( fsupc, fpanelc );
 
-  	    /* Distance from the current supernode to the current panel; 
+  	    /* Distance from the current supernode to the current panel;
 	       d_fsupc=0 if fsupc > fpanelc. */
-  	    d_fsupc = fst_col - fsupc; 
+  	    d_fsupc = fst_col - fsupc;
 
 	    luptr = xlusup[fst_col] + d_fsupc;
 	    lptr = xlsub[fsupc] + d_fsupc;
@@ -153,8 +153,8 @@ dcolumn_bmod (
 	    ops[GEMV] += 2 * nrow * segsze;
 
 
-	    /* 
-	     * Case 1: Update U-segment of size 1 -- col-col update 
+	    /*
+	     * Case 1: Update U-segment of size 1 -- col-col update
 	     */
 	    if ( segsze == 1 ) {
 	  	ukj = dense[lsub[krep_ind]];
@@ -215,29 +215,29 @@ dcolumn_bmod (
 	        for (i = 0; i < segsze; i++) {
 	  	    irow = lsub[isub];
 		    tempv[i] = dense[irow];
-		    ++isub; 
+		    ++isub;
 	        }
 
 	        /* Dense triangular solve -- start effective triangle */
-		luptr += nsupr * no_zeros + no_zeros; 
-		
+		luptr += nsupr * no_zeros + no_zeros;
+
 #ifdef USE_VENDOR_BLAS
 #ifdef _CRAY
-		STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+		STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr],
 		       &nsupr, tempv, &incx );
-#else		
-		dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+#else
+		dtrsv_( "L", "N", "U", &segsze, &lusup[luptr],
 		       &nsupr, tempv, &incx );
-#endif		
+#endif
  		luptr += segsze;  /* Dense matrix-vector */
 		tempv1 = &tempv[segsze];
                 alpha = one;
                 beta = zero;
 #ifdef _CRAY
-		SGEMV( ftcs2, &nrow, &segsze, &alpha, &lusup[luptr], 
+		SGEMV( ftcs2, &nrow, &segsze, &alpha, &lusup[luptr],
 		       &nsupr, tempv, &incx, &beta, tempv1, &incy );
 #else
-		dgemv_( "N", &nrow, &segsze, &alpha, &lusup[luptr], 
+		dgemv_( "N", &nrow, &segsze, &alpha, &lusup[luptr],
 		       &nsupr, tempv, &incx, &beta, tempv1, &incy );
 #endif
 #else
@@ -247,8 +247,8 @@ dcolumn_bmod (
 		tempv1 = &tempv[segsze];
 		dmatvec (nsupr, nrow , segsze, &lusup[luptr], tempv, tempv1);
 #endif
-		
-		
+
+
                 /* Scatter tempv[] into SPA dense[] as a temporary storage */
                 isub = lptr + no_zeros;
                 for (i = 0; i < segsze; i++) {
@@ -266,7 +266,7 @@ dcolumn_bmod (
 		    ++isub;
 		}
 	    }
-	    
+
 	} /* if jsupno ... */
 
     } /* for each segment... */
@@ -295,8 +295,8 @@ dcolumn_bmod (
 
     xlusup[jcolp1] = nextlu;	/* Close L\U[*,jcol] */
 
-    /* For more updates within the panel (also within the current supernode), 
-     * should start from the first column of the panel, or the first column 
+    /* For more updates within the panel (also within the current supernode),
+     * should start from the first column of the panel, or the first column
      * of the supernode, whichever is bigger. There are 2 cases:
      *    1) fsupc < fpanelc, then fst_col := fpanelc
      *    2) fsupc >= fpanelc, then fst_col := fsupc
@@ -316,20 +316,20 @@ dcolumn_bmod (
 	nrow = nsupr - d_fsupc - nsupc;
 
 	/* Points to the beginning of jcol in snode L\U(jsupno) */
-	ufirst = xlusup[jcol] + d_fsupc;	
+	ufirst = xlusup[jcol] + d_fsupc;
 
 	ops[TRSV] += nsupc * (nsupc - 1);
 	ops[GEMV] += 2 * nrow * nsupc;
-	
+
 #ifdef USE_VENDOR_BLAS
 #ifdef _CRAY
-	STRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr], 
+	STRSV( ftcs1, ftcs2, ftcs3, &nsupc, &lusup[luptr],
 	       &nsupr, &lusup[ufirst], &incx );
 #else
-	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], 
+	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr],
 	       &nsupr, &lusup[ufirst], &incx );
 #endif
-	
+
 	alpha = none; beta = one; /* y := beta*y + alpha*A*x */
 
 #ifdef _CRAY
@@ -344,7 +344,7 @@ dcolumn_bmod (
 
 	dmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc],
 		&lusup[ufirst], tempv );
-	
+
         /* Copy updates from tempv[*] into lusup[*] */
 	isub = ufirst + nsupc;
 	for (i = 0; i < nrow; i++) {
@@ -354,9 +354,9 @@ dcolumn_bmod (
 	}
 
 #endif
-	
-	
-    } /* if fst_col < jcol ... */ 
+
+
+    } /* if fst_col < jcol ... */
 
     return 0;
 }

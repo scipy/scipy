@@ -9,28 +9,29 @@ MODE is either 'html' or 'tex'.
 import sys
 import re, optparse
 
+
 def main():
     p = optparse.OptionParser(__doc__)
     options, args = p.parse_args()
 
     if len(args) < 1:
-        p.error('no mode given')
+        p.error("no mode given")
 
     mode = args.pop(0)
 
-    if mode not in ('html', 'tex'):
-        p.error('unknown mode %s' % mode)
+    if mode not in ("html", "tex"):
+        p.error("unknown mode %s" % mode)
 
     for fn in args:
         # default encoding under Py3 is locale dependent (might even be ASCII),
         # so need to specify the encoding.
-        with open(fn, 'r', encoding='utf-8') as f:
-            if mode == 'html':
+        with open(fn, "r", encoding="utf-8") as f:
+            if mode == "html":
                 lines = process_html(fn, f.readlines())
-            elif mode == 'tex':
+            elif mode == "tex":
                 lines = process_tex(f.readlines())
 
-        with open(fn, 'w', encoding='utf-8') as f:
+        with open(fn, "w", encoding="utf-8") as f:
             f.write("".join(lines))
 
 
@@ -46,7 +47,7 @@ def process_tex(lines):
     """
     new_lines = []
     for line in lines:
-        line = line.replace(r'p{0.5\linewidth}', r'\X{1}{2}')
+        line = line.replace(r"p{0.5\linewidth}", r"\X{1}{2}")
 
         new_lines.append(line)
     return new_lines

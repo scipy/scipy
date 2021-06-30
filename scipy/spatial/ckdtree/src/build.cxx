@@ -244,4 +244,3 @@ build_weights (ckdtree *self, double *node_weights, double *weights)
     add_weights(self, node_weights, 0, weights);
     return 0;
 }
-

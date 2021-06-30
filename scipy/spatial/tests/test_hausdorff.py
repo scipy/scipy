@@ -1,11 +1,10 @@
 import numpy as np
-from numpy.testing import (assert_allclose,
-                           assert_array_equal,
-                           assert_equal)
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 import pytest
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
+
 
 class TestHausdorff:
     # Test various properties of the directed Hausdorff code.
@@ -13,12 +12,12 @@ class TestHausdorff:
     def setup_method(self):
         np.random.seed(1234)
         random_angles = np.random.random(100) * np.pi * 2
-        random_columns = np.column_stack(
-            (random_angles, random_angles, np.zeros(100)))
+        random_columns = np.column_stack((random_angles, random_angles, np.zeros(100)))
         random_columns[..., 0] = np.cos(random_columns[..., 0])
         random_columns[..., 1] = np.sin(random_columns[..., 1])
         random_columns_2 = np.column_stack(
-            (random_angles, random_angles, np.zeros(100)))
+            (random_angles, random_angles, np.zeros(100))
+        )
         random_columns_2[1:, 0] = np.cos(random_columns_2[1:, 0]) * 2.0
         random_columns_2[1:, 1] = np.sin(random_columns_2[1:, 1]) * 2.0
         # move one point farther out so we don't have two perfect circles
@@ -43,8 +42,7 @@ class TestHausdorff:
         # forward direction.
         actual = directed_hausdorff(self.path_1, self.path_2)[0]
         # brute force over rows:
-        expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
-                               axis=1))
+        expected = max(np.amin(distance.cdist(self.path_1, self.path_2), axis=1))
         assert_allclose(actual, expected)
 
     def test_brute_force_comparison_reverse(self):
@@ -53,8 +51,7 @@ class TestHausdorff:
         # reverse direction.
         actual = directed_hausdorff(self.path_2, self.path_1)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1, self.path_2), 
-                               axis=0))
+        expected = max(np.amin(distance.cdist(self.path_1, self.path_2), axis=0))
         assert_allclose(actual, expected)
 
     def test_degenerate_case(self):
@@ -66,11 +63,10 @@ class TestHausdorff:
     def test_2d_data_forward(self):
         # Ensure that 2D data is handled properly for a simple case
         # relative to brute force approach.
-        actual = directed_hausdorff(self.path_1[..., :2],
-                                    self.path_2[..., :2])[0]
-        expected = max(np.amin(distance.cdist(self.path_1[..., :2],
-                                              self.path_2[..., :2]),
-                               axis=1))
+        actual = directed_hausdorff(self.path_1[..., :2], self.path_2[..., :2])[0]
+        expected = max(
+            np.amin(distance.cdist(self.path_1[..., :2], self.path_2[..., :2]), axis=1)
+        )
         assert_allclose(actual, expected)
 
     def test_4d_data_reverse(self):
@@ -78,15 +74,14 @@ class TestHausdorff:
         # relative to brute force approach.
         actual = directed_hausdorff(self.path_2_4d, self.path_1_4d)[0]
         # brute force over columns:
-        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), 
-                               axis=0))
+        expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), axis=0))
         assert_allclose(actual, expected)
 
     def test_indices(self):
         # Ensure that correct point indices are returned -- they should
         # correspond to the Hausdorff pair
-        path_simple_1 = np.array([[-1,-12],[0,0], [1,1], [3,7], [1,2]])
-        path_simple_2 = np.array([[0,0], [1,1], [4,100], [10,9]])
+        path_simple_1 = np.array([[-1, -12], [0, 0], [1, 1], [3, 7], [1, 2]])
+        path_simple_2 = np.array([[0, 0], [1, 1], [4, 100], [10, 9]])
         actual = directed_hausdorff(path_simple_2, path_simple_1)[1:]
         expected = (2, 3)
         assert_array_equal(actual, expected)
@@ -121,25 +116,24 @@ class TestHausdorff:
         with pytest.raises(ValueError):
             directed_hausdorff(A, B)
 
-    @pytest.mark.parametrize("A, B, seed, expected", [
-        # the two cases from gh-11332
-        ([(0,0)],
-         [(0,1), (0,0)],
-         0,
-         (0.0, 0, 1)),
-        ([(0,0)],
-         [(0,1), (0,0)],
-         1,
-         (0.0, 0, 1)),
-        # slightly more complex case
-        ([(-5, 3), (0,0)],
-         [(0,1), (0,0), (-5, 3)],
-         77098,
-         # the maximum minimum distance will
-         # be the last one found, but a unique
-         # solution is not guaranteed more broadly
-         (0.0, 1, 1)),
-    ])
+    @pytest.mark.parametrize(
+        "A, B, seed, expected",
+        [
+            # the two cases from gh-11332
+            ([(0, 0)], [(0, 1), (0, 0)], 0, (0.0, 0, 1)),
+            ([(0, 0)], [(0, 1), (0, 0)], 1, (0.0, 0, 1)),
+            # slightly more complex case
+            (
+                [(-5, 3), (0, 0)],
+                [(0, 1), (0, 0), (-5, 3)],
+                77098,
+                # the maximum minimum distance will
+                # be the last one found, but a unique
+                # solution is not guaranteed more broadly
+                (0.0, 1, 1),
+            ),
+        ],
+    )
     def test_subsets(self, A, B, seed, expected):
         # verify fix for gh-11332
         actual = directed_hausdorff(u=A, v=B, seed=seed)
