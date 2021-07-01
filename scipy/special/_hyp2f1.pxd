@@ -35,13 +35,16 @@ References
 
 cimport cython
 from numpy cimport npy_cdouble
-from libc.math cimport fabs, trunc
+from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
 
 from . cimport sf_error
+from ._cephes cimport Gamma, gammasgn, lgam
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
     zabs,
+    zisinf,
+    zisnan,
     zpack,
 )
 
@@ -67,6 +70,9 @@ cdef extern from 'specfun_wrappers.h':
 # Small value from the Fortran original.
 DEF EPS = 1e-15
 
+DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
+DEF LOG_PI_2 = 0.5723649429247001  # log(M_PI) / 2
+
 
 @cython.cdivision(True)
 cdef inline double complex hyp2f1_complex(
@@ -75,6 +81,7 @@ cdef inline double complex hyp2f1_complex(
     cdef:
         int num_terms
         double modulus_z
+        double complex result
         bint a_neg_int, b_neg_int, c_non_pos_int
     modulus_z = zabs(z)
     a_neg_int = a == trunc(a) and a < 0
@@ -111,15 +118,32 @@ cdef inline double complex hyp2f1_complex(
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     # Fallback to Fortran original. To be translated to Cython later.
     if z == 1.0 and c - a - b > 0:
-        return double_complex_from_npy_cdouble(
-            chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
-        )
+        result = Gamma(c) * Gamma(c - a - b)
+        result /= Gamma(c - a) * Gamma(c - b)
+        # Try again with logs if there has been an overflow.
+        if zisnan(result) or zisinf(result) or result == 0.0:
+            result = exp(
+                lgam(c) - lgam(c - a) +
+                lgam(c - a - b) - lgam(c - b)
+            )
+            result *= gammasgn(c) * gammasgn(c - a - b)
+            result *= gammasgn(c - a) * gammasgn(c - b)
+        return result
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
-    # Fall back to Fortran original. To be translated to Cython later.
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
-        return double_complex_from_npy_cdouble(
-            chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
-        )
+        # The computation below has been simplified through
+        # Legendre duplication for the Gamma function (DLMF 5.5.5).
+        result = SQRT_PI * pow(2, -a) * Gamma(c)
+        result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
+        # Try again with logs if there has been an overflow.
+        if zisnan(result) or zisinf(result) or result == 0.0:
+            result = exp(
+                LOG_PI_2 + lgam(c) - a * M_LN2 +
+                -lgam(1 + 0.5*a - b) - lgam(0.5 + 0.5*a)
+            )
+            result *= gammasgn(c) * gammasgn(1 + 0.5*a - b)
+            result *= gammasgn(0.5 + 0.5*a)
+        return result
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
