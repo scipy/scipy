@@ -11,8 +11,9 @@ from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 import scipy.stats.stats
 from functools import wraps
-from numpydoc.docscrape import FunctionDoc, Parameter
+from scipy._lib._docscrape import FunctionDoc, Parameter
 import inspect
+
 
 # TODO: add support for `axis` tuples
 def _remove_nans(samples, paired):
