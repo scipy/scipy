@@ -90,7 +90,9 @@ cdef inline double complex hyp2f1_complex(
             return zpack(NPY_NAN, 0)
     # Diverges when c is a non-positive integer unless a is an integer with c
     # <= a <= 0 or b is an integer with c <= b <= 0, (or z equals 0 with c !=
-    # 0) Cases z = 0, a = 0, or b = 0 have already been handled.
+    # 0) Cases z = 0, a = 0, or b = 0 have already been handled. We follow
+    # mpmath in handling the degenerate cases where any of a, b, c are
+    # non-positive integers. See [3] for a treatment of degenerate cases.
     if c_non_pos_int and not (
             a_neg_int and c <= a < 0 or b_neg_int and c <= b < 0
     ):
