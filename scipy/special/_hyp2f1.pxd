@@ -35,13 +35,14 @@ References
 
 cimport cython
 from numpy cimport npy_cdouble
-from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
+from libc.math cimport fabs, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lgam
 from ._complexstuff cimport (
-    double_complex_from_npy_cdouble, npy_cdouble_from_double_complex,
-    zabs, zisinf, zisnan, zpack, zpow
+    double_complex_from_npy_cdouble,
+    npy_cdouble_from_double_complex,
+    zabs,
+    zpack,
 )
 
 
@@ -55,7 +56,7 @@ cdef extern from 'specfun_wrappers.h':
         double,
         double,
         double,
-        npy_cdouble
+        npy_cdouble,
     ) nogil
 
 
@@ -101,7 +102,6 @@ cdef inline double complex hyp2f1_complex(
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    # Fall back to Fortran original. To be translated to Cython later.
     if z == 1.0 and c - a - b > 0:
         return double_complex_from_npy_cdouble(
             chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
