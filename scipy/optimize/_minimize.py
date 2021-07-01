@@ -495,16 +495,6 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
-    if x0 is None and method != 'direct':
-        raise ValueError("Initial guess required for {} "
-                         "optimization method".format(method))
-    x0 = np.asarray(x0)
-    if x0.dtype.kind in np.typecodes["AllInteger"]:
-        x0 = np.asarray(x0, dtype=float)
-
-    if not isinstance(args, tuple):
-        args = (args,)
-
     if method is None:
         # Select automatically
         if constraints:
@@ -513,6 +503,17 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
             method = 'L-BFGS-B'
         else:
             method = 'BFGS'
+    
+    if x0 is None and method != 'direct':
+        raise ValueError("Initial guess required for {} "
+                         "optimization method".format(method))
+
+    x0 = np.asarray(x0)
+    if x0.dtype.kind in np.typecodes["AllInteger"]:
+        x0 = np.asarray(x0, dtype=float)
+
+    if not isinstance(args, tuple):
+        args = (args,)
 
     if callable(method):
         meth = "_custom"

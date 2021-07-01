@@ -44,16 +44,15 @@ ERROR_MESSAGES = (
 )
 
 SUCCESS_MESSAGES = (
-    "Number of function evaluations done is larger then maxfun",
-    "Number of iterations is equal to maxiter",
-    ("The best function value found is within fglper of the (known) "
-     "global optimum"),
+    "Number of function evaluations done is larger then maxfun={}",
+    "Number of iterations is equal to maxiter={}",
+    ("The best function value found is within {} percent "
+    "of the (known) global optimum"),
     ("The volume of the hyper-rectangle with best function value found "
-     "is below volper"),
+     "is below volper={}"),
     ("The volume of the hyper-rectangle with best function value found "
-     "is smaller then volper"),
+     "is smaller then volper={}"),
 )
-
 
 def _minimize_direct(func, bounds=None, nvar=None, *args, disp=False,
                      eps=1e-4, maxfun=20000, maxiter=6000, 
@@ -172,8 +171,10 @@ def _minimize_direct(func, bounds=None, nvar=None, *args, disp=False,
         iidata, ddata, cdata,
         disp)
 
+    format_val = (maxfun, maxiter, fglper, volper, volper)
     if ierror > 0:
-        message = SUCCESS_MESSAGES[ierror - 1]
+        message = SUCCESS_MESSAGES[ierror - 1].format(
+                    format_val[ierror - 1])
     else:
         message = ERROR_MESSAGES[abs(ierror) - 1]
 
