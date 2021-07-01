@@ -141,7 +141,30 @@ cdef inline double complex hyp2f1_series(
         bint early_stop,
         double rtol,
 ) nogil:
-    """Maclaurin series for hyp2f1 truncated at degree max_degree."""
+    """Return Truncated Maclaurin series for hyp2f1.
+
+    Series is convergent for |z| < 1 but is only practical for numerical
+    computation when |z| < 0.9.
+
+    Parameters
+    ----------
+    a : double
+    b : double
+    c : double
+    z : double complex
+    max_degree : int
+        Maximum degree of terms before truncating.
+    early_stop : bint
+    rtol : double
+        If early_stop is True, truncate
+            |current_sum - previous_sum| <= rtol * |current_sum|
+        If max_degree is reached before the stopping condition is satisfied,
+        return nan. If early_stop is False, sum all terms up until max_degree.
+
+    Returns
+    -------
+    double complex
+    """
     cdef:
         int k
         double complex term = 1 + 0j
