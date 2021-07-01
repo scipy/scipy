@@ -936,7 +936,7 @@ def approx_fprime(xk, f, epsilon, *args):
 
 
 def check_grad(func, grad, x0, *args, epsilon=_epsilon, 
-                random_projection=False, seed=None):
+                direction='all', seed=None):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -954,10 +954,11 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
         ``sqrt(np.finfo(float).eps)``, which is approximately 1.49e-08.
-    random_projection : bool, optional
-        If set to ``True``, then gradients along a random vector 
+    direction : str, optional
+        If set to ``'random'``, then gradients along a random vector 
         are used to check `grad` against forward difference approximation 
-        using `func`. By default it is ``False``.
+        using `func`. By default it is ``'all'``, in which case, all
+        the one hot direction vectors are considered to check `grad`.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -969,7 +970,8 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         that instance is used.
         Specify `seed` for reproducing the return value from this function. 
         The random numbers generated with this seed affect the random vector
-        along which gradients are computed to check ``grad``.
+        along which gradients are computed to check ``grad``. Note that `seed`
+        is only used when `direction` argument is set to `'random'`.
 
     Returns
     -------
@@ -993,7 +995,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     2.9802322387695312e-08
     >>> rng = np.random.default_rng()
     >>> check_grad(func, grad, [1.5, -1.5], 
-    ...             random_projection=True, seed=rng)
+    ...             direction='random', seed=rng)
     2.9802322387695312e-08
 
     """
@@ -1003,18 +1005,21 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     def g(w, func, x0, v, *args):
         return func(x0 + w*v, *args)
 
-    if random_projection:
+    if direction == 'random':
         random_state = check_random_state(seed)
         v = random_state.normal(0, 1, size=(x0.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
         analytical_grad = np.dot(grad(x0, *args), v)
-    else:
+    elif direction == 'all':
         _args = args
         _func = func
         vars = x0
         analytical_grad = grad(x0, *args)
+    else:
+        raise ValueError("{} is not a valid string for "
+                         "``direction`` argument".format(direction))
 
     return sqrt(sum((analytical_grad -
                      approx_fprime(vars, _func, step, *_args))**2))

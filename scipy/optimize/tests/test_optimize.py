@@ -43,20 +43,20 @@ def test_check_grad():
     r = optimize.check_grad(logit, der_logit, x0)
     assert_almost_equal(r, 0)
     r = optimize.check_grad(logit, der_logit, x0, 
-                            random_projection=True, seed=1234)
+                            direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
     r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6,
-                            random_projection=True, seed=1234)
+                            direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
     r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
     assert_(r > 1e-7)
     r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1,
-                                random_projection=True, seed=1234) - 0)
+                                direction='random', seed=1234) - 0)
     assert_(r > 1e-7)
 
     def x_sinx(x):
@@ -68,8 +68,12 @@ def test_check_grad():
     x0 = np.arange(0, 2, 0.2)
 
     r = optimize.check_grad(x_sinx, der_x_sinx, x0,
-                            random_projection=True, seed=1234)
+                            direction='random', seed=1234)
     assert_almost_equal(r, 0)
+
+    assert_raises(ValueError, optimize.check_grad,
+                  x_sinx, der_x_sinx, x0,
+                  direction='random_projection', seed=1234)
 
 
 class CheckOptimize:
