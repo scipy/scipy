@@ -325,7 +325,6 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
 
-
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 

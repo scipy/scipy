@@ -11,7 +11,8 @@ from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 import scipy.stats.stats
 from functools import wraps
-
+from numpydoc.docscrape import FunctionDoc, Parameter
+import inspect
 
 # TODO: add support for `axis` tuples
 def _remove_nans(samples, paired):
@@ -43,10 +44,44 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
+_name = 'axis'
+_type = "int or None, default: 0"
+_desc = (
+"""If an int, the axis of the input along which to compute the statistic.
+The statistic of each axis-slice (e.g. row) of the input will appear in a
+corresponding element of the output.
+If ``None``, the input will be raveled before computing the statistic."""
+.split('\n'))
+_axis_parameter_doc = Parameter(_name, _type, _desc)
+_axis_parameter = inspect.Parameter(_name,
+                                    inspect.Parameter.KEYWORD_ONLY,
+                                    default=0)
+
+_name = 'nan_policy'
+_type = "{'propagate', 'omit', 'raise'}"
+_desc = (
+"""Defines how to handle input NaNs.
+
+- ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+  which the  statistic is computed, the corresponding entry of the output
+  will be NaN.
+- ``omit``: NaNs will be omitted when performing the calculation.
+  If insufficient data remains in the axis slice along which the
+  statistic is computed, the corresponding entry of the output will be
+  NaN.
+- ``raise``: if a NaN is present, a ``ValueError`` will be raised."""
+.split('\n'))
+_nan_policy_parameter_doc = Parameter(_name, _type, _desc)
+_nan_policy_parameter = inspect.Parameter(_name,
+                                          inspect.Parameter.KEYWORD_ONLY,
+                                          default='propagate')
+
+
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
                                 result_unpacker=None, too_small=0,
                                 nan_policy_position=None, vectorized=False):
+
     if result_unpacker is None:
         def result_unpacker(res):
             return res[..., 0], res[..., 1]
@@ -163,6 +198,30 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
             return result_object(*result_unpacker(res))
+
+        doc = FunctionDoc(vectorize_hypotest_wrapper)
+        parameter_names = [param.name for param in doc['Parameters']]
+        if 'axis' in parameter_names:
+            doc['Parameters'][parameter_names.index('axis')] = _axis_parameter_doc
+        else:
+            doc['Parameters'].append(_axis_parameter_doc)
+        if 'nan_policy' in parameter_names:
+            doc['Parameters'][parameter_names.index('nan_policy')] = _nan_policy_parameter_doc
+        else:
+            doc['Parameters'].append(_nan_policy_parameter_doc)
+        doc = str(doc).split("\n", 1)[1]  # remove signature
+        vectorize_hypotest_wrapper.__doc__ = str(doc)
+
+        sig = inspect.signature(vectorize_hypotest_wrapper)
+        parameters = sig.parameters
+        parameter_list = list(parameters.values())
+        if 'axis' not in parameters:
+            parameter_list.append(_axis_parameter)
+        if 'nan_policy' not in parameters:
+            parameter_list.append(_nan_policy_parameter)
+        sig = sig.replace(parameters=parameter_list)
+        vectorize_hypotest_wrapper.__signature__ = sig
+
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
 
