@@ -212,7 +212,6 @@ class TestHyp2f1:
                     expected=1.3396562400934e117 + 0j,
                     rtol=1e-12,
                 ),
-                marks=pytest.mark.xfail(reason="overflow"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -233,7 +232,6 @@ class TestHyp2f1:
                     expected=-1.3113641413099326e-56 + 0j,
                     rtol=1e-12,
                 ),
-                marks=pytest.mark.xfail(reason="underflow"),
             ),
         ],
     )
@@ -287,7 +285,6 @@ class TestHyp2f1:
                     expected=45143784.46783885 + 0j,
                     rtol=1e-7,
                 ),
-                marks=pytest.mark.xfail,
             ),
         ],
     )
