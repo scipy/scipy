@@ -46,6 +46,7 @@ from ._complexstuff cimport (
     zisinf,
     zisnan,
     zpack,
+    zpow,
 )
 
 
@@ -83,10 +84,13 @@ cdef inline double complex hyp2f1_complex(
         double modulus_z
         double complex result
         bint a_neg_int, b_neg_int, c_non_pos_int
+        bint c_minus_a_neg_int, c_minus_b_neg_int
     modulus_z = zabs(z)
     a_neg_int = a == trunc(a) and a < 0
     b_neg_int = b == trunc(b) and b < 0
     c_non_pos_int = c == trunc(c) and c <= 0
+    c_minus_a_neg_int = c - a == trunc(c - a) and c - a < 0
+    c_minus_b_neg_int = c - b == trunc(c - b) and c - b < 0
     # Special Cases
     # -------------------------------------------------------------------------
     # Takes constant value 1 when a = 0 or b = 0, even if c is a non-positive
@@ -165,6 +169,16 @@ cdef inline double complex hyp2f1_complex(
         else:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
             return zpack(NPY_NAN, NPY_NAN)
+    # If one of c - a or c - b is a negative integer, reduces to evaluating
+    # a polynomial through an Euler hypergeometric transformation.
+    # (DLMF 15.8.1)
+    if c_minus_a_neg_int or c_minus_b_neg_int:
+        num_terms = (
+            <int> fabs(c - b) if c_minus_b_neg_int else <int> fabs(c - a)
+        )
+        result = zpow(1 - z, c - a - b)
+        result *= hyp2f1_series(c - a, c - b, c, z, num_terms, False, 0)
+        return result
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
