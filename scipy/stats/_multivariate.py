@@ -3850,6 +3850,15 @@ class multivariate_t_gen(multi_rv_generic):
     as a function to fix the location, shape matrix, and degrees of freedom
     parameters, returning a "frozen" multivariate t-distribution random.
 
+    Methods
+    -------
+    ``pdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+        Probability density function.
+    ``logpdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+        Log of the probability density function.
+    ``rvs(loc=None, shape=1, df=1, size=1, random_state=None)``
+        Draw random samples from a multivariate t-distribution.
+
     Parameters
     ----------
     x : array_like
