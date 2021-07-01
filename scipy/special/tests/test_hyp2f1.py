@@ -93,7 +93,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340")
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -104,7 +103,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -125,7 +123,6 @@ class TestHyp2f1:
                     expected=np.inf + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -136,7 +133,6 @@ class TestHyp2f1:
                     expected=np.nan + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -147,7 +143,6 @@ class TestHyp2f1:
                     expected=(1.0495404166666666+0.05708208333333334j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -158,7 +153,6 @@ class TestHyp2f1:
                     expected=(1.092966013125+0.13455014673750001j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -169,7 +163,6 @@ class TestHyp2f1:
                     expected=(-0.07712512000000005+0.12752814080000005j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -180,7 +173,6 @@ class TestHyp2f1:
                     expected=(1.6400000000000001+0.6400000000000001j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
         ]
     )
