@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 r"""
-scipydirect - A python wrapper to the DIRECT algorithm.
-=======================================================
+A python wrapper to the DIRECT algorithm implemented in Fortran
+===============================================================
 
 DIRECT is a method to solve global bound constraint optimization problems and
 was originally developed by D. R. Jones, C. D. Perttunen and B. E. Stuckmann.
-It is designed to find **global** solutions of mathematical optimization problems of the from
+It is designed to find **global** solutions of mathematical optimization 
+problems of the from,
 
 .. math::
 
@@ -22,9 +22,12 @@ bounds), :math:`f(x)` is the objective function.
 
 The DIRECT package uses the Fortran implementation of DIRECT written by
 Joerg.M.Gablonsky, DIRECT Version 2.0.4. More information on the DIRECT
-algorithm can be found in Gablonsky's `thesis <http://repository.lib.ncsu.edu/ir/bitstream/1840.16/3920/1/etd.pdf>`_.
+algorithm can be found in Gablonsky's `thesis 
+<http://repository.lib.ncsu.edu/ir/bitstream/1840.16/3920/1/etd.pdf>`_.
 
-.. codeauthor:: Andreas Mayer <andimscience@gmail.com>, Amit Aides <amitibo@tx.technion.ac.il>
+Authors:
+
+Andreas Mayer <andimscience@gmail.com>, Amit Aides <amitibo@tx.technion.ac.il>
 """
 
 import numpy as np
@@ -43,30 +46,23 @@ ERROR_MESSAGES = (
 SUCCESS_MESSAGES = (
     "Number of function evaluations done is larger then maxfun",
     "Number of iterations is equal to maxiter",
-    "The best function value found is within fglper of the (known) global optimum",
-    "The volume of the hyper-rectangle with best function value found is below volper",
-    "The volume of the hyper-rectangle with best function value found is smaller then volper",
+    ("The best function value found is within fglper of the (known) "
+     "global optimum"),
+    ("The volume of the hyper-rectangle with best function value found "
+     "is below volper"),
+    ("The volume of the hyper-rectangle with best function value found "
+     "is smaller then volper"),
 )
 
 
-def _minimize_direct(
-    func,
-    bounds=None,
-    nvar=None,
-    args=(),
-    disp=False,
-    eps=1e-4,
-    maxfun=20000,
-    maxiter=6000,
-    locally_biased=False,
-    fglobal=-1e100,
-    fglper=0.01,
-    volper=-1.0,
-    sigmaper=-1.0,
-):
+def _minimize_direct(func, bounds=None, nvar=None, *args, disp=False,
+                     eps=1e-4, maxfun=20000, maxiter=6000, 
+                     locally_biased=False, fglobal=-1e100, fglper=0.01, 
+                     volper=-1.0, sigmaper=-1.0):
     r"""
 
-    Solve an optimization problem using the DIRECT (Dividing Rectangles) algorithm.
+    Solve an optimization problem using the DIRECT 
+    (Dividing Rectangles) algorithm.
     It can be used to solve general nonlinear programming problems of the form:
 
     .. math::
@@ -102,13 +98,15 @@ def _minimize_direct(
         Maximum number of iterations.
         Maximal allowed value is 6000 see documentation of Fortran library.
     locally_biased : bool, optional
-        Whether to use the original or modified DIRECT algorithm. Possible values:
+        Whether to use the original or modified DIRECT algorithm.
+        Possible values:
 
         * ``locally_based=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
     fglobal : float, optional
-        Function value of the global optimum. If this value is not known set this
-        to a very large negative value.
+        Function value of the global optimum.
+        By default it is a negative value whose absolute value is very large.
+        Set this value only if the global optimum is known.
     fglper : float, optional
         Terminate the optimization when the percent error satisfies:
 
@@ -119,8 +117,8 @@ def _minimize_direct(
         Terminate the optimization once the volume of a hyperrectangle is less
         than volper percent of the original hyperrectangel.
     sigma_per : float, optional
-        Terminate the optimization once the measure of the hyperrectangle is less
-        than sigmaper.
+        Terminate the optimization once the measure of the 
+        hyperrectangle is less than this argument.
 
     Returns
     -------
@@ -145,12 +143,12 @@ def _minimize_direct(
         Wrap the python objective to comply with the signature required by the
         Fortran library.
 
-        Returns the function value and a flag indicating whether function is defined.
-        If function is not defined return np.nan
+        Returns the function value and a flag indicating whether function 
+        is defined. If function is not defined, it returns ``np.nan``.
         """
         try:
             return func(x, *args), 0
-        except:
+        except (NameError, TypeError):
             return np.nan, 1
 
     #
