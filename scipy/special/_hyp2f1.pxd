@@ -179,6 +179,21 @@ cdef inline double complex hyp2f1_complex(
         result = zpow(1 - z, c - a - b)
         result *= hyp2f1_series(c - a, c - b, c, z, num_terms, False, 0)
         return result
+    # |z| < 0, real(z) >= 0. Use defining Taylor series.
+    # --------------------------------------------------------------------------
+    if modulus_z < 0.9 and z.real >= 0:
+        # Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce
+        # size of a and b if possible. We follow the original Fortran
+        # implementation although there is very likely a better heuristic to
+        # determine when this transformation should be applied. As it stands,
+        # it hurts precision in some cases.
+        if c - a < a and c - b < b:
+            result = zpow(1 - z, c - a - b)
+            # Maximum number of terms 1500 comes from Fortran original.
+            result *= hyp2f1_series(c - a, c - b, c, z, 1500, True, EPS)
+            return result
+        # Maximum number of terms 1500 comes from Fortran original.
+        return hyp2f1_series(a, b, c, z, 1500, True, EPS)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
