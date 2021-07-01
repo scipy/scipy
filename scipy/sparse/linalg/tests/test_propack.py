@@ -19,6 +19,13 @@ TOLS = {
     np.complex128: 1e-8,
 }
 
+_dtype_map = {
+    "single": np.float32,
+    "double": np.float64,
+    "complex8": np.complex64,
+    "complex16": np.complex128,
+}
+
 
 def is_complex_type(dtype):
     return np.dtype(dtype).char.isupper()
@@ -67,11 +74,12 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
 
 @pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
-@pytest.mark.parametrize('dtype', (np.float32, np.float64, np.complex64, np.complex128))
+@pytest.mark.parametrize('precision', _dtype_map.keys())
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
-def test_svdp(ctor, dtype, irl, which):
+def test_svdp(ctor, precision, irl, which):
     np.random.seed(0)
+    dtype = _dtype_map[precision]
     n, m, k = 10, 20, 3
     if which == 'SM' and not irl:
         with assert_raises(ValueError):
@@ -80,47 +88,39 @@ def test_svdp(ctor, dtype, irl, which):
         check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
-def load_coord(folder, precision, file=None):
-    dtype = {
-        "single": np.float32,
-        "double": np.float64,
-        "complex8": np.complex64,
-        "complex16": np.complex128,
-    }[precision]
-    if file is None:
-        file = "illc1850.coord" if precision in {'single', 'double'} else 'mhd1280b.cua'
+def load_real(folder, precision, file='illc1850.coord'):
+    dtype = _dtype_map[precision]
     path = os.path.join(folder, precision, 'Examples', file)
-    if precision in {'single', 'double'}:
-        # Coordinate Text File
-        with open(path) as f:
-            m, n, nnz = (int(val) for val in f.readline().split())
-            coord = np.array([[float(val) for val in line.split()] for line in f])
-        i = coord[:, 0].astype(int) - 1
-        j = coord[:, 1].astype(int) - 1
-        data = coord[:, 2].astype(dtype)
-        A = coo_matrix((data, (i, j)))
-    elif precision in {'complex8', 'complex16'}:
-        # Harwell-Boeing Exchange Format
-        if precision == 'complex8':
-            readhb_hdr, readhb = creadhb_hdr, creadhb
-        else:
-            readhb_hdr, readhb = zreadhb_hdr, zreadhb
-        nc, nz = readhb_hdr(path)
-        values = np.empty(nz, dtype=dtype)
-        colptr = np.empty(nc+1, dtype=np.int32)
-        rowind = np.empty(nz, dtype=np.int32)
-        res = readhb(path, values, colptr, rowind)
-        A = csc_matrix((values, rowind-1, colptr-1))
+    # Coordinate Text File
+    with open(path) as f:
+        m, n, nnz = (int(val) for val in f.readline().split())
+        coord = np.array([[float(val) for val in line.split()] for line in f])
+    i = coord[:, 0].astype(int) - 1
+    j = coord[:, 1].astype(int) - 1
+    data = coord[:, 2].astype(dtype)
+    A = coo_matrix((data, (i, j)))
+    return A
+
+
+def load_complex(folder, precision, file='mhd1280b.cua'):
+    dtype = _dtype_map[precision]
+    path = os.path.join(folder, precision, 'Examples', file)
+    # Harwell-Boeing Exchange Format
+    if precision == 'complex8':
+        readhb_hdr, readhb = creadhb_hdr, creadhb
+    else:
+        readhb_hdr, readhb = zreadhb_hdr, zreadhb
+    nc, nz = readhb_hdr(path)
+    values = np.empty(nz, dtype=dtype)
+    colptr = np.empty(nc+1, dtype=np.int32)
+    rowind = np.empty(nz, dtype=np.int32)
+    res = readhb(path, values, colptr, rowind)
+    A = csc_matrix((values, rowind-1, colptr-1))
     return A
 
 
 def load_sigma(folder, precision="double", irl=False):
-    dtype = {
-        "single": np.float32,
-        "double": np.float64,
-        "complex8": np.complex64,
-        "complex16": np.complex128,
-    }[precision]
+    dtype = _dtype_map[precision]
     s_name = "Sigma_IRL.ascii" if irl else "Sigma.ascii"
     path = os.path.join(folder, precision, 'Examples', 'Output', s_name)
     with open(path) as f:
@@ -129,12 +129,7 @@ def load_sigma(folder, precision="double", irl=False):
 
 
 def load_uv(folder, precision="double", uv="U", irl=False):
-    dtype = {
-        "single": np.float32,
-        "double": np.float64,
-        "complex8": np.complex64,
-        "complex16": np.complex128,
-    }[precision]
+    dtype = _dtype_map[precision]
     uv_name = (uv + "_IRL.ascii") if irl else (uv + ".ascii")
     path = os.path.join(folder, precision, 'Examples', 'Output', uv_name)
     with open(path) as f:
@@ -149,8 +144,7 @@ def load_uv(folder, precision="double", uv="U", irl=False):
     return data.reshape((n, m)).T
 
 
-@pytest.mark.parametrize('precision', ('single', 'double',
-                                       'complex8', 'complex16'))
+@pytest.mark.parametrize('precision', _dtype_map.keys())
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
@@ -164,7 +158,12 @@ def test_examples(precision, irl):
     relative_path = ['..', '_propack', 'PROPACK']
     folder = os.path.join(path_prefix, *relative_path)
 
-    A = load_coord(folder, precision)
+    A = {
+        'single': load_real,
+        'double': load_real,
+        'complex8': load_complex,
+        'complex16': load_complex,
+    }[precision](folder, precision)
     s_expected = load_sigma(folder, precision, irl=irl)
     u_expected = load_uv(folder, precision, "U", irl=irl)
     vt_expected = load_uv(folder, precision, "V", irl=irl).T
@@ -182,10 +181,10 @@ def test_examples(precision, irl):
 
 
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
-@pytest.mark.parametrize('dtype', (np.float32, np.float64,
-                                   np.complex64, np.complex128))
-def test_shifts(shifts, dtype):
+@pytest.mark.parametrize('precision', _dtype_map.keys())
+def test_shifts(shifts, precision):
     np.random.seed(0)
+    dtype = _dtype_map[precision]
     n, k = 70, 10
     A = np.random.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):
