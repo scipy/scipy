@@ -741,6 +741,25 @@ class _TestCommon:
         assert_equal(self.spmatrix((15, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((0, 5)).diagonal(10), np.empty(0))
 
+    def test_trace(self):
+        # For square matrix
+        A = csr_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        desired = A[0, 0] + A[1, 1] + A[2, 2]
+        assert_equal(A.trace(), desired)
+        A = A.tocsc()
+        assert_equal(A.trace(), desired)
+        A = A.tocoo()
+        assert_equal(A.trace(), desired)
+
+        # For rectangular matrix
+        A = csr_matrix([[1, 2, 3], [4, 5, 6]])
+        desired = A[0, 0] + A[1, 1]
+        assert_equal(A.trace(), desired)
+        A = A.tocsc()
+        assert_equal(A.trace(), desired)
+        A = A.tocoo()
+        assert_equal(A.trace(), desired)
+
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
         x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
