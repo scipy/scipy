@@ -3,16 +3,16 @@ import numpy as np
 from .arpack import _arpack  # type: ignore[attr-defined]
 from . import eigsh
 
-from scipy.sparse.linalg.interface import LinearOperator
-from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy._lib._util import check_random_state
+from scipy.sparse.linalg.interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
+import scipy.sparse.linalg as spla
 
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
 
 
-def _augmented_orthonormal_cols(x, k):
+def _augmented_orthonormal_cols(x, k, random_state):
     # extract the shape of the x array
     n, m = x.shape
     # create the expanded array and copy x into it
@@ -21,9 +21,9 @@ def _augmented_orthonormal_cols(x, k):
     # do some modified gram schmidt to add k random orthonormal vectors
     for i in range(k):
         # sample a random initial vector
-        v = np.random.randn(n)
+        v = random_state.standard_normal(size=n)
         if np.iscomplexobj(x):
-            v = v + 1j*np.random.randn(n)
+            v = v + 1j*random_state.standard_normal(size=n)
         # subtract projections onto the existing unit length vectors
         for j in range(m+i):
             u = y[:, j]
@@ -36,17 +36,96 @@ def _augmented_orthonormal_cols(x, k):
     return y
 
 
-def _augmented_orthonormal_rows(x, k):
-    return _augmented_orthonormal_cols(x.T, k).T
+def _augmented_orthonormal_rows(x, k, random_state):
+    return _augmented_orthonormal_cols(x.T, k, random_state).T
 
 
 def _herm(x):
     return x.T.conj()
 
 
+def _iv(A, k, ncv, tol, which, v0, maxiter,
+        return_singular, solver, random_state):
+
+    # input validation/standardization for `solver`
+    # out of order because it's needed for other parameters
+    solver = str(solver).lower()
+    solvers = {"arpack", "lobpcg", "propack"}
+    if solver not in solvers:
+        raise ValueError(f"solver must be one of {solvers}.")
+
+    # input validation/standardization for `A`
+    A = aslinearoperator(A)  # this takes care of some input validation
+    if not (np.issubdtype(A.dtype, np.complexfloating)
+            or np.issubdtype(A.dtype, np.floating)):
+        message = "`A` must be of floating or complex floating data type."
+        raise ValueError(message)
+    if np.prod(A.shape) == 0:
+        message = "`A` must not be empty."
+        raise ValueError(message)
+
+    # input validation/standardization for `k`
+    kmax = min(A.shape) if solver == 'propack' else min(A.shape) - 1
+    if int(k) != k or not (0 < k <= kmax):
+        message = "`k` must be an integer satisfying `0 < k < min(A.shape)`."
+        raise ValueError(message)
+    k = int(k)
+
+    # input validation/standardization for `ncv`
+    if solver == "arpack" and ncv is not None:
+        if int(ncv) != ncv or not (k < ncv < min(A.shape)):
+            message = ("`ncv` must be an integer satisfying "
+                       "`k < ncv < min(A.shape)`.")
+            raise ValueError(message)
+        ncv = int(ncv)
+
+    # input validation/standardization for `tol`
+    if tol < 0 or not np.isfinite(tol):
+        message = "`tol` must be a non-negative floating point value."
+        raise ValueError(message)
+    tol = float(tol)
+
+    # input validation/standardization for `which`
+    which = str(which).upper()
+    whichs = {'LM', 'SM'}
+    if which not in whichs:
+        raise ValueError(f"`which` must be in {whichs}.")
+
+    # input validation/standardization for `v0`
+    if v0 is not None:
+        v0 = np.atleast_1d(v0)
+        if not (np.issubdtype(v0.dtype, np.complexfloating)
+                or np.issubdtype(v0.dtype, np.floating)):
+            message =  ("`v0` must be of floating or complex floating "
+                        "data type.")
+            raise ValueError(message)
+
+        shape = (A.shape[0],) if solver == 'propack' else (min(A.shape),)
+        if v0.shape != shape:
+            message = "`v0` must have shape {shape}."
+            raise ValueError(message)
+
+    # input validation/standardization for `maxiter`
+    if maxiter is not None and (int(maxiter) != maxiter or maxiter <= 0):
+        message = "`maxiter` must be a positive integer."
+        raise ValueError(message)
+    maxiter = int(maxiter) if maxiter is not None else maxiter
+
+    # input validation/standardization for `return_singular_vectors`
+    # not going to be flexible with this; too complicated for little gain
+    rs_options = {True, False, "vh", "u"}
+    if return_singular not in rs_options:
+        raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
+
+    random_state = check_random_state(random_state)
+
+    return (A, k, ncv, tol, which, v0, maxiter,
+            return_singular, solver, random_state)
+
+
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
-         solver='arpack', options=None):
+         solver='arpack', random_state=None, options=None):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -62,7 +141,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= kmax``, where ``kmax=min(M, N)`` for
+        ``solver='propack'`` and ``kmax=min(M, N) - 1`` otherwise.
     ncv : int, optional
         When ``solver='arpack'``, this is the number of Lanczos vectors
         generated. See :ref:`'arpack' <sparse.linalg.svds-arpack>` for details.
@@ -83,16 +163,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         documentation (:ref:`'arpack' <sparse.linalg.svds-arpack>`,
         :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`), or
         :ref:`'propack' <sparse.linalg.svds-propack>` for details.
-    return_singular_vectors : bool or str, optional
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
+
+        If ``solver='propack'``, the option is respected regardless of the
+        matrix shape.
 
     solver : str, optional
             The solver used.
@@ -100,6 +185,16 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`, and
             :ref:`'propack' <sparse.linalg.svds-propack>` are supported.
             Default: `'arpack'`.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -108,14 +203,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -154,54 +245,43 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular values match the expected singular values, and the singular
-    values are as expected up to a difference in sign. Consequently, the
-    returned arrays of singular vectors must also be orthogonal.
+    vectors are as expected up to a difference in sign.
 
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
     True
 
+    The singular vectors are also orthogonal.
+    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
+    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
+    True
+
     """
-    if which == 'LM':
-        largest = True
-    elif which == 'SM':
-        largest = False
-    else:
-        raise ValueError("which must be either 'LM' or 'SM'.")
+    rs_was_None = random_state is None  # avoid changing v0 for arpack/lobpcg
 
-    if not (isinstance(A, LinearOperator) or isspmatrix(A)
-            or is_pydata_spmatrix(A)):
-        A = np.asarray(A)
+    args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
+               solver, random_state)
+    (A, k, ncv, tol, which, v0, maxiter,
+     return_singular_vectors, solver, random_state) = args
 
+    largest = (which == 'LM')
     n, m = A.shape
 
-    if k <= 0 or k >= min(n, m):
-        raise ValueError("k must be between 1 and min(A.shape), k=%d" % k)
-
-    if isinstance(A, LinearOperator):
-        if n > m:
-            X_dot = A.matvec
-            X_matmat = A.matmat
-            XH_dot = A.rmatvec
-            XH_mat = A.rmatmat
-        else:
-            X_dot = A.rmatvec
-            X_matmat = A.rmatmat
-            XH_dot = A.matvec
-            XH_mat = A.matmat
-
-            dtype = getattr(A, 'dtype', None)
-            if dtype is None:
-                dtype = A.dot(np.zeros([m, 1])).dtype
-
+    if n > m:
+        X_dot = A.matvec
+        X_matmat = A.matmat
+        XH_dot = A.rmatvec
+        XH_mat = A.rmatmat
     else:
-        if n > m:
-            X_dot = X_matmat = A.dot
-            XH_dot = XH_mat = _herm(A).dot
-        else:
-            XH_dot = XH_mat = A.dot
-            X_dot = X_matmat = _herm(A).dot
+        X_dot = A.rmatvec
+        X_matmat = A.rmatmat
+        XH_dot = A.matvec
+        XH_mat = A.matmat
+
+        dtype = getattr(A, 'dtype', None)
+        if dtype is None:
+            dtype = A.dot(np.zeros([m, 1])).dtype
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
@@ -220,18 +300,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            X = np.random.RandomState(52).randn(min(A.shape), k)
+            if rs_was_None:
+                X = np.random.RandomState(52).randn(min(A.shape), k)
+            else:
+                X = random_state.uniform(size=(min(A.shape), k))
 
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest)
+                                 largest=largest, )
 
     elif solver == 'propack':
-        from scipy.sparse.linalg import svdp
-        jobu = n <= m or return_singular_vectors != 'vh'
-        jobv = n > m or return_singular_vectors != 'u'
-        res = svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
-                   compute_u=jobu, compute_v=jobv, irl_mode=True,
-                   kmax=maxiter, v0=v0)
+        jobu = return_singular_vectors in {True, 'u'}
+        jobv = return_singular_vectors in {True, 'vh'}
+        res = spla.svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
+                        compute_u=jobu, compute_v=jobv, irl_mode=True,
+                        kmax=maxiter, v0=v0, random_state=random_state)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 
@@ -242,22 +324,19 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         u = u[:, ::-1]
         vh = vh[::-1]
 
-        if return_singular_vectors is False:
-            return s
-        elif return_singular_vectors == 'u' and n <= m:
-            return u, s, None
-        elif return_singular_vectors == 'vh' and n >= m:
-            return None, s, vh
-        else:
+        u = u if jobu else None
+        vh = vh if jobv else None
+
+        if return_singular_vectors:
             return u, s, vh
+        else:
+            return s
 
     elif solver == 'arpack' or solver is None:
+        if v0 is None and not rs_was_None:
+            v0 = random_state.uniform(size=(min(A.shape),))
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
-
-    else:
-        raise ValueError("solver must be either 'arpack', 'lobpcg', or "
-                         "'propack'.")
 
     # Gramian matrices have real non-negative eigenvalues.
     eigvals = np.maximum(eigvals.real, 0)
@@ -289,9 +368,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         vhlarge = (_herm(X_matmat(ularge) / slarge)
                    if return_singular_vectors != 'u' else None)
 
-    u = (_augmented_orthonormal_cols(ularge, nsmall)
+    u = (_augmented_orthonormal_cols(ularge, nsmall, random_state)
          if ularge is not None else None)
-    vh = (_augmented_orthonormal_rows(vhlarge, nsmall)
+    vh = (_augmented_orthonormal_rows(vhlarge, nsmall, random_state)
           if vhlarge is not None else None)
 
     indexes_sorted = np.argsort(s)

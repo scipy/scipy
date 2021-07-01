@@ -16,6 +16,8 @@ PROPACK source is BSD licensed, and available at
 __all__ = ['svdp']
 
 import numpy as np
+
+from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
@@ -76,10 +78,10 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-def svdp(A, k, which='LM', irl_mode=False, kmax=None,
+def svdp(A, k, which='LM', irl_mode=True, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True,
-         min_relgap=0.002, shifts=None, maxiter=None):
+         min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
@@ -100,7 +102,7 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         values by default.
     irl_mode : bool, optional
         If `True`, then compute SVD using IRL (implicitly restarted Lanczos)
-        mode.  Default is `False`.
+        mode.  Default is `True`.
     kmax : int, optional
         Maximal number of iterations / maximal dimension of the Krylov
         subspace. Default is ``5 * k``.
@@ -142,6 +144,16 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     maxiter : int, optional
         Maximum number of restarts in IRL mode.  Default is `1000`.
         Accessed only if ``irl_mode=True``.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -174,6 +186,8 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
      [ 0.  1.  0.]
      [ 0.  0.  1.]]
     """
+
+    random_state = check_random_state(random_state)
 
     which = which.upper()
     if which not in {'LM', 'SM'}:
@@ -224,9 +238,9 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
     # a random starting vector: the random seed cannot be controlled in that
     # case, so we'll instead use numpy to generate a random vector
     if v0 is None:
-        u[:, 0] = np.random.random(m)
+        u[:, 0] = random_state.uniform(size=m)
         if np.iscomplexobj(np.empty(0, dtype=typ)):  # complex type
-            u[:, 0] += 1j * np.random.random(m)
+            u[:, 0] += 1j * random_state.uniform(size=m)
     else:
         try:
             u[:, 0] = v0
@@ -286,30 +300,18 @@ def svdp(A, k, which='LM', irl_mode=False, kmax=None,
         # Use the same length Julia's wrapper uses
         # see https://github.com/JuliaSmoothOptimizers/PROPACK.jl/
         zwork = np.empty(m + n + 32*m, dtype=typ)
+        works = work, zwork, iwork
+    else:
+        works = work, iwork
 
-        if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
-                                                jobu, jobv, m, n,
-                                                shifts, k, maxiter, aprod,
-                                                u, v, tol, work, zwork,
-                                                iwork, doption, ioption,
-                                                dparm, iparm)
-        else:
-            u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v,
-                                            tol, work, zwork, iwork, doption,
+    if irl_mode:
+        u, sigma, bnd, v, info = lansvd_irl(_which_converter[which], jobu,
+                                            jobv, m, n, shifts, k, maxiter,
+                                            aprod, u, v, tol, *works, doption,
                                             ioption, dparm, iparm)
     else:
-        if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
-                                                jobu, jobv, m, n,
-                                                shifts, k, maxiter, aprod,
-                                                u, v, tol, work, iwork,
-                                                doption, ioption, dparm,
-                                                iparm)
-        else:
-            u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v,
-                                            tol, work, iwork, doption,
-                                            ioption, dparm, iparm)
+        u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v, tol,
+                                        *works, doption, ioption, dparm, iparm)
 
     if info > 0:
         raise LinAlgError(

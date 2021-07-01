@@ -1,7 +1,7 @@
 
 def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='arpack'):
+                     solver='arpack', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using ARPACK.
 
@@ -17,12 +17,12 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= min(M, N) - 1``.
     ncv : int, optional
         The number of Lanczos vectors generated.
         The default is ``min(n, max(2*k + 1, 20))``.
-        If specified, must satistify ``k + 1 < ncv < N``; ``ncv > 2*k`` is
-        recommended.
+        If specified, must satistify ``k + 1 < ncv < min(M, N)``; ``ncv > 2*k``
+        is recommended.
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : {'LM', 'SM'}
@@ -36,35 +36,43 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed;
         default is ``min(M, N) * 10``.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='arpack'``.
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -103,12 +111,16 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular values match the expected singular values, and the singular
-    values are as expected up to a difference in sign. Consequently, the
-    returned arrays of singular vectors must also be orthogonal.
+    vectors are as expected up to a difference in sign.
 
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    True
+
+    The singular vectors are also orthogonal.
+    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
+    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
     """
     pass
@@ -116,7 +128,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='lobpcg'):
+                     solver='lobpcg', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using LOBPCG.
 
@@ -132,7 +144,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Matrix to decompose.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
-        Must satisfy ``1 <= k < min(M, N)``.
+        Must satisfy ``1 <= k <= min(M, N) - 1``.
     ncv : int, optional
         Ignored.
     tol : float, optional
@@ -148,35 +160,43 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Default: random
     maxiter : int, default: 20
         Maximum number of iterations.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: if ``M <= N``, compute only the left singular vectors and
+          return ``None`` for the right singular vectors. Otherwise, compute
+          all singular vectors.
+        - ``"vh"``: if ``M > N``, compute only the right singular vectors and
+          return ``None` for the left singular vectors. Otherwise, compute
+          all singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='lobpcg'``.
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -215,12 +235,16 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular values match the expected singular values, and the singular
-    values are as expected up to a difference in sign. Consequently, the
-    returned arrays of singular vectors must also be orthogonal.
+    vectors are as expected up to a difference in sign.
 
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    True
+
+    The singular vectors are also orthogonal.
+    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
+    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
     """
     pass
@@ -228,7 +252,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='propack'):
+                     solver='propack', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using PROPACK.
 
@@ -261,35 +285,41 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     maxiter : int, optional
         Maximum number of iterations / maximal dimension of the Krylov
         subspace. Default is ``5 * k``.
-    return_singular_vectors : bool or str, default: True
+    return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.
 
         - ``True``: return singular vectors.
         - ``False``: do not return singular vectors.
-        - ``"u"``: only return the left singular values, without computing the
-          right singular vectors (if ``N > M``).
-        - ``"vh"``: only return the right singular values, without computing
-          the left singular vectors (if ``N <= M``).
+        - ``"u"``: compute only the left singular vectors; return ``None`` for
+          the right singular vectors.
+        - ``"vh"``: compute only the right singular vectors; return ``None``
+          for the left singular vectors.
 
     solver : str, optional
             This is the solver-specific documentation for ``solver='propack'``.
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`
             are also supported.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate resamples.
+
+        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
-        If `return_singular_vectors` is ``"vh"``, this variable is not
-        computed, and ``None`` is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
-        If `return_singular_vectors` is ``"u"``, this variable is not computed,
-        and ``None`` is returned instead.
 
     Notes
     -----
@@ -333,12 +363,16 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular values match the expected singular values, and the singular
-    values are as expected up to a difference in sign. Consequently, the
-    returned arrays of singular vectors must also be orthogonal.
+    vectors are as expected up to a difference in sign.
 
     >>> (np.allclose(s3, s) and
     ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    True
+
+    The singular vectors are also orthogonal.
+    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
+    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
     """
     pass
