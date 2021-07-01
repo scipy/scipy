@@ -162,30 +162,20 @@ def _minimize_direct(func, bounds=None, nvar=None, *args, disp=False,
     #
     # Call the DIRECT algorithm
     #
-    x, fun, ierror = direct(
-        _objective_wrap,
-        eps,
-        maxfun,
-        maxiter,
-        l,
-        u,
+    x, fun, ierror = direct(_objective_wrap,
+        eps, maxfun, maxiter,
+        l, u,
         locally_biased,
         "dummylogfile",
-        fglobal,
-        fglper,
-        volper,
-        sigmaper,
-        iidata,
-        ddata,
-        cdata,
-        disp,
-    )
+        fglobal, fglper,
+        volper, sigmaper,
+        iidata, ddata, cdata,
+        disp)
 
     if ierror > 0:
         message = SUCCESS_MESSAGES[ierror - 1]
     else:
         message = ERROR_MESSAGES[abs(ierror) - 1]
 
-    return OptimizeResult(
-        x=x, fun=fun, status=ierror, success=ierror > 0, message=message
-    )
+    return OptimizeResult(x=x, fun=fun, status=ierror, 
+            success=ierror > 0, message=message)
