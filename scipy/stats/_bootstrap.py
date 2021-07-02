@@ -63,24 +63,45 @@ class _StatisticLastAxis:
         return self.statistic(*data, axis=self.default_axis)
 
 
-def _jackknife_resample(sample, batch=None):
-    """Jackknife resample the sample. Only one-sample stats for now."""
-    n = sample.shape[-1]
-    batch_nominal = batch or n
+class _BootstrapDistribution:
+    def __init__(self, batch_nominal, n_resamples, data, statistic, rng):
+        self.batch_nominal = batch_nominal
+        self.n_resamples = n_resamples
+        self.data = data
+        self.statistic = statistic
+        self.rng = rng
 
-    for k in range(0, n, batch_nominal):
+    def __call__(self, k):
+        batch_actual = min(self.batch_nominal, self.n_resamples-k)
+        # Generate resamples
+        resampled_data = []
+        for sample in self.data:
+            resample = _bootstrap_resample(sample,
+                                           n_resamples=batch_actual,
+                                           random_state=self.rng)
+            resampled_data.append(resample)
+        return self.statistic(resampled_data)
+
+
+class _JackknifeDistribution:
+    def __init__(self, batch_nominal, n, sample, statistic):
+        self.batch_nominal = batch_nominal
+        self.n = n
+        self.sample = sample
+        self.statistic = statistic
+
+    def __call__(self, k):
         # col_start:col_end are the observations to remove
-        batch_actual = min(batch_nominal, n-k)
+        batch_actual = min(self.batch_nominal, self.n-k)
 
         # jackknife - each row leaves out one observation
-        j = np.ones((batch_actual, n), dtype=bool)
+        j = np.ones((batch_actual, self.n), dtype=bool)
         np.fill_diagonal(j[:, k:k+batch_actual], False)
-        i = np.arange(n)
-        i = np.broadcast_to(i, (batch_actual, n))
-        i = i[j].reshape((batch_actual, n-1))
-
-        resamples = sample[..., i]
-        yield (resamples,)
+        i = np.arange(self.n)
+        i = np.broadcast_to(i, (batch_actual, self.n))
+        i = i[j].reshape((batch_actual, self.n-1))
+        resamples = self.sample[..., i]
+        return self.statistic((resamples,))
 
 
 def _bootstrap_resample(sample, n_resamples=None, random_state=None):
@@ -130,9 +151,15 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, workers):
 
     # calculate a_hat
     statistic = _StatisticLastAxis(statistic)
-    jackknife_sampler = _jackknife_resample(sample, batch)
-    with MapWrapper(pool=1) as mapper:
-        theta_hat_i = list(mapper(statistic, jackknife_sampler))
+
+    n = sample.shape[-1]
+    batch_nominal = batch or n
+
+    jackknife_distribution = _JackknifeDistribution(batch_nominal, n, sample,
+                                                    statistic)
+    ks = range(0, n, batch_nominal)
+    with MapWrapper(pool=workers) as mapper:
+        theta_hat_i = list(mapper(jackknife_distribution, ks))
 
     theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
@@ -477,21 +504,13 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
 
     # Re-sample data and compute corresponding statistic in batches,
     # possibly in parallel
-    def _bootstrap_sampler():
-        for k in range(0, n_resamples, batch_nominal):
-            batch_actual = min(batch_nominal, n_resamples-k)
-            # Generate resamples
-            resampled_data = []
-            for sample in data:
-                resample = _bootstrap_resample(sample,
-                                               n_resamples=batch_actual,
-                                               random_state=random_state)
-                resampled_data.append(resample)
-            yield resampled_data
-
     statistic_la = _StatisticLastAxis(statistic)
+    bootstrap_distribution = _BootstrapDistribution(batch_nominal, n_resamples,
+                                                    data, statistic_la,
+                                                    random_state)
+    ks = range(0, n_resamples, batch_nominal)
     with MapWrapper(pool=workers) as mapper:
-        theta_hat_b = list(mapper(statistic_la, _bootstrap_sampler()))
+        theta_hat_b = list(mapper(bootstrap_distribution, ks))
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
