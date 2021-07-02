@@ -1232,20 +1232,16 @@ class TestPermutationTest:
 
     rtol = 1e-14
 
-    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    # different conventions for two-sided p-value here and in permutation ttest
+    # the plan is to resolove that by adding multiple options for two-sided
+    # p-values to permutation_test
+    @pytest.mark.parametrize('alternative', ('less', 'greater'))
     @pytest.mark.parametrize('permutations', (30, 1e9))
     @pytest.mark.parametrize('axis', (0, 1, 2))
     def test_basic(self, alternative, permutations, axis):
 
-        if permutations == 30:
-            message = 'ttest_ind uses different sample ordering'
-            x = np.arange(5)
-            y = np.arange(4)
-            if axis != 0:
-                pytest.skip(message)
-        else:
-            x = np.arange(3*4*5).reshape(3, 4, 5)
-            y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
+        x = np.arange(3*4*5).reshape(3, 4, 5)
+        y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
 
         res1 = stats.ttest_ind(x, y, permutations=permutations, axis=axis,
                                random_state=0, alternative=alternative)

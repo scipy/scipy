@@ -6112,7 +6112,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0054)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
 
     Take these two samples, one of which has an extreme tail.
 
@@ -6362,27 +6362,13 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    def less(null_distribution, observed):
-        cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / permutations
-        return pvalues
+    compare = {"less": np.less_equal,
+               "greater": np.greater_equal,
+               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
 
-    def greater(null_distribution, observed):
-        cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / permutations
-        return pvalues
-
-    def two_sided(null_distribution, observed):
-        pvalues_less = less(null_distribution, observed)
-        pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
-        return pvalues
-
-    compare = {"less": less,
-               "greater": greater,
-               "two-sided": two_sided}
-
-    pvalues = compare[alternative](t_stat, t_stat_observed)
+    # Calculate the p-values
+    cmps = compare[alternative](t_stat, t_stat_observed)
+    pvalues = cmps.sum(axis=0) / permutations
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
