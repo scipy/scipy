@@ -4029,11 +4029,9 @@ class Test_ttest_ind_permutations():
                           size=500).reshape(100, 5)
     rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
 
-    # These are not from an outside reference; they make sure the options
-    # are working and that behavior doesn't change
-    p_d = [0, 0.624]  # desired pvalues
-    p_d_gen = [0, 0.636]  # desired pvalues for Generator seed
-    p_d_big = [0.976, 0.676, 0.82 , 0.95 , 0.242]
+    p_d = [0, 0.676]  # desired pvalues
+    p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
+    p_d_big = [0.993, 0.685, 0.84, 0.955, 0.255]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test
