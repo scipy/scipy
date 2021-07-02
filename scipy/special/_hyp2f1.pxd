@@ -197,6 +197,10 @@ cdef inline double complex hyp2f1_complex(
         # Maximum number of terms 1500 comes from Fortran original.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
     if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
+        if c - a < a and c - b < b:
+            result = zpow(1 - z, c - a - b)
+            result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
+            return result
         return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
