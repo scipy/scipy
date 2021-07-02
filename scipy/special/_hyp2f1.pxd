@@ -196,6 +196,8 @@ cdef inline double complex hyp2f1_complex(
             return result
         # Maximum number of terms 1500 comes from Fortran original.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
+    if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
+        return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
@@ -257,4 +259,37 @@ cdef inline double complex hyp2f1_series(
         if early_stop:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
             result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+cdef inline double complex hyp2f1_lopez_temme_series(
+        double a,
+        double b,
+        double c,
+        double complex z,
+        int max_degree,
+        double rtol,
+) nogil:
+    """Series for hyp2f1 that converges near critical values exp(+-i*pi/3)."""
+    cdef:
+        int n
+        double phi_previous, phi
+        double complex prefactor, previous, Z, result
+    prefactor = zpow(1 - 0.5 * z, -a)
+    phi, phi_previous = 1 - 2 * b / c, 1.0
+    previous = 1 + 0j
+    Z = a * z / (z - 2)
+    result = previous + Z * phi
+    for n in range(2, max_degree):
+        phi, phi_previous = (
+            ((n - 1) * phi_previous - (2 * b - c) * phi) / (c + n - 1), phi
+        )
+        Z = Z * (a + n - 1) * z / ((z - 2) * n)
+        previous, result = result, result + Z * phi
+        if zabs(result - previous) <= rtol * zabs(result):
+            result = prefactor * result
+            break
+    else:
+        sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
+        result = zpack(NPY_NAN, NPY_NAN)
     return result
