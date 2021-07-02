@@ -2,12 +2,13 @@
 
 Author: Albert Steppi
 
-This script is long running and generates a large output file. The generated
-file is roughly 700MB in size. It takes around 40 minutes using an Intel(R)
-Core(TM) i5-8250U CPU with n_jobs set to 8 (full utilization). It is only
-meant to be run occasionally. It's output can be analyzed to identify suitable
-test cases and to find parameter and argument regions where hyp2f1 needs to
-be improved.
+This script is long running and generates a large output file. With default
+arguments, the generated file is roughly 700MB in size and it takes around
+40 minutes using an Intel(R) Core(TM) i5-8250U CPU with n_jobs set to 8
+(full utilization). There are optional arguments which can be used to restrict
+(or enlarge) the computations performed. These are described below.
+The output of this script can be analyzed to identify suitable test cases and
+to find parameter and argument regions where hyp2f1 needs to be improved.
 
 The script has one mandatory positional argument for specifying the path to
 the location where the output file is to be placed, and 4 optional arguments
