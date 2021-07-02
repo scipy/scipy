@@ -989,7 +989,7 @@ class LatinHypercube(QMCEngine):
 
 
 class OptimalLatinHypercube(QMCEngine):
-    """Optimal Latin hypercube sampling (OLHS).
+    """Greedy optimization of a Latin hypercube sample (OLHS).
 
     Optimize the sample by doing random permutations of coordinates to lower
     the centered discrepancy [1]_. The resulting sample is still a LHS.
@@ -1002,12 +1002,12 @@ class OptimalLatinHypercube(QMCEngine):
         Initial sample to optimize. `LatinHypercube`
         is used to generate a first design otherwise.
     n_perturbations : int, optional
-        Number of perturbation to perform. Default is 10000.
+        Number of perturbations to perform. Default is 10000.
     seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is None, the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
+        If `seed` is already a ``Generator`` instance, then that instance is
         used.
 
     Notes
