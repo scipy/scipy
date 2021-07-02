@@ -9,9 +9,11 @@ meant to be run occasionally. It's output can be analyzed to identify suitable
 test cases and to find parameter and argument regions where hyp2f1 needs to
 be improved.
 
-The script has two arguments; a positional argument for specifying the path to
-the location where the output file is to be placed, and an optional argument
-specifying the number of processes to use for parallel execution.
+The script has one mandatory positional argument for specifying the path to
+the location where the output file is to be placed, and 4 optional arguments
+--n_jobs, --grid_size, --regions, and --parameter_groups. --n_jobs specifies
+the number of processes to use if running in parallel. The default value is 1.
+The other optional arguments are explained below.
 
 Produces a tab separated values file with 11 columns. The first four columns
 contain the parameters a, b, c and the argument z. The next two contain |z| and
@@ -23,11 +25,16 @@ a region code for which region of the complex plane belongs to. The regions are
     4) 0.9 <= |z| =< 1 and |1 - z| >= 1.0 and real(z) >= 0:
     5) |z| > 1
 
+The --regions optional argument allows the user to specify a list of regions
+to which computation will be restricted.
+
 Parameters a, b, c are taken from a 10 * 10 * 10 grid with values at
 
     -16, -8, -4, -2, -1, 1, 2, 4, 8, 16
 
-with random perturbations applied. The following cases are handled.
+with random perturbations applied.
+
+There are 8 parameter groups handling the following cases.
 
     1) A, B, C, B - A, C - A, C - B, C - A - B all non-integral.
     2) B - A integral
@@ -41,8 +48,13 @@ with random perturbations applied. The following cases are handled.
 The seventh column of the output file is an integer between 1 and 8 specifying
 the parameter group as above.
 
-The argument z is taken from a 20 * 20 grid in the box
+The --parameter_groups optional argument allows the user to specify a list of
+parameter groups to which computation will be restricted.
+
+The argument z is taken from a grid in the box
     -2 <= real(z) <= 2, -2 <= imag(z) <= 2.
+with grid size specified using the optional command line argument --grid-size.
+The default value is 20, yielding a 20 * 20 grid in this box.
 
 The final four columns have the expected value of hyp2f1 for the given
 parameters and argument as calculated with mpmath, the observed value
@@ -67,7 +79,7 @@ from scipy.special.tests.test_hyp2f1 import mp_hyp2f1
 
 
 def get_region(z):
-    """Assign numbers for regions where hyp2f1 is calculated differently."""
+    """Assign numbers for regions where hyp2f1 must be handled differently."""
     if abs(z) < 0.9 and z.real >= 0:
         return 1
     elif abs(z) <= 1 and z.real < 0:
@@ -170,7 +182,7 @@ def make_hyp2f1_test_cases(rows):
     return result
 
 
-def main(outpath, n_jobs=1):
+def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
     outpath = os.path.realpath(os.path.expanduser(outpath))
 
     random_state = np.random.RandomState(1234)
@@ -288,10 +300,21 @@ def main(outpath, n_jobs=1):
         )
     )
 
-    # 20 * 20 grid in box with corners -2 - 2j, -2 + 2j, 2 - 2j, 2 + 2j
-    X, Y = np.meshgrid(np.linspace(-2, 2, 20), np.linspace(-2, 2, 20))
+    if parameter_groups is not None:
+        params = [
+            (a, b, c, group) for a, b, c, group in params
+            if group in parameter_groups
+        ]
+
+    # grid_size * grid_size grid in box with corners
+    # -2 - 2j, -2 + 2j, 2 - 2j, 2 + 2j
+    X, Y = np.meshgrid(
+        np.linspace(-2, 2, grid_size), np.linspace(-2, 2, grid_size)
+    )
     Z = X + Y * 1j
-    Z = Z.flatten()
+    Z = Z.flatten().tolist()
+    if regions is not None:
+        Z = [z for z in Z if get_region(z) in regions]
 
     # Evaluate scipy and mpmath's hyp2f1 for all parameter combinations
     # above against all arguments in the grid Z
@@ -323,9 +346,9 @@ if __name__ == "__main__":
         description="Test scipy's hyp2f1 against mpmath's on a grid in the"
         " complex plane over a grid of parameter values. Saves output to file"
         " specified in positional argument \"outpath\"."
-        " Caution: Generated output file is roughly 700MB in size. Script"
-        " may take several hours to finish if \"--n_jobs\" is set to 1."
-
+        " Caution: With default arguments, the generated output file is"
+        " roughly 700MB in size. Script may take several hours to finish if"
+        " \"--n_jobs\" is set to 1."
     )
     parser.add_argument(
         "outpath", type=str, help="Path to output tsv file."
@@ -336,5 +359,36 @@ if __name__ == "__main__":
         default=1,
         help="Number of jobs for multiprocessing.",
     )
+    parser.add_argument(
+        "--grid_size",
+        type=int,
+        default=20,
+        help="hyp2f1 is evaluated on grid_size * grid_size grid in box of side"
+        " length 2 centered at the origin."
+    )
+    parser.add_argument(
+        "--parameter_groups",
+        type=int,
+        nargs='+',
+        default=None,
+        help="Restrict to supplied parameter groups. See the Docstring for"
+        " this module for more info on parameter groups. Calculate for all"
+        " paremeter groups by default."
+    )
+    parser.add_argument(
+        "--regions",
+        type=int,
+        nargs='+',
+        default=None,
+        help="Restrict to argument z only within the supplied regions. See"
+        " the Docstring for this module for more info on regions. Calculate"
+        " for all regions by default."
+    )
     args = parser.parse_args()
-    main(args.outpath, n_jobs=args.n_jobs)
+    main(
+        args.outpath,
+        n_jobs=args.n_jobs,
+        grid_size=args.grid_size,
+        parameter_groups=args.parameter_groups,
+        regions=args.regions
+    )
