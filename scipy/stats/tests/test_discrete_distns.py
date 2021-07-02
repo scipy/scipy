@@ -11,6 +11,32 @@ from scipy.optimize import root_scalar
 from scipy.integrate import quad
 
 
+# The expected values were computed with Wolfram Alpha, using
+# the expression CDF[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(3, 10, 4, 5,
+                           0.9761904761904762, 1e-15),
+                          (107, 10000, 3000, 215,
+                           0.9999999997226765, 1e-15),
+                          (10, 10000, 3000, 215,
+                           2.681682217692179e-21, 5e-11)])
+def test_hypergeom_cdf(k, M, n, N, expected, rtol):
+    p = hypergeom.cdf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression SurvivalFunction[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(25, 10000, 3000, 215,
+                           0.9999999999052958, 1e-15),
+                          (125, 10000, 3000, 215,
+                           1.4416781705752128e-18, 5e-11)])
+def test_hypergeom_sf(k, M, n, N, expected, rtol):
+    p = hypergeom.sf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
+
+
 def test_hypergeom_logpmf():
     # symmetries test
     # f(k,N,K,n) = f(n-k,N,N-K,n) = f(K-k,N,K,N-n) = f(k,N,n,K)
@@ -65,6 +91,25 @@ def test_nhypergeom_r0():
     r = 0
     pmf = nhypergeom.pmf([[0, 1, 2, 0], [1, 2, 0, 3]], M, n, r)
     assert_allclose(pmf, [[1, 0, 0, 1], [0, 0, 1, 0]], rtol=1e-13)
+
+
+def test_nhypergeom_rvs_shape():
+    # Check that when given a size with more dimensions than the
+    # dimensions of the broadcast parameters, rvs returns an array
+    # with the correct shape.
+    x = nhypergeom.rvs(22, [7, 8, 9], [[12], [13]], size=(5, 1, 2, 3))
+    assert x.shape == (5, 1, 2, 3)
+
+
+def test_nhypergeom_accuracy():
+    # Check that nhypergeom.rvs post-gh-13431 gives the same values as
+    # inverse transform sampling
+    np.random.seed(0)
+    x = nhypergeom.rvs(22, 7, 11, size=100)
+    np.random.seed(0)
+    p = np.random.uniform(size=100)
+    y = nhypergeom.ppf(p, 22, 7, 11)
+    assert_equal(x, y)
 
 
 def test_boltzmann_upper_bound():

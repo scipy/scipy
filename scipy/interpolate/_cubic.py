@@ -285,7 +285,7 @@ class PchipInterpolator(CubicHermiteSpline):
 
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):
             whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
 
         dk = np.zeros_like(y)

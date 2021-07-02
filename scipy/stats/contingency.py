@@ -176,6 +176,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     chisquare
     power_divergence
     barnard_exact
+    boschloo_exact
 
     Notes
     -----
@@ -287,7 +288,11 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     else:
         if dof == 1 and correction:
             # Adjust `observed` according to Yates' correction for continuity.
-            observed = observed + 0.5 * np.sign(expected - observed)
+            # Magnitude of correction no bigger than difference; see gh-13875
+            diff = expected - observed
+            direction = np.sign(diff)
+            magnitude = np.minimum(0.5, np.abs(diff))
+            observed = observed + magnitude * direction
 
         chi2, p = power_divergence(observed, expected,
                                    ddof=observed.size - 1 - dof, axis=None,

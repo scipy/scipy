@@ -312,7 +312,7 @@ def jn_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -365,7 +365,7 @@ def jnp_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -416,7 +416,7 @@ def yn_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -459,6 +459,12 @@ def ynp_zeros(n, nt):
         Order of Bessel function
     nt : int
         Number of zeros to return
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Bessel derivative function.
+
 
     See Also
     --------
@@ -1446,11 +1452,41 @@ def lqmn(m, n, z):
 def bernoulli(n):
     """Bernoulli numbers B0..Bn (inclusive).
 
+    Parameters
+    ----------
+    n : int
+        Indicated the number of terms in the Bernoulli series to generate.
+
+    Returns
+    -------
+    ndarray
+        The Bernoulli numbers ``[B(0), B(1), ..., B(n)]``.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+    .. [2] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
+
+    Examples
+    --------
+    >>> from scipy.special import bernoulli, zeta
+    >>> bernoulli(4)
+    array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
+
+    The Wikipedia article ([2]_) points out the relationship between the
+    Bernoulli numbers and the zeta function, ``B_n^+ = -n * zeta(1 - n)``
+    for ``n > 0``:
+
+    >>> n = np.arange(1, 5)
+    >>> -n * zeta(1 - n)
+    array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
+
+    Note that, in the notation used in the wikipedia article,
+    `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
+    ``B_1`` is -1/2).  The relation given above is for ``B_n^+``, so the
+    sign of 0.5 does not match the output of ``bernoulli(4)``.
 
     """
     if not isscalar(n) or (n < 0):

@@ -1778,15 +1778,15 @@ _METRIC_INFOS = [
         canonical_name='braycurtis',
         aka={'braycurtis'},
         dist_func=braycurtis,
-        cdist_func=CDistMetricWrapper('braycurtis'),
-        pdist_func=PDistMetricWrapper('braycurtis'),
+        cdist_func=_distance_pybind.cdist_braycurtis,
+        pdist_func=_distance_pybind.pdist_braycurtis,
     ),
     MetricInfo(
         canonical_name='canberra',
         aka={'canberra'},
         dist_func=canberra,
-        cdist_func=CDistMetricWrapper('canberra'),
-        pdist_func=PDistMetricWrapper('canberra'),
+        cdist_func=_distance_pybind.cdist_canberra,
+        pdist_func=_distance_pybind.pdist_canberra,
     ),
     MetricInfo(
         canonical_name='chebyshev',
@@ -1923,8 +1923,8 @@ _METRIC_INFOS = [
         canonical_name='sqeuclidean',
         aka={'sqeuclidean', 'sqe', 'sqeuclid'},
         dist_func=sqeuclidean,
-        cdist_func=CDistMetricWrapper('sqeuclidean'),
-        pdist_func=PDistMetricWrapper('sqeuclidean'),
+        cdist_func=_distance_pybind.cdist_sqeuclidean,
+        pdist_func=_distance_pybind.pdist_sqeuclidean,
     ),
     MetricInfo(
         canonical_name='wminkowski',
@@ -2093,115 +2093,128 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
        proportion of those elements ``u[i]`` and ``v[i]`` that
        disagree.
 
-    10. ``Y = pdist(X, 'chebyshev')``
+    10. ``Y = pdist(X, 'jensenshannon')``
 
-       Computes the Chebyshev distance between the points. The
-       Chebyshev distance between two n-vectors ``u`` and ``v`` is the
-       maximum norm-1 distance between their respective elements. More
-       precisely, the distance is given by
+        Computes the Jensen-Shannon distance between two probability arrays.
+        Given two probability vectors, :math:`p` and :math:`q`, the
+        Jensen-Shannon distance is
 
-       .. math::
+        .. math::
 
-          d(u,v) = \\max_i {|u_i-v_i|}
+           \\sqrt{\\frac{D(p \\parallel m) + D(q \\parallel m)}{2}}
 
-    11. ``Y = pdist(X, 'canberra')``
+        where :math:`m` is the pointwise mean of :math:`p` and :math:`q`
+        and :math:`D` is the Kullback-Leibler divergence.
 
-       Computes the Canberra distance between the points. The
-       Canberra distance between two points ``u`` and ``v`` is
+    11. ``Y = pdist(X, 'chebyshev')``
 
-       .. math::
+        Computes the Chebyshev distance between the points. The
+        Chebyshev distance between two n-vectors ``u`` and ``v`` is the
+        maximum norm-1 distance between their respective elements. More
+        precisely, the distance is given by
 
-         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
-                              {|u_i|+|v_i|}
+        .. math::
+
+           d(u,v) = \\max_i {|u_i-v_i|}
+
+    12. ``Y = pdist(X, 'canberra')``
+
+        Computes the Canberra distance between the points. The
+        Canberra distance between two points ``u`` and ``v`` is
+
+        .. math::
+
+          d(u,v) = \\sum_i \\frac{|u_i-v_i|}
+                               {|u_i|+|v_i|}
 
 
-    12. ``Y = pdist(X, 'braycurtis')``
+    13. ``Y = pdist(X, 'braycurtis')``
 
-       Computes the Bray-Curtis distance between the points. The
-       Bray-Curtis distance between two points ``u`` and ``v`` is
+        Computes the Bray-Curtis distance between the points. The
+        Bray-Curtis distance between two points ``u`` and ``v`` is
 
 
-       .. math::
+        .. math::
 
-            d(u,v) = \\frac{\\sum_i {|u_i-v_i|}}
-                           {\\sum_i {|u_i+v_i|}}
+             d(u,v) = \\frac{\\sum_i {|u_i-v_i|}}
+                            {\\sum_i {|u_i+v_i|}}
 
-    13. ``Y = pdist(X, 'mahalanobis', VI=None)``
+    14. ``Y = pdist(X, 'mahalanobis', VI=None)``
 
-       Computes the Mahalanobis distance between the points. The
-       Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
-       variable) is the inverse covariance. If ``VI`` is not None,
-       ``VI`` will be used as the inverse covariance matrix.
+        Computes the Mahalanobis distance between the points. The
+        Mahalanobis distance between two points ``u`` and ``v`` is
+        :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
+        variable) is the inverse covariance. If ``VI`` is not None,
+        ``VI`` will be used as the inverse covariance matrix.
 
-    14. ``Y = pdist(X, 'yule')``
+    15. ``Y = pdist(X, 'yule')``
 
-       Computes the Yule distance between each pair of boolean
-       vectors. (see yule function documentation)
+        Computes the Yule distance between each pair of boolean
+        vectors. (see yule function documentation)
 
-    15. ``Y = pdist(X, 'matching')``
+    16. ``Y = pdist(X, 'matching')``
 
-       Synonym for 'hamming'.
+        Synonym for 'hamming'.
 
-    16. ``Y = pdist(X, 'dice')``
+    17. ``Y = pdist(X, 'dice')``
 
-       Computes the Dice distance between each pair of boolean
-       vectors. (see dice function documentation)
+        Computes the Dice distance between each pair of boolean
+        vectors. (see dice function documentation)
 
-    17. ``Y = pdist(X, 'kulsinski')``
+    18. ``Y = pdist(X, 'kulsinski')``
 
-       Computes the Kulsinski distance between each pair of
-       boolean vectors. (see kulsinski function documentation)
+        Computes the Kulsinski distance between each pair of
+        boolean vectors. (see kulsinski function documentation)
 
-    18. ``Y = pdist(X, 'rogerstanimoto')``
+    19. ``Y = pdist(X, 'rogerstanimoto')``
 
-       Computes the Rogers-Tanimoto distance between each pair of
-       boolean vectors. (see rogerstanimoto function documentation)
+        Computes the Rogers-Tanimoto distance between each pair of
+        boolean vectors. (see rogerstanimoto function documentation)
 
-    19. ``Y = pdist(X, 'russellrao')``
+    20. ``Y = pdist(X, 'russellrao')``
 
-       Computes the Russell-Rao distance between each pair of
-       boolean vectors. (see russellrao function documentation)
+        Computes the Russell-Rao distance between each pair of
+        boolean vectors. (see russellrao function documentation)
 
-    20. ``Y = pdist(X, 'sokalmichener')``
+    21. ``Y = pdist(X, 'sokalmichener')``
 
-       Computes the Sokal-Michener distance between each pair of
-       boolean vectors. (see sokalmichener function documentation)
+        Computes the Sokal-Michener distance between each pair of
+        boolean vectors. (see sokalmichener function documentation)
 
-    21. ``Y = pdist(X, 'sokalsneath')``
+    22. ``Y = pdist(X, 'sokalsneath')``
 
-       Computes the Sokal-Sneath distance between each pair of
-       boolean vectors. (see sokalsneath function documentation)
+        Computes the Sokal-Sneath distance between each pair of
+        boolean vectors. (see sokalsneath function documentation)
 
-    22. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
+    23. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
 
-       Computes the weighted Minkowski distance between each pair of
-       vectors. (see wminkowski function documentation)
+        Computes the weighted Minkowski distance between each pair of
+        vectors. (see wminkowski function documentation)
 
-       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
-       Use 'minkowski' instead.
+        'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
+        Use 'minkowski' instead.
 
-    23. ``Y = pdist(X, f)``
+    24. ``Y = pdist(X, f)``
 
-       Computes the distance between all pairs of vectors in X
-       using the user supplied 2-arity function f. For example,
-       Euclidean distance between the vectors could be computed
-       as follows::
+        Computes the distance between all pairs of vectors in X
+        using the user supplied 2-arity function f. For example,
+        Euclidean distance between the vectors could be computed
+        as follows::
 
-         dm = pdist(X, lambda u, v: np.sqrt(((u-v)**2).sum()))
+          dm = pdist(X, lambda u, v: np.sqrt(((u-v)**2).sum()))
 
-       Note that you should avoid passing a reference to one of
-       the distance functions defined in this library. For example,::
+        Note that you should avoid passing a reference to one of
+        the distance functions defined in this library. For example,::
 
-         dm = pdist(X, sokalsneath)
+          dm = pdist(X, sokalsneath)
 
-       would calculate the pair-wise distances between the vectors in
-       X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`{n \\choose 2}` times, which
-       is inefficient. Instead, the optimized C version is more
-       efficient, and we call it using the following syntax.::
+        would calculate the pair-wise distances between the vectors in
+        X using the Python function sokalsneath. This would result in
+        sokalsneath being called :math:`{n \\choose 2}` times, which
+        is inefficient. Instead, the optimized C version is more
+        efficient, and we call it using the following syntax.::
 
-         dm = pdist(X, 'sokalsneath')
+          dm = pdist(X, 'sokalsneath')
 
     """
     # You can also call this as:
@@ -2740,115 +2753,128 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
        proportion of those elements ``u[i]`` and ``v[i]`` that
        disagree where at least one of them is non-zero.
 
-    10. ``Y = cdist(XA, XB, 'chebyshev')``
+    10. ``Y = cdist(XA, XB, 'jensenshannon')``
 
-       Computes the Chebyshev distance between the points. The
-       Chebyshev distance between two n-vectors ``u`` and ``v`` is the
-       maximum norm-1 distance between their respective elements. More
-       precisely, the distance is given by
+        Computes the Jensen-Shannon distance between two probability arrays.
+        Given two probability vectors, :math:`p` and :math:`q`, the
+        Jensen-Shannon distance is
 
-       .. math::
+        .. math::
 
-          d(u,v) = \\max_i {|u_i-v_i|}.
+           \\sqrt{\\frac{D(p \\parallel m) + D(q \\parallel m)}{2}}
 
-    11. ``Y = cdist(XA, XB, 'canberra')``
+        where :math:`m` is the pointwise mean of :math:`p` and :math:`q`
+        and :math:`D` is the Kullback-Leibler divergence.
 
-       Computes the Canberra distance between the points. The
-       Canberra distance between two points ``u`` and ``v`` is
+    11. ``Y = cdist(XA, XB, 'chebyshev')``
 
-       .. math::
+        Computes the Chebyshev distance between the points. The
+        Chebyshev distance between two n-vectors ``u`` and ``v`` is the
+        maximum norm-1 distance between their respective elements. More
+        precisely, the distance is given by
 
-         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
-                              {|u_i|+|v_i|}.
+        .. math::
 
-    12. ``Y = cdist(XA, XB, 'braycurtis')``
+           d(u,v) = \\max_i {|u_i-v_i|}.
 
-       Computes the Bray-Curtis distance between the points. The
-       Bray-Curtis distance between two points ``u`` and ``v`` is
+    12. ``Y = cdist(XA, XB, 'canberra')``
 
+        Computes the Canberra distance between the points. The
+        Canberra distance between two points ``u`` and ``v`` is
 
-       .. math::
+        .. math::
 
-            d(u,v) = \\frac{\\sum_i (|u_i-v_i|)}
-                          {\\sum_i (|u_i+v_i|)}
+          d(u,v) = \\sum_i \\frac{|u_i-v_i|}
+                               {|u_i|+|v_i|}.
 
-    13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
+    13. ``Y = cdist(XA, XB, 'braycurtis')``
 
-       Computes the Mahalanobis distance between the points. The
-       Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
-       variable) is the inverse covariance. If ``VI`` is not None,
-       ``VI`` will be used as the inverse covariance matrix.
-
-    14. ``Y = cdist(XA, XB, 'yule')``
-
-       Computes the Yule distance between the boolean
-       vectors. (see `yule` function documentation)
-
-    15. ``Y = cdist(XA, XB, 'matching')``
-
-       Synonym for 'hamming'.
-
-    16. ``Y = cdist(XA, XB, 'dice')``
-
-       Computes the Dice distance between the boolean vectors. (see
-       `dice` function documentation)
-
-    17. ``Y = cdist(XA, XB, 'kulsinski')``
-
-       Computes the Kulsinski distance between the boolean
-       vectors. (see `kulsinski` function documentation)
-
-    18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
-
-       Computes the Rogers-Tanimoto distance between the boolean
-       vectors. (see `rogerstanimoto` function documentation)
-
-    19. ``Y = cdist(XA, XB, 'russellrao')``
-
-       Computes the Russell-Rao distance between the boolean
-       vectors. (see `russellrao` function documentation)
-
-    20. ``Y = cdist(XA, XB, 'sokalmichener')``
-
-       Computes the Sokal-Michener distance between the boolean
-       vectors. (see `sokalmichener` function documentation)
-
-    21. ``Y = cdist(XA, XB, 'sokalsneath')``
-
-       Computes the Sokal-Sneath distance between the vectors. (see
-       `sokalsneath` function documentation)
+        Computes the Bray-Curtis distance between the points. The
+        Bray-Curtis distance between two points ``u`` and ``v`` is
 
 
-    22. ``Y = cdist(XA, XB, 'wminkowski', p=2., w=w)``
+        .. math::
 
-       Computes the weighted Minkowski distance between the
-       vectors. (see `wminkowski` function documentation)
+             d(u,v) = \\frac{\\sum_i (|u_i-v_i|)}
+                           {\\sum_i (|u_i+v_i|)}
 
-       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
-       Use 'minkowski' instead.
+    14. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
-    23. ``Y = cdist(XA, XB, f)``
+        Computes the Mahalanobis distance between the points. The
+        Mahalanobis distance between two points ``u`` and ``v`` is
+        :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
+        variable) is the inverse covariance. If ``VI`` is not None,
+        ``VI`` will be used as the inverse covariance matrix.
 
-       Computes the distance between all pairs of vectors in X
-       using the user supplied 2-arity function f. For example,
-       Euclidean distance between the vectors could be computed
-       as follows::
+    15. ``Y = cdist(XA, XB, 'yule')``
 
-         dm = cdist(XA, XB, lambda u, v: np.sqrt(((u-v)**2).sum()))
+        Computes the Yule distance between the boolean
+        vectors. (see `yule` function documentation)
 
-       Note that you should avoid passing a reference to one of
-       the distance functions defined in this library. For example,::
+    16. ``Y = cdist(XA, XB, 'matching')``
 
-         dm = cdist(XA, XB, sokalsneath)
+        Synonym for 'hamming'.
 
-       would calculate the pair-wise distances between the vectors in
-       X using the Python function `sokalsneath`. This would result in
-       sokalsneath being called :math:`{n \\choose 2}` times, which
-       is inefficient. Instead, the optimized C version is more
-       efficient, and we call it using the following syntax::
+    17. ``Y = cdist(XA, XB, 'dice')``
 
-         dm = cdist(XA, XB, 'sokalsneath')
+        Computes the Dice distance between the boolean vectors. (see
+        `dice` function documentation)
+
+    18. ``Y = cdist(XA, XB, 'kulsinski')``
+
+        Computes the Kulsinski distance between the boolean
+        vectors. (see `kulsinski` function documentation)
+
+    19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
+
+        Computes the Rogers-Tanimoto distance between the boolean
+        vectors. (see `rogerstanimoto` function documentation)
+
+    20. ``Y = cdist(XA, XB, 'russellrao')``
+
+        Computes the Russell-Rao distance between the boolean
+        vectors. (see `russellrao` function documentation)
+
+    21. ``Y = cdist(XA, XB, 'sokalmichener')``
+
+        Computes the Sokal-Michener distance between the boolean
+        vectors. (see `sokalmichener` function documentation)
+
+    22. ``Y = cdist(XA, XB, 'sokalsneath')``
+
+        Computes the Sokal-Sneath distance between the vectors. (see
+        `sokalsneath` function documentation)
+
+
+    23. ``Y = cdist(XA, XB, 'wminkowski', p=2., w=w)``
+
+        Computes the weighted Minkowski distance between the
+        vectors. (see `wminkowski` function documentation)
+
+        'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
+        Use 'minkowski' instead.
+
+    24. ``Y = cdist(XA, XB, f)``
+
+        Computes the distance between all pairs of vectors in X
+        using the user supplied 2-arity function f. For example,
+        Euclidean distance between the vectors could be computed
+        as follows::
+
+          dm = cdist(XA, XB, lambda u, v: np.sqrt(((u-v)**2).sum()))
+
+        Note that you should avoid passing a reference to one of
+        the distance functions defined in this library. For example,::
+
+          dm = cdist(XA, XB, sokalsneath)
+
+        would calculate the pair-wise distances between the vectors in
+        X using the Python function `sokalsneath`. This would result in
+        sokalsneath being called :math:`{n \\choose 2}` times, which
+        is inefficient. Instead, the optimized C version is more
+        efficient, and we call it using the following syntax::
+
+          dm = cdist(XA, XB, 'sokalsneath')
 
     Examples
     --------

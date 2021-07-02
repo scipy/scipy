@@ -53,7 +53,7 @@ jobs:
 
   test_nightly:
     name: Nightly CPython
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
+    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -81,7 +81,8 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
+        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
+        pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python3.10 -m pip install -r mypy_requirements.txt
 
     - name: Mypy

@@ -542,6 +542,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
         throw py::error_already_set();
     }
     using namespace pybind11::literals;
+    m.def("pdist_canberra",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, CanberraDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_chebyshev",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, ChebyshevDistance{});
@@ -570,6 +575,21 @@ PYBIND11_MODULE(_distance_pybind, m) {
               }
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none(), "p"_a=2.0);
+    m.def("pdist_sqeuclidean",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, SquareEuclideanDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_braycurtis",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, BraycurtisDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_canberra",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, CanberraDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_chebyshev",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, ChebyshevDistance{});
@@ -599,6 +619,16 @@ PYBIND11_MODULE(_distance_pybind, m) {
               }
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none(), "p"_a=2.0);
+    m.def("cdist_sqeuclidean",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, SquareEuclideanDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_braycurtis",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, BraycurtisDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
 }
 
 }  // namespace (anonymous)
