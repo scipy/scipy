@@ -580,7 +580,6 @@ class TestHyp2f1:
         assert abs(z) < 1 and z.real < 0  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
-    @pytest.mark.xfail(reason="gh-8054")
     @pytest.mark.parametrize(
         "hyp2f1_test_case",
         [
