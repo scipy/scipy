@@ -1010,6 +1010,7 @@ class TestBoschlooExact:
     """Some tests to show that boschloo_exact() works correctly."""
 
     ATOL = 1e-7
+
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
@@ -1137,6 +1138,7 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
 
 class TestCvm_2samp:
     def test_invalid_input(self):

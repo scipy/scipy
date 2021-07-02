@@ -1565,24 +1565,24 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     Parameters
     ----------
     data : tuple of array-like
-        Contains the two samples, each of which is an array of observations.
-        Dimensions of arrays must be compatible for broadcasting except along
-        `axis`.
+        Contains the two samples, e.g. ``a`` and ``b``, each of which is an
+        array of observations. Dimensions of arrays must be compatible for
+        broadcasting except along `axis`.
     statistic : callable
         Statistic for which the p-value of the hypothesis test is to be
-        calculated. `statistic` must be a callable that accepts `a` and `b`
+        calculated. `statistic` must be a callable that accepts ``a`` and ``b``
         as separate arguments and returns the resulting statistic.
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
-        provided `axis` of ND arrays `a` and `b`.
+        provided `axis` of ND arrays ``a`` and ``b``.
     paired : bool, optional (default: ``False``)
-        Whether the statistic treats corresponding elements of `a` and `b`
+        Whether the statistic treats corresponding elements of ``a`` and ``b``
         as paired.
     vectorized : bool, optional (default: ``False``)
         By default, `statistic` is assumed to calculate the statistic only for
-        1D arrays `a` and `b. If `vectorized` is set ``True``, `statistic` must
-        also accept a keyword argument `axis` and be vectorized to compute the
-        statistic along the provided `axis` of ND arrays `a` and `b`.
+        1D arrays ``a`` and ``b``. If `vectorized` is set ``True``, `statistic`
+        must also accept a keyword argument `axis` and be vectorized to compute
+        the statistic along the provided `axis` of ND arrays ``a`` and ``b``.
     permutations: int, optional (default: ``np.inf``)
         Number of permutations used to estimate the p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
@@ -1590,27 +1590,25 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
         The alternative hypothesis for which the p-value is calculated.
         For each alternative, the p-value is defined as follows.
 
-        ``'greater'`` : the percentage of the null distribution that is
+        - ``'greater'`` : the percentage of the null distribution that is
         greater than or equal to the observed value of the test statistic.
-
-        ``'less'`` : the percentage of the null distribution that is
+        - ``'less'`` : the percentage of the null distribution that is
         less than or equal to the observed value of the test statistic.
-
-        ``'two-sided'`` : twice the smaller of the p-values above.
+        - ``'two-sided'`` : twice the smaller of the p-values above.
 
     axis : int, optional (default: 0)
         The axis of samples over which to calculate the statistic.
     random_state : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
+                    `numpy.random.RandomState`}, optional
 
-        Pseudorandom number generator state used to generate permutations.
+        Pseudorandom number generator state used to generate resamples.
 
-        If `seed` is ``None``, the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an ``int``, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``numpy.random.Generator`` or ``RandomState``
-        instance, then that instance is used.
+        If `random_state` is ``None`` (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
 
     Returns
     -------
@@ -1624,16 +1622,18 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     Notes
     -----
 
+    Let ``a, b = data``.
+
     *Unpaired statistics*
 
     When ``1 < permutations < binom(n, k)``, where
 
-    * ``k`` is the number of observations in `a`,
-    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``k`` is the number of observations in ``a``,
+    * ``n`` is the total number of observations in ``a`` and ``b``, and
     * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
 
-    the data are pooled (concatenated), randomly assigned to either group `a`
-    or `b`, and the statistic is calculated. This process is performed
+    the data are pooled (concatenated), randomly assigned to either group ``a``
+    or ``b``, and the statistic is calculated. This process is performed
     repeatedly, `permutation` times, generating a distribution of the
     statistic under the null hypothesis. The statistic of the observed
     data is compared to this distribution to determine the p-value. When
@@ -1643,9 +1643,9 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     *Paired statistics*
 
     When ``1 < permutations < factorial(k)``, where ``k`` is the number of
-    observations in `a`, the elements of `a` are randomly paired with elements
-    of `b`, and the statistic is calculated. This process is performed
-    repeatedly, `permutation` times, generating a distribution of the
+    observations in ``a``, the elements of ``a`` are randomly paired with
+    elements of ``b``, and the statistic is calculated. This process is
+    performed repeatedly, `permutation` times, generating a distribution of the
     statistic under the null hypothesis. The statistic of the observed
     data is compared to this distribution to determine the p-value. When
     ``permutations >= factorial(k)``, an exact test is performed: the data are
