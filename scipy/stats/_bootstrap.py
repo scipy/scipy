@@ -5,23 +5,62 @@ from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
 from scipy.stats.stats import _broadcast_concatenate
+from scipy._lib._util import MapWrapper
 
 
-def _vectorize_statistic(statistic):
-    """Vectorize an n-sample statistic"""
+class _VectorizedStatistic:
+    """
+    Vectorize an n-sample statistic.
+
+    This class wraps a user-provided statistic that works on 1D data only,
+    providing callable that computes that statistic on ND data along `axis`.
+    """
+
+    def __init__(self, statistic):
+        self.statistic = statistic
+
     # This is a little cleaner than np.nditer at the expense of some data
     # copying: concatenate samples together, then use np.apply_along_axis
-    def stat_nd(*data, axis=0):
+    def __call__(self, *data, axis=0):
         lengths = [sample.shape[axis] for sample in data]
         split_indices = np.cumsum(lengths)[:-1]
         z = _broadcast_concatenate(data, axis)
 
         def stat_1d(z):
             data = np.split(z, split_indices)
-            return statistic(*data)
+            return self.statistic(*data)
 
         return np.apply_along_axis(stat_1d, axis, z)[()]
-    return stat_nd
+
+
+class _PairedStatistic:
+    """
+    Object to wrap a paired sample statistic for use with `bootstrap`.
+
+    To bootstrap with paired-sample statistics, we resample the indices of
+    the observations. This class wraps a user-provided statistic and user-
+    provided data into a callable that accepts indices, rather than data,
+    as the first argument.
+    """
+    def __init__(self, data, statistic):
+        self.data = data
+        self.statistic = statistic
+
+    def __call__(self, i, axis=-1):
+        data = [sample[..., i] for sample in self.data]
+        return self.statistic(*data, axis=axis)
+
+
+class _StatisticLastAxis:
+    """
+    Object to wrap a statistic and call it along the last axis.
+    """
+    def __init__(self, statistic, default_axis=-1):
+        self.statistic = statistic
+        self.default_axis = default_axis
+
+    def __call__(self, data):
+        return self.statistic(*data, axis=self.default_axis)
 
 
 def _jackknife_resample(sample, batch=None):
@@ -41,7 +80,7 @@ def _jackknife_resample(sample, batch=None):
         i = i[j].reshape((batch_actual, n-1))
 
         resamples = sample[..., i]
-        yield resamples
+        yield (resamples,)
 
 
 def _bootstrap_resample(sample, n_resamples=None, random_state=None):
@@ -79,7 +118,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
     return percentiles[()]  # return scalar instead of 0d array
 
 
-def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
+def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, workers):
     """Bias-corrected and accelerated interval."""
     # closely follows [2] "BCa Bootstrap CIs"
     sample = data[0]  # only works with 1 sample statistics right now
@@ -90,9 +129,11 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    theta_hat_i = []  # would be better to fill pre-allocated array
-    for jackknife_sample in _jackknife_resample(sample, batch):
-        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
+    statistic = _StatisticLastAxis(statistic)
+    jackknife_sampler = _jackknife_resample(sample, batch)
+    with MapWrapper(pool=1) as mapper:
+        theta_hat_i = list(mapper(statistic, jackknife_sampler))
+
     theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
@@ -110,14 +151,14 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+                  n_resamples, batch, method, random_state, workers):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
     if not vectorized:
-        statistic = _vectorize_statistic(statistic)
+        statistic = _VectorizedStatistic(statistic)
 
     axis_int = int(axis)
     if axis != axis_int:
@@ -153,11 +194,10 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                 raise ValueError(message)
 
         # to generate the bootstrap distribution for paired-sample statistics,
-        # resample the indices of the observations
-        def statistic(i, axis=-1, data=data_iv, unpaired_statistic=statistic):
-            data = [sample[..., i] for sample in data]
-            return unpaired_statistic(*data, axis=axis)
-
+        # we'll resample the indices of the observations
+        # We would simply re- `def` statistic here, but multiprocessing
+        # requires that functions be defined at top-level for pickleability
+        statistic = _PairedStatistic(data=data_iv, statistic=statistic)
         data_iv = [np.arange(n)]
 
     confidence_level_float = float(confidence_level)
@@ -184,9 +224,13 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     random_state = check_random_state(random_state)
 
+    workers_int = int(workers)
+    if workers != workers_int or workers == 0 or workers < -1:
+        raise ValueError("`workers` must be a positive integer or -1.")
+
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+            method, random_state, workers)
 
 
 fields = ['confidence_interval', 'standard_error']
@@ -195,7 +239,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
               confidence_level=0.95, n_resamples=9999, batch=None,
-              method='BCa', random_state=None):
+              method='BCa', random_state=None, workers=1):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -273,6 +317,12 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         that instance is used.
 
         Pseudorandom number generator state used to generate resamples.
+    workers : int, default: 1
+        Batches are evaluated in parallel using
+        `multiprocessing.Pool <multiprocessing>` with `workers` threads.
+        If ``workers == 1``, no parallel processing is performed; if
+        ``workers == -1``, all cores available to the process are used.
+        If ``workers != 1``, `statistic` must be pickleable.
 
     Returns
     -------
@@ -417,32 +467,39 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
                          confidence_level, n_resamples, batch, method,
-                         random_state)
-    data, statistic, vectorized, paired, axis = args[:5]
-    confidence_level, n_resamples, batch, method, random_state = args[5:]
+                         random_state, workers)
+    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
+    n_resamples, batch, method, random_state, workers = args[6:]
 
     theta_hat_b = []
 
     batch_nominal = batch or n_resamples
 
-    for k in range(0, n_resamples, batch_nominal):
-        batch_actual = min(batch_nominal, n_resamples-k)
-        # Generate resamples
-        resampled_data = []
-        for sample in data:
-            resample = _bootstrap_resample(sample, n_resamples=batch_actual,
-                                           random_state=random_state)
-            resampled_data.append(resample)
+    # Re-sample data and compute corresponding statistic in batches,
+    # possibly in parallel
+    def _bootstrap_sampler():
+        for k in range(0, n_resamples, batch_nominal):
+            batch_actual = min(batch_nominal, n_resamples-k)
+            # Generate resamples
+            resampled_data = []
+            for sample in data:
+                resample = _bootstrap_resample(sample,
+                                               n_resamples=batch_actual,
+                                               random_state=random_state)
+                resampled_data.append(resample)
+            yield resampled_data
 
-        # Compute bootstrap distribution of statistic
-        theta_hat_b.append(statistic(*resampled_data, axis=-1))
+    statistic_la = _StatisticLastAxis(statistic)
+    with MapWrapper(pool=workers) as mapper:
+        theta_hat_b = list(mapper(statistic_la, _bootstrap_sampler()))
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+                                 theta_hat_b=theta_hat_b, batch=batch,
+                                 workers=workers)
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
