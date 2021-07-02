@@ -1591,9 +1591,9 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
         For each alternative, the p-value is defined as follows.
 
         - ``'greater'`` : the percentage of the null distribution that is
-        greater than or equal to the observed value of the test statistic.
+          greater than or equal to the observed value of the test statistic.
         - ``'less'`` : the percentage of the null distribution that is
-        less than or equal to the observed value of the test statistic.
+          less than or equal to the observed value of the test statistic.
         - ``'two-sided'`` : twice the smaller of the p-values above.
 
     axis : int, optional (default: 0)
@@ -1622,7 +1622,8 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     Notes
     -----
 
-    Let ``a, b = data``.
+    Let ``a, b = data``. The permutation tests for unpaired- and paired-sample
+    statistics as follows.
 
     *Unpaired statistics*
 
