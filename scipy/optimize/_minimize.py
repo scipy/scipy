@@ -663,7 +663,7 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
         options.setdefault('fglper', 0.01) 
         options.setdefault('volper', -1.0)
         options.setdefault('sigmaper', -1.0)
-        nvar = options.get('nvar', None)
+        nvar = options.pop('nvar', None)
         return _minimize_direct(fun, bounds=bounds, nvar=nvar, 
                                 *args, **options)
     else:
