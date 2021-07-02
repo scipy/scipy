@@ -31,6 +31,9 @@ References
     Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
 [3] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
     Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
+[4] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
+    function. Adv Comput Math 39, 349-365 (2013).
+    https://doi.org/10.1007/s10444-012-9283-y
 """
 
 cimport cython
@@ -274,12 +277,20 @@ cdef inline double complex hyp2f1_lopez_temme_series(
         int max_degree,
         double rtol,
 ) nogil:
-    """Series for hyp2f1 that converges near critical values exp(+-i*pi/3)."""
+    """Lopez-Temme Series for Gaussian hypergeometric function [4].
+
+    Converges for all z with real(z) < 1, including in the regions surrounding
+    the points exp(+- i*pi/3) that are not covered by any of the standard
+    transformations.
+    """
     cdef:
         int n
         double phi_previous, phi
         double complex prefactor, previous, Z, result
     prefactor = zpow(1 - 0.5 * z, -a)
+    # phi(n, b, c) = hyp2f1(-n, b, c, 2). It is computed through a linear
+    # recurrence of degree 2. phi and phi_previous below are the initial
+    # conditions of this recurrence.
     phi, phi_previous = 1 - 2 * b / c, 1.0
     previous = 1 + 0j
     Z = a * z / (z - 2)
