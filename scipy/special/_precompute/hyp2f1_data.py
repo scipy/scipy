@@ -83,10 +83,7 @@ def get_region(z):
 def get_result(a, b, c, z, group):
     """Get results for given parameter and value combination."""
     expected, observed = mp_hyp2f1(a, b, c, z), hyp2f1(a, b, c, z)
-    if expected != 0:
-        relative_error = abs(expected - observed) / abs(expected)
-    else:
-        relative_error = float('nan')
+    relative_error = abs(expected - observed) / abs(expected)
     return (
         a,
         b,
