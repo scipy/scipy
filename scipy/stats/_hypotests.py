@@ -9,9 +9,9 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln, comb, factorial
 from . import _wilcoxon_data
-from scipy.stats.stats import _broadcast_concatenate
+import scipy.stats._bootstrap as _bootstrap
+import scipy.stats.stats as statsstats
 from scipy._lib._util import check_random_state
-
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -19,22 +19,6 @@ __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
-
-
-def _stat_wrapper(statistic):
-    """Vectorize a 2-sample statistic; see gh-13312 for more general wrapper"""
-    def stat_nd(x, y, axis=0):
-        x = np.moveaxis(x, axis, -1)
-        y = np.moveaxis(y, axis, -1)
-        nx = x.shape[-1]
-        z = _broadcast_concatenate((x, y), -1)
-
-        def stat_1d(z):
-            x, y = z[:nx], z[nx:]
-            return statistic(x, y)
-
-        return np.apply_along_axis(stat_1d, axis, z)[()]
-    return stat_nd
 
 
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
@@ -1463,71 +1447,59 @@ attributes = ('statistic', 'pvalue', 'null_distribution')
 PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
 
 
-# TODO: replace with _all_partitions in _hypotests when gh-13661 merges
-def _all_partitions(nx, ny):
-    """
-    Partition a set of indices into two fixed-length sets in all possible ways.
-
-    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
-    ny in all possible ways (ignoring order of elements).
-    """
-    z = set(range(nx+ny))
-    for c in combinations(z, nx):
-        x = np.array(c)
-        y = np.array(tuple(z.difference(c)))
-        yield x, y
-
-
-# TODO: combine with scipy.stats.stats _data_permutations when gh-13661 merges
-def _data_permutations(data, n, random_state=None):
+# Could combine with scipy.stats.stats _data_partitions, but probably not
+# not worth the time; eventually, the permutation t-test should just
+# be implemented by this function.
+def _data_permutations(data, n_permutations, random_state=None):
     """
     Vectorized permutation of data, unpaired samples.
     """
 
-    ma = data[0].shape[-1]  # number of observations in first sample
-    data = _broadcast_concatenate(data, axis=-1)
-    m = data.shape[-1]  # total number of observations
+    n_obs_a = data[0].shape[-1]  # number of observations in first sample
+    data = statsstats._broadcast_concatenate(data, axis=-1)
+    n_obs = data.shape[-1]  # total number of observations
 
     # number of distinct combinations
-    n_max = comb(m, ma)
+    n_max = comb(n_obs, n_obs_a)
 
-    # TODO: add paired version by permuting the first m indices
     # these are not as efficient as they can be, but I'm not going
     # to mess with them right now because they will be replaced with
     # Pythran versions
 
-    if n < n_max:
-        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    if n_permutations < n_max:
+        indices = np.array([random_state.permutation(n_obs)
+                            for i in range(n_permutations)])
     else:
-        n = n_max
+        n_permutations = n_max
         indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(ma, m-ma)]).T
+                            for z in _all_partitions(n_obs_a, n_obs-n_obs_a)])
 
     data = data[..., indices]        # generate permutations
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    x = data[..., :ma]
-    y = data[..., ma:]
-    return x, y, n
+    data = np.moveaxis(data, -2, 0)  # permutations indexed along axis 0
+    x = data[..., :n_obs_a]
+    y = data[..., n_obs_a:]
+    return x, y, n_permutations
 
 
-def _data_permutations_paired(data, n, random_state=None):
+def _data_permutations_paired(data, n_permutations, random_state=None):
     """
     Vectorized permutation of data, paired samples. Two-sample only for now.
     """
     a, b = data
-    ma = len(a)
-    n_max = factorial(ma)
-    if n < n_max:
-        indices = np.array([random_state.permutation(ma) for i in range(n)]).T
+    n_obs_a = len(a)
+    n_max = factorial(n_obs_a)
+    if n_permutations < n_max:
+        indices = np.array([random_state.permutation(n_obs_a)
+                            for i in range(n_permutations)])
     else:
-        n = n_max
+        n_permutations = n_max
         indices = np.array([permutation for permutation
-                            in permutations(range(ma))]).T
+                            in permutations(range(n_obs_a))])
     x = a[..., indices]
-    x = np.moveaxis(x, -1, 0)
+    x = np.moveaxis(x, -2, 0)
     y = b
     x, y = np.broadcast_arrays(x, y)
-    return x, y, n
+    return x, y, n_permutations
 
 
 def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
@@ -1760,7 +1732,7 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     permutations, alternative, axis, random_state = args[4:]
 
     if not vectorized:
-        statistic_vectorized = _stat_wrapper(lambda x, y: statistic(x, y))
+        statistic_vectorized = _bootstrap._vectorize_statistic(statistic)
     else:
         statistic_vectorized = statistic
 

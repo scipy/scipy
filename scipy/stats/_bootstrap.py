@@ -4,7 +4,7 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
-from scipy.stats.stats import _broadcast_concatenate
+import scipy.stats.stats as statsstats
 
 
 def _vectorize_statistic(statistic):
@@ -14,7 +14,7 @@ def _vectorize_statistic(statistic):
     def stat_nd(*data, axis=0):
         lengths = [sample.shape[axis] for sample in data]
         split_indices = np.cumsum(lengths)[:-1]
-        z = _broadcast_concatenate(data, axis)
+        z = statsstats._broadcast_concatenate(data, axis)
 
         def stat_1d(z):
             data = np.split(z, split_indices)
