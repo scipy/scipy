@@ -15,6 +15,7 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
+from scipy.sparse import csr_matrix
 
 
 class TestBSpline:
@@ -429,7 +430,54 @@ class TestBSpline:
         spl0 = BSpline(t, c[0], k)
         spl1 = BSpline(t, c[1], k)
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
+    
+    def test_design_matrix_bc_types(self):
+        np.random.seed(1234)
+        n = 11
+        k = 3
+        bc_list = ['natural', 'not-a-knot','clamped','periodic']
+        for bc in bc_list:
+            x = np.sort(np.random.random_sample(n) * 40 - 20)
+            y = np.random.random_sample(n) * 40 - 20
+            if bc == 'periodic':
+                y[0] = y[-1]
+            bspl = make_interp_spline(x, y, k=k, bc_type=bc)
+            nt = len(bspl.t)
 
+            # creating matrix with a trick mentioned in issue #6730
+            c = np.eye(nt - k - 1)
+            des_matr_def = BSpline(bspl.t, c, k)(x)
+            
+            des_matr_dense = bspl.design_matrix(x, kind='dense')
+            des_matr_csr = bspl.design_matrix(x, kind='CSR')
+
+            assert_allclose(des_matr_def, des_matr_dense, atol=1e-14)
+            # test `dense` format by definition
+            assert_allclose(des_matr_dense @ bspl.c, y, atol=1e-14)
+            # test `CSR` format
+            assert_allclose(des_matr_dense,
+                            csr_matrix(*des_matr_csr).toarray(), atol=1e-14)
+        with assert_raises(ValueError):
+            des_test = bspl.design_matrix(x, kind='Some kind')
+    
+    def test_design_matrix_x_shapes(self):
+        # test for different `x` shapes
+        np.random.seed(1234)
+        n = 10
+        k = 3
+        x = np.sort(np.random.random_sample(n) * 40 - 20)
+        y = np.random.random_sample(n) * 40 - 20
+
+        bspl = make_interp_spline(x, y, k=k)
+        for i in range(1, 4):
+            xc = x[:i]
+            yc = y[:i]
+            des_matr_dense = bspl.design_matrix(xc, kind='dense')
+            des_matr_csr = bspl.design_matrix(xc, kind='CSR')
+
+            assert_allclose(des_matr_dense @ bspl.c, yc, atol=1e-14)
+            assert_allclose(des_matr_dense,
+                            csr_matrix(*des_matr_csr).toarray(), atol=1e-14)
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
