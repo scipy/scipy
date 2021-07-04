@@ -303,14 +303,15 @@ def check_pickling(distfn, args):
     npt.assert_equal(r0, r1)
 
     # check pickling/unpickling of .fit method
-    fit_function = distfn.fit
-    pickled_fit_function = pickle.dumps(fit_function)
-    unpickled_fit_function = pickle.loads(pickled_fit_function)
-    
-    data = distfn.rvs(*args, size=8)
-    p0 = fit_function(data)
-    p1 = unpickled_fit_function(data)
-    npt.assert_equal(p0, p1)
+    if hasattr(distfn, "fit"):
+        fit_function = distfn.fit
+        pickled_fit_function = pickle.dumps(fit_function)
+        unpickled_fit_function = pickle.loads(pickled_fit_function)
+
+        data = distfn.rvs(*args, size=8)
+        p0 = fit_function(data)
+        p1 = unpickled_fit_function(data)
+        npt.assert_equal(p0, p1)
     
     # restore the random_state
     distfn.random_state = rndm
