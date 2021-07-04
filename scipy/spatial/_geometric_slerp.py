@@ -185,7 +185,7 @@ def geometric_slerp(start,
                          "space")
 
     if np.array_equal(start, end):
-        return [start] * np.asarray(t).size
+        return np.linspace(start, start, np.asarray(t).size)
 
     # for points that violate equation for n-sphere
     for coord in [start, end]:
