@@ -310,7 +310,7 @@ class csr_matrix(_cs_matrix):
             row_data = row_data[::-1]
             row_indices = abs(row_indices[::-1])
 
-        shape = (1, int(np.ceil(float(stop - start) / stride)))
+        shape = (1, max(0, int(np.ceil(float(stop - start) / stride))))
         return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
                           dtype=self.dtype, copy=False)
 

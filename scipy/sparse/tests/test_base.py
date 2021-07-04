@@ -21,6 +21,7 @@ import contextlib
 import functools
 import operator
 import platform
+import itertools
 import sys
 from distutils.version import LooseVersion
 
@@ -2474,6 +2475,19 @@ class _TestSlicing:
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
                 check_2(a, b)
+
+        # Check out of bounds etc. systematically
+        extra_slices = []
+        for a, b, c in itertools.product(*([(None, 0, 1, 2, 5, 15,
+                                             -1, -2, 5, -15)]*3)):
+            if c == 0:
+                continue
+            extra_slices.append(slice(a, b, c))
+
+        for a in extra_slices:
+            check_2(a, a)
+            check_2(a, -2)
+            check_2(-2, a)
 
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))

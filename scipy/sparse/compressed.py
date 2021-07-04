@@ -686,10 +686,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape)
 
-        row_nnz = np.diff(self.indptr)
+        row_nnz = self.indptr[indices + 1] - self.indptr[indices]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
-        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+        np.cumsum(row_nnz, out=res_indptr[1:])
 
         nnz = res_indptr[-1]
         res_indices = np.empty(nnz, dtype=idx_dtype)
@@ -713,10 +713,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape)
 
-        row_nnz = np.diff(self.indptr)
+        # Work out what slices are needed for `row_nnz`
+        # start,stop can be -1, only if step is negative
+        start0, stop0 = start, stop
+        if stop == -1 and start >= 0:
+            stop0 = None
+        start1, stop1 = start + 1, stop + 1
+
+        row_nnz = self.indptr[start1:stop1:step] - \
+            self.indptr[start0:stop0:step]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
-        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+        np.cumsum(row_nnz, out=res_indptr[1:])
 
         if step == 1:
             all_idx = slice(self.indptr[start], self.indptr[stop])
