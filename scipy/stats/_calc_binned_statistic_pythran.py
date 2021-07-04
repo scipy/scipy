@@ -1,6 +1,8 @@
 import numpy as np
 import builtins
 
+#pythran export _create_binned_data_pythran(int64[:], int[:], float[:,:], int)
+#pythran export _create_binned_data_pythran(int64[:], int[:], int[:,:], int)
 #pythran export _create_binned_data_pythran(intc[:], int[:], float[:,:], int)
 #pythran export _create_binned_data_pythran(intc[:], int[:], int[:,:], int)
 #pythran export _create_binned_data_pythran(int[:], int[:], float[:,:], int)
@@ -18,6 +20,8 @@ def _create_binned_data_pythran(bin_numbers, unique_bin_numbers, values, vv):
     return bin_map
 
 
+#pythran export _calc_binned_statistic_pythran(int, int64[:], float[:,:], float[:,:], str)
+#pythran export _calc_binned_statistic_pythran(int, int64[:], float[:,:], int[:,:], str)
 #pythran export _calc_binned_statistic_pythran(int, intc[:], float[:,:], float[:,:], str)
 #pythran export _calc_binned_statistic_pythran(int, intc[:], float[:,:], int[:,:], str)
 #pythran export _calc_binned_statistic_pythran(int, int[:], float[:,:], float[:,:], str)
