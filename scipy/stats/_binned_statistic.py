@@ -3,6 +3,9 @@ import numpy as np
 from numpy.testing import suppress_warnings
 from operator import index
 from collections import namedtuple
+from ._calc_binned_statistic_pythran import (
+    _calc_binned_statistic as _calc_binned_statistic_pythran
+)
 
 __all__ = ['binned_statistic',
            'binned_statistic_2d',
@@ -584,11 +587,17 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
-        if values[0][0] != None:
-            from ._calc_binned_statistic_pythran import _calc_binned_statistic_pythran
-            _calc_binned_statistic_pythran(Vdim, binnumbers, result, values, statistic)
-        else:
+        # The Pythran version _calc_binned_statistic is much faster 
+        # than the pure Python one.
+        # However, the pythran version does not support 
+        # 1) object type input  2) callables.
+        # Here we need the pure python version to handle such cases.
+        # Same for statistic is `median` or `min` or `max`
+        if values.dtype == 'O':
             _calc_binned_statistic(Vdim, binnumbers, result, values, np.std)
+        else:
+            _calc_binned_statistic_pythran(Vdim, binnumbers, result, 
+                                           values, statistic)
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -602,25 +611,25 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
-        if values[0][0] != None:
-            from ._calc_binned_statistic_pythran import _calc_binned_statistic_pythran
-            _calc_binned_statistic_pythran(Vdim, binnumbers, result, values, statistic)
-        else:
+        if values.dtype == 'O':
             _calc_binned_statistic(Vdim, binnumbers, result, values, np.median)
+        else:
+            _calc_binned_statistic_pythran(Vdim, binnumbers, result, 
+                                           values, statistic)
     elif statistic == 'min':
         result.fill(np.nan)
-        if values[0][0] != None:
-            from ._calc_binned_statistic_pythran import _calc_binned_statistic_pythran
-            _calc_binned_statistic_pythran(Vdim, binnumbers, result, values, statistic)
-        else:
+        if values.dtype == 'O':
             _calc_binned_statistic(Vdim, binnumbers, result, values, np.min)
+        else:
+            _calc_binned_statistic_pythran(Vdim, binnumbers, result, 
+                                           values, statistic)
     elif statistic == 'max':
         result.fill(np.nan)
-        if values[0][0] != None:
-            from ._calc_binned_statistic_pythran import _calc_binned_statistic_pythran
-            _calc_binned_statistic_pythran(Vdim, binnumbers, result, values, statistic)
-        else:
+        if values.dtype == 'O':
             _calc_binned_statistic(Vdim, binnumbers, result, values, np.max)
+        else:
+            _calc_binned_statistic_pythran(Vdim, binnumbers, result, 
+                                           values, statistic)
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
