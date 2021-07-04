@@ -308,8 +308,8 @@ def check_pickling(distfn, args):
     unpickled_fit_function = pickle.loads(pickled_fit_function)
     
     data = distfn.rvs(*args, size=8)
-    p0 = fit_function(data, *args)
-    p1 = unpickled_fit_function(data, *args)
+    p0 = fit_function(data)
+    p1 = unpickled_fit_function(data)
     npt.assert_equal(p0, p1)
     
     # restore the random_state
