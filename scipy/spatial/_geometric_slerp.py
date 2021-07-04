@@ -170,7 +170,6 @@ def geometric_slerp(start,
 
     start = np.asarray(start, dtype=np.float64)
     end = np.asarray(end, dtype=np.float64)
-    t = np.asarray(t, dtype=np.float64)
 
     if start.ndim != 1 or end.ndim != 1:
         raise ValueError("Start and end coordinates "
@@ -185,16 +184,8 @@ def geometric_slerp(start,
                          "both be in at least two-dimensional "
                          "space")
 
-    if t.size == 0:
-        return np.empty((0, start.size))
-
-    if t.min() < 0 or t.max() > 1:
-        raise ValueError("interpolation parameter must be in [0, 1]")
-
-    # Ensure that the output is broadcasted to the correct shape
     if np.array_equal(start, end):
-        shape = (t.size,) + start.shape
-        return np.full(shape, start)
+        return np.linspace(start, start, np.asarray(t).size)
 
     # for points that violate equation for n-sphere
     for coord in [start, end]:
@@ -217,6 +208,14 @@ def geometric_slerp(start,
         warnings.warn("start and end are antipodes"
                       " using the specified tolerance;"
                       " this may cause ambiguous slerp paths")
+
+    t = np.asarray(t, dtype=np.float64)
+
+    if t.size == 0:
+        return np.empty((0, start.size))
+
+    if t.min() < 0 or t.max() > 1:
+        raise ValueError("interpolation parameter must be in [0, 1]")
 
     if t.ndim == 0:
         return _geometric_slerp(start,
