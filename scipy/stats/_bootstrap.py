@@ -74,8 +74,12 @@ def _percentile_along_axis(theta_hat_b, alpha):
     alpha = np.broadcast_to(alpha, shape)
     percentiles = np.zeros_like(alpha, dtype=np.float64)
     for indices, alpha_i in np.ndenumerate(alpha):
-        theta_hat_b_i = theta_hat_b[indices]
-        percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
+        if np.isnan(alpha_i):
+            # e.g. when bootstrap distribution has only one unique element
+            percentiles[indices] = np.nan
+        else:
+            theta_hat_b_i = theta_hat_b[indices]
+            percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
     return percentiles[()]  # return scalar instead of 0d array
 
 

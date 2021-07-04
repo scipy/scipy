@@ -353,6 +353,18 @@ def test_bootstrap_vectorized_1samp(method, axis):
     assert_allclose(res1.standard_error, res2.standard_error)
 
 
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_bootstrap_degenerate(method):
+    data = 35 * [10000.]
+    with np.errstate(invalid='ignore'):
+        res = bootstrap([data,], np.mean, method=method)
+    if method == "BCa":
+        assert_equal(res.confidence_interval, (np.nan, np.nan))
+    else:
+        assert_equal(res.confidence_interval, (10000., 10000.))
+    assert_equal(res.standard_error, 0)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
