@@ -2,9 +2,9 @@ import numpy as np
 import builtins
 
 
-#pythran export _create_binned_data(int[:], int[:], float[:,:], int)
-#pythran export _create_binned_data(int[:], int[:], int[:,:], int)
-def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
+#pythran export _create_binned_data_pythran(int[:], int[:], float[:,:], int)
+#pythran export _create_binned_data_pythran(int[:], int[:], int[:,:], int)
+def _create_binned_data_pythran(bin_numbers, unique_bin_numbers, values, vv):
     """ Create hashmap of bin ids to values in bins
     key: bin number
     value: list of binned data
@@ -16,10 +16,9 @@ def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
         bin_map[bin_numbers[i]].append(values[vv, i])
     return bin_map
 
-
-#pythran export _calc_binned_statistic(int, int[:], float[:,:], float[:,:], str)
-#pythran export _calc_binned_statistic(int, int[:], float[:,:], int[:,:], str)
-def _calc_binned_statistic(Vdim, binnumbers, result, values, statistic):
+#pythran export _calc_binned_statistic_pythran(int, int[:], float[:,:], float[:,:], str)
+#pythran export _calc_binned_statistic_pythran(int, int[:], float[:,:], int[:,:], str)
+def _calc_binned_statistic_pythran(Vdim, binnumbers, result, values, statistic):
     if statistic == 'mean':
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers)
@@ -32,7 +31,7 @@ def _calc_binned_statistic(Vdim, binnumbers, result, values, statistic):
         result.fill(0)
         unique_bin_numbers = np.unique(binnumbers)
         for vv in builtins.range(Vdim):
-            bin_map = _create_binned_data(binnumbers, unique_bin_numbers,
+            bin_map = _create_binned_data_pythran(binnumbers, unique_bin_numbers,
                                         values, vv)       
             for i in unique_bin_numbers:
                 if (len(bin_map[i]) >= 2):
@@ -53,7 +52,7 @@ def _calc_binned_statistic(Vdim, binnumbers, result, values, statistic):
         result.fill(np.nan)
         unique_bin_numbers = np.unique(binnumbers)
         for vv in builtins.range(Vdim):
-            bin_map = _create_binned_data(binnumbers, unique_bin_numbers,
+            bin_map = _create_binned_data_pythran(binnumbers, unique_bin_numbers,
                                         values, vv)
             for i in unique_bin_numbers:
                 result[vv, i] = np.median(np.array(bin_map[i]))
@@ -61,7 +60,7 @@ def _calc_binned_statistic(Vdim, binnumbers, result, values, statistic):
         result.fill(np.nan)
         unique_bin_numbers = np.unique(binnumbers)
         for vv in builtins.range(Vdim):
-            bin_map = _create_binned_data(binnumbers, unique_bin_numbers,
+            bin_map = _create_binned_data_pythran(binnumbers, unique_bin_numbers,
                                         values, vv)
             for i in unique_bin_numbers:
                 result[vv, i] = np.min(np.array(bin_map[i]))
@@ -69,7 +68,7 @@ def _calc_binned_statistic(Vdim, binnumbers, result, values, statistic):
         result.fill(np.nan)
         unique_bin_numbers = np.unique(binnumbers)
         for vv in builtins.range(Vdim):
-            bin_map = _create_binned_data(binnumbers, unique_bin_numbers,
+            bin_map = _create_binned_data_pythran(binnumbers, unique_bin_numbers,
                                         values, vv)
             for i in unique_bin_numbers:
                 result[vv, i] = np.max(np.array(bin_map[i]))    
