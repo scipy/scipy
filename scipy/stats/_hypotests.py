@@ -82,17 +82,18 @@ _nan_policy_parameter = inspect.Parameter(_name,
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
                                 result_unpacker=None, too_small=0,
-                                nan_policy_position=None, vectorized=False):
-    """Factory for a wrapper that adds axis/nan_policy to a function.
+                                nan_policy_position=None, axis_position=None):
+    """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
     ----------
     result_object : callable
         Callable that returns an object of the type returned by the function
         being wrapped (e.g. the namedtuple or dataclass returned by a
-        statistical test).
+        statistical test) provided the separate components (e.g. statistic,
+        pvalue).
     default_axis : int, default: 0
-        The default value of the axis argument. Should be 0 except when
+        The default value of the axis argument. Standard is 0 except when
         backwards compatibility demands otherwise (e.g. `None`).
     n_samples : int, default: 1
         The number of data samples accepted by the function. For example,
@@ -104,23 +105,26 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
         components of the same sample.)
     result_unpacker : callable, optional
         Function that unpacks the results of the function being wrapped into
-        a tuple. (This is essentially the inverse of `result_object`.) Default
-        is None, which is appropriate for statistical tests that return a
-        statistic, pvalue tuple (rather than, e.g.,  a non-iterable datalass).
+        a tuple. This is essentially the inverse of `result_object`. Default
+        is `None`, which is appropriate for statistical tests that return a
+        statistic, pvalue tuple (rather than, e.g., a non-iterable datalass).
     too_small : int, default: 0
         The largest unnacceptably small sample for the function being wrapped.
-        For example, some functions require samples of size 2 or more or they
-        raise an error; this argument prevents the error from being raised and
-        instead places a NaN in the corresponding element of the result.
-    nan_policy_position : int, default: None
+        For example, some functions require samples of size two or more or they
+        raise an error. This argument prevents the error from being raised when
+        input is not 1D and instead places a NaN in the corresponding element
+        of the result.
+    nan_policy_position : int, optional
         If `nan_policy` is already a positional argument of the function being
         wrapped, this the index of its position. Allows the user of the wrapped
         function to continue using the positional `nan_policy` syntax rather
         than keyword only (default).
-    vectorized : {False, True}
-        Whether the function is already vectorized and accepts an `axis`
-        argument, in which case the function will be called dirrectly when
-        there are no NaNs in the data.
+    axis_position : int, optional
+        If `axis` is already a positional argument of the function being
+        wrapped, this the index of its position. Allows the user of the wrapped
+        function to continue using the positional `axis` syntax rather
+        than keyword only (default). Also uses the built-in vectorization
+        instead of looping when there are no NaNs in the data.
     """
 
     if result_unpacker is None:
@@ -142,12 +146,19 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
+            # currently doesn't work; this and nan_policy_position need tests
+            if axis_position is not None and len(args) > axis_position:
+                # The wrapped function will override an existing vectorization
+                # behavior only if there are NaNs in the data.
+                # Consider what to do if both are specified but not the same.
+                # To detect this, should the default value of keyword arg be
+                # a sentinal value (e.g. None)?
+                axis = args[axis_position]
+            vectorized = False if axis_position is None else True
+
             if (nan_policy_position is not None
                     and len(args) > nan_policy_position):
                 # This is for overriding an existing nan_policy implementation.
-                # Consider what to do if both are specified but not the same.
-                # To detect this, should the default value of keyword arg be
-                # None?
                 nan_policy = args[nan_policy_position]
 
             # if n_samples is None, all args are samples

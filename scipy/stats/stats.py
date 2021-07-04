@@ -182,7 +182,7 @@ def _broadcast_shapes(shapes, axis=None):
 
 @_vectorize_hypotest_factory(
         lambda x, y=None: x, n_samples=1, too_small=0,
-        result_unpacker=lambda x: (x,), vectorized=True)
+        result_unpacker=lambda x: (x,), axis_position=1)
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
