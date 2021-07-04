@@ -17,7 +17,7 @@ cdef class MessageStream:
     to a temporary file, residing in memory (if possible) or on disk.
     """
 
-    def __init__(self):
+    def __cinit__(self):
         # Try first in-memory files, if available
         self._memstream_ptr = NULL
         self.handle = messagestream_open_memstream(&self._memstream_ptr,
