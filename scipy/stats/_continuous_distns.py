@@ -60,6 +60,7 @@ def _call_super_mom(fun):
             return super(type(self), self).fit(*args, **kwds)
         else:
             return fun(self, *args, **kwds)
+    wrapper.__name__ = fun.__name__
     return wrapper
 
 
