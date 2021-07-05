@@ -1254,16 +1254,15 @@ def test_kdtree_duplicated_inputs(kdtree_type):
         # it shall not divide more than 3 nodes.
         # root left (1), and right (2)
         kdtree = kdtree_type(data, leafsize=1)
-        assert_equal(kdtree.size, 3)
+        assert kdtree.size == 3
 
         kdtree = kdtree_type(data)
-        assert_equal(kdtree.size, 3)
+        assert kdtree.size == 3
 
-        # if compact_nodes are disabled, the number
-        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
-        # and the root
+        # if compact_nodes is disabled, the maximum number
+        # of nodes is that of a balanced tree (2 * n - 1)
         kdtree = kdtree_type(data, compact_nodes=False, leafsize=1)
-        assert_equal(kdtree.size, n + m * 2 - 1)
+        assert kdtree.size <= 2 * n - 1
 
 def test_kdtree_noncumulative_nondecreasing(kdtree_type):
     # check kdtree with duplicated inputs
