@@ -105,55 +105,55 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
         else {
             /* split with the sliding midpoint rule */
             split = (maxval + minval) / 2;
-        }
 
-        p = start_idx;
-        q = end_idx - 1;
-        while (p <= q) {
-            if (data[indices[p] * m + d] < split)
-                ++p;
-            else if (data[indices[q] * m + d] >= split)
-                --q;
-            else {
-                ckdtree_intp_t t = indices[p];
-                indices[p] = indices[q];
-                indices[q] = t;
-                ++p;
-                --q;
-            }
-        }
-        /* slide midpoint if necessary */
-        if (p == start_idx) {
-            /* no points less than split */
-            j = start_idx;
-            split = data[indices[j] * m + d];
-            for (i = start_idx+1; i < end_idx; ++i) {
-                if (data[indices[i] * m + d] < split) {
-                    j = i;
-                    split = data[indices[j] * m + d];
+            p = start_idx;
+            q = end_idx - 1;
+            while (p <= q) {
+                if (data[indices[p] * m + d] < split)
+                    ++p;
+                else if (data[indices[q] * m + d] >= split)
+                    --q;
+                else {
+                    ckdtree_intp_t t = indices[p];
+                    indices[p] = indices[q];
+                    indices[q] = t;
+                    ++p;
+                    --q;
                 }
             }
-            ckdtree_intp_t t = indices[start_idx];
-            indices[start_idx] = indices[j];
-            indices[j] = t;
-            p = start_idx + 1;
-            q = start_idx;
-        }
-        else if (p == end_idx) {
-            /* no points greater than split */
-            j = end_idx - 1;
-            split = data[indices[j] * m + d];
-            for (i = start_idx; i < end_idx-1; ++i) {
-                if (data[indices[i] * m + d] > split) {
-                    j = i;
-                    split = data[indices[j] * m + d];
+            /* slide midpoint if necessary */
+            if (p == start_idx) {
+                /* no points less than split */
+                j = start_idx;
+                split = data[indices[j] * m + d];
+                for (i = start_idx+1; i < end_idx; ++i) {
+                    if (data[indices[i] * m + d] < split) {
+                        j = i;
+                        split = data[indices[j] * m + d];
+                    }
                 }
+                ckdtree_intp_t t = indices[start_idx];
+                indices[start_idx] = indices[j];
+                indices[j] = t;
+                p = start_idx + 1;
+                q = start_idx;
             }
-            ckdtree_intp_t t = indices[end_idx-1];
-            indices[end_idx-1] = indices[j];
-            indices[j] = t;
-            p = end_idx - 1;
-            q = end_idx - 2;
+            else if (p == end_idx) {
+                /* no points greater than split */
+                j = end_idx - 1;
+                split = data[indices[j] * m + d];
+                for (i = start_idx; i < end_idx-1; ++i) {
+                    if (data[indices[i] * m + d] > split) {
+                        j = i;
+                        split = data[indices[j] * m + d];
+                    }
+                }
+                ckdtree_intp_t t = indices[end_idx-1];
+                indices[end_idx-1] = indices[j];
+                indices[j] = t;
+                p = end_idx - 1;
+                q = end_idx - 2;
+            }
         }
 
         if (CKDTREE_LIKELY(_compact)) {
@@ -244,4 +244,3 @@ build_weights (ckdtree *self, double *node_weights, double *weights)
     add_weights(self, node_weights, 0, weights);
     return 0;
 }
-
