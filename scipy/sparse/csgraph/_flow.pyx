@@ -27,7 +27,7 @@ class MaximumFlowResult:
         return 'MaximumFlowResult with value of %d' % self.flow_value 
 
 
-def maximum_flow(csgraph, source, sink):
+def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
     r"""
     maximum_flow(csgraph, source, sink)
 
@@ -220,8 +220,14 @@ def maximum_flow(csgraph, source, sink):
     # they are missing.
     m = _add_reverse_edges(csgraph)
     rev_edge_ptr, tails = _make_edge_pointers(m)
-    residual = _edmonds_karp(m.indptr, tails, m.indices,
-                             m.data, rev_edge_ptr, source, sink)
+    if method == 'edmonds_karp':
+        residual = _edmonds_karp(m.indptr, tails, m.indices,
+                                m.data, rev_edge_ptr, source, sink)
+    elif method == 'dinic':
+        residual = _dinic(m.indptr, tails, m.indices,
+                          m.data, rev_edge_ptr, source, sink)
+    else:
+        raise ValueError('{} method is not supported yet.'.format(method))
     residual_array = np.asarray(residual)
     residual_matrix = csr_matrix((residual_array, m.indices, m.indptr),
                                  shape=m.shape)
@@ -406,4 +412,31 @@ cdef ITYPE_t[:] _edmonds_karp(
         else:
             # If no augmenting path could be found, we're done.
             break
+    return flow
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef ITYPE_t[:] _dinic(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t[:] tails,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] rev_edge_ptr,
+        ITYPE_t source,
+        ITYPE_t sink):
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+    cdef ITYPE_t n_edges = capacities.shape[0]
+
+    cdef ITYPE_t[:] flow = np.zeros(n_edges, dtype=ITYPE)
+
+    while True:
+        cdef ITYPE_t[:] level = np.full(n_verts, -1, dtype=ITYPE)
+        level[source] = 0
+        q[0] = source
+        if not breadth_first_search(q, edges_ptr, level, flow):
+            break
+        cdef ITYPE_t[:] ptr = np.zeros(n_verts, dtype=ITYPE)
+        depth_first_search(s, ITYPE_MAX)
+    
     return flow
