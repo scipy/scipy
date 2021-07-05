@@ -1316,7 +1316,7 @@ class rv_generic:
                     j+=1
             mu, mu2, g1, g2 = mom
             args = argsreduce(loc != 0, *shapes, loc, scale, val)
-            shapes, loc, scale, val = args[:-3], args[-3], args[-2], args[-1]
+            *shapes, loc, scale, val = args
 
             res2 = zeros(loc.shape, dtype='d')
             fac = scale / loc
