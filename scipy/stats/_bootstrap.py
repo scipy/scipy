@@ -290,6 +290,14 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
             The bootstrap standard error, that is, the sample standard
             deviation of the bootstrap distribution
 
+    Notes
+    -----
+    Elements of the confidence interval may be NaN for ``method='BCa'`` if
+    the bootstrap distribution is degenerate (e.g. all elements are identical).
+    In this case, consider using another `method` or inspecting `data` for
+    indications that other analysis may be more appropriate (e.g. all
+    observations are identical).
+
     References
     ----------
     .. [1] B. Efron and R. J. Tibshirani, An Introduction to the Bootstrap,
