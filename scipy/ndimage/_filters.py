@@ -51,7 +51,8 @@ def _invalid_origin(origin, lenw):
     return (origin < -(lenw // 2)) or (origin > (lenw - 1) // 2)
 
 
-def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
+def _complex_via_real_components(func, input, weights, output, cval,
+                                 **kwargs):
     """Complex convolution via a linear combination of real convolutions."""
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
@@ -1594,8 +1595,10 @@ def generic_filter(input, function, size=None, footprint=None,
     for origin, lenf in zip(origins, fshape):
         if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
             raise ValueError('invalid origin')
+
     if not footprint.flags.contiguous:
         footprint = footprint.copy()
+
     output = _ni_support._get_output(output, input)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter(input, function, footprint, output, mode,
