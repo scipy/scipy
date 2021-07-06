@@ -427,7 +427,7 @@ cdef bint build_level_graph(
 
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
 
-    cdef ITYPE_t cur, start, end, dst_vertex
+    cdef ITYPE_t cur, start, end, dst_vertex, e
 
     q[0] = source
     start = 0
@@ -467,7 +467,8 @@ cdef ITYPE_t augment_paths(
     if current == sink:
         return flow
     
-    cdef ITYPE_t dst_vertex, result_flow
+    cdef ITYPE_t dst_vertex, result_flow, e
+    
     if progress[current] == -1:
         progress[current] = edge_ptr[current]
     while progress[current] < edge_ptr[current + 1]:
