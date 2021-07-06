@@ -422,10 +422,9 @@ cdef bint build_level_graph(
         ITYPE_t sink,
         ITYPE_t[:] capacities,
         ITYPE_t[:] heads,
-        ITYPE_t[:] levels):
+        ITYPE_t[:] levels, 
+        ITYPE_t[:] q):
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
-
-    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
 
     cdef ITYPE_t cur, start, end, dst_vertex, e
 
@@ -468,7 +467,7 @@ cdef ITYPE_t augment_paths(
         return flow
     
     cdef ITYPE_t dst_vertex, result_flow, e
-    
+
     if progress[current] == -1:
         progress[current] = edge_ptr[current]
     while progress[current] < edge_ptr[current + 1]:
@@ -503,18 +502,20 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
-    cdef ITYPE_t[:] levels,progress
+    cdef ITYPE_t[:] levels, progress
+    cdef ITYPE_t[:] neg_ones = np.full(n_verts, -1, dtype=ITYPE)
+    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
 
     cdef ITYPE_t max_flow = 0
     cdef ITYPE_t i = 0
     while i < 100:
-        levels = np.full(n_verts, -1, dtype=ITYPE)
+        levels = neg_ones
         if not build_level_graph(edge_ptr, source, sink,
-                                 capacities, heads, levels):
+                                 capacities, heads, levels, q):
             break
-        progress = np.full(n_verts, -1, dtype=ITYPE)
+        progress = neg_ones
         while True:
             flow = augment_paths(edge_ptr, source, sink, 
                                  progress, levels, capacities,
