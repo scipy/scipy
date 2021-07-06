@@ -876,7 +876,8 @@ def main(argv):
 
     os.environ['SCIPY_PIL_IMAGE_VIEWER'] = 'true'
 
-    for name in list(args.module_names):
+    module_names = list(args.module_names)
+    for name in module_names:
         if name in OTHER_MODULE_DOCS:
             name = OTHER_MODULE_DOCS[name]
             if name not in module_names:
