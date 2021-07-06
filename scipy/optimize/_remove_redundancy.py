@@ -154,7 +154,7 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
     m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
-    b = list(v)             # Basis column indices.
+    b = v                   # Basis column indices.
     # This is better as a list than a set because column order of basis matrix
     # needs to be consistent.
     d = []                  # Indices of dependent rows
@@ -282,7 +282,7 @@ def _remove_redundancy_pivot_sparse(A, rhs):
     m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
-    b = list(v)             # Basis column indices.
+    b = v                   # Basis column indices.
     # This is better as a list than a set because column order of basis matrix
     # needs to be consistent.
     k = set(range(m, m+n))  # Structural column indices.

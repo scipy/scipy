@@ -118,7 +118,7 @@ def wrap_mangling_directive(base_directive):
 
             special_args = {'fun', 'x0', 'args', 'tol', 'callback', 'method',
                             'options', 'solver'}
-            for arg in list(args):
+            for arg in args:
                 if arg not in impl_args and arg not in special_args:
                     remove_arg(arg)
 
