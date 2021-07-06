@@ -855,7 +855,7 @@ def jaccard(u, v, w=None):
     1.0
     >>> distance.jaccard([1, 0, 0], [1, 1, 0])
     0.5
-    >>> 
+    >>> distance.jaccard([1, 0, 0], [1, 2, 0])
     0.5
     >>> distance.jaccard([1, 0, 0], [1, 1, 1])
     0.66666666666666663
