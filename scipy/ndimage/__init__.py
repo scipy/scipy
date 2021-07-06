@@ -116,6 +116,16 @@ Morphology
    morphological_laplace
    white_tophat
 
+Backend control
+===============
+.. autosummary::
+   :toctree: generated/
+
+   set_backend - Context manager to set the backend within a fixed scope
+   skip_backend - Context manager to skip a backend within a fixed scope
+   set_global_backend - Sets the global ndimage backend
+   register_backend - Register a backend for permanent use
+
 """
 
 # Copyright (C) 2003-2005 Peter J. Verveer
@@ -153,6 +163,7 @@ from ._fourier import *  # noqa: F401 F403
 from ._interpolation import *  # noqa: F401 F403
 from ._measurements import *  # noqa: F401 F403
 from ._morphology import *  # noqa: F401 F403
+from ._backend import *  # noqa: F401 F403
 from . import filters  # noqa: F401
 from . import fourier  # noqa: F401
 from . import interpolation  # noqa: F401
