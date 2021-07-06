@@ -487,6 +487,7 @@ cdef ITYPE_t augment_paths(
                                         min(flow, capacities[e]))
             if result_flow:
                 capacities[e] -= result_flow
+                capacities[rev_edge_ptr[e]] += result_flow
                 flows[e] += result_flow
                 flows[rev_edge_ptr[e]] -= result_flow
                 return result_flow
@@ -525,7 +526,7 @@ cdef ITYPE_t[:] _dinic(
                                  progress, levels, capacities,
                                  heads, flows, rev_edge_ptr, ITYPE_MAX)
             if flow:
-                # print()
+                print(flow)
                 max_flow += flow
             else:
                 break
