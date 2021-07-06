@@ -414,6 +414,84 @@ cdef ITYPE_t[:] _edmonds_karp(
             break
     return flow
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef bint build_level_graph(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t source,
+        ITYPE_t sink,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] levels):
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+
+    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
+
+    cdef ITYPE_t cur, start, end, dst_vertex
+
+    q[0] = source
+    start = 0
+    end = 1
+    levels[source] = 0
+
+    while start != end:
+        cur = q[start]
+        # print(cur, sink)
+        start += 1
+        if start == n_verts:
+            start = 0
+        if cur == sink:
+            return 1
+        for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
+            dst_vertex = heads[e]
+            # print(capacities[e], heads[e], cur, dst_vertex)
+            if capacities[e] > 0 and levels[dst_vertex] == -1:
+                levels[dst_vertex] = levels[cur] + 1
+                q[end] = dst_vertex
+                end += 1
+                if end == n_verts:
+                    end = 0
+    return 0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef ITYPE_t augment_paths(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t current,
+        ITYPE_t sink,
+        ITYPE_t[:] progress,
+        ITYPE_t[:] levels,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] flows,
+        ITYPE_t[:] rev_edge_ptr,
+        ITYPE_t flow):
+    # print(current)
+    if current == sink:
+        return flow
+    
+    cdef ITYPE_t dst_vertex, result_flow
+    if progress[current] == -1:
+        progress[current] = edge_ptr[current]
+    while progress[current] < edge_ptr[current + 1]:
+        e = progress[current]
+        dst_vertex = heads[e]
+        # print(dst_vertex)
+        # if progress[current] == dst_vertex:
+            # print(current, sink)
+        if (capacities[e] > 0 and 
+            levels[dst_vertex] == levels[current] + 1):
+            result_flow = augment_paths(edge_ptr, dst_vertex, sink,
+                                        progress, levels, capacities,
+                                        heads, flows, rev_edge_ptr,
+                                        min(flow, capacities[e]))
+            if result_flow:
+                capacities[e] -= result_flow
+                flows[e] += result_flow
+                flows[rev_edge_ptr[e]] -= result_flow
+                return result_flow
+        progress[current] += 1
+    return 0
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -427,16 +505,30 @@ cdef ITYPE_t[:] _dinic(
         ITYPE_t sink):
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
     cdef ITYPE_t n_edges = capacities.shape[0]
+    cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
-    cdef ITYPE_t[:] flow = np.zeros(n_edges, dtype=ITYPE)
+    cdef ITYPE_t[:] levels,progress
+    cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
+    cdef ITYPE_t flow
 
-    while True:
-        cdef ITYPE_t[:] level = np.full(n_verts, -1, dtype=ITYPE)
-        level[source] = 0
-        q[0] = source
-        if not breadth_first_search(q, edges_ptr, level, flow):
+    cdef ITYPE_t max_flow = 0
+    cdef ITYPE_t i = 0
+    while i < 100:
+        # print("Iteration:", i)
+        levels = np.full(n_verts, -1, dtype=ITYPE)
+        if not build_level_graph(edge_ptr, source, sink,
+                                 capacities, heads, levels):
             break
-        cdef ITYPE_t[:] ptr = np.zeros(n_verts, dtype=ITYPE)
-        depth_first_search(s, ITYPE_MAX)
-    
-    return flow
+        progress = np.full(n_verts, -1, dtype=ITYPE)
+        while True:
+            flow = augment_paths(edge_ptr, source, sink, 
+                                 progress, levels, capacities,
+                                 heads, flows, rev_edge_ptr, ITYPE_MAX)
+            if flow:
+                # print()
+                max_flow += flow
+            else:
+                break
+        i += 1
+    # print(max_flow)
+    return flows
