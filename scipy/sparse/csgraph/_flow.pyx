@@ -436,7 +436,6 @@ cdef bint build_level_graph(
 
     while start != end:
         cur = q[start]
-        # print(cur, sink)
         start += 1
         if start == n_verts:
             start = 0
@@ -444,7 +443,6 @@ cdef bint build_level_graph(
             return 1
         for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
             dst_vertex = heads[e]
-            # print(capacities[e], heads[e], cur, dst_vertex)
             if capacities[e] > 0 and levels[dst_vertex] == -1:
                 levels[dst_vertex] = levels[cur] + 1
                 q[end] = dst_vertex
@@ -466,7 +464,6 @@ cdef ITYPE_t augment_paths(
         ITYPE_t[:] flows,
         ITYPE_t[:] rev_edge_ptr,
         ITYPE_t flow):
-    # print(current)
     if current == sink:
         return flow
     
@@ -476,9 +473,6 @@ cdef ITYPE_t augment_paths(
     while progress[current] < edge_ptr[current + 1]:
         e = progress[current]
         dst_vertex = heads[e]
-        # print(dst_vertex)
-        # if progress[current] == dst_vertex:
-            # print(current, sink)
         if (capacities[e] > 0 and 
             levels[dst_vertex] == levels[current] + 1):
             result_flow = augment_paths(edge_ptr, dst_vertex, sink,
@@ -515,7 +509,6 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t max_flow = 0
     cdef ITYPE_t i = 0
     while i < 100:
-        # print("Iteration:", i)
         levels = np.full(n_verts, -1, dtype=ITYPE)
         if not build_level_graph(edge_ptr, source, sink,
                                  capacities, heads, levels):
@@ -526,10 +519,8 @@ cdef ITYPE_t[:] _dinic(
                                  progress, levels, capacities,
                                  heads, flows, rev_edge_ptr, ITYPE_MAX)
             if flow:
-                print(flow)
                 max_flow += flow
             else:
                 break
         i += 1
-    # print(max_flow)
     return flows
