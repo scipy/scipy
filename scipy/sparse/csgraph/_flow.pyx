@@ -610,19 +610,17 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
     cdef ITYPE_t[:] levels, progress
-    cdef ITYPE_t[:] neg_ones = np.full(n_verts, -1, dtype=ITYPE)
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
 
     cdef ITYPE_t max_flow = 0
-    cdef ITYPE_t i = 0
-    while i < 100:
-        levels = neg_ones
+    while True:
+        levels = np.full(n_verts, -1, dtype=ITYPE)
         if not _build_level_graph(edge_ptr, source, sink,
                                  capacities, heads, levels, q):
             break
-        progress = neg_ones
+        progress = np.full(n_verts, -1, dtype=ITYPE)
         while True:
             flow = _augment_paths(edge_ptr, source, sink, 
                                  progress, levels, capacities,
@@ -631,5 +629,4 @@ cdef ITYPE_t[:] _dinic(
                 max_flow += flow
             else:
                 break
-        i += 1
     return flows
