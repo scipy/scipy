@@ -312,7 +312,7 @@ def jn_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -365,7 +365,7 @@ def jnp_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -416,7 +416,7 @@ def yn_zeros(n, nt):
     Returns
     -------
     ndarray
-        First `n` zeros of the Bessel function.
+        First `nt` zeros of the Bessel function.
 
     See Also
     --------
@@ -459,6 +459,12 @@ def ynp_zeros(n, nt):
         Order of Bessel function
     nt : int
         Number of zeros to return
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Bessel derivative function.
+
 
     See Also
     --------

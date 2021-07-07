@@ -13,6 +13,10 @@ import scipy.stats.stats
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
 import inspect
+from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+
+__all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
+           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
 
 
 # TODO: add support for `axis` tuples
@@ -279,9 +283,6 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
 
-
-__all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -668,51 +669,6 @@ def _get_wilcoxon_distr(n):
                          "statistic is not implemented for n={}".format(n))
 
     return np.array(cnt, dtype=int)
-
-
-def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
-
-
-def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
-
-
-def _P(A):
-    """Twice the number of concordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
-    return count
-
-
-def _Q(A):
-    """Twice the number of discordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
-    return count
-
-
-def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See [2] section 4: Modified ASEs to test the null hypothesis...
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
-    return count
 
 
 def _tau_b(A):
@@ -1294,13 +1250,13 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
     Boschloo exact test, we can assert three different null hypotheses :
 
-    - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
 
-    - :math:`H_0 : p_1 \leq p_2` versus :math:`H_1 : p_1 > p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 > p_2`,
       with `alternative` = "greater"
 
-    - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
     Boschloo's exact test uses the p-value of Fisher's exact test as a
@@ -1418,7 +1374,11 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         raise ValueError(msg)
 
     fisher_stat = pvalues[table[0, 0], table[0, 1]]
-    index_arr = pvalues <= fisher_stat
+
+    # fisher_stat * (1+1e-13) guards us from small numerical error. It is
+    # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
+    # For more throughout explanations, see gh-14178
+    index_arr = pvalues <= fisher_stat * (1+1e-13)
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)

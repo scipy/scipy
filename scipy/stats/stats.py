@@ -3968,6 +3968,7 @@ def pearsonr(x, y):
     e follow a normal distribution with mean zero and standard deviation s>0.
 
     >>> s = 0.5
+    >>> x = stats.norm.rvs(size=500)
     >>> e = stats.norm.rvs(scale=s, size=500)
     >>> y = x + e
     >>> stats.pearsonr(x, y)
@@ -3990,7 +3991,6 @@ def pearsonr(x, y):
     cov(x, y) = E[x*y]. By definition, this equals E[x*abs(x)] which is zero
     by symmetry. The following lines of code illustrate this observation:
 
-    >>> x = stats.norm.rvs(size=500)
     >>> y = np.abs(x)
     >>> stats.pearsonr(x, y)
     (-0.016172891856853524, 0.7182823678751942) # may vary
