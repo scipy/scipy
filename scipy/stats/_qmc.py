@@ -1015,8 +1015,8 @@ class OptimalLatinHypercube(QMCEngine):
     `n_perturbations` set of random permutations are performed aginst a LHS
     sample. The best design based on the centered discrepancy is constantly
     update. Centered discrepancy-based design shows better space filling
-    robustness toward 2D and 3D subprojections. Distance-based design shows
-    better space filling but less robustness to subprojections [2]_.
+    robustness toward 2D and 3D subprojections compared to using other
+    discrepancy measures [2]_.
 
     References
     ----------
