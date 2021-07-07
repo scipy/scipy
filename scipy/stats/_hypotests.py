@@ -136,35 +136,36 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
-            # if n_samples is None, all args are samples
-            n_samp = len(args) if n_samples is None else n_samples
-
-            # split samples from other positional arguments
-            samples = [np.atleast_1d(sample) for sample in args[:n_samp]]
-
-            # Some functions already accept `axis` and `nan_policy` as
-            # positional arguments. We need to maintain this for backwards
-            # compatibility. Of course, we must also accept these as keyword
-            # arguments and make sure the user doesn't pass both versions.
+            # We need to be flexible about whether position or keyword
+            # arguments are used, but we need to make sure users don't pass
+            # both for the same parameter. To complicate matters, some
+            # functions accept samples with *args, and some functions already
+            # accept `axis` and `nan_policy` as positional arguments.
             # The strategy is to make sure that there is no duplication
             # between `args` and `kwds`, combine the two into `kwds`, then
-            # remove `nan_policy` and `axis` from `kwds`, as they are dealt
-            # with separately.
+            # the samples, `nan_policy`, and `axis` from `kwds`, as they are
+            # dealt with separately.
 
             # Check for intersection between positional and keyword args
             params = list(inspect.signature(hypotest_fun_in).parameters)
-            params_samp = params[:1] if n_samples is None else params[:n_samp]
-            params_other = params[1:] if n_samples is None else params[n_samp:]
-            d_samp = dict(zip(params_samp, args[:n_samp]))
-            d_other = dict(zip(params_other, args[n_samp:]))
-            intersection = (set(d_samp) | set(d_other)) & set(kwds)
+            if n_samples is None:
+                # Give unique names to each positional sample argument
+                # Note that *args can't be provided as a keyword argument
+                params = [f"arg{i}" for i in range(len(args))] + params[1:]
+            n_samp = n_samples or len(args)  # rename avoids UnboundLocalError
+            d_args = dict(zip(params, args))
+            intersection = set(d_args) & set(kwds)
             if intersection:
                 message = (f"{hypotest_fun_in.__name__}() got multiple values "
                            f"for argument '{list(intersection)[0]}'")
                 raise TypeError(message)
 
-            kwds.update(d_other)
+            # Consolidate other positional and keyword args into `kwds`
+            kwds.update(d_args)
 
+            # Extract the things we need here
+            samples = [np.atleast_1d(kwds.pop(param))
+                       for param in params[:n_samp]]
             vectorized = True if 'axis' in params else False
             axis = kwds.pop('axis', default_axis)
             nan_policy = kwds.pop('nan_policy', 'propagate')

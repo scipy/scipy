@@ -1146,6 +1146,26 @@ def test_hypotest_positional_args():
     with pytest.raises(TypeError, match=re.escape(message)):
         stats.levene(args=x)
 
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.levene(*x, args=x)
+
+
+def test_hypotest_keyword_samples():
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Avoid test failures due to old version of NumPy")
+
+    shape = (2, 8, 9, 10)
+    rng = np.random.default_rng(0)
+    x = rng.random(shape)
+    x[0, 0, 0, 0] = np.nan
+    res1 = stats.ks_2samp(*x)
+    res2 = stats.ks_2samp(data1=x[0], data2=x[1])
+    assert_equal(res1, res2)
+
+    message = "ks_2samp() got multiple values for argument 'data1'"
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.ks_2samp(*x, data1=x[0], data2=x[1])
+
 
 def test_check_empty_inputs():
     # Test that _check_empty_inputs is doing its job, at least for single-
