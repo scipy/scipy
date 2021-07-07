@@ -7,10 +7,9 @@ class _ScipyBackend:
 
     Notes
     -----
-    We use the domain ``numpy.scipy`` rather than ``scipy`` because in the
-    future, ``uarray`` will treat the domain as a hierarchy. This means the user
-    can install a single backend for ``numpy`` and have it implement
-    ``numpy.scipy.fft`` as well.
+    We use the domain ``numpy.scipy`` rather than ``scipy`` because ``uarray``
+    treats the domain as a hierarchy. This means the user can install a single
+    backend for ``numpy`` and have it implement ``numpy.scipy.fft`` as well.
     """
     __ua_domain__ = "numpy.scipy.fft"
 
@@ -44,7 +43,7 @@ def _backend_from_arg(backend):
 
 
 def set_global_backend(backend, coerce=False, only=False, try_last=False):
-    """Sets the global ndimage backend
+    """Sets the global fft backend
 
     This utility method replaces the default backend for permanent use. It
     will be tried in the list of backends automatically, unless the
