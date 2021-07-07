@@ -70,7 +70,6 @@ def configuration(parent_package='', top_path=None):
                        'distance_base.h',
                        'distance.h',
                        'ordered_pair.h',
-                       'partial_sort.h',
                        'rectangle.h']
 
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
