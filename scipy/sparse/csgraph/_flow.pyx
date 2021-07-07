@@ -1,3 +1,5 @@
+# cython: wraparound=False, boundscheck=False
+
 import numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
@@ -45,6 +47,9 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
         The source vertex from which the flow flows.
     sink : int
         The sink vertex to which the flow flows.
+    
+    .. versionadded:: 1.8.0
+
     method: str
         The method/algorithm to be used for computing the maximum flow.
         Following methods are supported,
@@ -316,8 +321,6 @@ def _make_edge_pointers(a):
     return rev_edge_ptr, rows
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] edge_ptr,
         ITYPE_t[:] tails,
@@ -427,16 +430,14 @@ cdef ITYPE_t[:] _edmonds_karp(
             break
     return flow
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef bint _build_level_graph(
-        ITYPE_t[:] edge_ptr,
-        ITYPE_t source,
-        ITYPE_t sink,
-        ITYPE_t[:] capacities,
-        ITYPE_t[:] heads,
-        ITYPE_t[:] levels, 
-        ITYPE_t[:] q):
+        const ITYPE_t[:] edge_ptr, # IN
+        const ITYPE_t source, # IN
+        const ITYPE_t sink, # IN
+        const ITYPE_t[:] capacities, # IN
+        const ITYPE_t[:] heads, # IN
+        ITYPE_t[:] levels, # IN/OUT
+        ITYPE_t[:] q) nogil:
     """Builds layered graph from input graph using breadth first search.
 
     Parameters
@@ -492,19 +493,18 @@ cdef bint _build_level_graph(
                     end = 0
     return 0
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef ITYPE_t _augment_paths(
-        ITYPE_t[:] edge_ptr,
-        ITYPE_t current,
-        ITYPE_t sink,
-        ITYPE_t[:] progress,
-        ITYPE_t[:] levels,
-        ITYPE_t[:] capacities,
-        ITYPE_t[:] heads,
-        ITYPE_t[:] flows,
-        ITYPE_t[:] rev_edge_ptr,
-        ITYPE_t flow):
+        const ITYPE_t[:] edge_ptr, # IN
+        const ITYPE_t current, # IN
+        const ITYPE_t sink, # IN
+        const ITYPE_t[:] levels, # IN
+        const ITYPE_t[:] heads, # IN
+        const ITYPE_t[:] rev_edge_ptr, # IN
+        ITYPE_t[:] capacities, # IN/OUT
+        ITYPE_t[:] progress, # IN
+        ITYPE_t[:] flows, # OUT
+        ITYPE_t flow # OUT
+    ) nogil:
     """Computes blocking flow in layered graph using depth first search.
 
     Parameters
@@ -516,21 +516,21 @@ cdef ITYPE_t _augment_paths(
         The current node in the path.
     sink : int
         The sink vertex.
-    progress: memoryview of length :math:`|E|`
-        For a given vertex ``v``, ``progress[v]`` is the index of the next
-        edge to be visited from ``v``.
     levels: memoryview of length :math:`|E|`
         For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in 
         the layered graph of input graph.
-    capacities : memoryview of length :math:`|E|`
-        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
     heads : memoryview of length :math:`|E|`
         For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
-    flows : memoryview of length :math:`|E|`
-        The residual graph with respect to a maximum flow.
     rev_edge_ptr : memoryview of length :math:`|E|`
         For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
         reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    progress: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``progress[v]`` is the index of the next
+        edge to be visited from ``v``.
+    flows : memoryview of length :math:`|E|`
+        The residual graph with respect to a maximum flow.
     flow : int
         Current maximum flow in the path.
 
@@ -553,9 +553,9 @@ cdef ITYPE_t _augment_paths(
         if (capacities[e] > 0 and 
             levels[dst_vertex] == levels[current] + 1):
             result_flow = _augment_paths(edge_ptr, dst_vertex, sink,
-                                        progress, levels, capacities,
-                                        heads, flows, rev_edge_ptr,
-                                        min(flow, capacities[e]))
+                                         levels, heads, rev_edge_ptr,
+                                         capacities, progress, flows,
+                                         min(flow, capacities[e]))
             if result_flow:
                 capacities[e] -= result_flow
                 capacities[rev_edge_ptr[e]] += result_flow
@@ -565,8 +565,6 @@ cdef ITYPE_t _augment_paths(
         progress[current] += 1
     return 0
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef ITYPE_t[:] _dinic(
         ITYPE_t[:] edge_ptr,
         ITYPE_t[:] tails,
@@ -609,22 +607,26 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
-    cdef ITYPE_t[:] levels, progress
+    cdef ITYPE_t[:] levels = np.full(n_verts, -1, dtype=ITYPE)
+    cdef ITYPE_t[:] progress = np.full(n_verts, -1, dtype=ITYPE)
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
 
     cdef ITYPE_t max_flow = 0
     while True:
-        levels = np.full(n_verts, -1, dtype=ITYPE)
+        for i in range(n_verts):
+            levels[i] = -1
         if not _build_level_graph(edge_ptr, source, sink,
                                  capacities, heads, levels, q):
             break
-        progress = np.full(n_verts, -1, dtype=ITYPE)
+        for i in range(n_verts):
+            progress[i] = -1
         while True:
-            flow = _augment_paths(edge_ptr, source, sink, 
-                                 progress, levels, capacities,
-                                 heads, flows, rev_edge_ptr, ITYPE_MAX)
+            flow = _augment_paths(edge_ptr, source, sink,
+                                 levels, heads, rev_edge_ptr,
+                                 capacities, progress, flows,
+                                 ITYPE_MAX)
             if flow:
                 max_flow += flow
             else:
