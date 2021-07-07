@@ -126,8 +126,8 @@ class TestUtils:
         # of a single point in the unit hypercube. JCAM, 2005
         # Table 1 on Page 283
         for dim in [2, 4, 8, 16, 32, 64]:
-            ref = np.sqrt(3 ** (-dim))
-            assert_allclose(qmc.discrepancy(np.array([[1] * dim]),
+            ref = np.sqrt(3**(-dim))
+            assert_allclose(qmc.discrepancy(np.array([[1]*dim]),
                                             method='L2-star'), ref)
 
     def test_discrepancy_errors(self):
@@ -236,8 +236,8 @@ class TestUtils:
             n, s = x.shape
             xij = x
             disc1 = np.sum(np.prod((1
-                                    + 1 / 2 * np.abs(xij - 0.5)
-                                    - 1 / 2 * np.abs(xij - 0.5) ** 2), axis=1))
+                                    + 1/2*np.abs(xij-0.5)
+                                    - 1/2*np.abs(xij-0.5)**2), axis=1))
             xij = x[None, :, :]
             xkj = x[:, None, :]
             disc2 = np.sum(np.sum(np.prod(1
@@ -245,24 +245,24 @@ class TestUtils:
                                           + 1/2*np.abs(xkj - 0.5)
                                           - 1/2*np.abs(xij - xkj), axis=2),
                                   axis=0))
-            return (13 / 12) ** s - 2 / n * disc1 + 1 / n ** 2 * disc2
+            return (13/12)**s - 2/n * disc1 + 1/n**2*disc2
 
         def disc_wd(x):
             n, s = x.shape
             xij = x[None, :, :]
             xkj = x[:, None, :]
-            disc = np.sum(np.sum(np.prod(3 / 2
+            disc = np.sum(np.sum(np.prod(3/2
                                          - np.abs(xij - xkj)
                                          + np.abs(xij - xkj)**2, axis=2),
                                  axis=0))
-            return -(4 / 3) ** s + 1 / n ** 2 * disc
+            return -(4/3)**s + 1/n**2 * disc
 
         def disc_md(x):
             n, s = x.shape
             xij = x
-            disc1 = np.sum(np.prod((5 / 3
-                                    - 1 / 4 * np.abs(xij - 0.5)
-                                    - 1 / 4 * np.abs(xij - 0.5) ** 2), axis=1))
+            disc1 = np.sum(np.prod((5/3
+                                    - 1/4*np.abs(xij-0.5)
+                                    - 1/4*np.abs(xij-0.5)**2), axis=1))
             xij = x[None, :, :]
             xkj = x[:, None, :]
             disc2 = np.sum(np.sum(np.prod(15/8
