@@ -1096,6 +1096,57 @@ def test_hypotest_back_compat_no_axis(hypotest, nsamp):
     assert_equal(res, res2)
 
 
+@pytest.mark.parametrize(("axis"), (0, 1, 2))
+def test_hypotest_positional_axis(axis):
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Avoid test failures due to old version of NumPy")
+
+    shape = (8, 9, 10)
+    rng = np.random.default_rng(0)
+    x = rng.random(shape)
+    res1 = stats.gmean(x, axis)
+    res2 = stats.gmean(x, axis=axis)
+    assert_equal(res1, res2)
+
+    message = "gmean() got multiple values for argument 'axis'"
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.gmean(x, axis, axis=axis)
+
+
+@pytest.mark.parametrize(("nan_policy"), ('omit', 'propagate'))
+def test_hypotest_positional_nan_policy(nan_policy):
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Avoid test failures due to old version of NumPy")
+
+    shape = (2, 8, 9, 10)
+    rng = np.random.default_rng(0)
+    x = rng.random(shape)
+    x[0, 0, 0, 0] = np.nan
+    res1 = stats.brunnermunzel(*x, 'two-sided', 't', nan_policy)
+    res2 = stats.brunnermunzel(*x, nan_policy=nan_policy)
+    assert_equal(res1, res2)
+
+    message = "brunnermunzel() got multiple values for argument 'nan_policy'"
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.brunnermunzel(*x, 'two-sided', 't', nan_policy,
+                            nan_policy=nan_policy)
+
+
+def test_hypotest_positional_args():
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Avoid test failures due to old version of NumPy")
+
+    shape = (3, 8, 9, 10)
+    rng = np.random.default_rng(0)
+    x = rng.random(shape)
+    x[0, 0, 0, 0] = np.nan
+    stats.levene(*x)
+
+    message = "levene() got an unexpected keyword argument 'args'"
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.levene(args=x)
+
+
 def test_check_empty_inputs():
     # Test that _check_empty_inputs is doing its job, at least for single-
     # sample inputs. (Multi-sample functionality is tested below.)

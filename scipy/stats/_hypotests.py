@@ -85,8 +85,7 @@ _nan_policy_parameter = inspect.Parameter(_name,
 
 def _vectorize_hypotest_factory(result_object, default_axis=0,
                                 n_samples=1, paired=False,
-                                result_unpacker=None, too_small=0,
-                                nan_policy_position=None, axis_position=None):
+                                result_unpacker=None, too_small=0):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -143,34 +142,44 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
 
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
-        def vectorize_hypotest_wrapper(*args, axis=default_axis,
-                                       nan_policy='propagate', _no_deco=False,
-                                       **kwds):
+        def vectorize_hypotest_wrapper(*args, _no_deco=False, **kwds):
 
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
-
-            # currently doesn't work; this and nan_policy_position need tests
-            if axis_position is not None and len(args) > axis_position:
-                # The wrapped function will override an existing vectorization
-                # behavior only if there are NaNs in the data.
-                # Consider what to do if both are specified but not the same.
-                # To detect this, should the default value of keyword arg be
-                # a sentinal value (e.g. None)?
-                axis = args[axis_position]
-            vectorized = False if axis_position is None else True
-
-            if (nan_policy_position is not None
-                    and len(args) > nan_policy_position):
-                # This is for overriding an existing nan_policy implementation.
-                nan_policy = args[nan_policy_position]
 
             # if n_samples is None, all args are samples
             n_samp = len(args) if n_samples is None else n_samples
 
             # split samples from other positional arguments
             samples = [np.atleast_1d(sample) for sample in args[:n_samp]]
-            args = args[n_samp:]
+
+            # Some functions already accept `axis` and `nan_policy` as
+            # positional arguments. We need to maintain this for backwards
+            # compatibility. Of course, we must also accept these as keyword
+            # arguments and make sure the user doesn't pass both versions.
+            # The strategy is to make sure that there is no duplication
+            # between `args` and `kwds`, combine the two into `kwds`, then
+            # remove `nan_policy` and `axis` from `kwds`, as they are dealt
+            # with separately.
+
+            # Check for intersection between positional and keyword args
+            params = list(inspect.signature(hypotest_fun_in).parameters)
+            params_samp = params[:1] if n_samples is None else params[:n_samp]
+            params_other = params[1:] if n_samples is None else params[n_samp:]
+            d_samp = dict(zip(params_samp, args[:n_samp]))
+            d_other = dict(zip(params_other, args[n_samp:]))
+            intersection = (set(d_samp) | set(d_other)) & set(kwds)
+            if intersection:
+                message = (f"{hypotest_fun_in.__name__}() got multiple values "
+                           f"for argument '{list(intersection)[0]}'")
+                raise TypeError(message)
+
+            kwds.update(d_other)
+
+            vectorized = True if 'axis' in params else False
+            axis = kwds.pop('axis', default_axis)
+            nan_policy = kwds.pop('nan_policy', 'propagate')
+            del args  # avoid the possibility of passing both `args` and `kwds`
 
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
@@ -204,7 +213,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                 # if is_too_small(samples):
                 #     return result_object(np.nan, np.nan)
 
-                return hypotest_fun_in(*samples, *args, **kwds)
+                return hypotest_fun_in(*samples, **kwds)
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -227,7 +236,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                 scipy.stats.stats._contains_nan(x, nan_policy))
 
             if vectorized and not contains_nan:
-                return hypotest_fun_in(*samples, *args, axis=axis, **kwds)
+                return hypotest_fun_in(*samples, axis=axis, **kwds)
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -236,7 +245,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                     samples = _remove_nans(samples, paired)
                     if is_too_small(samples):
                         return result_object(np.nan, np.nan)
-                    return hypotest_fun_in(*samples, *args, **kwds)
+                    return hypotest_fun_in(*samples, **kwds)
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
@@ -244,12 +253,12 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                     if np.isnan(x).any():
                         return result_object(np.nan, np.nan)
                     samples = np.split(x, split_indices)[:n_samp]
-                    return hypotest_fun_in(*samples, *args, **kwds)
+                    return hypotest_fun_in(*samples, **kwds)
 
             else:
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
-                    return hypotest_fun_in(*samples, *args, **kwds)
+                    return hypotest_fun_in(*samples, **kwds)
 
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)

@@ -182,7 +182,7 @@ def _broadcast_shapes(shapes, axis=None):
 
 @_vectorize_hypotest_factory(
         lambda x, y=None: x, n_samples=1, too_small=0,
-        result_unpacker=lambda x: (x,), axis_position=1)
+        result_unpacker=lambda x: (x,))
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
@@ -8004,8 +8004,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2,
-                             nan_policy_position=4)
+@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.
