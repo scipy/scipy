@@ -106,8 +106,11 @@ An example of this interface is shown below:
 As shown in the example, we first initialize a distribution object that
 contains an implementation of the methods required by the generator. In
 our case, we use the :class:`~TransformedDensityRejection` method which
-requires a PDF and its derivative w.r.t. x (i.e. the variate). Note that
-the PDF doesn't need to be vectorized. It should accept and return floats.
+requires a PDF and its derivative w.r.t. x (i.e. the variate).
+
+.. note:: Note that the methods of the distribution (i.e. ``pdf``,
+          ``dpdf``, etc) need not be vectorized. They should
+          accept and return floats.
 
 .. note:: One can also pass the SciPy distributions as arguments but it can
           be slow due to validations and expensive NumPy operations.
