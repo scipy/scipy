@@ -1061,12 +1061,12 @@ class OptimalLatinHypercube(QMCEngine):
                  seed: SeedType = None):
         super().__init__(d=d, seed=seed)
         self.n_perturbations = n_perturbations
+        self.start_sample: Optional[np.ndarray] = None
 
         if start_sample is not None:
             self.start_sample = np.asarray(start_sample).copy()
             self.start_disc = discrepancy(self.start_sample)
         else:
-            self.start_sample = None
             self.start_disc = np.inf
 
         self.lhs = LatinHypercube(self.d, seed=self.rng)
