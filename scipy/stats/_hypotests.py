@@ -117,17 +117,6 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
         of the result.
-    nan_policy_position : int, optional
-        If `nan_policy` is already a positional argument of the function being
-        wrapped, this the index of its position. Allows the user of the wrapped
-        function to continue using the positional `nan_policy` syntax rather
-        than keyword only (default).
-    axis_position : int, optional
-        If `axis` is already a positional argument of the function being
-        wrapped, this the index of its position. Allows the user of the wrapped
-        function to continue using the positional `axis` syntax rather
-        than keyword only (default). Also uses the built-in vectorization
-        instead of looping when there are no NaNs in the data.
     """
 
     if result_unpacker is None:
