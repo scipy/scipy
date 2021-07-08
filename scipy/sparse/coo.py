@@ -474,9 +474,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 
-    def trace(self):
-        return self.diagonal().sum()
-
     def _setdiag(self, values, k):
         M, N = self.shape
         if values.ndim and not len(values):

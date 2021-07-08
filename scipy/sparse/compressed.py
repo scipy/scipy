@@ -542,9 +542,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
-    def trace(self):
-        return self.diagonal().sum()
-
     #####################
     # Other binary ops  #
     #####################

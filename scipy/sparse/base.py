@@ -1136,6 +1136,18 @@ class spmatrix:
         """
         return self.tocsr().diagonal(k=k)
 
+    def trace(self, k=0):
+        """Returns the sum (trace) based on the kth diagonal of the matrix.
+
+        Parameters
+        ----------
+        k : int, optional
+            Which diagonal to get, corresponding to elements a[i, i+k].
+            Default: 0 (the main diagonal).
+
+        """
+        return self.diagonal(k=k).sum()
+
     def setdiag(self, values, k=0):
         """
         Set diagonal or off-diagonal elements of the array.
