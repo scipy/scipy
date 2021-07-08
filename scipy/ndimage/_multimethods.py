@@ -265,8 +265,8 @@ def _input_size_footprint_output_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, size=None, footprint=None,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], size, dispatchables[1],
-              dispatchables[2]) + args, kwargs
+        return (dispatchables[0], size, dispatchables[1],
+                dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -303,8 +303,8 @@ def _input_arg2_size_footprint_output_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, arg2, size=None, footprint=None,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], arg2, size,
-              dispatchables[1], dispatchables[2]) + args, kwargs
+        return (dispatchables[0], arg2, size, dispatchables[1],
+                dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -331,8 +331,8 @@ def _generic_filter1d_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, function, filter_size, axis=-1,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], arg2, arg3,
-              axis, dispatchables[1]) + args, kwargs
+        return (dispatchables[0], arg2, arg3,
+                axis, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -364,8 +364,8 @@ def _fourier_multimethods_arg_replacer(args, kwargs, dispatchables):
     uarray argument replacer for fourier multimethods.
     """
     def self_method(input, arg2, n=-1, axis=-1, output=None, *args, **kwargs):
-      return (dispatchables[0], arg2, n, axis,
-              dispatchables[1]) + args, kwargs
+        return (dispatchables[0], arg2, n, axis,
+                dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -409,8 +409,8 @@ def _spline_filter1d_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, order=3, axis=-1, output=np.float64,
                     *args, **kwargs):
-      return (dispatchables[0], order, axis,
-              dispatchables[1]) + args, kwargs
+        return (dispatchables[0], order, axis,
+                dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -429,7 +429,7 @@ def _input_order_output_replacer(args, kwargs, dispatchables):
     with ``order`` and ``output`` kwargs.
     """
     def self_method(input, order=3, output=np.float64, *args, **kwargs):
-      return (dispatchables[0], order, dispatchables[1]) + args, kwargs
+        return (dispatchables[0], order, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -447,8 +447,8 @@ def _geometric_transform_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, mapping, output_shape=None,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], mapping,
-              output_shape, dispatchables[1]) + args, kwargs
+        return (dispatchables[0], mapping,
+                output_shape, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -468,7 +468,7 @@ def _map_coordinates_arg_replacer(args, kwargs, dispatchables):
     uarray argument replacer for map_coordinates.
     """
     def self_method(input, coordinates, output=None, *args, **kwargs):
-      return (dispatchables[0], coordinates, dispatchables[1]) + args, kwargs
+        return (dispatchables[0], coordinates, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -487,8 +487,8 @@ def _affine_transform_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, matrix, offset=0.0, output_shape=None,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], dispatchables[1], offset,
-              output_shape, dispatchables[2]) + args, kwargs
+        return (dispatchables[0], dispatchables[1], offset,
+                output_shape, dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -524,8 +524,8 @@ def _rotate_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, angle, axes=(1,0), reshape=True,
                     output=None, *args, **kwargs):
-      return (dispatchables[0], angle, axes, reshape,
-              dispatchables[2]) + args, kwargs
+        return (dispatchables[0], angle, axes, reshape,
+                dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -549,8 +549,8 @@ def _input_structure_output_replacer(args, kwargs, dispatchables):
     ``input`` with ``structure`` and ``output`` kwargs.
     """
     def self_method(input, structure=None, output=None, *args, **kwargs):
-      return (dispatchables[0], dispatchables[1],
-              dispatchables[2]) + args, kwargs
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -568,7 +568,7 @@ def _input_replacer(args, kwargs, dispatchables):
     the required ``input`` as the only dispatchable.
     """
     def self_method(input, *args, **kwargs):
-      return (dispatchables[0],) + args, kwargs
+        return (dispatchables[0],) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -586,8 +586,8 @@ def _input_labels_index_replacer(args, kwargs, dispatchables):
     ``input`` with ``labels`` and ``index`` kwargs.
     """
     def self_method(input, labels=None, index=None, *args, **kwargs):
-      return (dispatchables[0], dispatchables[1],
-              dispatchables[2]) + args, kwargs
+        return (dispatchables[0], dispatchables[1],
+                dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
