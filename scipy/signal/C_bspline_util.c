@@ -261,8 +261,8 @@ C_separable_2Dconvolve_mirror(__complex__ float *in, __complex__ float *out,
 	    outptr += N;
 	}
     }
-    else if(inptr != NULL)
-	memmove(tmpmem, inptr, M*N*sizeof(__complex__ float));
+    else
+	memmove(tmpmem, in, M*N*sizeof(__complex__ float));
 
     if (Nhc > 0) {
 	/* filter down columns */
