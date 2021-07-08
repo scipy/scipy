@@ -861,14 +861,12 @@ def jaccard(u, v, w=None):
     0.66666666666666663
 
     """
-    if np.isin(u, [0, 1]).all() == False or np.isin(v, [0, 1]).all() == False:
-        raise ValueError('u and v should be boolean 1-D arrays')
-        
     u = _validate_vector(u)
     v = _validate_vector(v)
 
-    nonzero = np.bitwise_or(u != 0, v != 0)
+    nonzero = np.bitwise_or(u.astype(bool), v.astype(bool))
     unequal_nonzero = np.bitwise_and((u != v), nonzero)
+    print(unequal_nonzero)
     if w is not None:
         w = _validate_weights(w)
         nonzero = w * nonzero
