@@ -91,11 +91,19 @@ def initialize_direction_numbers():
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    global is_initialized, poly, vinit
+    cdef int[:] dns_poly
+    cdef int[:, :] dns_vinit
+
+    global is_initialized
     if not is_initialized:
         dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
-        poly = dns["poly"]
-        vinit = dns["vinit"]
+        dns_poly = dns["poly"].astype(np.intc)
+        dns_vinit = dns["vinit"].astype(np.intc)
+        for i in range(MAXDIM):
+            poly[i] = dns_poly[i]
+        for i in range(MAXDIM):
+            for j in range(MAXDEG):
+                vinit[i][j] = dns_vinit[i, j]
         is_initialized = True
 
 
