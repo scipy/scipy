@@ -1162,7 +1162,7 @@ def test_hypotest_keyword_samples():
     res2 = stats.ks_2samp(data1=x[0], data2=x[1])
     assert_equal(res1, res2)
 
-    message = "ks_2samp() got multiple values for argument 'data1'"
+    message = "ks_2samp() got multiple values for argument"
     with pytest.raises(TypeError, match=re.escape(message)):
         stats.ks_2samp(*x, data1=x[0], data2=x[1])
 
