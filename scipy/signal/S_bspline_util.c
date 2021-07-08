@@ -257,6 +257,7 @@ S_separable_2Dconvolve_mirror(float *in, float *out, int M, int N,
     else
 	memmove(tmpmem, in, M*N*sizeof(float));
 
+
     if (Nhc > 0) {
 	/* filter down columns */
 	inptr = tmpmem;
