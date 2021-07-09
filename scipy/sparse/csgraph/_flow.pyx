@@ -47,17 +47,16 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
         The source vertex from which the flow flows.
     sink : int
         The sink vertex to which the flow flows.
-    
-    .. versionadded:: 1.8.0
-
-    method: str
+    method: {‘edmonds_karp’, ‘dinic’}, optional
         The method/algorithm to be used for computing the maximum flow.
         Following methods are supported,
 
-            * 'edmonds_karp': Edmonds Karp algorithm in [1].
-            * 'dinic': Dinic's algorithm in [4].
+            * 'edmonds_karp': Edmonds Karp algorithm in [1]_.
+            * 'dinic': Dinic's algorithm in [4]_.
 
-        Optional, by default, 'edmonds_karp'.
+        Default is 'edmonds_karp'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -240,7 +239,7 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
     rev_edge_ptr, tails = _make_edge_pointers(m)
     if method == 'edmonds_karp':
         residual = _edmonds_karp(m.indptr, tails, m.indices,
-                                m.data, rev_edge_ptr, source, sink)
+                                 m.data, rev_edge_ptr, source, sink)
     elif method == 'dinic':
         residual = _dinic(m.indptr, tails, m.indices,
                           m.data, rev_edge_ptr, source, sink)
@@ -443,7 +442,7 @@ cdef bint _build_level_graph(
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex v, the edges whose tail is ``v`` are those between
+        For a given vertex ``v``, the edges whose tail is ``v`` are those between
         ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     source : int
         The source vertex.
@@ -510,7 +509,7 @@ cdef ITYPE_t _augment_paths(
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex v, the edges whose tail is ``v`` are those between
+        For a given vertex ``v``, the edges whose tail is ``v`` are those between
         ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     current : int
         The current node in the path.
@@ -581,7 +580,7 @@ cdef ITYPE_t[:] _dinic(
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex v, the edges whose tail is ``v`` are those between
+        For a given vertex ``v``, the edges whose tail is ``v`` are those between
         ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     tails : memoryview of length :math:`|E|`
         For a given edge ``e``, ``tails[e]`` is the tail vertex of ``e``.
