@@ -15,7 +15,6 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
-from scipy.sparse import csr_matrix
 
 
 class TestBSpline:
@@ -432,33 +431,42 @@ class TestBSpline:
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
     
     def test_design_matrix_bc_types(self):
-        np.random.seed(1234)
-        n = 11
-        k = 3
-        bc_list = ['natural', 'not-a-knot','clamped','periodic']
-        for bc in bc_list:
+        def run_design_matrix_tests(n, k, bc_type):
+            '''
+            To avoid repetition of the code the following function is
+            provided.
+            '''
             x = np.sort(np.random.random_sample(n) * 40 - 20)
             y = np.random.random_sample(n) * 40 - 20
-            if bc == 'periodic':
+            if bc_type == "periodic":
                 y[0] = y[-1]
-            bspl = make_interp_spline(x, y, k=k, bc_type=bc)
-            nt = len(bspl.t)
+       
+            bspl = make_interp_spline(x, y, k=k, bc_type=bc_type)
 
-            # creating matrix with a trick mentioned in issue #6730
-            c = np.eye(nt - k - 1)
+            c = np.eye(len(bspl.t) - k - 1)
             des_matr_def = BSpline(bspl.t, c, k)(x)
+            des_matr_dense = BSpline.design_matrix(x, bspl.t, k, kind="dense")
+            des_matr_csr = BSpline.design_matrix(x, bspl.t, k, kind="CSR")
             
-            des_matr_dense = bspl.design_matrix(x, kind='dense')
-            des_matr_csr = bspl.design_matrix(x, kind='CSR')
-
             assert_allclose(des_matr_def, des_matr_dense, atol=1e-14)
-            # test `dense` format by definition
             assert_allclose(des_matr_dense @ bspl.c, y, atol=1e-14)
-            # test `CSR` format
-            assert_allclose(des_matr_dense,
-                            csr_matrix(*des_matr_csr).toarray(), atol=1e-14)
-        with assert_raises(ValueError):
-            des_test = bspl.design_matrix(x, kind='Some kind')
+            assert_allclose(des_matr_dense, des_matr_csr.toarray(), atol=1e-14)
+
+        np.random.seed(1234)
+        # "clamped" and "natural" work only with `k = 3`
+        n = 11
+        k = 3
+        for bc in ["clamped", "natural"]:
+            run_design_matrix_tests(n, k, bc)
+        
+        # "not-a-knot" works with odd `k`
+        for k in range(3, 8, 2):
+            run_design_matrix_tests(n, k, "not-a-knot")
+
+        # "periodic" works with any `k` (even more than `n`)
+        n = 5  # smaller `n` to test `k > n` case
+        for k in range(2, 7):
+            run_design_matrix_tests(n, k, "periodic")
     
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
@@ -472,12 +480,18 @@ class TestBSpline:
         for i in range(1, 4):
             xc = x[:i]
             yc = y[:i]
-            des_matr_dense = bspl.design_matrix(xc, kind='dense')
-            des_matr_csr = bspl.design_matrix(xc, kind='CSR')
+            des_matr_dense = BSpline.design_matrix(xc, bspl.t, k, kind='dense')
+            des_matr_csr = BSpline.design_matrix(xc, bspl.t, k, kind='CSR')
 
             assert_allclose(des_matr_dense @ bspl.c, yc, atol=1e-14)
             assert_allclose(des_matr_dense,
-                            csr_matrix(*des_matr_csr).toarray(), atol=1e-14)
+                            des_matr_csr.toarray(), atol=1e-14)
+        # unknown `kind`
+        with assert_raises(ValueError):
+            des_test = BSpline.design_matrix(x, bspl.t, k, kind="Some kind")
+        # invalid vector of knots
+        with assert_raises(ValueError):
+            des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
