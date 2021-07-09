@@ -109,9 +109,9 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
     .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
-    .. [4] Dinic, E.A. (1970).
-           Algorithm for solution of a problem of maximal flow in a network with
-           power estimation.
+    .. [4] Dinic, Efim A. 
+           Algorithm for solution of a problem of maximum flow in networks with
+           power estimation. In Soviet Math. Doklady, vol. 11, pp. 1277-1280. 1970.
 
     Examples
     --------
