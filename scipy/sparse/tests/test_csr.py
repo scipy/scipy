@@ -113,3 +113,35 @@ def test_csr_bool_indexing():
     assert (slice_list2 == slice_array2).all()
     assert (slice_list3 == slice_array3).all()
 
+def test_invalid_csr():
+    #see gh-8778 for more information
+    with pytest.raises(Exception) as e:
+        data = [1.0, 1.0]
+        # negative indices are invalid
+        indices = [-100, -555]
+        indptr = [0, 1, 2]
+        shape = (2, 1000)
+        mat = csr_matrix((data, indices, indptr), shape=shape)
+        #a = mat * mat.T #causes segfault if above constructor is called
+
+def test_invalid_csr2():
+    #see gh-8778 for more information
+    with pytest.raises(Exception) as e:
+        data = [1.0, 1.0]
+        # out of bounds indices are invalid
+        indices = [1001, 555]
+        indptr = [0, 1, 2]
+        shape = (2, 1000)
+        mat = csr_matrix((data, indices, indptr), shape=shape)
+        #a = mat * mat.T #causes segfault if above constructor is called
+
+def test_invalid_csr3():
+    #see gh-8778 for more information
+    with pytest.raises(Exception) as e:
+        data = [1.0, 1.0]
+        # out of bounds indices are invalid
+        indices = [1, 2]
+        indptr = [0, 5, 1]
+        shape = (2, 1000)
+        mat = csr_matrix((data, indices, indptr), shape=shape)
+        #a = mat * mat.T #causes segfault if above constructor is called

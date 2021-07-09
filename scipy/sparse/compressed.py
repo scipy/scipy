@@ -24,7 +24,7 @@ from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     """base matrix class for compressed row- and column-oriented matrices"""
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, safety_check=True):
         _data_matrix.__init__(self)
 
         if isspmatrix(arg1):
@@ -103,7 +103,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
 
-        self.check_format(full_check=False)
+        if isinstance(arg1, tuple):
+            #this was either loaded from npz or constructed manually
+            self.check_format(full_check=safety_check)
+        else:
+            #under most conditions full_check is slow and not necessary
+            self.check_format(full_check=False)
 
     def getnnz(self, axis=None):
         if axis is None:
