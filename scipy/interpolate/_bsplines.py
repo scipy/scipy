@@ -86,6 +86,7 @@ class BSpline:
     antiderivative
     integrate
     construct_fast
+    design_matrix
 
     Notes
     -----
@@ -297,6 +298,68 @@ class BSpline:
         c = np.zeros_like(t)
         c[k] = 1.
         return cls.construct_fast(t, c, k, extrapolate)
+    
+    @classmethod
+    def design_matrix(cls, x, t, k, kind="dense", extrapolate=False, check_finite=True):
+        '''
+        Returns a design matrix for BSpline object in "dense" or "CSR" formats.
+        
+        Parameters
+        ----------
+        x : 1-D array, shape(n,)
+            Values of x - coordinate of a given set of points (n >= 1).   
+        t : 1-D array, shape(nt,)
+            Vector of knots.
+        k : int
+            The maximum degree of spline.
+        kind : "CSR" or "dense", optional
+            Default is ``"dense"`` .
+            * ``"dense"`` : Returns dense matrix.
+            * ``"CSR"`` : Returns sparse matrix in CSR.
+        extrapolate : int, optional
+            Whether to extrapolate to ouf-of-bounds points, or to return NaNs.
+            Default is False.
+        check_finite : bool, optional
+            Whether to check that the input arrays contain only finite numbers.
+            Disabling may give a performance gain, but may result in problems
+            (crashes, non-termination) if the inputs do contain infinities or NaNs.
+            Default is True.    
+        Returns
+        -------
+        2-D array, shape(n, nt - k - 1) or sparse matrix in CSR.
+
+        Examples
+        --------
+        Construct a design matrix for some vector of knots
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline
+        >>> k = 2
+        >>> t = [0, 1, 2, 3, 4, 5, 6]
+        >>> x = [1, 2, 3, 4]
+        >>> design_matrix = BSpline.design_matrix(x, t, k)
+        [[ 2. , -1.5,  0.5,  0. ],
+        [ 0.5,  0.5,  0. ,  0. ],
+        [ 0. ,  0.5,  0.5,  0. ],
+        [ 0. ,  0. ,  0.5,  0.5]]
+
+        Construct a design matrix for a B-spline
+        >>> from scipy.interpolate import make_interp_spline
+        >>> x = np.linspace(0, np.pi * 2, 4)
+        >>> y = np.sin(x)
+        >>> bspl = make_interp_spline(x, y, k=3)
+        >>> design_matrix = BSpline.design_matrix(x, bspl.t, k)
+        [[1.    0.    0.    0.   ]
+        [0.296 0.444 0.222 0.037]
+        [0.037 0.222 0.444 0.296]
+        [0.    0.    0.    1.   ]]
+        '''
+        x = _as_float_array(x, check_finite)
+        t = _as_float_array(t, check_finite)
+        
+        if not all(t[:1] <= t[1:]):
+            raise ValueError("Knot vector should be non-descending")
+
+        return _bspl._make_design_matrix(x, t, k, kind, extrapolate)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
@@ -561,87 +624,6 @@ class BSpline:
         integral *= sign
         return integral.reshape(ca.shape[1:])
 
-    def design_matrix(self, x, kind="dense", check_finite=True):
-        '''
-        Returns a design matrix for BSpline object in "dense" "CSR" formats.
-        
-        Parameters
-        ----------
-        x : 1-D array, shape(n,)
-            Values of x - coordinate of a given set of points (n >= 1).
-        
-        kind : "CSR" or "dense", optional
-            * ``"dense"``: Returns dense matrix.
-            * ``"CSR"``: Returns a tuple ``((data, (row_ind, col_ind)),
-                [n, nt - k - 1])`` suitable for ``csr_matrix`` constructor.
-            Default is ``"dense"``
-            
-        check_finite : bool, optional
-            Whether to check that the input arrays contain only finite numbers.
-            Disabling may give a performance gain, but may result in problems
-            (crashes, non-termination) if the inputs do contain infinities or NaNs.
-            Default is True.    
-        Returns
-        -------
-        2-D array, shape(n, nt - k - 1) or tuple depending on ``kind`` option.
-        '''
-
-        def find_left(t, x, k):
-            '''
-            Returns the first index of ``ar`` that makes the statement
-            ``x[i] <= val < x[i + 1]`` True.
-
-            If such index can not be found returns the last index that
-            stands for the last element in initial vector of points
-            ``n + k - 2``.
-            '''
-            nt = len(t)
-            for i in range(nt - 1):
-                if (t[i] <= x and t[i + 1] > x):
-                    return i
-            return nt - k - 2
-
-        x = _as_float_array(x, check_finite)
-
-        t = self.t
-        k = self.k
-        n = len(x)
-        nt = len(t)
-
-        if kind == 'dense':
-            data = np.zeros((n, nt - k - 1))
-            for i in range(n):
-                ind = find_left(t, x[i], k)
-                vals = _bspl.evaluate_all_bspl(t, k, x[i], ind)
-                # special check due to periodic boundary conditions:
-                # the shape of vector of B-splines evaluated at ``x[-1]``
-                #  should be reduced by 1
-                if (ind == nt - k - 1):
-                    data[i, ind - k: ind + 1] = vals[:-1]
-                else:
-                    data[i, ind - k: ind + 1] = vals
-            return data
-        elif kind == 'CSR':
-            data = []
-            row_ind = []
-            col_ind = []
-            for i in range(n):
-                ind = find_left(t, x[i], k)
-                vals = _bspl.evaluate_all_bspl(t, k, x[i], ind)
-                # special check due to periodic boundary conditions:
-                # the shape of vector of B-splines evaluated at ``x[-1]``
-                #  should be reduced by 1
-                if (ind == nt - k - 1):
-                    data += vals[:-1].tolist()
-                    row_ind += [i] * k
-                    col_ind += [i for i in range(ind - k, ind)]
-                else:
-                    data += vals.tolist()
-                    row_ind += [i] * (k + 1)
-                    col_ind += [i for i in range(ind - k, ind + 1)]
-            return ((data, (row_ind, col_ind)), [n, nt - k - 1])
-        else:
-            raise ValueError(f"Unknown ``kind``: {kind}")
 
 #################################
 #  Interpolating spline helpers #

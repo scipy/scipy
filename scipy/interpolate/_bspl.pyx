@@ -4,6 +4,7 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
+from scipy.sparse import csr_matrix
 cimport numpy as cnp
 
 cimport cython
@@ -412,3 +413,69 @@ def _norm_eq_lsq(const double[::1] x,
                 # ... and A.T @ y
                 for ci in range(rhs.shape[1]):
                     rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _make_design_matrix(const double[::1] x,
+                const double[::1] t,
+                int k,
+                kind='dense',
+                bint extrapolate=False):
+    '''
+    Returns a design matrix for BSpline object in "dense" or "CSR" formats.
+    
+    Parameters
+    ----------
+    x : 1-D array, shape(n,)
+        Values of x - coordinate of a given set of points (n >= 1).   
+    t : 1-D array, shape(nt,)
+        Vector of knots.
+    k : int
+        The maximum degree of spline.
+    kind : "CSR" or "dense", optional
+        Default is ``"dense"`` .
+        * ``"dense"`` : Returns dense matrix.
+        * ``"CSR"`` : Returns sparse matrix in CSR.
+    extrapolate : int, optional
+        Whether to extrapolate to ouf-of-bounds points, or to return NaNs.
+        Default is False.  
+    Returns
+    -------
+    2-D array, shape(n, nt - k - 1) or sparse matrix in CSR.
+    '''
+    n = len(x)
+    nt = len(t)
+    if kind == 'dense':
+        data = np.zeros((n, nt - k - 1), dtype=float)
+        for i in range(n):
+            ind = find_interval(t, k, x[i], k - 1, extrapolate)
+            vals = evaluate_all_bspl(t, k, x[i], ind)
+            # special check due to periodic boundary conditions:
+            # the shape of vector of B-splines evaluated at ``x[-1]``
+            # should be reduced by 1
+            if (ind == nt - k - 1):
+                data[i, ind - k: ind + 1] = vals[:-1]
+            else:
+                data[i, ind - k: ind + 1] = vals
+        return data
+    elif kind == 'CSR':
+        data = np.zeros(n * (k + 1), dtype=float)
+        row_ind = np.zeros(n * (k + 1), dtype=int)
+        col_ind = np.zeros(n * (k + 1), dtype=int)
+        for i in range(n):
+            ind = find_interval(t, k, x[i], k - 1, extrapolate)
+            vals = evaluate_all_bspl(t, k, x[i], ind)
+            # special check due to periodic boundary conditions:
+            # the shape of vector of B-splines evaluated at ``x[-1]``
+            # should be reduced by 1
+            if (ind == nt - k - 1):
+                data[(k + 1) * i : (k + 1) * (i + 1)] = vals[:-1]
+                row_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i] * k
+                col_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i for i in range(ind - k, ind)]
+            else:
+                data[(k + 1) * i : (k + 1) * (i + 1)] = vals
+                row_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i] * (k + 1)
+                col_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i for i in range(ind - k, ind + 1)]
+        return csr_matrix((data, (row_ind, col_ind)), [n, nt - k - 1])
+    else:
+        raise ValueError(f"Unknown ``kind``: {kind}")                        
