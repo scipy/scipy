@@ -1136,7 +1136,7 @@ class spmatrix:
         """
         return self.tocsr().diagonal(k=k)
 
-    def trace(self, k=0):
+    def trace(self, offset=0):
         """Returns the sum (trace) based on the kth diagonal of the matrix.
 
         Parameters
@@ -1146,7 +1146,7 @@ class spmatrix:
             Default: 0 (the main diagonal).
 
         """
-        return self.diagonal(k=k).sum()
+        return self.diagonal(k=offset).sum()
 
     def setdiag(self, values, k=0):
         """

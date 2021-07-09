@@ -743,22 +743,16 @@ class _TestCommon:
 
     def test_trace(self):
         # For square matrix
-        A = csr_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        desired = A[0, 0] + A[1, 1] + A[2, 2]
-        assert_equal(A.trace(), desired)
-        A = A.tocsc()
-        assert_equal(A.trace(), desired)
-        A = A.tocoo()
-        assert_equal(A.trace(), desired)
+        A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        B = self.spmatrix(A)
+        for k in range(-2, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
 
         # For rectangular matrix
-        A = csr_matrix([[1, 2, 3], [4, 5, 6]])
-        desired = A[0, 0] + A[1, 1]
-        assert_equal(A.trace(), desired)
-        A = A.tocsc()
-        assert_equal(A.trace(), desired)
-        A = A.tocoo()
-        assert_equal(A.trace(), desired)
+        A = np.array([[1, 2, 3], [4, 5, 6]])
+        B = self.spmatrix(A)
+        for k in range(-1, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
 
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
