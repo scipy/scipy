@@ -4441,9 +4441,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(b, a, x, axis=axis)
+            y = sosfiltfilt(b, a, x, axis=axis)
         else:
-            y = lfilter(b, a, x, axis=axis)
+            y = sosfilt(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]
