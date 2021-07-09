@@ -1,10 +1,11 @@
 import typing
+import types
 import inspect
 import functools
-from . import _uarray  # type: ignore
-import copyreg  # type: ignore
-import atexit
+from . import _uarray
+import copyreg
 import pickle
+import contextlib
 
 ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
 ArgumentReplacerType = typing.Callable[
@@ -16,6 +17,7 @@ from ._uarray import (  # type: ignore
     _Function,
     _SkipBackendContext,
     _SetBackendContext,
+    _BackendState,
 )
 
 __all__ = [
@@ -23,6 +25,8 @@ __all__ = [
     "set_global_backend",
     "skip_backend",
     "register_backend",
+    "determine_backend",
+    "determine_backend_multi",
     "clear_backends",
     "create_multimethod",
     "generate_multimethod",
@@ -30,17 +34,31 @@ __all__ = [
     "BackendNotImplementedError",
     "Dispatchable",
     "wrap_single_convertor",
+    "wrap_single_convertor_instance",
     "all_of_type",
     "mark_as",
+    "set_state",
+    "get_state",
+    "reset_state",
+    "_BackendState",
+    "_SkipBackendContext",
+    "_SetBackendContext",
 ]
 
 
-def unpickle_function(mod_name, qname):
+def unpickle_function(mod_name, qname, self_):
     import importlib
 
     try:
         module = importlib.import_module(mod_name)
-        func = getattr(module, qname)
+        qname = qname.split(".")
+        func = module
+        for q in qname:
+            func = getattr(func, q)
+
+        if self_ is not None:
+            func = types.MethodType(func, self_)
+
         return func
     except (ImportError, AttributeError) as e:
         from pickle import UnpicklingError
@@ -51,9 +69,10 @@ def unpickle_function(mod_name, qname):
 def pickle_function(func):
     mod_name = getattr(func, "__module__", None)
     qname = getattr(func, "__qualname__", None)
+    self_ = getattr(func, "__self__", None)
 
     try:
-        test = unpickle_function(mod_name, qname)
+        test = unpickle_function(mod_name, qname, self_)
     except pickle.UnpicklingError:
         test = None
 
@@ -62,11 +81,73 @@ def pickle_function(func):
             "Can't pickle {}: it's not the same object as {}".format(func, test)
         )
 
-    return unpickle_function, (mod_name, qname)
+    return unpickle_function, (mod_name, qname, self_)
+
+
+def pickle_state(state):
+    return _uarray._BackendState._unpickle, state._pickle()
+
+
+def pickle_set_backend_context(ctx):
+    return _SetBackendContext, ctx._pickle()
+
+
+def pickle_skip_backend_context(ctx):
+    return _SkipBackendContext, ctx._pickle()
 
 
 copyreg.pickle(_Function, pickle_function)
-atexit.register(_uarray.clear_all_globals)
+copyreg.pickle(_uarray._BackendState, pickle_state)
+copyreg.pickle(_SetBackendContext, pickle_set_backend_context)
+copyreg.pickle(_SkipBackendContext, pickle_skip_backend_context)
+
+
+def get_state():
+    """
+    Returns an opaque object containing the current state of all the backends.
+
+    Can be used for synchronization between threads/processes.
+
+    See Also
+    --------
+    set_state
+        Sets the state returned by this function.
+    """
+    return _uarray.get_state()
+
+
+@contextlib.contextmanager
+def reset_state():
+    """
+    Returns a context manager that resets all state once exited.
+
+    See Also
+    --------
+    set_state
+        Context manager that sets the backend state.
+    get_state
+        Gets a state to be set by this context manager.
+    """
+    with set_state(get_state()):
+        yield
+
+
+@contextlib.contextmanager
+def set_state(state):
+    """
+    A context manager that sets the state of the backends to one returned by :obj:`get_state`.
+
+    See Also
+    --------
+    get_state
+        Gets a state to be set by this context manager.
+    """
+    old_state = get_state()
+    _uarray.set_state(state)
+    try:
+        yield
+    finally:
+        _uarray.set_state(old_state, True)
 
 
 def create_multimethod(*args, **kwargs):
@@ -80,7 +161,8 @@ def create_multimethod(*args, **kwargs):
 
     See Also
     --------
-    generate_multimethod : Generates a multimethod.
+    generate_multimethod
+        Generates a multimethod.
     """
 
     def wrapper(a):
@@ -93,7 +175,7 @@ def generate_multimethod(
     argument_extractor: ArgumentExtractorType,
     argument_replacer: ArgumentReplacerType,
     domain: str,
-    default: typing.Optional[typing.Callable] = None
+    default: typing.Optional[typing.Callable] = None,
 ):
     """
     Generates a multimethod.
@@ -109,7 +191,7 @@ def generate_multimethod(
         return an (args, kwargs) pair with the dispatchables replaced inside the args/kwargs.
     domain : str
         A string value indicating the domain of this multimethod.
-    default : Optional[Callable], optional
+    default: Optional[Callable], optional
         The default implementation of this multimethod, where ``None`` (the default) specifies
         there is no default implementation.
 
@@ -138,7 +220,8 @@ def generate_multimethod(
     >>> overridden_me(1, "a")
     Traceback (most recent call last):
         ...
-    uarray.backend.BackendNotImplementedError: ...
+    uarray.BackendNotImplementedError: ...
+
     >>> overridden_me2 = generate_multimethod(
     ...     override_me, override_replacer, "ua_examples", default=lambda x, y: (x, y)
     ... )
@@ -147,7 +230,7 @@ def generate_multimethod(
 
     See Also
     --------
-    uarray :
+    uarray
         See the module documentation for how to override the method by creating backends.
     """
     kw_defaults, arg_defaults, opts = get_defaults(argument_extractor)
@@ -178,8 +261,8 @@ def set_backend(backend, coerce=False, only=False):
 
     See Also
     --------
-    skip_backend : A context manager that allows skipping of backends.
-    set_global_backend : Set a single, global backend for a domain.
+    skip_backend: A context manager that allows skipping of backends.
+    set_global_backend: Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["set", coerce, only]
@@ -206,8 +289,8 @@ def skip_backend(backend):
 
     See Also
     --------
-    set_backend : A context manager that allows setting of backends.
-    set_global_backend : Set a single, global backend for a domain.
+    set_backend: A context manager that allows setting of backends.
+    set_global_backend: Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["skip"]
@@ -239,7 +322,7 @@ def get_defaults(f):
     return kw_defaults, tuple(arg_defaults), opts
 
 
-def set_global_backend(backend, coerce=False, only=False):
+def set_global_backend(backend, coerce=False, only=False, *, try_last=False):
     """
     This utility method replaces the default backend for permanent use. It
     will be tried in the list of backends automatically, unless the
@@ -258,13 +341,20 @@ def set_global_backend(backend, coerce=False, only=False):
     ----------
     backend
         The backend to register.
+    coerce : bool
+        Whether to coerce input types when trying this backend.
+    only : bool
+        If ``True``, no more backends will be tried if this fails.
+        Implied by ``coerce=True``.
+    try_last : bool
+        If ``True``, the global backend is tried after registered backends.
 
     See Also
     --------
-    set_backend : A context manager that allows setting of backends.
-    skip_backend : A context manager that allows skipping of backends.
+    set_backend: A context manager that allows setting of backends.
+    skip_backend: A context manager that allows skipping of backends.
     """
-    _uarray.set_global_backend(backend, coerce, only)
+    _uarray.set_global_backend(backend, coerce, only, try_last)
 
 
 def register_backend(backend):
@@ -290,7 +380,7 @@ def clear_backends(domain, registered=True, globals=False):
     .. warning::
         We caution library authors against using this function in
         their code. We do *not* support this use-case. This function
-        is meant to be used only by the users themselves.
+        is meant to be used only by users themselves.
 
     .. warning::
         Do NOT use this method inside a multimethod call, or the
@@ -423,3 +513,191 @@ def wrap_single_convertor(convert_single):
         return converted
 
     return __ua_convert__
+
+
+def wrap_single_convertor_instance(convert_single):
+    """
+    Wraps a ``__ua_convert__`` defined for a single element to all elements.
+    If any of them return ``NotImplemented``, the operation is assumed to be
+    undefined.
+
+    Accepts a signature of (value, type, coerce).
+    """
+
+    @functools.wraps(convert_single)
+    def __ua_convert__(self, dispatchables, coerce):
+        converted = []
+        for d in dispatchables:
+            c = convert_single(self, d.value, d.type, coerce and d.coercible)
+
+            if c is NotImplemented:
+                return NotImplemented
+
+            converted.append(c)
+
+        return converted
+
+    return __ua_convert__
+
+
+def determine_backend(value, dispatch_type, *, domain, only=True, coerce=False):
+    """Set the backend to the first active backend that supports ``value``
+
+    This is useful for functions that call multimethods without any dispatchable
+    arguments. You can use :func:`determine_backend` to ensure the same backend
+    is used everywhere in a block of multimethod calls.
+
+    Parameters
+    ----------
+    value
+        The value being tested
+    dispatch_type
+        The dispatch type associated with ``value``, aka
+        ":ref:`marking <MarkingGlossary>`".
+    domain: string
+        The domain to query for backends and set.
+    coerce: bool
+        Whether or not to allow coercion to the backend's types. Implies ``only``.
+    only: bool
+        Whether or not this should be the last backend to try.
+
+    See Also
+    --------
+    set_backend: For when you know which backend to set
+
+    Notes
+    -----
+
+    Support is determined by the ``__ua_convert__`` protocol. Backends not
+    supporting the type must return ``NotImplemented`` from their
+    ``__ua_convert__`` if they don't support input of that type.
+
+    Examples
+    --------
+
+    Suppose we have two backends ``BackendA`` and ``BackendB`` each supporting
+    different types, ``TypeA`` and ``TypeB``. Neither supporting the other type:
+
+    >>> with ua.set_backend(ex.BackendA):
+    ...     ex.call_multimethod(ex.TypeB(), ex.TypeB())
+    Traceback (most recent call last):
+        ...
+    uarray.BackendNotImplementedError: ...
+
+    Now consider a multimethod that creates a new object of ``TypeA``, or
+    ``TypeB`` depending on the active backend.
+
+    >>> with ua.set_backend(ex.BackendA), ua.set_backend(ex.BackendB):
+    ...         res = ex.creation_multimethod()
+    ...         ex.call_multimethod(res, ex.TypeA())
+    Traceback (most recent call last):
+        ...
+    uarray.BackendNotImplementedError: ...
+
+    ``res`` is an object of ``TypeB`` because ``BackendB`` is set in the
+    innermost with statement. So, ``call_multimethod`` fails since the types
+    don't match.
+
+    Instead, we need to first find a backend suitable for all of our objects.
+
+    >>> with ua.set_backend(ex.BackendA), ua.set_backend(ex.BackendB):
+    ...     x = ex.TypeA()
+    ...     with ua.determine_backend(x, "mark", domain="ua_examples"):
+    ...         res = ex.creation_multimethod()
+    ...         ex.call_multimethod(res, x)
+    TypeA
+
+    """
+    dispatchables = (Dispatchable(value, dispatch_type, coerce),)
+    backend = _uarray.determine_backend(domain, dispatchables, coerce)
+
+    return set_backend(backend, coerce=coerce, only=only)
+
+
+def determine_backend_multi(
+    dispatchables, *, domain, only=True, coerce=False, **kwargs
+):
+    """Set a backend supporting all ``dispatchables``
+
+    This is useful for functions that call multimethods without any dispatchable
+    arguments. You can use :func:`determine_backend_multi` to ensure the same
+    backend is used everywhere in a block of multimethod calls involving
+    multiple arrays.
+
+    Parameters
+    ----------
+    dispatchables: Sequence[Union[uarray.Dispatchable, Any]]
+        The dispatchables that must be supported
+    domain: string
+        The domain to query for backends and set.
+    coerce: bool
+        Whether or not to allow coercion to the backend's types. Implies ``only``.
+    only: bool
+        Whether or not this should be the last backend to try.
+    dispatch_type: Optional[Any]
+        The default dispatch type associated with ``dispatchables``, aka
+        ":ref:`marking <MarkingGlossary>`".
+
+    See Also
+    --------
+    determine_backend: For a single dispatch value
+    set_backend: For when you know which backend to set
+
+    Notes
+    -----
+
+    Support is determined by the ``__ua_convert__`` protocol. Backends not
+    supporting the type must return ``NotImplemented`` from their
+    ``__ua_convert__`` if they don't support input of that type.
+
+    Examples
+    --------
+
+    :func:`determine_backend` allows the backend to be set from a single
+    object. :func:`determine_backend_multi` allows multiple objects to be
+    checked simultaneously for support in the backend. Suppose we have a
+    ``BackendAB`` which supports ``TypeA`` and ``TypeB`` in the same call,
+    and a ``BackendBC`` that doesn't support ``TypeA``.
+
+    >>> with ua.set_backend(ex.BackendAB), ua.set_backend(ex.BackendBC):
+    ...     a, b = ex.TypeA(), ex.TypeB()
+    ...     with ua.determine_backend_multi(
+    ...         [ua.Dispatchable(a, "mark"), ua.Dispatchable(b, "mark")],
+    ...         domain="ua_examples"
+    ...     ):
+    ...         res = ex.creation_multimethod()
+    ...         ex.call_multimethod(res, a, b)
+    TypeA
+
+    This won't call ``BackendBC`` because it doesn't support ``TypeA``.
+
+    We can also use leave out the ``ua.Dispatchable`` if we specify the
+    default ``dispatch_type`` for the ``dispatchables`` argument.
+
+    >>> with ua.set_backend(ex.BackendAB), ua.set_backend(ex.BackendBC):
+    ...     a, b = ex.TypeA(), ex.TypeB()
+    ...     with ua.determine_backend_multi(
+    ...         [a, b], dispatch_type="mark", domain="ua_examples"
+    ...     ):
+    ...         res = ex.creation_multimethod()
+    ...         ex.call_multimethod(res, a, b)
+    TypeA
+
+    """
+    if "dispatch_type" in kwargs:
+        disp_type = kwargs.pop("dispatch_type")
+        dispatchables = tuple(
+            d if isinstance(d, Dispatchable) else Dispatchable(d, disp_type)
+            for d in dispatchables
+        )
+    else:
+        dispatchables = tuple(dispatchables)
+        if not all(isinstance(d, Dispatchable) for d in dispatchables):
+            raise TypeError("dispatchables must be instances of uarray.Dispatchable")
+
+    if len(kwargs) != 0:
+        raise TypeError("Received unexpected keyword arguments: {}".format(kwargs))
+
+    backend = _uarray.determine_backend(domain, dispatchables, coerce)
+
+    return set_backend(backend, coerce=coerce, only=only)

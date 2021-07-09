@@ -884,9 +884,9 @@ class LatinHypercube(QMCEngine):
 
         """
         if self.centered:
-            samples = 0.5
+            samples: np.ndarray | float = 0.5
         else:
-            samples = self.rng.uniform(size=(n, self.d))  # type: ignore[assignment]
+            samples = self.rng.uniform(size=(n, self.d))
 
         perms = np.tile(np.arange(1, n + 1), (self.d, 1))
         for i in range(self.d):

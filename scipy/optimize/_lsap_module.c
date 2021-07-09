@@ -39,14 +39,21 @@ calculate_assignment(PyObject* self, PyObject* args)
     PyObject* b = NULL;
     PyObject* result = NULL;
     PyObject* obj_cost = NULL;
-    if (!PyArg_ParseTuple(args, "O", &obj_cost))
+    int maximize = 0;
+    if (!PyArg_ParseTuple(args, "Op", &obj_cost, &maximize))
         return NULL;
 
     PyArrayObject* obj_cont =
-      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
+      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 0, 0);
     if (!obj_cont) {
-        PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         return NULL;
+    }
+
+    if (PyArray_NDIM(obj_cont) != 2) {
+        PyErr_Format(PyExc_ValueError,
+                     "expected a matrix (2-D array), got a %d array",
+                     PyArray_NDIM(obj_cont));
+        goto cleanup;
     }
 
     double* cost_matrix = (double*)PyArray_DATA(obj_cont);
@@ -67,7 +74,7 @@ calculate_assignment(PyObject* self, PyObject* args)
         goto cleanup;
 
     int ret = solve_rectangular_linear_sum_assignment(
-      num_rows, num_cols, cost_matrix,
+      num_rows, num_cols, cost_matrix, maximize,
       PyArray_DATA((PyArrayObject*)a),
       PyArray_DATA((PyArrayObject*)b));
     if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
