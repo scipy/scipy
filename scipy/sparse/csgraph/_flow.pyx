@@ -47,7 +47,7 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
         The source vertex from which the flow flows.
     sink : int
         The sink vertex to which the flow flows.
-    method: {‘edmonds_karp’, ‘dinic’}, optional
+    method: {'edmonds_karp', 'dinic'}, optional
         The method/algorithm to be used for computing the maximum flow.
         Following methods are supported,
 
