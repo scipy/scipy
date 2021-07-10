@@ -8784,13 +8784,13 @@ def rankdata(a, method='average', *, axis=None):
 
 
 def generate_ar_covariance(n: int, rho: float = 0.5):
-    """Generate a covariance matrix of an Autoregressive model.
+    """Generates a covariance matrix of an Autoregressive process.
 
     Parameters
     ----------
     n : int
         Covariance matrix shape is (n, n).
-    rho : int or None, optional
+    rho : int, optional
         Autoregressive coefficient.
 
     Returns
