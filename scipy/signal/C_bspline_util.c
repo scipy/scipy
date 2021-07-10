@@ -264,7 +264,6 @@ C_separable_2Dconvolve_mirror(__complex__ float *in, __complex__ float *out,
     else
 	memmove(tmpmem, in, M*N*sizeof(__complex__ float));
 
-
     if (Nhc > 0) {
 	/* filter down columns */
 	inptr = tmpmem;
@@ -276,7 +275,7 @@ C_separable_2Dconvolve_mirror(__complex__ float *in, __complex__ float *out,
 	}
     }
     else
-	memmove(outptr, tmpmem, M*N*sizeof(__complex__ float));
+	memmove(out, tmpmem, M*N*sizeof(__complex__ float));
 
     free(tmpmem);
     return 0;

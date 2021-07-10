@@ -262,7 +262,6 @@ D_separable_2Dconvolve_mirror(double *in, double *out, int M, int N,
     else
 	memmove(tmpmem, in, M*N*sizeof(double));
 
-
     if (Nhc > 0) {
 	/* filter down columns */
 	inptr = tmpmem;
@@ -274,7 +273,7 @@ D_separable_2Dconvolve_mirror(double *in, double *out, int M, int N,
 	}
     }
     else
-	memmove(outptr, tmpmem, M*N*sizeof(double));
+	memmove(out, tmpmem, M*N*sizeof(double));
 
     free(tmpmem);
     return 0;
