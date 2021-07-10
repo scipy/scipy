@@ -142,7 +142,7 @@ class csr_matrix(_cs_matrix):
 
         from .csc import csc_matrix
         return csc_matrix((self.data, self.indices,
-                           self.indptr), shape=(N, M), copy=copy)
+                           self.indptr), shape=(N, M), copy=copy, safety_check=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
