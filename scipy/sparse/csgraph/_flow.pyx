@@ -87,9 +87,12 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
     By the max-flow min-cut theorem, the maximal value of the flow is also the
     total weight of the edges in a minimum cut.
 
-    To solve the problem, we use the Edmonds--Karp algorithm. [1]_ This
-    particular implementation strives to exploit sparsity. Its time complexity
-    is :math:`O(VE^2)` and its space complexity is :math:`O(E)`.
+    To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm [4]_. 
+    The implementation of former strives to exploit sparsity. Its time complexity
+    is :math:`O(VE^2)` and its space complexity is :math:`O(E)`. The latter 
+    achieves its performance by building level graphs and finding blocking flows
+    in them.  Its time complexity is :math:`O(V^2E)` and its space complexity is 
+    :math:`O(E)`.
 
     The maximum flow problem is usually defined with real valued capacities,
     but we require that all capacities are integral to ensure convergence. When
