@@ -653,19 +653,9 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
     elif meth == 'direct':
-        options = dict(options)
-        options.setdefault('disp', False)
-        options.setdefault('eps', 1e-4)
-        options.setdefault('maxfun', 20000)
-        options.setdefault('maxiter', 6000)
-        options.setdefault('locally_biased', False)
-        options.setdefault('fglobal', -1e100) 
-        options.setdefault('fglper', 0.01) 
-        options.setdefault('volper', -1.0)
-        options.setdefault('sigmaper', -1.0)
-        nvar = options.pop('nvar', None)
-        return _minimize_direct(fun, bounds=bounds, nvar=nvar, 
-                                *args, **options)
+        if bounds is None:
+            raise ValueError("`bounds` is a required argument for 'direct' method.")
+        return _minimize_direct(fun, bounds=bounds, *args)
     else:
         raise ValueError('Unknown solver %s' % method)
 
