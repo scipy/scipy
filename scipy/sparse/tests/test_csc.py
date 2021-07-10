@@ -104,7 +104,7 @@ def test_invalid_csc_negative_indices():
         # negative indices are invalid
         indices = [-100, -555]
         indptr = [0, 1, 2]
-        shape = (2, 1000)
+        shape = (1000, 2)
         mat = csc_matrix((data, indices, indptr), shape=shape)
         #a = mat * mat.T #causes segfault if above constructor is called
 
@@ -115,9 +115,9 @@ def test_invalid_csc_out_of_bounds_indices():
         # out of bounds indices are invalid
         indices = [1001, 555]
         indptr = [0, 1, 2]
-        shape = (2, 1000)
+        shape = (1000, 2)
         mat = csc_matrix((data, indices, indptr), shape=shape)
-        #a = mat * mat.T #causes segfault if above constructor is called
+        #a = mat * mat.T #no segfault for some reason, but this is still invalid
 
 def test_invalid_csc_unordered_indptr():
     #see gh-8778 for more information
@@ -126,6 +126,6 @@ def test_invalid_csc_unordered_indptr():
         # indptr should be monotonically ascending
         indices = [1, 2]
         indptr = [0, 5, 1]
-        shape = (2, 1000)
+        shape = (1000, 2)
         mat = csc_matrix((data, indices, indptr), shape=shape)
         #a = mat * mat.T #causes segfault if above constructor is called
