@@ -14,7 +14,7 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from .filter_design import cheby1, _validate_sos
+from .filter_design import cheby1, _validate_sos, tf2sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
@@ -4440,10 +4440,13 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             sl[axis] = slice(None, n_out, None)
 
     else:  # IIR case
+        sos = tf2sos(b, a)
+        sos = np.asarray(sos, dtype=result_type)
         if zero_phase:
-            y = sosfiltfilt(b, a, x, axis=axis)
+            y = sosfiltfilt(sos, x, axis=axis)
         else:
-            y = sosfilt(b, a, x, axis=axis)
+            y = sosfilt(sos, x, axis=axis)
+
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]
