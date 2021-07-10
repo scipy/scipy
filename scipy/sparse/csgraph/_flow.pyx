@@ -29,7 +29,7 @@ class MaximumFlowResult:
         return 'MaximumFlowResult with value of %d' % self.flow_value 
 
 
-def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
+def maximum_flow(csgraph, source, sink, *, method='dinic'):
     r"""
     maximum_flow(csgraph, source, sink)
 
@@ -54,7 +54,7 @@ def maximum_flow(csgraph, source, sink, *, method='edmonds_karp'):
             * 'edmonds_karp': Edmonds Karp algorithm in [1]_.
             * 'dinic': Dinic's algorithm in [4]_.
 
-        Default is 'edmonds_karp'.
+        Default is 'dinic'.
 
         .. versionadded:: 1.8.0
 

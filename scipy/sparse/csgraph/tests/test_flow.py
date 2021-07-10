@@ -11,28 +11,28 @@ def test_raises_on_dense_input():
     with pytest.raises(TypeError):
         graph = np.array([[0, 1], [0, 0]])
         maximum_flow(graph, 0, 1)
-        maximum_flow(graph, 0, 1, method='dinic')
+        maximum_flow(graph, 0, 1, method='edmonds_karp')
 
 
 def test_raises_on_csc_input():
     with pytest.raises(TypeError):
         graph = csc_matrix([[0, 1], [0, 0]])
         maximum_flow(graph, 0, 1)
-        maximum_flow(graph, 0, 1, method='dinic')
+        maximum_flow(graph, 0, 1, method='edmonds_karp')
 
 
 def test_raises_on_floating_point_input():
     with pytest.raises(ValueError):
         graph = csr_matrix([[0, 1.5], [0, 0]], dtype=np.float64)
         maximum_flow(graph, 0, 1)
-        maximum_flow(graph, 0, 1, method='dinic')
+        maximum_flow(graph, 0, 1, method='edmonds_karp')
 
 
 def test_raises_when_source_is_sink():
     with pytest.raises(ValueError):
         graph = csr_matrix([[0, 1], [0, 0]])
         maximum_flow(graph, 0, 0)
-        maximum_flow(graph, 0, 0, method='dinic')
+        maximum_flow(graph, 0, 0, method='edmonds_karp')
 
 
 @pytest.mark.parametrize('method', methods)
