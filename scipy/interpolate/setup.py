@@ -1,6 +1,6 @@
 import os
 from os.path import join
-
+from scipy._build_utils import numpy_nodepr_api
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -43,7 +43,8 @@ def configuration(parent_package='',top_path=None):
                          libraries=['fitpack'],
                          define_macros=define_macros,
                          depends=(['src/__fitpack.h']
-                                  + fitpack_src)
+                                  + fitpack_src),
+                         **numpy_nodepr_api
                          )
 
     config.add_extension('dfitpack',
