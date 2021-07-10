@@ -41,9 +41,9 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
+                         define_macros=define_macros + numpy_nodepr_api['define_macros'],
                          depends=(['src/__fitpack.h']
                                   + fitpack_src),
-                         **numpy_nodepr_api
                          )
 
     config.add_extension('dfitpack',
