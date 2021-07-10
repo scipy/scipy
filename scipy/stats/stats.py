@@ -31,6 +31,9 @@ import math
 from math import gcd
 from collections import namedtuple
 
+from functools import reduce
+from operator import mul
+
 import numpy as np
 from numpy import array, asarray, ma
 
@@ -73,7 +76,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+           'brunnermunzel', 'alexandergovern', 'generate_ar_covariance']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -8778,3 +8781,29 @@ def rankdata(a, method='average', *, axis=None):
 
     # average method
     return .5 * (count[dense] + count[dense - 1] + 1)
+
+
+def generate_ar_covariance(n: int, rho: float = 0.5):
+    """Generate a covariance matrix of an Autoregressive model.
+
+    Parameters
+    ----------
+    n : int
+        Covariance matrix shape is (n, n).
+    rho : int or None, optional
+        Autoregressive coefficient.
+
+    Returns
+    -------
+    ar_covariance : ndarray of shape (n, n).
+        The covariance matrix of an AR(rho) process.
+
+    """
+    rho_vec = np.ones(n, ) * rho
+    covariance = np.zeros(shape=(n, n))
+    for i in range(n):
+        for j in range(i, n):
+            covariance[i][j] = reduce(mul, [rho_vec[k] for k in range(i, j)], 1)
+    ar_covariance = np.triu(covariance) + np.triu(covariance).T - np.diag(np.diag(covariance))
+
+    return ar_covariance
