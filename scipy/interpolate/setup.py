@@ -43,7 +43,8 @@ def configuration(parent_package='',top_path=None):
                          libraries=['fitpack'],
                          define_macros=define_macros,
                          depends=(['src/__fitpack.h']
-                                  + fitpack_src)
+                                  + fitpack_src),
+                         **numpy_nodepr_api
                          )
 
     config.add_extension('dfitpack',
