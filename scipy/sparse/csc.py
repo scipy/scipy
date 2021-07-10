@@ -147,7 +147,7 @@ class csc_matrix(_cs_matrix):
                   data)
 
         from .csr import csr_matrix
-        A = csr_matrix((data, indices, indptr), shape=self.shape, copy=False)
+        A = csr_matrix((data, indices, indptr), shape=self.shape, copy=False, safety_check=False)
         A.has_sorted_indices = True
         return A
 

@@ -188,7 +188,7 @@ class csr_matrix(_cs_matrix):
                   data)
 
         from .csc import csc_matrix
-        A = csc_matrix((data, indices, indptr), shape=self.shape)
+        A = csc_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
         A.has_sorted_indices = True
         return A
 
@@ -203,7 +203,7 @@ class csr_matrix(_cs_matrix):
 
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix(arg1, shape=self.shape, copy=copy)
+            return bsr_matrix(arg1, shape=self.shape, copy=copy, safety_check=False)
 
         else:
             R,C = blocksize
@@ -226,7 +226,7 @@ class csr_matrix(_cs_matrix):
                       self.data,
                       indptr, indices, data.ravel())
 
-            return bsr_matrix((data,indices,indptr), shape=self.shape)
+            return bsr_matrix((data,indices,indptr), shape=self.shape, safety_check=False)
 
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
@@ -245,7 +245,7 @@ class csr_matrix(_cs_matrix):
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield csr_matrix((data, indices, indptr), shape=shape, copy=True)
+            yield csr_matrix((data, indices, indptr), shape=shape, copy=True, safety_check=False)
             i0 = i1
 
     def getrow(self, i):
@@ -261,7 +261,7 @@ class csr_matrix(_cs_matrix):
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
         return csr_matrix((data, indices, indptr), shape=(1, N),
-                          dtype=self.dtype, copy=False)
+                          dtype=self.dtype, copy=False, safety_check=False)
 
     def getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
@@ -276,7 +276,7 @@ class csr_matrix(_cs_matrix):
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
         return csr_matrix((data, indices, indptr), shape=(M, 1),
-                          dtype=self.dtype, copy=False)
+                          dtype=self.dtype, copy=False, safety_check=False)
 
     def _get_intXarray(self, row, col):
         return self.getrow(row)._minor_index_fancy(col)
@@ -312,7 +312,7 @@ class csr_matrix(_cs_matrix):
 
         shape = (1, max(0, int(np.ceil(float(stop - start) / stride))))
         return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
-                          dtype=self.dtype, copy=False)
+                          dtype=self.dtype, copy=False, safety_check=False)
 
     def _get_sliceXint(self, row, col):
         if row.step in (1, None):
