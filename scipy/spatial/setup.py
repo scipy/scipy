@@ -109,8 +109,8 @@ def configuration(parent_package='', top_path=None):
     if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         import pythran
         ext = pythran.dist.PythranExtension(
-            'scipy.spatial._voronoi_pythran',
-            sources=["scipy/spatial/_voronoi_pythran.py"],
+            'scipy.spatial._voronoi',
+            sources=["scipy/spatial/_voronoi.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     else:

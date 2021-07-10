@@ -16,7 +16,6 @@ import numpy as np
 import scipy
 from . import _voronoi
 from scipy.spatial import cKDTree
-from ._voronoi_pythran import sort_vertices_of_regions
 
 __all__ = ['SphericalVoronoi']
 
@@ -262,7 +261,7 @@ class SphericalVoronoi:
         """
         if self._dim != 3:
             raise TypeError("Only supported for three-dimensional point sets")
-        self.regions = sort_vertices_of_regions(self._simplices, self.regions)
+        self.regions = _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
 
     def _calculate_areas_3d(self):
         self.sort_vertices_of_regions()
