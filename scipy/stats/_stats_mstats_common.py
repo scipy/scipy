@@ -221,7 +221,7 @@ def theilslopes(y, x=None, alpha=0.95):
     medslope : float
         Theil slope.
     medintercept : float
-        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
+        Intercept of the Theil line, as ``median(y - medslope*x)``.
     lo_slope : float
         Lower bound of the confidence interval on `medslope`.
     up_slope : float
@@ -234,8 +234,8 @@ def theilslopes(y, x=None, alpha=0.95):
     Notes
     -----
     The implementation of `theilslopes` follows [1]_. The intercept is
-    not defined in [1]_, and here it is defined as ``median(y) -
-    medslope*median(x)``, which is given in [3]_. Other definitions of
+    not defined in [1]_, and here it is defined as ``median(y -
+    medslope*x)``, which is given in [4]_. Other definitions of
     the intercept exist in the literature. A confidence interval for
     the intercept is not given as this question is not addressed in
     [1]_.
@@ -249,6 +249,7 @@ def theilslopes(y, x=None, alpha=0.95):
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
     .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
            John Wiley and Sons, New York, pp. 493.
+    .. [4] https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator
 
     Examples
     --------
@@ -298,7 +299,7 @@ def theilslopes(y, x=None, alpha=0.95):
     slopes = deltay[deltax > 0] / deltax[deltax > 0]
     slopes.sort()
     medslope = np.median(slopes)
-    medinter = np.median(y) - medslope * np.median(x)
+    medinter = np.median(y - medslope * x)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
