@@ -35,7 +35,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper
+from scipy._lib._util import MapWrapper, check_random_state, rng_integers
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -935,7 +935,8 @@ def approx_fprime(xk, f, epsilon, *args):
                              args=args, f0=f0)
 
 
-def check_grad(func, grad, x0, *args, **kwargs):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, 
+                direction='all', seed=None):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -953,6 +954,24 @@ def check_grad(func, grad, x0, *args, **kwargs):
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
         ``sqrt(np.finfo(float).eps)``, which is approximately 1.49e-08.
+    direction : str, optional
+        If set to ``'random'``, then gradients along a random vector 
+        are used to check `grad` against forward difference approximation 
+        using `func`. By default it is ``'all'``, in which case, all
+        the one hot direction vectors are considered to check `grad`.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Specify `seed` for reproducing the return value from this function. 
+        The random numbers generated with this seed affect the random vector
+        along which gradients are computed to check ``grad``. Note that `seed`
+        is only used when `direction` argument is set to `'random'`.
 
     Returns
     -------
@@ -974,14 +993,36 @@ def check_grad(func, grad, x0, *args, **kwargs):
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
+    >>> rng = np.random.default_rng()
+    >>> check_grad(func, grad, [1.5, -1.5], 
+    ...             direction='random', seed=rng)
+    2.9802322387695312e-08
 
     """
-    step = kwargs.pop('epsilon', _epsilon)
-    if kwargs:
-        raise ValueError("Unknown keyword arguments: %r" %
-                         (list(kwargs.keys()),))
-    return sqrt(sum((grad(x0, *args) -
-                     approx_fprime(x0, func, step, *args))**2))
+    step = epsilon
+    x0 = np.asarray(x0)
+    
+    def g(w, func, x0, v, *args):
+        return func(x0 + w*v, *args)
+
+    if direction == 'random':
+        random_state = check_random_state(seed)
+        v = random_state.normal(0, 1, size=(x0.shape))
+        _args = (func, x0, v) + args
+        _func = g
+        vars = np.zeros((1,))
+        analytical_grad = np.dot(grad(x0, *args), v)
+    elif direction == 'all':
+        _args = args
+        _func = func
+        vars = x0
+        analytical_grad = grad(x0, *args)
+    else:
+        raise ValueError("{} is not a valid string for "
+                         "``direction`` argument".format(direction))
+
+    return sqrt(sum((analytical_grad -
+                     approx_fprime(vars, _func, step, *_args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
