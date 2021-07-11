@@ -243,7 +243,7 @@ py::array_t<T> npy_asarray(const py::handle& obj, int flags = 0) {
     if (arr == nullptr) {
         throw py::error_already_set();
     }
-    return py::reinterpret_borrow<py::array_t<T>>(arr);
+    return py::reinterpret_steal<py::array_t<T>>(arr);
 }
 
 // Cast python object to NumPy array with unspecified dtype.
@@ -253,7 +253,7 @@ py::array npy_asarray(const py::handle& obj, int flags = 0) {
     if (arr == nullptr) {
         throw py::error_already_set();
     }
-    return py::reinterpret_borrow<py::array>(arr);
+    return py::reinterpret_steal<py::array>(arr);
 }
 
 template <typename scalar_t>
