@@ -458,3 +458,17 @@ class DistanceFunctions(Benchmark):
         distance = stats.wasserstein_distance(
                  self.u_values, self.v_values, 
                  self.u_weights, self.v_weights)
+
+
+class Somersd(Benchmark):
+    param_names = ['n_size']
+    params = [
+        [10, 100]
+    ]
+    def setup(self, n_size):
+        rng = np.random.default_rng(12345678)
+        self.x = rng.choice(n_size, size=n_size)
+        self.y = rng.choice(n_size, size=n_size)
+
+    def time_somersd(self, n_size):
+        res = stats.somersd(self.x, self.y)
