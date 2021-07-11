@@ -864,7 +864,8 @@ def jaccard(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v)
 
-    nonzero = np.bitwise_or(u.astype(bool), v.astype(bool))
+    nonzero = np.bitwise_or(u.astype(bool, copy=False),
+                            v.astype(bool, copy=False))
     unequal_nonzero = np.bitwise_and((u != v), nonzero)
     if w is not None:
         w = _validate_weights(w)
