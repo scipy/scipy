@@ -2344,7 +2344,7 @@ def test_binary_closing_noninteger_brute_force_passes_when_true():
 @pytest.mark.parametrize('brute_force', [False, True])
 def test_binary_input_as_output(function, iterations, brute_force):
     rstate = numpy.random.RandomState(123)
-    data = rstate.random_integers(low=0, high=2, size=100, dtype=bool)
+    data = rstate.randint(low=0, high=2, size=100).astype(bool)
     ndi_func = getattr(ndimage, function)
 
     # input data is not modified
@@ -2359,7 +2359,7 @@ def test_binary_input_as_output(function, iterations, brute_force):
 
 def test_binary_hit_or_miss_input_as_output():
     rstate = numpy.random.RandomState(123)
-    data = rstate.random_integers(low=0, high=2, size=100, dtype=bool)
+    data = rstate.randint(low=0, high=2, size=100).astype(bool)
 
     # input data is not modified
     data_orig = data.copy()
