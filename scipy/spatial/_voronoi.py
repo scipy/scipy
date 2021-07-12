@@ -24,6 +24,6 @@ def sort_vertices_of_regions(simplices, regions):
                     break
             remaining.remove(current_simplex)
             sorted_vertices.append(current_simplex)
-        regions[n] = sorted_vertices
+        regions[n] = list(sorted_vertices)
     
     return regions
