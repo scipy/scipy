@@ -252,7 +252,6 @@ def _binary_erosion(input, structure, iterations, mask, output,
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
-        return output
     elif cit and not brute_force:
         changed, coordinate_list = _nd_image.binary_erosion(
             input, structure, mask, output,
