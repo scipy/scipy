@@ -220,7 +220,7 @@ def maximum_flow(csgraph, source, sink):
     # Sorted indices are needed by both the _add_reverse_edges() and
     # the _make_edge_pointers() function.
     if not csgraph.has_sorted_indices:
-      csgraph = csgraph.sorted_indices()
+        csgraph = csgraph.sorted_indices()
 
     # Our implementation of Edmonds--Karp assumes that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
@@ -300,11 +300,11 @@ def _add_reverse_edges(a):
         at_ptr, at_end = at_indptr_view[i], at_indptr_view[i + 1]
         while a_ptr != a_end or at_ptr != at_end:
             move_a = a_ptr != a_end \
-                     and (at_ptr == at_end
-                          or a_indices_view[a_ptr] <= at_indices_view[at_ptr])
+                and (at_ptr == at_end
+                     or a_indices_view[a_ptr] <= at_indices_view[at_ptr])
             move_at = at_ptr != at_end \
-                      and (a_ptr == a_end
-                           or at_indices_view[at_ptr] <= a_indices_view[a_ptr])
+                and (a_ptr == a_end
+                     or at_indices_view[at_ptr] <= a_indices_view[a_ptr])
             if move_a:
                 # Note that it's possible that we move both pointers at once.
                 # In that case, we explicitly want the value from the original
