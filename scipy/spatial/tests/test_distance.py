@@ -35,6 +35,7 @@
 import os.path
 
 from functools import wraps, partial
+import weakref
 
 import numpy as np
 import warnings
@@ -649,6 +650,28 @@ class TestCdist:
                 Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
                 # test that output is numerically equivalent
                 _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+    def test_cdist_refcount(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
+            for metric in _METRICS_NAMES:
+                x1 = np.random.rand(10, 10)
+                x2 = np.random.rand(10, 10)
+
+                kwargs = dict()
+                if metric in ['minkowski', 'wminkowski']:
+                    kwargs['p'] = 1.23
+                    if metric == 'wminkowski':
+                        kwargs['w'] = 1.0 / x1.std(axis=0)
+
+                out = cdist(x1, x2, metric=metric, **kwargs)
+
+                # Check reference counts aren't messed up. If we only hold weak
+                # references, the arrays should be deallocated.
+                weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+                del x1, x2, out
+                assert all(weak_ref() is None for weak_ref in weak_refs)
+
 
 class TestPdist:
 
