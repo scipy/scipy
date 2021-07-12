@@ -226,9 +226,8 @@ def maximum_flow(csgraph, source, sink):
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
     m = _add_reverse_edges(csgraph)
-
-    # Make edge pointers.
-    rev_edge_ptr, tails = _make_edge_pointers(m)
+    rev_edge_ptr = _make_edge_pointers(m)
+    tails = _make_tails(m)
 
     residual = _edmonds_karp(m.indptr, tails, m.indices,
                              m.data, rev_edge_ptr, source, sink)
@@ -260,86 +259,92 @@ def _add_reverse_edges(a):
         by explicit zeros.
 
     """
-
     # Reference arrays of the input matrix.
-    cdef int n = a.shape[0]
-    cdef int[:] a_data_view = a.data
-    cdef int[:] a_indices_view = a.indices
-    cdef int[:] a_indptr_view = a.indptr
+    cdef ITYPE_t n = a.shape[0]
+    cdef ITYPE_t[:] a_data_view = a.data
+    cdef ITYPE_t[:] a_indices_view = a.indices
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
 
     # Create the transpose with the intent of using the resulting index
-    # arrays for the addition of reverse edges with zero capacity.
-    b = csr_matrix(a.transpose())
-    cdef int[:] b_indices_view = b.indices
-    cdef int[:] b_indptr_view = b.indptr
+    # arrays for the addition of reverse edges with zero capacity. In
+    # particular, we do not actually use the values in the transpose;
+    # only the fact that the indices exist.
+    at = csr_matrix(a.transpose())
+    cdef ITYPE_t[:] at_indices_view = at.indices
+    cdef ITYPE_t[:] at_indptr_view = at.indptr
 
-    # Create arrays for the result matrix with added reverse edges.
-    c_data = np.zeros(2 * a.nnz, np.intc)
-    cdef int[:] c_data_view = c_data
-    c_indices = np.zeros(2 * a.nnz, np.intc)
-    cdef int[:] c_indices_view = c_indices
-    c_indptr = np.zeros(n + 1, np.intc)
-    cdef int[:] c_indptr_view = c_indptr
+    # Create arrays for the result matrix with added reverse edges. We
+    # allocate twice the number of non-zeros in `a` for the data, which
+    # will always be enough. It might be too many entries in case `a` has
+    # some reverse edges already; in that case, over-allocating is not
+    # a problem since csr_matrix implicitly truncates elements of data
+    # and indices that go beyond the indices given by indptr.
+    res_data = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_data_view = res_data
+    res_indices = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_indices_view = res_indices
+    res_indptr = np.zeros(n + 1, ITYPE)
+    cdef ITYPE_t[:] res_indptr_view = res_indptr
 
-    cdef int i = 0
-    cdef int c_ptr = 0
-    cdef int a_ptr, a_end, b_ptr, b_end
+    cdef ITYPE_t i = 0
+    cdef ITYPE_t res_ptr = 0
+    cdef ITYPE_t a_ptr, a_end, at_ptr, at_end
+    cdef bint move_a, move_at
+    # Loop over all rows
     while i != n:
-        a_ptr = a_indptr_view[i]
-        a_end = a_indptr_view[i + 1]
-        b_ptr = b_indptr_view[i]
-        b_end = b_indptr_view[i + 1]
-        while a_ptr != a_end or b_ptr != b_end:
-            if a_ptr != a_end and b_ptr != b_end:
-                if a_indices_view[a_ptr] < b_indices_view[b_ptr]:
-                    c_data_view[c_ptr] = a_data_view[a_ptr]
-                    c_indices_view[c_ptr] = a_indices_view[a_ptr]
-                    a_ptr += 1
-                elif a_indices_view[a_ptr] > b_indices_view[b_ptr]:
-                    c_data_view[c_ptr] = 0
-                    c_indices_view[c_ptr] = b_indices_view[b_ptr]
-                    b_ptr += 1
-                else:
-                    c_data_view[c_ptr] = a_data_view[a_ptr]
-                    c_indices_view[c_ptr] = a_indices_view[a_ptr]
-                    a_ptr += 1
-                    b_ptr += 1
-            elif a_ptr != a_end:
-                c_data_view[c_ptr] = a_data_view[a_ptr]
-                c_indices_view[c_ptr] = a_indices_view[a_ptr]
+        # For each row, to ensure that the resulting matrix has
+        # sorted indices, we loop over the i'th rows in a and a.T
+        # simultaneously, bumping the pointer in one matrix only
+        # if that wouldn't break the sorting.
+        a_ptr, a_end = a_indptr_view[i], a_indptr_view[i + 1]
+        at_ptr, at_end = at_indptr_view[i], at_indptr_view[i + 1]
+        while a_ptr != a_end or at_ptr != at_end:
+            move_a = a_ptr != a_end \
+                     and (at_ptr == at_end
+                          or a_indices_view[a_ptr] <= at_indices_view[at_ptr])
+            move_at = at_ptr != at_end \
+                      and (a_ptr == a_end
+                           or at_indices_view[at_ptr] <= a_indices_view[a_ptr])
+            if move_a:
+                # Note that it's possible that we move both pointers at once.
+                # In that case, we explicitly want the value from the original
+                # matrix.
+                res_indices_view[res_ptr] = a_indices_view[a_ptr]
+                res_data_view[res_ptr] = a_data_view[a_ptr]
                 a_ptr += 1
-            elif b_ptr != b_end:
-                c_indices_view[c_ptr] = b_indices_view[b_ptr]
-                b_ptr += 1
-            c_ptr += 1
+            if move_at:
+                res_indices_view[res_ptr] = at_indices_view[at_ptr]
+                at_ptr += 1
+            res_ptr += 1
         i += 1
-        c_indptr_view[i] = c_ptr
-
-    return csr_matrix((c_data, c_indices, c_indptr), shape=(n, n))
+        res_indptr_view[i] = res_ptr
+    return csr_matrix((res_data, res_indices, res_indptr), shape=(n, n))
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def _make_edge_pointers(a):
-    """Create for each edge pointers to its reverse and its tail."""
+    """Create for each edge pointers to its reverse."""
     cdef int n = a.shape[0]
     b_data = np.arange(a.data.shape[0], dtype=ITYPE)
-    b_indices = a.indices.copy()
-    b_indptr = a.indptr.copy()
     b = csr_matrix(
-        (b_data, b_indices, b_indptr), shape=(n, n), dtype=ITYPE)
+        (b_data, a.indices, a.indptr), shape=(n, n), dtype=ITYPE)
     b = csr_matrix(b.transpose())
-    cdef int[:] b_indices_view = b_indices
-    cdef int[:] b_indptr_view = b_indptr
+    return b.data
 
-    # Overwrite and reuse b_indices with the set of row indices for
-    # each matrix entry, i.e., with the set of tail vertices of each edge.
-    cdef int i, j
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _make_tails(a):
+    """Create for each edge pointers to its tail."""
+    cdef int n = a.shape[0]
+    cdef ITYPE_t[:] tails = np.empty(a.data.shape[0], dtype=ITYPE)
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
+    cdef ITYPE_t i, j
     for i in range(n):
-        for j in range(b_indptr_view[i], b_indptr_view[i + 1]):
-            b_indices_view[j] = i
-
-    return b.data, b_indices
+        for j in range(a_indptr_view[i], a_indptr_view[i + 1]):
+            tails[j] = i
+    return tails
 
 
 @cython.boundscheck(False)
