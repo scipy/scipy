@@ -4,7 +4,9 @@ import pytest
 
 from scipy.sparse import csr_matrix, csc_matrix
 from scipy.sparse.csgraph import maximum_flow
-from scipy.sparse.csgraph._flow import _add_reverse_edges, _make_edge_pointers
+from scipy.sparse.csgraph._flow import (
+    _add_reverse_edges, _make_edge_pointers, _make_tails
+)
 
 
 def test_raises_on_dense_input():
@@ -178,5 +180,5 @@ def test_make_tails():
     a = csr_matrix([[1, 0, 2],
                     [0, 0, 3],
                     [4, 5, 0]], dtype=np.int32)
-    tails = _make_edge_pointers(a)
+    tails = _make_tails(a)
     assert_array_equal(tails, [0, 0, 1, 2, 2])
