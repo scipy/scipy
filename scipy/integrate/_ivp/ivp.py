@@ -154,7 +154,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, max_events=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -567,9 +567,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         g = [event(t0, y0) for event in events]
         t_events = [[] for _ in range(len(events))]
         y_events = [[] for _ in range(len(events))]
+        found_count = [0 for _ in range(len(events))]
+        if max_events is None:
+            max_events = np.inf
     else:
         t_events = None
         y_events = None
+        found_count = None
 
     status = None
     while status is None:
@@ -604,8 +608,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
                     y_events[e].append(sol(te))
+                    found_count[e] = found_count[e] + 1
 
                 if terminate:
+                    status = 1
+                    t = roots[-1]
+                    y = sol(t)
+                
+                if any([c >= max_events for c in found_count]):
                     status = 1
                     t = roots[-1]
                     y = sol(t)
