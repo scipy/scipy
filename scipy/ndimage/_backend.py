@@ -2,6 +2,10 @@ import scipy._lib.uarray as ua
 from scipy.ndimage import _api
 
 
+__all__ = ['register_backend', 'set_backend',
+           'set_global_backend', 'skip_backend']
+
+
 class _ScipyImageBackend:
     """The default backend for ndimage calculations
 
