@@ -131,6 +131,21 @@ def test_disconnected_graph():
     assert_array_equal(res.residual.toarray(), expected_residual)
 
 
+def test_add_reverse_edges_large_graph():
+    # Regression test for https://github.com/scipy/scipy/issues/14385
+    n = 100_000
+    indices = np.arange(1, n)
+    indptr = np.array(list(range(n)) + [n - 1])
+    data = np.ones(n - 1, dtype=np.int32)
+    graph = csr_matrix((data, indices, indptr), shape=(n, n))
+    res = maximum_flow(graph, 0, n - 1)
+    assert res.flow_value == 1
+    expected_residual = graph - graph.transpose()
+    assert_array_equal(res.residual.data, expected_residual.data)
+    assert_array_equal(res.residual.indices, expected_residual.indices)
+    assert_array_equal(res.residual.indptr, expected_residual.indptr)
+
+
 @pytest.mark.parametrize("a,b_data_expected", [
     ([[]], []),
     ([[0], [0]], []),
