@@ -10,7 +10,7 @@ import numpy as np
 def group_dense(m, n, A):
     B = A.T  # Transposed view for convenience.
 
-    groups = -np.ones(n, dtype=np.intp)  #FIXME: use np.full once pythran supports it
+    groups = -np.ones(n, dtype=np.intp)  # FIXME: use np.full once pythran supports it
     current_group = 0
 
     union = np.empty(m, dtype=np.intp)

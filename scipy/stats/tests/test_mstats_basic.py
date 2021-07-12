@@ -394,7 +394,6 @@ class TestCorr:
         y = np.concatenate((y[1000:], y[:1000]))
         assert_(np.isfinite(mstats.kendalltau(x, y)[1]))
 
-
     def test_kendalltau_seasonal(self):
         # Tests the seasonal Kendall tau.
         x = [[nan, nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
@@ -437,13 +436,12 @@ class TestCorr:
             res = mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
-
     def test_pointbiserial(self):
-        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-             0,0,0,0,1,-1]
-        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-             0.8,0.7,0.6,0.5,0.2,0.2,0.1,np.nan]
+        x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+             0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
+        y = [14.8, 13.8, 12.4, 10.1, 7.1, 6.1, 5.8, 4.6, 4.3, 3.5, 3.3, 3.2,
+             3.0, 2.8, 2.8, 2.5, 2.4, 2.3, 2.1, 1.7, 1.7, 1.5, 1.3, 1.3, 1.2,
+             1.2, 1.1, 0.8, 0.7, 0.6, 0.5, 0.2, 0.2, 0.1, np.nan]
         assert_almost_equal(mstats.pointbiserialr(x, y)[0], 0.36149, 5)
 
         # test for namedtuple attributes
@@ -618,7 +616,7 @@ class TestMoments:
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(mstats.moment(x, 2), ma.masked) # NaN value is ignored
+        assert_equal(mstats.moment(x, 2), ma.masked)  # NaN value is ignored
 
     def test_variation(self):
         y = mstats.variation(self.testcase)

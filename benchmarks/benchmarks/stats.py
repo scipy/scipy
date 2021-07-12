@@ -50,7 +50,7 @@ class ANOVAFunction(Benchmark):
         self.a = rng.random((6,3)) * 10
         self.b = rng.random((6,3)) * 10
         self.c = rng.random((6,3)) * 10
-    
+
     def time_f_oneway(self):
         statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
         statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
@@ -444,19 +444,19 @@ class DistanceFunctions(Benchmark):
 
     def setup(self, n_size):
         rng = np.random.default_rng(12345678)
-        self.u_values= rng.random(n_size) * 10
+        self.u_values = rng.random(n_size) * 10
         self.u_weights = rng.random(n_size) * 10
         self.v_values = rng.random(n_size // 2) * 10
         self.v_weights = rng.random(n_size // 2) * 10
 
     def time_energy_distance(self, n_size):
         distance = stats.energy_distance(
-                 self.u_values, self.v_values, 
+                 self.u_values, self.v_values,
                  self.u_weights, self.v_weights)
-    
+
     def time_wasserstein_distance(self, n_size):
         distance = stats.wasserstein_distance(
-                 self.u_values, self.v_values, 
+                 self.u_values, self.v_values,
                  self.u_weights, self.v_weights)
 
 
@@ -465,6 +465,7 @@ class Somersd(Benchmark):
     params = [
         [10, 100]
     ]
+
     def setup(self, n_size):
         rng = np.random.default_rng(12345678)
         self.x = rng.choice(n_size, size=n_size)

@@ -250,7 +250,6 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-
     @pytest.mark.xfail(reason="This part of test_powell fails on some "
                        "platforms, but the solution returned by powell is "
                        "still valid.")
