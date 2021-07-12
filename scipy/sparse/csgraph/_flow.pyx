@@ -24,7 +24,7 @@ class MaximumFlowResult:
         self.residual = residual
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value 
+        return 'MaximumFlowResult with value of %d' % self.flow_value
 
 
 def maximum_flow(csgraph, source, sink):
@@ -208,6 +208,8 @@ def maximum_flow(csgraph, source, sink):
         csgraph = csgraph.astype(ITYPE)
     if source == sink:
         raise ValueError("source and sink vertices must differ")
+    if csgraph.shape[0] != csgraph.shape[1]:
+        raise ValueError("graph must be specified as a square matrix.")
     if source < 0 or source >= csgraph.shape[0]:
         raise ValueError('source value ({}) must be between '.format(source) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
@@ -215,13 +217,22 @@ def maximum_flow(csgraph, source, sink):
         raise ValueError('sink value ({}) must be between '.format(sink) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
 
+    # Sorted indices are needed by both the _add_reverse_edges() and
+    # the _make_edge_pointers() function.
+    if not csgraph.has_sorted_indices:
+      csgraph = csgraph.sorted_indices()
+
     # Our implementation of Edmonds--Karp assumes that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
     m = _add_reverse_edges(csgraph)
+
+    # Make edge pointers.
     rev_edge_ptr, tails = _make_edge_pointers(m)
+
     residual = _edmonds_karp(m.indptr, tails, m.indices,
                              m.data, rev_edge_ptr, source, sink)
+
     residual_array = np.asarray(residual)
     residual_matrix = csr_matrix((residual_array, m.indices, m.indptr),
                                  shape=m.shape)
@@ -229,6 +240,8 @@ def maximum_flow(csgraph, source, sink):
     return MaximumFlowResult(source_flow.sum(), residual_matrix)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def _add_reverse_edges(a):
     """Add reversed edges to all edges in a graph.
 
@@ -247,54 +260,86 @@ def _add_reverse_edges(a):
         by explicit zeros.
 
     """
-    # This is equivalent to just looping over all (i, j) and letting
-    # the weight of (j, i) be zero if it is not already defined.
-    # Using NumPy to do so is several orders of magnitude faster
-    # than the naive solution. We first create create the sorted
-    # list {i*n + j} for nonzero (i, j), then use binary search
-    # to determine if j*n + i belongs to the list. To ensure that
-    # the haystack below is sorted, we presort the column indices if
-    # necessary.
-    if not a.has_sorted_indices:
-        a = a.sorted_indices()
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    n = a.shape[0]
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    indices = np.searchsorted(haystack, needles)
-    # As searchsorted returns a.nnz when a given needle is
-    # larger than the largest element of the haystack, we
-    # explicitly add an element not in needles at the end.
-    haystack = np.concatenate([haystack, [-1]])
-    indexed = haystack[indices]
-    diff = indexed != needles
-    # At this point, diff contains the indices of the (j, i)
-    # to be added. We make use of the COO initializer for CSR
-    # matrices which ensures that 0s are added explicitly.
-    indices_to_add = np.where(diff)[0]
-    data_to_add = np.zeros((indices_to_add.shape[0],), dtype=ITYPE)
-    acoo.row = np.concatenate([acoo.row, cols[indices_to_add]])
-    acoo.col = np.concatenate([acoo.col, rows[indices_to_add]])
-    acoo.data = np.concatenate([acoo.data, data_to_add])
-    return acoo.tocsr()
+
+    # Reference arrays of the input matrix.
+    cdef int n = a.shape[0]
+    cdef int[:] a_data_view = a.data
+    cdef int[:] a_indices_view = a.indices
+    cdef int[:] a_indptr_view = a.indptr
+
+    # Create the transpose with the intent of using the resulting index
+    # arrays for the addition of reverse edges with zero capacity.
+    b = csr_matrix(a.transpose())
+    cdef int[:] b_indices_view = b.indices
+    cdef int[:] b_indptr_view = b.indptr
+
+    # Create arrays for the result matrix with added reverse edges.
+    c_data = np.zeros(2 * a.nnz, np.intc)
+    cdef int[:] c_data_view = c_data
+    c_indices = np.zeros(2 * a.nnz, np.intc)
+    cdef int[:] c_indices_view = c_indices
+    c_indptr = np.zeros(n + 1, np.intc)
+    cdef int[:] c_indptr_view = c_indptr
+
+    cdef int i = 0
+    cdef int c_ptr = 0
+    cdef int a_ptr, a_end, b_ptr, b_end
+    while i != n:
+        a_ptr = a_indptr_view[i]
+        a_end = a_indptr_view[i + 1]
+        b_ptr = b_indptr_view[i]
+        b_end = b_indptr_view[i + 1]
+        while a_ptr != a_end or b_ptr != b_end:
+            if a_ptr != a_end and b_ptr != b_end:
+                if a_indices_view[a_ptr] < b_indices_view[b_ptr]:
+                    c_data_view[c_ptr] = a_data_view[a_ptr]
+                    c_indices_view[c_ptr] = a_indices_view[a_ptr]
+                    a_ptr += 1
+                elif a_indices_view[a_ptr] > b_indices_view[b_ptr]:
+                    c_data_view[c_ptr] = 0
+                    c_indices_view[c_ptr] = b_indices_view[b_ptr]
+                    b_ptr += 1
+                else:
+                    c_data_view[c_ptr] = a_data_view[a_ptr]
+                    c_indices_view[c_ptr] = a_indices_view[a_ptr]
+                    a_ptr += 1
+                    b_ptr += 1
+            elif a_ptr != a_end:
+                c_data_view[c_ptr] = a_data_view[a_ptr]
+                c_indices_view[c_ptr] = a_indices_view[a_ptr]
+                a_ptr += 1
+            elif b_ptr != b_end:
+                c_indices_view[c_ptr] = b_indices_view[b_ptr]
+                b_ptr += 1
+            c_ptr += 1
+        i += 1
+        c_indptr_view[i] = c_ptr
+
+    return csr_matrix((c_data, c_indices, c_indptr), shape=(n, n))
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def _make_edge_pointers(a):
     """Create for each edge pointers to its reverse and its tail."""
-    # Just as above, one way to match (i, j) with (j, i) is to match
-    # i*n + j with j*n + i, which we can do by ensuring that we
-    # have a sorted collection of {i*n + j} and using binary search
-    # to find j*n + i here.
-    n = a.shape[0]
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    rev_edge_ptr = np.searchsorted(haystack, needles).astype(ITYPE)
-    return rev_edge_ptr, rows
+    cdef int n = a.shape[0]
+    b_data = np.arange(a.data.shape[0], dtype=ITYPE)
+    b_indices = a.indices.copy()
+    b_indptr = a.indptr.copy()
+    b = csr_matrix(
+        (b_data, b_indices, b_indptr), shape=(n, n), dtype=ITYPE)
+    b = csr_matrix(b.transpose())
+    cdef int[:] b_indices_view = b_indices
+    cdef int[:] b_indptr_view = b_indptr
+
+    # Overwrite and reuse b_indices with the set of row indices for
+    # each matrix entry, i.e., with the set of tail vertices of each edge.
+    cdef int i, j
+    for i in range(n):
+        for j in range(b_indptr_view[i], b_indptr_view[i + 1]):
+            b_indices_view[j] = i
+
+    return b.data, b_indices
 
 
 @cython.boundscheck(False)
@@ -369,8 +414,6 @@ cdef ITYPE_t[:] _edmonds_karp(
             # Pop queue
             cur = q[start]
             start += 1
-            if start == n_verts:
-                start = 0
             # Loop over all edges from the current vertex
             for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
                 t = heads[e]
@@ -383,8 +426,6 @@ cdef ITYPE_t[:] _edmonds_karp(
                     # Push to queue
                     q[end] = t
                     end += 1
-                    if end == n_verts:
-                        end = 0
         # Did we find an augmenting path?
         if path_found:
             df = ITYPE_MAX

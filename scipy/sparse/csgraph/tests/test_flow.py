@@ -4,6 +4,7 @@ import pytest
 
 from scipy.sparse import csr_matrix, csc_matrix
 from scipy.sparse.csgraph import maximum_flow
+from scipy.sparse.csgraph._flow import _add_reverse_edges, _make_edge_pointers
 
 
 def test_raises_on_dense_input():
@@ -21,6 +22,12 @@ def test_raises_on_csc_input():
 def test_raises_on_floating_point_input():
     with pytest.raises(ValueError):
         graph = csr_matrix([[0, 1.5], [0, 0]], dtype=np.float64)
+        maximum_flow(graph, 0, 1)
+
+
+def test_raises_on_non_square_input():
+    with pytest.raises(ValueError):
+        graph = csr_matrix([[0, 1, 2], [2, 1, 0]])
         maximum_flow(graph, 0, 1)
 
 
@@ -122,3 +129,29 @@ def test_disconnected_graph():
     assert res.flow_value == 0
     expected_residual = np.zeros((4, 4), dtype=np.int32)
     assert_array_equal(res.residual.toarray(), expected_residual)
+
+
+@pytest.mark.parametrize("a,b_data_expected", [
+    ([[]], []),
+    ([[0], [0]], []),
+    ([[1, 0, 2], [0, 0, 0], [0, 3, 0]], [1, 2, 0, 0, 3]),
+    ([[9, 8, 7], [4, 5, 6], [0, 0, 0]], [9, 8, 7, 4, 5, 6, 0, 0])])
+def test_add_reverse_edges(a, b_data_expected):
+    """Test that the reversal of the edges of the input graph works
+    as expected.
+    """
+    a = csr_matrix(a, dtype=np.int32, shape=(len(a), len(a)))
+    b = _add_reverse_edges(a)
+    assert_array_equal(b.data, b_data_expected)
+
+
+def test_make_edge_pointers():
+    """Test that the computation of pointers from edges to reverse edges
+    gives the right result for a structurally symmetric matrix.
+    """
+    a = csr_matrix([[1, 0, 2],
+                    [0, 0, 3],
+                    [4, 5, 0]], dtype=np.int32)
+    data, indices = _make_edge_pointers(a)
+    assert_array_equal(data, [0, 3, 4, 1, 2])
+    assert_array_equal(indices, [0, 0, 1, 2, 2])
