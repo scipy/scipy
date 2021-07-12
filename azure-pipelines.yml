@@ -142,7 +142,7 @@ stages:
       CXX: g++-4.8
     steps:
     - script: |
-        set -e
+        set -euxo pipefail
         sudo apt update -y
         sudo apt install -y g++-4.8 gcc-4.8
       displayName: 'Install GCC 4.8'
@@ -173,7 +173,7 @@ stages:
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
-        set -e
+        set -euxo pipefail
         PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out || true
         cat test.out
         test \! -s test.out
@@ -196,7 +196,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-            set -e
+            set -euxo pipefail
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
