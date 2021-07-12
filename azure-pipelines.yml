@@ -169,7 +169,7 @@ stages:
     - script: >-
         python -m pip install
         pycodestyle==2.5.0
-        pyflakes==2.1.1
+        pyflakes==2.3.1
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
