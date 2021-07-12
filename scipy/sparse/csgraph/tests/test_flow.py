@@ -162,23 +162,27 @@ def test_add_reverse_edges(a, b_data_expected):
     assert_array_equal(b.data, b_data_expected)
 
 
-def test_make_edge_pointers():
-    """Test that the computation of pointers from edges to reverse edges
-    gives the right result for a structurally symmetric matrix.
-    """
-    a = csr_matrix([[1, 0, 2],
-                    [0, 0, 3],
-                    [4, 5, 0]], dtype=np.int32)
+@pytest.mark.parametrize("a,expected", [
+    ([[]], []),
+    ([[0]], []),
+    ([[1]], [0]),
+    ([[0, 1], [10, 0]], [1, 0]),
+    ([[1, 0, 2], [0, 0, 3], [4, 5, 0]], [0, 3, 4, 1, 2])
+])
+def test_make_edge_pointers(a, expected):
+    a = csr_matrix(a, dtype=np.int32)
     rev_edge_ptr = _make_edge_pointers(a)
-    assert_array_equal(rev_edge_ptr, [0, 3, 4, 1, 2])
+    assert_array_equal(rev_edge_ptr, expected)
 
 
-def test_make_tails():
-    """Test that the computation of pointers from edges to tails
-    gives the right result for a structurally symmetric matrix.
-    """
-    a = csr_matrix([[1, 0, 2],
-                    [0, 0, 3],
-                    [4, 5, 0]], dtype=np.int32)
+@pytest.mark.parametrize("a,expected", [
+    ([[]], []),
+    ([[0]], []),
+    ([[1]], [0]),
+    ([[0, 1], [10, 0]], [0, 1]),
+    ([[1, 0, 2], [0, 0, 3], [4, 5, 0]], [0, 0, 1, 2, 2])
+])
+def test_make_tails(a, expected):
+    a = csr_matrix(a, dtype=np.int32)
     tails = _make_tails(a)
-    assert_array_equal(tails, [0, 0, 1, 2, 2])
+    assert_array_equal(tails, expected)
