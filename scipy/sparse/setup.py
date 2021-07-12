@@ -6,7 +6,7 @@ import subprocess
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.compiler_helper import set_cxx_flags_hook
-
+    from scipy._build_utils import numpy_nodepr_api
     config = Configuration('sparse',parent_package,top_path)
 
     config.add_data_dir('tests')
@@ -51,7 +51,8 @@ def configuration(parent_package='',top_path=None):
                                   os.path.join('sparsetools', 'csc.cxx'),
                                   os.path.join('sparsetools', 'bsr.cxx'),
                                   os.path.join('sparsetools', 'other.cxx'),
-                                  get_sparsetools_sources]
+                                  get_sparsetools_sources],
+                         **numpy_nodepr_api
                          )
     sparsetools._pre_build_hook = set_cxx_flags_hook
 
