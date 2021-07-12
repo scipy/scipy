@@ -92,7 +92,7 @@ def linprog_verbose_callback(res):
     np.set_printoptions(linewidth=500,
                         formatter={'float': lambda x: "{0: 12.4f}".format(x)})
     if status:
-        print('--------- Simplex Early Exit -------\n'.format(nit))
+        print('--------- Simplex Early Exit -------\n')
         print('The simplex method exited early with status {0:d}'.format(status))
         print(message)
     elif complete:
