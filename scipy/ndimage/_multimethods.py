@@ -4,7 +4,8 @@ from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.ndimage import _api
 
 
-mark_non_coercible = lambda x: Dispatchable(x, np.ndarray, coercible=False)
+mark_non_coercible = functools.partial(Dispatchable, dispatch_type=np.ndarray,
+                                       coercible=False)
 create_ndimage = functools.partial(create_multimethod,
                                    domain="numpy.scipy.ndimage")
 
@@ -19,7 +20,7 @@ def _get_docs(func):
 
 
 ############################################
-""" filters multimethods """
+# filters multimethods
 ############################################
 
 
@@ -53,7 +54,7 @@ def convolve1d(input, weights, axis=-1, output=None,
 
 def _gaussian_filter1d_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for gaussian_filter1d.
+    uarray argument replacer for ``gaussian_filter1d``.
     """
     def self_method(input, sigma, axis=-1, order=0,
                     output=None, *args, **kwargs):
@@ -73,7 +74,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 def _gaussian_filter_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for gaussian_filter.
+    uarray argument replacer for ``gaussian_filter``.
     """
     def self_method(input, sigma, order=0, output=None, *args, **kwargs):
         return (dispatchables[0], sigma,
@@ -115,18 +116,17 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     return input, mark_non_coercible(output)
 
 
-def _input_arg2_output_replacer(args, kwargs, dispatchables):
+def _generic_laplace_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for signatures involving required ``input``
-    array and a non-dispatchable second argument with an ``output`` kwarg.
+    uarray argument replacer for ``generic_laplace``.
     """
-    def self_method(input, arg2, output=None, *args, **kwargs):
-        return (dispatchables[0], arg2, dispatchables[1]) + args, kwargs
+    def self_method(input, derivative2, output=None, *args, **kwargs):
+        return (dispatchables[0], derivative2, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@create_ndimage(_input_arg2_output_replacer)
+@create_ndimage(_generic_laplace_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def generic_laplace(input, derivative2, output=None, mode="reflect",
@@ -152,7 +152,18 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_output_replacer)
+def _input_sigma_output_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for signatures involving required
+    ``input`` array and ``sigma`` with ``output`` kwarg.
+    """
+    def self_method(input, sigma, output=None, *args, **kwargs):
+        return (dispatchables[0], sigma, dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_input_sigma_output_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
@@ -160,7 +171,17 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_output_replacer)
+def _generic_gradient_magnitude_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``generic_gradient_magnitude``.
+    """
+    def self_method(input, derivative, output=None, *args, **kwargs):
+        return (dispatchables[0], derivative, dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_generic_gradient_magnitude_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def generic_gradient_magnitude(input, derivative, output=None,
@@ -169,7 +190,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_output_replacer)
+@create_ndimage(_input_sigma_output_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def gaussian_gradient_magnitude(input, sigma, output=None,
@@ -226,7 +247,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
 
 def _uniform_filter_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for uniform_filter.
+    uarray argument replacer for ``uniform_filter``.
     """
     def self_method(input, size=3, output=None, *args, **kwargs):
         return (dispatchables[0], size, dispatchables[1]) + args, kwargs
@@ -295,21 +316,19 @@ def median_filter(input, size=None, footprint=None, output=None,
     return input, footprint, mark_non_coercible(output)
 
 
-def _input_arg2_size_footprint_output_replacer(args, kwargs, dispatchables):
+def _rank_filter_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for signatures involving required ``input``
-    and a non-dispatchable second argument with ``size``, ``footprint``
-    and ``output`` kwarg.
+    uarray argument replacer for ``rank_filter``.
     """
-    def self_method(input, arg2, size=None, footprint=None,
+    def self_method(input, rank, size=None, footprint=None,
                     output=None, *args, **kwargs):
-        return (dispatchables[0], arg2, size, dispatchables[1],
+        return (dispatchables[0], rank, size, dispatchables[1],
                 dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@create_ndimage(_input_arg2_size_footprint_output_replacer)
+@create_ndimage(_rank_filter_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def rank_filter(input, rank, size=None, footprint=None, output=None,
@@ -317,7 +336,19 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     return input, footprint, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_size_footprint_output_replacer)
+def _percentile_filter_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``percentile_filter``.
+    """
+    def self_method(input, percentile, size=None, footprint=None,
+                    output=None, *args, **kwargs):
+        return (dispatchables[0], percentile, size, dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_percentile_filter_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def percentile_filter(input, percentile, size=None, footprint=None,
@@ -327,11 +358,11 @@ def percentile_filter(input, percentile, size=None, footprint=None,
 
 def _generic_filter1d_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for generic_filter1d
+    uarray argument replacer for ``generic_filter1d``.
     """
     def self_method(input, function, filter_size, axis=-1,
                     output=None, *args, **kwargs):
-        return (dispatchables[0], arg2, arg3,
+        return (dispatchables[0], function, filter_size,
                 axis, dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
@@ -346,7 +377,19 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_size_footprint_output_replacer)
+def _generic_filter_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``generic_filter``.
+    """
+    def self_method(input, function, size=None, footprint=None,
+                    output=None, *args, **kwargs):
+        return (dispatchables[0], function, size, dispatchables[1],
+                dispatchables[2]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_generic_filter_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def generic_filter(input, function, size=None, footprint=None,
@@ -356,42 +399,66 @@ def generic_filter(input, function, size=None, footprint=None,
 
 
 ############################################
-""" fourier multimethods """
+# fourier multimethods
 ############################################
 
-def _fourier_multimethods_arg_replacer(args, kwargs, dispatchables):
+
+def _fourier_gaussian_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for fourier multimethods.
+    uarray argument replacer for ``fourier_gaussian``.
     """
-    def self_method(input, arg2, n=-1, axis=-1, output=None, *args, **kwargs):
-        return (dispatchables[0], arg2, n, axis,
+    def self_method(input, sigma, n=-1, axis=-1, output=None, *args, **kwargs):
+        return (dispatchables[0], sigma, n, axis,
                 dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@create_ndimage(_fourier_multimethods_arg_replacer)
+@create_ndimage(_fourier_gaussian_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_fourier_multimethods_arg_replacer)
+def _input_size_n_axis_output_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for signatures involving required ``input``
+    with ``size``, ``n``, ``axis`` and ``output`` kwargs.
+    """
+    def self_method(input, size, n=-1, axis=-1, output=None, *args, **kwargs):
+        return (dispatchables[0], size, n, axis,
+                dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_input_size_n_axis_output_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_fourier_multimethods_arg_replacer)
+@create_ndimage(_input_size_n_axis_output_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_fourier_multimethods_arg_replacer)
+def _fourier_shift_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``fourier_shift``.
+    """
+    def self_method(input, shift, n=-1, axis=-1, output=None, *args, **kwargs):
+        return (dispatchables[0], shift, n, axis,
+                dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_fourier_shift_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def fourier_shift(input, shift, n=-1, axis=-1, output=None):
@@ -399,13 +466,13 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
 
 
 ############################################
-""" interpolation multimethods """
+# interpolation multimethods
 ############################################
 
 
 def _spline_filter1d_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for spline_filter1d.
+    uarray argument replacer for ``spline_filter1d``.
     """
     def self_method(input, order=3, axis=-1, output=np.float64,
                     *args, **kwargs):
@@ -443,7 +510,7 @@ def spline_filter(input, order=3, output=np.float64, mode='mirror'):
 
 def _geometric_transform_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for geometric_transform.
+    uarray argument replacer for ``geometric_transform``.
     """
     def self_method(input, mapping, output_shape=None,
                     output=None, *args, **kwargs):
@@ -465,7 +532,7 @@ def geometric_transform(input, mapping, output_shape=None,
 
 def _map_coordinates_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for map_coordinates.
+    uarray argument replacer for ``map_coordinates``.
     """
     def self_method(input, coordinates, output=None, *args, **kwargs):
         return (dispatchables[0], coordinates, dispatchables[1]) + args, kwargs
@@ -483,7 +550,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
 
 def _affine_transform_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for affine_transform.
+    uarray argument replacer for ``affine_transform``.
     """
     def self_method(input, matrix, offset=0.0, output_shape=None,
                     output=None, *args, **kwargs):
@@ -502,7 +569,17 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     return (input, matrix, mark_non_coercible(output))
 
 
-@create_ndimage(_input_arg2_output_replacer)
+def _shift_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``shift``.
+    """
+    def self_method(input, shift, output=None, *args, **kwargs):
+        return (dispatchables[0], shift, dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_shift_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
@@ -510,7 +587,17 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     return input, mark_non_coercible(output)
 
 
-@create_ndimage(_input_arg2_output_replacer)
+def _zoom_arg_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``zoom``.
+    """
+    def self_method(input, zoom, output=None, *args, **kwargs):
+        return (dispatchables[0], zoom, dispatchables[1]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@create_ndimage(_zoom_arg_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
@@ -520,7 +607,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
 def _rotate_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for rotate.
+    uarray argument replacer for ``rotate``.
     """
     def self_method(input, angle, axes=(1,0), reshape=True,
                     output=None, *args, **kwargs):
@@ -539,7 +626,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
 
 
 ############################################
-""" measurement multimethods """
+# measurement multimethods
 ############################################
 
 
@@ -685,7 +772,7 @@ def center_of_mass(input, labels=None, index=None):
 
 def _histogram_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for histogram.
+    uarray argument replacer for ``histogram``.
     """
     def self_method(input, min, max, bins, labels=None, index=None,
                     *args, **kwargs):
@@ -704,7 +791,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 def _watershed_ift_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for watershed_ift.
+    uarray argument replacer for ``watershed_ift``.
     """
     def self_method(input, markers, structure=None, output=None,
                     *args, **kwargs):
@@ -722,7 +809,7 @@ def watershed_ift(input, markers, structure=None, output=None):
 
 
 ############################################
-""" morphology multimethods """
+# morphology multimethods
 ############################################
 
 
@@ -747,7 +834,7 @@ def generate_binary_structure(rank, connectivity):
 
 def _binary_erosion_dilation_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for binary_erosion and binary_dilation.
+    uarray argument replacer for ``binary_erosion`` and ``binary_dilation``.
     """
     def self_method(input, structure=None, iterations=1, mask=None,
                     output=None, *args, **kwargs):
@@ -777,7 +864,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
 
 def _binary_opening_closing_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for binary_opening and binary_closing.
+    uarray argument replacer for ``binary_opening`` and ``binary_closing``.
     """
     def self_method(input, structure=None, iterations=1,
                     output=None, *args, **kwargs):
@@ -805,7 +892,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
 
 def _binary_hit_or_miss_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for binary_hit_or_miss.
+    uarray argument replacer for ``binary_hit_or_miss``.
     """
     def self_method(input, structure1=None, structure2=None,
                     output=None, *args, **kwargs):
@@ -825,7 +912,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 
 def _binary_propagation_arg_replacer(args, kwargs, dispatchables):
     """
-    uarray argument replacer for binary_propagation.
+    uarray argument replacer for ``binary_propagation``.
     """
     def self_method(input, structure=None, mask=None,
                     output=None, *args, **kwargs):
