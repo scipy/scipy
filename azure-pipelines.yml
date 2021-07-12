@@ -194,7 +194,7 @@ stages:
       displayName: 'Fetch submodules'
     - script: |
             docker pull i386/ubuntu:bionic
-            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
+            docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
             apt-get -y install curl python3.7-dev python3.7 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \

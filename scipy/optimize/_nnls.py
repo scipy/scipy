@@ -61,7 +61,7 @@ def nnls(A, b, maxiter=None):
         raise ValueError("Expected a two-dimensional array (matrix)" +
                          ", but the shape of A is %s" % (A.shape, ))
     if len(b.shape) != 1:
-        raise ValueError("Expected a one-dimensional array (vector" +
+        raise ValueError("Expected a one-dimensional array (vector)" +
                          ", but the shape of b is %s" % (b.shape, ))
 
     m, n = A.shape
