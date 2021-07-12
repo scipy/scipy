@@ -89,10 +89,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm [4]_. 
     The implementation of former strives to exploit sparsity. Its time complexity
-    is :math:`O(VE^2)` and its space complexity is :math:`O(E)`. The latter 
+    is :math:`O(|V|\,|E|^2)` and its space complexity is :math:`O(|E|)`. The latter 
     achieves its performance by building level graphs and finding blocking flows
-    in them.  Its time complexity is :math:`O(V^2E)` and its space complexity is 
-    :math:`O(E)`.
+    in them.  Its time complexity is :math:`O(|V|^2\,|E|)` and its space complexity is 
+    :math:`O(|E|)`.
 
     The maximum flow problem is usually defined with real valued capacities,
     but we require that all capacities are integral to ensure convergence. When
@@ -130,7 +130,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     >>> graph = csr_matrix([[0, 5], [0, 0]])
     >>> maximum_flow(graph, 0, 1).flow_value
     5
-    >>> maximum_flow(graph, 0, 1, method='dinic').flow_value
+    >>> maximum_flow(graph, 0, 1, method='edmonds_karp').flow_value
     5
 
     If, on the other hand, there is a bottleneck between source and sink, that
@@ -439,7 +439,8 @@ cdef bint _build_level_graph(
         const ITYPE_t[:] capacities, # IN
         const ITYPE_t[:] heads, # IN
         ITYPE_t[:] levels, # IN/OUT
-        ITYPE_t[:] q) nogil:
+        ITYPE_t[:] q, # IN/OUT
+    ) nogil:
     """Builds layered graph from input graph using breadth first search.
 
     Parameters
@@ -465,7 +466,7 @@ cdef bint _build_level_graph(
     Returns
     -------
     bool:
-        ``True`` if the layered graph creation was successfull,
+        ``True`` if the layered graph creation was successful,
         otherwise ``False``.
 
     """
