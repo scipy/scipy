@@ -87,7 +87,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
         Valid entries are explained above.
-    transposed: bool, optional
+    transposed : bool, optional
         If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
         for complex matrices (only for True).
 
