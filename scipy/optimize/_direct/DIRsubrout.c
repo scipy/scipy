@@ -1157,7 +1157,7 @@ L50:
     doublereal *thirds, doublereal *levels, integer *maxfunc, const integer *
     maxdeep, integer *n, integer *maxor, doublereal *fmax, integer *
     ifeasiblef, integer *iinfeasible, integer *ierror, void *fcndata,
-    integer jones, double starttime, double maxtime, int *force_stop)
+    integer jones, int *force_stop)
 {
     /* System generated locals */
     integer c_dim1, c_offset, length_dim1, length_offset, list2_dim1,

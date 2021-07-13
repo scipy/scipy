@@ -44,7 +44,7 @@
 /* |   Lipschitz continues. However, DIRECT has proven to be effective on  | */
 /* |   more complex problems than these.                                   | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_direct_(fp fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, double starttime, double maxtime, int *force_stop, doublereal *minf, doublereal *l, 
+/* Subroutine */ void direct_direct_(fp fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
     doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
     doublereal *fglobal, doublereal *fglper, doublereal *volper, 
     doublereal *sigmaper, void *fcn_data)
@@ -404,7 +404,7 @@
         logfile, arrayi, &maxi, list2, w, &x[1], &l[1], &u[1], 
         minf, &minpos, thirds, levels, &MAXFUNC, &MAXDEEP, n, n, &
         fmax, &ifeasiblef, &iinfesiblef, ierror, fcn_data, jones,
-            starttime, maxtime, force_stop);
+            force_stop);
 /* +-----------------------------------------------------------------------+ */
 /* | Added error checking.                                                 | */
 /* +-----------------------------------------------------------------------+ */
