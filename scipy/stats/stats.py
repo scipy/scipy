@@ -6158,7 +6158,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             raise ValueError("Permutations are currently not supported "
                              "with trimming.")
         if permutations < 0 or (np.isfinite(permutations) and
-                                int(permutations) != permutations) :
+                                int(permutations) != permutations):
             raise ValueError("Permutations must be a non-negative integer.")
 
         res = _permutation_ttest(a, b, permutations=permutations,

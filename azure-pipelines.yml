@@ -142,7 +142,7 @@ stages:
       CXX: g++-4.8
     steps:
     - script: |
-        set -e
+        set -euo pipefail
         sudo apt update -y
         sudo apt install -y g++-4.8 gcc-4.8
       displayName: 'Install GCC 4.8'
@@ -169,11 +169,14 @@ stages:
     - script: >-
         python -m pip install
         pycodestyle==2.5.0
-        pyflakes==2.1.1
+        pyflakes==2.3.1
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
-        PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
+        set -euo pipefail
+        PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out || true
+        cat test.out
+        test \! -s test.out
         pycodestyle scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
@@ -193,6 +196,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
+            set -euo pipefail
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
