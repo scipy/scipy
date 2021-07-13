@@ -244,8 +244,8 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
         residual = _edmonds_karp(m.indptr, tails, m.indices,
                                  m.data, rev_edge_ptr, source, sink)
     elif method == 'dinic':
-        residual = _dinic(m.indptr, tails, m.indices,
-                          m.data, rev_edge_ptr, source, sink)
+        residual = _dinic(m.indptr, m.indices, m.data, rev_edge_ptr,
+                          source, sink)
     else:
         raise ValueError('{} method is not supported yet.'.format(method))
     residual_array = np.asarray(residual)
@@ -482,8 +482,6 @@ cdef bint _build_level_graph(
     while start != end:
         cur = q[start]
         start += 1
-        if start == n_verts:
-            start = 0
         if cur == sink:
             return 1
         for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
@@ -492,8 +490,6 @@ cdef bint _build_level_graph(
                 levels[dst_vertex] = levels[cur] + 1
                 q[end] = dst_vertex
                 end += 1
-                if end == n_verts:
-                    end = 0
     return 0
 
 cdef ITYPE_t _augment_paths(
@@ -570,7 +566,6 @@ cdef ITYPE_t _augment_paths(
 
 cdef ITYPE_t[:] _dinic(
         ITYPE_t[:] edge_ptr,
-        ITYPE_t[:] tails,
         ITYPE_t[:] heads,
         ITYPE_t[:] capacities,
         ITYPE_t[:] rev_edge_ptr,
@@ -586,8 +581,6 @@ cdef ITYPE_t[:] _dinic(
     edge_ptr : memoryview of length :math:`|V| + 1`
         For a given vertex ``v``, the edges whose tail is ``v`` are those between
         ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
-    tails : memoryview of length :math:`|E|`
-        For a given edge ``e``, ``tails[e]`` is the tail vertex of ``e``.
     heads : memoryview of length :math:`|E|`
         For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
     capacities : memoryview of length :math:`|E|`
