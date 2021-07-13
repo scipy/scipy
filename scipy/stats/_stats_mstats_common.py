@@ -198,7 +198,7 @@ def linregress(x, y=None, alternative='two-sided'):
                             intercept_stderr=intercept_stderr)
 
 
-def theilslopes(y, x=None, alpha=0.95):
+def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -215,6 +215,16 @@ def theilslopes(y, x=None, alpha=0.95):
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+            * 'joint': Uses np.median(y - medslope * x) as intercept.
+            * 'separate': Uses np.median(y) - medslope * np.median(x) as intercept.
+        
+        By default, 'separate'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -264,7 +274,7 @@ def theilslopes(y, x=None, alpha=0.95):
     Compute the slope, intercept and 90% confidence interval.  For comparison,
     also compute the least-squares fit with `linregress`:
 
-    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> res = stats.theilslopes(y, x, 0.90, method='separate')
     >>> lsq_res = stats.linregress(x, y)
 
     Plot the results. The Theil-Sen regression line is shown in red, with the
@@ -299,7 +309,10 @@ def theilslopes(y, x=None, alpha=0.95):
     slopes = deltay[deltax > 0] / deltax[deltax > 0]
     slopes.sort()
     medslope = np.median(slopes)
-    medinter = np.median(y - medslope * x)
+    if method == 'joint':
+        medinter = np.median(y - medslope * x)
+    else:
+        medinter = np.median(y) - medslope * np.median(x)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
