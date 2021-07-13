@@ -1,3 +1,5 @@
+# cython: wraparound=False, boundscheck=False
+
 import numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
@@ -239,8 +241,6 @@ def maximum_flow(csgraph, source, sink):
     return MaximumFlowResult(source_flow.sum(), residual_matrix)
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _add_reverse_edges(a):
     """Add reversed edges to all edges in a graph.
 
@@ -321,8 +321,6 @@ def _add_reverse_edges(a):
     return csr_matrix((res_data, res_indices, res_indptr), shape=(n, n))
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _make_edge_pointers(a):
     """Create for each edge pointers to its reverse."""
     cdef int n = a.shape[0]
@@ -333,8 +331,6 @@ def _make_edge_pointers(a):
     return b.data
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _make_tails(a):
     """Create for each edge pointers to its tail."""
     cdef int n = a.shape[0]
@@ -347,8 +343,6 @@ def _make_tails(a):
     return tails
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] edge_ptr,
         ITYPE_t[:] tails,
