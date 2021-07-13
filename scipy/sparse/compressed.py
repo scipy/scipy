@@ -803,15 +803,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self.__class__((data, indices, indptr), shape=shape,
                               dtype=self.dtype, copy=False)
 
-    def _set_intXint(self, row, col, x):
+    def _set_intXint(self, row, col, x, insert_zeros):
         i, j = self._swap((row, col))
         self._set_many(i, j, x)
 
-    def _set_arrayXarray(self, row, col, x):
+    def _set_arrayXarray(self, row, col, x, insert_zeros):
         i, j = self._swap((row, col))
-        self._set_many(i, j, x)
+        self._set_many(i, j, x, insert_zeros)
 
-    def _set_arrayXarray_sparse(self, row, col, x):
+    def _set_arrayXarray_sparse(self, row, col, x, insert_zeros):
         # clear entries that will be overwritten
         self._zero_many(*self._swap((row, col)))
 
@@ -834,9 +834,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             x = np.repeat(x, N)
         # only assign entries in the new sparsity structure
         i, j = self._swap((row[r, c], col[r, c]))
-        self._set_many(i, j, x)
+        self._set_many(i, j, x, insert_zeros)
 
-    def _setdiag(self, values, k):
+    def _setdiag(self, values, k, insert_zeros):
         if 0 in self.shape:
             return
 
@@ -864,7 +864,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if not broadcast:
             values = values[:len(i)]
 
-        self[i, j] = values
+        self._setitem((i, j), values, insert_zeros)
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
@@ -885,7 +885,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         check_bounds(j, N)
         return i, j, M, N
 
-    def _set_many(self, i, j, x):
+    def _set_many(self, i, j, x, insert_zeros):
         """Sets value at each (i, j) to x
 
         Here (i,j) index major and minor respectively, and must not contain
@@ -910,19 +910,26 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a {}_matrix is expensive."
-                 " lil_matrix is more efficient.".format(self.format),
-                 SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1
             self.data[offsets[mask]] = x[mask]
-            # only insertions remain
+
             mask = ~mask
+            x = x[mask]
+            if not insert_zeros and np.count_nonzero(x) == 0:
+                # all remaining elements are zero, so no more work is needed
+                return
+
+            # only insertions remain
+            warn("Changing the sparsity structure of a {}_matrix is expensive."
+                 " lil_matrix is more efficient.".format(self.format),
+                 SparseEfficiencyWarning, stacklevel=3)
+
             i = i[mask]
             i[i < 0] += M
             j = j[mask]
             j[j < 0] += N
-            self._insert_many(i, j, x[mask])
+            self._insert_many(i, j, x)
 
     def _zero_many(self, i, j):
         """Sets value at each (i, j) to zero, preserving sparsity structure.
