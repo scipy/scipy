@@ -41,8 +41,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
           transposed=False):
     """
-    Solves the linear equation set ``a * x = b`` for the unknown ``x``
-    for square ``a`` matrix.
+    Solves the linear equation set ``ax = b`` for the unknown ``x`` for
+    square ``a`` matrix.
 
     If the data matrix is known to be a particular type then supplying the
     corresponding string to ``assume_a`` key chooses the dedicated solver.
@@ -70,11 +70,14 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Input data for the right hand side.
     sym_pos : bool, optional
         Assume `a` is symmetric and positive definite. This key is deprecated
-        and assume_a = 'pos' keyword is recommended instead. The functionality
-        is the same. It will be removed in the future.
+        and ``assume_a='pos'`` is recommended instead. The functionality is
+        the same. It will be removed in the future.
+        Default is False.
     lower : bool, optional
-        If True, only the data contained in the lower triangle of `a`. Default
-        is to use upper triangle. (ignored for ``'gen'``)
+        If True, the calulation is based only on the data in the lower triangle of
+        matrix `a` instead of data in the upper triangle.
+        Ignored if ``assume_a == 'gen'``.
+        Default is False.
     overwrite_a : bool, optional
         Allow overwriting data in `a` (may enhance performance).
         Default is False.
@@ -85,11 +88,14 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
     assume_a : str, optional
         Valid entries are explained above.
+        Default is ``'gen'``.
     transposed : bool, optional
-        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
-        for complex matrices (only for True).
+        If True, calculate ``a^T x = b``.
+        Only implemented for real matrices `a`.
+        Default is False.
 
     Returns
     -------
