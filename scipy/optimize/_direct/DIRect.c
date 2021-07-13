@@ -44,10 +44,10 @@
 /* |   Lipschitz continues. However, DIRECT has proven to be effective on  | */
 /* |   more complex problems than these.                                   | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_direct_(fp fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
+/* Subroutine */ void direct_direct_(PyObject* fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
     doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
     doublereal *fglobal, doublereal *fglper, doublereal *volper, 
-    doublereal *sigmaper, void *fcn_data)
+    doublereal *sigmaper, PyObject* args)
 {
     /* System generated locals */
     integer i__1, i__2;
@@ -403,8 +403,8 @@
     direct_dirinit_(f, fcn, c__, length, &actdeep, point, anchor, &ifree,
         logfile, arrayi, &maxi, list2, w, &x[1], &l[1], &u[1], 
         minf, &minpos, thirds, levels, &MAXFUNC, &MAXDEEP, n, n, &
-        fmax, &ifeasiblef, &iinfesiblef, ierror, fcn_data, jones,
-            force_stop);
+        fmax, &ifeasiblef, &iinfesiblef, ierror, args, jones,
+        force_stop);
 /* +-----------------------------------------------------------------------+ */
 /* | Added error checking.                                                 | */
 /* +-----------------------------------------------------------------------+ */
@@ -542,10 +542,10 @@
 /* | JG 01/22/01 Added variable to keep track of the maximum value found.  | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirsamplef_(c__, arrayi, &delta, &help, &start, length,
-                logfile, f, &ifree, &maxi, point, fcn, &x[
+            logfile, f, &ifree, &maxi, point, fcn, &x[
             1], &l[1], minf, &minpos, &u[1], n, &MAXFUNC, &
             MAXDEEP, &oops, &fmax, &ifeasiblef, &iinfesiblef, 
-                   fcn_data, force_stop);
+            args, force_stop);
         if (force_stop && *force_stop) {
              *ierror = -102;
              goto L100;

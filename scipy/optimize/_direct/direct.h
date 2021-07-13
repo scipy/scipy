@@ -1,6 +1,7 @@
 #ifndef DIRECT_H
 #define DIRECT_H
 
+#include <Python.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -8,10 +9,6 @@
 extern "C"
 {
 #endif /* __cplusplus */
-
-typedef double (*direct_objective_func)(int n, const double *x,
-                    int *undefined_flag, 
-                    void *data);
 
 typedef enum {
      DIRECT_ORIGINAL, DIRECT_GABLONSKY
@@ -39,22 +36,18 @@ typedef enum {
 #define DIRECT_UNKNOWN_FGLOBAL_RELTOL (0.0)
 
 extern direct_return_code direct_optimize(
-     direct_objective_func f, void *f_data,
-     int dimension,
-     const double *lower_bounds, const double *upper_bounds,
-
-     double *x, double *minf, 
-
-     int max_feval, int max_iter, 
-     double magic_eps, double magic_eps_abs,
-     double volume_reltol, double sigma_reltol,
-     int *force_stop,
-
-     double fglobal,
-     double fglobal_reltol,
-
-     FILE *logfile,
-     direct_algorithm algorithm);
+    PyObject* f, double *x, PyObject *args,
+    int dimension,
+    const double *lower_bounds, const double *upper_bounds,
+    double *minf, 
+    int max_feval, int max_iter, 
+    double magic_eps, double magic_eps_abs,
+    double volume_reltol, double sigma_reltol,
+    int *force_stop,
+    double fglobal,
+    double fglobal_reltol,
+    FILE *logfile,
+    direct_algorithm algorithm);
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -41,22 +41,18 @@
               or Gablonsky's "improved" version (DIRECT_GABLONSKY)
 */
 direct_return_code direct_optimize(
-     direct_objective_func f, void *f_data,
-     int dimension,
-     const double *lower_bounds, const double *upper_bounds,
-
-     double *x, double *minf, 
-
-     int max_feval, int max_iter,
-     double magic_eps, double magic_eps_abs,
-     double volume_reltol, double sigma_reltol,
-     int *force_stop,
-
-     double fglobal,
-     double fglobal_reltol,
-
-     FILE *logfile,
-     direct_algorithm algorithm)
+    PyObject* f, double *x, PyObject* args,
+    int dimension,
+    const double *lower_bounds, const double *upper_bounds,
+    double *minf, 
+    int max_feval, int max_iter,
+    double magic_eps, double magic_eps_abs,
+    double volume_reltol, double sigma_reltol,
+    int *force_stop,
+    double fglobal,
+    double fglobal_reltol,
+    FILE *logfile,
+    direct_algorithm algorithm)
 {
      integer algmethod = algorithm == DIRECT_GABLONSKY;
      integer ierror;
@@ -95,7 +91,7 @@ direct_return_code direct_optimize(
             logfile,
             &fglobal, &fglobal_reltol,
             &volume_reltol, &sigma_reltol,
-            f_data);
+            args);
 
      free(l);
 

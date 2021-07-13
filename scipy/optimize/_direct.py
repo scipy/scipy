@@ -54,7 +54,7 @@ SUCCESS_MESSAGES = (
      "is smaller then volper={}"),
 )
 
-def _minimize_direct(func, bounds=None, nvar=None, *args, disp=False,
+def _minimize_direct(func, bounds, *args, disp=False,
                      eps=1e-4, maxfun=20000, maxiter=6000, 
                      locally_biased=False, fglobal=-1e100, fglper=0.01, 
                      volper=-1.0, sigmaper=-1.0):

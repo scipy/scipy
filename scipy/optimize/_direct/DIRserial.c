@@ -17,10 +17,10 @@
 /* Subroutine */ void direct_dirsamplef_(doublereal *c__, integer *arrayi, doublereal
     *delta, integer *sample, integer *new__, integer *length,
     FILE *logfile, doublereal *f, integer *free, integer *maxi,
-    integer *point, fp fcn, doublereal *x, doublereal *l, doublereal *
+    integer *point, PyObject* fcn, doublereal *x, doublereal *l, doublereal *
     minf, integer *minpos, doublereal *u, integer *n, integer *maxfunc,
     const integer *maxdeep, integer *oops, doublereal *fmax, integer *
-    ifeasiblef, integer *iinfesiblef, void *fcn_data, int *force_stop)
+    ifeasiblef, integer *iinfesiblef, PyObject* fcn_data, int *force_stop)
 {
     /* System generated locals */
     integer length_dim1, length_offset, c_dim1, c_offset, i__1, i__2;
@@ -87,7 +87,7 @@
          f[(pos << 1) + 1] = *fmax;
     else
          direct_dirinfcn_(fcn, &x[1], &l[1], &u[1], n, &f[(pos << 1) + 1],
-                  &kret, fcn_data);
+                  &kret, args);
     if (force_stop && *force_stop)
          kret = -1; /* mark as invalid point */
 /* +-----------------------------------------------------------------------+ */

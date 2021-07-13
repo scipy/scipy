@@ -1045,9 +1045,9 @@ L50:
 /* | The subroutine whose name is passed through the argument fcn.         | */
 /* |                                                                       | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_dirinfcn_(fp fcn, doublereal *x, doublereal *c1,
+/* Subroutine */ void direct_dirinfcn_(PyObject* fcn, doublereal *x, doublereal *c1,
     doublereal *c2, integer *n, doublereal *f, integer *flag__,
-                       void *fcn_data)
+    PyObject* args)
 {
     /* System generated locals */
     integer i__1;
@@ -1149,14 +1149,14 @@ L50:
 /* |    Changed 01/23/01                                                   | */
 /* |       Added variable Ierror to keep track of errors.                  | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_dirinit_(doublereal *f, fp fcn, doublereal *c__,
+/* Subroutine */ void direct_dirinit_(doublereal *f, PyObject* fcn, doublereal *c__,
     integer *length, integer *actdeep, integer *point, integer *anchor,
     integer *free, FILE *logfile, integer *arrayi,
     integer *maxi, integer *list2, doublereal *w, doublereal *x,
     doublereal *l, doublereal *u, doublereal *minf, integer *minpos,
     doublereal *thirds, doublereal *levels, integer *maxfunc, const integer *
     maxdeep, integer *n, integer *maxor, doublereal *fmax, integer *
-    ifeasiblef, integer *iinfeasible, integer *ierror, void *fcndata,
+    ifeasiblef, integer *iinfeasible, integer *ierror, PyObject* args,
     integer jones, int *force_stop)
 {
     /* System generated locals */
@@ -1248,7 +1248,7 @@ L50:
     length[i__ + length_dim1] = 0;
 /* L20: */
     }
-    direct_dirinfcn_(fcn, &x[1], &l[1], &u[1], n, &f[3], &help, fcndata);
+    direct_dirinfcn_(fcn, &x[1], &l[1], &u[1], n, &f[3], &help, args);
     if (force_stop && *force_stop) {
      *ierror = -102;
      return;
@@ -1292,7 +1292,7 @@ L50:
     direct_dirsamplef_(&c__[c_offset], &arrayi[1], &delta, &c__1, &new__, &length[
         length_offset], logfile, &f[3], free, maxi, &point[
         1], fcn, &x[1], &l[1], minf, minpos, &u[1], n, maxfunc,
-        maxdeep, &oops, fmax, ifeasiblef, iinfeasible, fcndata,
+        maxdeep, &oops, fmax, ifeasiblef, iinfeasible, args,
         force_stop);
     if (force_stop && *force_stop) {
      *ierror = -102;
