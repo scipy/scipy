@@ -868,7 +868,7 @@ class LowRankMatrix:
         D, R = qr(D, mode='economic')
         C = dot(C, R.T.conj())
 
-        U, S, WH = svd(C, full_matrices=False, compute_uv=True)
+        U, S, WH = svd(C, full_matrices=False)
 
         C = dot(C, inv(WH))
         D = dot(D, WH.T.conj())
