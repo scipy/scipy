@@ -194,7 +194,7 @@ Low-level routines
 
 from .misc import *
 from .basic import *
-from .decomp import *
+from .decomp import hessenberg, cdf2rdf
 from .decomp_lu import *
 from ._decomp_ldl import *
 from .decomp_cholesky import *
@@ -212,6 +212,9 @@ from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
 from ._decomp_cossin import *
+
+from ._multimethods import *
+from ._backend import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
