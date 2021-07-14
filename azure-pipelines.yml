@@ -317,7 +317,6 @@ stages:
         numpy==1.19.5
         Pillow
         pybind11
-        pythran
         pytest==5.4.3
         pytest-cov
         pytest-env
@@ -332,6 +331,9 @@ stages:
     # on PyPI, so we now regularly test that the version of
     # _distributor_init.py in our wheels repo is capable of
     # loading the DLLs from a master branch wheel build
+     - script: >-
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@feature/0.9.12.post1
+      displayName: 'Install Pythran (testing 0.9.12.post1)'
     - powershell: |
         git clone -n --depth 1 https://github.com/MacPython/scipy-wheels.git
         cd scipy-wheels
