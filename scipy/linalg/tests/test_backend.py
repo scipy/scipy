@@ -15,6 +15,7 @@ fnames = ('eig', 'eigvals', 'eigh', 'eigvalsh',
 funcs = [getattr(scipy.linalg, fname) for fname in fnames]
 mocks = [getattr(mock_backend, fname) for fname in fnames]
 
+
 @pytest.mark.parametrize("func, mock", zip(funcs, mocks))
 def test_backend_call(func, mock):
     """

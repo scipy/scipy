@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class _MockFunction:
     def __init__(self, return_value=None):
         self.number_calls = 0
@@ -10,6 +11,7 @@ class _MockFunction:
         self.number_calls += 1
         self.last_args = (args, kwargs)
         return self.return_value
+
 
 method_names = ['eig', 'eigvals', 'eigh', 'eigvalsh',
                 'eig_banded', 'eigvals_banded',
