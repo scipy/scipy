@@ -26,7 +26,7 @@ class MaximumFlowResult:
         self.residual = residual
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value 
+        return 'MaximumFlowResult with value of %d' % self.flow_value
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -87,11 +87,12 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     By the max-flow min-cut theorem, the maximal value of the flow is also the
     total weight of the edges in a minimum cut.
 
-    To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm [4]_. 
-    The implementation of former strives to exploit sparsity. Its time complexity
-    is :math:`O(|V|\,|E|^2)` and its space complexity is :math:`O(|E|)`. The latter 
-    achieves its performance by building level graphs and finding blocking flows
-    in them.  Its time complexity is :math:`O(|V|^2\,|E|)` and its space complexity is 
+    To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm
+    [4]_. The implementation of both algorithms strive to exploit sparsity.
+    The time complexity of the former :math:`O(|V|\,|E|^2)` and its space
+    complexity is :math:`O(|E|)`. The latter achieves its performance by
+    building level graphs and finding blocking flows in them. Its time
+    complexity is :math:`O(|V|^2\,|E|)` and its space complexity is
     :math:`O(|E|)`.
 
     The maximum flow problem is usually defined with real valued capacities,
@@ -112,9 +113,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
     .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
-    .. [4] Dinic, Efim A. 
+    .. [4] Dinic, Efim A.
            Algorithm for solution of a problem of maximum flow in networks with
-           power estimation. In Soviet Math. Doklady, vol. 11, pp. 1277-1280. 1970.
+           power estimation. In Soviet Math. Doklady, vol. 11, pp. 1277-1280.
+           1970.
 
     Examples
     --------
@@ -433,21 +435,21 @@ cdef ITYPE_t[:] _edmonds_karp(
     return flow
 
 cdef bint _build_level_graph(
-        const ITYPE_t[:] edge_ptr, # IN
-        const ITYPE_t source, # IN
-        const ITYPE_t sink, # IN
-        const ITYPE_t[:] capacities, # IN
-        const ITYPE_t[:] heads, # IN
-        ITYPE_t[:] levels, # IN/OUT
-        ITYPE_t[:] q, # IN/OUT
-    ) nogil:
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t source,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] capacities,  # IN
+        const ITYPE_t[:] heads,  # IN
+        ITYPE_t[:] levels,  # IN/OUT
+        ITYPE_t[:] q,  # IN/OUT
+        ) nogil:
     """Builds layered graph from input graph using breadth first search.
 
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex ``v``, the edges whose tail is ``v`` are those between
-        ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     source : int
         The source vertex.
     sink : int
@@ -457,10 +459,10 @@ cdef bint _build_level_graph(
     heads : memoryview of length :math:`|E|`
         For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
     levels: memoryview of length :math:`|E|`
-        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in 
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
         the layered graph of input graph.
     q : memoryview of length :math:`|E|`
-        Queue to be used in breadth first search. Passed to avoid repeated 
+        Queue to be used in breadth first search. Passed to avoid repeated
         queue creation inside this function.
 
     Returns
@@ -493,30 +495,30 @@ cdef bint _build_level_graph(
     return 0
 
 cdef ITYPE_t _augment_paths(
-        const ITYPE_t[:] edge_ptr, # IN
-        const ITYPE_t current, # IN
-        const ITYPE_t sink, # IN
-        const ITYPE_t[:] levels, # IN
-        const ITYPE_t[:] heads, # IN
-        const ITYPE_t[:] rev_edge_ptr, # IN
-        ITYPE_t[:] capacities, # IN/OUT
-        ITYPE_t[:] progress, # IN
-        ITYPE_t[:] flows, # OUT
-        ITYPE_t flow # OUT
-    ) nogil:
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t current,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] levels,  # IN
+        const ITYPE_t[:] heads,  # IN
+        const ITYPE_t[:] rev_edge_ptr,  # IN
+        ITYPE_t[:] capacities,  # IN/OUT
+        ITYPE_t[:] progress,  # IN
+        ITYPE_t[:] flows,  # OUT
+        ITYPE_t flow  # OUT
+        ) nogil:
     """Computes blocking flow in layered graph using depth first search.
 
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex ``v``, the edges whose tail is ``v`` are those between
-        ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     current : int
         The current node in the path.
     sink : int
         The sink vertex.
     levels: memoryview of length :math:`|E|`
-        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in 
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
         the layered graph of input graph.
     heads : memoryview of length :math:`|E|`
         For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
@@ -536,21 +538,19 @@ cdef ITYPE_t _augment_paths(
     Returns
     -------
     result_flow : int
-        The blocking flow in the layered graph.
+        An arbitrary flow in the layered graph.
 
     """
     if current == sink:
         return flow
-    
+
     cdef ITYPE_t dst_vertex, result_flow, e
 
-    if progress[current] == -1:
-        progress[current] = edge_ptr[current]
     while progress[current] < edge_ptr[current + 1]:
         e = progress[current]
         dst_vertex = heads[e]
-        if (capacities[e] > 0 and 
-            levels[dst_vertex] == levels[current] + 1):
+        if (capacities[e] > 0 and
+                levels[dst_vertex] == levels[current] + 1):
             result_flow = _augment_paths(edge_ptr, dst_vertex, sink,
                                          levels, heads, rev_edge_ptr,
                                          capacities, progress, flows,
@@ -579,8 +579,8 @@ cdef ITYPE_t[:] _dinic(
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
-        For a given vertex ``v``, the edges whose tail is ``v`` are those between
-        ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
     heads : memoryview of length :math:`|E|`
         For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
     capacities : memoryview of length :math:`|E|`
@@ -603,28 +603,24 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
-    cdef ITYPE_t[:] levels = np.full(n_verts, -1, dtype=ITYPE)
-    cdef ITYPE_t[:] progress = np.full(n_verts, -1, dtype=ITYPE)
+    cdef ITYPE_t[:] levels = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] progress = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
 
-    cdef ITYPE_t max_flow = 0
     while True:
         for i in range(n_verts):
             levels[i] = -1
         if not _build_level_graph(edge_ptr, source, sink,
-                                 capacities, heads, levels, q):
+                                  capacities, heads, levels, q):
             break
         for i in range(n_verts):
-            progress[i] = -1
-        while True:
+            progress[i] = edge_ptr[i]
+        flow = 1
+        while flow:
             flow = _augment_paths(edge_ptr, source, sink,
-                                 levels, heads, rev_edge_ptr,
-                                 capacities, progress, flows,
-                                 ITYPE_MAX)
-            if flow:
-                max_flow += flow
-            else:
-                break
+                                  levels, heads, rev_edge_ptr,
+                                  capacities, progress, flows,
+                                  ITYPE_MAX)
     return flows
