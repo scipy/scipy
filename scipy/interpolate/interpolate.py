@@ -1,4 +1,4 @@
-__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
+<__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
 
 import itertools
@@ -64,8 +64,15 @@ def lagrange(x, w):
         \end{aligned}
 
     >>> from numpy.polynomial.polynomial import Polynomial
-    >>> Polynomial(poly).coef
-    array([ 3., -2.,  0.])
+    >>> Polynomial(poly.coef[::-1]).coef
+    array([ 0., -2.,  3.])
+    
+    >>> x_new = np.arange(0, 2.1, 0.1)
+    >>> plt.scatter(x, y, label='data')
+	>>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial')
+	>>> plt.plot(x_new, 3*x_new**2-2*x_new+0*x_new, label='Known polynomial', linestyle='-.')
+	>>> plt.legend()
+	>>> plt.show()
 
     """
 
