@@ -1,8 +1,10 @@
+import threading
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
 from scipy.stats import TransformedDensityRejection, DiscreteAliasUrn
+from scipy.stats import UNURANError
 from scipy import stats
 from scipy.stats import chisquare, cramervonmises
 from scipy.stats._distr_params import distdiscrete
@@ -38,18 +40,18 @@ all_methods = [
 
 bad_pdfs_common = [
     # Negative PDF
-    (lambda x: -x, RuntimeError, r"50 : PDF\(x\) < 0.!"),
+    (lambda x: -x, UNURANError, r"50 : PDF\(x\) < 0.!"),
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]
     # Infinite value returned => Overflow error.
-    (lambda x: np.inf, RuntimeError, r"50 : PDF\(x\) overflow"),
+    (lambda x: np.inf, UNURANError, r"50 : PDF\(x\) overflow"),
     # NaN value => internal error in UNU.RAN
     # Currently, UNU.RAN just returns a "cannot create bounded hat!"
     # error which is not very useful. So, instead of testing the error
     # message, we just ensure an error is raised.
-    (lambda x: np.nan, RuntimeError, r"..."),
+    (lambda x: np.nan, UNURANError, r"..."),
     # signature of PDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -57,12 +59,12 @@ bad_pdfs_common = [
 bad_dpdf_common = [
     # Infinite value returned. For dPDF, UNU.RAN complains that it cannot
     # create a bounded hat instead of an overflow error.
-    (lambda x: np.inf, RuntimeError, r"51 : cannot create bounded hat"),
+    (lambda x: np.inf, UNURANError, r"51 : cannot create bounded hat"),
     # NaN value => internal error in UNU.RAN
     # Currently, UNU.RAN just returns a "cannot create bounded hat!"
     # error which is not very useful. So, instead of testing the error
     # message, we just ensure an error is raised.
-    (lambda x: np.nan, RuntimeError, r"..."),
+    (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
@@ -77,15 +79,15 @@ bad_pmf_common = [
     # helpful thing to do here is to calculate the PV ourselves
     # and check for inf, nan, if the domain is known and distribution
     # doesn't have infinite tails.
-    (lambda x: np.inf, RuntimeError, r"240 : unknown error"),
-    (lambda x: np.nan, RuntimeError, r"240 : unknown error"),
-    (lambda x: 0.0, RuntimeError, r"240 : unknown error"),
+    (lambda x: np.inf, UNURANError, r"240 : unknown error"),
+    (lambda x: np.nan, UNURANError, r"240 : unknown error"),
+    (lambda x: 0.0, UNURANError, r"240 : unknown error"),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # probabilities < 0
-    (lambda x: -x, RuntimeError, r"50 : probability < 0"),
+    (lambda x: -x, UNURANError, r"50 : probability < 0"),
     # signature of PMF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -109,17 +111,17 @@ bad_sized_domains = [
 
 # domain values are incorrect
 bad_domains = [
-    ((2, 1), RuntimeError, r"left >= right"),
-    ((1, 1), RuntimeError, r"left >= right"),
+    ((2, 1), UNURANError, r"left >= right"),
+    ((1, 1), UNURANError, r"left >= right"),
 ]
 
 # infinite and nan values present in domain.
 inf_nan_domains = [
     # left >= right
-    ((10, 10), RuntimeError, r"left >= right"),
-    ((np.inf, np.inf), RuntimeError, r"left >= right"),
-    ((-np.inf, -np.inf), RuntimeError, r"left >= right"),
-    ((np.inf, -np.inf), RuntimeError, r"left >= right"),
+    ((10, 10), UNURANError, r"left >= right"),
+    ((np.inf, np.inf), UNURANError, r"left >= right"),
+    ((-np.inf, -np.inf), UNURANError, r"left >= right"),
+    ((np.inf, -np.inf), UNURANError, r"left >= right"),
     # Also include nans in some of the domains.
     ((-np.inf, np.nan), ValueError, r"only non-nan values"),
     ((np.nan, np.inf), ValueError, r"only non-nan values")
@@ -161,6 +163,11 @@ def test_seed(method, kwargs):
         rng1 = Method(**kwargs, seed=seed1)
         rng2 = Method(**kwargs, seed=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
+        rvs11 = rng1.rvs(550)
+        rvs12 = rng1.rvs(50)
+        rvs2 = rng2.rvs(600)
+        assert_equal(rvs11, rvs2[:550])
+        assert_equal(rvs12, rvs2[550:])
     else:  # Generator seed for new NumPy
         seed1 = np.random.default_rng(123)
         seed2 = np.random.PCG64(123)
@@ -181,6 +188,59 @@ def test_seed(method, kwargs):
     rng1 = Method(**kwargs, seed=seed)
     rng2 = Method(**kwargs, seed=seed)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
+
+
+def test_seed_setter():
+    rng1 = TransformedDensityRejection(common_cont_dist, seed=123)
+    rng2 = TransformedDensityRejection(common_cont_dist)
+    rng2.seed = 123
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
+    rng = TransformedDensityRejection(common_cont_dist, seed=123)
+    rvs1 = rng.rvs(100)
+    rng.seed = 123
+    rvs2 = rng.rvs(100)
+    assert_equal(rvs1, rvs2)
+
+
+def test_threading_behaviour():
+    errors = {"err1": None, "err2": None}
+    class Distribution:
+        def __init__(self, pdf_msg):
+            self.pdf_msg = pdf_msg
+        def pdf(self, x):
+            if 49.9 < x < 50.0:
+                raise ValueError(self.pdf_msg)
+            return x
+        def dpdf(self, x):
+            return 1
+
+    def func1():
+        dist = Distribution('foo')
+        rng = TransformedDensityRejection(dist, domain=(10, 100), seed=12)
+        try:
+            rng.rvs(100000)
+        except ValueError as e:
+            errors['err1'] = e.args[0]
+
+    def func2():
+        dist = Distribution('bar')
+        rng = TransformedDensityRejection(dist, domain=(10, 100), seed=2)
+        try:
+            rng.rvs(100000)
+        except ValueError as e:
+            errors['err2'] = e.args[0]
+
+    t1 = threading.Thread(target=func1)
+    t2 = threading.Thread(target=func2)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+    assert errors['err1'] == 'foo'
+    assert errors['err2'] == 'bar'
 
 
 @pytest.mark.parametrize("size", [None, 0, (0, ), 1, (10, 3), (2, 3, 4, 5),
@@ -251,7 +311,7 @@ class TestTransformedDensityRejection:
     def test_basic(self, dist, mv_ex):
         with suppress_warnings() as sup:
             # filter the warnings thrown by UNU.RAN
-            sup.filter(UserWarning)
+            sup.filter(RuntimeWarning)
             rng = TransformedDensityRejection(dist, seed=42)
         rvs = rng.rvs(100000)
         mv = rvs.mean(), rvs.var()
@@ -265,7 +325,7 @@ class TestTransformedDensityRejection:
         assert pval > 0.1
 
     # PDF 0 everywhere => bad construction points
-    bad_pdfs = [(lambda x: 0, RuntimeError, r"50 : bad construction points.")]
+    bad_pdfs = [(lambda x: 0, UNURANError, r"50 : bad construction points.")]
     bad_pdfs += bad_pdfs_common  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("pdf, err, msg", bad_pdfs)
@@ -300,8 +360,8 @@ class TestTransformedDensityRejection:
     #       validate this parameter ourself.
     @pytest.mark.parametrize("cpoints", [0, 0.1])
     def test_bad_cpoints_scalar(self, cpoints):
-        with pytest.raises(RuntimeError, match=r"50 : bad construction "
-                                               r"points."):
+        with pytest.raises(UNURANError, match=r"50 : bad construction "
+                                              r"points."):
             TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
     def test_bad_cpoints_array(self):
@@ -313,37 +373,37 @@ class TestTransformedDensityRejection:
 
         # cpoints not monotonically increasing
         cpoints = [1, 1, 1, 1, 1, 1]
-        with pytest.warns(UserWarning, match=r"33 : starting points not "
-                                             r"strictly monotonically "
-                                             r"increasing"):
+        with pytest.warns(RuntimeWarning, match=r"33 : starting points not "
+                                                r"strictly monotonically "
+                                                r"increasing"):
             TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
         # cpoints containing nans
         cpoints = [np.nan, np.nan, np.nan]
-        with pytest.raises(RuntimeError, match=r"50 : bad construction "
+        with pytest.raises(UNURANError, match=r"50 : bad construction "
                                                r"points."):
             TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
         # cpoints out of domain
         cpoints = [-10, 10]
-        with pytest.warns(UserWarning, match=r"50 : starting point out of "
-                                             r"domain"):
+        with pytest.warns(RuntimeWarning, match=r"50 : starting point out of "
+                                                r"domain"):
             TransformedDensityRejection(common_cont_dist, domain=(-3, 3),
                                         cpoints=cpoints)
 
     def test_bad_c(self):
         # c < -0.5 => Not Implemented Error
         msg = r"33 : c < -0.5 not implemented yet"
-        with pytest.raises(RuntimeError, match=msg):
+        with pytest.raises(UNURANError, match=msg):
             TransformedDensityRejection(common_cont_dist, c=-1.)
         # -0.5 < c < 0. => Warning: Not recommended. Using default
         msg = (r"33 : -0.5 < c < 0 not recommended. using c = -0.5 "
                 r"instead.")
-        with pytest.warns(UserWarning, match=msg):
+        with pytest.warns(RuntimeWarning, match=msg):
             TransformedDensityRejection(common_cont_dist, c=-0.1)
         # c > 0. => Warning: Using default
         msg = r"33 : c > 0"
-        with pytest.warns(UserWarning, match=msg):
+        with pytest.warns(RuntimeWarning, match=msg):
             TransformedDensityRejection(common_cont_dist, c=1.)
         # nan c
         msg = r"`c` must be a non-nan value."
@@ -455,7 +515,7 @@ class TestDiscreteAliasUrn:
         (lambda x: [], ValueError,
          r"setting an array element with a sequence."),
         # probabilities < 0
-        (lambda x: -x, RuntimeError,
+        (lambda x: -x, UNURANError,
          r"50 : probability < 0"),
         # signature of PMF wrong
         (lambda: 1.0, TypeError,
@@ -509,7 +569,7 @@ class TestDiscreteAliasUrn:
                              params=common_discr_dist.params)
 
     def test_bad_urn_factor(self):
-        with pytest.warns(UserWarning, match=r"relative urn size < 1."):
+        with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
             DiscreteAliasUrn([0.5, 0.5], urn_factor=-1)
 
     def test_bad_args(self):

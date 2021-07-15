@@ -1,77 +1,54 @@
 # cython: language_level=3
 
 
-# As we use a lot of curly brackets, don't use Python format strings here
-# Instead, search for this using the `re` module and replace it with a
-# boolean. As this exact expression never occurs more than once, this should
-# work.
+# Expression below is replaced by ``DEF NPY_OLD = True`` for NumPy < 1.19
+# and ``DEF NPY_OLD = False`` for NumPy >= 1.19.
 DEF NPY_OLD = isNPY_OLD
 
 
 cimport cython
 from cpython.object cimport PyObject
-from libc.setjmp cimport setjmp
 cimport numpy as np
+IF not NPY_OLD:
+    from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
+    from numpy.random cimport bitgen_t
 from scipy._lib.ccallback cimport ccallback_t
+from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
-
+import threading
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 
 
-__all__ = ["TransformedDensityRejection", "DiscreteAliasUrn"]
+__all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn']
+
+
+cdef extern from "Python.h":
+    PyObject *PyErr_Occurred() nogil
 
 
 # Internal API for handling Python callbacks.
-# TODO: maybe, support `LowLevelCallable`s in the future?
+# TODO: Maybe, support ``LowLevelCallable``s in the future?
 cdef extern from "unuran_callback.h":
-    # callbacks is a dictionary of Python functions with name as their key.
-    # The allowed keys are "pdf", "cdf", "dpdf", or "pmf".
-    # params is a Python tuple containing extra arguments taken by the
-    # callbacks. All the callbacks are expected to have similar signatures.
-    ctypedef struct unuran_callback_t:
-        PyObject *callbacks
-        PyObject *params
+    int init_unuran_callback(ccallback_t *callback, fcn, extra_args) except -1
+    int release_unuran_callback(ccallback_t *callback) except -1
 
-    # initialize a callback i.e. fill in the `callback` object and
-    # `unur_callback` object with required callbacks (`fcn_dict`) and
-    # argument list (`extra_args_list`)
-    int init_unuran_callback(ccallback_t *callback,
-                             unuran_callback_t *unur_callback,
-                             fcn_dict, extra_args_list) except -1
-    # release a callback i.e. clean `callback` and `unur_callback` objects
-    # and decrement references if required.
-    int release_unuran_callback(ccallback_t *callback,
-                                unuran_callback_t *unur_callback) except -1
-
-    # C thunks for handling callbacks
     double pdf_thunk(double x, const unur_distr *distr) nogil
     double dpdf_thunk(double x, const unur_distr *distr) nogil
     double cont_cdf_thunk(double x, const unur_distr *distr) nogil
-    double pmf_thunk(int k, const unur_distr *distr) nogil
-    double discr_cdf_thunk(int k, const unur_distr *distr) nogil
+    double pmf_thunk(int x, const unur_distr *distr) nogil
+    double discr_cdf_thunk(int x, const unur_distr *distr) nogil
 
-    # An error handler to handle errors occuring in UNU.RAN
     void error_handler(const char *objid, const char *file,
                        int line, const char *errortype,
                        int unur_errno, const char *reason) nogil
 
 
-cdef void set_error_handler():
-    """Change the default error handler to our error handler."""
-    unur_set_error_handler(error_handler)
+class UNURANError(RuntimeError):
+    pass
 
 
-set_error_handler()
-
-
-# TODO: if we are dropping NumPy 1.16, this can be changed to use
-#       the cython API for BitGenerators.
 IF not NPY_OLD:
-    from numpy.random cimport bitgen_t
-    from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
-
-
     cdef object get_numpy_rng(object seed = None):
         """
         Create a NumPy Generator object from a given seed.
@@ -90,39 +67,6 @@ IF not NPY_OLD:
         if isinstance(seed, np.random.RandomState):
             return np.random.default_rng(seed._bit_generator)
         return np.random.default_rng(seed)
-
-
-    cdef unur_urng * get_urng(object numpy_rng) except *:
-        """
-        Convert NumPy's Generator object into UNU.RAN's uniform random number
-        generator.
-
-        Parameters
-        ----------
-        numpy_rng : object
-            An instance of NumPy's Generator class. i.e. a NumPy random
-            number generator.
-
-        Returns
-        -------
-        unuran_urng : unur_urng *
-            A UNU.RAN uniform random number generator.
-        """
-        cdef:
-            bitgen_t *numpy_urng
-            unur_urng *unuran_urng
-            const char *capsule_name = "BitGenerator"
-
-        capsule = numpy_rng.bit_generator.capsule
-
-        if not PyCapsule_IsValid(capsule, capsule_name):
-            raise ValueError("Invalid pointer to anon_func_state.")
-
-        numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-        unuran_urng = unur_urng_new(numpy_urng.next_double,
-                                    <void *>(numpy_urng.state))
-
-        return unuran_urng
 ELSE:
     ctypedef double (*URNG_FUNCT)(void *) nogil
 
@@ -142,6 +86,8 @@ ELSE:
         numpy_rng : object
             An instance of NumPy's RandomState or Generator class.
         """
+        if seed is None or seed is np.random:
+            return np.random.mtrand._rand
         if (hasattr(np.random, "Generator") and
             isinstance(seed, np.random.Generator)):
             return seed
@@ -150,65 +96,110 @@ ELSE:
         return np.random.RandomState(seed)
 
 
-# UNU.RAN requires us to set a default URNG before we can create
-# distributions/parameters/generators. As the default URNG has been
-# removed from UNU.RAN, set a NumPy BitGenerator as default URNG on
-# import.
+@cython.final
+cdef class _URNG:
+    """
+    Build a UNU.RAN's uniform random number generator from a NumPy random
+    numpy generator.
+
+    Parameters
+    ----------
+    numpy_rng : object
+        An instance of NumPy's Generator class. i.e. a NumPy random
+        number generator.
+    """
+    cdef object numpy_rng
+
+    def __init__(self, numpy_rng):
+        self.numpy_rng = numpy_rng
+
+    IF NPY_OLD:
+        cdef double _next_double(self) nogil:
+            with gil:
+                return self.numpy_rng.uniform()
+
+    cdef unur_urng * get_urng(self) except *:
+        """
+        Get a ``unur_urng`` object from given ``numpy_rng``.
+
+        Returns
+        -------
+        unuran_urng : unur_urng *
+            A UNU.RAN uniform random number generator.
+        """
+        cdef unur_urng *unuran_urng
+        IF NPY_OLD:
+            unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_double,
+                                        <void *>self)
+            return unuran_urng
+        ELSE:
+            cdef:
+                bitgen_t *numpy_urng
+                const char *capsule_name = "BitGenerator"
+
+            capsule = self.numpy_rng.bit_generator.capsule
+
+            if not PyCapsule_IsValid(capsule, capsule_name):
+                raise ValueError("Invalid pointer to anon_func_state.")
+
+            numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+            unuran_urng = unur_urng_new(numpy_urng.next_double,
+                                        <void *>(numpy_urng.state))
+
+            return unuran_urng
+
+
+# Module level lock. This is used to provide thread-safe error reporting.
+# UNU.RAN has a thread-unsafe global FILE streams where errors are reported.
+# To make them thread-safe, one can aquire a lock before calling
+# `unur_set_stream` and release once the stream is not needed anymore.
+cdef object _lock = threading.Lock()
 
 cdef:
-    unur_urng *default_urng = NULL
-    unur_urng *default_urng_aux = NULL
-    object default_numpy_rng = None
-
-IF NPY_OLD:
-    # a global function for generating uniform random numbers
-    # using old numpy's python interface.
-    cdef double _global_next_double(void *state) nogil:
-        with gil:
-            global default_numpy_rng
-            return default_numpy_rng.uniform()
+    unur_urng *default_urng
+    object default_numpy_rng
+    _URNG _urng_builder
 
 
-# a function to set the default URNG
-cdef object set_default_urng():
-    """Sets the default UNU.RAN uniform random number generator"""
-    cdef unur_urng *urng
-    global default_urng, default_urng_aux
-    global default_numpy_rng
-    if NPY_OLD:
-        global _global_next_double
-
-    # if the NumPy RNG has already been set, no need to initialize
-    # a new one.
-    if default_numpy_rng is None:
-        # if the default_urng is not NULL, free it before setting a new one.
-        if default_urng != NULL:
-            unur_urng_free(default_urng)
-            default_urng = NULL
-        default_numpy_rng = get_numpy_rng()
-
-    # try to set a default URNG.
-    try:
-        IF not NPY_OLD:
-            urng = get_urng(default_numpy_rng)
-        ELSE:
-            urng = unur_urng_new(_global_next_double, NULL)
-    except ValueError as e:
-        msg = "Failed to initialize the default URNG."
-        raise RuntimeError(msg) from e
-
-    default_urng = urng
-    default_urng_aux = default_urng
-    unur_set_default_urng(default_urng)
-    unur_set_default_urng_aux(default_urng_aux)
-
-
-set_default_urng()
-
-
-def _unpack_dist(dist, dist_type, meths, optional_meths=None):
+cdef object _setup_unuran():
     """
-    Get the required methods from a Python class or object.
+    Sets the default UNU.RAN uniform random number generator and error
+    handler.
+    """
+    global default_urng
+    global default_numpy_rng
+    global _urng_builder
+
+    default_numpy_rng = get_numpy_rng()
+
+    cdef MessageStream _messages = MessageStream()
+
+    _lock.acquire()
+    try:
+        unur_set_stream(_messages.handle)
+        # try to set a default URNG.
+        try:
+            _urng_builder = _URNG(default_numpy_rng)
+            default_urng = _urng_builder.get_urng()
+            if default_urng == NULL:
+                raise UNURANError(_messages.get())
+        except Exception as e:
+            msg = "Failed to initialize the default URNG."
+            raise RuntimeError(msg) from e
+    finally:
+        _lock.release()
+
+    unur_set_default_urng(default_urng)
+    unur_set_error_handler(error_handler)
+
+
+_setup_unuran()
+
+
+cdef dict _unpack_dist(object dist, str dist_type, list meths,
+                       list optional_meths = None):
+    """
+    Get the required methods/attributes from a Python class or object.
 
     Parameters
     ----------
@@ -217,11 +208,11 @@ def _unpack_dist(dist, dist_type, meths, optional_meths=None):
     dist_type : str
         Type of the distribution. "cont" for continuous distribution
         and "discr" for discrete distribution.
-    meths : list or set
-        A list or set of methods to get from `dist`.
-    optional_meths : list of set, optional
-        A list or set of optional methods to be returned if found. No error
-        is raised if some of the methods in this list/set are not found.
+    meths : list
+        A list of methods to get from `dist`.
+    optional_meths : list, optional
+        A list of optional methods to be returned if found. No error
+        is raised if some of the methods in this list are not found.
 
     Returns
     -------
@@ -231,10 +222,10 @@ def _unpack_dist(dist, dist_type, meths, optional_meths=None):
     Raises
     ------
     ValueError
-        A ValueError is raised in case some methods in the `meths` list/set
+        A ValueError is raised in case some methods in the `meths` list
         are not found.
     """
-    callbacks = {}
+    cdef dict callbacks = {}
     for meth in meths:
         if hasattr(dist, meth):
             callbacks[meth] = getattr(dist, meth)
@@ -248,7 +239,7 @@ def _unpack_dist(dist, dist_type, meths, optional_meths=None):
     return callbacks
 
 
-cdef void _pack_dist(unur_distr *distr, dict callbacks):
+cdef void _pack_distr(unur_distr *distr, dict callbacks) except *:
     """
     Set the methods of a continuous or discrete distribution object
     using a dictionary of callbacks.
@@ -312,33 +303,51 @@ cdef double[::1] _validate_pv(pv) except *:
 
 cdef class Method:
     """
-    A base class for all the methods.
+    A base class for all the wrapped generators.
 
-    This class implements the `rvs` method which is common between all the
-    methods. The extending class must set the `callbacks` member of this
-    class with Python callbacks that need to be captured before sampling. In
-    case no callbacks need to be captured, an empty dictionary is expected.
-    Moreover, `params` must be a tuple containing the extra arguments that
-    the `callbacks` take. If none, an empty tuple is expected.
+    There are 5 basic functions of this base class:
 
-    `rng` is the initialized UNU.RAN generator object which can be used to
-    obtain, change, or reinitalize required parameters and function.
+    * It provides a `_set_rng` method to initialize and set a `unur_gen`
+      object. It should be called during the setup stage in the `__cinit__`
+      method. As it uses MessageStream, the call must be protected under
+      the module-level lock.
+    * `_check_errorcode` must be called after calling a UNU.RAN function
+      that returns a error code. It raises an error if Python error variable
+      has been set or if an error has occured in UNU.RAN.
+    * It implements the `rvs` public method for sampling. No child class
+      should override this method.
+    * Provides the `seed` property to get and set the NumPy URNG.
+    * Implements the __dealloc__ method. The child class must not overide
+      this method.
+
     """
+    cdef unur_distr *distr
+    cdef unur_par *par
     cdef unur_gen *rng
     cdef unur_urng *urng
     cdef object numpy_rng
+    cdef _URNG _urng_builder
     cdef object callbacks
+    cdef object _callback_wrapper
     cdef object params
-    IF NPY_OLD:
-        # define a function for sampling uniform random number for
-        # old version of NumPy. Here, ``self`` is used as the state
-        # of the URNG to obtain the NumPy RNG.
-        cdef double _next_double(self) nogil:
-            with gil:
-                return self.numpy_rng.uniform()
+    cdef MessageStream _messages
 
-    cdef void _set_rng(self, object seed, unur_par *par,
-                       unur_distr *distr) except *:
+    cdef inline void _check_errorcode(self, int errorcode) except *:
+        # check for non-zero errorcode
+        if errorcode != UNUR_SUCCESS:
+            # check if the Python error variable has been set. We need
+            # to do this because it is possible that an error has occured
+            # during a call to the callback. As we can't perform a non-local
+            # return (because that leads to memory leaks), there is no way
+            # to know whether a callback has errored out until a non-zero
+            # errorcode has been returned by UNU.RAN.
+            if PyErr_Occurred():
+                return
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+
+    cdef inline void _set_rng(self, object seed) except *:
         """
         Create a UNU.RAN random number generator.
 
@@ -352,27 +361,31 @@ cdef class Method:
         distr : unur_distr *
             UNU.RAN distribution object.
         """
-        cdef unur_urng *urng = NULL
-
-        if seed is not None:
-            self.numpy_rng = get_numpy_rng(seed)
-            IF not NPY_OLD:
-                urng = get_urng(self.numpy_rng)
-            ELSE:
-                # use self._next_double to generate uniform random numbers.
-                # Pass ``self`` as the state because it is required to obtain
-                # the NumPy RNG to sample from.
-                urng = unur_urng_new(<URNG_FUNCT>self._next_double,
-                                     <void *>self)
-            unur_set_urng(par, urng)
-
-        self.rng = unur_init(par)
-        self.urng = urng
-        unur_distr_free(distr)
+        self.numpy_rng = get_numpy_rng(seed)
+        self._urng_builder = _URNG(self.numpy_rng)
+        self.urng = self._urng_builder.get_urng()
+        if self.urng == NULL:
+            msg = self._messages.get()
+            if PyErr_Occurred():
+                return
+            raise UNURANError(msg)
+        self._check_errorcode(unur_set_urng(self.par, self.urng))
+        self.rng = unur_init(self.par)
+        # set self.par = NULL because a call to `unur_init` destroys
+        # the parameter object. See "Creating a generator object" in
+        # http://statmath.wu.ac.at/software/unuran/doc/unuran.html#Concepts
+        self.par = NULL
+        if self.rng == NULL:
+            msg = self._messages.get()
+            if PyErr_Occurred():
+                return
+            raise UNURANError(msg)
+        unur_distr_free(self.distr)
+        self.distr = NULL
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef int _rvs_cont(self, double[::1] out) except -1:
+    cdef inline void _rvs_cont(self, double[::1] out) except *:
         """
         Sample random variates from a continuous distribution.
 
@@ -383,27 +396,34 @@ cdef class Method:
         """
         cdef:
             ccallback_t callback
-            unuran_callback_t unur_callback
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
 
-        init_unuran_callback(&callback, &unur_callback, self.callbacks,
-                             self.params)
-        if setjmp(callback.error_buf) != 0:
-            release_unuran_callback(&callback, &unur_callback)
-            return -1
+        if self._callback_wrapper is not None:
+            init_unuran_callback(&callback, self._callback_wrapper,
+                                 self.params)
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
 
-        for i in range(size):
-            out[i] = unur_sample_cont(rng)
+            for i in range(size):
+                out[i] = unur_sample_cont(rng)
+                if PyErr_Occurred():
+                    return
 
-        release_unuran_callback(&callback, &unur_callback)
-
-        return 0
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+        finally:
+            _lock.release()
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef int _rvs_discr(self, int[::1] out) except -1:
+    cdef inline void _rvs_discr(self, int[::1] out) except *:
         """
         Sample random variates from a discrete distribution.
 
@@ -414,23 +434,30 @@ cdef class Method:
         """
         cdef:
             ccallback_t callback
-            unuran_callback_t unur_callback
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
 
-        init_unuran_callback(&callback, &unur_callback, self.callbacks,
-                             self.params)
-        if setjmp(callback.error_buf) != 0:
-            release_unuran_callback(&callback, &unur_callback)
-            return -1
+        if self._callback_wrapper is not None:
+            init_unuran_callback(&callback, self._callback_wrapper,
+                                 self.params)
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
 
-        for i in range(size):
-            out[i] = unur_sample_discr(rng)
+            for i in range(size):
+                out[i] = unur_sample_discr(rng)
+                if PyErr_Occurred():
+                    return
 
-        release_unuran_callback(&callback, &unur_callback)
-
-        return 0
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+        finally:
+            _lock.release()
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
 
     def rvs(self, size=None):
         """
@@ -466,11 +493,40 @@ cdef class Method:
             raise NotImplementedError("only univariate continuous and "
                                       "discrete distributions supported")
 
+    @property
+    def seed(self):
+        return self.numpy_rng
+
+    @seed.setter
+    def seed(self, new_seed):
+        self.numpy_rng = get_numpy_rng(new_seed)
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            unur_urng_free(self.urng)
+            self._urng_builder = _URNG(self.numpy_rng)
+            self.urng = self._urng_builder.get_urng()
+            if self.urng == NULL:
+                raise UNURANError(self._messages.get())
+            unur_chg_urng(self.rng, self.urng)
+        finally:
+            _lock.release()
+
+    @cython.final
     def __dealloc__(self):
+        if self.distr != NULL:
+            unur_distr_free(self.distr)
+            self.distr = NULL
+        if self.par != NULL:
+            unur_par_free(self.par)
+            self.par = NULL
         if self.rng != NULL:
             unur_free(self.rng)
+            self.rng = NULL
         if self.urng != NULL:
             unur_urng_free(self.urng)
+            self.urng = NULL
 
 
 cdef class TransformedDensityRejection(Method):
@@ -639,12 +695,69 @@ cdef class TransformedDensityRejection(Method):
                   use_mode=True,
                   guide_factor=2,
                   seed=None):
+        cdef double[::1] cpoints_array
         (params, domain, c, cpoints, cpoints_array,
          variant) = self._validate_args(params, domain, c, cpoints, variant)
-        self._init_method(dist, mode, center, params, domain, c, cpoints,
-                          cpoints_array, variant, use_dars, max_sqhratio,
-                          max_intervals, use_center, use_mode, guide_factor,
-                          seed)
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+            ccallback_t callback
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
+        self.params = params
+        def _callback_wrapper(x, name, *args):
+            return self.callbacks[name](x, *args)
+        self._callback_wrapper = _callback_wrapper
+        init_unuran_callback(&callback, self._callback_wrapper, self.params)
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+            if center is not None:
+                self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
+            self.par = unur_tdr_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+            self._check_errorcode(unur_tdr_set_c(self.par, c))
+            if cpoints_array is None:
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, cpoints, NULL))
+            else:
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(cpoints_array),
+                                                           &cpoints_array[0]))
+
+            if variant == "ps":
+                self._check_errorcode(unur_tdr_set_variant_ps(self.par))
+            elif variant == "ia":
+                self._check_errorcode(unur_tdr_set_variant_ia(self.par))
+            elif variant == "gw":
+                self._check_errorcode(unur_tdr_set_variant_gw(self.par))
+
+            self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
+            self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_sqhratio))
+            self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
+            self._check_errorcode(unur_tdr_set_usecenter(self.par, use_center))
+            self._check_errorcode(unur_tdr_set_usemode(self.par, use_mode))
+            self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
+
+            self._set_rng(seed)
+        finally:
+            release_unuran_callback(&callback)
+            _lock.release()
 
     cdef object _validate_args(self, params, domain, c, cpoints, variant):
         cdef double[::1] cpoints_array = None
@@ -662,63 +775,6 @@ cdef class TransformedDensityRejection(Method):
         params = tuple(params)
 
         return params, domain, c, cpoints, cpoints_array, variant
-
-    cdef int _init_method(self, dist, mode, center, params, domain, c,
-                          cpoints, double[::1] cpoints_array, variant,
-                          use_dars, max_sqhratio, max_intervals, use_center,
-                          use_mode, guide_factor, seed) except -1:
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-            ccallback_t callback
-            unuran_callback_t unur_callback
-
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
-        init_unuran_callback(&callback, &unur_callback, self.callbacks,
-                             params)
-        if setjmp(callback.error_buf) != 0:
-            release_unuran_callback(&callback, &unur_callback)
-            return -1
-
-        distr = unur_distr_cont_new()
-        _pack_dist(distr, self.callbacks)
-
-        if mode is not None:
-            unur_distr_cont_set_mode(distr, mode)
-        if center is not None:
-            unur_distr_cont_set_center(distr, center)
-
-        if domain is not None:
-            unur_distr_cont_set_domain(distr, domain[0], domain[1])
-
-        par = unur_tdr_new(distr)
-        unur_tdr_set_c(par, c)
-        if cpoints_array is None:
-            unur_tdr_set_cpoints(par, cpoints, NULL)
-        else:
-            unur_tdr_set_cpoints(par, len(cpoints_array), &cpoints_array[0])
-
-        if variant == "ps":
-            unur_tdr_set_variant_ps(par)
-        elif variant == "ia":
-            unur_tdr_set_variant_ia(par)
-        elif variant == "gw":
-            unur_tdr_set_variant_gw(par)
-
-        unur_tdr_set_usedars(par, use_dars)
-        unur_tdr_set_max_sqhratio(par, max_sqhratio)
-        unur_tdr_set_max_intervals(par, max_intervals)
-        unur_tdr_set_usecenter(par, use_center)
-        unur_tdr_set_usemode(par, use_mode)
-
-        self._set_rng(seed, par, distr)
-
-        release_unuran_callback(&callback, &unur_callback)
-
-        self.params = params
-
-        return 0
 
     @property
     def sqhratio(self):
@@ -738,20 +794,23 @@ cdef class TransformedDensityRejection(Method):
         """Get the area below the squeeze for the generator."""
         return unur_tdr_get_squeezearea(self.rng)
 
-    cdef int _ppf_hat(self, const double *u, double *out, size_t N) except -1:
+    cdef inline void _ppf_hat(self, const double *u, double *out, size_t N) except *:
         cdef:
             ccallback_t callback
-            unuran_callback_t unur_callback
             size_t i
-        init_unuran_callback(&callback, &unur_callback, self.callbacks,
-                             self.params)
-        if setjmp(callback.error_buf) != 0:
-            release_unuran_callback(&callback, &unur_callback)
-            return -1
-        for i in range(N):
-            out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
-        release_unuran_callback(&callback, &unur_callback)
-        return 0
+        init_unuran_callback(&callback, self._callback_wrapper, self.params)
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            for i in range(N):
+                out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+        finally:
+            _lock.release()
+            release_unuran_callback(&callback)
 
     def ppf_hat(self, u):
         """
@@ -774,7 +833,7 @@ cdef class TransformedDensityRejection(Method):
         --------
         >>> from scipy.stats import TransformedDensityRejection
         >>> from scipy.stats import norm
-        >>> from math import pi, sqrt, exp
+        >>> from math import exp
         >>> 
         >>> class MyDist:
         ...     def pdf(self, x):
@@ -800,9 +859,6 @@ cdef class TransformedDensityRejection(Method):
         cond0 = 0 <= u
         cond1 = u <= 1
         cond2 = cond0 & cond1
-        # UNU.RAN fails to recognize NaNs and seg faults when nans are
-        # present. So, handle nan manually.
-        cond3 = np.isnan(u)
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
         cdef double[::1] u_view = np.ascontiguousarray(goodu)
@@ -810,7 +866,7 @@ cdef class TransformedDensityRejection(Method):
         if cond2.any():
             self._ppf_hat(&u_view[0], &goodout[0], len(goodu))
         np.place(out, cond2, goodout)
-        np.place(out, ~cond2 | cond3, np.nan)
+        np.place(out, ~cond2, np.nan)
         return np.asarray(out).reshape(oshape)[()]
 
 
@@ -950,9 +1006,38 @@ cdef class DiscreteAliasUrn(Method):
                   domain=None,
                   urn_factor=1,
                   seed=None):
-        (pv_view, params, domain) = self._validate_args(pv, dist, params,
-                                                        domain)
-        self._init_method(pv_view, domain, urn_factor, seed)
+        cdef double[::1] pv_view
+        (pv_view, params, domain) = self._validate_args(pv, dist, params, domain)
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_discr_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+
+            n_pv = len(pv_view)
+            self._check_errorcode(unur_distr_discr_set_pv(self.distr, &pv_view[0], n_pv))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_discr_set_domain(self.distr, domain[0],
+                                                                  domain[1]))
+
+            self.par = unur_dau_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+            self._check_errorcode(unur_dau_set_urnfactor(self.par, urn_factor))
+
+            self._set_rng(seed)
+        finally:
+            _lock.release()
 
     cdef object _validate_args(self, pv, dist, params, domain):
         cdef double[::1] pv_view
@@ -987,37 +1072,3 @@ cdef class DiscreteAliasUrn(Method):
             pv_view = _validate_pv(pv)
 
         return pv_view, params, domain
-
-    cdef int _init_method(self, double[::1] pv_view, domain, urn_factor,
-                          seed) except -1:
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-            ccallback_t callback
-            unuran_callback_t unur_callback
-
-        self.callbacks = {}
-        init_unuran_callback(&callback, &unur_callback, self.callbacks, ())
-        if setjmp(callback.error_buf) != 0:
-            release_unuran_callback(&callback, &unur_callback)
-            return -1
-
-        distr = unur_distr_discr_new()
-
-        n_pv = len(pv_view)
-        unur_distr_discr_set_pv(distr, &pv_view[0], n_pv)
-
-        if domain is not None:
-            unur_distr_discr_set_domain(distr, domain[0], domain[1])
-
-        par = unur_dau_new(distr)
-        unur_dau_set_urnfactor(par, urn_factor)
-
-        self._set_rng(seed, par, distr)
-
-        release_unuran_callback(&callback, &unur_callback)
-
-        self.params = ()
-
-        return 0

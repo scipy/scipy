@@ -12,7 +12,7 @@ continuous and discrete distributions. Implementations of a fast C library
 called `UNU.RAN <http://statmath.wu.ac.at/software/unuran/>`__ are used
 for speed and performance. Please look at
 `UNU.RAN's documentation <http://statmath.wu.ac.at/software/unuran/doc/unuran.html>`__
-for an in-depth explanation of these methods. It is heavily referred
+for an in-depth explanation of these methods. It is heavily referred to
 for writing this tutorial and the documentation of all the generators.
 
 
@@ -81,7 +81,7 @@ parameter with a NumPy BitGenerator as the uniform random number generator.
 
 .. warning:: Use of NumPy < 1.19.0 is discouraged as it doesn't have a fast
              Cython API for generating uniform random numbers and might be
-             too slow to practically rely on.
+             too slow for practical use.
 
 All the generators have a common ``rvs`` method that can be used to draw
 samples from the given distribution.

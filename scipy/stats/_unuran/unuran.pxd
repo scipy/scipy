@@ -1,5 +1,7 @@
 # File automatically generated using autopxd2
 
+from libc.stdio cimport FILE
+
 cdef extern from "unuran.h" nogil:
 
     cdef struct unur_distr
@@ -1226,6 +1228,10 @@ cdef extern from "unuran.h" nogil:
     UNUR_DISTR* unur_distr_poisson(double* params, int n_params)
 
     UNUR_DISTR* unur_distr_zipf(double* params, int n_params)
+
+    FILE* unur_set_stream(FILE* new_stream)
+
+    FILE* unur_get_stream()
 
     int unur_set_debug(UNUR_PAR* parameters, unsigned debug)
 
