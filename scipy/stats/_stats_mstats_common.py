@@ -220,8 +220,9 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
         Following methods are supported,
 
             * 'joint': Uses np.median(y - medslope * x) as intercept.
-            * 'separate': Uses np.median(y) - medslope * np.median(x) as intercept.
-        
+            * 'separate': Uses np.median(y) - medslope * np.median(x)
+                          as intercept.
+
         By default, 'separate'.
 
         .. versionadded:: 1.8.0

@@ -1655,7 +1655,7 @@ def test_theilslopes():
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.5)
 
-    slope, intercept, lower, upper = stats.theilslopes([0,1,1],
+    slope, intercept, lower, upper = stats.theilslopes([0, 1, 1],
                                                 method='joint')
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.0)
