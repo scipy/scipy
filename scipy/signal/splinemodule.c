@@ -541,7 +541,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 /* Initialization function for the module */
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "spline",
+    "_spline",
     NULL,
     -1,
     toolbox_module_methods,
@@ -551,7 +551,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit_spline(void)
+PyObject *PyInit__spline(void)
 {
     PyObject *m, *d, *s;
 

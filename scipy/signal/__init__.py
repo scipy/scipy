@@ -294,9 +294,13 @@ from .waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
-# The spline module (a C extension) provides:
-#     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2
-from .spline import *
+from ._spline import (
+ cspline2d,
+ qspline2d,
+ sepfir2d,
+ symiirorder1,
+ symiirorder2,
+)
 
 from .bsplines import *
 from .filter_design import *

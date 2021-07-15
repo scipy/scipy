@@ -4,7 +4,7 @@ from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
                               less_equal, greater_equal)
 
 # From splinemodule.c
-from .spline import cspline2d, sepfir2d
+from ._spline import cspline2d, sepfir2d
 
 from scipy.special import comb
 from scipy._lib._util import float_factorial
