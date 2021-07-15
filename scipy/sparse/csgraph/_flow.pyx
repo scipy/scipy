@@ -1,3 +1,5 @@
+# cython: wraparound=False, boundscheck=False
+
 import numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
@@ -24,10 +26,10 @@ class MaximumFlowResult:
         self.residual = residual
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value 
+        return 'MaximumFlowResult with value of %d' % self.flow_value
 
 
-def maximum_flow(csgraph, source, sink):
+def maximum_flow(csgraph, source, sink, *, method='dinic'):
     r"""
     maximum_flow(csgraph, source, sink)
 
@@ -45,6 +47,16 @@ def maximum_flow(csgraph, source, sink):
         The source vertex from which the flow flows.
     sink : int
         The sink vertex to which the flow flows.
+    method: {'edmonds_karp', 'dinic'}, optional
+        The method/algorithm to be used for computing the maximum flow.
+        Following methods are supported,
+
+            * 'edmonds_karp': Edmonds Karp algorithm in [1]_.
+            * 'dinic': Dinic's algorithm in [4]_.
+
+        Default is 'dinic'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -75,9 +87,13 @@ def maximum_flow(csgraph, source, sink):
     By the max-flow min-cut theorem, the maximal value of the flow is also the
     total weight of the edges in a minimum cut.
 
-    To solve the problem, we use the Edmonds--Karp algorithm. [1]_ This
-    particular implementation strives to exploit sparsity. Its time complexity
-    is :math:`O(VE^2)` and its space complexity is :math:`O(E)`.
+    To solve the problem, we provide Edmonds--Karp [1]_ and Dinic's algorithm
+    [4]_. The implementation of both algorithms strive to exploit sparsity.
+    The time complexity of the former :math:`O(|V|\,|E|^2)` and its space
+    complexity is :math:`O(|E|)`. The latter achieves its performance by
+    building level graphs and finding blocking flows in them. Its time
+    complexity is :math:`O(|V|^2\,|E|)` and its space complexity is
+    :math:`O(|E|)`.
 
     The maximum flow problem is usually defined with real valued capacities,
     but we require that all capacities are integral to ensure convergence. When
@@ -97,6 +113,10 @@ def maximum_flow(csgraph, source, sink):
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
     .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
+    .. [4] Dinic, Efim A.
+           Algorithm for solution of a problem of maximum flow in networks with
+           power estimation. In Soviet Math. Doklady, vol. 11, pp. 1277-1280.
+           1970.
 
     Examples
     --------
@@ -111,6 +131,8 @@ def maximum_flow(csgraph, source, sink):
     >>> from scipy.sparse.csgraph import maximum_flow
     >>> graph = csr_matrix([[0, 5], [0, 0]])
     >>> maximum_flow(graph, 0, 1).flow_value
+    5
+    >>> maximum_flow(graph, 0, 1, method='edmonds_karp').flow_value
     5
 
     If, on the other hand, there is a bottleneck between source and sink, that
@@ -180,7 +202,7 @@ def maximum_flow(csgraph, source, sink):
     added source and the desired matching can be obtained by restricting the
     residual graph to the block corresponding to the original graph:
 
-    >>> flow = maximum_flow(graph_flow, 0, i+j+1)
+    >>> flow = maximum_flow(graph_flow, 0, i+j+1, method='dinic')
     >>> matching = flow.residual[1:i+1, i+1:i+j+1]
     >>> print(matching.toarray())
     [[0 1 0 0]
@@ -220,8 +242,14 @@ def maximum_flow(csgraph, source, sink):
     # they are missing.
     m = _add_reverse_edges(csgraph)
     rev_edge_ptr, tails = _make_edge_pointers(m)
-    residual = _edmonds_karp(m.indptr, tails, m.indices,
-                             m.data, rev_edge_ptr, source, sink)
+    if method == 'edmonds_karp':
+        residual = _edmonds_karp(m.indptr, tails, m.indices,
+                                 m.data, rev_edge_ptr, source, sink)
+    elif method == 'dinic':
+        residual = _dinic(m.indptr, m.indices, m.data, rev_edge_ptr,
+                          source, sink)
+    else:
+        raise ValueError('{} method is not supported yet.'.format(method))
     residual_array = np.asarray(residual)
     residual_matrix = csr_matrix((residual_array, m.indices, m.indptr),
                                  shape=m.shape)
@@ -297,8 +325,6 @@ def _make_edge_pointers(a):
     return rev_edge_ptr, rows
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] edge_ptr,
         ITYPE_t[:] tails,
@@ -320,7 +346,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     tails : memoryview of length :math:`|E|`
         For a given edge ``e``, ``tails[e]`` is the tail vertex of ``e``.
     heads : memoryview of length :math:`|E|`
-        For a given edge ``e``, ``tails[e]`` is the head vertex of ``e``.
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
     capacities : memoryview of length :math:`|E|`
         For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
     rev_edge_ptr : memoryview of length :math:`|E|`
@@ -407,3 +433,194 @@ cdef ITYPE_t[:] _edmonds_karp(
             # If no augmenting path could be found, we're done.
             break
     return flow
+
+cdef bint _build_level_graph(
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t source,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] capacities,  # IN
+        const ITYPE_t[:] heads,  # IN
+        ITYPE_t[:] levels,  # IN/OUT
+        ITYPE_t[:] q,  # IN/OUT
+        ) nogil:
+    """Builds layered graph from input graph using breadth first search.
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    source : int
+        The source vertex.
+    sink : int
+        The sink vertex.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    levels: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
+        the layered graph of input graph.
+    q : memoryview of length :math:`|E|`
+        Queue to be used in breadth first search. Passed to avoid repeated
+        queue creation inside this function.
+
+    Returns
+    -------
+    bool:
+        ``True`` if the layered graph creation was successful,
+        otherwise ``False``.
+
+    """
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+
+    cdef ITYPE_t cur, start, end, dst_vertex, e
+
+    q[0] = source
+    start = 0
+    end = 1
+    levels[source] = 0
+
+    while start != end:
+        cur = q[start]
+        start += 1
+        if cur == sink:
+            return 1
+        for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
+            dst_vertex = heads[e]
+            if capacities[e] > 0 and levels[dst_vertex] == -1:
+                levels[dst_vertex] = levels[cur] + 1
+                q[end] = dst_vertex
+                end += 1
+    return 0
+
+cdef ITYPE_t _augment_paths(
+        const ITYPE_t[:] edge_ptr,  # IN
+        const ITYPE_t current,  # IN
+        const ITYPE_t sink,  # IN
+        const ITYPE_t[:] levels,  # IN
+        const ITYPE_t[:] heads,  # IN
+        const ITYPE_t[:] rev_edge_ptr,  # IN
+        ITYPE_t[:] capacities,  # IN/OUT
+        ITYPE_t[:] progress,  # IN
+        ITYPE_t[:] flows,  # OUT
+        ITYPE_t flow  # OUT
+        ) nogil:
+    """Computes blocking flow in layered graph using depth first search.
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    current : int
+        The current node in the path.
+    sink : int
+        The sink vertex.
+    levels: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``levels[v]`` is the level of ``v`` in
+        the layered graph of input graph.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    rev_edge_ptr : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
+        reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    progress: memoryview of length :math:`|E|`
+        For a given vertex ``v``, ``progress[v]`` is the index of the next
+        edge to be visited from ``v``.
+    flows : memoryview of length :math:`|E|`
+        The residual graph with respect to a maximum flow.
+    flow : int
+        Current maximum flow in the path.
+
+    Returns
+    -------
+    result_flow : int
+        An arbitrary flow in the layered graph.
+
+    """
+    if current == sink:
+        return flow
+
+    cdef ITYPE_t dst_vertex, result_flow, e
+
+    while progress[current] < edge_ptr[current + 1]:
+        e = progress[current]
+        dst_vertex = heads[e]
+        if (capacities[e] > 0 and
+                levels[dst_vertex] == levels[current] + 1):
+            result_flow = _augment_paths(edge_ptr, dst_vertex, sink,
+                                         levels, heads, rev_edge_ptr,
+                                         capacities, progress, flows,
+                                         min(flow, capacities[e]))
+            if result_flow:
+                capacities[e] -= result_flow
+                capacities[rev_edge_ptr[e]] += result_flow
+                flows[e] += result_flow
+                flows[rev_edge_ptr[e]] -= result_flow
+                return result_flow
+        progress[current] += 1
+    return 0
+
+cdef ITYPE_t[:] _dinic(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] rev_edge_ptr,
+        ITYPE_t source,
+        ITYPE_t sink):
+    """Solves the maximum flow problem using the Dinic's algorithm.
+
+    This assumes that for every edge in the graph, the edge in the opposite
+    direction is also in the graph (possibly with capacity 0).
+
+    Parameters
+    ----------
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex ``v``, the edges whose tail is ``v`` are
+        those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``heads[e]`` is the head vertex of ``e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    rev_edge_ptr : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
+        reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
+    source : int
+        The source vertex.
+    sink : int
+        The sink vertex.
+
+    Returns
+    -------
+    flows : memoryview of length :math:`|E|`
+        The residual graph with respect to a maximum flow.
+
+    """
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+    cdef ITYPE_t n_edges = capacities.shape[0]
+    cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
+
+    cdef ITYPE_t[:] levels = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] progress = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
+    cdef ITYPE_t flow
+
+    while True:
+        for i in range(n_verts):
+            levels[i] = -1
+        if not _build_level_graph(edge_ptr, source, sink,
+                                  capacities, heads, levels, q):
+            break
+        for i in range(n_verts):
+            progress[i] = edge_ptr[i]
+        flow = 1
+        while flow:
+            flow = _augment_paths(edge_ptr, source, sink,
+                                  levels, heads, rev_edge_ptr,
+                                  capacities, progress, flows,
+                                  ITYPE_MAX)
+    return flows
