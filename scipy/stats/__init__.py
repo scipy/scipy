@@ -379,6 +379,7 @@ Random variate generation / CDF Inversion
    NumericalInverseHermite
    TransformedDensityRejection
    DiscreteAliasUrn
+   UNURANError
 
 Circular statistical functions
 ------------------------------

@@ -174,6 +174,9 @@ found in `Section 5.3.16 of the UNU.RAN user manual
 <http://statmath.wu.ac.at/software/unuran/doc/unuran.html#TDR>`__.
 
 
+Please see [1]_, [2]_, and [3]_ for more details on this method.
+
+
 References
 ----------
 

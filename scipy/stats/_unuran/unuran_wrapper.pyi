@@ -12,6 +12,10 @@ ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
 __all__: List[str]
 
 
+class UNURANError(RuntimeError):
+    ...
+
+
 class Method:
     @overload
     def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]

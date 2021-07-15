@@ -80,9 +80,12 @@ table which can be changed by passing a ``urn_factor`` parameter.
 
 .. note:: It is recommended to keep this parameter under 2.
 
+Please see [1]_ and [2]_ for more details on this method.
+
 
 References
 ----------
+
 .. [1] UNU.RAN reference manual, Section 5.8.2,
        "DAU - (Discrete) Alias-Urn method",
        http://statmath.wu.ac.at/software/unuran/doc/unuran.html#DAU
