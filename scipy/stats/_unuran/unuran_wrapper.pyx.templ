@@ -101,13 +101,13 @@ ELSE:
 cdef class _URNG:
     """
     Build a UNU.RAN's uniform random number generator from a NumPy random
-    numpy generator.
+    number generator.
 
     Parameters
     ----------
     numpy_rng : object
-        An instance of NumPy's Generator class. i.e. a NumPy random
-        number generator.
+        An instance of NumPy's Generator or RandomState class. i.e. a NumPy
+        random number generator.
     """
     cdef object numpy_rng
 
@@ -151,8 +151,8 @@ cdef class _URNG:
 
 
 # Module level lock. This is used to provide thread-safe error reporting.
-# UNU.RAN has a thread-unsafe global FILE streams where errors are reported.
-# To make them thread-safe, one can aquire a lock before calling
+# UNU.RAN has a thread-unsafe global FILE streams where errors are logged.
+# To make it thread-safe, one can aquire a lock before calling
 # `unur_set_stream` and release once the stream is not needed anymore.
 cdef object _lock = threading.Lock()
 
@@ -205,7 +205,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
     Parameters
     ----------
     dist : object
-        An instance of a Python class or object with required methods.
+        An instance of a Python class or an object with required methods.
     dist_type : str
         Type of the distribution. "cont" for continuous distribution
         and "discr" for discrete distribution.
