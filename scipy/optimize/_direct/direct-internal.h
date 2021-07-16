@@ -14,7 +14,6 @@ extern "C"
 
 typedef int integer;
 typedef double doublereal;
-typedef direct_objective_func fp;
 
 #define ASRT(c) if (!(c)) { fprintf(stderr, "DIRECT assertion failure at " __FILE__ ":%d -- " #c "\n", __LINE__); exit(EXIT_FAILURE); }
 

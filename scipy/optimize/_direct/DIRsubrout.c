@@ -4,6 +4,7 @@
 */
 
 #include <math.h>
+#include <numpy/ndarrayobject.h>
 #include "direct-internal.h"
 
 /* Table of constant values */
@@ -1076,7 +1077,27 @@ L50:
 /* | Call the function-evaluation subroutine fcn.                          | */
 /* +-----------------------------------------------------------------------+ */
     *flag__ = 0;
-    *f = fcn(*n, &x[1], flag__, fcn_data);
+    // TODO: PyArray_SimpleNewFromData gives segmentation fault
+    // and therefore using list to pass to the user function.
+    // Once the above function works, replace with NumPy arrays.
+    PyObject *x_seq = PyList_New(*n);
+    for (int i = 0; i < *n; i++) {
+        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i + 1]));
+    }
+    PyObject* arg_tuple = NULL;
+    if (PyObject_IsTrue(args)) {
+        arg_tuple = Py_BuildValue("(OO)", x_seq, args);
+    } else {
+        arg_tuple = Py_BuildValue("(O)", x_seq);
+    }
+    PyObject* f_py = PyObject_CallObject(fcn, arg_tuple);
+    Py_DECREF(x_seq);
+    Py_DECREF(arg_tuple);
+    if (!f_py ) {
+        return ;
+    }
+    *f = PyFloat_AsDouble(f_py);
+    Py_DECREF(f_py);
 /* +-----------------------------------------------------------------------+ */
 /* | Rescale the variable x.                                               | */
 /* +-----------------------------------------------------------------------+ */

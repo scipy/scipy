@@ -95,10 +95,17 @@ def configuration(parent_package='', top_path=None):
 
     sources = ['direct_wrap.c', 'DIRect.c',
                'DIRsubrout.c', 'DIRserial.c', 'tstc.c']
-    depends = ['direct.h', 'direct-internal.h']
-    ext = config.add_extension('_directmodule', 
+    headers = ['direct.h', 'direct-internal.h']
+    config.add_library('_direct_lib', 
         sources=[join('_direct', x) for x in sources],
-        depends=[join('_direct', x) for x in depends])
+        headers=[join('_direct', x) for x in headers],
+        **numpy_nodepr_api)
+
+    config.add_extension('_directmodule',
+                         sources=['direct.c'],
+                         libraries=['_direct_lib'],
+                         depends=(sources + headers),
+                         **numpy_nodepr_api)
 
     config.add_data_files('__nnls.pyi')
     ext = config.add_extension('__nnls', sources=[
