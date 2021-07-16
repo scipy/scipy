@@ -1010,6 +1010,7 @@ class TestBoschlooExact:
     """Some tests to show that boschloo_exact() works correctly."""
 
     ATOL = 1e-7
+
     @pytest.mark.parametrize(
         "input_sample,expected",
         [

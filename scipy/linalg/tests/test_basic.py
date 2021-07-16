@@ -578,7 +578,6 @@ class TestSolve:
                 x = solve(a, b, assume_a='her', lower=lower)
                 assert_array_almost_equal(dot(a, x), b)
 
-            
     def test_simple_her(self):
         a = [[5, 2+1j], [2-1j, -4]]
         for b in ([1j, 0],
@@ -587,8 +586,6 @@ class TestSolve:
                   ):
             x = solve(a, b, assume_a='her')
             assert_array_almost_equal(dot(a, x), b)
-
-            
 
     def test_nils_20Feb04(self):
         n = 2

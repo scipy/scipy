@@ -112,8 +112,8 @@ def configuration(parent_package='', top_path=None):
                      if pathlib.Path(s).parent.name != 'mip']
     ext = config.add_extension(
         '_highs_wrapper',
-        sources=[join('cython', 'src', '_highs_wrapper.cxx')] + \
-                highs_sources + ipx_sources,
+        sources=([join('cython', 'src', '_highs_wrapper.cxx')] +
+                 highs_sources + ipx_sources),
         include_dirs=[
             # highs_wrapper
             'src',
