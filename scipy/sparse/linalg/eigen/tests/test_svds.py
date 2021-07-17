@@ -628,3 +628,8 @@ class Test_SVDS_PROPACK(SVDSCommonTests):
         # There are some other issues with this matrix of all ones, e.g.
         # `which='sm'` and `k=1` returns the largest singular value
         pytest.xfail(message)
+
+    def test_svd_LM_zeros_matrix(self):
+        message = ("PROPACK does not return orthonormal singular vectors "
+                   "associated with zero singular values.")
+        pytest.xfail(message)

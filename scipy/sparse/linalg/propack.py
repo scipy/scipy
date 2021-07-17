@@ -324,8 +324,4 @@ def svdp(A, k, which='LM', irl_mode=True, kmax=None,
     # info == 0: The K largest (or smallest) singular triplets were computed
     # succesfully!
 
-    # catch corner case where A is all zeros and v is not orthogonal
-    if not np.any(v):
-        v = np.eye(*v.shape)
-
     return u[:, :k], sigma, v[:, :k].conj().T, bnd
