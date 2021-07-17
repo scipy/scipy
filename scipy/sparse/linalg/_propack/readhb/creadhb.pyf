@@ -1,0 +1,24 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module creadhb ! in
+    interface  ! in :creadhb
+        subroutine readhb_hdr(filename,nc,nz) ! in :creadhb:creadhb.f
+            character*256 intent(in) :: filename
+            integer intent(out) :: nc
+            integer intent(out) :: nz
+        end subroutine readhb
+
+        subroutine readhb(filename,nc,nz,values,colptr,rowind) ! in :creadhb:creadhb.f
+            character*256 intent(in) :: filename
+            integer optional, depend(colptr) :: nc=len(colptr)-1
+            integer optional, depend(values) :: nz=len(values)
+            complex intent(inout), dimension(nz), depend(nz) :: values
+            integer intent(inout), dimension(nc+1), depend(nc) :: colptr
+            integer intent(inout), dimension(nz), depend(nz) :: rowind
+        end subroutine readhb
+    end interface
+end python module creadhb
+
+! This file was auto-generated with f2py (version:1.20.2).
+! See http://cens.ioc.ee/projects/f2py2e/

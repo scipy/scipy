@@ -6,6 +6,10 @@ from numpy.testing import assert_allclose, assert_raises
 
 from scipy.sparse.linalg.propack import svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
+from scipy.sparse.linalg._propack.creadhb import (
+    readhb as creadhb, readhb_hdr as creadhb_hdr)
+from scipy.sparse.linalg._propack.zreadhb import (
+    readhb as zreadhb, readhb_hdr as zreadhb_hdr)
 
 
 TOLS = {
@@ -13,6 +17,13 @@ TOLS = {
     np.float64: 1e-8,
     np.complex64: 1e-4,
     np.complex128: 1e-8,
+}
+
+_dtype_map = {
+    "single": np.float32,
+    "double": np.float64,
+    "complex8": np.complex64,
+    "complex16": np.complex128,
 }
 
 
@@ -63,11 +74,12 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
 
 @pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
-@pytest.mark.parametrize('dtype', (np.float32, np.float64, np.complex64, np.complex128))
+@pytest.mark.parametrize('precision', _dtype_map.keys())
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
-def test_svdp(ctor, dtype, irl, which):
+def test_svdp(ctor, precision, irl, which):
     np.random.seed(0)
+    dtype = _dtype_map[precision]
     n, m, k = 10, 20, 3
     if which == 'SM' and not irl:
         with assert_raises(ValueError):
@@ -76,9 +88,10 @@ def test_svdp(ctor, dtype, irl, which):
         check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
-def load_coord(folder, precision, file="illc1850.coord"):
-    dtype = {"single": np.float32, "double": np.float64}[precision]
-    path = os.path.join(folder, precision, file)
+def load_real(folder, precision, file='illc1850.coord'):
+    dtype = _dtype_map[precision]
+    path = os.path.join(folder, precision, 'Examples', file)
+    # Coordinate Text File
     with open(path) as f:
         m, n, nnz = (int(val) for val in f.readline().split())
         coord = np.array([[float(val) for val in line.split()] for line in f])
@@ -89,52 +102,110 @@ def load_coord(folder, precision, file="illc1850.coord"):
     return A
 
 
+def load_complex(folder, precision, file='mhd1280b.cua'):
+    dtype = _dtype_map[precision]
+    path = os.path.join(folder, precision, 'Examples', file)
+    # Harwell-Boeing Exchange Format
+    if precision == 'complex8':
+        readhb_hdr, readhb = creadhb_hdr, creadhb
+    else:
+        readhb_hdr, readhb = zreadhb_hdr, zreadhb
+    nc, nz = readhb_hdr(path)
+    values = np.empty(nz, dtype=dtype)
+    colptr = np.empty(nc+1, dtype=np.int32)
+    rowind = np.empty(nz, dtype=np.int32)
+    res = readhb(path, values, colptr, rowind)
+    A = csc_matrix((values, rowind-1, colptr-1))
+    return A
+
+
 def load_sigma(folder, precision="double", irl=False):
-    dtype = {"single": np.float32, "double": np.float64}[precision]
+    dtype = _dtype_map[precision]
     s_name = "Sigma_IRL.ascii" if irl else "Sigma.ascii"
-    path = os.path.join(folder, precision, s_name)
+    path = os.path.join(folder, precision, 'Examples', 'Output', s_name)
     with open(path) as f:
-        data = np.array([float(line.split()[1]) for line in f], dtype=dtype)
+        data = np.array([dtype(line.split()[1]) for line in f], dtype=dtype)
     return data
 
 
 def load_uv(folder, precision="double", uv="U", irl=False):
-    dtype = {"single": np.float32, "double": np.float64}[precision]
+    dtype = _dtype_map[precision]
     uv_name = (uv + "_IRL.ascii") if irl else (uv + ".ascii")
-    path = os.path.join(folder, precision, uv_name)
+    path = os.path.join(folder, precision, 'Examples', 'Output', uv_name)
     with open(path) as f:
         m, n = (int(val) for val in f.readline().split())
-        data = np.array([float(val.strip()) for val in f], dtype=dtype)
+        if precision in {'single', 'double'}:
+            data = np.array([dtype(val.strip()) for val in f], dtype=dtype)
+        else:
+            data = np.loadtxt(
+                path, dtype=dtype, skiprows=1, delimiter='\n',
+                converters={0: lambda s: complex(
+                    *[float(n) for n in s.decode()[1:-1].split(',')])})
     return data.reshape((n, m)).T
 
 
-@pytest.mark.parametrize('precision', ('single', 'double'))
+@pytest.mark.parametrize('precision', _dtype_map.keys())
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
-    atol = {'single': 1e-3, 'double': 1e-11}[precision]
+    atol = {
+        'single': 1e-3,
+        'double': 1e-9,
+        'complex8': 1e-4,
+        'complex16': 1e-9,
+    }[precision]
 
     path_prefix = os.path.dirname(__file__)
-    relative_path = "propack_examples"
-    folder = os.path.join(path_prefix, relative_path)
+    relative_path = ['..', '_propack', 'PROPACK']
+    folder = os.path.join(path_prefix, *relative_path)
 
-    A = load_coord(folder, precision)
+    A = {
+        'single': load_real,
+        'double': load_real,
+        'complex8': load_complex,
+        'complex16': load_complex,
+    }[precision](folder, precision)
     s_expected = load_sigma(folder, precision, irl=irl)
     u_expected = load_uv(folder, precision, "U", irl=irl)
-    vt_expected = load_uv(folder, precision, "V", irl=irl).T
+    vh_expected = load_uv(folder, precision, "V", irl=irl).T
 
     k = len(s_expected)
-    u, s, vt, _ = svdp(A, k, irl_mode=irl)
+    u, s, vh, _ = svdp(A, k, irl_mode=irl, random_state=0)
 
-    assert_allclose(s, s_expected, atol)
+    # Check singular values
+    assert_allclose(s, s_expected.real, atol=atol)
+
+    # complex example matrix has many repeated singular values, so check only
+    # beginning non-repeated singular vectors to avoid permutations
+    sv_check = 27 if precision in {'complex8', 'complex16'} else k
+    u = u[:, :sv_check]
+    u_expected = u_expected[:, :sv_check]
+    vh = vh[:sv_check, :]
+    vh_expected = vh_expected[:sv_check, :]
+    s = s[:sv_check]
+
     assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
-    assert_allclose(np.abs(vt), np.abs(vt_expected), atol=atol)
+    assert_allclose(np.abs(vh), np.abs(vh_expected), atol=atol)
+
+    # Check orthogonality of singular vectors
+    assert_allclose(np.eye(u.shape[1]), u.conj().T @ u, atol=atol)
+    assert_allclose(np.eye(vh.shape[0]), vh @ vh.conj().T, atol=atol)
+
+    # Ensure the norm of the difference between the np.linalg.svd and
+    # PROPACK reconstructed matrices is small
+    u3, s3, vh3 = np.linalg.svd(A.todense())
+    u3 = u3[:, :sv_check]
+    s3 = s3[:sv_check]
+    vh3 = vh3[:sv_check, :]
+    A3 = u3 @ np.diag(s3) @ vh3
+    recon = u @ np.diag(s) @ vh
+    assert_allclose(np.linalg.norm(A3 - recon), 0, atol=atol)
 
 
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
-@pytest.mark.parametrize('dtype', (np.float32, np.float64,
-                                   np.complex64, np.complex128))
-def test_shifts(shifts, dtype):
+@pytest.mark.parametrize('precision', _dtype_map.keys())
+def test_shifts(shifts, precision):
     np.random.seed(0)
+    dtype = _dtype_map[precision]
     n, k = 70, 10
     A = np.random.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):

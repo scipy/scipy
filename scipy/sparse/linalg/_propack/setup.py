@@ -46,6 +46,13 @@ def configuration(parent_package='', top_path=None):
                              extra_info=lapack_opt,
                              undef_macros=['_OPENMP'])
 
+        # Since scipy.io doesn't support reading complex Harwell-Boeing
+        # matrices, we'll use PROPACK's complex matrix readers
+        if prefix in {'c', 'z'}:
+            config.add_extension(f'{prefix}readhb',
+                                 sources=[f'readhb/{prefix}readhb.pyf', f'readhb/{prefix}readhb.f'],
+                                 undef_macros=['_OPENMP'])
+
     return config
 
 if __name__ == '__main__':
