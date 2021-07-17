@@ -87,7 +87,6 @@ Singular values problems:
    :toctree: generated/
 
    svds -- Compute k singular values/vectors for a sparse matrix
-   svdp -- Compute k singular values/vectors for LinearOperators via PROPACK
 
 The `svds` function supports the following solvers:
 
