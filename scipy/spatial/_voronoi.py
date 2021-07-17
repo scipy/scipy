@@ -1,6 +1,6 @@
 #pythran export sort_vertices_of_regions(int[:,:], int list list)
+#pythran export sort_vertices_of_regions(intc[:,:], intc list list)
 #pythran export sort_vertices_of_regions(int32[:,:], int64 list list)
-#pythran export sort_vertices_of_regions(int32[:,:], int32 list list)
 #pythran export sort_vertices_of_regions(int64[:,:], int64 list list)
 def sort_vertices_of_regions(simplices, regions):
     for n in range(0, len(regions)):
