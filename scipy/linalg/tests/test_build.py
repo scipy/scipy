@@ -31,8 +31,8 @@ class FindDependenciesLdd:
     def grep_dependencies(self, file, deps):
         stdout = self.get_dependencies(file)
 
-        rdeps = dict([( dep.encode('latin1'), 
-                        re.compile(dep.encode('latin1'))) for dep in deps])
+        rdeps = dict([(dep.encode('latin1'),
+                       re.compile(dep.encode('latin1'))) for dep in deps])
         founds = []
         for l in stdout.splitlines():
             for k, v in rdeps.items():

@@ -186,6 +186,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # calculation/creation of a hessp. BUT you only want to do this
         # if the user *hasn't* provided a callable(hessp) function.
         hess = None
+
         def hessp(x, p, *args):
             return sf.hess(x).dot(p)
     else:

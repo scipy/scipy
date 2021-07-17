@@ -2674,7 +2674,6 @@ class TestMoments:
                          moment=moment)
         self._assert_equal(y, expect, shape=(), dtype=dtype)
 
-
     def test_moment_propagate_nan(self):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
@@ -2973,7 +2972,7 @@ PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
                            'log',      # G-test (log-likelihood)
                            'mod_log',  # Modified log-likelihood
                            'cr',       # Cressie-Read (lambda=2/3)
-                          ])
+                           ])
 
 # The details of the first two elements in power_div_1d_cases are used
 # in a test in TestPowerDivergence.  Check that code before making
@@ -7037,7 +7036,7 @@ class TestNumericalInverseHermite:
     sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
              ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
     # Neither `d=None` nor `d=1` should add anything to the shape
-    ds = [(None,  tuple()), (1, tuple()), (3, (3,))]
+    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
 
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
