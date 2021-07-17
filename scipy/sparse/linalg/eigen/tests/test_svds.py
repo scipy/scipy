@@ -95,18 +95,24 @@ class SVDSCommonTests:
 
     # some of these IV tests could run only once, say with solver=None
 
-    def test_svds_input_validation_A_1(self):
-        message = "invalid shape"
-        with pytest.raises(ValueError, match=message):
-            svds([[[1., 2.], [3., 4.]]], k=1, solver=self.solver)
-
+    def test_svds_input_validation_A(self):
+        A = np.asarray([[]])
         message = "`A` must not be empty."
         with pytest.raises(ValueError, match=message):
-            svds([[]], k=1, solver=self.solver)
+            svds(A, k=1, solver=self.solver)
 
-    @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
-    def test_svds_input_validation_A_2(self, A):
+        A = np.asarray([[1, 2], [3, 4]])
         message = "`A` must be of floating or complex floating data type."
+        with pytest.raises(ValueError, match=message):
+            svds(A, k=1, solver=self.solver)
+
+        A = "hi"
+        message = "type not understood"
+        with pytest.raises(TypeError, match=message):
+            svds(A, k=1, solver=self.solver)
+
+        A = np.asarray([[[1., 2.], [3., 4.]]])
+        message = "array must have ndim <= 2"
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, solver=self.solver)
 
@@ -434,14 +440,15 @@ class SVDSCommonTests:
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
     @pytest.mark.parametrize('real', (True, False))
     @pytest.mark.parametrize('transpose', (False, True))
-    @pytest.mark.parametrize('lo_type', (None, np.asarray, csc_matrix,
-                                        aslinearoperator))
+    # In gh-14299, it was suggested the `svds` should _not_ work with lists
+    @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
+                                         aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
         A = np.asarray(A)
         A = np.real(A) if real else A
         A = A.T if transpose else A
-        A2 = lo_type(A) if lo_type else A.tolist()
+        A2 = lo_type(A)
 
         # could check for the appropriate errors, but that is tested above
         if k > min(A.shape):
