@@ -42,8 +42,8 @@ import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
-from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
-                                   siegelslopes)
+from ._stats_mstats_common import _find_repeats, linregress, theilslopes
+from ._siegelslopes import siegelslopes
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
