@@ -50,8 +50,21 @@ def configuration(parent_package='', top_path=None):
         # matrices, we'll use PROPACK's complex matrix readers
         if prefix in {'c', 'z'}:
             config.add_extension(f'{prefix}readhb',
-                                 sources=[f'readhb/{prefix}readhb.pyf', f'readhb/{prefix}readhb.f'],
+                                 sources=[f'readhb/{prefix}readhb.pyf',
+                                          f'readhb/{prefix}readhb.f'],
                                  undef_macros=['_OPENMP'])
+
+        # add required data files to run example matrix tests
+        config.add_data_files('.', join('PROPACK', directory, 'Examples',
+                                     '*.coord'))
+        config.add_data_files('.', join('PROPACK', directory, 'Examples',
+                                     '*.diag'))
+        config.add_data_files('.', join('PROPACK', directory, 'Examples',
+                                     '*.rra'))
+        config.add_data_files('.', join('PROPACK', directory, 'Examples',
+                                     '*.cua'))
+        config.add_data_files('.', join('PROPACK', directory, 'Examples',
+                                     'Output', '*.ascii'))
 
     return config
 
