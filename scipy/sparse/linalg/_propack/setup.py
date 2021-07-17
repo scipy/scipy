@@ -26,7 +26,7 @@ def configuration(parent_package='', top_path=None):
                      c='complex8',
                      z='complex16')
     check_propack_submodule()
-    base = pathlib.Path(__file__).parent / 'PROPACK'
+
     for prefix, directory in type_dict.items():
         lapack_lib = f'sp_{prefix}lapack_util'
         propack_lib = f'_{prefix}propack'
@@ -45,13 +45,6 @@ def configuration(parent_package='', top_path=None):
                              libraries=[lapack_lib, propack_lib],
                              extra_info=lapack_opt,
                              undef_macros=['_OPENMP'])
-
-        # Since scipy.io doesn't support reading complex Harwell-Boeing
-        # matrices, we'll use PROPACK's complex matrix readers
-        if prefix in {'c', 'z'}:
-            config.add_extension(f'{prefix}readhb',
-                                 sources=[f'readhb/{prefix}readhb.pyf', f'readhb/{prefix}readhb.f'],
-                                 undef_macros=['_OPENMP'])
 
     return config
 

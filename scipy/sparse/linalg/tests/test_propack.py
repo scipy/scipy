@@ -6,11 +6,6 @@ from numpy.testing import assert_allclose, assert_raises
 
 from scipy.sparse.linalg.propack import svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
-from scipy.sparse.linalg._propack.creadhb import (
-    readhb as creadhb, readhb_hdr as creadhb_hdr)
-from scipy.sparse.linalg._propack.zreadhb import (
-    readhb as zreadhb, readhb_hdr as zreadhb_hdr)
-
 
 TOLS = {
     np.float32: 1e-4,
@@ -102,21 +97,42 @@ def load_real(folder, precision, file='illc1850.coord'):
     return A
 
 
-def load_complex(folder, precision, file='mhd1280b.cua'):
+def load_complex(folder, precision):
+    file='mhd1280b.cua'
+
     dtype = _dtype_map[precision]
     path = os.path.join(folder, precision, 'Examples', file)
-    # Harwell-Boeing Exchange Format
-    if precision == 'complex8':
-        readhb_hdr, readhb = creadhb_hdr, creadhb
-    else:
-        readhb_hdr, readhb = zreadhb_hdr, zreadhb
-    nc, nz = readhb_hdr(path)
-    values = np.empty(nz, dtype=dtype)
-    colptr = np.empty(nc+1, dtype=np.int32)
-    rowind = np.empty(nz, dtype=np.int32)
-    res = readhb(path, values, colptr, rowind)
-    A = csc_matrix((values, rowind-1, colptr-1))
-    return A
+    with open(path, "r") as f:
+        contents = f.readlines()
+    file_metadata = contents[1].split()
+    matrix_metadata = contents[2].split()
+    datum_length = 15  # hard code rather than getting from contents[3]
+
+    n_header = 4
+    n_total, n_indptr, n_indices, n_data, _ = (int(n) for n in file_metadata)
+    m, n, nnz,_ = (int(n) for n in matrix_metadata[1:])
+
+    line_indptr = n_header
+    line_indices = line_indptr + n_indptr
+    line_data = line_indices + n_indices
+
+    def _concatenate_lines(lines):
+        return "".join([line.rstrip() for line in lines])
+
+    indptr = _concatenate_lines(contents[line_indptr:line_indices])
+    indptr = np.asarray([int(i) for i in indptr.split()])-1
+
+    indices = _concatenate_lines(contents[line_indices:line_data])
+    indices = np.asarray([int(i) for i in indices.split()])-1
+
+    data = _concatenate_lines(contents[line_data:])
+    data = np.asarray([float(data[i:i+datum_length])
+                       for i in range(0, len(data), datum_length)])
+    real, cplx = data[::2], data[1::2]
+    data = real + cplx*1.0j
+    data.astype(dtype)
+
+    return csc_matrix((data, indices, indptr), (m,n))
 
 
 def load_sigma(folder, precision="double", irl=False):
