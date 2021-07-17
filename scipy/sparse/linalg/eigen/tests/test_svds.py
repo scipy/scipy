@@ -95,19 +95,19 @@ class SVDSCommonTests:
 
     # some of these IV tests could run only once, say with solver=None
 
-    def test_svds_input_validation_A_1(self):
-        message = "invalid shape"
-        with pytest.raises(ValueError, match=message):
-            svds([[[1., 2.], [3., 4.]]], k=1, solver=self.solver)
-
-        message = "`A` must not be empty."
-        with pytest.raises(ValueError, match=message):
-            svds([[]], k=1, solver=self.solver)
-
-    @pytest.mark.parametrize("A", ("hi", 1, [[1, 2], [3, 4]]))
-    def test_svds_input_validation_A_2(self, A):
-        message = "`A` must be of floating or complex floating data type."
-        with pytest.raises(ValueError, match=message):
+    _A_empty_msg = "`A` must not be empty."
+    _A_dtype_msg = "`A` must be of floating or complex floating data type"
+    _A_type_msg = "type not understood"
+    _A_ndim_msg = "array must have ndim <= 2"
+    _A_validation_inputs =[
+        (np.asarray([[]]), ValueError, _A_empty_msg),
+        (np.asarray([[1, 2], [3, 4]]), ValueError, _A_dtype_msg),
+        ("hi", TypeError, _A_type_msg),
+        (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
+    @pytest.mark.parametrize("args", _A_validation_inputs)
+    def test_svds_input_validation_A(self, args):
+        A, error_type, message = args
+        with pytest.raises(error_type, match=message):
             svds(A, k=1, solver=self.solver)
 
     @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
@@ -435,14 +435,15 @@ class SVDSCommonTests:
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
     @pytest.mark.parametrize('real', (True, False))
     @pytest.mark.parametrize('transpose', (False, True))
-    @pytest.mark.parametrize('lo_type', (None, np.asarray, csc_matrix,
-                                        aslinearoperator))
+    # In gh-14299, it was suggested the `svds` should _not_ work with lists
+    @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
+                                         aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
         A = np.asarray(A)
         A = np.real(A) if real else A
         A = A.T if transpose else A
-        A2 = lo_type(A) if lo_type else A.tolist()
+        A2 = lo_type(A)
 
         # could check for the appropriate errors, but that is tested above
         if k > min(A.shape):
