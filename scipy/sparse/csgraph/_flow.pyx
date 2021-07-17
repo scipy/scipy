@@ -506,7 +506,7 @@ cdef ITYPE_t _augment_paths(
         ITYPE_t[:] flows,  # OUT
         ITYPE_t flow,  # OUT
         ITYPE_t[:, :] stack
-        ):
+        ) nogil:
     """Computes blocking flow in layered graph using depth first search.
 
     Parameters
@@ -542,7 +542,8 @@ cdef ITYPE_t _augment_paths(
         An arbitrary flow in the layered graph.
 
     """
-    cdef ITYPE_t top, dst_vertex, result_flow, e, current
+    cdef ITYPE_t top, dst_vertex, result_flow
+    cdef ITYPE_t stack_top, e, current
     top = 0
     stack[top][0] = source
     stack[top][1] = flow
@@ -566,21 +567,32 @@ cdef ITYPE_t _augment_paths(
                         top -= 1
                     return result_flow
                 while top > -1:
-                    progress[stack[top][0]] += 1
+                    if progress[stack[top][0]] < edge_ptr[stack[top][0] + 1]:
+                        progress[stack[top][0]] += 1
                     if progress[stack[top][0]] >= edge_ptr[stack[top][0] + 1]:
-                        progress[stack[top][0]] = edge_ptr[stack[top][0]]
                         top -= 1
                     else:
                         break
             else:
-                top += 1
-                stack[top][0] = dst_vertex
-                stack[top][1] = min(flow, capacities[e])
+                if progress[dst_vertex] >= edge_ptr[dst_vertex + 1]:
+                    while top > -1:
+                        stack_top = stack[top][0]
+                        if progress[stack_top] < edge_ptr[stack_top + 1]:
+                            progress[stack_top] += 1
+                        if progress[stack_top] >= edge_ptr[stack_top + 1]:
+                            top -= 1
+                        else:
+                            break
+                else:
+                    top += 1
+                    stack[top][0] = dst_vertex
+                    stack[top][1] = min(flow, capacities[e])
         else:
             while top > -1:
-                progress[stack[top][0]] += 1
-                if progress[stack[top][0]] >= edge_ptr[stack[top][0] + 1]:
-                    progress[stack[top][0]] = edge_ptr[stack[top][0]]
+                stack_top = stack[top][0]
+                if progress[stack_top] < edge_ptr[stack_top + 1]:
+                    progress[stack_top] += 1
+                if progress[stack_top] >= edge_ptr[stack_top + 1]:
                     top -= 1
                 else:
                     break
@@ -631,7 +643,6 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t[:, :] stack = np.empty((n_verts, 2), dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
-
     while True:
         for i in range(n_verts):
             levels[i] = -1
