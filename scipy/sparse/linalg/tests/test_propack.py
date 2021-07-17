@@ -99,7 +99,7 @@ def load_real(folder, precision, file='illc1850.coord'):
 
 
 def load_complex(folder, precision):
-    file='mhd1280b.cua'
+    file = 'mhd1280b.cua'
 
     dtype = _dtype_map[precision]
     path = os.path.join(folder, precision, 'Examples', file)
@@ -111,7 +111,7 @@ def load_complex(folder, precision):
 
     n_header = 4
     n_total, n_indptr, n_indices, n_data, _ = (int(n) for n in file_metadata)
-    m, n, nnz,_ = (int(n) for n in matrix_metadata[1:])
+    m, n, nnz, _ = (int(n) for n in matrix_metadata[1:])
 
     line_indptr = n_header
     line_indices = line_indptr + n_indptr
@@ -133,7 +133,7 @@ def load_complex(folder, precision):
     data = real + cplx*1.0j
     data.astype(dtype)
 
-    return csc_matrix((data, indices, indptr), (m,n))
+    return csc_matrix((data, indices, indptr), (m, n))
 
 
 def load_sigma(folder, precision="double", irl=False):
