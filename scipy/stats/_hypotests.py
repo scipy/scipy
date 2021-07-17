@@ -9,6 +9,7 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
@@ -393,51 +394,6 @@ def _get_wilcoxon_distr(n):
                          "statistic is not implemented for n={}".format(n))
 
     return np.array(cnt, dtype=int)
-
-
-def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
-
-
-def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
-
-
-def _P(A):
-    """Twice the number of concordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
-    return count
-
-
-def _Q(A):
-    """Twice the number of discordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
-    return count
-
-
-def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See [2] section 4: Modified ASEs to test the null hypothesis...
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
-    return count
 
 
 def _tau_b(A):

@@ -87,7 +87,6 @@ Singular values problems:
    :toctree: generated/
 
    svds -- Compute k singular values/vectors for a sparse matrix
-   svdp -- Compute k singular values/vectors for LinearOperators via PROPACK
 
 The `svds` function supports the following solvers:
 
@@ -95,6 +94,7 @@ The `svds` function supports the following solvers:
 
     sparse.linalg.svds-arpack
     sparse.linalg.svds-lobpcg
+    sparse.linalg.svds-propack
 
 Complete or incomplete LU factorizations
 
@@ -124,7 +124,7 @@ from .matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
-from .propack import *
+from ._svdp import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

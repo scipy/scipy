@@ -57,7 +57,7 @@ class BenchPPoly(Benchmark):
         rng = np.random.default_rng(1234)
         m, k = 55, 3
         x = np.sort(rng.random(m+1))
-        c = rng.random((3, m))
+        c = rng.random((k, m))
         self.pp = interpolate.PPoly(c, x)
 
         npts = 100

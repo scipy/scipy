@@ -96,8 +96,8 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         v0 = np.atleast_1d(v0)
         if not (np.issubdtype(v0.dtype, np.complexfloating)
                 or np.issubdtype(v0.dtype, np.floating)):
-            message =  ("`v0` must be of floating or complex floating "
-                        "data type.")
+            message = ("`v0` must be of floating or complex floating "
+                       "data type.")
             raise ValueError(message)
 
         shape = (A.shape[0],) if solver == 'propack' else (min(A.shape),)
@@ -311,15 +311,16 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
-        res = spla.svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
-                        compute_u=jobu, compute_v=jobv, irl_mode=True,
-                        kmax=maxiter, v0=v0, random_state=random_state)
+        res = spla._svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
+                         compute_u=jobu, compute_v=jobv, irl_mode=True,
+                         kmax=maxiter, v0=v0, random_state=random_state)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 
-        # PROPACK order appears to be largest first. Output order is not
+        # PROPACK order appears to be largest first. `svds` output order is not
         # guaranteed, according to documentation, but for ARPACK and LOBPCG
-        # they actually are ordered smallest to largest.
+        # they actually are ordered smallest to largest, so reverse for
+        # consistency.
         s = s[::-1]
         u = u[:, ::-1]
         vh = vh[::-1]

@@ -46,7 +46,16 @@ def configuration(parent_package='', top_path=None):
                              extra_info=lapack_opt,
                              undef_macros=['_OPENMP'])
 
+        # add required data files to run example matrix tests
+        path_list = ['PROPACK', directory, 'Examples']
+        config.add_data_files('.', join(*path_list, '*.coord'))
+        config.add_data_files('.', join(*path_list, '*.diag'))
+        config.add_data_files('.', join(*path_list, '*.rra'))
+        config.add_data_files('.', join(*path_list, '*.cua'))
+        config.add_data_files('.', join(*path_list, 'Output', '*.ascii'))
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

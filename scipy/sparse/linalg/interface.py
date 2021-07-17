@@ -823,5 +823,4 @@ def aslinearoperator(A):
                                   rmatmat=rmatmat, dtype=dtype)
 
         else:
-            A = np.atleast_2d(np.asarray(A))
-            return MatrixLinearOperator(A)
+            raise TypeError('type not understood')

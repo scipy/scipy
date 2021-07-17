@@ -1,3 +1,4 @@
+import os
 from os.path import join
 
 from numpy.distutils.misc_util import get_info
@@ -45,6 +46,14 @@ def configuration(parent_package='', top_path=None):
     ext = config.add_extension('_qmc_cy',
                                sources=['_qmc_cy.cxx'])
     ext._pre_build_hook = set_cxx_flags_hook
+
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.stats._hypotests_pythran',
+            sources=["scipy/stats/_hypotests_pythran.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
 
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')

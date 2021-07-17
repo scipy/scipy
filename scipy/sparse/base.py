@@ -1136,6 +1136,18 @@ class spmatrix:
         """
         return self.tocsr().diagonal(k=k)
 
+    def trace(self, offset=0):
+        """Returns the sum along diagonals of the sparse matrix.
+
+        Parameters
+        ----------
+        offset : int, optional
+            Which diagonal to get, corresponding to elements a[i, i+offset].
+            Default: 0 (the main diagonal).
+
+        """
+        return self.diagonal(k=offset).sum()
+
     def setdiag(self, values, k=0):
         """
         Set diagonal or off-diagonal elements of the array.
