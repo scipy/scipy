@@ -363,7 +363,7 @@ stages:
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
         $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
-        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
+        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
