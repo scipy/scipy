@@ -144,7 +144,10 @@ def load_uv(folder, precision="double", uv="U", irl=False):
     return data.reshape((n, m)).T
 
 
-@pytest.mark.parametrize('precision', _dtype_map.keys())
+@pytest.mark.parametrize('precision', [
+    pytest.param(p, marks=pytest.mark.slow)
+    if 'complex' in p else p for p in _dtype_map
+])
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
@@ -215,6 +218,7 @@ def test_shifts(shifts, precision):
         svdp(A, k, shifts=shifts, irl_mode=True)
 
 
+@pytest.mark.slow
 @pytest.mark.xfail()
 def test_shifts_accuracy():
     np.random.seed(0)
