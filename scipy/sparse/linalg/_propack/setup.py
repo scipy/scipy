@@ -55,16 +55,12 @@ def configuration(parent_package='', top_path=None):
                                  undef_macros=['_OPENMP'])
 
         # add required data files to run example matrix tests
-        config.add_data_files('.', join('PROPACK', directory, 'Examples',
-                                     '*.coord'))
-        config.add_data_files('.', join('PROPACK', directory, 'Examples',
-                                     '*.diag'))
-        config.add_data_files('.', join('PROPACK', directory, 'Examples',
-                                     '*.rra'))
-        config.add_data_files('.', join('PROPACK', directory, 'Examples',
-                                     '*.cua'))
-        config.add_data_files('.', join('PROPACK', directory, 'Examples',
-                                     'Output', '*.ascii'))
+        path_list = ['PROPACK', directory, 'Examples']
+        config.add_data_files('.', join(*path_list, '*.coord'))
+        config.add_data_files('.', join(*path_list, '*.diag'))
+        config.add_data_files('.', join(*path_list, '*.rra'))
+        config.add_data_files('.', join(*path_list, '*.cua'))
+        config.add_data_files('.', join(*path_list, 'Output', '*.ascii'))
 
     return config
 
