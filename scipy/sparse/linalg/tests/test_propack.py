@@ -149,9 +149,9 @@ def load_uv(folder, precision="double", uv="U", irl=False):
 def test_examples(precision, irl):
     atol = {
         'single': 1e-3,
-        'double': 1e-11,
-        'complex8': 1e-3,
-        'complex16': 1e-11,
+        'double': 1e-9,
+        'complex8': 1e-4,
+        'complex16': 1e-9,
     }[precision]
 
     path_prefix = os.path.dirname(__file__)
@@ -166,18 +166,39 @@ def test_examples(precision, irl):
     }[precision](folder, precision)
     s_expected = load_sigma(folder, precision, irl=irl)
     u_expected = load_uv(folder, precision, "U", irl=irl)
-    vt_expected = load_uv(folder, precision, "V", irl=irl).T
+    vh_expected = load_uv(folder, precision, "V", irl=irl).T
 
     k = len(s_expected)
-    u, s, vt, _ = svdp(A, k, irl_mode=irl)
+    u, s, vh, _ = svdp(A, k, irl_mode=irl, random_state=0)
 
-    assert_allclose(s, s_expected, atol)
+    # Check singular values
+    assert_allclose(s, s_expected.real, atol=atol)
 
-    # TODO: complex types seem to have trouble with this, maybe adjust atol for
-    #       these?
-    if precision in {'single', 'double'}:
-        assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
-        assert_allclose(np.abs(vt), np.abs(vt_expected), atol=atol)
+    # complex example matrix has many repeated singular values, so check only
+    # beginning non-repeated singular vectors to avoid permutations
+    sv_check = 27 if precision in {'complex8', 'complex16'} else k
+    u = u[:, :sv_check]
+    u_expected = u_expected[:, :sv_check]
+    vh = vh[:sv_check, :]
+    vh_expected = vh_expected[:sv_check, :]
+    s = s[:sv_check]
+
+    assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
+    assert_allclose(np.abs(vh), np.abs(vh_expected), atol=atol)
+
+    # Check orthogonality of singular vectors
+    assert_allclose(np.eye(u.shape[1]), u.conj().T @ u, atol=atol)
+    assert_allclose(np.eye(vh.shape[0]), vh @ vh.conj().T, atol=atol)
+
+    # Ensure the norm of the difference between the np.linalg.svd and
+    # PROPACK reconstructed matrices is small
+    u3, s3, vh3 = np.linalg.svd(A.todense())
+    u3 = u3[:, :sv_check]
+    s3 = s3[:sv_check]
+    vh3 = vh3[:sv_check, :]
+    A3 = u3 @ np.diag(s3) @ vh3
+    recon = u @ np.diag(s) @ vh
+    assert_allclose(np.linalg.norm(A3 - recon), 0, atol=atol)
 
 
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
