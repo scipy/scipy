@@ -13,7 +13,7 @@ PROPACK source is BSD licensed, and available at
   http://soi.stanford.edu/~rmunk/PROPACK/
 """
 
-__all__ = ['svdp']
+__all__ = ['_svdp']
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from ._propack import _spropack
+from ._propack import _spropack  # type: ignore
 from ._propack import _dpropack
 from ._propack import _cpropack
 from ._propack import _zpropack
@@ -78,7 +78,7 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-def svdp(A, k, which='LM', irl_mode=True, kmax=None,
+def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True,
          min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
@@ -173,9 +173,9 @@ def svdp(A, k, which='LM', irl_mode=True, kmax=None,
 
     Examples
     --------
-    >>> from scipy.sparse.linalg import svdp
+    >>> from scipy.sparse.linalg import svd
     >>> A = np.random.random((10, 20))
-    >>> u, sigma, vt = svdp(A, 3)
+    >>> u, sigma, vt = svd(A, 3, solver='propack')
     >>> np.set_printoptions(precision=3, suppress=True)
     >>> print(abs(np.dot(u.T, u)))
     [[ 1.  0.  0.]

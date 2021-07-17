@@ -4,11 +4,11 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises
 
-from scipy.sparse.linalg.propack import svdp
+from scipy.sparse.linalg import _svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
-from scipy.sparse.linalg._propack.creadhb import (
+from scipy.sparse.linalg._propack.creadhb import (  # type: ignore
     readhb as creadhb, readhb_hdr as creadhb_hdr)
-from scipy.sparse.linalg._propack.zreadhb import (
+from scipy.sparse.linalg._propack.zreadhb import (  # type: ignore
     readhb as zreadhb, readhb_hdr as zreadhb_hdr)
 
 
@@ -57,8 +57,8 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     Msp = constructor(M)
 
     u1, sigma1, vt1 = np.linalg.svd(M, full_matrices=False)
-    u2, sigma2, vt2, _ = svdp(Msp, k=k, which=which, irl_mode=irl_mode,
-                              tol=tol)
+    u2, sigma2, vt2, _ = _svdp(Msp, k=k, which=which, irl_mode=irl_mode,
+                               tol=tol)
 
     # check the which
     if which.upper() == 'SM':
@@ -173,7 +173,7 @@ def test_examples(precision, irl):
     vh_expected = load_uv(folder, precision, "V", irl=irl).T
 
     k = len(s_expected)
-    u, s, vh, _ = svdp(A, k, irl_mode=irl, random_state=0)
+    u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
 
     # Check singular values
     assert_allclose(s, s_expected.real, atol=atol)
@@ -214,9 +214,9 @@ def test_shifts(shifts, precision):
     A = np.random.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):
         with pytest.raises(ValueError):
-            svdp(A, k, shifts=shifts, irl_mode=True)
+            _svdp(A, k, shifts=shifts, irl_mode=True)
     else:
-        svdp(A, k, shifts=shifts, irl_mode=True)
+        _svdp(A, k, shifts=shifts, irl_mode=True)
 
 
 @pytest.mark.slow
@@ -225,8 +225,8 @@ def test_shifts_accuracy():
     np.random.seed(0)
     n, k = 70, 10
     A = np.random.random((n, n)).astype(np.double)
-    u1, s1, vt1, _ = svdp(A, k, shifts=None, which='SM', irl_mode=True)
-    u2, s2, vt2, _ = svdp(A, k, shifts=32, which='SM', irl_mode=True)
+    u1, s1, vt1, _ = _svdp(A, k, shifts=None, which='SM', irl_mode=True)
+    u2, s2, vt2, _ = _svdp(A, k, shifts=32, which='SM', irl_mode=True)
     # shifts <= 32 doesn't agree with shifts > 32
     # Does agree when which='LM' instead of 'SM'
     assert_allclose(s1, s2)
