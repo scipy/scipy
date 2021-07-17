@@ -102,7 +102,7 @@ class _Bunch:
 
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature=None, full_output=False):
+             workers=1, points=None, quadrature=None, full_output=False, args=()):
     r"""Adaptive integration of a vector-valued function.
 
     Parameters
@@ -140,6 +140,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
     full_output : bool, optional
         Return an additional ``info`` dictionary.
+    args : tuple, optional
+        Extra arguments to pass to function, if any.
 
     Returns
     -------
@@ -214,6 +216,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     """
     a = float(a)
     b = float(b)
+
+    if args:
+        if not isinstance(args, tuple):
+            args = (args,)
+        _f = f
+        f = lambda x: _f(x, *args)
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
