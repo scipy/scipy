@@ -96,8 +96,8 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         v0 = np.atleast_1d(v0)
         if not (np.issubdtype(v0.dtype, np.complexfloating)
                 or np.issubdtype(v0.dtype, np.floating)):
-            message =  ("`v0` must be of floating or complex floating "
-                        "data type.")
+            message = ("`v0` must be of floating or complex floating "
+                       "data type.")
             raise ValueError(message)
 
         shape = (A.shape[0],) if solver == 'propack' else (min(A.shape),)

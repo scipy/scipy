@@ -57,7 +57,8 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     Msp = constructor(M)
 
     u1, sigma1, vt1 = np.linalg.svd(M, full_matrices=False)
-    u2, sigma2, vt2, _ = svdp(Msp, k=k, which=which, irl_mode=irl_mode, tol=tol)
+    u2, sigma2, vt2, _ = svdp(Msp, k=k, which=which, irl_mode=irl_mode,
+                              tol=tol)
 
     # check the which
     if which.upper() == 'SM':

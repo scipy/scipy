@@ -244,7 +244,7 @@ def svdp(A, k, which='LM', irl_mode=True, kmax=None,
     else:
         try:
             u[:, 0] = v0
-        except:
+        except ValueError:
             raise ValueError(f"v0 must be of length {m}")
 
     # process options for the fit
@@ -282,8 +282,9 @@ def svdp(A, k, which='LM', irl_mode=True, kmax=None,
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
     if compute_u or compute_v:
-        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(3*kmax*kmax + 4*kmax + 4,
-                                                       blocksize*max(m, n))
+        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(
+            3*kmax*kmax + 4*kmax + 4,
+            blocksize*max(m, n))
         liwork = 8*kmax
     else:
         lwork = m + n + 9*kmax + 2*kmax*kmax + 4 + max(m + n, 4*kmax + 4)

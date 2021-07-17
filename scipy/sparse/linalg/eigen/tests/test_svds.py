@@ -251,6 +251,7 @@ class SVDSCommonTests:
 
         # calculate the error as a function of `tol`
         A = csc_matrix(A)
+
         def err(tol):
             _, s2, _ = svds(A, k=k, v0=np.ones(n), solver=self.solver, tol=tol)
             return np.linalg.norm((s2 - s[k-1::-1])/s[k-1::-1])
@@ -454,7 +455,6 @@ class SVDSCommonTests:
         u, s, vh = svds(A2, k, solver=self.solver)
         _check_svds(A, k, u, s, vh)
 
-
     def test_svd_linop(self):
         solver = self.solver
 
@@ -510,8 +510,10 @@ class SVDSCommonTests:
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)
 
-                    U1, s1, VH1 = reorder(svds(A, k, which="LM", solver=solver))
-                    U2, s2, VH2 = reorder(svds(L, k, which="LM", solver=solver))
+                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
+                                               solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
+                                               solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
@@ -578,7 +580,6 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
     def setup_method(self):
         self.solver = 'arpack'
 
-
     @pytest.mark.parametrize("ncv", list(range(-1, 8)) + [4.5, "5"])
     def test_svds_input_validation_ncv_1(self, ncv):
         rng = np.random.default_rng(0)
@@ -604,7 +605,6 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         message = "invalid literal for int()"
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), ncv="hi", solver=self.solver)
-
 
     # I can't see a robust relationship between `ncv` and relevant outputs
     # (e.g. accuracy, time), so no test of the parameter.
