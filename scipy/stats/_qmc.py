@@ -1069,8 +1069,6 @@ class OptimalLatinHypercube(QMCEngine):
         else:
             self.start_disc = np.inf
 
-        self.lhs = LatinHypercube(self.d, seed=self.rng)
-
     def random(self, n: IntNumber = 1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
@@ -1089,10 +1087,12 @@ class OptimalLatinHypercube(QMCEngine):
             return np.empty((n, self.d))
 
         if self.start_sample is None:
-            best_sample = self.lhs.random(n)
+            lhs = LatinHypercube(self.d, seed=self.rng)
+            best_sample = lhs.random(n)
             best_disc = discrepancy(best_sample)
         else:
             best_sample = self.start_sample
+            n = len(best_sample)
             best_disc = self.start_disc
 
         if n == 1:
@@ -1119,19 +1119,6 @@ class OptimalLatinHypercube(QMCEngine):
         self.num_generated += n
         return best_sample
 
-    def reset(self):
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine: OptimalLatinHypercube
-            Engine reset to its base state.
-
-        """
-        self.__init__(d=self.d, start_sample=self.start_sample,
-                      n_perturbations=self.n_perturbations, seed=self.rng_seed)
-        self.num_generated = 0
-        return self
 
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
