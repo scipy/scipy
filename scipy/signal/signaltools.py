@@ -2,6 +2,7 @@
 # 1999 -- 2002
 
 import operator
+import os
 import math
 import timeit
 from scipy.spatial import cKDTree
@@ -17,6 +18,7 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
+from ._sosfilt_float import _sosfilt_float
 import warnings
 
 
@@ -4225,7 +4227,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
-    _sosfilt(sos, x, zi)
+    if sos.dtype is object or int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+        _sosfilt(sos, x, zi)
+    else:
+        x, zi = _sosfilt_float(sos, x, zi)
     x.shape = x_shape
     x = np.moveaxis(x, -1, axis)
     if return_zi:
