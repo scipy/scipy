@@ -129,8 +129,8 @@ def load_complex(folder, precision):
     data = _concatenate_lines(contents[line_data:])
     data = np.asarray([float(data[i:i+datum_length])
                        for i in range(0, len(data), datum_length)])
-    real, cplx = data[::2], data[1::2]
-    data = real + cplx*1.0j
+    real, imag= data[::2], data[1::2]
+    data = real + imag*1.0j
     data.astype(dtype)
 
     return csc_matrix((data, indices, indptr), (m, n))
