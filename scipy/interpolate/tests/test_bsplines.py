@@ -431,6 +431,12 @@ class TestBSpline:
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
     
     def test_design_matrix_bc_types(self):
+        '''
+        Splines with different boundary conditions are built on different
+        types of vectors of knots. As far as design matrix depends only on
+        vector of knots, `k` and `x` it is useful to make tests for different
+        boundary conditions (and as following different vectors of knots).
+        '''
         def run_design_matrix_tests(n, k, bc_type):
             '''
             To avoid repetition of the code the following function is
@@ -445,12 +451,12 @@ class TestBSpline:
 
             c = np.eye(len(bspl.t) - k - 1)
             des_matr_def = BSpline(bspl.t, c, k)(x)
-            des_matr_dense = BSpline.design_matrix(x, bspl.t, k, kind="dense")
-            des_matr_csr = BSpline.design_matrix(x, bspl.t, k, kind="CSR")
-            
-            assert_allclose(des_matr_def, des_matr_dense, atol=1e-14)
-            assert_allclose(des_matr_dense @ bspl.c, y, atol=1e-14)
-            assert_allclose(des_matr_dense, des_matr_csr.toarray(), atol=1e-14)
+            des_matr_csr = BSpline.design_matrix(x, 
+                                                 bspl.t,
+                                                 k, 
+                                                 kind="CSR").toarray()
+            assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
+            assert_allclose(des_matr_def, des_matr_csr, atol=1e-14)
 
         np.random.seed(1234)
         # "clamped" and "natural" work only with `k = 3`
@@ -480,18 +486,31 @@ class TestBSpline:
         for i in range(1, 4):
             xc = x[:i]
             yc = y[:i]
-            des_matr_dense = BSpline.design_matrix(xc, bspl.t, k, kind='dense')
-            des_matr_csr = BSpline.design_matrix(xc, bspl.t, k, kind='CSR')
-
-            assert_allclose(des_matr_dense @ bspl.c, yc, atol=1e-14)
-            assert_allclose(des_matr_dense,
-                            des_matr_csr.toarray(), atol=1e-14)
+            des_matr_csr = BSpline.design_matrix(xc,
+                                                 bspl.t,
+                                                 k, 
+                                                 kind='CSR').toarray()
+            assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
+        
+    def test_design_matrix_asserts(self):
+        np.random.seed(1234)
+        n = 10
+        k = 3
+        x = np.sort(np.random.random_sample(n) * 40 - 20)
+        y = np.random.random_sample(n) * 40 - 20
+        bspl = make_interp_spline(x, y, k=k)
         # unknown `kind`
         with assert_raises(ValueError):
             des_test = BSpline.design_matrix(x, bspl.t, k, kind="Some kind")
         # invalid vector of knots
         with assert_raises(ValueError):
             des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
+        k = 2
+        t = [0., 1., 2., 3., 4., 5.]
+        x = [1., 2., 3., 4.]
+        # out of bounds
+        with assert_raises(ValueError):
+            des_test = BSpline.design_matrix(x, t, k)
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
