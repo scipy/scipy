@@ -41,6 +41,12 @@ def configuration(parent_package='', top_path=None):
             sources=["scipy/signal/_spectral.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
+
+        ext = pythran.dist.PythranExtension(
+            'scipy.signal.morebsplines',
+            sources=["scipy/signal/morebsplines.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
     else:
         config.add_extension(
             '_spectral', sources=['_spectral.c'])
