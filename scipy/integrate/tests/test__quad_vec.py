@@ -87,6 +87,15 @@ def test_quad_vec_simple_inf(quadrature):
     assert_allclose(res, exact, rtol=0, atol=max(epsabs, 1.5 * err))
 
 
+def test_quad_vec_args():
+    f = lambda x, a: x * (x + a) * np.arange(3)
+    a = 2
+    exact = np.array([0, 4/3, 8/3])
+
+    res, err = quad_vec(f, 0, 1, args=(a,))
+    assert_allclose(res, exact, rtol=0, atol=1e-4)
+
+
 def _lorenzian(x):
     return 1 / (1 + x**2)
 
@@ -102,6 +111,25 @@ def test_quad_vec_pool():
         f = lambda x: 1 / (1 + x**2)
         res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=1e-4, workers=pool.map)
         assert_allclose(res, np.pi, rtol=0, atol=1e-4)
+
+
+def _func_with_args(x, a):
+    return x * (x + a) * np.arange(3)
+
+
+def test_quad_vec_pool_args():
+    from multiprocessing.dummy import Pool
+
+    f = _func_with_args
+    a = 2
+    exact = np.array([0, 4/3, 8/3])
+
+    res, err = quad_vec(f, 0, 1, args=(a,), workers=4)
+    assert_allclose(res, exact, rtol=0, atol=1e-4)
+
+    with Pool(10) as pool:
+        res, err = quad_vec(f, 0, 1, args=(a,), workers=pool.map)
+        assert_allclose(res, exact, rtol=0, atol=1e-4)
 
 
 @quadrature_params
