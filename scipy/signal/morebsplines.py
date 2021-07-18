@@ -4,9 +4,11 @@ import numpy as np
 __all__ = [ 'cubic', 'quadratic','cspline1d', 'qspline1d', 
             'cspline1d_eval', 'qspline1d_eval']
 
-
+#pythran export cubic(int list)
+#pythran export cubic(float list)
 #pythran export cubic(int[])
 #pythran export cubic(float[])
+#pythran export cubic(complex128[:, :])
 def cubic(x):
     """A cubic B-spline.
 
@@ -59,8 +61,11 @@ def cubic(x):
     return res
 
 
+#pythran export quadratic(int list)
+#pythran export quadratic(float list)
 #pythran export quadratic(int[])
 #pythran export quadratic(float[])
+#pythran export quadratic(complex128[:, :])
 def quadratic(x):
     """A quadratic B-spline.
 
@@ -208,8 +213,13 @@ def _quadratic_coeff(signal):
 
 #pythran export cspline1d(int[])
 #pythran export cspline1d(float[])
+#pythran export cspline1d(complex128[])
 #pythran export cspline1d(int[], float)
 #pythran export cspline1d(float[], float)
+#pythran export cspline1d(complex128[], float)
+#pythran export cspline1d(int[], int)
+#pythran export cspline1d(float[], int)
+#pythran export cspline1d(complex128[], int)
 def cspline1d(signal, lamb=0.0):
     """
     Compute cubic spline coefficients for rank-1 array.
@@ -313,6 +323,19 @@ def qspline1d(signal, lamb=0.0):
         return _quadratic_coeff(signal)
 
 
+#pythran export cspline1d_eval(complex128[], float[])
+#pythran export cspline1d_eval(int[], int list)
+#pythran export cspline1d_eval(int[], int list, float)
+#pythran export cspline1d_eval(int[], int list, float, int)
+#pythran export cspline1d_eval(int[], float list)
+#pythran export cspline1d_eval(int[], float list, float)
+#pythran export cspline1d_eval(int[], float list, float, int)
+#pythran export cspline1d_eval(float[], int list)
+#pythran export cspline1d_eval(float[], int list, float)
+#pythran export cspline1d_eval(float[], int list, float, int)
+#pythran export cspline1d_eval(float[], float list)
+#pythran export cspline1d_eval(float[], float list, float)
+#pythran export cspline1d_eval(float[], float list, float, int)
 #pythran export cspline1d_eval(int[], int[])
 #pythran export cspline1d_eval(int[], int[], float)
 #pythran export cspline1d_eval(int[], int[], float, int)
@@ -325,6 +348,22 @@ def qspline1d(signal, lamb=0.0):
 #pythran export cspline1d_eval(float[], float[])
 #pythran export cspline1d_eval(float[], float[], float)
 #pythran export cspline1d_eval(float[], float[], float, int)
+#pythran export cspline1d_eval(int[], int list, int)
+#pythran export cspline1d_eval(int[], int list, int, int)
+#pythran export cspline1d_eval(int[], float list, int)
+#pythran export cspline1d_eval(int[], float list, int, int)
+#pythran export cspline1d_eval(float[], int list, int)
+#pythran export cspline1d_eval(float[], int list, int, int)
+#pythran export cspline1d_eval(float[], float list, int)
+#pythran export cspline1d_eval(float[], float list, int, int)
+#pythran export cspline1d_eval(int[], int[], int)
+#pythran export cspline1d_eval(int[], int[], int, int)
+#pythran export cspline1d_eval(int[], float[], int)
+#pythran export cspline1d_eval(int[], float[], int, int)
+#pythran export cspline1d_eval(float[], int[], int)
+#pythran export cspline1d_eval(float[], int[], int, int)
+#pythran export cspline1d_eval(float[], float[], int)
+#pythran export cspline1d_eval(float[], float[], int, int)
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a cubic spline at the new set of points.
 
@@ -398,6 +437,18 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     return res
 
 
+#pythran export qspline1d_eval(int[], int list)
+#pythran export qspline1d_eval(int[], int list, float)
+#pythran export qspline1d_eval(int[], int list, float, int)
+#pythran export qspline1d_eval(int[], float list)
+#pythran export qspline1d_eval(int[], float list, float)
+#pythran export qspline1d_eval(int[], float list, float, int)
+#pythran export qspline1d_eval(float[], int list)
+#pythran export qspline1d_eval(float[], int list, float)
+#pythran export qspline1d_eval(float[], int list, float, int)
+#pythran export qspline1d_eval(float[], float list)
+#pythran export qspline1d_eval(float[], float list, float)
+#pythran export qspline1d_eval(float[], float list, float, int)
 #pythran export qspline1d_eval(int[], int[])
 #pythran export qspline1d_eval(int[], int[], float)
 #pythran export qspline1d_eval(int[], int[], float, int)
@@ -410,6 +461,14 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 #pythran export qspline1d_eval(float[], float[])
 #pythran export qspline1d_eval(float[], float[], float)
 #pythran export qspline1d_eval(float[], float[], float, int)
+#pythran export qspline1d_eval(int[], int list, int)
+#pythran export qspline1d_eval(int[], int list, int, int)
+#pythran export qspline1d_eval(int[], float list, int)
+#pythran export qspline1d_eval(int[], float list, int, int)
+#pythran export qspline1d_eval(float[], int list, int)
+#pythran export qspline1d_eval(float[], int list, int, int)
+#pythran export qspline1d_eval(float[], float list, int)
+#pythran export qspline1d_eval(float[], float list, int, int)
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a quadratic spline at the new set of points.
 
