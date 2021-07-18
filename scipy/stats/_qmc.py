@@ -1106,15 +1106,13 @@ class OptimalLatinHypercube(QMCEngine):
             col = rng_integers(self.rng, *bounds[0])
             row_1 = rng_integers(self.rng, *bounds[1])
             row_2 = rng_integers(self.rng, *bounds[2])
-            doe = best_sample.copy()
             disc = _perturb_discrepancy(best_sample,
                                         row_1, row_2, col,
                                         best_disc)
             if disc < best_disc:
-                doe[row_1, col], doe[row_2, col] = (
-                    doe[row_2, col], doe[row_1, col])
+                best_sample[row_1, col], best_sample[row_2, col] = (
+                    best_sample[row_2, col], best_sample[row_1, col])
                 best_disc = disc
-                best_sample = doe
 
         self.num_generated += n
         return best_sample
