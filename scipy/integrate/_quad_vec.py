@@ -101,6 +101,18 @@ class _Bunch:
                                              for k in self.__keys))
 
 
+class _FunctionWrapper:
+    """
+    Object to wrap user function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
              workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):
@@ -221,8 +233,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     if args:
         if not isinstance(args, tuple):
             args = (args,)
-        _f = f
-        f = lambda x: _f(x, *args)
+
+        # create a wrapped function to allow the use of map and Pool.map
+        f = _FunctionWrapper(f, args)
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
