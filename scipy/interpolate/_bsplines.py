@@ -300,7 +300,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
     
     @classmethod
-    def design_matrix(cls, x, t, k, kind="dense", extrapolate=False, check_finite=True):
+    def design_matrix(cls, x, t, k, kind="CSR"):
         '''
         Returns a design matrix for BSpline object in "dense" or "CSR" formats.
         
@@ -312,54 +312,61 @@ class BSpline:
             Vector of knots.
         k : int
             The maximum degree of spline.
-        kind : "CSR" or "dense", optional
-            Default is ``"dense"`` .
-            * ``"dense"`` : Returns dense matrix.
+        kind : "CSR", optional
+            Default is ``"CSR"`` .
             * ``"CSR"`` : Returns sparse matrix in CSR.
-        extrapolate : int, optional
-            Whether to extrapolate to ouf-of-bounds points, or to return NaNs.
-            Default is False.
-        check_finite : bool, optional
-            Whether to check that the input arrays contain only finite numbers.
-            Disabling may give a performance gain, but may result in problems
-            (crashes, non-termination) if the inputs do contain infinities or NaNs.
-            Default is True.    
+ 
         Returns
         -------
-        2-D array, shape(n, nt - k - 1) or sparse matrix in CSR.
+        Sparse matrix in CSR.
 
         Examples
         --------
-        Construct a design matrix for some vector of knots
-        >>> import numpy as np
-        >>> from scipy.interpolate import BSpline
-        >>> k = 2
-        >>> t = [0, 1, 2, 3, 4, 5, 6]
-        >>> x = [1, 2, 3, 4]
-        >>> design_matrix = BSpline.design_matrix(x, t, k)
-        [[ 2. , -1.5,  0.5,  0. ],
-        [ 0.5,  0.5,  0. ,  0. ],
-        [ 0. ,  0.5,  0.5,  0. ],
-        [ 0. ,  0. ,  0.5,  0.5]]
-
         Construct a design matrix for a B-spline
-        >>> from scipy.interpolate import make_interp_spline
+        >>> from scipy.interpolate import make_interp_spline, BSpline
         >>> x = np.linspace(0, np.pi * 2, 4)
         >>> y = np.sin(x)
-        >>> bspl = make_interp_spline(x, y, k=3)
-        >>> design_matrix = BSpline.design_matrix(x, bspl.t, k)
-        [[1.    0.    0.    0.   ]
-        [0.296 0.444 0.222 0.037]
-        [0.037 0.222 0.444 0.296]
-        [0.    0.    0.    1.   ]]
-        '''
-        x = _as_float_array(x, check_finite)
-        t = _as_float_array(t, check_finite)
-        
-        if not all(t[:1] <= t[1:]):
-            raise ValueError("Knot vector should be non-descending")
+        >>> k = 3
+        >>> bspl = make_interp_spline(x, y, k=k)
+        >>> design_matrix = BSpline.design_matrix(x, bspl.t, k, kind="CSR")
+        >>> design_matrix.toarray()
+        [[1.        , 0.        , 0.        , 0.        ],
+        [0.2962963 , 0.44444444, 0.22222222, 0.03703704],
+        [0.03703704, 0.22222222, 0.44444444, 0.2962963 ],
+        [0.        , 0.        , 0.        , 1.        ]]
 
-        return _bspl._make_design_matrix(x, t, k, kind, extrapolate)
+        Construct a design matrix for some vector of knots
+        >>> k = 2
+        >>> t = [-1, 0, 1, 2, 3, 4, 5, 6]
+        >>> x = [1, 2, 3, 4]
+        >>> design_matrix = BSpline.design_matrix(x, t, k, kind="CSR").toarray()
+        >>> design_matrix
+        [[0.5, 0.5, 0. , 0. , 0. ],
+        [0. , 0.5, 0.5, 0. , 0. ],
+        [0. , 0. , 0.5, 0.5, 0. ],
+        [0. , 0. , 0. , 0.5, 0.5]]
+
+        Comparing with method introduced in gh-6730
+        >>> c = np.eye(len(t) - k - 1)
+        >>> design_matrix_gh = BSpline(t, c, k)(x)
+        >>> np.allclose(design_matrix, design_matrix_gh, atol=1e-14)
+        True
+
+        Notes
+        -----
+        versionadded:: 1.8.0
+        '''
+        x = _as_float_array(x, True)
+        t = _as_float_array(t, True)
+        
+        if t.ndim != 1 or np.any(t[1:] < t[:-1]):
+            raise ValueError("Expect t to be a 1-D sorted array_like.")
+        if  len(t) < k:
+            raise ValueError(f"Length t is not enough for k={k}.")
+        if (min(x) < t[k]) or (max(x) > t[-k]):
+            raise ValueError('Out of bounds w/ x = %s.' % x)
+
+        return _bspl._make_design_matrix(x, t, k, kind)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
