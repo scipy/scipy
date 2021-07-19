@@ -52,15 +52,15 @@ SUCCESS_MESSAGES = (
     ("The best function value found is within {} percent "
     "of the (known) global optimum"),
     ("The volume of the hyper-rectangle with best function value found "
-     "is below volper={}"),
+     "is below vol_per={}"),
     ("The measure of the hyper-rectangle with best function value found "
-     "is below sigmaper={}"),
+     "is below sigma_per={}"),
 )
 
-def _minimize_direct(func, bounds, *args, disp=False,
-                     eps=1e-4, maxfun=2000, maxiter=6000, 
-                     locally_biased=False, fglobal=-1e100, fglper=0.01, 
-                     volper=-1.0, sigmaper=-1.0):
+def _minimize_direct(func, bounds, args = (), disp=False,
+                     eps=1e-4, maxfun=90000, maxiter=6000, 
+                     locally_biased=False, fglobal=-np.inf, fglper=0.01, 
+                     vol_per=-1.0, sigma_per=-1.0):
     r"""
 
     Solve an optimization problem using the DIRECT 
@@ -85,10 +85,13 @@ def _minimize_direct(func, bounds, *args, disp=False,
     fun: callable
         The objective function to be minimized.
         fun(x, *args) -> float
-        where x is an 1-D array with shape (n,) and args is a tuple of the fixed parameters needed to completely specify the function.
+        where x is an 1-D array with shape (n,) and args is a tuple of
+        the fixed parameters needed to completely specify the function.
     bounds : Bounds
         lower bounds and upper bounds for each element in ``x``, defining
         the bounds on that parameter.
+    args : tuple, optional
+        Extra arguments passed to the objective function.
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal interval is chosen.
@@ -97,7 +100,7 @@ def _minimize_direct(func, bounds, *args, disp=False,
     maxiter : int, optional
         Maximum number of iterations.
     locally_biased : bool, optional
-        Whether to use the original or modified DIRECT algorithm.
+        Whether to use the original [1]_ or modified [2]_ DIRECT algorithm.
         Possible values:
 
         * ``locally_biased=False`` - use the original DIRECT algorithm
@@ -112,12 +115,12 @@ def _minimize_direct(func, bounds, *args, disp=False,
         .. math::
 
             100*(f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
-    volper : float, optional
-        Terminate the optimization once the volume of a hyperrectangle is less
-        than volper percent of the original hyperrectangel.
+    vol_per : float, optional
+        Terminate the optimization once the volume of a hyper-rectangle is less
+        than vol_per percent of the original hyper-rectangle.
     sigma_per : float, optional
         Terminate the optimization once the measure of the 
-        hyperrectangle is less than this argument.
+        hyper-rectangle is less than this argument.
 
     Returns
     -------
@@ -127,26 +130,36 @@ def _minimize_direct(func, bounds, *args, disp=False,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
+    
+    References
+    ----------
+    .. [1] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
+           optimization without the Lipschitz constant. J Optim Theory Appl
+           79, 157–181 (1993)
+    .. [2] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
+           Modifications of the direct algorithm. Ph.D. Dissertation.
     """
     l = np.ascontiguousarray(bounds.lb)
     u = np.ascontiguousarray(bounds.ub)
 
-    def func_wrap(x, *args):
-        try:
-            return func(x, *args)
-        except Exception:
+    def _func_wrap(x, *args):
+        f = func(x, *args)
+        if np.isnan(f):
             return np.nan
+        else:
+            return f
+
 
     #
     # Call the DIRECT algorithm
     #
-    x, fun, ret_code, nfev, nit = direct(func_wrap, np.asarray(l), np.asarray(u), args,
+    x, fun, ret_code, nfev, nit = direct(_func_wrap, np.asarray(l), np.asarray(u), args,
         disp, eps, maxfun, maxiter,
         locally_biased,
         fglobal, fglper,
-        volper, sigmaper)
+        vol_per, sigma_per)
 
-    format_val = (maxfun, maxiter, fglper, volper, volper)
+    format_val = (maxfun, maxiter, fglper, vol_per, vol_per)
     if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 1].format(
                     format_val[ret_code - 1])

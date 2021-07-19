@@ -44,7 +44,7 @@ direct(PyObject *self, PyObject *args)
                                 logfile, algorithm, &info);
     PyObject *x_seq = PyList_New(dimension);
     for (int i = 0; i < dimension; i++) {
-        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i + 1]));
+        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i]));
     }
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);

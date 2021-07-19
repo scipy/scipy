@@ -1035,8 +1035,8 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
 
-        # cobyla doesn't have callback
-        if method == 'cobyla':
+        # cobyla and direct don't have callback
+        if method == 'cobyla' or method == 'direct':
             return
 
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
@@ -1942,9 +1942,14 @@ class TestOptimizeResultAttributes:
                 sup.filter(RuntimeWarning,
                            ("Method .+ does not use (gradient|Hessian.*)"
                             " information"))
-                res = optimize.minimize(self.func, self.x0, method=method,
-                                        jac=self.jac, hess=self.hess,
-                                        hessp=self.hessp)
+                if method == 'direct':
+                    res = optimize.minimize(self.func, None,
+                                            bounds=[(-1.0, 1.0), (-1.0, 1.0)],
+                                            method=method)
+                else:
+                    res = optimize.minimize(self.func, self.x0, method=method,
+                                            jac=self.jac, hess=self.hess,
+                                            hessp=self.hessp)
             for attribute in attributes:
                 if method in skip and attribute in skip[method]:
                     continue

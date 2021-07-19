@@ -1068,11 +1068,6 @@ L50:
     --x;
 
     /* Function Body */
-    i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-    x[i__] = (x[i__] + c2[i__]) * c1[i__];
-/* L20: */
-    }
 /* +-----------------------------------------------------------------------+ */
 /* | Call the function-evaluation subroutine fcn.                          | */
 /* +-----------------------------------------------------------------------+ */
@@ -1082,7 +1077,7 @@ L50:
     // Once the above function works, replace with NumPy arrays.
     PyObject *x_seq = PyList_New(*n);
     for (int i = 0; i < *n; i++) {
-        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i + 1]));
+        PyList_SetItem(x_seq, i, PyFloat_FromDouble((x[i + 1] + c2[i + 1]) * c1[i + 1]));
     }
     PyObject* arg_tuple = NULL;
     if (PyObject_IsTrue(args)) {
@@ -1098,14 +1093,6 @@ L50:
     }
     *f = PyFloat_AsDouble(f_py);
     Py_DECREF(f_py);
-/* +-----------------------------------------------------------------------+ */
-/* | Rescale the variable x.                                               | */
-/* +-----------------------------------------------------------------------+ */
-    i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-    x[i__] = x[i__] / c1[i__] - c2[i__];
-/* L30: */
-    }
 } /* dirinfcn_ */
 
 /* +-----------------------------------------------------------------------+ */
