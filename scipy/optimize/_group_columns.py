@@ -54,6 +54,8 @@ def group_dense(m, n, A):
 
 #pythran export group_sparse(int, int, intc[], intc[])
 #pythran export group_sparse(int, int, int[], int[])
+#pythran export group_sparse(int, int, intc[::], intc[::])
+#pythran export group_sparse(int, int, int[::], int[::])
 def group_sparse(m, n, indices, indptr):
     groups = -np.ones(n, dtype=np.intp)
     current_group = 0
