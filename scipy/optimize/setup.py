@@ -94,7 +94,7 @@ def configuration(parent_package='', top_path=None):
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
     sources = ['direct_wrap.c', 'DIRect.c',
-               'DIRsubrout.c', 'DIRserial.c', 'tstc.c']
+               'DIRsubrout.c', 'DIRserial.c']
     headers = ['direct.h', 'direct-internal.h']
     config.add_library('_direct_lib', 
         sources=[join('_direct', x) for x in sources],

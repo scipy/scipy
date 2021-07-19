@@ -47,7 +47,7 @@
 /* Subroutine */ void direct_direct_(PyObject* fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
     doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
     doublereal *fglobal, doublereal *fglper, doublereal *volper, 
-    doublereal *sigmaper, PyObject* args)
+    doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter)
 {
     /* System generated locals */
     integer i__1, i__2;
@@ -80,7 +80,7 @@
     doublereal *levels = 0, *thirds = 0;
     doublereal epsfix;
     integer oldpos, minpos, maxpos, tstart, actdeep, ifreeold, oldmaxf;
-    integer numfunc, version;
+    integer version;
     integer jones;
 
     /* FIXME: change sizes dynamically? */
@@ -421,8 +421,7 @@
     }
     if (*ierror == -102) goto L100;
     }
-    else if (*ierror == DIRECT_MAXTIME_EXCEEDED) goto L100;
-    numfunc = maxi + 1 + maxi;
+    *numfunc = maxi + 1 + maxi;
     actmaxdeep = 1;
     oldpos = 0;
     tstart = 2;
@@ -434,11 +433,11 @@
     if (ifeasiblef > 0) {
      if (logfile)
           fprintf(logfile, "No feasible point found in %d iterations "
-              "and %d function evaluations.\n", tstart-1, numfunc);
+              "and %d function evaluations.\n", tstart-1, *numfunc);
     } else {
      if (logfile)
           fprintf(logfile, "%d, %d, %g, %g\n", 
-              tstart-1, numfunc, *minf, fmax);
+              tstart-1, *numfunc, *minf, fmax);
     }
 /* +-----------------------------------------------------------------------+ */
 /* +-----------------------------------------------------------------------+ */
@@ -471,6 +470,7 @@
 "This means that there are a lot of hyperrectangles with the same function\n"
 "value at the center. We suggest to use our modification instead (Jones = 1)\n"
               );
+        *numiter = t;
         goto cleanup;
         }
     }
@@ -501,6 +501,7 @@
             if (logfile)
              fprintf(logfile, "WARNING: Maximum number of levels reached. Increase maxdeep.\n");
             *ierror = -6;
+            *numiter = t;
             goto L100;
         }
         actmaxdeep = MAX(actdeep,actmaxdeep);
@@ -535,6 +536,7 @@
             if (logfile)
              fprintf(logfile, "WARNING: Error occurred in routine DIRsamplepoints.\n");
             *ierror = -4;
+            *numiter = t;
             goto cleanup;
         }
         newtosample += maxi;
@@ -548,12 +550,14 @@
             args, force_stop);
         if (force_stop && *force_stop) {
              *ierror = -102;
+             *numiter = t;
              goto L100;
         }
         if (oops > 0) {
             if (logfile)
              fprintf(logfile, "WARNING: Error occurred in routine DIRsamplef.\n");
             *ierror = -5;
+            *numiter = t;
             goto cleanup;
         }
 /* +-----------------------------------------------------------------------+ */
@@ -569,7 +573,7 @@
 /* +-----------------------------------------------------------------------+ */
 /* | Increase the number of function evaluations.                          | */
 /* +-----------------------------------------------------------------------+ */
-        numfunc = numfunc + maxi + maxi;
+        *numfunc = *numfunc + maxi + maxi;
         }
 /* +-----------------------------------------------------------------------+ */
 /* | End of main loop.                                                     | */
@@ -584,7 +588,7 @@
     if (oldpos < minpos) {
         if (logfile)
          fprintf(logfile, "%d, %d, %g, %g\n",
-             t, numfunc, *minf, fmax);
+             t, *numfunc, *minf, fmax);
     }
 /* +-----------------------------------------------------------------------+ */
 /* | If no feasible point has been found, give out the iteration, the      | */
@@ -593,7 +597,7 @@
     if (ifeasiblef > 0) {
         if (logfile)
          fprintf(logfile, "No feasible point found in %d iterations "
-             "and %d function evaluations\n", t, numfunc);
+             "and %d function evaluations\n", t, *numfunc);
     }
 /* +-----------------------------------------------------------------------+ */
 /* +-----------------------------------------------------------------------+ */
@@ -622,6 +626,7 @@
          fprintf(logfile, "DIRECT stopped: Volume of S_min is "
              "%g%% < %g%% of the original volume.\n",
              delta, *volper);
+        *numiter = t;
         goto L100;
     }
 /* +-----------------------------------------------------------------------+ */
@@ -636,6 +641,7 @@
         if (logfile)
          fprintf(logfile, "DIRECT stopped: Measure of S_min "
              "= %g < %g.\n", delta, *sigmaper);
+        *numiter = t;
         goto L100;
     }
 /* +-----------------------------------------------------------------------+ */
@@ -647,6 +653,7 @@
         *ierror = 3;
         if (logfile)
          fprintf(logfile, "DIRECT stopped: minf within fglper of global minimum.\n");
+        *numiter = t;
         goto L100;
     }
 /* +-----------------------------------------------------------------------+ */
@@ -678,7 +685,7 @@
 /* | increase is needed.                                                   | */
 /* +-----------------------------------------------------------------------+ */
     if (increase == 1) {
-        *maxf = numfunc + oldmaxf;
+        *maxf = *numfunc + oldmaxf;
         if (ifeasiblef == 0) {
         if (logfile)
              fprintf(logfile, "DIRECT found a feasible point.  The "
@@ -692,19 +699,20 @@
 /* | found. If this is a case, terminate. If no feasible point was found,  | */
 /* | increase the budget and set flag increase.                            | */
 /* +-----------------------------------------------------------------------+ */
-    if (numfunc > *maxf) {
+    if (*numfunc > *maxf) {
         if (ifeasiblef == 0) {
         *ierror = 1;
         if (logfile)
              fprintf(logfile, "DIRECT stopped: numfunc >= maxf.\n");
+        *numiter = t;
         goto L100;
         } else {
         increase = 1;
         if (logfile)
                      fprintf(logfile, 
 "DIRECT could not find a feasible point after %d function evaluations.\n"
-"DIRECT continues until a feasible point is found.\n", numfunc);
-        *maxf = numfunc + oldmaxf;
+"DIRECT continues until a feasible point is found.\n", *numfunc);
+        *maxf = *numfunc + oldmaxf;
         }
     }
 /* L10: */
@@ -735,11 +743,11 @@ L100:
 /* +-----------------------------------------------------------------------+ */
 /* | Store the number of function evaluations in maxf.                     | */
 /* +-----------------------------------------------------------------------+ */
-    *maxf = numfunc;
+    *maxf = *numfunc;
 /* +-----------------------------------------------------------------------+ */
 /* | Give out a summary of the run.                                        | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirsummary_(logfile, &x[1], &l[1], &u[1], n, minf, fglobal, &numfunc, 
+    direct_dirsummary_(logfile, &x[1], &l[1], &u[1], n, minf, fglobal, numfunc, 
         ierror);
 /* +-----------------------------------------------------------------------+ */
 /* | Format statements.                                                    | */

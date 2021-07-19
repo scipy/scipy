@@ -44,7 +44,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
-def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
+def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
@@ -59,9 +59,9 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
         where ``x`` is an 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
-    x0 : ndarray, shape (n,), needed for all but 'direct' method
+    x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
-        where 'n' is the number of independent variables.
+        where 'n' is the number of independent variables. You can pass `None if using the `direct` method.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (`fun`, `jac` and `hess` functions).
@@ -503,10 +503,6 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
             method = 'L-BFGS-B'
         else:
             method = 'BFGS'
-    
-    if x0 is None and method != 'direct':
-        raise ValueError("Initial guess required for {} "
-                         "optimization method".format(method))
 
     x0 = np.asarray(x0)
     if x0.dtype.kind in np.typecodes["AllInteger"]:
@@ -655,7 +651,9 @@ def minimize(fun, x0=None, args=(), method=None, jac=None, hess=None,
     elif meth == 'direct':
         if bounds is None:
             raise ValueError("`bounds` is a required argument for 'direct' method.")
-        return _minimize_direct(fun, bounds=bounds, *args)
+        locally_biased = options.get('locally_biased', False)
+        fglobal = options.get('fglobal', -1e100)
+        return _minimize_direct(fun, bounds=bounds, *args, locally_biased=locally_biased, fglobal=fglobal)
     else:
         raise ValueError('Unknown solver %s' % method)
 
@@ -820,7 +818,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'direct'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)

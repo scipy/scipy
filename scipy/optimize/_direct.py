@@ -35,6 +35,8 @@ from ._directmodule import direct
 from .optimize import OptimizeResult
 
 ERROR_MESSAGES = (
+    "Number of function evaluations done is larger than maxfun={}",
+    "Number of iterations is larger than maxiter={}",
     "u[i] < l[i] for some i",
     "maxfun is too large",
     "Initialization failed",
@@ -47,8 +49,6 @@ ERROR_MESSAGES = (
 )
 
 SUCCESS_MESSAGES = (
-    "Number of function evaluations done is larger than maxfun={}",
-    "Number of iterations is larger than maxiter={}",
     ("The best function value found is within {} percent "
     "of the (known) global optimum"),
     ("The volume of the hyper-rectangle with best function value found "
@@ -82,28 +82,25 @@ def _minimize_direct(func, bounds, *args, disp=False,
 
     Parameters
     ----------
-    func : objective function
-        called as `func(x, *args)`; does not need to be defined everywhere,
-        raise an Exception where function is not defined
-    bounds : array_like, optional
-            ``(min, max)`` pairs for each element in ``x``, defining
-            the bounds on that parameter.
-    nvar : int, optional
-        Dimensionality of x (only needed if `bounds` is not defined)
+    fun: callable
+        The objective function to be minimized.
+        fun(x, *args) -> float
+        where x is an 1-D array with shape (n,) and args is a tuple of the fixed parameters needed to completely specify the function.
+    bounds : Bounds
+        lower bounds and upper bounds for each element in ``x``, defining
+        the bounds on that parameter.
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal interval is chosen.
     maxfun : int, optional
         Approximate upper bound on objective function evaluations.
-        Maximal allowed value is 90000 see documentation of Fortran library.
     maxiter : int, optional
         Maximum number of iterations.
-        Maximal allowed value is 6000 see documentation of Fortran library.
     locally_biased : bool, optional
         Whether to use the original or modified DIRECT algorithm.
         Possible values:
 
-        * ``locally_based=False`` - use the original DIRECT algorithm
+        * ``locally_biased=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
     fglobal : float, optional
         Function value of the global optimum.
@@ -131,32 +128,34 @@ def _minimize_direct(func, bounds, *args, disp=False,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
     """
+    l = np.ascontiguousarray(bounds.lb)
+    u = np.ascontiguousarray(bounds.ub)
 
-    if bounds is None:
-        l = np.zeros(nvar, dtype=np.float64)
-        u = np.ones(nvar, dtype=np.float64)
-    else:
-        bounds = np.asarray(bounds)
-        l = np.ascontiguousarray(bounds[:, 0])
-        u = np.ascontiguousarray(bounds[:, 1])
+    def func_wrap(x, *args):
+        try:
+            return func(x, *args)
+        except Exception:
+            return np.nan
 
     #
     # Call the DIRECT algorithm
     #
-    x, fun, ret_code = direct(func, np.asarray(l), np.asarray(u), args,
+    x, fun, ret_code, nfev, nit = direct(func_wrap, np.asarray(l), np.asarray(u), args,
         disp, eps, maxfun, maxiter,
         locally_biased,
         fglobal, fglper,
         volper, sigmaper)
 
     format_val = (maxfun, maxiter, fglper, volper, volper)
-    if ret_code > 0:
+    if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 1].format(
                     format_val[ret_code - 1])
+    elif ret_code > 0 and ret_code <= 2:
+        message = ERROR_MESSAGES[ret_code - 1].format(format_val[ret_code - 1])
     elif ret_code < 0 and ret_code > -100:
-        message = ERROR_MESSAGES[abs(ret_code) - 1]
+        message = ERROR_MESSAGES[abs(ret_code) + 1]
     else:
         message = ERROR_MESSAGES[ret_code + 99]
 
     return OptimizeResult(x=np.asarray(x), fun=fun, status=ret_code, 
-            success=ret_code > 0, message=message)
+            success=ret_code > 2, message=message, nfev=nfev, nit=nit)

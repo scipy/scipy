@@ -34,7 +34,9 @@ class TestDIRECT:
     def test_bounds(self, function_name, bounds, 
                     arg_min, min, arg_min_rtol, min_rtol):
         func = self.get_test_func(function_name)
-        res = minimize(func, bounds=bounds, method='direct')
+        res = minimize(func, None, bounds=bounds, method='direct')
         assert_allclose(res.x, arg_min, rtol=arg_min_rtol)
         assert_allclose(res.fun, min, rtol=min_rtol)
         assert_(res['status'])
+        assert_equal(res['nfev'], 2031)
+        assert_equal(res['nit'], 59)

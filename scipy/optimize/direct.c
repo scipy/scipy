@@ -35,16 +35,19 @@ direct(PyObject *self, PyObject *args)
     fglobal_reltol /= 100.0;
     force_stop = 0;
 
+    direct_return_info info;
+
     ret_code =  direct_optimize(f, x, f_args, dimension, lower_bounds,
                                 upper_bounds, &minf, max_feval, max_iter,
                                 magic_eps, magic_eps_abs, volume_reltol,
                                 sigma_reltol, &force_stop, fglobal, fglobal_reltol,
-                                logfile, algorithm);
+                                logfile, algorithm, &info);
     PyObject *x_seq = PyList_New(dimension);
     for (int i = 0; i < dimension; i++) {
         PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i + 1]));
     }
-    PyObject* ret_py = Py_BuildValue("Odi", x_seq, minf, (int) ret_code);
+    PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
+                                     info.numfunc, info.numiter);
     return ret_py;
 }
 

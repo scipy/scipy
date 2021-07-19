@@ -110,7 +110,7 @@ extern void direct_direct_(
      int *force_stop, doublereal *minf, doublereal *l, 
      doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
      doublereal *fglobal, doublereal *fglper, doublereal *volper, 
-     doublereal *sigmaper, PyObject* fcn_data);
+     doublereal *sigmaper, PyObject* fcn_data, integer *numfunc, integer *numiter);
 
 #ifdef __cplusplus
 }  /* extern "C" */
