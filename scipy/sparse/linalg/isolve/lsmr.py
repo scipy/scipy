@@ -26,7 +26,7 @@ from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg.isolve.lsqr import _sym_ortho
 
 
-def lsmr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
+def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
          maxiter=None, show=False, x0=None):
     """Iterative solver for least-squares problems.
 
@@ -59,14 +59,14 @@ def lsmr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         certain backward error estimate is smaller than some quantity
         depending on atol and btol.  Let ``r = b - Ax`` be the
         residual vector for the current approximate solution ``x``.
-        If ``Ax = b`` seems to be consistent, ``lsmr`` terminates
+        If ``Ax = b`` seems to be consistent, `lsmr` terminates
         when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
-        Otherwise, lsmr terminates when ``norm(A^H r) <=
-        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-8 (default),
-        the final ``norm(r)`` should be accurate to about 8
+        Otherwise, `lsmr` terminates when ``norm(A^H r) <=
+        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (default),
+        the final ``norm(r)`` should be accurate to about 6
         digits. (The final ``x`` will usually have fewer correct digits,
         depending on ``cond(A)`` and the size of LAMBDA.)  If `atol`
-        or `btol` is None, a default value of 1.0e-8 will be used.
+        or `btol` is None, a default value of 1.0e-6 will be used.
         Ideally, they should be estimates of the relative error in the
         entries of ``A`` and ``b`` respectively.  For example, if the entries
         of ``A`` have 7 correct digits, set ``atol = 1e-7``. This prevents
