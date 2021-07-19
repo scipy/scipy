@@ -1,4 +1,4 @@
-from . import _fourier
+from . import _multimethods
 
 
 __all__ = ['fourier_gaussian', 'fourier_uniform',  # noqa: F822
@@ -14,4 +14,4 @@ def __getattr__(name):
         raise AttributeError(
             f"scipy.ndimage.fourier has no attribute {name}.")
 
-    return getattr(_fourier, name)
+    return getattr(_multimethods, name)

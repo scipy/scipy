@@ -1,4 +1,4 @@
-from . import _measurements
+from . import _multimethods
 
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension',  # noqa: F822
@@ -17,4 +17,4 @@ def __getattr__(name):
         raise AttributeError(
             f"scipy.ndimage.measurements has no attribute {name}.")
 
-    return getattr(_measurements, name)
+    return getattr(_multimethods, name)

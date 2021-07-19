@@ -1,4 +1,4 @@
-from . import _interpolation
+from . import _multimethods
 
 
 __all__ = ['spline_filter1d', 'spline_filter',  # noqa: F822
@@ -15,4 +15,4 @@ def __getattr__(name):
         raise AttributeError(
             f"scipy.ndimage.interpolation has no attribute {name}.")
 
-    return getattr(_interpolation, name)
+    return getattr(_multimethods, name)

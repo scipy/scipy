@@ -1,4 +1,4 @@
-from . import _filters
+from . import _multimethods
 
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d',  # noqa: F822
@@ -20,4 +20,4 @@ def __getattr__(name):
         raise AttributeError(
             f"scipy.ndimage.filters has no attribute {name}.")
 
-    return getattr(_filters, name)
+    return getattr(_multimethods, name)

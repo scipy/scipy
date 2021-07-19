@@ -1,4 +1,4 @@
-from . import _morphology
+from . import _multimethods
 
 
 __all__ = ['iterate_structure', 'generate_binary_structure',  # noqa: F822
@@ -20,4 +20,4 @@ def __getattr__(name):
         raise AttributeError(
             f"scipy.ndimage.morphology has no attribute {name}.")
 
-    return getattr(_morphology, name)
+    return getattr(_multimethods, name)
