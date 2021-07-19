@@ -115,7 +115,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     u = r = b - A.matvec(x)
     w = r.copy()
-    # Let rstar equals b - Ax0, that is rstar := r = b - Ax0 mathematically
+    # Take rstar as b - Ax0, that is rstar := r = b - Ax0 mathematically
     rstar = r
     v = M.matvec(A.matvec(r))
     uhat = v
@@ -140,12 +140,14 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             if vtrstar == 0.:
                 return (postprocess(x), -1)
             alpha = rho / vtrstar
-            uNext = u - alpha * v
-        w -= alpha * uhat
-        d = u + (theta**2 / alpha) * eta * d
+            uNext = u - alpha * v  # [1]-(5.6)
+        w -= alpha * uhat  # [1]-(5.8)
+        d = u + (theta**2 / alpha) * eta * d  # [1]-(5.5)
+        # [1]-(5.2)
         theta = np.linalg.norm(w) / tau
         c = np.sqrt(1. / (1 + theta**2))
         tau *= theta * c
+        # Calculate step and direction [1]-(5.4)
         eta = (c**2) * alpha
         z = M.matvec(d)
         x += eta * z
@@ -161,6 +163,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             return (postprocess(x), 0)
 
         if (not even):
+            # [1]-(5.7)
             rho = np.inner(rstar.conjugate(), w)
             beta = rho / rhoLast
             u = w + beta * u
