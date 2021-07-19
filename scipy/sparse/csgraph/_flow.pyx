@@ -494,9 +494,9 @@ cdef bint _build_level_graph(
                 end += 1
     return 0
 
-cdef ITYPE_t _augment_paths(
+cdef bint _augment_paths(
         const ITYPE_t[:] edge_ptr,  # IN
-        const ITYPE_t current,  # IN
+        const ITYPE_t source,  # IN
         const ITYPE_t sink,  # IN
         const ITYPE_t[:] levels,  # IN
         const ITYPE_t[:] heads,  # IN
@@ -504,17 +504,17 @@ cdef ITYPE_t _augment_paths(
         ITYPE_t[:] capacities,  # IN/OUT
         ITYPE_t[:] progress,  # IN
         ITYPE_t[:] flows,  # OUT
-        ITYPE_t flow  # OUT
+        ITYPE_t[:, :] stack
         ) nogil:
-    """Computes blocking flow in layered graph using depth first search.
+    """Finds augmenting paths in layered graph using depth first search.
 
     Parameters
     ----------
     edge_ptr : memoryview of length :math:`|V| + 1`
         For a given vertex ``v``, the edges whose tail is ``v`` are
         those between ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
-    current : int
-        The current node in the path.
+    source : int
+        The source vertex.
     sink : int
         The sink vertex.
     levels: memoryview of length :math:`|E|`
@@ -532,37 +532,46 @@ cdef ITYPE_t _augment_paths(
         edge to be visited from ``v``.
     flows : memoryview of length :math:`|E|`
         The residual graph with respect to a maximum flow.
-    flow : int
-        Current maximum flow in the path.
+    stack : memoryview of length (:math:`|E|`, 2)
+        Stack used during depth-first search.
 
     Returns
     -------
-    result_flow : int
-        An arbitrary flow in the layered graph.
+    bool
+        True if and only if an augmenting path was found.
 
     """
-    if current == sink:
-        return flow
+    cdef ITYPE_t top, current, e, dst_vertex, current_flow, flow
+    top = 0
+    stack[top][0] = source
+    stack[top][1] = 2147483647  # Max int
 
-    cdef ITYPE_t dst_vertex, result_flow, e
-
-    while progress[current] < edge_ptr[current + 1]:
+    while True:
+        current = stack[top][0]
+        flow = stack[top][1]
         e = progress[current]
         dst_vertex = heads[e]
         if (capacities[e] > 0 and
                 levels[dst_vertex] == levels[current] + 1):
-            result_flow = _augment_paths(edge_ptr, dst_vertex, sink,
-                                         levels, heads, rev_edge_ptr,
-                                         capacities, progress, flows,
-                                         min(flow, capacities[e]))
-            if result_flow:
-                capacities[e] -= result_flow
-                capacities[rev_edge_ptr[e]] += result_flow
-                flows[e] += result_flow
-                flows[rev_edge_ptr[e]] -= result_flow
-                return result_flow
-        progress[current] += 1
-    return 0
+            current_flow = min(flow, capacities[e])
+            if dst_vertex == sink:
+                while top > -1:
+                    e = progress[stack[top][0]]
+                    capacities[e] -= current_flow
+                    capacities[rev_edge_ptr[e]] += current_flow
+                    flows[e] += current_flow
+                    flows[rev_edge_ptr[e]] -= current_flow
+                    top -= 1
+                return True
+            top += 1
+            stack[top][0] = dst_vertex
+            stack[top][1] = current_flow
+        else:
+            while progress[current] == edge_ptr[current + 1] - 1:
+                top -= 1
+                if top < 0: return False  # Did we pop the source?
+                current = stack[top][0]
+            progress[current] += 1
 
 cdef ITYPE_t[:] _dinic(
         ITYPE_t[:] edge_ptr,
@@ -601,14 +610,13 @@ cdef ITYPE_t[:] _dinic(
     """
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
     cdef ITYPE_t n_edges = capacities.shape[0]
-    cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
     cdef ITYPE_t[:] levels = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] progress = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:, :] stack = np.empty((n_verts, 2), dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
     cdef ITYPE_t flow
-
     while True:
         for i in range(n_verts):
             levels[i] = -1
@@ -617,10 +625,8 @@ cdef ITYPE_t[:] _dinic(
             break
         for i in range(n_verts):
             progress[i] = edge_ptr[i]
-        flow = 1
-        while flow:
-            flow = _augment_paths(edge_ptr, source, sink,
-                                  levels, heads, rev_edge_ptr,
-                                  capacities, progress, flows,
-                                  ITYPE_MAX)
+        while _augment_paths(edge_ptr, source, sink,
+                             levels, heads, rev_edge_ptr,
+                             capacities, progress, flows, stack):
+            pass
     return flows
