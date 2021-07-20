@@ -2315,5 +2315,6 @@ def test_x_overwritten_user_function():
             hess = fquad_hess
         if meth == 'direct':
             bounds = 5*[(0.0, 10.0)]
-        res = optimize.minimize(fquad, x0, bounds=bounds, method=meth, jac=jac, hess=hess)
+        res = optimize.minimize(fquad, x0, bounds=bounds, method=meth,
+                                jac=jac, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)) + 1, atol=2e-4)

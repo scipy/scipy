@@ -12,7 +12,7 @@ def configuration(parent_package='', top_path=None):
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
     from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, set_cxx_flags_clib_hook, set_c_flags_hook)
+        set_cxx_flags_clib_hook, set_c_flags_hook)
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -96,10 +96,10 @@ def configuration(parent_package='', top_path=None):
     sources = ['direct_wrap.c', 'DIRect.c',
                'DIRsubrout.c', 'DIRserial.c']
     headers = ['direct.h', 'direct-internal.h']
-    config.add_library('_direct_lib', 
-        sources=[join('_direct', x) for x in sources],
-        headers=[join('_direct', x) for x in headers],
-        **numpy_nodepr_api)
+    config.add_library('_direct_lib',
+                       sources=[join('_direct', x) for x in sources],
+                       headers=[join('_direct', x) for x in headers],
+                       **numpy_nodepr_api)
 
     config.add_extension('_directmodule',
                          sources=['direct.c'],

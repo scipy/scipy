@@ -1,35 +1,3 @@
-r"""
-A python wrapper to the DIRECT algorithm implemented in Fortran
-===============================================================
-
-DIRECT is a method to solve global bound constraint optimization problems and
-was originally developed by D. R. Jones, C. D. Perttunen and B. E. Stuckmann.
-It is designed to find **global** solutions of mathematical optimization 
-problems of the from,
-
-.. math::
-
-       \min_ {x \in R^n} f(x)
-
-subject to
-
-.. math::
-
-       x_L \leq  x  \leq x_U
-
-Where :math:`x` are the optimization variables (with upper and lower
-bounds), :math:`f(x)` is the objective function.
-
-The DIRECT package uses the Fortran implementation of DIRECT written by
-Joerg.M.Gablonsky, DIRECT Version 2.0.4. More information on the DIRECT
-algorithm can be found in Gablonsky's `thesis 
-<http://repository.lib.ncsu.edu/ir/bitstream/1840.16/3920/1/etd.pdf>`_.
-
-Authors:
-
-Andreas Mayer <andimscience@gmail.com>, Amit Aides <amitibo@tx.technion.ac.il>
-"""
-
 import numpy as np
 from ._directmodule import direct
 from .optimize import OptimizeResult
@@ -50,20 +18,21 @@ ERROR_MESSAGES = (
 
 SUCCESS_MESSAGES = (
     ("The best function value found is within {} percent "
-    "of the (known) global optimum"),
+     "of the (known) global optimum"),
     ("The volume of the hyper-rectangle with best function value found "
      "is below vol_per={}"),
     ("The measure of the hyper-rectangle with best function value found "
      "is below sigma_per={}"),
 )
 
-def _minimize_direct(func, bounds, args = (), disp=False,
-                     eps=1e-4, maxfun=20000, maxiter=6000, 
-                     locally_biased=True, fglobal=-np.inf, fglper=0.01, 
+
+def _minimize_direct(func, bounds, args=(), disp=False,
+                     eps=1e-4, maxfun=20000, maxiter=6000,
+                     locally_biased=True, fglobal=-np.inf, fglper=0.01,
                      vol_per=-1.0, sigma_per=-1.0):
     r"""
 
-    Solve an optimization problem using the DIRECT 
+    Solve an optimization problem using the DIRECT
     (Dividing Rectangles) algorithm.
     It can be used to solve general nonlinear programming problems of the form:
 
@@ -119,7 +88,7 @@ def _minimize_direct(func, bounds, args = (), disp=False,
         Terminate the optimization once the volume of a hyper-rectangle is less
         than vol_per percent of the original hyper-rectangle.
     sigma_per : float, optional
-        Terminate the optimization once the measure of the 
+        Terminate the optimization once the measure of the
         hyper-rectangle is less than this argument.
 
     Returns
@@ -130,7 +99,7 @@ def _minimize_direct(func, bounds, args = (), disp=False,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
-    
+
     References
     ----------
     .. [1] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
@@ -139,8 +108,8 @@ def _minimize_direct(func, bounds, args = (), disp=False,
     .. [2] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
            Modifications of the direct algorithm. Ph.D. Dissertation.
     """
-    l = np.ascontiguousarray(bounds.lb)
-    u = np.ascontiguousarray(bounds.ub)
+    lb = np.ascontiguousarray(bounds.lb)
+    ub = np.ascontiguousarray(bounds.ub)
 
     def _func_wrap(x, *args):
         f = func(x, *args)
@@ -149,15 +118,13 @@ def _minimize_direct(func, bounds, args = (), disp=False,
         else:
             return f
 
-
-    #
-    # Call the DIRECT algorithm
-    #
-    x, fun, ret_code, nfev, nit = direct(_func_wrap, np.asarray(l), np.asarray(u), args,
-        disp, eps, maxfun, maxiter,
-        locally_biased,
-        fglobal, fglper,
-        vol_per, sigma_per)
+    x, fun, ret_code, nfev, nit = direct(_func_wrap,
+                                         np.asarray(lb), np.asarray(ub),
+                                         args,
+                                         disp, eps, maxfun, maxiter,
+                                         locally_biased,
+                                         fglobal, fglper,
+                                         vol_per, sigma_per)
 
     format_val = (maxfun, maxiter, fglper, vol_per, vol_per)
     if ret_code > 2:
@@ -170,5 +137,6 @@ def _minimize_direct(func, bounds, args = (), disp=False,
     else:
         message = ERROR_MESSAGES[ret_code + 99]
 
-    return OptimizeResult(x=np.asarray(x), fun=fun, status=ret_code, 
-            success=ret_code > 2, message=message, nfev=nfev, nit=nit)
+    return OptimizeResult(x=np.asarray(x), fun=fun, status=ret_code,
+                          success=ret_code > 2, message=message,
+                          nfev=nfev, nit=nit)

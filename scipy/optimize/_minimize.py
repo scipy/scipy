@@ -44,6 +44,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
+
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
@@ -61,7 +62,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         specify the function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
-        where 'n' is the number of independent variables. You can pass `None if using the `direct` method.
+        where 'n' is the number of independent variables.
+        You can pass `None if using the `direct` method.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (`fun`, `jac` and `hess` functions).
@@ -650,10 +652,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                            callback=callback, **options)
     elif meth == 'direct':
         if bounds is None:
-            raise ValueError("`bounds` is a required argument for 'direct' method.")
-        locally_biased = options.get('locally_biased', False)
+            raise ValueError(("`bounds` is a required argument for "
+                              "'direct' method."))
+        locally_biased = options.get('locally_biased', True)
         fglobal = options.get('fglobal', -1e100)
-        return _minimize_direct(fun, bounds=bounds, *args, locally_biased=locally_biased, fglobal=fglobal)
+        return _minimize_direct(fun, bounds=bounds, *args,
+                                locally_biased=locally_biased,
+                                fglobal=fglobal)
     else:
         raise ValueError('Unknown solver %s' % method)
 

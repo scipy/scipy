@@ -9,6 +9,7 @@ import numpy as np
 
 from scipy.optimize import minimize
 
+
 class TestDIRECT:
 
     def get_test_func(self, name):
@@ -25,14 +26,13 @@ class TestDIRECT:
 
                 return fact1*fact2
             return gp_func
-    
+
     @pytest.mark.parametrize(
         ("function_name, bounds, arg_min, min, "
          "arg_min_rtol, min_rtol, arg_min_atol, min_atol"), [
-        ('goldstein_price_function', [[-2.0, 2.0], [-2.0, 2.0]], 
-            np.array([0.0, -1.0]), 3.0, 1e-5, 1e-7, 1e-3, 0)
-        ])
-    def test_bounds(self, function_name, bounds, 
+         ('goldstein_price_function', [[-2.0, 2.0], [-2.0, 2.0]],
+          np.array([0.0, -1.0]), 3.0, 1e-5, 1e-7, 1e-3, 0)])
+    def test_bounds(self, function_name, bounds,
                     arg_min, min, arg_min_rtol, min_rtol,
                     arg_min_atol, min_atol):
         func = self.get_test_func(function_name)
