@@ -453,8 +453,7 @@ class TestBSpline:
             des_matr_def = BSpline(bspl.t, c, k)(x)
             des_matr_csr = BSpline.design_matrix(x, 
                                                  bspl.t,
-                                                 k, 
-                                                 kind="CSR").toarray()
+                                                 k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
             assert_allclose(des_matr_def, des_matr_csr, atol=1e-14)
 
@@ -488,8 +487,7 @@ class TestBSpline:
             yc = y[:i]
             des_matr_csr = BSpline.design_matrix(xc,
                                                  bspl.t,
-                                                 k, 
-                                                 kind='CSR').toarray()
+                                                 k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
         
     def test_design_matrix_asserts(self):
@@ -499,9 +497,6 @@ class TestBSpline:
         x = np.sort(np.random.random_sample(n) * 40 - 20)
         y = np.random.random_sample(n) * 40 - 20
         bspl = make_interp_spline(x, y, k=k)
-        # unknown `kind`
-        with assert_raises(ValueError):
-            des_test = BSpline.design_matrix(x, bspl.t, k, kind="Some kind")
         # invalid vector of knots
         with assert_raises(ValueError):
             des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
