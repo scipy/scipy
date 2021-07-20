@@ -43,5 +43,5 @@ class TestDIRECT:
                         rtol=min_rtol, atol=min_atol)
         assert_(res['success'] is False)
         assert_equal(res['status'], 1)
-        assert_equal(res['nfev'], 20005)
-        assert_equal(res['nit'], 460)
+        assert_equal(res['nfev'], 20009)
+        assert_equal(res['nit'], 982)

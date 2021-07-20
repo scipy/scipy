@@ -104,7 +104,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
     ----------
     .. [1] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
            optimization without the Lipschitz constant. J Optim Theory Appl
-           79, 157–181 (1993)
+           79, 157-181 (1993)
     .. [2] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
            Modifications of the direct algorithm. Ph.D. Dissertation.
     """
