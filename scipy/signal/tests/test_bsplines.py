@@ -254,3 +254,13 @@ def test_sepfir2d_invalid_image():
 
     with pytest.raises(ValueError, match="object of too small depth"):
         signal.sepfir2d(image[0], filt, filt)
+
+def test_cspline2d():
+    np.random.seed(181819142)
+    image = np.random.rand(71, 73)
+    ck = signal.cspline2d(image, 8.0)
+
+def test_qspline2d():
+    np.random.seed(181819143)
+    image = np.random.rand(71, 73)
+    qk = signal.qspline2d(image)
