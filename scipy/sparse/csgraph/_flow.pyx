@@ -230,6 +230,8 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
         csgraph = csgraph.astype(ITYPE)
     if source == sink:
         raise ValueError("source and sink vertices must differ")
+    if csgraph.shape[0] != csgraph.shape[1]:
+        raise ValueError("graph must be specified as a square matrix.")
     if source < 0 or source >= csgraph.shape[0]:
         raise ValueError('source value ({}) must be between '.format(source) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
@@ -237,12 +239,18 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
         raise ValueError('sink value ({}) must be between '.format(sink) +
                          '0 and {}'.format(csgraph.shape[0] - 1))
 
-    # Our implementation of Edmonds--Karp assumes that edges always exist
+    # Sorted indices are needed by both the _add_reverse_edges() and
+    # the _make_edge_pointers() function.
+    if not csgraph.has_sorted_indices:
+        csgraph = csgraph.sorted_indices()
+
+    # Our maximum flow solvers assume that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
     m = _add_reverse_edges(csgraph)
-    rev_edge_ptr, tails = _make_edge_pointers(m)
+    rev_edge_ptr = _make_edge_pointers(m)
     if method == 'edmonds_karp':
+        tails = _make_tails(m)
         residual = _edmonds_karp(m.indptr, tails, m.indices,
                                  m.data, rev_edge_ptr, source, sink)
     elif method == 'dinic':
@@ -275,54 +283,88 @@ def _add_reverse_edges(a):
         by explicit zeros.
 
     """
-    # This is equivalent to just looping over all (i, j) and letting
-    # the weight of (j, i) be zero if it is not already defined.
-    # Using NumPy to do so is several orders of magnitude faster
-    # than the naive solution. We first create create the sorted
-    # list {i*n + j} for nonzero (i, j), then use binary search
-    # to determine if j*n + i belongs to the list. To ensure that
-    # the haystack below is sorted, we presort the column indices if
-    # necessary.
-    if not a.has_sorted_indices:
-        a = a.sorted_indices()
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    n = a.shape[0]
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    indices = np.searchsorted(haystack, needles)
-    # As searchsorted returns a.nnz when a given needle is
-    # larger than the largest element of the haystack, we
-    # explicitly add an element not in needles at the end.
-    haystack = np.concatenate([haystack, [-1]])
-    indexed = haystack[indices]
-    diff = indexed != needles
-    # At this point, diff contains the indices of the (j, i)
-    # to be added. We make use of the COO initializer for CSR
-    # matrices which ensures that 0s are added explicitly.
-    indices_to_add = np.where(diff)[0]
-    data_to_add = np.zeros((indices_to_add.shape[0],), dtype=ITYPE)
-    acoo.row = np.concatenate([acoo.row, cols[indices_to_add]])
-    acoo.col = np.concatenate([acoo.col, rows[indices_to_add]])
-    acoo.data = np.concatenate([acoo.data, data_to_add])
-    return acoo.tocsr()
+    # Reference arrays of the input matrix.
+    cdef ITYPE_t n = a.shape[0]
+    cdef ITYPE_t[:] a_data_view = a.data
+    cdef ITYPE_t[:] a_indices_view = a.indices
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
+
+    # Create the transpose with the intent of using the resulting index
+    # arrays for the addition of reverse edges with zero capacity. In
+    # particular, we do not actually use the values in the transpose;
+    # only the fact that the indices exist.
+    at = csr_matrix(a.transpose())
+    cdef ITYPE_t[:] at_indices_view = at.indices
+    cdef ITYPE_t[:] at_indptr_view = at.indptr
+
+    # Create arrays for the result matrix with added reverse edges. We
+    # allocate twice the number of non-zeros in `a` for the data, which
+    # will always be enough. It might be too many entries in case `a` has
+    # some reverse edges already; in that case, over-allocating is not
+    # a problem since csr_matrix implicitly truncates elements of data
+    # and indices that go beyond the indices given by indptr.
+    res_data = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_data_view = res_data
+    res_indices = np.zeros(2 * a.nnz, ITYPE)
+    cdef ITYPE_t[:] res_indices_view = res_indices
+    res_indptr = np.zeros(n + 1, ITYPE)
+    cdef ITYPE_t[:] res_indptr_view = res_indptr
+
+    cdef ITYPE_t i = 0
+    cdef ITYPE_t res_ptr = 0
+    cdef ITYPE_t a_ptr, a_end, at_ptr, at_end
+    cdef bint move_a, move_at
+    # Loop over all rows
+    while i != n:
+        # For each row, to ensure that the resulting matrix has
+        # sorted indices, we loop over the i'th rows in a and a.T
+        # simultaneously, bumping the pointer in one matrix only
+        # if that wouldn't break the sorting.
+        a_ptr, a_end = a_indptr_view[i], a_indptr_view[i + 1]
+        at_ptr, at_end = at_indptr_view[i], at_indptr_view[i + 1]
+        while a_ptr != a_end or at_ptr != at_end:
+            move_a = a_ptr != a_end \
+                and (at_ptr == at_end
+                     or a_indices_view[a_ptr] <= at_indices_view[at_ptr])
+            move_at = at_ptr != at_end \
+                and (a_ptr == a_end
+                     or at_indices_view[at_ptr] <= a_indices_view[a_ptr])
+            if move_a:
+                # Note that it's possible that we move both pointers at once.
+                # In that case, we explicitly want the value from the original
+                # matrix.
+                res_indices_view[res_ptr] = a_indices_view[a_ptr]
+                res_data_view[res_ptr] = a_data_view[a_ptr]
+                a_ptr += 1
+            if move_at:
+                res_indices_view[res_ptr] = at_indices_view[at_ptr]
+                at_ptr += 1
+            res_ptr += 1
+        i += 1
+        res_indptr_view[i] = res_ptr
+    return csr_matrix((res_data, res_indices, res_indptr), shape=(n, n))
 
 
 def _make_edge_pointers(a):
-    """Create for each edge pointers to its reverse and its tail."""
-    # Just as above, one way to match (i, j) with (j, i) is to match
-    # i*n + j with j*n + i, which we can do by ensuring that we
-    # have a sorted collection of {i*n + j} and using binary search
-    # to find j*n + i here.
-    n = a.shape[0]
-    acoo = a.tocoo()
-    rows = acoo.row
-    cols = acoo.col
-    haystack = rows*n + cols
-    needles = cols*n + rows
-    rev_edge_ptr = np.searchsorted(haystack, needles).astype(ITYPE)
-    return rev_edge_ptr, rows
+    """Create for each edge pointers to its reverse."""
+    cdef int n = a.shape[0]
+    b_data = np.arange(a.data.shape[0], dtype=ITYPE)
+    b = csr_matrix(
+        (b_data, a.indices, a.indptr), shape=(n, n), dtype=ITYPE)
+    b = csr_matrix(b.transpose())
+    return b.data
+
+
+def _make_tails(a):
+    """Create for each edge pointers to its tail."""
+    cdef int n = a.shape[0]
+    cdef ITYPE_t[:] tails = np.empty(a.data.shape[0], dtype=ITYPE)
+    cdef ITYPE_t[:] a_indptr_view = a.indptr
+    cdef ITYPE_t i, j
+    for i in range(n):
+        for j in range(a_indptr_view[i], a_indptr_view[i + 1]):
+            tails[j] = i
+    return tails
 
 
 cdef ITYPE_t[:] _edmonds_karp(
@@ -395,8 +437,6 @@ cdef ITYPE_t[:] _edmonds_karp(
             # Pop queue
             cur = q[start]
             start += 1
-            if start == n_verts:
-                start = 0
             # Loop over all edges from the current vertex
             for e in range(edge_ptr[cur], edge_ptr[cur + 1]):
                 t = heads[e]
@@ -409,8 +449,6 @@ cdef ITYPE_t[:] _edmonds_karp(
                     # Push to queue
                     q[end] = t
                     end += 1
-                    if end == n_verts:
-                        end = 0
         # Did we find an augmenting path?
         if path_found:
             df = ITYPE_MAX
