@@ -4741,8 +4741,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             return mstats_basic.kendalltau(x, y, method=method, use_ties=True,
                                            alternative=alternative)
         else:
-            message = ("`nan_policy='omit' is currently compatible only with "
-                       "`variant='b'.")
+            message = ("nan_policy='omit' is currently compatible only with "
+                       "variant='b'.")
             raise ValueError(message)
 
     if initial_lexsort is not None:  # deprecate to drop!

@@ -1259,7 +1259,7 @@ class TestKendallTauAlternative:
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], 1 - (expected[1] / 2))
 
-        # rank correlation > 0 -> small "less" p-value
+        # rank correlation > 0 -> small "greater" p-value
         res = stats.kendalltau(x1, x2, alternative="greater")
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], expected[1] / 2)
@@ -1271,12 +1271,12 @@ class TestKendallTauAlternative:
         expected = stats.kendalltau(x1, x2, alternative="two-sided")
         assert expected[0] < 0
 
-        # rank correlation > 0 -> large "greater" p-value
+        # rank correlation < 0 -> large "greater" p-value
         res = stats.kendalltau(x1, x2, alternative="greater")
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], 1 - (expected[1] / 2))
 
-        # rank correlation > 0 -> small "less" p-value
+        # rank correlation < 0 -> small "less" p-value
         res = stats.kendalltau(x1, x2, alternative="less")
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], expected[1] / 2)
