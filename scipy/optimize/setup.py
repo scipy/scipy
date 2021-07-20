@@ -13,6 +13,7 @@ def configuration(parent_package='', top_path=None):
                                     uses_blas64, get_f2py_int64_options)
     from scipy._build_utils.compiler_helper import (
         set_cxx_flags_clib_hook, set_c_flags_hook)
+    from distutils.sysconfig import get_python_inc
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -45,7 +46,7 @@ def configuration(parent_package='', top_path=None):
     rootfind_hdr = [join('Zeros', 'zeros.h')]
     config.add_library('rootfind',
                        sources=rootfind_src,
-                       headers=rootfind_hdr, **numpy_nodepr_api)
+                       headers=rootfind_hdr,**numpy_nodepr_api)
 
     config.add_extension('_zeros',
                          sources=['zeros.c'],
@@ -99,6 +100,7 @@ def configuration(parent_package='', top_path=None):
     config.add_library('_direct_lib',
                        sources=[join('_direct', x) for x in sources],
                        headers=[join('_direct', x) for x in headers],
+                       include_dirs=[get_python_inc()],
                        **numpy_nodepr_api)
 
     config.add_extension('_directmodule',

@@ -1,7 +1,7 @@
 #ifndef DIRECT_H
 #define DIRECT_H
 
-#include <Python.h>
+#include "Python.h"
 #include <math.h>
 #include <stdio.h>
 

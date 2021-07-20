@@ -1,6 +1,8 @@
+#ifndef PY_SSIZE_T_CLEAN
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <numpy/ndarrayobject.h>
+#endif /* PY_SSIZE_T_CLEAN */
+#include "Python.h"
+#include "numpy/arrayobject.h"
 #include "_direct/direct.h"
 
 static PyObject *
