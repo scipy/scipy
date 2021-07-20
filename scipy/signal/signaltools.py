@@ -14,7 +14,7 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from .filter_design import cheby1, _validate_sos, tf2sos
+from .filter_design import cheby1, _validate_sos, zpk2sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
@@ -4413,6 +4413,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             n = 8
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
         b, a = system.num, system.den
+
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form
         b, a = system.num, system.den
@@ -4440,7 +4441,11 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             sl[axis] = slice(None, n_out, None)
 
     else:  # IIR case
-        sos = tf2sos(b, a)
+        zpk = system.to_zpk()
+        z = zpk.zeros
+        p = zpk.poles
+        k = zpk.gain
+        sos = zpk2sos(z, p, k)
         sos = np.asarray(sos, dtype=result_type)
         if zero_phase:
             y = sosfiltfilt(sos, x, axis=axis)
