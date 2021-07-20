@@ -1437,12 +1437,12 @@ def _data_permutations(data, n_permutations, random_state=None):
     return x, y, n_permutations
 
 
-def _data_permutations_paired(data, n_permutations, random_state=None):
+def _data_permutations_corr(data, n_permutations, random_state=None):
     """
-    Vectorized permutation of data, paired samples. Two-sample only for now.
+    Vectorized permutation of data for two-sample correlation statistic.
     """
     a, b = data
-    n_obs_a = len(a)
+    n_obs_a = a.shape[-1]
     n_max = factorial(n_obs_a)
     if n_permutations < n_max:
         indices = np.array([random_state.permutation(n_obs_a)
@@ -1697,8 +1697,8 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
 
     # TODO: generalize to n-samples
     if paired:
-        tmp = _data_permutations_paired(data, permutations,
-                                        random_state=random_state)
+        tmp = _data_permutations_corr(data, permutations,
+                                      random_state=random_state)
     else:
         tmp = _data_permutations(data, permutations,
                                  random_state=random_state)

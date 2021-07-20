@@ -1466,6 +1466,16 @@ class TestPermutationTest:
                               ('two-sided', 0.1027777777778)))
     def test_permutation_test_against_spearmanr_in_R(self, alternative,
                                                      expected_pvalue):
+        """
+        Results above from R cor.test, e.g.
+
+        options(digits=16)
+        x <- c(1.76405235, 0.40015721, 0.97873798,
+               2.2408932, 1.86755799, -0.97727788)
+        y <- c(2.71414076, 0.2488, 0.87551913,
+               2.6514917, 2.01160156, 0.47699563)
+        cor.test(x, y, method = "spearm", alternative = "t")
+        """
         np.random.seed(0)
         x = stats.norm.rvs(size=6)
         y = x + stats.norm.rvs(size=6)
