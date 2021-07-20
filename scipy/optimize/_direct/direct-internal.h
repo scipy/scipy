@@ -24,7 +24,7 @@ typedef double doublereal;
 
 extern void direct_dirheader_(
      FILE *logfile, integer *version,
-     doublereal *x, integer *n, doublereal *eps, integer *maxf, integer *
+     doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, integer *maxf, integer *
      maxt, doublereal *l, doublereal *u, integer *algmethod, integer *
      maxfunc, const integer *maxdeep, doublereal *fglobal, doublereal *fglper,
      integer *ierror, doublereal *epsfix, integer *iepschange, doublereal *
@@ -33,7 +33,7 @@ extern void direct_dirinit_(
      doublereal *f, PyObject* fcn, doublereal *c__,
      integer *length, integer *actdeep, integer *point, integer *anchor,
      integer *free, FILE *logfile, integer *arrayi,
-     integer *maxi, integer *list2, doublereal *w, doublereal *x,
+     integer *maxi, integer *list2, doublereal *w, doublereal *x, PyObject* x_seq,
      doublereal *l, doublereal *u, doublereal *minf, integer *minpos,
      doublereal *thirds, doublereal *levels, integer *maxfunc, const integer *
      maxdeep, integer *n, integer *maxor, doublereal *fmax, integer *
@@ -82,14 +82,14 @@ extern void direct_dirreplaceinf_(
      integer *maxfunc, const integer *maxdeep, integer *maxdim, integer *n, 
      FILE *logfile, doublereal *fmax, integer jones);
 extern void direct_dirsummary_(
-     FILE *logfile, doublereal *x, doublereal *l, doublereal *u, 
+     FILE *logfile, doublereal *x, PyObject *x_seq, doublereal *l, doublereal *u, 
      integer *n, doublereal *minf, doublereal *fglobal, 
      integer *numfunc, integer *ierror);
 extern integer direct_dirgetlevel_(
      integer *pos, integer *length, 
      integer *maxfunc, integer *n, integer jones);
 extern void direct_dirinfcn_(
-     PyObject* fcn, doublereal *x, doublereal *c1, 
+     PyObject* fcn, doublereal *x, PyObject *x_seq, doublereal *c1, 
      doublereal *c2, integer *n, doublereal *f, integer *flag__, 
      PyObject* args);
 
@@ -98,14 +98,14 @@ extern void direct_dirsamplef_(
      doublereal *c__, integer *arrayi, doublereal 
      *delta, integer *sample, integer *new__, integer *length, 
      FILE *logfile, doublereal *f, integer *free, integer *maxi, 
-     integer *point, PyObject* fcn, doublereal *x, doublereal *l, doublereal *
+     integer *point, PyObject* fcn, doublereal *x, PyObject* x_seq, doublereal *l, doublereal *
      minf, integer *minpos, doublereal *u, integer *n, integer *maxfunc, 
      const integer *maxdeep, integer *oops, doublereal *fmax, integer *
      ifeasiblef, integer *iinfesiblef, PyObject* args, int *force_stop);
 
 /* DIRect.c */
 extern void direct_direct_(
-     PyObject* fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs,
+     PyObject* fcn, doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, doublereal epsabs,
      integer *maxf, integer *maxt,
      int *force_stop, doublereal *minf, doublereal *l, 
      doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 

@@ -41,7 +41,7 @@
               or Gablonsky's "improved" version (DIRECT_GABLONSKY)
 */
 direct_return_code direct_optimize(
-    PyObject* f, double *x, PyObject* args,
+    PyObject* f, double *x, PyObject *x_seq, PyObject* args,
     int dimension,
     const double *lower_bounds, const double *upper_bounds,
     double *minf, 
@@ -85,7 +85,7 @@ direct_return_code direct_optimize(
      int numfunc;
      int numiter;
      
-     direct_direct_(f, x, &dimension, &magic_eps, magic_eps_abs,
+     direct_direct_(f, x, x_seq, &dimension, &magic_eps, magic_eps_abs,
             &max_feval, &max_iter, 
             force_stop,
             minf,

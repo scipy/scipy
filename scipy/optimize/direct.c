@@ -27,6 +27,7 @@ direct(PyObject *self, PyObject *args)
 
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
     double x[dimension + 1];
+    PyObject *x_seq = PyList_New(dimension);
     lower_bounds = (double*)PyArray_DATA((PyArrayObject*)lb);
     upper_bounds = (double*)PyArray_DATA((PyArrayObject*)ub);
     magic_eps_abs = abs(magic_eps);
@@ -34,18 +35,13 @@ direct(PyObject *self, PyObject *args)
     sigma_reltol /= 100.0;
     fglobal_reltol /= 100.0;
     force_stop = 0;
-
     direct_return_info info;
 
-    ret_code =  direct_optimize(f, x, f_args, dimension, lower_bounds,
+    ret_code =  direct_optimize(f, x, x_seq, f_args, dimension, lower_bounds,
                                 upper_bounds, &minf, max_feval, max_iter,
                                 magic_eps, magic_eps_abs, volume_reltol,
                                 sigma_reltol, &force_stop, fglobal, fglobal_reltol,
                                 logfile, algorithm, &info);
-    PyObject *x_seq = PyList_New(dimension);
-    for (int i = 0; i < dimension; i++) {
-        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x[i]));
-    }
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);
     return ret_py;

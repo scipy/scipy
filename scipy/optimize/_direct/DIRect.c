@@ -44,7 +44,7 @@
 /* |   Lipschitz continues. However, DIRECT has proven to be effective on  | */
 /* |   more complex problems than these.                                   | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_direct_(PyObject* fcn, doublereal *x, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
+/* Subroutine */ void direct_direct_(PyObject* fcn, doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
     doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
     doublereal *fglobal, doublereal *fglper, doublereal *volper, 
     doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter)
@@ -349,7 +349,7 @@
 /* +-----------------------------------------------------------------------+ */
 /* | Write the header of the logfile.                                      | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirheader_(logfile, &version, &x[1], n, eps, maxf, maxt, &l[1], &u[1], 
+    direct_dirheader_(logfile, &version, &x[1], x_seq, n, eps, maxf, maxt, &l[1], &u[1], 
         algmethod, &MAXFUNC, &MAXDEEP, fglobal, fglper, ierror, &epsfix, &
               iepschange, volper, sigmaper);
 /* +-----------------------------------------------------------------------+ */
@@ -401,7 +401,7 @@
 /* | Added variable to keep track of the maximum value found.              | */
 /* +-----------------------------------------------------------------------+ */
     direct_dirinit_(f, fcn, c__, length, &actdeep, point, anchor, &ifree,
-        logfile, arrayi, &maxi, list2, w, &x[1], &l[1], &u[1], 
+        logfile, arrayi, &maxi, list2, w, &x[1], x_seq, &l[1], &u[1], 
         minf, &minpos, thirds, levels, &MAXFUNC, &MAXDEEP, n, n, &
         fmax, &ifeasiblef, &iinfesiblef, ierror, args, jones,
         force_stop);
@@ -545,7 +545,7 @@
 /* +-----------------------------------------------------------------------+ */
         direct_dirsamplef_(c__, arrayi, &delta, &help, &start, length,
             logfile, f, &ifree, &maxi, point, fcn, &x[
-            1], &l[1], minf, &minpos, &u[1], n, &MAXFUNC, &
+            1], x_seq, &l[1], minf, &minpos, &u[1], n, &MAXFUNC, &
             MAXDEEP, &oops, &fmax, &ifeasiblef, &iinfesiblef, 
             args, force_stop);
         if (force_stop && *force_stop) {
@@ -747,7 +747,7 @@ L100:
 /* +-----------------------------------------------------------------------+ */
 /* | Give out a summary of the run.                                        | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirsummary_(logfile, &x[1], &l[1], &u[1], n, minf, fglobal, numfunc, 
+    direct_dirsummary_(logfile, &x[1], x_seq, &l[1], &u[1], n, minf, fglobal, numfunc, 
         ierror);
 /* +-----------------------------------------------------------------------+ */
 /* | Format statements.                                                    | */

@@ -27,17 +27,21 @@ class TestDIRECT:
             return gp_func
     
     @pytest.mark.parametrize(
-        "function_name, bounds, arg_min, min, arg_min_rtol, min_rtol", [
+        ("function_name, bounds, arg_min, min, "
+         "arg_min_rtol, min_rtol, arg_min_atol, min_atol"), [
         ('goldstein_price_function', [[-2.0, 2.0], [-2.0, 2.0]], 
-            np.array([0.0, -1.0]), 3.0, 1e-5, 1e-7)
+            np.array([0.0, -1.0]), 3.0, 1e-5, 1e-7, 1e-3, 0)
         ])
     def test_bounds(self, function_name, bounds, 
-                    arg_min, min, arg_min_rtol, min_rtol):
+                    arg_min, min, arg_min_rtol, min_rtol,
+                    arg_min_atol, min_atol):
         func = self.get_test_func(function_name)
         res = minimize(func, None, bounds=bounds, method='direct')
-        assert_allclose(res.x, arg_min, rtol=arg_min_rtol)
-        assert_allclose(res.fun, min, rtol=min_rtol)
+        assert_allclose(res.x, arg_min,
+                        rtol=arg_min_rtol, atol=arg_min_atol)
+        assert_allclose(res.fun, min,
+                        rtol=min_rtol, atol=min_atol)
         assert_(res['success'] is False)
         assert_equal(res['status'], 1)
-        assert_equal(res['nfev'], 90031)
-        assert_equal(res['nit'], 2053)
+        assert_equal(res['nfev'], 20005)
+        assert_equal(res['nit'], 460)

@@ -58,8 +58,8 @@ SUCCESS_MESSAGES = (
 )
 
 def _minimize_direct(func, bounds, args = (), disp=False,
-                     eps=1e-4, maxfun=90000, maxiter=6000, 
-                     locally_biased=False, fglobal=-np.inf, fglper=0.01, 
+                     eps=1e-4, maxfun=20000, maxiter=6000, 
+                     locally_biased=True, fglobal=-np.inf, fglper=0.01, 
                      vol_per=-1.0, sigma_per=-1.0):
     r"""
 

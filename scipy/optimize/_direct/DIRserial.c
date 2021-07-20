@@ -17,7 +17,7 @@
 /* Subroutine */ void direct_dirsamplef_(doublereal *c__, integer *arrayi, doublereal
     *delta, integer *sample, integer *new__, integer *length,
     FILE *logfile, doublereal *f, integer *free, integer *maxi,
-    integer *point, PyObject* fcn, doublereal *x, doublereal *l, doublereal *
+    integer *point, PyObject* fcn, doublereal *x, PyObject* x_seq, doublereal *l, doublereal *
     minf, integer *minpos, doublereal *u, integer *n, integer *maxfunc,
     const integer *maxdeep, integer *oops, doublereal *fmax, integer *
     ifeasiblef, integer *iinfesiblef, PyObject* args, int *force_stop)
@@ -86,7 +86,7 @@
     if (force_stop && *force_stop)  /* skip eval after forced stop */
          f[(pos << 1) + 1] = *fmax;
     else
-         direct_dirinfcn_(fcn, &x[1], &l[1], &u[1], n, &f[(pos << 1) + 1],
+         direct_dirinfcn_(fcn, &x[1], x_seq, &l[1], &u[1], n, &f[(pos << 1) + 1],
                   &kret, args);
     if (force_stop && *force_stop)
          kret = -1; /* mark as invalid point */

@@ -2282,13 +2282,13 @@ def test_x_overwritten_user_function():
     # that the minimizer stops working properly.
     # gh13740
     def fquad(x):
-        a = np.arange(np.size(x))
+        a = np.arange(np.size(x)) + 1
         x -= a
         x *= x
         return np.sum(x)
 
     def fquad_jac(x):
-        a = np.arange(np.size(x))
+        a = np.arange(np.size(x)) + 1
         x *= 2
         x -= 2 * a
         return x
@@ -2308,9 +2308,12 @@ def test_x_overwritten_user_function():
     for meth in MINIMIZE_METHODS:
         jac = None
         hess = None
+        bounds = None
         if meth in meth_jac:
             jac = fquad_jac
         if meth in meth_hess:
             hess = fquad_hess
-        res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
-        assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
+        if meth == 'direct':
+            bounds = 5*[(0.0, 10.0)]
+        res = optimize.minimize(fquad, x0, bounds=bounds, method=meth, jac=jac, hess=hess)
+        assert_allclose(res.x, np.arange(np.size(x0)) + 1, atol=2e-4)

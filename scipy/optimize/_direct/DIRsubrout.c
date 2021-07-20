@@ -1046,8 +1046,8 @@ L50:
 /* | The subroutine whose name is passed through the argument fcn.         | */
 /* |                                                                       | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_dirinfcn_(PyObject* fcn, doublereal *x, doublereal *c1,
-    doublereal *c2, integer *n, doublereal *f, integer *flag__,
+/* Subroutine */ void direct_dirinfcn_(PyObject* fcn, doublereal *x, PyObject *x_seq,
+    doublereal *c1, doublereal *c2, integer *n, doublereal *f, integer *flag__,
     PyObject* args)
 {
     /* System generated locals */
@@ -1075,9 +1075,9 @@ L50:
     // TODO: PyArray_SimpleNewFromData gives segmentation fault
     // and therefore using list to pass to the user function.
     // Once the above function works, replace with NumPy arrays.
-    PyObject *x_seq = PyList_New(*n);
     for (int i = 0; i < *n; i++) {
-        PyList_SetItem(x_seq, i, PyFloat_FromDouble((x[i + 1] + c2[i + 1]) * c1[i + 1]));
+        doublereal x_i_scaled = (x[i + 1] + c2[i + 1]) * c1[i + 1];
+        PyList_SetItem(x_seq, i, PyFloat_FromDouble(x_i_scaled));
     }
     PyObject* arg_tuple = NULL;
     if (PyObject_IsTrue(args)) {
@@ -1086,7 +1086,6 @@ L50:
         arg_tuple = Py_BuildValue("(O)", x_seq);
     }
     PyObject* f_py = PyObject_CallObject(fcn, arg_tuple);
-    Py_DECREF(x_seq);
     Py_DECREF(arg_tuple);
     if (!f_py ) {
         return ;
@@ -1160,7 +1159,7 @@ L50:
 /* Subroutine */ void direct_dirinit_(doublereal *f, PyObject* fcn, doublereal *c__,
     integer *length, integer *actdeep, integer *point, integer *anchor,
     integer *free, FILE *logfile, integer *arrayi,
-    integer *maxi, integer *list2, doublereal *w, doublereal *x,
+    integer *maxi, integer *list2, doublereal *w, doublereal *x, PyObject *x_seq,
     doublereal *l, doublereal *u, doublereal *minf, integer *minpos,
     doublereal *thirds, doublereal *levels, integer *maxfunc, const integer *
     maxdeep, integer *n, integer *maxor, doublereal *fmax, integer *
@@ -1256,7 +1255,7 @@ L50:
     length[i__ + length_dim1] = 0;
 /* L20: */
     }
-    direct_dirinfcn_(fcn, &x[1], &l[1], &u[1], n, &f[3], &help, args);
+    direct_dirinfcn_(fcn, &x[1], x_seq, &l[1], &u[1], n, &f[3], &help, args);
     if (force_stop && *force_stop) {
      *ierror = -102;
      return;
@@ -1299,7 +1298,7 @@ L50:
 /* +-----------------------------------------------------------------------+ */
     direct_dirsamplef_(&c__[c_offset], &arrayi[1], &delta, &c__1, &new__, &length[
         length_offset], logfile, &f[3], free, maxi, &point[
-        1], fcn, &x[1], &l[1], minf, minpos, &u[1], n, maxfunc,
+        1], fcn, &x[1], x_seq, &l[1], minf, minpos, &u[1], n, maxfunc,
         maxdeep, &oops, fmax, ifeasiblef, iinfeasible, args,
         force_stop);
     if (force_stop && *force_stop) {
@@ -1442,7 +1441,7 @@ L50:
 } /* dirpreprc_ */
 
 /* Subroutine */ void direct_dirheader_(FILE *logfile, integer *version,
-    doublereal *x, integer *n, doublereal *eps, integer *maxf, integer *
+    doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, integer *maxf, integer *
     maxt, doublereal *l, doublereal *u, integer *algmethod, integer *
     maxfunc, const integer *maxdeep, doublereal *fglobal, doublereal *fglper,
     integer *ierror, doublereal *epsfix, integer *iepschange, doublereal *
@@ -1564,7 +1563,7 @@ L50:
 /* L10005: */
 } /* dirheader_ */
 
-/* Subroutine */ void direct_dirsummary_(FILE *logfile, doublereal *x, doublereal *
+/* Subroutine */ void direct_dirsummary_(FILE *logfile, doublereal *x, PyObject *x_seq, doublereal *
     l, doublereal *u, integer *n, doublereal *minf, doublereal *fglobal,
     integer *numfunc, integer *ierror)
 {

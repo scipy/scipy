@@ -41,7 +41,7 @@ typedef struct {
 #define DIRECT_UNKNOWN_FGLOBAL_RELTOL (0.0)
 
 extern direct_return_code direct_optimize(
-    PyObject* f, double *x, PyObject *args,
+    PyObject* f, double *x, PyObject *x_seq, PyObject *args,
     int dimension,
     const double *lower_bounds, const double *upper_bounds,
     double *minf, 
