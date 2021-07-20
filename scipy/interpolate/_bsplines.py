@@ -300,25 +300,22 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
     
     @classmethod
-    def design_matrix(cls, x, t, k, kind="CSR"):
-        '''
+    def design_matrix(cls, x, t, k):
+        """
         Returns a design matrix for BSpline object in "dense" or "CSR" formats.
         
         Parameters
         ----------
-        x : 1-D array, shape(n,)
-            Values of x - coordinate of a given set of points (n >= 1).   
-        t : 1-D array, shape(nt,)
-            Vector of knots.
+        x : array_like, shape (n,)
+            Points to evaluate the spline at.
+        t : array_like, shape (n,)
+            Sorted 1D array of knots.
         k : int
-            The maximum degree of spline.
-        kind : "CSR", optional
-            Default is ``"CSR"`` .
-            * ``"CSR"`` : Returns sparse matrix in CSR.
+            B-spline degree.
  
         Returns
         -------
-        Sparse matrix in CSR.
+        Sparse matrix in CSR format.
 
         Examples
         --------
@@ -328,7 +325,7 @@ class BSpline:
         >>> y = np.sin(x)
         >>> k = 3
         >>> bspl = make_interp_spline(x, y, k=k)
-        >>> design_matrix = BSpline.design_matrix(x, bspl.t, k, kind="CSR")
+        >>> design_matrix = bspl.design_matrix(x, bspl.t, k)
         >>> design_matrix.toarray()
         [[1.        , 0.        , 0.        , 0.        ],
         [0.2962963 , 0.44444444, 0.22222222, 0.03703704],
@@ -339,7 +336,7 @@ class BSpline:
         >>> k = 2
         >>> t = [-1, 0, 1, 2, 3, 4, 5, 6]
         >>> x = [1, 2, 3, 4]
-        >>> design_matrix = BSpline.design_matrix(x, t, k, kind="CSR").toarray()
+        >>> design_matrix = BSpline.design_matrix(x, t, k).toarray()
         >>> design_matrix
         [[0.5, 0.5, 0. , 0. , 0. ],
         [0. , 0.5, 0.5, 0. , 0. ],
@@ -355,18 +352,18 @@ class BSpline:
         Notes
         -----
         versionadded:: 1.8.0
-        '''
+        """
         x = _as_float_array(x, True)
         t = _as_float_array(t, True)
         
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
             raise ValueError("Expect t to be a 1-D sorted array_like.")
-        if  len(t) < k:
+        if len(t) < k:
             raise ValueError(f"Length t is not enough for k={k}.")
         if (min(x) < t[k]) or (max(x) > t[-k]):
             raise ValueError('Out of bounds w/ x = %s.' % x)
 
-        return _bspl._make_design_matrix(x, t, k, kind)
+        return _bspl._make_design_matrix(x, t, k)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """

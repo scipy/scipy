@@ -418,47 +418,42 @@ def _norm_eq_lsq(const double[::1] x,
 @cython.boundscheck(False)
 def _make_design_matrix(const double[::1] x,
                 const double[::1] t,
-                int k,
-                kind):
-    '''
+                int k):
+    """
     Returns a design matrix for BSpline object in "dense" or "CSR" formats.
     
     Parameters
     ----------
-    x : 1-D array, shape(n,)
-        Values of x - coordinate of a given set of points (n >= 1).   
-    t : 1-D array, shape(nt,)
-        Vector of knots.
+    x : array_like, shape (n,)
+        Points to evaluate the spline at.   
+    t : array_like, shape (n,)
+        Sorted 1D array of knots.
     k : int
-        The maximum degree of spline.
-    kind : "CSR", optional
-        Default is ``"CSR"`` .
-        * ``"CSR"`` : Returns sparse matrix in CSR.
+        B-spline degree.
 
     Returns
     -------
-    Sparse matrix in CSR.
-    '''
-    n = len(x)
-    nt = len(t)
-    if kind == 'CSR':
-        data = np.zeros(n * (k + 1), dtype=float)
-        row_ind = np.zeros(n * (k + 1), dtype=int)
-        col_ind = np.zeros(n * (k + 1), dtype=int)
-        for i in range(n):
-            ind = find_interval(t, k, x[i], k - 1, 0)
-            vals = evaluate_all_bspl(t, k, x[i], ind)
-            # special check due to periodic boundary conditions:
-            # the shape of vector of B-splines evaluated at ``x[-1]``
-            # should be reduced by 1
-            if (ind == nt - k - 1):
-                data[(k + 1) * i : (k + 1) * (i + 1)] = vals[:-1]
-                row_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i] * k
-                col_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i for i in range(ind - k, ind)]
-            else:
-                data[(k + 1) * i : (k + 1) * (i + 1)] = vals
-                row_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i] * (k + 1)
-                col_ind[(k + 1) * i : (k + 1) * (i + 1)] = [i for i in range(ind - k, ind + 1)]
-        return csr_matrix((data, (row_ind, col_ind)), [n, nt - k - 1])
-    else:
-        raise ValueError(f"Unknown ``kind``: {kind}")              
+    Sparse matrix in CSR format.
+    """
+    cdef:
+        int n = len(x)
+        int nt = len(t)
+        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
+        double[::1] data = np.zeros(n * (k + 1), dtype=np.float_)
+        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
+        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+    for i in range(n):
+        ind = find_interval(t, k, x[i], k - 1, 0)
+        _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
+        # special check due to periodic boundary conditions:
+        # the shape of vector of B-splines evaluated at ``x[-1]``
+        # should be reduced by 1
+        if (ind == nt - k - 1):
+            data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k]
+            row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
+            col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind, dtype=int)
+        else:
+            data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
+            row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
+            col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1, dtype=int)
+    return csr_matrix((data, (row_ind, col_ind)), [n, nt - k - 1])       
