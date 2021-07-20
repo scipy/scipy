@@ -888,14 +888,15 @@ class LatinHypercube(QMCEngine):
         else:
             samples = self.rng.uniform(size=(n, self.d))
 
-        perms = np.tile(np.arange(1, n + 1), (self.d, 1))
+        perms = np.tile(np.arange(1, n + 1),
+                        (self.d, 1))  # type: ignore[arg-type]
         for i in range(self.d):
             self.rng.shuffle(perms[i, :])
         perms = perms.T
 
         samples = (perms - samples) / n
         self.num_generated += n
-        return samples  # type: ignore[return-value]
+        return samples
 
 
 class Sobol(QMCEngine):
