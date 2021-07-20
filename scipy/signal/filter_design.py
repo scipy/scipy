@@ -4327,10 +4327,9 @@ def _arc_jac_sn(w, m):
     """
 
     def _complement(kx):
-        # (1-k**2) ** 0.5; the expression below 
+        # (1-k**2) ** 0.5; the expression below
         # works for small kx
         return ((1 - kx) * (1 + kx)) ** 0.5
-
 
     k = m ** 0.5
 
@@ -4355,9 +4354,8 @@ def _arc_jac_sn(w, m):
 
     for kn, knext in zip(ks[:-1], ks[1:]):
         wn = wns[-1]
-        wnext = ( 2 * wn
-                  /
-                 ( (1 + knext) * (1 + _complement(kn * wn)) ) )
+        wnext = (2 * wn /
+                 ((1 + knext) * (1 + _complement(kn * wn))))
         wns.append(wnext)
 
     u = 2 / np.pi * np.arcsin(wns[-1])
@@ -4379,7 +4377,8 @@ def _arc_jac_sc1(w, m):
 
     References
     ----------
-    .. [1] https://functions.wolfram.com/EllipticFunctions/JacobiSC/introductions/JacobiPQs/ShowAll.html, 
+    # noqa: E501
+    .. [1] https://functions.wolfram.com/EllipticFunctions/JacobiSC/introductions/JacobiPQs/ShowAll.html,
        "Representations through other Jacobi functions"
 
     """

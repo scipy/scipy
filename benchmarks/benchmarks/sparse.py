@@ -8,7 +8,7 @@ import pickle
 
 import numpy
 import numpy as np
-from numpy import ones, array, asarray, empty, random
+from numpy import ones, array, asarray, empty
 
 from .common import Benchmark, safe_import
 

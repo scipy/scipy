@@ -797,8 +797,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         if suggest_mode is not None:
             warnings.warn(
                 ("It is recommended to use mode = {} instead of {} when "
-                 "grid_mode is True."
-                ).format(suggest_mode, mode)
+                 "grid_mode is True.").format(suggest_mode, mode)
             )
     mode = _ni_support._extend_mode_to_code(mode)
 

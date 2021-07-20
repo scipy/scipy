@@ -2,6 +2,8 @@
 #ifndef CKDTREE_ORDERED_PAIR
 #define CKDTREE_ORDERED_PAIR
 
+#include <vector>
+
 struct ordered_pair {
     ckdtree_intp_t i;
     ckdtree_intp_t j;
@@ -22,5 +24,3 @@ add_ordered_pair(std::vector<ordered_pair> *results,
 }
 
 #endif
-
-
