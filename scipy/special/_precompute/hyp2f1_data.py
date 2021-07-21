@@ -374,7 +374,7 @@ if __name__ == "__main__":
         default=None,
         help="Restrict to supplied parameter groups. See the Docstring for"
         " this module for more info on parameter groups. Calculate for all"
-        " paremeter groups by default."
+        " parameter groups by default."
     )
     parser.add_argument(
         "--regions",
