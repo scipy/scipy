@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Optional
 from scipy._lib._util import DecimalNumber, IntNumber
 
 
