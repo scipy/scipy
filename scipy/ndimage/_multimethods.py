@@ -633,10 +633,10 @@ def _rotate_arg_replacer(args, kwargs, dispatchables):
     """
     uarray argument replacer for ``rotate``.
     """
-    def self_method(input, angle, axes=(1,0), reshape=True,
+    def self_method(input, angle, axes=(1, 0), reshape=True,
                     output=None, *args, **kwargs):
         return (dispatchables[0], angle, axes, reshape,
-                dispatchables[2]) + args, kwargs
+                dispatchables[1]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
