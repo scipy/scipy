@@ -303,12 +303,12 @@ def _fhtq(a, u, inverse=False):
 
     # check for singular transform or singular inverse transform
     if np.isinf(u[0]) and not inverse:
-        warn(f'singular transform; consider changing the bias')
+        warn('singular transform; consider changing the bias')
         # fix coefficient to obtain (potentially correct) transform anyway
         u = u.copy()
         u[0] = 0
     elif u[0] == 0 and inverse:
-        warn(f'singular inverse transform; consider changing the bias')
+        warn('singular inverse transform; consider changing the bias')
         # fix coefficient to obtain (potentially correct) inverse anyway
         u = u.copy()
         u[0] = np.inf

@@ -1870,6 +1870,14 @@ class TestMultivariateT:
         args = dict(loc=[0,0], shape=[[0,0],[0,1]], df=1, allow_singular=False)
         assert_raises(np.linalg.LinAlgError, multivariate_t, **args)
 
+    @pytest.mark.parametrize("size", [(10, 3), (5, 6, 4, 3)])
+    @pytest.mark.parametrize("dim", [2, 3, 4, 5])
+    @pytest.mark.parametrize("df", [1., 2., np.inf])
+    def test_rvs(self, size, dim, df):
+        dist = multivariate_t(np.zeros(dim), np.eye(dim), df)
+        rvs = dist.rvs(size=size)
+        assert rvs.shape == size + (dim, )
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(

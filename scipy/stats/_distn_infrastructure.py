@@ -3414,13 +3414,16 @@ class rv_discrete(rv_generic):
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
+        cond3 = (q == 0) & cond0
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
         output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _b)
-        place(output, cond2, _a-1)
+        lower_bound = _a - 1 + loc
+        upper_bound = _b + loc
+        place(output, cond2*(cond == cond), lower_bound)
+        place(output, cond3*(cond == cond), upper_bound)
 
         # call place only if at least 1 valid argument
         if np.any(cond):

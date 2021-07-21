@@ -76,7 +76,7 @@ class binom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._binom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._binom_ppf(q, n, p)
 
@@ -149,8 +149,8 @@ class bernoulli_gen(binom_gen):
         return binom._sf(x, 1, p)
 
     def _isf(self, x, p):
-        return binom._isf(x, 1, p)        
-    
+        return binom._isf(x, 1, p)
+
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
 
@@ -334,7 +334,7 @@ class nbinom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._nbinom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._nbinom_ppf(q, n, p)
 
@@ -504,26 +504,27 @@ class hypergeom_gen(rv_discrete):
         return result
 
     def _pmf(self, k, M, n, N):
-        # same as the following but numerically more precise
-        # return comb(good, k) * comb(bad, N-k) / comb(tot, N)
-        return exp(self._logpmf(k, M, n, N))
+        return _boost._hypergeom_pdf(k, n, N, M)
+
+    def _cdf(self, k, M, n, N):
+        return _boost._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
-        # tot, good, sample_size = M, n, N
-        # "wikipedia".replace('N', 'M').replace('n', 'N').replace('K', 'n')
-        M, n, N = 1.*M, 1.*n, 1.*N
+        M, n, N = 1. * M, 1. * n, 1. * N
         m = M - n
-        p = n/M
-        mu = N*p
 
-        var = m*n*N*(M - N)*1.0/(M*M*(M-1))
-        g1 = (m - n)*(M-2*N) / (M-2.0) * sqrt((M-1.0) / (m*n*N*(M-N)))
-
-        g2 = M*(M+1) - 6.*N*(M-N) - 6.*n*m
-        g2 *= (M-1)*M*M
-        g2 += 6.*n*N*(M-N)*m*(5.*M-6)
-        g2 /= n * N * (M-N) * m * (M-2.) * (M-3.)
-        return mu, var, g1, g2
+        # Boost kurtosis_excess doesn't return the same as the value
+        # computed here.
+        g2 = M * (M + 1) - 6. * N * (M - N) - 6. * n * m
+        g2 *= (M - 1) * M * M
+        g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
+        g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
+        return (
+            _boost._hypergeom_mean(n, N, M),
+            _boost._hypergeom_variance(n, N, M),
+            _boost._hypergeom_skewness(n, N, M),
+            g2,
+        )
 
     def _entropy(self, M, n, N):
         k = np.r_[N - (M - n):min(n, N) + 1]
@@ -531,17 +532,7 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        # This for loop is needed because `k` can be an array. If that's the
-        # case, the sf() method makes M, n and N arrays of the same shape. We
-        # therefore unpack all inputs args, so we can do the manual
-        # integration.
-        res = []
-        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
-            # Manual integration over probability mass function. More accurate
-            # than integrate.quad.
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(np.sum(self._pmf(k2, tot, good, draw)))
-        return np.asarray(res)
+        return _boost._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
         res = []
@@ -1206,7 +1197,7 @@ class zipfian_gen(rv_discrete):
         return 1.0 / _gen_harmonic(n, a) / k**a
 
     def _cdf(self, k, a, n):
-        return  _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
         k = k + 1  # # to match SciPy convention
@@ -1230,6 +1221,7 @@ class zipfian_gen(rv_discrete):
               - 3*Hna1**4) / mu2n**2
         g2 -= 3
         return mu1, mu2, g1, g2
+
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
 

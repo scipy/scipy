@@ -42,7 +42,7 @@ stages:
         RET: 'true'
       steps:
       - bash: |
-          git_log=`git log --max-count=1 --skip=1 --pretty=format:"%s"`
+          git_log=`git log --max-count=1 --skip=1 --pretty=format:"%B" | tr "\n" " "`
           echo "##vso[task.setvariable variable=log]$git_log"
       - bash: echo "##vso[task.setvariable variable=RET]false"
         condition: or(contains(variables.log, '[skip azp]'), contains(variables.log, '[azp skip]'), contains(variables.log, '[skip ci]'), contains(variables.log, '[ci skip]'))
@@ -142,7 +142,7 @@ stages:
       CXX: g++-4.8
     steps:
     - script: |
-        set -e
+        set -euo pipefail
         sudo apt update -y
         sudo apt install -y g++-4.8 gcc-4.8
       displayName: 'Install GCC 4.8'
@@ -169,11 +169,14 @@ stages:
     - script: >-
         python -m pip install
         pycodestyle==2.5.0
-        pyflakes==2.1.1
+        pyflakes==2.3.1
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
-        PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
+        set -euo pipefail
+        PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out || true
+        cat test.out
+        test \! -s test.out
         pycodestyle scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
@@ -193,8 +196,9 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
+            set -euo pipefail
             docker pull i386/ubuntu:bionic
-            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
+            docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
             apt-get -y install curl python3.7-dev python3.7 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
@@ -359,7 +363,7 @@ stages:
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
         $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
-        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
+        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2
       condition: succeededOrFailed()

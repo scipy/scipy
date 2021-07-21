@@ -1,3 +1,4 @@
+import sys
 import os.path
 from os.path import join
 
@@ -118,16 +119,15 @@ def configuration(parent_package='', top_path=None):
     # Cython optimize API for zeros functions
     config.add_subpackage('cython_optimize')
     config.add_data_files('cython_optimize.pxd')
-    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
-    config.add_extension(
-        'cython_optimize._zeros',
-        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 
     # HiGHS linear programming libraries and extensions
-    config.add_subpackage('_highs')
+    if 'sdist' not in sys.argv:
+        # Avoid running this during sdist creation - it makes numpy.distutils
+        # create an empty cython/src top-level directory.
+        config.add_subpackage('_highs')
 
     config.add_data_dir('tests')
 
