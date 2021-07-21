@@ -37,6 +37,7 @@ from scipy.stats._qmc_cy import (
     _cy_wrapper_mixture_discrepancy,
     _cy_wrapper_l2_star_discrepancy,
     _cy_wrapper_update_discrepancy,
+    _cy_van_der_corput_scrambled,
     _cy_van_der_corput,
 )
 
@@ -518,11 +519,10 @@ def van_der_corput(
         for perm in permutations:
             rng.shuffle(perm)
 
-    else:
-        permutations = None
+        return _cy_van_der_corput_scrambled(n, base, start_index, permutations)
 
-    sequence = _cy_van_der_corput(n, base, start_index, permutations)
-    return sequence
+    else:
+        return _cy_van_der_corput(n, base, start_index)
 
 
 class QMCEngine(ABC):
