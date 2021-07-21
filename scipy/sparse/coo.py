@@ -364,7 +364,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(N, M, self.nnz, col, row, self.data,
                       indptr, indices, data)
 
-            x = csc_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
+            x = csc_matrix((data, indices, indptr), shape=self.shape, safety_check="never")
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
@@ -406,7 +406,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(M, N, self.nnz, row, col, self.data,
                       indptr, indices, data)
 
-            x = csr_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
+            x = csr_matrix((data, indices, indptr), shape=self.shape, safety_check="never")
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x

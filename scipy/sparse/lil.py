@@ -451,7 +451,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         M, N = self.shape
         if M == 0 or N == 0:
-            return csr_matrix((M, N), dtype=self.dtype, safety_check=False)
+            return csr_matrix((M, N), dtype=self.dtype, safety_check="never")
 
         # construct indptr array
         if M*N <= np.iinfo(np.int32).max:
@@ -478,7 +478,7 @@ class lil_matrix(spmatrix, IndexMixin):
         _csparsetools.lil_flatten_to_array(self.data, data)
 
         # init csr matrix
-        return csr_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
+        return csr_matrix((data, indices, indptr), shape=self.shape, safety_check="never")
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 

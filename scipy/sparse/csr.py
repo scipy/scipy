@@ -142,7 +142,7 @@ class csr_matrix(_cs_matrix):
 
         from .csc import csc_matrix
         return csc_matrix((self.data, self.indices,
-                           self.indptr), shape=(N, M), copy=copy, safety_check=False)
+                           self.indptr), shape=(N, M), copy=copy, safety_check="never")
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -188,7 +188,7 @@ class csr_matrix(_cs_matrix):
                   data)
 
         from .csc import csc_matrix
-        A = csc_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
+        A = csc_matrix((data, indices, indptr), shape=self.shape, safety_check="never")
         A.has_sorted_indices = True
         return A
 
@@ -203,7 +203,7 @@ class csr_matrix(_cs_matrix):
 
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix(arg1, shape=self.shape, copy=copy, safety_check=False)
+            return bsr_matrix(arg1, shape=self.shape, copy=copy, safety_check="never")
 
         else:
             R,C = blocksize
@@ -226,7 +226,7 @@ class csr_matrix(_cs_matrix):
                       self.data,
                       indptr, indices, data.ravel())
 
-            return bsr_matrix((data,indices,indptr), shape=self.shape, safety_check=False)
+            return bsr_matrix((data,indices,indptr), shape=self.shape, safety_check="never")
 
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
@@ -245,7 +245,7 @@ class csr_matrix(_cs_matrix):
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield csr_matrix((data, indices, indptr), shape=shape, copy=True, safety_check=False)
+            yield csr_matrix((data, indices, indptr), shape=shape, copy=True, safety_check="never")
             i0 = i1
 
     def getrow(self, i):
@@ -312,7 +312,7 @@ class csr_matrix(_cs_matrix):
 
         shape = (1, max(0, int(np.ceil(float(stop - start) / stride))))
         return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
-                          dtype=self.dtype, copy=False, safety_check=False)
+                          dtype=self.dtype, copy=False, safety_check="never")
 
     def _get_sliceXint(self, row, col):
         if row.step in (1, None):

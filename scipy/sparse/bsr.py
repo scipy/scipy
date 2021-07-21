@@ -117,7 +117,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     """
     format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None, safety_check=True):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None, safety_check="auto"):
         _data_matrix.__init__(self)
 
         if isspmatrix(arg1):
@@ -223,10 +223,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
 
-        if isinstance(arg1, tuple):
-            self.check_format(full_check=safety_check)
-        else:
-            self.check_format(full_check=False)
+        perform_check = False
+        if isinstance(arg1, tuple) and safety_check == "auto":
+            perform_check = True
+        elif safety_check == "always":
+            perform_check = True
+        self.check_format(full_check=perform_check)
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
@@ -470,7 +472,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                   indices,
                   data)
         from .csr import csr_matrix
-        return csr_matrix((data, indices, indptr), shape=self.shape, safety_check=False)
+        return csr_matrix((data, indices, indptr), shape=self.shape, safety_check="never")
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
@@ -531,7 +533,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         if self.nnz == 0:
             return bsr_matrix((N, M), blocksize=(C, R),
-                              dtype=self.dtype, copy=copy, safety_check=False)
+                              dtype=self.dtype, copy=copy, safety_check="never")
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
@@ -542,7 +544,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                       indptr, indices, data.ravel())
 
         return bsr_matrix((data, indices, indptr),
-                          shape=(N, M), copy=copy, safety_check=False)
+                          shape=(N, M), copy=copy, safety_check="never")
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -683,7 +685,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         data = data.reshape(-1,R,C)
 
-        return self.__class__((data, indices, indptr), shape=self.shape, safety_check=False)
+        return self.__class__((data, indices, indptr), shape=self.shape, safety_check="never")
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
@@ -693,10 +695,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         """
         if copy:
             return self.__class__((data,self.indices.copy(),self.indptr.copy()),
-                                   shape=self.shape,dtype=data.dtype, safety_check=False)
+                                   shape=self.shape,dtype=data.dtype, safety_check="never")
         else:
             return self.__class__((data,self.indices,self.indptr),
-                                   shape=self.shape,dtype=data.dtype, safety_check=False)
+                                   shape=self.shape,dtype=data.dtype, safety_check="never")
 
 #    # these functions are used by the parent class
 #    # to remove redudancy between bsc_matrix and bsr_matrix

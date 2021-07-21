@@ -322,7 +322,7 @@ def kron(A, B, format=None):
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
         data = data * B
 
-        return bsr_matrix((data,A.indices,A.indptr), shape=output_shape, safety_check=False)
+        return bsr_matrix((data,A.indices,A.indptr), shape=output_shape, safety_check="never")
     else:
         # use COO
         A = coo_matrix(A)
@@ -428,10 +428,10 @@ def _compressed_sparse_stack(blocks, axis):
     indptr[-1] = last_indptr
     if axis == 0:
         return csr_matrix((data, indices, indptr),
-                          shape=(sum_dim, constant_dim), safety_check=False)
+                          shape=(sum_dim, constant_dim), safety_check="never")
     else:
         return csc_matrix((data, indices, indptr),
-                          shape=(constant_dim, sum_dim), safety_check=False)
+                          shape=(constant_dim, sum_dim), safety_check="never")
 
 
 def hstack(blocks, format=None, dtype=None):

@@ -389,7 +389,7 @@ class dia_matrix(_data_matrix):
         indices = row.T[mask.T].astype(idx_dtype, copy=False)
         data = self.data.T[mask.T]
         return csc_matrix((data, indices, indptr), shape=self.shape,
-                          dtype=self.dtype, safety_check=False)
+                          dtype=self.dtype, safety_check="never")
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
