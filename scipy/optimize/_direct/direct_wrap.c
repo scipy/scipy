@@ -40,7 +40,7 @@
    algorithm: whether to use the original DIRECT algorithm (DIRECT_ORIGINAL)
               or Gablonsky's "improved" version (DIRECT_GABLONSKY)
 */
-direct_return_code direct_optimize(
+PyObject* direct_optimize(
     PyObject* f, double *x, PyObject *x_seq, PyObject* args,
     int dimension,
     const double *lower_bounds, const double *upper_bounds,
@@ -53,7 +53,8 @@ direct_return_code direct_optimize(
     double fglobal_reltol,
     FILE *logfile,
     direct_algorithm algorithm,
-    direct_return_info *info)
+    direct_return_info *info,
+    direct_return_code* ret_code)
 {
      integer algmethod = algorithm == DIRECT_GABLONSKY;
      integer ierror;
@@ -72,10 +73,10 @@ direct_return_code direct_optimize(
      if (fglobal == DIRECT_UNKNOWN_FGLOBAL)
       fglobal_reltol = DIRECT_UNKNOWN_FGLOBAL_RELTOL;
 
-     if (dimension < 1) return DIRECT_INVALID_ARGS;
+     if (dimension < 1) *ret_code = DIRECT_INVALID_ARGS;
 
      l = (doublereal *) malloc(sizeof(doublereal) * dimension * 2);
-     if (!l) return DIRECT_OUT_OF_MEMORY;
+     if (!l) *ret_code = DIRECT_OUT_OF_MEMORY;
      u = l + dimension;
      for (i = 0; i < dimension; ++i) {
       l[i] = lower_bounds[i];
@@ -85,7 +86,7 @@ direct_return_code direct_optimize(
      int numfunc;
      int numiter;
      
-     direct_direct_(f, x, x_seq, &dimension, &magic_eps, magic_eps_abs,
+    PyObject* ret = direct_direct_(f, x, x_seq, &dimension, &magic_eps, magic_eps_abs,
             &max_feval, &max_iter, 
             force_stop,
             minf,
@@ -102,5 +103,6 @@ direct_return_code direct_optimize(
 
     free(l);
 
-    return (direct_return_code) ierror;
+    *ret_code = (direct_return_code) ierror;
+    return ret;
 }

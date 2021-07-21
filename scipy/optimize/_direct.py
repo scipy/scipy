@@ -28,7 +28,7 @@ SUCCESS_MESSAGES = (
 
 def _minimize_direct(func, bounds, args=(), disp=False,
                      eps=1e-4, maxfun=20000, maxiter=6000,
-                     locally_biased=True, fglobal=-np.inf, fglper=0.01,
+                     locally_biased=True, f_min=-np.inf, f_min_per=0.01,
                      vol_per=-1.0, sigma_per=-1.0):
     r"""
 
@@ -74,11 +74,11 @@ def _minimize_direct(func, bounds, args=(), disp=False,
 
         * ``locally_biased=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
-    fglobal : float, optional
+    f_min : float, optional
         Function value of the global optimum.
         By default it is a negative value whose absolute value is very large.
         Set this value only if the global optimum is known.
-    fglper : float, optional
+    f_min_per : float, optional
         Terminate the optimization when the percent error satisfies:
 
         .. math::
@@ -123,10 +123,10 @@ def _minimize_direct(func, bounds, args=(), disp=False,
                                          args,
                                          disp, eps, maxfun, maxiter,
                                          locally_biased,
-                                         fglobal, fglper,
+                                         f_min, f_min_per,
                                          vol_per, sigma_per)
 
-    format_val = (maxfun, maxiter, fglper, vol_per, vol_per)
+    format_val = (maxfun, maxiter, f_min_per, vol_per, vol_per)
     if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 1].format(
                     format_val[ret_code - 1])

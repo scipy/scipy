@@ -44,7 +44,7 @@
 /* |   Lipschitz continues. However, DIRECT has proven to be effective on  | */
 /* |   more complex problems than these.                                   | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_direct_(PyObject* fcn, doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
+/* Subroutine */ PyObject* direct_direct_(PyObject* fcn, doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
     doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
     doublereal *fglobal, doublereal *fglper, doublereal *volper, 
     doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter)
@@ -318,6 +318,7 @@
 /* |                            Start of code.                             | */
 /* +-----------------------------------------------------------------------+ */
 /* +-----------------------------------------------------------------------+ */
+    PyObject *ret = NULL;
     /* Parameter adjustments */
     --u;
     --l;
@@ -400,11 +401,14 @@
 /* +-----------------------------------------------------------------------+ */
 /* | Added variable to keep track of the maximum value found.              | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirinit_(f, fcn, c__, length, &actdeep, point, anchor, &ifree,
+    ret = direct_dirinit_(f, fcn, c__, length, &actdeep, point, anchor, &ifree,
         logfile, arrayi, &maxi, list2, w, &x[1], x_seq, &l[1], &u[1], 
         minf, &minpos, thirds, levels, &MAXFUNC, &MAXDEEP, n, n, &
         fmax, &ifeasiblef, &iinfesiblef, ierror, args, jones,
         force_stop);
+    if (!ret) {
+        return NULL;
+    } 
 /* +-----------------------------------------------------------------------+ */
 /* | Added error checking.                                                 | */
 /* +-----------------------------------------------------------------------+ */
@@ -769,5 +773,7 @@ L100:
     MY_FREE(arrayi);
     MY_FREE(levels);
     MY_FREE(thirds);
+
+    return ret;
 } /* direct_ */
 

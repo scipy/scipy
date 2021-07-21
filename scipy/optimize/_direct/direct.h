@@ -40,7 +40,7 @@ typedef struct {
 #define DIRECT_UNKNOWN_FGLOBAL (-HUGE_VAL)
 #define DIRECT_UNKNOWN_FGLOBAL_RELTOL (0.0)
 
-extern direct_return_code direct_optimize(
+extern PyObject* direct_optimize(
     PyObject* f, double *x, PyObject *x_seq, PyObject *args,
     int dimension,
     const double *lower_bounds, const double *upper_bounds,
@@ -53,7 +53,8 @@ extern direct_return_code direct_optimize(
     double fglobal_reltol,
     FILE *logfile,
     direct_algorithm algorithm,
-    direct_return_info *info);
+    direct_return_info *info,
+    direct_return_code *ret_code);
 
 #ifdef __cplusplus
 }  /* extern "C" */

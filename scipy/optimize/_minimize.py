@@ -655,10 +655,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             raise ValueError(("`bounds` is a required argument for "
                               "'direct' method."))
         locally_biased = options.get('locally_biased', True)
-        fglobal = options.get('fglobal', -1e100)
+        f_min = options.get('f_min', -np.inf)
         return _minimize_direct(fun, bounds=bounds, *args,
                                 locally_biased=locally_biased,
-                                fglobal=fglobal)
+                                f_min=f_min)
     else:
         raise ValueError('Unknown solver %s' % method)
 

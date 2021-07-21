@@ -1046,15 +1046,11 @@ L50:
 /* | The subroutine whose name is passed through the argument fcn.         | */
 /* |                                                                       | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_dirinfcn_(PyObject* fcn, doublereal *x, PyObject *x_seq,
+/* Subroutine */ PyObject* direct_dirinfcn_(PyObject* fcn, doublereal *x, PyObject *x_seq,
     doublereal *c1, doublereal *c2, integer *n, doublereal *f, integer *flag__,
     PyObject* args)
 {
-    /* System generated locals */
-    integer i__1;
-
-    /* Local variables */
-    integer i__;
+    int i;
 
 /* +-----------------------------------------------------------------------+ */
 /* | Variables to pass user defined data to the function to be optimized.  | */
@@ -1075,7 +1071,7 @@ L50:
     // TODO: PyArray_SimpleNewFromData gives segmentation fault
     // and therefore using list to pass to the user function.
     // Once the above function works, replace with NumPy arrays.
-    for (int i = 0; i < *n; i++) {
+    for (i = 0; i < *n; i++) {
         doublereal x_i_scaled = (x[i + 1] + c2[i + 1]) * c1[i + 1];
         PyList_SetItem(x_seq, i, PyFloat_FromDouble(x_i_scaled));
     }
@@ -1088,10 +1084,10 @@ L50:
     PyObject* f_py = PyObject_CallObject(fcn, arg_tuple);
     Py_DECREF(arg_tuple);
     if (!f_py ) {
-        return ;
+        return NULL;
     }
     *f = PyFloat_AsDouble(f_py);
-    Py_DECREF(f_py);
+    return f_py;
 } /* dirinfcn_ */
 
 /* +-----------------------------------------------------------------------+ */
@@ -1156,7 +1152,7 @@ L50:
 /* |    Changed 01/23/01                                                   | */
 /* |       Added variable Ierror to keep track of errors.                  | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ void direct_dirinit_(doublereal *f, PyObject* fcn, doublereal *c__,
+/* Subroutine */ PyObject* direct_dirinit_(doublereal *f, PyObject* fcn, doublereal *c__,
     integer *length, integer *actdeep, integer *point, integer *anchor,
     integer *free, FILE *logfile, integer *arrayi,
     integer *maxi, integer *list2, doublereal *w, doublereal *x, PyObject *x_seq,
@@ -1255,10 +1251,13 @@ L50:
     length[i__ + length_dim1] = 0;
 /* L20: */
     }
-    direct_dirinfcn_(fcn, &x[1], x_seq, &l[1], &u[1], n, &f[3], &help, args);
+    PyObject* ret = direct_dirinfcn_(fcn, &x[1], x_seq, &l[1], &u[1], n, &f[3], &help, args);
+    if (!ret) {
+        return NULL;
+    }
     if (force_stop && *force_stop) {
      *ierror = -102;
-     return;
+     return ret;
     }
     f[4] = (doublereal) help;
     *iinfeasible = help;
@@ -1290,7 +1289,7 @@ L50:
 /* +-----------------------------------------------------------------------+ */
     if (oops > 0) {
     *ierror = -4;
-    return;
+    return ret;
     }
 /* +-----------------------------------------------------------------------+ */
 /* | JG 01/22/01 Added variable to keep track of the maximum value found.  | */
@@ -1303,20 +1302,21 @@ L50:
         force_stop);
     if (force_stop && *force_stop) {
      *ierror = -102;
-     return;
+     return ret;
     }
 /* +-----------------------------------------------------------------------+ */
 /* | JG 01/23/01 Added error checking.                                     | */
 /* +-----------------------------------------------------------------------+ */
     if (oops > 0) {
     *ierror = -5;
-    return;
+    return ret;
     }
     direct_dirdivide_(&new__, &c__0, &length[length_offset], &point[1], &arrayi[1], &
         c__1, &list2[list2_offset], &w[1], maxi, &f[3], maxfunc,
         maxdeep, n);
     direct_dirinsertlist_(&new__, &anchor[-1], &point[1], &f[3], maxi, &
         length[length_offset], maxfunc, maxdeep, n, &c__1, jones);
+    return ret;
 } /* dirinit_ */
 
 /* +-----------------------------------------------------------------------+ */

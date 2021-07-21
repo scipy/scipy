@@ -3,10 +3,11 @@ Unit test for DIRECT optimization algorithm.
 """
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
-from numpy.testing._private.utils import assert_almost_equal
+from numpy.testing._private.utils import assert_almost_equal, assert_array_less
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+from scipy import optimize
 
 from scipy.optimize import minimize
 
@@ -46,21 +47,35 @@ class TestDIRECT:
          (neg_inv_func, 4*[(-10, 10)], 
           {'arg_min': np.array([0., 0., 0., 0.]), 'min': -np.inf,
            'arg_decimal': 7, 'decimal': 7,
-           'nfev': 23, 'nit': 2,
-           'status': 3, 'success': True}),
+           'nfev': 20379, 'nit': 118,
+           'status': 1, 'success': False}),
          (dot_func, 4*[(-10, 10)], 
           {'arg_min': np.array([-1., 2., -4., 3.]), 'min': 0.0,
            'arg_decimal': 7, 'decimal': 7,
            'nfev': 20105, 'nit': 256,
            'status': 1, 'success': False}),
         ])
-    def test_bounds(self, func, bounds, result):
+    def test_algorithm(self, func, bounds, result):
         res = minimize(func, None, bounds=bounds, method='direct')
         assert_array_almost_equal(res.x, result['arg_min'],
                                   decimal=result['arg_decimal'])
+        _bounds = np.asarray(bounds)
+        assert_(np.all(res.x >= _bounds[:, 0]))
+        assert_(np.all(res.x <= _bounds[:, 1]))
         assert_almost_equal(res.fun, result['min'],
                             decimal=result['decimal'])
         assert_equal(res['success'], result['success'])
         assert_equal(res['status'], result['status'])
         assert_equal(res['nfev'], result['nfev'])
         assert_equal(res['nit'], result['nit'])
+
+    def inv(self, x):
+        if np.sum(x) == 0:
+            raise ZeroDivisionError()
+        return 1/np.sum(x)
+
+    def test_exception(self):
+        bounds = 4*[(-10, 10)]
+        with pytest.raises(ZeroDivisionError): 
+            minimize(self.inv, None, bounds=bounds,
+                     method='direct')

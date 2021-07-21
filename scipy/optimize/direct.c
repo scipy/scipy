@@ -39,11 +39,13 @@ direct(PyObject *self, PyObject *args)
     force_stop = 0;
     direct_return_info info;
 
-    ret_code =  direct_optimize(f, x, x_seq, f_args, dimension, lower_bounds,
-                                upper_bounds, &minf, max_feval, max_iter,
-                                magic_eps, magic_eps_abs, volume_reltol,
-                                sigma_reltol, &force_stop, fglobal, fglobal_reltol,
-                                logfile, algorithm, &info);
+    if (!direct_optimize(f, x, x_seq, f_args, dimension, lower_bounds,
+                         upper_bounds, &minf, max_feval, max_iter,
+                         magic_eps, magic_eps_abs, volume_reltol,
+                         sigma_reltol, &force_stop, fglobal, fglobal_reltol,
+                         logfile, algorithm, &info, &ret_code)) {
+        return NULL;
+    }
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);
     return ret_py;
