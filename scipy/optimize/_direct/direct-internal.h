@@ -82,7 +82,7 @@ extern void direct_dirreplaceinf_(
      integer *maxfunc, const integer *maxdeep, integer *maxdim, integer *n, 
      FILE *logfile, doublereal *fmax, integer jones);
 extern void direct_dirsummary_(
-     FILE *logfile, doublereal *x, PyObject *x_seq, doublereal *l, doublereal *u, 
+     FILE *logfile, doublereal *x, doublereal *l, doublereal *u, 
      integer *n, doublereal *minf, doublereal *fglobal, 
      integer *numfunc, integer *ierror);
 extern integer direct_dirgetlevel_(

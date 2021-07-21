@@ -736,6 +736,7 @@ L100:
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
     x[i__] = c__[i__ + minpos * i__1 - i__1-1] * l[i__] + l[i__] * u[i__];
+    PyList_SetItem(x_seq, i__ - 1, PyFloat_FromDouble(x[i__]));
     u[i__] = oldu[i__ - 1];
     l[i__] = oldl[i__ - 1];
 /* L50: */
@@ -747,7 +748,7 @@ L100:
 /* +-----------------------------------------------------------------------+ */
 /* | Give out a summary of the run.                                        | */
 /* +-----------------------------------------------------------------------+ */
-    direct_dirsummary_(logfile, &x[1], x_seq, &l[1], &u[1], n, minf, fglobal, numfunc, 
+    direct_dirsummary_(logfile, &x[1], &l[1], &u[1], n, minf, fglobal, numfunc, 
         ierror);
 /* +-----------------------------------------------------------------------+ */
 /* | Format statements.                                                    | */

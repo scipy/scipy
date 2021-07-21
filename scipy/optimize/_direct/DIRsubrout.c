@@ -1563,7 +1563,7 @@ L50:
 /* L10005: */
 } /* dirheader_ */
 
-/* Subroutine */ void direct_dirsummary_(FILE *logfile, doublereal *x, PyObject *x_seq, doublereal *
+/* Subroutine */ void direct_dirsummary_(FILE *logfile, doublereal *x, doublereal *
     l, doublereal *u, integer *n, doublereal *minf, doublereal *fglobal,
     integer *numfunc, integer *ierror)
 {
