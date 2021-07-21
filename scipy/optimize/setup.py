@@ -46,7 +46,7 @@ def configuration(parent_package='', top_path=None):
     rootfind_hdr = [join('Zeros', 'zeros.h')]
     config.add_library('rootfind',
                        sources=rootfind_src,
-                       headers=rootfind_hdr,**numpy_nodepr_api)
+                       headers=rootfind_hdr, **numpy_nodepr_api)
 
     config.add_extension('_zeros',
                          sources=['zeros.c'],
