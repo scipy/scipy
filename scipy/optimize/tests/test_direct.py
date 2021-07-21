@@ -14,6 +14,9 @@ from scipy.optimize import minimize
 
 class TestDIRECT:
 
+    MAXFEVAL = 20000
+    MAXITER = 6000
+
     def gp_func(x):
         x1, x2 = x[0], x[1]
         fact1a = (x1 + x2 + 1)**2
@@ -42,17 +45,14 @@ class TestDIRECT:
          (gp_func, [[-2.0, 2.0], [-2.0, 2.0]],
           {'arg_min': np.array([0.0, -1.0]), 'min': 3.0,
            'arg_decimal': 4, 'decimal': 7,
-           'nfev': 20009, 'nit': 982,
            'status': 1, 'success': False}),
          (neg_inv_func, 4*[(-10, 10)], 
           {'arg_min': np.array([0., 0., 0., 0.]), 'min': -np.inf,
            'arg_decimal': 7, 'decimal': 7,
-           'nfev': 20379, 'nit': 118,
            'status': 1, 'success': False}),
          (dot_func, 4*[(-10, 10)], 
           {'arg_min': np.array([-1., 2., -4., 3.]), 'min': 0.0,
            'arg_decimal': 7, 'decimal': 7,
-           'nfev': 20105, 'nit': 256,
            'status': 1, 'success': False}),
         ])
     def test_algorithm(self, func, bounds, result):
@@ -66,8 +66,8 @@ class TestDIRECT:
                             decimal=result['decimal'])
         assert_equal(res['success'], result['success'])
         assert_equal(res['status'], result['status'])
-        assert_equal(res['nfev'], result['nfev'])
-        assert_equal(res['nit'], result['nit'])
+        assert_(res['nfev'] >= self.MAXFEVAL)
+        assert_(res['nit'] <= self.MAXITER)
 
     def inv(self, x):
         if np.sum(x) == 0:

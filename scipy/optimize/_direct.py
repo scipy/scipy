@@ -1,5 +1,5 @@
 import numpy as np
-from ._directmodule import direct # type: ignore
+from ._directmodule import direct  # type: ignore
 from .optimize import OptimizeResult
 
 ERROR_MESSAGES = (
