@@ -442,6 +442,7 @@ class TestBSpline:
             To avoid repetition of the code the following function is
             provided.
             '''
+            np.random.seed(1234)
             x = np.sort(np.random.random_sample(n) * 40 - 20)
             y = np.random.random_sample(n) * 40 - 20
             if bc_type == "periodic":
@@ -457,7 +458,6 @@ class TestBSpline:
             assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
             assert_allclose(des_matr_def, des_matr_csr, atol=1e-14)
 
-        np.random.seed(1234)
         # "clamped" and "natural" work only with `k = 3`
         n = 11
         k = 3
@@ -497,7 +497,8 @@ class TestBSpline:
         x = np.sort(np.random.random_sample(n) * 40 - 20)
         y = np.random.random_sample(n) * 40 - 20
         bspl = make_interp_spline(x, y, k=k)
-        # invalid vector of knots
+        # invalid vector of knots (should a 1D non-descending array_like)
+        # here the actual vector of knots is reversed, so it is invalid
         with assert_raises(ValueError):
             des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
         k = 2

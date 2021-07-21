@@ -302,13 +302,13 @@ class BSpline:
     @classmethod
     def design_matrix(cls, x, t, k):
         """
-        Returns a design matrix for BSpline object in "dense" or "CSR" formats.
+        Returns a design matrix in CSR format.
         
         Parameters
         ----------
         x : array_like, shape (n,)
             Points to evaluate the spline at.
-        t : array_like, shape (n,)
+        t : array_like, shape (nt,)
             Sorted 1D array of knots.
         k : int
             B-spline degree.
@@ -343,7 +343,7 @@ class BSpline:
         [0. , 0. , 0.5, 0.5, 0. ],
         [0. , 0. , 0. , 0.5, 0.5]]
 
-        Comparing with method introduced in gh-6730
+        This result is equivalent to ones created in the sparse format
         >>> c = np.eye(len(t) - k - 1)
         >>> design_matrix_gh = BSpline(t, c, k)(x)
         >>> np.allclose(design_matrix, design_matrix_gh, atol=1e-14)
@@ -352,6 +352,12 @@ class BSpline:
         Notes
         -----
         versionadded:: 1.8.0
+
+        In each row of the design matrix all the basis elemets are evaluated
+        at the certain point (first row - x[0], ..., last row - x[-1]).
+
+        For now extrapolate option is not added (if `x` is out of boundaries
+        ValueError is raised).
         """
         x = _as_float_array(x, True)
         t = _as_float_array(t, True)
