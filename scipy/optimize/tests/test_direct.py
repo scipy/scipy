@@ -28,7 +28,7 @@ class TestDIRECT:
     def dot_func(x):
         if np.sum(np.abs(x)) > 20:
             return np.nan
-        x -=  np.array([-1., 2., -4., 3.])
+        x -= np.array([-1., 2., -4., 3.])
         return np.dot(x, x)
 
     def neg_inv_func(x):
