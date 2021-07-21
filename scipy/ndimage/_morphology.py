@@ -34,7 +34,7 @@ import operator
 import numpy
 from . import _ni_support
 from . import _nd_image
-from . import filters
+from . import _filters
 
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',
            'binary_dilation', 'binary_opening', 'binary_closing',
@@ -1217,8 +1217,8 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     if size is None and footprint is None and structure is None:
         raise ValueError("size, footprint, or structure must be specified")
 
-    return filters._min_or_max_filter(input, size, footprint, structure,
-                                      output, mode, cval, origin, 1)
+    return _filters._min_or_max_filter(input, size, footprint, structure,
+                                       output, mode, cval, origin, 1)
 
 
 def grey_dilation(input, size=None, footprint=None, structure=None,
@@ -1365,8 +1365,8 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
         if not sz & 1:
             origin[ii] -= 1
 
-    return filters._min_or_max_filter(input, size, footprint, structure,
-                                      output, mode, cval, origin, 0)
+    return _filters._min_or_max_filter(input, size, footprint, structure,
+                                       output, mode, cval, origin, 0)
 
 
 def grey_opening(input, size=None, footprint=None, structure=None,

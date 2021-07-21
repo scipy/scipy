@@ -11,7 +11,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import ndimage
-from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
+from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
 
@@ -1937,7 +1937,7 @@ def test_rank_filter_noninteger_rank():
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
     arr = numpy.random.random((10, 20, 30))
-    assert_raises(TypeError, rank_filter, arr, 0.5,
+    assert_raises(TypeError, ndimage.rank_filter, arr, 0.5,
                   footprint=numpy.ones((1, 1, 10), dtype=bool))
 
 
@@ -1948,7 +1948,7 @@ def test_size_footprint_both_set():
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
         arr = numpy.random.random((10, 20, 30))
-        rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
+        ndimage.rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
                     dtype=bool))
 
 
