@@ -7,7 +7,7 @@ return the same branch as scipy's on the standard branch cut.
 
 import pytest
 import numpy as np
-from collections import namedtuple
+from typing import NamedTuple
 from numpy.testing import assert_allclose
 
 from scipy.special import hyp2f1
@@ -45,10 +45,13 @@ def mp_hyp2f1(a, b, c, z):
     return complex(mpmath.hyp2f1(a, b, c, z_mpmath))
 
 
-Hyp2f1TestCase = namedtuple(
-    "Hyp2f1TestCase",
-    ["a", "b", "c", "z", "expected", "rtol"]
-)
+class Hyp2f1TestCase(NamedTuple):
+    a: float
+    b: float
+    c: float
+    z: complex
+    expected: complex
+    rtol: float
 
 
 class TestHyp2f1:
