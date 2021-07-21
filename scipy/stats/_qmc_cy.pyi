@@ -37,9 +37,17 @@ def _cy_wrapper_update_discrepancy(
         initial_disc: DecimalNumber,
 ) -> float: ...
 
+
 def _cy_van_der_corput(
         n: IntNumber,
         base: IntNumber,
         start_index: IntNumber,
-        permutations: Optional[np.ndarray]
+) -> np.ndarray: ...
+
+
+def _cy_van_der_corput_scrambled(
+        n: IntNumber,
+        base: IntNumber,
+        start_index: IntNumber,
+        permutations: np.ndarray,
 ) -> np.ndarray: ...
