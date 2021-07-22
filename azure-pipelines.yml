@@ -168,16 +168,12 @@ stages:
         architecture: 'x64'
     - script: >-
         python -m pip install
-        pycodestyle==2.5.0
-        pyflakes==2.3.1
+        flake8==3.9.2
       displayName: 'Install tools'
       failOnStderr: false
     - script: |
         set -euo pipefail
-        PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out || true
-        cat test.out
-        test \! -s test.out
-        pycodestyle scipy benchmarks/benchmarks
+        flake8 scipy benchmarks/benchmarks
         # for Travis CI we used to do: git fetch --unshallow
         # but apparently Azure clones are not as shallow
         # so does not appear to be needed to fetch maintenance

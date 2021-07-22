@@ -32,7 +32,6 @@ dependencies:
   - pydata-sphinx-theme
   - sphinx-panels
   # For linting
-  - pycodestyle
   - flake8
   # Some optional test dependencies
   - mpmath
