@@ -63,7 +63,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
         Extra arguments passed to the objective function.
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
-        optimal interval is chosen.
+        optimal hyper-rectangle is chosen.
     maxfun : int, optional
         Approximate upper bound on objective function evaluations.
     maxiter : int, optional
@@ -88,8 +88,8 @@ def _minimize_direct(func, bounds, args=(), disp=False,
         Terminate the optimization once the volume of a hyper-rectangle is less
         than vol_per percent of the original hyper-rectangle.
     sigma_per : float, optional
-        Terminate the optimization once the measure of the
-        hyper-rectangle is less than this argument.
+        Terminate the optimization once the measure of the hyper-rectangle is
+        less than this argument.
 
     Returns
     -------
