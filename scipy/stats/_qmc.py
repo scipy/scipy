@@ -506,7 +506,7 @@ def van_der_corput(
 
     """
     if base < 2:
-        raise ValueError('base must be at least 2')
+        raise ValueError("'base' must be at least 2")
 
     if scramble:
         rng = check_random_state(seed)
