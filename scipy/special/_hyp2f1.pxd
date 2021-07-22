@@ -89,9 +89,9 @@ cdef inline double complex hyp2f1_complex(
         else:
             # Returning real part NAN and imaginary part 0 follows mpmath.
             return zpack(NPY_NAN, 0)
-    # Diverges when c is a non-positive integer unless a is an integer with c
-    # <= a <= 0 or b is an integer with c <= b <= 0, (or z equals 0 with c !=
-    # 0) Cases z = 0, a = 0, or b = 0 have already been handled. We follow
+    # Diverges when c is a non-positive integer unless a is an integer with
+    # c <= a <= 0 or b is an integer with c <= b <= 0, (or z equals 0 with
+    # c != 0) Cases z = 0, a = 0, or b = 0 have already been handled. We follow
     # mpmath in handling the degenerate cases where any of a, b, c are
     # non-positive integers. See [3] for a treatment of degenerate cases.
     if c_non_pos_int and not (
@@ -102,6 +102,7 @@ cdef inline double complex hyp2f1_complex(
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
+    # Fallback to Fortran original. To be translated to Cython later.
     if z == 1.0 and c - a - b > 0:
         return double_complex_from_npy_cdouble(
             chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
@@ -174,13 +175,15 @@ cdef inline double complex hyp2f1_series(
         double complex result = 1 + 0j
     for k in range(max_degree + 1):
         # Follows the Fortran original exactly. Using *= degrades precision.
-        # Todo: Check generated assembly to see what's going on
+        # Todo: Check generated assembly to see what's going on.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         previous = result
         result += term
         if early_stop and zabs(result - previous) < zabs(result) * rtol:
             break
     else:
+        # Return nan if max_degree is exceeded without convergence and
+        # early_stop has been set to True.
         if early_stop:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
             result = zpack(NPY_NAN, NPY_NAN)
