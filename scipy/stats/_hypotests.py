@@ -1576,11 +1576,12 @@ def permutation_test(data, statistic, *, permutation_type='both',
         - ``'pairings'`` : observations are paired with different observations,
           but they remain within the same sample. This permutation type is
           appropriate for association/correlation tests with statistics such
-          as Spearman's $\rho$, Kendall's $\tau$, and Pearson's $r$.
+          as Spearman's :math:`\rho`, Kendall's :math:`\tau`, and Pearson's
+          :math:`r`.
         - ``'both'`` : observations are assigned to different samples without
           preserving pairs. Samples may contain different numbers of
           observations. This permutations is appropriate for unpaired-sample
-          hypothesis tests such as the Mann-Whitney $U$ test and the
+          hypothesis tests such as the Mann-Whitney :math:`U` test and the
           independent sample t-test.
 
     vectorized : bool, optional (default: ``False``)
@@ -1632,6 +1633,10 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     *Unpaired statistics*: ``permutation_type='both'``
 
+    The null hypothesis associated with this permutation type is that all
+    observations are sampled from the same underlying distribution and that
+    the sample to which they are assigned is random.
+
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in ``a``,
@@ -1648,6 +1653,11 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     *Paired statistics*: ``permutation_type='pairings'``
 
+    The null hypothesis associated with this permutation type is that
+    observations within each sample are drawn from the same underlying
+    distribution and that pairings with elements of other samples are
+    assigned at random.
+
     When ``1 < permutations < factorial(k)``, where ``k`` is the number of
     observations in ``a``, the elements of ``a`` are randomly paired with
     elements of ``b``, and the statistic is calculated. This process is
@@ -1658,6 +1668,10 @@ def permutation_test(data, statistic, *, permutation_type='both',
     paired in each distinct way exactly once.
 
     *Paired statistics*: ``permutation_type='samples'``
+
+    The null hypothesis associated with this permutation type is that
+    observations within each pair are drawn from the same underlying
+    distribution and that the sample to which they are assigned is random.
 
     When ``1 < permutations < 2**k``, where ``k`` is the number of
     observations in ``a``, the elements of ``a`` are ``b`` are randomly
