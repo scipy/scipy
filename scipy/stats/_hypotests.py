@@ -1486,7 +1486,6 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     return x, y, n_permutations
 
 
-
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
                          permutations, alternative, axis, random_state):
     """Input validation for `permutation_test`."""

@@ -1236,7 +1236,7 @@ class TestPermutationTest:
 
     rtol = 1e-14
 
-    ### Input validation ###
+    # -- Input validation -- #
 
     def test_permutation_test_iv(self):
 
@@ -1283,7 +1283,7 @@ class TestPermutationTest:
             permutation_test(([1, 2, 3], [1, 2, 3]), stat,
                              random_state='herring')
 
-    ### Randomized Permutation Tests ###
+    # -- Randomized Permutation Tests -- #
 
     @pytest.mark.parametrize('permutation_type',
                              ('samples', 'pairings', 'both'))
@@ -1302,18 +1302,24 @@ class TestPermutationTest:
         if permutation_type == 'both':
             nx, ny, permutations = 8, 9, 24000
             assert special.binom(nx + ny, nx) > permutations
+
             def statistic(x, y, axis):
                 return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+
         elif permutation_type == 'samples':
             nx, ny, permutations = 15, 15, 32000
             assert 2**nx > permutations
+
             def statistic(x, y, axis):
                 return np.mean(x - y, axis=axis)
+
         elif permutation_type == 'pairings':
             nx, ny, permutations = 7, 7, 5000
             assert special.factorial(nx) > permutations
+
             def statistic1d(x, y):
                 return stats.pearsonr(x, y)[0]
+
             statistic = _bootstrap._vectorize_statistic(statistic1d)
 
         np.random.seed(0)
@@ -1385,7 +1391,7 @@ class TestPermutationTest:
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
         assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
-    ### Exact Independent (Unpaired) Sample Tests ###
+    # -- Exact Independent (Unpaired) Sample Tests -- #
 
     def test_permutation_test_against_kstest(self):
         np.random.seed(0)
@@ -1458,7 +1464,7 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    ### Exact Paired-Sample Tests ###
+    # -- Exact Paired-Sample Tests -- #
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
     def test_permutation_test_against_wilcoxon(self, alternative):
@@ -1491,7 +1497,7 @@ class TestPermutationTest:
             assert_allclose(res.statistic, expected_stat, rtol=self.rtol)
         assert_allclose(res.pvalue, expected_p, rtol=self.rtol)
 
-    ### Exact Association Tests ###
+    # -- Exact Association Tests -- #
 
     def test_permutation_test_against_kendalltau(self):
         np.random.seed(0)
@@ -1528,7 +1534,7 @@ class TestPermutationTest:
 
         assert_allclose(res.pvalue, res2[1])
 
-    ### Test Against External References ###
+    # -- Test Against External References -- #
 
     tie_case_1 = {'x': [1, 2, 3, 4], 'y': [1.5, 2, 2.5],
                   'expected_less': 0.2000000000,
