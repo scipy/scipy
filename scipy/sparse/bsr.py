@@ -430,7 +430,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         # TODO eliminate zeros
 
-        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C), safety_check=False)
+        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C), safety_check="never")
 
     ######################
     # Conversion methods #
