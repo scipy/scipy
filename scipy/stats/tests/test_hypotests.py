@@ -1497,6 +1497,27 @@ class TestPermutationTest:
             assert_allclose(res.statistic, expected_stat, rtol=self.rtol)
         assert_allclose(res.pvalue, expected_p, rtol=self.rtol)
 
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    def test_permutation_test_against_binomtest(self, alternative):
+        np.random.seed(0)
+        x = stats.uniform.rvs(size=10)
+        y = stats.uniform.rvs(size=10)
+
+        def statistic(x, y, axis=0):
+            return np.sum(x > y, axis=axis)
+
+        k = statistic(x, y)
+        n = 10
+        p = 0.5
+
+        expected = stats.binomtest(k, n, p, alternative=alternative)
+
+        res = permutation_test((x, y), statistic, vectorized=True,
+                               permutation_type='samples',
+                               alternative=alternative)
+
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
     # -- Exact Association Tests -- #
 
     def test_permutation_test_against_kendalltau(self):
