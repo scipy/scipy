@@ -32,7 +32,7 @@
 /* |   The algorithm starts with mapping the hyperrectangle Q to the       | */
 /* |   n-dimensional unit hypercube. DIRECT then samples the function at   | */
 /* |   the center of this hypercube and at 2n more points, 2 in each       | */
-/* |   coordinate direction. Uisng these function values, DIRECT then      | */
+/* |   coordinate direction. Using these function values, DIRECT then      | */
 /* |   divides the domain into hyperrectangles, each having exactly one of | */
 /* |   the sampling points as its center. In each iteration, DIRECT chooses| */
 /* |   some of the existing hyperrectangles to be further divided.         | */

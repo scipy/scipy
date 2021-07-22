@@ -77,6 +77,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'Newton-CG'   :ref:`(see here) <optimize.minimize-newtoncg>`
             - 'L-BFGS-B'    :ref:`(see here) <optimize.minimize-lbfgsb>`
             - 'TNC'         :ref:`(see here) <optimize.minimize-tnc>`
+            - 'DIRECT'      :ref:`(see here) <optimize.minimize-direct>`
             - 'COBYLA'      :ref:`(see here) <optimize.minimize-cobyla>`
             - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
             - 'trust-constr':ref:`(see here) <optimize.minimize-trustconstr>`
@@ -318,6 +319,25 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     method described above as it wraps a C implementation and allows
     each variable to be given upper and lower bounds.
 
+    Method :ref:`DIRECT <optimize.minimize-direct>` is a deterministic
+    optimization algorithm capable of minimizing black box function with
+    its variables subject to lower and upper bound constrains by sampling
+    potential solutions in the search space. The algorithm starts with
+    mapping the hyperrectangle (set of all possible values that can be taken
+    by the input variables subject to the bound constraints) n-dimensional
+    unit hypercube. It samples the function at the center of this hypercube
+    and at 2n (n is the number of variables) more points, 2 in each coordinate
+    direction. Using these function values, DIRECT then divides the domain
+    into hyperrectangles, each having exactly one of the sampling points as
+    its center. In each iteration, DIRECT chooses, using the epsilon parameter,
+    by default 1e-4, some of the existing hyperrectangles to be further divided
+    . This division process continues until the maximum iterations or maximum
+    function evaluations allowed are exceeded, or the function value is within
+    the desired percentage error of the global minimum (if known). The improved
+    version of DIRECT algorithm [18]_ is biased towards local search making it
+    effective for functions without too many local minima. This method wraps
+    the C implementation of the original and improved algorithms.
+
     **Constrained Minimization**
 
     Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
@@ -436,6 +456,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
+    .. [18] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
+        optimization without the Lipschitz constant. J Optim Theory Appl
+        79, 157-181 (1993)
+    .. [19] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
+        Modifications of the direct algorithm. Ph.D. Dissertation.
 
     Examples
     --------

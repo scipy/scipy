@@ -3472,6 +3472,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`Newton-CG   <optimize.minimize-newtoncg>`
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
+    - :ref:`DIRECT      <optimize.minimize-direct>`
     - :ref:`COBYLA      <optimize.minimize-cobyla>`
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
