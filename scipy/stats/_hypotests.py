@@ -2,7 +2,7 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
-from itertools import combinations, permutations
+from itertools import combinations, permutations, product
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
@@ -1437,7 +1437,7 @@ def _data_permutations(data, n_permutations, random_state=None):
     return x, y, n_permutations
 
 
-def _data_permutations_corr(data, n_permutations, random_state=None):
+def _data_permutations_pairings(data, n_permutations, random_state=None):
     """
     Vectorized permutation of data for two-sample correlation statistic.
     """
@@ -1449,8 +1449,7 @@ def _data_permutations_corr(data, n_permutations, random_state=None):
                             for i in range(n_permutations)])
     else:
         n_permutations = n_max
-        indices = np.array([permutation for permutation
-                            in permutations(range(n_obs_a))])
+        indices = np.array(list(permutations(range(n_obs_a))))
     x = a[..., indices]
     x = np.moveaxis(x, -2, 0)
     y = b
@@ -1458,17 +1457,49 @@ def _data_permutations_corr(data, n_permutations, random_state=None):
     return x, y, n_permutations
 
 
-def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
-                         permutations=np.inf, alternative="two-sided", axis=0,
-                         random_state=None):
+def _data_permutations_samples(data, n_permutations, random_state=None):
+    """
+    Vectorized permutation of data for two-sample paired statistic.
+    """
+    # no need to optimize this, as it has to be generalized to n samples
+    a, b = np.broadcast_arrays(*data)
+    n_obs_a = a.shape[-1]
+    n_max = 2**n_obs_a
+
+    if n_permutations < n_max:
+        indices = random_state.random(size=(n_permutations, n_obs_a)) > 0.5
+    else:
+        n_permutations = n_max
+        indices = np.array(list(product(*([[False, True]]*n_obs_a))))
+
+    if a.ndim > 1:
+        indices = np.expand_dims(indices, tuple(1 + np.arange(a.ndim-1)))
+
+    new_shape = [n_permutations] + list(a.shape)
+    a = np.broadcast_to(a, new_shape)
+    b = np.broadcast_to(b, new_shape)
+    indices = np.broadcast_to(indices, new_shape)
+
+    x = a.copy()
+    y = b.copy()
+    x[indices] = b[indices]
+    y[indices] = a[indices]
+    return x, y, n_permutations
+
+
+
+def _permutation_test_iv(data, statistic, permutation_type, vectorized,
+                         permutations, alternative, axis, random_state):
     """Input validation for `permutation_test`."""
 
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    if paired not in {True, False}:
-        raise ValueError("`paired` must be `True` or `False`.")
+    permutation_types = {'samples', 'pairings', 'both'}
+    permutation_type = permutation_type.lower()
+    if permutation_type not in permutation_types:
+        raise ValueError(f"`permutation_type` must be in {permutation_types}.")
 
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
@@ -1503,13 +1534,13 @@ def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, paired, vectorized, permutations_int,
+    return (data_iv, statistic, permutation_type, vectorized, permutations_int,
             alternative, axis_int, random_state)
 
 
-def permutation_test(data, statistic, paired=False, vectorized=False,
-                     permutations=np.inf, alternative="two-sided", axis=0,
-                     random_state=None):
+def permutation_test(data, statistic, *, permutation_type='both',
+                     vectorized=False, permutations=np.inf,
+                     alternative="two-sided", axis=0, random_state=None):
     """
     Performs a permutation test of a given statistic on provided data.
 
@@ -1531,9 +1562,27 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
         provided `axis` of ND arrays ``a`` and ``b``.
-    paired : bool, optional (default: ``False``)
-        Whether the statistic treats corresponding elements of ``a`` and ``b``
-        as paired.
+    permutation_type : {'both', 'sample', 'order'}
+        The type of permutations to be performed, in accordance with the
+        null hypothesis. The first two permutation types are for "paired"
+        statistics in which all samples contain the same number of
+        observations and corresponding elements are considered to be paired;
+        the third is for "unpaired" statistics.
+
+        - ``'samples'`` : observations are assigned to different samples
+          but remain paired with the same observations from other samples.
+          This permutation type is appropriate for paired-sample hypothesis
+          tests such as the Wilcoxon signed-rank test and the paired t-test.
+        - ``'pairings'`` : observations are paired with different observations,
+          but they remain within the same sample. This permutation type is
+          appropriate for association/correlation tests with statistics such
+          as Spearman's $\rho$, Kendall's $\tau$, and Pearson's $r$.
+        - ``'both'`` : observations are assigned to different samples without
+          preserving pairs. Samples may contain different numbers of
+          observations. This permutations is appropriate for unpaired-sample
+          hypothesis tests such as the Mann-Whitney $U$ test and the
+          independent sample t-test.
+
     vectorized : bool, optional (default: ``False``)
         By default, `statistic` is assumed to calculate the statistic only for
         1D arrays ``a`` and ``b``. If `vectorized` is set ``True``, `statistic`
@@ -1578,10 +1627,10 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     Notes
     -----
 
-    Let ``a, b = data``. The permutation tests for unpaired- and paired-sample
-    statistics as follows.
+    Let ``a, b = data``. The three types of permutation tests supported by
+    this function are described below.
 
-    *Unpaired statistics*
+    *Unpaired statistics*: ``permutation_type='both'``
 
     When ``1 < permutations < binom(n, k)``, where
 
@@ -1597,7 +1646,7 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     ``permutations >= binom(n, k)``, an exact test is performed: the data are
     partitioned between the groups in each distinct way exactly once.
 
-    *Paired statistics*
+    *Paired statistics*: ``permutation_type='pairings'``
 
     When ``1 < permutations < factorial(k)``, where ``k`` is the number of
     observations in ``a``, the elements of ``a`` are randomly paired with
@@ -1607,6 +1656,18 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     data is compared to this distribution to determine the p-value. When
     ``permutations >= factorial(k)``, an exact test is performed: the data are
     paired in each distinct way exactly once.
+
+    *Paired statistics*: ``permutation_type='samples'``
+
+    When ``1 < permutations < 2**k``, where ``k`` is the number of
+    observations in ``a``, the elements of ``a`` are ``b`` are randomly
+    swapped between samples (maintaining their pairings) and the statistic is
+    calculated. This process is performed repeatedly, `permutation` times,
+    generating a distribution of the statistic under the null hypothesis.
+    The statistic of the observed data is compared to this distribution to
+    determine the p-value. When ``permutations >= 2**k``, an exact test is
+    performed: the observations are assigned to the two samples in each
+    distinct way (while maintaining pairings) exactly once.
 
     Examples
     --------
@@ -1683,9 +1744,9 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     >>> plt.ylabel("Frequency")
 
     """
-    args = _permutation_test_iv(data, statistic, paired, vectorized,
+    args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
                                 permutations, alternative, axis, random_state)
-    data, statistic, paired, vectorized = args[:4]
+    data, statistic, permutation_type, vectorized = args[:4]
     permutations, alternative, axis, random_state = args[4:]
 
     if not vectorized:
@@ -1696,9 +1757,12 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
     observed = statistic_vectorized(*data, axis=-1)
 
     # TODO: generalize to n-samples
-    if paired:
-        tmp = _data_permutations_corr(data, permutations,
-                                      random_state=random_state)
+    if permutation_type == "pairings":
+        tmp = _data_permutations_pairings(data, permutations,
+                                          random_state=random_state)
+    elif permutation_type == "samples":
+        tmp = _data_permutations_samples(data, permutations,
+                                         random_state=random_state)
     else:
         tmp = _data_permutations(data, permutations,
                                  random_state=random_state)

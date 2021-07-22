@@ -15,6 +15,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact, permutation_test)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
+import scipy.stats._bootstrap as _bootstrap
 from .common_tests import check_named_results
 
 
@@ -1278,9 +1279,10 @@ class TestPermutationTest:
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, axis=1.5)
 
-        message = "`paired` must be `True` or `False`."
+        message = "`permutation_type` must be in..."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, paired=1.5)
+            permutation_test(([1, 2, 3], [1, 2, 3]), stat,
+                             permutation_type="ekki")
 
         message = "`vectorized` must be `True` or `False`."
         with pytest.raises(ValueError, match=message):
@@ -1343,14 +1345,45 @@ class TestPermutationTest:
 
         expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
 
-        def statistic1d(x, y, axis):
+        def statistic(x, y, axis):
             return stats.mannwhitneyu(x, y, axis=axis).statistic
 
-        res = permutation_test((x, y), statistic1d, vectorized=True,
+        res = permutation_test((x, y), statistic, vectorized=True,
                                alternative=alternative, axis=1)
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    def test_permutation_test_against_wilcoxon(self, alternative):
+        np.random.seed(0)
+        x = stats.uniform.rvs(size=(3, 6, 2), loc=0)
+        y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05)
+
+        def statistic1d(x, y):
+            # alternative 'less' ensures we get the same of two statistics
+            # every time
+            return stats.wilcoxon(x, y, alternative='less').statistic
+
+        def test1d(x, y):
+            # alternative 'less' ensures we get the same of two statistics
+            # every time
+            return stats.wilcoxon(x, y, alternative=alternative)
+
+        statistic = _bootstrap._vectorize_statistic(statistic1d)
+        test = _bootstrap._vectorize_statistic(test1d)
+        expected = test(x, y, axis=1)
+        expected_stat = expected[:, 0, :]
+        expected_p = expected[:, 1, :]
+
+        res = permutation_test((x, y), statistic, vectorized=True,
+                               permutation_type='samples',
+                               alternative=alternative, axis=1)
+
+        # `wilcoxon` returns a different statistic with 'two-sided'
+        if alternative != 'two-sided':
+            assert_allclose(res.statistic, expected_stat, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected_p, rtol=self.rtol)
 
     def test_permutation_test_against_cvm(self):
         np.random.seed(0)
@@ -1380,7 +1413,8 @@ class TestPermutationTest:
             return stats.kendalltau(x, y, method='asymptotic').correlation
 
         # kendalltau has only one alternative, two-sided
-        res = permutation_test((x, y), statistic1d, paired=True)
+        res = permutation_test((x, y), statistic1d,
+                               permutation_type='pairings')
 
         assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1485,7 +1519,8 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.spearmanr(x, y).correlation
 
-        res = permutation_test((x, y), statistic1d, paired=True,
+        res = permutation_test((x, y), statistic1d,
+                               permutation_type='pairings',
                                alternative=alternative)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
@@ -1539,7 +1574,7 @@ class TestPermutationTest:
         x = stats.norm.rvs(size=500)
         y = stats.norm.rvs(size=500)
 
-        res = permutation_test((x, y), statistic, paired=True,
+        res = permutation_test((x, y), statistic, permutation_type='pairings',
                                permutations=5000, alternative=alternative,
                                random_state=rng)
         res2 = stats.spearmanr(x, y, alternative=alternative)
@@ -1559,7 +1594,7 @@ class TestPermutationTest:
         y = (np.random.rand(8) + 0.25*x > 0.6).astype(float)
         tab = stats.contingency.crosstab(x, y)[1]
 
-        res = permutation_test((x, y), statistic, paired=True,
+        res = permutation_test((x, y), statistic, permutation_type='pairings',
                                alternative=alternative)
         res2 = stats.fisher_exact(tab, alternative=alternative)
 
