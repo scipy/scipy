@@ -114,6 +114,10 @@ cdef inline double complex hyp2f1_complex(
             chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
         )
     # Reduces to a polynomial when a or b is a negative integer.
+    # If a and b are both negative integers, we take care to terminate
+    # the series at a or b of smaller magnitude. This is to ensure proper
+    # handling of situations like a < c < b <= 0, a, b, c all non-positive
+    # integers, where terminating at a would lead to a term of the form 0 / 0.
     if a_neg_int and b_neg_int:
         num_terms = <int> fabs(a) - 1 if a > b else <int> fabs(b) - 1
         return hyp2f1_series(
