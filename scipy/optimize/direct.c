@@ -4,6 +4,9 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "_direct/direct.h"
+#define MY_ALLOC(p, t, n, ret_code) p = (t *) malloc(sizeof(t) * (n)); \
+                          if (!(p)) { *ret_code = DIRECT_OUT_OF_MEMORY; }
+#define MY_FREE(p) if (p) free(p)
 
 static PyObject *
 direct(PyObject *self, PyObject *args)
@@ -11,7 +14,7 @@ direct(PyObject *self, PyObject *args)
     PyObject *f, *f_args, *lb, *ub;
     int dimension, max_feval, max_iter, force_stop, disp;
     const double *lower_bounds, *upper_bounds;
-    double minf, magic_eps, magic_eps_abs;
+    double minf, magic_eps, magic_eps_abs, *x;
     double volume_reltol, sigma_reltol;
     double fglobal, fglobal_reltol;
     FILE *logfile = NULL;
@@ -28,11 +31,11 @@ direct(PyObject *self, PyObject *args)
     }
 
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
-    double x[dimension + 1];
+    MY_ALLOC(x, double, dimension + 1, &ret_code);
     PyObject *x_seq = PyList_New(dimension);
     lower_bounds = (double*)PyArray_DATA((PyArrayObject*)lb);
     upper_bounds = (double*)PyArray_DATA((PyArrayObject*)ub);
-    magic_eps_abs = abs(magic_eps);
+    magic_eps_abs = 0.0;
     volume_reltol /= 100.0;
     sigma_reltol /= 100.0;
     fglobal_reltol /= 100.0;
@@ -44,10 +47,12 @@ direct(PyObject *self, PyObject *args)
                          magic_eps, magic_eps_abs, volume_reltol,
                          sigma_reltol, &force_stop, fglobal, fglobal_reltol,
                          logfile, algorithm, &info, &ret_code)) {
+        MY_FREE(x);
         return NULL;
     }
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);
+    MY_FREE(x);
     return ret_py;
 }
 
