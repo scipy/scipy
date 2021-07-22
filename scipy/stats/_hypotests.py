@@ -1471,8 +1471,9 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
         n_permutations = n_max
         indices = np.array(list(product(*([[False, True]]*n_obs_a))))
 
-    if a.ndim > 1:
-        indices = np.expand_dims(indices, tuple(1 + np.arange(a.ndim-1)))
+    # expand_dims doesn't support axis tuples until NumPy 1.18
+    for i in range(a.ndim - 1):
+        indices = np.expand_dims(indices, axis=1)
 
     new_shape = [n_permutations] + list(a.shape)
     a = np.broadcast_to(a, new_shape)
