@@ -287,6 +287,9 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Notes
     -----
     This function uses the SuperLU library.
+    
+    In the case of using scipy.sparse.linalg.splu as a preconditionner for eignenvalue problem
+    you migth need to cast A as dtype('complex128') as eigenvalue could be complex.
 
     References
     ----------
@@ -380,6 +383,9 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     increase `fill_factor` AND decrease `drop_tol`.
 
     This function uses the SuperLU library.
+    
+    In the case of using scipy.sparse.linalg.spilu as a preconditionner for eignenvalue problem
+    you migth need to cast A as dtype('complex128') as eigenvalue could be complex.
 
     Examples
     --------
