@@ -1408,8 +1408,9 @@ PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
 # be implemented by this function.
 def _data_permutations(data, n_permutations, random_state=None):
     """
-    Vectorized permutation of data, unpaired samples.
+    Permute unpaired observations between samples for independent sample tests.
     """
+    # no need to optimize this as it will soon be generalized to n samples
 
     n_obs_a = data[0].shape[-1]  # number of observations in first sample
     data = statsstats._broadcast_concatenate(data, axis=-1)
@@ -1417,10 +1418,6 @@ def _data_permutations(data, n_permutations, random_state=None):
 
     # number of distinct combinations
     n_max = comb(n_obs, n_obs_a)
-
-    # these are not as efficient as they can be, but I'm not going
-    # to mess with them right now because they will be replaced with
-    # Pythran versions
 
     if n_permutations < n_max:
         indices = np.array([random_state.permutation(n_obs)
@@ -1439,17 +1436,19 @@ def _data_permutations(data, n_permutations, random_state=None):
 
 def _data_permutations_pairings(data, n_permutations, random_state=None):
     """
-    Vectorized permutation of data for two-sample correlation statistic.
+    Permute observations between pairs for association tests.
     """
     a, b = data
     n_obs_a = a.shape[-1]
     n_max = factorial(n_obs_a)
+
     if n_permutations < n_max:
         indices = np.array([random_state.permutation(n_obs_a)
                             for i in range(n_permutations)])
     else:
         n_permutations = n_max
         indices = np.array(list(permutations(range(n_obs_a))))
+
     x = a[..., indices]
     x = np.moveaxis(x, -2, 0)
     y = b
@@ -1459,9 +1458,9 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
     """
-    Vectorized permutation of data for two-sample paired statistic.
+    Permute observations between samples for paired-sample tests.
     """
-    # no need to optimize this, as it has to be generalized to n samples
+    # no need to optimize this as it will soon be generalized to n samples
     a, b = np.broadcast_arrays(*data)
     n_obs_a = a.shape[-1]
     n_max = 2**n_obs_a
@@ -1544,10 +1543,11 @@ def permutation_test(data, statistic, *, permutation_type='both',
     """
     Performs a permutation test of a given statistic on provided data.
 
-    Performs a two-sample permutation test. For unpaired statistics,
+    Performs a two-sample permutation test. For independent sample statistics,
     the null hypothesis is that the data are randomly sampled from the same
-    distribution. For paired statistics, the null hypothesis is that the data
-    are paired at random.
+    distribution. For paired statistics, two null hypothesis can be tested:
+    that the data are paired at random or that the data are assigned to groups
+    at random.
 
     Parameters
     ----------
