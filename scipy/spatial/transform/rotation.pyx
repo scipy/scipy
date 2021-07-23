@@ -792,6 +792,8 @@ cdef class Rotation:
             If True, then the given magnitudes are assumed to be in degrees.
             Default is False.
 
+            .. versionadded:: 1.7.0
+
         Returns
         -------
         rotation : `Rotation` instance
