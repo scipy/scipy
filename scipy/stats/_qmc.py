@@ -511,9 +511,10 @@ def van_der_corput(
     if scramble:
         rng = check_random_state(seed)
         # Create a set of permutation of np.arange(base) for each positive
-        # integer k such that base**-k > 2**-54. The number of permutations is
-        # equal to the number of iterations in the while loop in Algorithm 1 of
-        # Owen 2017.
+        # integer k such that base**-k > 2**-54. 2**-54 is the largest value
+        # that can be subtracted from 1 and the result would still be 1 (using
+        # double precision floats), which is the stopping criteria for the
+        # while loop in Algorithm 1 of Owen 2017.
         count = math.ceil(54 / math.log2(base)) - 1
         permutations = np.repeat(np.arange(base)[None], count, axis=0)
         for perm in permutations:
