@@ -186,7 +186,7 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         float cur_min_M, current_M
         int best_m, best_k
 
-        int best_u, best_w
+        int best_u = 0, best_w = 0
 
     for i in range(len(sorted_Z)):
         # Iterate over the linkage list instead of recursion.
