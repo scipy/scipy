@@ -1411,27 +1411,28 @@ def _data_permutations(data, n_permutations, random_state=None):
     Permute unpaired observations between samples for independent sample tests.
     """
     # no need to optimize this as it will soon be generalized to n samples
-
-    n_obs_a = data[0].shape[-1]  # number of observations in first sample
+    n_samples = len(data)
+    n_obs_i = [sample.shape[-1] for sample in data]
+    n_obs_ic = np.cumsum(n_obs_i)
     data = statsstats._broadcast_concatenate(data, axis=-1)
-    n_obs = data.shape[-1]  # total number of observations
 
     # number of distinct combinations
-    n_max = comb(n_obs, n_obs_a)
+    n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
+                     for i in range(n_samples-1, 0, -1)])
 
-    if n_permutations < n_max:
-        indices = np.array([random_state.permutation(n_obs)
-                            for i in range(n_permutations)])
-    else:
+    if n_permutations >= n_max and n_samples==2:
         n_permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(n_obs_a, n_obs-n_obs_a)])
+        indices = [np.concatenate(z)
+                   for z in _all_partitions(*n_obs_i)]
+    else:
+        indices = [random_state.permutation(n_obs_ic[-1])
+                   for i in range(n_permutations)]
 
+    indices = np.array(indices)
     data = data[..., indices]        # generate permutations
     data = np.moveaxis(data, -2, 0)  # permutations indexed along axis 0
-    x = data[..., :n_obs_a]
-    y = data[..., n_obs_a:]
-    return x, y, n_permutations
+    data = np.split(data, n_obs_ic[:-1], axis=-1)
+    return data, n_permutations
 
 
 def _data_permutations_pairings(data, n_permutations, random_state=None):
@@ -1453,7 +1454,7 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
     x = np.moveaxis(x, -2, 0)
     y = b
     x, y = np.broadcast_arrays(x, y)
-    return x, y, n_permutations
+    return (x, y), n_permutations
 
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
@@ -1483,7 +1484,7 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     y = b.copy()
     x[indices] = b[indices]
     y[indices] = a[indices]
-    return x, y, n_permutations
+    return (x, y), n_permutations
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
@@ -1502,9 +1503,9 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
-    message = "`data` must be a tuple containing exactly two samples"
+    message = "`data` must be a tuple containing at least two samples"
     try:
-        if len(data) != 2:
+        if len(data) < 2:
             raise ValueError(message)
     except TypeError:
         raise TypeError(message)
@@ -1765,9 +1766,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     else:
         tmp = _data_permutations(data, permutations,
                                  random_state=random_state)
-    x, y, permutations = tmp
+    data, permutations = tmp
 
-    null_distribution = statistic_vectorized(x, y, axis=-1)
+    null_distribution = statistic_vectorized(*data, axis=-1)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed

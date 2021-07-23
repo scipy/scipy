@@ -1247,7 +1247,7 @@ class TestPermutationTest:
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1]), stat)
 
-        message = "`data` must be a tuple containing exactly two samples"
+        message = "`data` must be a tuple containing at least two samples"
         with pytest.raises(ValueError, match=message):
             permutation_test((1,), stat)
         with pytest.raises(TypeError, match=message):
