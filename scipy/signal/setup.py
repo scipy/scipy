@@ -16,8 +16,8 @@ def configuration(parent_package='', top_path=None):
 
     # convert the *.c.in files : `lfilter.c.in -> lfilter.c` etc
     srcdir = os.path.join(os.getcwd(), 'scipy', 'signal')
-    tempita.process_tempita(os.path.join(srcdir, 'lfilter.c.in') )
-    tempita.process_tempita(os.path.join(srcdir, 'correlate_nd.c.in') )
+    tempita.process_tempita(os.path.join(srcdir, 'lfilter.c.in'))
+    tempita.process_tempita(os.path.join(srcdir, 'correlate_nd.c.in'))
 
     sigtools = config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
@@ -56,7 +56,7 @@ def configuration(parent_package='', top_path=None):
         '_upfirdn_apply', sources=['_upfirdn_apply.c'])
     spline_src = ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
                   'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c']
-    config.add_extension('spline', sources=spline_src, **numpy_nodepr_api)
+    config.add_extension('_spline', sources=spline_src, **numpy_nodepr_api)
 
     return config
 

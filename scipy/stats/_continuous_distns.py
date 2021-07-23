@@ -5,6 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
+from functools import wraps
 import ctypes
 
 import numpy as np
@@ -57,7 +58,7 @@ def _call_super_mom(fun):
     # If fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm' or with censored data, this decorator calls the generic
     # implementation.
-
+    @wraps(fun)
     def wrapper(self, data, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
         censored = isinstance(data, CensoredData)

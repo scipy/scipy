@@ -21,6 +21,7 @@ import contextlib
 import functools
 import operator
 import platform
+import itertools
 import sys
 from distutils.version import LooseVersion
 
@@ -739,6 +740,19 @@ class _TestCommon:
         assert_equal(self.spmatrix((0, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((15, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((0, 5)).diagonal(10), np.empty(0))
+
+    def test_trace(self):
+        # For square matrix
+        A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        B = self.spmatrix(A)
+        for k in range(-2, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
+
+        # For rectangular matrix
+        A = np.array([[1, 2, 3], [4, 5, 6]])
+        B = self.spmatrix(A)
+        for k in range(-1, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
 
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
@@ -2474,6 +2488,19 @@ class _TestSlicing:
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
                 check_2(a, b)
+
+        # Check out of bounds etc. systematically
+        extra_slices = []
+        for a, b, c in itertools.product(*([(None, 0, 1, 2, 5, 15,
+                                             -1, -2, 5, -15)]*3)):
+            if c == 0:
+                continue
+            extra_slices.append(slice(a, b, c))
+
+        for a in extra_slices:
+            check_2(a, a)
+            check_2(a, -2)
+            check_2(-2, a)
 
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))

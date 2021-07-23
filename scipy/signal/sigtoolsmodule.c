@@ -856,14 +856,14 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	int is1, os;
 	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer=NULL;
 	npy_intp *ret_ind=NULL;
-	CompareFunction compare_func;
+	CompareFunction compare_func=NULL;
 	char *zptr=NULL;
 	PyArray_CopySwapFunc *copyswap;
 
 	/* Get Array objects from input */
-	typenum = PyArray_ObjectType(op1, 0);  
+	typenum = PyArray_ObjectType(op1, 0);
 	typenum = PyArray_ObjectType(op2, typenum);
-	
+
 	ap1 = (PyArrayObject *)PyArray_ContiguousFromObject(op1, typenum, 0, 0);
 	if (ap1 == NULL) return NULL;
 	ap2 = (PyArrayObject *)PyArray_ContiguousFromObject(op2, typenum, 0, 0);
@@ -894,21 +894,23 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
                 "Order must be non-negative and less than number of nonzero elements in domain.");
 	  goto fail;
 	}
-	
+
 	ret = (PyArrayObject *)PyArray_SimpleNew(PyArray_NDIM(ap1),
                                                  PyArray_DIMS(ap1),
                                                  typenum);
 	if (ret == NULL) goto fail;
-	
-	compare_func = compare_functions[PyArray_TYPE(ap1)];
+
+	if (PyArray_TYPE(ap1) < sizeof(compare_functions) / sizeof(compare_functions[0])) {
+	    compare_func = compare_functions[PyArray_TYPE(ap1)];
+	}
 	if (compare_func == NULL) {
-	    PyErr_SetString(PyExc_ValueError, 
-                            "order_filterND not available for this type");
+	    PyErr_SetString(PyExc_ValueError,
+                        "order_filterND not available for this type");
 		goto fail;
 	}
 
 	is1 = PyArray_ITEMSIZE(ap1);
-	
+
 	if (!(sort_buffer = malloc(n2_nonzero*is1))) goto fail;
 
 	os = PyArray_ITEMSIZE(ret);

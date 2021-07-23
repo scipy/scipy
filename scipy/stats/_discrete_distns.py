@@ -76,7 +76,7 @@ class binom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._binom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._binom_ppf(q, n, p)
 
@@ -149,8 +149,8 @@ class bernoulli_gen(binom_gen):
         return binom._sf(x, 1, p)
 
     def _isf(self, x, p):
-        return binom._isf(x, 1, p)        
-    
+        return binom._isf(x, 1, p)
+
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
 
@@ -334,7 +334,7 @@ class nbinom_gen(rv_discrete):
 
     def _isf(self, x, n, p):
         return _boost._nbinom_isf(x, n, p)
-    
+
     def _ppf(self, q, n, p):
         return _boost._nbinom_ppf(q, n, p)
 
@@ -1197,7 +1197,7 @@ class zipfian_gen(rv_discrete):
         return 1.0 / _gen_harmonic(n, a) / k**a
 
     def _cdf(self, k, a, n):
-        return  _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
         k = k + 1  # # to match SciPy convention
@@ -1221,6 +1221,7 @@ class zipfian_gen(rv_discrete):
               - 3*Hna1**4) / mu2n**2
         g2 -= 3
         return mu1, mu2, g1, g2
+
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
 
