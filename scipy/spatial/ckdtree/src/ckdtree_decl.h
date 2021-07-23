@@ -53,7 +53,7 @@ struct ckdtree {
 
 int
 build_ckdtree(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
-              double *maxes, double *mins, int _median, int _compact);
+              double *maxes, double *mins, int _median, int _compact, int _workers);
 
 int
 build_weights (ckdtree *self, double *node_weights, double *weights);

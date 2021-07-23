@@ -222,6 +222,9 @@ class KDTree(cKDTree):
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
+    workers : int, optional
+        Number of workers to use for parallel build. If -1 is given all
+        CPU threads are used. Default is 1.
 
     Notes
     -----
@@ -334,14 +337,14 @@ class KDTree(cKDTree):
         return self._tree
 
     def __init__(self, data, leafsize=10, compact_nodes=True, copy_data=False,
-                 balanced_tree=True, boxsize=None):
+                 balanced_tree=True, boxsize=None, *, workers=1):
         data = np.asarray(data)
         if data.dtype.kind == 'c':
             raise TypeError("KDTree does not work with complex data")
 
         # Note KDTree has different default leafsize from cKDTree
         super().__init__(data, leafsize, compact_nodes, copy_data,
-                         balanced_tree, boxsize)
+                         balanced_tree, boxsize, workers=workers)
 
     def query(
             self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
