@@ -1325,6 +1325,7 @@ _bspldismat(PyObject *dummy, PyObject *args)
     }
 
     equal = 0;
+    dx = 1.0;
     N = PySequence_Length(x_i_py);
     if (N == 2 || (N == -1 && PyErr_Occurred())) {
         PyErr_Clear();
@@ -1338,7 +1339,6 @@ _bspldismat(PyObject *dummy, PyObject *args)
             if (N == -1 && PyErr_Occurred()) {
                 goto fail;
             }
-            dx = 1.0;
         }
         equal = 1;
     }
