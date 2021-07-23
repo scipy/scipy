@@ -4415,7 +4415,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         b, a = system.num, system.den
 
     elif isinstance(ftype, dlti):
-        system = ftype._as_tf()  # Avoids copying if already in TF form
+        system = ftype  # Avoids copying if already in TF form
         b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
