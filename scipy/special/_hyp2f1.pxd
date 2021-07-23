@@ -119,9 +119,9 @@ cdef inline double complex hyp2f1_complex(
     # handling of situations like a < c < b <= 0, a, b, c all non-positive
     # integers, where terminating at a would lead to a term of the form 0 / 0.
     if a_neg_int and b_neg_int:
-        num_terms = <int> fabs(a) - 1 if a > b else <int> fabs(b) - 1
+        max_degree = <int> fabs(a) - 1 if a > b else <int> fabs(b) - 1
         return hyp2f1_series(
-            a, b, c, z, num_terms, False, 0
+            a, b, c, z, max_degree, False, 0
         )
     elif a_neg_int:
         return hyp2f1_series(
@@ -163,10 +163,11 @@ cdef inline double complex hyp2f1_series(
         Maximum degree of terms before truncating.
     early_stop : bint
     rtol : double
-        If early_stop is True, truncate
+        If early_stop is True, truncate when
             |current_sum - previous_sum| <= rtol * |current_sum|
         If max_degree is reached before the stopping condition is satisfied,
-        return nan. If early_stop is False, sum all terms up until max_degree.
+        return nan. If early_stop is False, sum all terms up until and
+        including that with degree max_degree.
 
     Returns
     -------
