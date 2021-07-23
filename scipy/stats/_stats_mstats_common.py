@@ -47,7 +47,7 @@ def linregress(x, y=None, alternative='two-sided'):
             Intercept of the regression line.
         rvalue : float
             The Pearson correlation coefficient. The square of ``rvalue``
-            is the coefficient of determination.
+            is equal to the coefficient of determination.
         pvalue : float
             The p-value for a hypothesis test whose null hypothesis is
             that the slope is zero, using Wald Test with t-distribution of
