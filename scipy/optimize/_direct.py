@@ -53,7 +53,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
     ----------
     fun: callable
         The objective function to be minimized.
-        fun(x, *args) -> float
+        fun(x, \*args) -> float
         where x is an 1-D array with shape (n,) and args is a tuple of
         the fixed parameters needed to completely specify the function.
     bounds : Bounds
