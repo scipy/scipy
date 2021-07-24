@@ -388,7 +388,7 @@ class MatFile4Reader(MatFileReader):
         mdict = {}
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name.decode('latin1')
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
@@ -408,7 +408,7 @@ class MatFile4Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = hdr.name.decode('latin1')
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             shape = self._matrix_reader.shape_from_header(hdr)
             info = mclass_info.get(hdr.mclass, 'unknown')
             vars.append((name, shape, info))

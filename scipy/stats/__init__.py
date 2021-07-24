@@ -136,6 +136,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
+   studentized_range    -- Studentized Range
    t                 -- Student's T
    trapezoid         -- Trapezoidal
    triang            -- Triangular
@@ -368,13 +369,14 @@ Statistical distances
    wasserstein_distance
    energy_distance
 
-Random variate generation
--------------------------
+Random variate generation / CDF Inversion
+=========================================
 
 .. autosummary::
    :toctree: generated/
 
    rvs_ratio_uniforms
+   NumericalInverseHermite
 
 Circular statistical functions
 ------------------------------
@@ -400,6 +402,7 @@ Contingency table functions
    contingency.association
    fisher_exact
    barnard_exact
+   boschloo_exact
 
 Plot-tests
 ----------
@@ -449,7 +452,7 @@ from .contingency import chi2_contingency
 from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms
+from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 

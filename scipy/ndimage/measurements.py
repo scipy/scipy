@@ -1355,7 +1355,8 @@ def center_of_mass(input, labels=None, index=None):
         Only used with `index`. Dimensions must be the same as `input`.
     index : int or sequence of ints, optional
         Labels for which to calculate centers-of-mass. If not specified,
-        all labels greater than zero are used. Only used with `labels`.
+        the combined center of mass of all labels greater than zero
+        will be calculated. Only used with `labels`.
 
     Returns
     -------

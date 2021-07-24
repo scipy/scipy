@@ -440,7 +440,7 @@ trlib_int_t trlib_tri_factor_regularized_umin(
     trlib_flt_t ferr = 0.0;               // forward  error bound from iterative refinement
     trlib_flt_t berr = 0.0;               // backward error bound from iterative refinement
     trlib_int_t inc = 1;                  // vector increment
-    trlib_int_t info_fac;                 // LAPACK return code
+    trlib_int_t info_fac = 0;             // LAPACK return code
     trlib_int_t nm = n-1;
 
     // factorize T + lam0 I
