@@ -869,6 +869,21 @@ class TestNdimageFilters:
         expected = tmp1 * tmp1 + tmp2 * tmp2
         expected = numpy.sqrt(expected).astype(dtype)
         assert_array_almost_equal(expected, output)
+    
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64,
+                              numpy.complex64, numpy.complex128])
+    def test_gaussian_gradient_magnitude03(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0], mode="reflect-odd")
+        tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1], mode="reflect-odd")
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.gaussian_gradient_magnitude(array, 1.0, output, mode="reflect-odd")
+        expected = tmp1 * tmp1 + tmp2 * tmp2
+        expected = numpy.sqrt(expected).astype(dtype)
+        assert_array_almost_equal(expected, output)
 
     def test_generic_gradient_magnitude01(self):
         array = numpy.array([[3, 2, 5, 1, 4],

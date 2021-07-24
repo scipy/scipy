@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+#include <stdio.h>
 
 /* initialize iterations over single array elements: */
 int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
@@ -283,6 +284,54 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             src = first;
             while (size_after--) {
                 *dst++ = *src++;
+            }
+            break;
+        /* 2a-d,2a-c,2a-b|abcd|2d-c,2d-b,2d-a */
+        case NI_EXTEND_REFLECT_ODD:
+            {
+            int left_factor = 2;
+            int right_factor = 0;
+            int sign = -1;
+            int direction = 1;
+            dst = first - 1;
+            double* pull = first + 1;
+            while (size_before--) {
+                *dst-- = (left_factor * (*first)) - (right_factor * (*(last - 1))) + (sign * (*pull));
+                pull += direction;
+                if (pull >= last) {
+                    pull = last - 2;
+                    direction = -1;
+                    sign = 1;
+                    right_factor += 2;
+                }
+                else if (pull < first) {
+                    pull = first + 1;
+                    direction = 1;
+                    sign = -1;
+                    left_factor += 2;
+                }
+            }
+            left_factor = 0;
+            right_factor = 2;
+            sign = -1;
+            direction = -1;
+            dst = last;
+            while (size_after--) {
+                *dst++ = (right_factor * (*(last - 1))) - (left_factor * (*first)) + (sign * (*pull));
+                pull += direction;
+                if (pull >= last) {
+                    pull = last - 2;
+                    direction = -1;
+                    sign = -1;
+                    right_factor += 2;
+                }
+                else if (pull < first) {
+                    pull = first + 1;
+                    direction = 1;
+                    sign = 1;
+                    left_factor += 2;
+                }
+            }
             }
             break;
         /* cbabcdcb|abcd|cbabcdcb */
@@ -623,6 +672,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                             }
                         }
                         break;
+                    case NI_EXTEND_REFLECT_ODD: //avoid failiure on bad mode choice
                     case NI_EXTEND_REFLECT:
                         if (cc < 0) {
                             if (len <= 1) {

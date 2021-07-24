@@ -624,8 +624,6 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
-
     def derivative(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
         order[axis] = 1
