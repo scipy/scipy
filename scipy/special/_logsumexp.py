@@ -128,8 +128,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
 
 def softmax(x, axis=None):
-    r"""
-    Softmax function
+    r"""Compute the softmax function.
 
     The softmax function transforms each element of a collection by
     computing the exponential of each element divided by the sum of the
