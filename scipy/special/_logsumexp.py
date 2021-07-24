@@ -181,7 +181,7 @@ def softmax(x, axis=None):
            [  1.21863e-05,   2.68421e-01,   7.29644e-01,   3.31258e-05]])
 
     >>> m.sum()
-    1.0000000000000002
+    1.0
 
     Compute the softmax transformation along the first axis (i.e., the
     columns).
@@ -208,9 +208,10 @@ def softmax(x, axis=None):
     array([ 1.,  1.,  1.])
 
     """
-
-    # compute in log space for numerical stability
-    return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
+    x = _asarray_validated(x, check_finite=False)
+    x_max = np.amax(x, axis=axis, keepdims=True)
+    exp_x_shifted = np.exp(x - x_max)
+    return exp_x_shifted / np.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
 def log_softmax(x, axis=None):
