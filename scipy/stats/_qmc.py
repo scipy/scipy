@@ -7,7 +7,9 @@ import numbers
 from abc import ABC, abstractmethod
 import math
 from typing import (
+    Callable,
     ClassVar,
+    Dict,
     List,
     Optional,
     overload,
@@ -41,7 +43,7 @@ from scipy.stats._qmc_cy import (
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton',
-           'LatinHypercube', 'OptimalLatinHypercube',
+           'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -901,6 +903,17 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
+    optimization : {None, "random-CD"}, optional, default None
+        Whether to use an optimization scheme to construct a LHS.
+
+        * ``random-CD``: random permutations of coordinates to lower the
+          centered discrepancy [5]_. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures [6]_.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -919,6 +932,11 @@ class LatinHypercube(QMCEngine):
        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
        24, no. 5: 2058-2080, 1996.
+    .. [5] Fang et al. "Design and modeling for computer experiments".
+       Computer Science and Data Analysis Series, 2006.
+    .. [6] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties."
+       Journal of Simulation, 2013.
 
     Examples
     --------
@@ -939,7 +957,7 @@ class LatinHypercube(QMCEngine):
     >>> qmc.discrepancy(sample)
     0.019558034794794565  # random
 
-    Finally, samples can be scaled to bounds.
+    Samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
@@ -950,16 +968,54 @@ class LatinHypercube(QMCEngine):
            [6.80338249, 3.08795949],
            [2.65448791, 3.83491828]])
 
+    Alternatively, optimized LHS can be constructed with `optimization`.
+    It should give a sample with a lower discrepancy at a higher computational
+    cost:
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-CD")
+    >>> sample = sampler.random(n=5)
+    >>> qmc.discrepancy(sample)
+    0.017579341838451112  # random
+
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        optimization: Optional[Literal["random-CD"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
+        optimization_methods: Dict[str, Callable] = {
+            "random-CD": self._random_optimal,
+        }
+
+        if optimization is None:
+            self.optimization = self._random
+        elif optimization in optimization_methods:
+            self.optimization = optimization_methods[optimization]
+        else:
+            raise ValueError(f"{optimization!r} is not a valid optimization"
+                             " method. It must be one of"
+                             f" {set(optimization_methods)!r}")
+
     def random(self, n: IntNumber = 1) -> np.ndarray:
+        """Draw `n` in the half-open interval ``[0, 1)``.
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of samples to generate in the parameter space. Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            LHS sample.
+
+        """
+        return self.optimization(n)
+
+    def _random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -987,89 +1043,7 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return samples  # type: ignore[return-value]
 
-
-class OptimalLatinHypercube(QMCEngine):
-    """Greedy optimization of a Latin hypercube sample (OLHS).
-
-    Optimize the sample by doing random permutations of coordinates to lower
-    the centered discrepancy [1]_. The resulting sample is still a LHS.
-
-    Parameters
-    ----------
-    d : int
-        Dimension of the parameter space.
-    start_sample : array_like (n, d), optional
-        Initial sample to optimize. `LatinHypercube`
-        is used to generate a first design otherwise.
-    n_perturbations : int, optional
-        Number of perturbations to perform. Default is 10000.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None, the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance, then that instance is
-        used.
-
-    Notes
-    -----
-    `n_perturbations` random permutations are performed against a LHS
-    sample. The best design based on the centered discrepancy is constantly
-    updated. Centered discrepancy-based design shows better space filling
-    robustness toward 2D and 3D subprojections compared to using other
-    discrepancy measures [2]_.
-
-    References
-    ----------
-    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
-       of computer experiments", Journal of Statistical Planning and
-       Inference, 2005.
-    .. [2] Damblin et al., "Numerical studies of space filling designs:
-       optimization of Latin Hypercube Samples and subprojection properties."
-       Journal of Simulation, 2013.
-
-    Examples
-    --------
-    Generate samples from an optimal design.
-
-    >>> from scipy.stats import qmc
-    >>> sampler = qmc.OptimalLatinHypercube(d=2)
-    >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.84052691, 0.53664833],  # random
-           [0.1545328 , 0.36265316],
-           [0.52177809, 0.93343721],
-           [0.68033825, 0.06474907],
-           [0.26544879, 0.61163943]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
-    >>> qmc.discrepancy(sample)
-    0.01602810655510689  # random
-
-    You can possibly improve the quality of the sample by performing more
-    optimization iterations by using `niter`:
-
-    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2, n_perturbations=5000)
-    >>> sample_2 = sampler_2.random(n=5)
-    >>> qmc.discrepancy(sample_2)
-    0.01600398742881648  # random
-
-    """
-
-    def __init__(self, d: IntNumber, *, start_sample: npt.ArrayLike = None,
-                 n_perturbations: IntNumber = 10000,
-                 seed: SeedType = None):
-        super().__init__(d=d, seed=seed)
-        self.n_perturbations = n_perturbations
-        self.start_sample: Optional[np.ndarray] = None
-
-        if start_sample is not None:
-            self.start_sample = np.asarray(start_sample).copy()
-            self.start_disc = discrepancy(self.start_sample)
-        else:
-            self.start_disc = np.inf
-
-    def random(self, n: IntNumber = 1):
+    def _random_optimal(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -1080,20 +1054,14 @@ class OptimalLatinHypercube(QMCEngine):
         Returns
         -------
         sample : array_like (n, d)
-            Optimal LHS sample.
+            LHS sample.
 
         """
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        if self.start_sample is None:
-            lhs = LatinHypercube(self.d, seed=self.rng)
-            best_sample = lhs.random(n)
-            best_disc = discrepancy(best_sample)
-        else:
-            best_sample = self.start_sample
-            n = len(best_sample)
-            best_disc = self.start_disc
+        best_sample = self._random(n=n)
+        best_disc = discrepancy(best_sample)
 
         if n == 1:
             return best_sample
@@ -1102,7 +1070,11 @@ class OptimalLatinHypercube(QMCEngine):
                   [0, n - 1],
                   [0, n - 1])
 
-        for _ in range(self.n_perturbations):
+        n_nochange = 0
+        n_iters = 0
+        while "Optimization loop":
+            n_iters += 1
+
             col = rng_integers(self.rng, *bounds[0])
             row_1 = rng_integers(self.rng, *bounds[1])
             row_2 = rng_integers(self.rng, *bounds[2])
@@ -1112,7 +1084,18 @@ class OptimalLatinHypercube(QMCEngine):
             if disc < best_disc:
                 best_sample[row_1, col], best_sample[row_2, col] = (
                     best_sample[row_2, col], best_sample[row_1, col])
+
                 best_disc = disc
+                n_nochange = 0
+            else:
+                # stopping criterion: wait for no successive improvement
+                if abs(best_disc - disc) < 1e-10:
+                    n_nochange += 1
+                    if n_nochange >= 10:
+                        break
+
+            if n_iters >= 10_000:
+                break
 
         self.num_generated += n
         return best_sample

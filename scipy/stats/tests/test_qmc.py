@@ -536,76 +536,42 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
-    def test_sample_stratified(self):
+    @pytest.mark.parametrize("optimization", [None, "random-CD"])
+    def test_sample_stratified(self, optimization):
         d, n = 4, 20
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=True)
+        engine = self.engine(d=d, scramble=False, centered=True,
+                             optimization=optimization)
         sample = engine.random(n=n)
         sorted_sample = np.sort(sample, axis=0)
 
         assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
 
-        engine = self.engine(d=d, scramble=False, centered=False)
-        sample = engine.random(n=n)
-        sorted_sample = np.sort(sample, axis=0)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
 
-
-class TestOptimalLatinHypercube(QMCEngineTests):
-    qmce = partial(qmc.OptimalLatinHypercube, n_perturbations=100)
-    can_scramble = False
-    unscramble_nd = np.array([[0.60881992, 0.00416027],
-                              [0.82837347, 0.26284543],
-                              [0.20290629, 0.83297228],
-                              [0.48412877, 0.89496811],
-                              [0.06857794, 0.43212172],
-                              [0.98461223, 0.5690004],
-                              [0.3424405, 0.14251516],
-                              [0.64745145, 0.70599331]])
-
-    def test_continuing(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
-
-    def test_fast_forward(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
-
     def test_discrepancy_hierarchy(self):
-        # base discrepancy as a reference for testing
-        # OptimalLatinHypercube is better
         seed = np.random.RandomState(123456)
         lhs = qmc.LatinHypercube(d=2, seed=seed)
         sample_ref = lhs.random(n=20)
         disc_ref = qmc.discrepancy(sample_ref)
 
-        # all defaults
         seed = np.random.RandomState(123456)
-        optimal_ = qmc.OptimalLatinHypercube(d=2, seed=seed, n_perturbations=5)
+        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
         sample_ = optimal_.random(n=20)
         disc_ = qmc.discrepancy(sample_)
 
         assert disc_ < disc_ref
 
-        # using an initial sample
-        seed = np.random.RandomState(123456)
-        optimal_1 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
-                                              n_perturbations=5,
-                                              seed=seed)
-        sample_1 = optimal_1.random(n=20)
-        disc_1 = qmc.discrepancy(sample_1)
-
-        assert disc_1 < disc_ref
-
-        # 10 perturbations is better than 5
-        optimal_2 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
-                                              n_perturbations=10, seed=seed)
-        sample_2 = optimal_2.random(n=20)
-        disc_2 = qmc.discrepancy(sample_2)
-        assert disc_2 < disc_1
-
+    def test_warning(self):
+        with pytest.raises(ValueError, match=r"'toto' is not a valid"
+                                             r" optimization method"):
+            seed = np.random.RandomState(12345)
+            engine = qmc.LatinHypercube(1, seed=seed, optimization="toto")
+            engine.random(10)
 
 class TestSobol(QMCEngineTests):
     qmce = qmc.Sobol
