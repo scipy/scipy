@@ -60,6 +60,9 @@ Iterative methods for linear equation systems:
    minres -- Use MINimum RESidual iteration to solve Ax = b
    qmr -- Use Quasi-Minimal Residual iteration to solve A x = b
    gcrotmk -- Solve a matrix equation using the GCROT(m,k) algorithm
+   cgne -- Use Conjugate Gradient Normal Error iteration to solve A x = b
+   cgnr -- Use Conjugate Gradient Normal Residual iteration to solve A x = b
+   icgs -- Use Improved Conjugate Gradient Squared iteration to solve A x = b
 
 Iterative methods for least-squares problems:
 

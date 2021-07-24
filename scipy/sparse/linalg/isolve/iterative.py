@@ -1,6 +1,6 @@
 """Iterative methods for solving linear systems"""
 
-__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
+__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr','cgne','cgnr','icgs']
 
 import warnings
 import numpy as np
@@ -125,6 +125,9 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
     return combine
 
 
+#======================
+#   BiCG
+#======================
 @set_docstring('Use BIConjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
@@ -148,70 +151,70 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                )
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A,M,x,b,postprocess = make_system(A, M, x0, b)
-
-    n = len(b)
     if maxiter is None:
-        maxiter = n*10
-
-    matvec, rmatvec = A.matvec, A.rmatvec
-    psolve, rpsolve = M.matvec, M.rmatvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'bicgrevcom')
-
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicg')
-    if atol == 'exit':
-        return postprocess(x), 0
-
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(6*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    At = A.H
+    Mt = M.H
+    r = b - A.matvec(x)
+    z = M.matvec(r)
+    rhat = z.copy()
+    z_hat = Mt.matvec(rhat)
+    d_old = np.inner(rhat.conjugate(), z)
+    p = r.copy()
+    p_hat = z.copy()
+    beta = 0.
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    if atol is not None:
+        if atol == 'legacy':
+            if r0norm <= tol:
+                return postprocess(x), 0
+        else:
+            tol = max(float(atol)/r0norm, tol)
+    for iter in range(maxiter):
+        p = z + beta * p
+        p_hat = z_hat + beta.conjugate() * p_hat
+        Ap = A.matvec(p)
+        phattAp = np.inner(p_hat.conjugate(), Ap)
+        if phattAp == 0.:
+            return (postprocess(x), -1)
+        alpha = d_old / phattAp
+        x += alpha * p
+        r -= alpha * Ap
+        beta = np.linalg.norm(r) / r0norm
+        if callback is not None:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*rmatvec(work[slice1])
-        elif (ijob == 3):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 4):
-            work[slice1] = rpsolve(work[slice2])
-        elif (ijob == 5):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 6):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
-
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+        if beta < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        Ap = At.matvec(p_hat)
+        rhat -= alpha.conjugate() * Ap  # alpha * At * p_hat
+        z = M.matvec(r)
+        d = np.inner(rhat.conjugate(), z)
+        if d == 0.:
+            return (postprocess(x), -1)
+        beta = d / d_old
+        d_old = d.copy()
+        z_hat = Mt.matvec(rhat)
 
 
+#======================
+#   BiCGSTAB
+#======================
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
                '``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
@@ -220,65 +223,68 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
-
-    n = len(b)
     if maxiter is None:
-        maxiter = n*10
-
-    matvec = A.matvec
-    psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
-
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicgstab')
-    if atol == 'exit':
-        return postprocess(x), 0
-
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(7*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)
+    rhat = r.copy()
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    if atol is not None:
+        if atol == 'legacy':
+            if r0norm <= tol:
+                return postprocess(x), 0
+        else:
+            tol = max(float(atol)/r0norm, tol)
+    for iter in range(maxiter):
+        rho1 = np.inner(rhat.conjugate(), r)
+        if rho1 == 0.:
+            print("Iterative method failed due to inner product of residuals is zero")
+        if iter == 0:
+            p = r.copy()
+        else:
+            beta = (rho1/rho0) * (alpha/omega)
+            p = r + beta * (p - omega*v)
+        p_hat = M.matvec(p)
+        v = A.matvec(p_hat)
+        rhattv = np.inner(rhat.conjugate(), v)
+        if rhattv == 0.:
+            return (postprocess(x), -1)
+        alpha = rho1 / rhattv
+        s = r - alpha * v
+        if np.linalg.norm(s) < 1e-14:
+            x += alpha * p_hat
+            return (postprocess(x), 0)
+        s_hat = M.matvec(s)
+        t = A.matvec(s_hat)
+        omega = np.inner(t.conjugate(), s) / np.inner(t.conjugate(), t)
+        x += alpha * p_hat + omega * s_hat
+        r = s - omega * t
+        beta = np.linalg.norm(r) / r0norm
+        if callback is not None:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
-
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+        if beta < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        rho0 = rho1;
 
 
+#======================
+#   CG
+#======================
 @set_docstring('Use Conjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
                '``A`` must represent a hermitian, positive definite matrix.\n'
@@ -287,70 +293,57 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
-
-    n = len(b)
     if maxiter is None:
-        maxiter = n*10
-
-    matvec = A.matvec
-    psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgrevcom')
-
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cg')
-    if atol == 'exit':
-        return postprocess(x), 0
-
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(4*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)  # A is a LinearOperator
+    z = M.matvec(r)  # z = M * r
+    p = z.copy()
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    if atol is not None:
+        if atol == 'legacy':
+            if r0norm <= tol:
+                return postprocess(x), 0
+        else:
+            tol = max(float(atol)/r0norm, tol)
+    for iter in range(maxiter):
+        rho0 = np.inner(r.conjugate(), z)
+        q = A.matvec(p)
+        ptq = np.inner(p.conjugate(), q)
+        if ptq == 0.:
+            return (postprocess(x), -1)
+        alpha = rho0 / ptq
+        x += alpha * p
+        r -= alpha * q
+        alpha = np.linalg.norm(r) / r0norm
+        if callback is not None:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-            if info == 1 and iter_ > 1:
-                # recompute residual and recheck, to avoid
-                # accumulating rounding error
-                work[slice1] = b - matvec(x)
-                resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
-
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+        if alpha < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        z = M.matvec(r)
+        rho1 = np.inner(r.conjugate(), z)
+        alpha = rho1 / rho0
+        p = z + alpha * p
 
 
+#======================
+#   Traditional CGS
+#======================
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
                'The real-valued N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
@@ -358,76 +351,66 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
-
-    n = len(b)
     if maxiter is None:
-        maxiter = n*10
-
-    matvec = A.matvec
-    psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgsrevcom')
-
-    get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cgs')
-    if atol == 'exit':
-        return postprocess(x), 0
-
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(7*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)
+    rhat = r.copy()
+    d_old = np.inner(rhat.conjugate(), r)
+    p = r.copy()
+    q = r.copy()
+    beta = 0.
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    if atol is not None:
+        if atol == 'legacy':
+            if r0norm <= tol:
+                return postprocess(x), 0
+        else:
+            tol = max(float(atol)/r0norm, tol)
+    for iter in range(maxiter):
+        w = r + beta * q
+        p = w + beta * q + (beta**2) * p
+        z = M.matvec(p)
+        Az = A.matvec(z)
+        rhattAz = np.inner(rhat.conjugate(), Az)
+        if rhattAz == 0.:
+            return (postprocess(x), -1)
+        alpha = d_old / rhattAz
+        q = w - alpha * Az
+        w += q
+        z = alpha * M.matvec(w)
+        x += z
+        r -= A.matvec(z)
+        alpha = np.linalg.norm(r) / r0norm
+        if callback is not None:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-            if info == 1 and iter_ > 1:
-                # recompute residual and recheck, to avoid
-                # accumulating rounding error
-                work[slice1] = b - matvec(x)
-                resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
-
-    if info == -10:
-        # termination due to breakdown: check for convergence
-        resid, ok = _stoptest(b - matvec(x), atol)
-        if ok:
-            info = 0
-
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+        if alpha < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        d = np.inner(rhat.conjugate(), r)
+        if d == 0.:
+            return (postprocess(x), -1)
+        beta = d / d_old
+        d_old = d
 
 
+#======================
+#   Restarted GMRES
+#======================
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
           restrt=None, atol=None, callback_type=None):
@@ -661,6 +644,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     return postprocess(x), info
 
 
+#======================
+#   QMR
+#======================
 @non_reentrant()
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
         atol=None):
@@ -728,6 +714,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
+
     A_ = A
     A, M, x, b, postprocess = make_system(A, None, x0, b)
 
@@ -776,7 +763,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
+            revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
         if callback is not None and iter_ > olditer:
             callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
@@ -814,3 +801,185 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
         info = iter_
 
     return postprocess(x), info
+
+
+#======================
+#   CGNE
+#======================
+@set_docstring('Use Conjugate Gradient Normal Error iteration to solve '
+               '``Ax = b``.',
+               'The real or complex N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
+@non_reentrant()
+def cgne(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    """
+    References
+    ----------
+    [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
+    [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
+    """
+    if maxiter is None:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)
+    At = A.H
+    z = M.matvec(r)
+    p = At.matvec(z)
+    ztr_old = np.inner(z.conjugate(), r)
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    for iter in range(maxiter):
+        w = A.matvec(p)
+        alpha = ztr_old / np.inner(p.conjugate(), p)
+        x += alpha * p
+        r -= alpha * w
+        alpha = np.linalg.norm(r) / r0norm
+        if callback is not None:
+            callback(x)
+        if alpha < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        z = M.matvec(r)
+        ztr = np.inner(z.conjugate(), r)
+        beta = ztr / ztr_old
+        p = At.matvec(z) + beta * p
+        ztr_old = ztr
+
+
+#======================
+#   CGNR
+#======================
+@set_docstring('Use Conjugate Gradient Normal Residual iteration to solve '
+               '``Ax = b``.',
+               'The real or complex N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
+@non_reentrant()
+def cgnr(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    """
+    References
+    ----------
+    [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
+    [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
+    """
+    if maxiter is None:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)
+    At = A.H
+    rhat = At.matvec(r)
+    z = M.matvec(rhat)
+    p = z.copy()
+    ztrhat_old = np.inner(z.conjugate(), rhat)
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    for iter in range(maxiter):
+        w = A.matvec(p)
+        alpha = ztrhat_old / np.inner(w.conjugate(), w)
+        x += alpha * p
+        r -= alpha * w
+        alpha = np.linalg.norm(r) / r0norm
+        if callback is not None:
+            callback(x)
+        if alpha < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        rhat = At.matvec(r)
+        z = M.matvec(rhat)
+        ztrhat = np.inner(z.conjugate(), rhat)
+        beta = ztrhat / ztrhat_old
+        p = z + beta * p
+        ztrhat_old = ztrhat
+
+
+#======================
+#   Improved CGS
+#======================
+@set_docstring('Use Improved Conjugate Gradient Squared iteration to solve ``Ax = b``.',
+               'The real-valued N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
+@non_reentrant()
+def icgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    if maxiter is None:
+        maxiter = 10000
+    # type judgment and conversion
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    # judge if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+    r = b - A.matvec(x)
+    # why not set rhat = M.matvec(r) directly ?
+    tmp = r.copy()
+    rhat = M.matvec(tmp)
+    z = rhat.copy()
+    d_old = np.inner(rhat.conjugate(), z)
+    p = r.copy()
+    q = r.copy()
+    beta = 0.
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+    for iter in range(maxiter):
+        w = z + beta * q
+        p = w + beta * q + (beta**2) * p
+        Ap = A.matvec(p)
+        z = M.matvec(Ap)
+        d = np.inner(rhat.conjugate(), z)
+        if d == 0.:
+            return (postprocess(x), -1)
+        alpha = d_old / d
+        q = w - alpha * z
+        w += q
+        x += alpha * w
+        r -= alpha * A.matvec(w)
+        alpha = np.linalg.norm(r) / r0norm
+        if callback is not None:
+            callback(x)
+        if alpha < tol:
+            return (postprocess(x), 0)
+        elif iter == maxiter - 1:
+            return (postprocess(x), maxiter)
+        z = M.matvec(r)
+        d = np.inner(rhat.conjugate(), z)
+        if d == 0.:
+            return (postprocess(x), -1)
+        beta = d / d_old
+        d_old = d

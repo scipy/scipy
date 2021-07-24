@@ -16,7 +16,7 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
+from scipy.sparse.linalg.isolve import cg, cgs, icgs, bicg, bicgstab, cgnr, cgne, gmres, qmr, minres, lgmres, gcrotmk
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -46,7 +46,7 @@ class Case:
 class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+        solvers = [cg, cgs, icgs, bicg, bicgstab, cgnr, cgne, gmres, qmr, minres, lgmres, gcrotmk]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -134,18 +134,18 @@ class IterativeParams:
 
         # Non-symmetric and Positive Definite
         #
-        # cgs, qmr, and bicg fail to converge on this one
+        # cgs, icgs, qmr, and bicg fail to converge on this one
         #   -- algorithmic limitation apparently
         data = ones((2,10))
         data[0,:] = 2
         data[1,:] = -1
         A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, icgs, qmr, bicg]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, icgs, qmr, bicg]))
 
-        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        # Symmetric, non-pd, hitting cgs/icgs/bicg/bicgstab/qmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
@@ -161,7 +161,7 @@ class IterativeParams:
         assert (A == A.T).all()
         self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+                               nonconvergence=[cgs,icgs,bicg,bicgstab,qmr]))
 
 
 params = IterativeParams()
@@ -326,7 +326,7 @@ def test_precond_inverse():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        if solver is qmr:
+        if solver is qmr or cgnr or cgne:  # add cgnr and cgne
             continue
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -412,7 +412,7 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, icgs, bicg, bicgstab, cgnr, cgne, gmres, qmr, minres, lgmres, gcrotmk])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -433,7 +433,7 @@ def test_zero_rhs(solver):
             assert_equal(info, 0)
             assert_allclose(x, 0, atol=tol)
 
-            if solver is not minres:
+            if solver not in [icgs, cgnr, cgne, minres]:
                 x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
                 if info == 0:
                     assert_allclose(x, 0)
@@ -486,7 +486,7 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, icgs, bicg, bicgstab, cgnr, cgne, gmres, qmr, minres, lgmres, gcrotmk])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -496,7 +496,7 @@ def test_x0_working(solver):
     b = np.random.rand(n)
     x0 = np.random.rand(n)
 
-    if solver is minres:
+    if solver in [icgs, cgnr, cgne, minres]:
         kw = dict(tol=1e-6)
     else:
         kw = dict(atol=0, tol=1e-6)
@@ -507,7 +507,7 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert_equal(info, 0)
-    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(A.dot(x0) - b))
 
 
 #------------------------------------------------------------------------------
@@ -636,15 +636,15 @@ class TestGMRES:
         M[2,2] = 0
 
         b = np.array([0, 1, 1])
-        x = np.array([1, 0, 0])
+        x0 = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+        x, info = gmres(A, b, x0=x0, M=M, tol=1e-15, atol=0)
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(A.dot(x0) - b))
 
         # The solution should be OK outside null space of M
         assert_allclose(M.dot(A.dot(x)), M.dot(b))
