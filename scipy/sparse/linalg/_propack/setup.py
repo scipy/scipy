@@ -1,6 +1,12 @@
 from os.path import join
 import pathlib
 
+import numpy as np
+
+
+def _is_32bit():
+    return np.intp(0).itemsize < 8
+
 
 def check_propack_submodule():
     if not (pathlib.Path(__file__).parent / 'PROPACK/README').exists():
@@ -11,6 +17,7 @@ def check_propack_submodule():
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import get_g77_abi_wrappers
     config = Configuration('_propack', parent_package, top_path)
     lapack_opt = get_info('lapack_opt')
     if not lapack_opt:
@@ -32,17 +39,21 @@ def configuration(parent_package='', top_path=None):
         propack_lib = f'_{prefix}propack'
 
         lapack_sources = join('PROPACK', directory, 'Lapack_Util', '*.f')
-        propack_sources = join('PROPACK', directory, '*.F')
 
-        config.add_library(lapack_lib,
-                           sources=lapack_sources,
-                           macros=[('_OPENMP',)])
+        # Need to use risc for 32-bit machines
+        if _is_32bit:
+            propack_sources = list((pathlib.Path(__file__).parent / 'PROPACK' / directory).glob('*.F'))
+            propack_sources = [str(p) for p in propack_sources if 'risc' not in str(p)]
+        else:
+            propack_sources = join('PROPACK', directory, '*.F')
+        # propack_sources += get_g77_abi_wrappers(lapack_opt)
+            
         config.add_library(propack_lib,
                            sources=propack_sources,
                            macros=[('_OPENMP',)])
         config.add_extension(f'_{prefix}propack',
                              sources=f'{prefix}propack.pyf',
-                             libraries=[lapack_lib, propack_lib],
+                             libraries=[propack_lib],
                              extra_info=lapack_opt,
                              undef_macros=['_OPENMP'])
 
