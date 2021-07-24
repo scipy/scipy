@@ -215,10 +215,13 @@ def softmax(x, axis=None):
 
 
 def log_softmax(x, axis=None):
-    r"""
-    Logarithm of softmax function::
+    r"""Compute the logarithm of the softmax function.
+
+    In principle::
 
         log_softmax(x) = log(softmax(x))
+
+    but using a more accurate implementation.
 
     Parameters
     ----------
