@@ -16,18 +16,18 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         and all elements are summed.
 
         .. versionadded:: 0.11.0
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array.
-
-        .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`. These values may be negative in order to
         implement subtraction.
 
         .. versionadded:: 0.12.0
+    keepdims : bool, optional
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array.
+
+        .. versionadded:: 0.15.0
     return_sign : bool, optional
         If this is set to True, the result will be a pair containing sign
         information; if False, results that are negative will be returned
@@ -60,9 +60,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     --------
     >>> from scipy.special import logsumexp
     >>> a = np.arange(10)
-    >>> np.log(np.sum(np.exp(a)))
-    9.4586297444267107
     >>> logsumexp(a)
+    9.4586297444267107
+    >>> np.log(np.sum(np.exp(a)))
     9.4586297444267107
 
     With weights
