@@ -6,8 +6,8 @@ python module __user__routines
            character*1 :: transa
            integer intent(in) :: m
            integer intent(in) :: n
-           complex intent(in),dimension((transa[0] == 'n' ? n : m)) :: x
-           complex intent(in,out),dimension((transa[0] == 'n' ? m : n)) :: y
+           complex precision depend(m,n),check(len(x)>=(transa[0] == 'n' ? n : m)),dimension((transa[0] == 'n' ? n : m)) :: x
+           complex precision depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
            integer dimension(*) :: iparm
            complex dimension(*) :: cparm
         end function caprod
