@@ -317,6 +317,10 @@ class TestVDC:
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
 
+    def test_invalid_base_error(self):
+        with pytest.raises(ValueError, match=r"'base' must be at least 2"):
+            van_der_corput(10, base=1)
+
 
 class RandomEngine(qmc.QMCEngine):
     def __init__(self, d, seed):
