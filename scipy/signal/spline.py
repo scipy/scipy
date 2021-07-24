@@ -6,7 +6,8 @@ import warnings
 
 from . import _spline
 
-__all__ = ['cspline2d', 'qspline2d', 'sepfir2d', 'symiirorder1', 'symiirorder2']
+__all__ = [  # noqa: F822
+    'cspline2d', 'qspline2d', 'sepfir2d', 'symiirorder1', 'symiirorder2']
 
 
 def __dir__():
@@ -23,4 +24,3 @@ def __getattr__(name):
                   "the `scipy.signal.spline` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
     return getattr(_spline, name)
-
