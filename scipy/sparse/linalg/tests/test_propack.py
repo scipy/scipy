@@ -17,8 +17,8 @@ TOLS = {
 _dtype_map = {
     "single": np.float32,
     "double": np.float64,
-    "complex8": np.complex64,
-    "complex16": np.complex128,
+    # "complex8": np.complex64,  # TODO
+    # "complex16": np.complex128,  # TODO
 }
 
 
