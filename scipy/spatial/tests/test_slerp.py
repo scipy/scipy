@@ -363,15 +363,21 @@ class TestGeometricSlerp:
         np.linspace(0, 1, 5),
     ])
     def test_degenerate_input(self, start, t):
-        shape = (t.size,) + start.shape
-        expected = np.full(shape, start)
+        if np.asarray(t).ndim > 1:
+            with pytest.raises(ValueError):
+                geometric_slerp(start=start, end=start, t=t)
+        else:
 
-        actual = geometric_slerp(start=start, end=start, t=t)
-        assert_allclose(actual, expected)
+            shape = (t.size,) + start.shape
+            expected = np.full(shape, start)
 
-        # Check that degenerate and non-degenerate inputs yield the same size
-        non_degenerate = geometric_slerp(start=start, end=start[::-1], t=t)
-        assert actual.size == non_degenerate.size
+            actual = geometric_slerp(start=start, end=start, t=t)
+            assert_allclose(actual, expected)
+
+            # Check that degenerate and non-degenerate
+            # inputs yield the same size
+            non_degenerate = geometric_slerp(start=start, end=start[::-1], t=t)
+            assert actual.size == non_degenerate.size
 
     @pytest.mark.parametrize('k', np.logspace(-10, -1, 10))
     def test_numerical_stability_pi(self, k):
@@ -391,3 +397,22 @@ class TestGeometricSlerp:
             norms = np.linalg.norm(result, axis=1)
             error = np.max(np.abs(norms - 1))
             assert error < 4e-15
+
+    @pytest.mark.parametrize('t', [
+     [[0, 0.5]],
+     [[[[[[[[[0, 0.5]]]]]]]]],
+    ])
+    def test_interpolation_param_ndim(self, t):
+        # regression test for gh-14465
+        arr1 = np.array([0, 1])
+        arr2 = np.array([1, 0])
+
+        with pytest.raises(ValueError):
+            geometric_slerp(start=arr1,
+                            end=arr2,
+                            t=t)
+
+        with pytest.raises(ValueError):
+            geometric_slerp(start=arr1,
+                            end=arr1,
+                            t=t)
