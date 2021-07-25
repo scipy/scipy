@@ -189,6 +189,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         # levy
         # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
         _x = x0 + 1
+        if _x < 0:
+            return 0
+
         return 1 / np.sqrt(2 * np.pi * _x) / _x * np.exp(-1 / (2 * _x))
     elif alpha == 0.5 and beta == 0.0 and x0 != 0:
         # analytical solution [HO]
@@ -309,6 +312,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         # levy
         # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
         _x = x0 + 1
+        if _x < 0:
+            return 0
+
         return sc.erfc(np.sqrt(0.5 / _x))
     elif alpha == 1.0 and beta == 0.0:
         # cauchy
