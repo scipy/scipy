@@ -3426,6 +3426,36 @@ class TestLevyStable:
                                args=(alpha, beta, loc, scale))
         assert p > 0.01
 
+    @pytest.mark.parametrize('alpha', [0.25, 0.5, 0.75])
+    def test_distribution_outside_support(self, alpha):
+        """Ensure the pdf/cdf routines do not return nan outside support.
+
+        This distribution's support becomes truncated in a few special cases:
+            support is [mu, infty) if alpha < 1 and beta = 1
+            support is (-infty, mu] if alpha < 1 and beta = -1
+        Otherwise, the support is all reals. Here, mu is zero by default.
+        """
+
+        assert 0 < alpha < 1
+
+        # check beta = 1 case
+        for x in np.linspace(-25, 0, 10):
+            assert_almost_equal(
+                stats.levy_stable.cdf(x, alpha=alpha, beta=1.0), 0.0
+            )
+            assert_almost_equal(
+                stats.levy_stable.pdf(x, alpha=alpha, beta=1.0), 0.0
+            )
+
+        # check beta = -1 case
+        for x in np.linspace(0, 25, 10):
+            assert_almost_equal(
+                stats.levy_stable.cdf(x, alpha=alpha, beta=-1.0), 1.0
+            )
+            assert_almost_equal(
+                stats.levy_stable.pdf(x, alpha=alpha, beta=-1.0), 0.0
+            )
+
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
