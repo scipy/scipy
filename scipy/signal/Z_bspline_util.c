@@ -13,7 +13,7 @@ void compute_root_from_lambda(double, double *, double *);
 #define ABSQ(a) (__real__ (a*CONJ(a)))
 #ifdef __GNUC__
 
-void Z_IIR_order1 (__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int); 
+void Z_IIR_order1 (__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int);
 void Z_IIR_order2 (__complex__ double,__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int);
 void Z_IIR_order2_cascade (__complex__ double,__complex__ double,__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int);
 int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
@@ -24,20 +24,20 @@ int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,in
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
 /* with a given starting value loaded into the array */
 
-void 
+void
 Z_IIR_order1(__complex__ double a1, __complex__ double a2,
              __complex__ double *x, __complex__ double *y,
              int N, int stridex, int stridey)
-{ 
-    __complex__ double *yvec = y+stridey; 
-    __complex__ double *xvec = x+stridex; 
-    int n; 
+{
+    __complex__ double *yvec = y+stridey;
+    __complex__ double *xvec = x+stridex;
+    int n;
 
-    for (n=1; n < N; n++) { 
-	*yvec = *xvec * a1 + *(yvec-stridey) * a2; 
-	yvec += stridey; 
-	xvec += stridex; 
-    } 
+    for (n=1; n < N; n++) {
+	*yvec = *xvec * a1 + *(yvec-stridey) * a2;
+	yvec += stridey;
+	xvec += stridex;
+    }
 }
 
 
@@ -45,27 +45,27 @@ Z_IIR_order1(__complex__ double a1, __complex__ double a2,
 /* y[n] = a1 * x[n] + a2 * y[n-1]  + a3 * y[n-2] */
 /* with two starting values loaded into the array */
 
-void 
+void
 Z_IIR_order2(__complex__ double a1, __complex__ double a2, __complex__ double a3,
              __complex__ double *x, __complex__ double *y,
              int N, int stridex, int stridey)
 {
-    __complex__ double *yvec = y+2*stridey; 
-    __complex__ double *xvec = x+2*stridex; 
-    int n; 
+    __complex__ double *yvec = y+2*stridey;
+    __complex__ double *xvec = x+2*stridex;
+    int n;
 
-    for (n=2; n < N; n++) { 
-	*yvec = *xvec * a1 + *(yvec-stridey) * a2 + *(yvec-2*stridey) * a3; 
-	yvec += stridey; 
+    for (n=2; n < N; n++) {
+	*yvec = *xvec * a1 + *(yvec-stridey) * a2 + *(yvec-2*stridey) * a3;
+	yvec += stridey;
 	xvec += stridex;
-    } 
+    }
 }
 
 /* Implement a second order IIR difference equation using a cascade
-   of first order sections.  Suppose the transfer function is 
-                  cs   
+   of first order sections.  Suppose the transfer function is
+                  cs
    H(z) =   -------------------
-            (1-z1/z) ( 1-z2/z)                    
+            (1-z1/z) ( 1-z2/z)
 
    then the following pair is implemented with one starting value loaded in
    the output array and the starting value for the intermediate array
@@ -76,28 +76,28 @@ Z_IIR_order2(__complex__ double a1, __complex__ double a2, __complex__ double a3
 
 */
 
-void 
+void
 Z_IIR_order2_cascade(__complex__ double cs,
                      __complex__ double z1, __complex__ double z2,
                      __complex__ double y1_0, __complex__ double *x,
                      __complex__ double *yp,
                     int N, int stridex, int stridey)
 {
-    __complex__ double *yvec = yp+stridey; 
-    __complex__ double *xvec = x+stridex; 
-    int n; 
+    __complex__ double *yvec = yp+stridey;
+    __complex__ double *xvec = x+stridex;
+    int n;
 
-    for (n=1; n < N; n++) { 
-	y1_0 = *xvec + y1_0 * z1; 
-	*yvec = cs * y1_0 + *(yvec-stridey) * z2; 
-	yvec += stridey; 
-	xvec += stridex;  
-    } 
+    for (n=1; n < N; n++) {
+	y1_0 = *xvec + y1_0 * z1;
+	*yvec = cs * y1_0 + *(yvec-stridey) * z2;
+	yvec += stridey;
+	xvec += stridex;
+    }
 }
 
 
 /* Implement a smoothing IIR filter with mirror-symmetric boundary conditions
-   using a cascade of first-order sections.  The second section uses a 
+   using a cascade of first-order sections.  The second section uses a
    reversed sequence.  This implements the following transfer function:
                     c0
    H(z) = ---------------------------
@@ -105,42 +105,42 @@ Z_IIR_order2_cascade(__complex__ double cs,
 
    with the following difference equations:
 
-   yp[n] = x[n] + z1 yp[n-1]  
-     with starting condition: 
+   yp[n] = x[n] + z1 yp[n-1]
+     with starting condition:
    yp[0] = x[0] + Sum(z1^(k+1) x[k],k=0..Infinity)
 
-   and 
+   and
 
    y[n] = z1 y[n+1] + c0 yp[n]
      with starting condition:
-   y[N-1] = z1 / (z1-1) yp[N-1] 
+   y[N-1] = z1 / (z1-1) yp[N-1]
 
    The resulting signal will have mirror symmetric boundary conditions as well.
 
-   If memory could not be allocated for the temporary vector yp, the 
+   If memory could not be allocated for the temporary vector yp, the
    function returns -1 otherwise it returns 0.
-   
+
    z1 should be less than 1;
-   
+
 */
 
-int 
+int
 Z_IIR_forback1(__complex__ double c0, __complex__ double z1,
                __complex__ double *x, __complex__ double *y,
                int N, int stridex, int stridey, double precision)
-{ 
-    __complex__ double *yp = NULL; 
+{
+    __complex__ double *yp = NULL;
     __complex__ double *xptr = x;
     __complex__ double yp0;
-    __complex__ double powz1;  
+    __complex__ double powz1;
     __complex__ double diff;
     double err;
     int k;
 
     if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
 
-    /* Initialize memory for loop */ 
-    if ((yp = malloc(N*sizeof(__complex__ double)))==NULL) return -1; 
+    /* Initialize memory for loop */
+    if ((yp = malloc(N*sizeof(__complex__ double)))==NULL) return -1;
 
    /* Fix starting value assuming mirror-symmetric boundary conditions. */
     yp0 = x[0];
@@ -156,10 +156,10 @@ Z_IIR_forback1(__complex__ double c0, __complex__ double z1,
 	xptr += stridex;
 	k++;
     } while((err > precision) && (k < N));
-    if (k >= N) return -3;     /* sum did not converge */ 
+    if (k >= N) return -3;     /* sum did not converge */
     yp[0] = yp0;
 
-    Z_IIR_order1(1.0, z1, x, yp, N, stridex, 1); 
+    Z_IIR_order1(1.0, z1, x, yp, N, stridex, 1);
 
     *(y + (N-1)*stridey) = -c0 / (z1 - 1.0) * yp[N-1];
 
@@ -173,7 +173,7 @@ Z_IIR_forback1(__complex__ double c0, __complex__ double z1,
 /* h must be odd length */
 /* strides in units of sizeof(__complex__ double) bytes */
 
-void 
+void
 Z_FIR_mirror_symmetric(__complex__ double *in, __complex__ double *out,
                        int N, __complex__ double *h, int Nh,
                        int instride, int outstride)
@@ -198,10 +198,10 @@ Z_FIR_mirror_symmetric(__complex__ double *in, __complex__ double *out,
 	for (k=n+1; k <= Nhdiv2; k++) {
 	    *outptr += *hptr++ * *inptr;
 	    inptr += instride;
-	}	
+	}
 	outptr += outstride;
     }
-    
+
     /* middle section */
     outptr = out + Nhdiv2*outstride;
     for (n=Nhdiv2; n < N-Nhdiv2; n++) {
@@ -232,7 +232,7 @@ Z_FIR_mirror_symmetric(__complex__ double *in, __complex__ double *out,
 	}
 	outptr += outstride;
     }
-   
+
 }
 
 int
@@ -245,23 +245,23 @@ Z_separable_2Dconvolve_mirror(__complex__ double *in, __complex__ double *out,
     int m, n;
     __complex__ double *tmpmem;
     __complex__ double *inptr=NULL, *outptr=NULL;
-    
+
     tmpmem = malloc(M*N*sizeof(__complex__ double));
     if (tmpmem == NULL) return -1;
 
     if (Nhr > 0) {
 	/* filter across rows */
 	inptr = in;
-	outptr = tmpmem;    
+	outptr = tmpmem;
 	for (m = 0; m < M; m++) {
 	    Z_FIR_mirror_symmetric (inptr, outptr, N, hr, Nhr, instrides[1], 1);
 	    inptr += instrides[0];
 	    outptr += N;
 	}
     }
-    else 
-	memmove(tmpmem, inptr, M*N*sizeof(__complex__ double));
-	
+    else
+	memmove(tmpmem, in, M*N*sizeof(__complex__ double));
+
     if (Nhc > 0) {
 	/* filter down columns */
 	inptr = tmpmem;
@@ -273,7 +273,7 @@ Z_separable_2Dconvolve_mirror(__complex__ double *in, __complex__ double *out,
 	}
     }
     else
-	memmove(outptr, tmpmem, M*N*sizeof(__complex__ double));
+	memmove(out, tmpmem, M*N*sizeof(__complex__ double));
 
     free(tmpmem);
     return 0;

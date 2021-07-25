@@ -128,7 +128,8 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 }
 
 static int
-solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* a, int64_t* b)
+solve(intptr_t nr, intptr_t nc, double* input_cost, bool maximize,
+      int64_t* a, int64_t* b)
 {
     // handle trivial inputs
     if (nr == 0 || nc == 0) {
@@ -147,6 +148,13 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* a, int64_t* b)
         }
 
         std::swap(nr, nc);
+    }
+
+    // negate cost matrix for maximization
+    if (maximize) {
+        for (intptr_t i = 0; i < nr * nc; i++) {
+            cost[i] = -cost[i];
+        }
     }
 
     // build a non-negative cost matrix
@@ -230,10 +238,11 @@ extern "C" {
 #endif
 
 int
-solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
+solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
+                                        double* input_cost, bool maximize,
                                         int64_t* a, int64_t* b)
 {
-    return solve(nr, nc, input_cost, a, b);
+    return solve(nr, nc, input_cost, maximize, a, b);
 }
 
 #ifdef __cplusplus

@@ -1062,6 +1062,16 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
+    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+                                       np.clongdouble, np.float16,])
+    def test_invalid_dtypes(self, dtype):
+        in_typed = np.array(self.IN, dtype=dtype)
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt(in_typed)
+
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt2d(in_typed)
+
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
@@ -2373,10 +2383,10 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     zo1 = np.swapaxes(zo1, -1, axis)
     zo2 = np.swapaxes(zo2, -1, axis)
 
-    assert_allclose(y, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+    assert_allclose(y, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(yg, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg1, zo1, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
 def test_choose_conv_method():

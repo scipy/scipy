@@ -201,6 +201,14 @@ def test_chi2_contingency_bad_args():
     assert_raises(ValueError, chi2_contingency, obs)
 
 
+def test_chi2_contingency_yates_gh13875():
+    # Magnitude of Yates' continuity correction should not exceed difference
+    # between expected and observed value of the statistic; see gh-13875
+    observed = np.array([[1573, 3], [4, 0]])
+    p = chi2_contingency(observed)[1]
+    assert_allclose(p, 1, rtol=1e-12)
+
+
 def test_bad_association_args():
     # Invalid Test Statistic
     assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")
