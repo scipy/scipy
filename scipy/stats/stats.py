@@ -6575,7 +6575,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         The power in the Cressie-Read power divergence statistic.  The default
         is 1.  For convenience, `lambda_` may be assigned one of the following
         strings, in which case the corresponding numerical value is used
-        
+
         Pearson (value 1)
             Pearson's chi-squared statistic. In this case, the function is
             equivalent to `chisquare`.
