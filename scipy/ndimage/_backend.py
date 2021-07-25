@@ -121,16 +121,17 @@ def register_backend(backend):
     --------
     We can register a new ndimage backend:
 
-    >>> from scipy.ndimage import correlate, register_backend, set_global_backend
+    >>> from scipy.ndimage import (correlate, register_backend,
+    ...                            set_global_backend)
     >>> class NoopBackend:  # Define an invalid Backend
     ...     __ua_domain__ = "numpy.scipy.ndimage"
     ...     def __ua_function__(self, func, args, kwargs):
     ...          return NotImplemented
     >>> set_global_backend(NoopBackend())  # Set the invalid backend as global
     >>> register_backend("scipy")  # Register a new backend
+    >>> # The registered backend is called because
+    >>> # the global backend returns `NotImplemented`
     >>> correlate(np.arange(10), [1, 2.5])
-    >>> # The registered backend is called because the global backend
-    >>> # returns `NotImplemented`
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> set_global_backend("scipy")  # Restore global backend to default
 
@@ -169,7 +170,8 @@ def set_backend(backend, coerce=False, only=False):
     --------
     >>> import scipy.ndimage as ndimage
     >>> with ndimage.set_backend('scipy', only=True):
-    ...     ndimage.correlate(np.arange(10), [1, 2.5]) # Always calls the scipy implementation
+    ...     # Always calls the scipy implementation
+    ...     ndimage.correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
 
     """
@@ -198,9 +200,11 @@ def skip_backend(backend):
     Examples
     --------
     >>> import scipy.ndimage as ndimage
-    >>> ndimage.correlate(np.arange(10), [1, 2.5])  # Calls default SciPy backend
+    >>> # Calls default SciPy backend
+    >>> ndimage.correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
-    >>> with ndimage.skip_backend('scipy'):  # Explicitly skip SciPy backend, leaving no implementation available
+    >>> # Explicitly skip SciPy backend, leaving no implementation available
+    >>> with ndimage.skip_backend('scipy'):
     ...     ndimage.correlate(np.arange(10), [1, 2.5])
     Traceback (most recent call last):
         ...

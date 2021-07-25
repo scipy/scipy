@@ -34,6 +34,7 @@ fnames = ('affine_transform', 'binary_closing', 'binary_dilation',
 funcs = [getattr(scipy.ndimage, fname) for fname in fnames]
 mocks = [getattr(mock_backend, fname) for fname in fnames]
 
+
 @pytest.mark.parametrize("func, mock", zip(funcs, mocks))
 def test_backend_call(func, mock):
     """

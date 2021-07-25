@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class _MockFunction:
     def __init__(self, return_value=None):
         self.number_calls = 0

@@ -29,9 +29,9 @@ __all__ = ['affine_transform', 'binary_closing', 'binary_dilation',
 
 
 _mark_non_coercible = functools.partial(Dispatchable, dispatch_type=np.ndarray,
-                                       coercible=False)
+                                        coercible=False)
 _create_ndimage = functools.partial(create_multimethod,
-                                   domain="numpy.scipy.ndimage")
+                                    domain="numpy.scipy.ndimage")
 
 
 def _get_docs(func):
