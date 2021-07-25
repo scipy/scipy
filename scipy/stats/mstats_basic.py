@@ -48,8 +48,9 @@ from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
         LinregressResult as stats_LinregressResult,
-        theilslopes as stats_theilslopes)
-from ._siegelslopes import siegelslopes as stats_siegelslopes
+        theilslopes as stats_theilslopes,
+        siegelslopes as stats_siegelslopes
+        )
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None

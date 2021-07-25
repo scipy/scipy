@@ -57,7 +57,7 @@ def configuration(parent_package='', top_path=None):
 
         ext = pythran.dist.PythranExtension(
             'scipy.stats._siegelslopes',
-            sources=["scipy/stats/_siegelslopes.py"],
+            sources=["scipy/stats/_siegelslopes_pythran.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     # add BiasedUrn module
