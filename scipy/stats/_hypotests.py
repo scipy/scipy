@@ -1439,22 +1439,25 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
     """
     Permute observations between pairs for association tests.
     """
-    a, b = data
-    n_obs_a = a.shape[-1]
-    n_max = factorial(n_obs_a)
+    n_samples = len(data)
+    n_obs_sample = data[0].shape[-1]
 
-    if n_permutations < n_max:
-        indices = np.array([random_state.permutation(n_obs_a)
-                            for i in range(n_permutations)])
-    else:
+    n_max = factorial(n_obs_sample)**(n_samples-1)
+
+    if n_permutations >= n_max and n_samples==2:
         n_permutations = n_max
-        indices = np.array(list(permutations(range(n_obs_a))))
+        indices = [list(permutations(range(n_obs_sample)))]
+    else:
+        indices = [[random_state.permutation(n_obs_sample)
+                    for i in range(n_permutations)]
+                   for j in range(n_samples-1)]
 
-    x = a[..., indices]
-    x = np.moveaxis(x, -2, 0)
-    y = b
-    x, y = np.broadcast_arrays(x, y)
-    return (x, y), n_permutations
+    indices = np.array(indices)
+    for i in range(n_samples-1):
+        data[i] = data[i][..., indices[i]]
+        data[i] = np.moveaxis(data[i], -2, 0)
+    data = np.broadcast_arrays(*data)
+    return data, n_permutations
 
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
