@@ -5109,14 +5109,14 @@ class levy_stable_gen(rv_continuous):
         nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
 
         if nu_alpha >= 2.439:
-            alpha = np.clip(psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
+            alpha = np.clip(psi_1(abs(nu_beta), nu_alpha)[0], np.finfo(float).eps, 2.)
             beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
         else:
             alpha = 2.0
             beta = np.sign(nu_beta)
         c = (p75 - p25) / phi_3_1(beta, alpha)[0]
         zeta = p50 + c*phi_5_1(beta, alpha)[0]
-        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf)
+        delta = zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta
 
         return (alpha, beta, delta, c)
 
