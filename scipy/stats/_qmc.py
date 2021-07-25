@@ -987,14 +987,13 @@ class LatinHypercube(QMCEngine):
         self.centered = centered
 
         optimization_methods: Dict[str, Callable] = {
+            None: self._random,
             "random-CD": self._random_optimal,
         }
 
-        if optimization is None:
-            self.optimization = self._random
-        elif optimization in optimization_methods:
+        try:
             self.optimization = optimization_methods[optimization]
-        else:
+        except KeyError:
             raise ValueError(f"{optimization!r} is not a valid optimization"
                              " method. It must be one of"
                              f" {set(optimization_methods)!r}")
