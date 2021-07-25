@@ -662,7 +662,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
                                      complex_output=complex_output)
     if complex_output:
         # import under different name to avoid confusion with shift parameter
-        from scipy.ndimage.interpolation import shift as _shift
+        from scipy.ndimage._interpolation import shift as _shift
 
         kwargs = dict(order=order, mode=mode, prefilter=prefilter)
         _shift(input.real, shift, output=output.real, cval=numpy.real(cval),
@@ -772,7 +772,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                                      complex_output=complex_output)
     if complex_output:
         # import under different name to avoid confusion with zoom parameter
-        from scipy.ndimage.interpolation import zoom as _zoom
+        from scipy.ndimage._interpolation import zoom as _zoom
 
         kwargs = dict(order=order, mode=mode, prefilter=prefilter)
         _zoom(input.real, zoom, output=output.real, cval=numpy.real(cval),
