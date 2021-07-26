@@ -3,7 +3,6 @@ shgo: The simplicial homology global optimisation algorithm
 """
 
 # Std. library imports
-from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 import time
 import logging
@@ -442,7 +441,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     if not shc.break_routine:
         if shc.disp:
-            print("Successfully completed construction of complex.")
+            logging.info("Successfully completed construction of complex.")
 
     # Test post iterations success
     if len(shc.LMC.xl_maps) == 0:
@@ -777,7 +776,7 @@ class SHGO:
 
         """
         if self.disp:
-            print('Splitting first generation')
+            logging.info('Splitting first generation')
 
         while not self.stop_global:
             if self.break_routine:
@@ -803,7 +802,7 @@ class SHGO:
         and sort the results into a global return object.
         """
         if self.disp:
-            print('Search for minimizer pool')
+            logging.info('Search for minimizer pool')
 
         self.minimizers()
         logging.info(f'self.X_min = {self.X_min}')
@@ -824,7 +823,6 @@ class SHGO:
         if self.disp:
             logging.info(
                 "Minimiser pool = SHGO.X_min = {}".format(self.X_min))
-            print("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
 
 
     def find_lowest_vertex(self):
@@ -972,7 +970,7 @@ class SHGO:
         """
         # Iterate the complex
         if self.disp:
-            print('Constructing and refining simplicial complex graph '
+            logging.info('Constructing and refining simplicial complex graph '
                   'structure')
         if self.n is None:
             self.HC.refine_all()
@@ -982,13 +980,13 @@ class SHGO:
             self.n_sampled += self.n
 
         if self.disp:
-            print('Triangulation completed, evaluating all contraints and o'
-                  'bjective function values.')
+            logging.info('Triangulation completed, evaluating all contraints '
+                         'and objective function values.')
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
         if self.disp:
-            print('Evaluations completed.')
+            logging.info('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
@@ -1003,7 +1001,7 @@ class SHGO:
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
         # Add sampled points to a triangulation, construct self.Tri
         if self.disp:
-            print('Constructing and refining simplicial complex graph '
+            logging.info('Constructing and refining simplicial complex graph '
                   'structure from sampling points.')
 
         #TODO: Find another solution for triangulating 1D,
@@ -1025,8 +1023,8 @@ class SHGO:
             self.n_prc = self.C.shape[0]
 
         if self.disp:
-            print('Triangulation completed, evaluating all contraints and o'
-                  'bjective function values.')
+            logging.info('Triangulation completed, evaluating all contraints '
+                         'and objective function values.')
 
         # self.delaunay_minimizers()
         if hasattr(self, 'Tri'):
@@ -1037,13 +1035,13 @@ class SHGO:
         #self.n_sampled = self.nc
         # Evaluate all constraints and functions
         if self.disp:
-            print('Triangulation completed, evaluating all contraints and o'
-                  'bjective function values.')
+            logging.info('Triangulation completed, evaluating all contraints '
+                         'objective function values.')
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
         if self.disp:
-            print('Evaluations completed.')
+            logging.info('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
@@ -1069,7 +1067,7 @@ class SHGO:
                     self.minimizer_pool.append(self.HC.V[x])
 
                 if self.disp:
-                    logging.info('Neighbours:')
+                    logging.info('Neighbors:')
                     logging.info('=' * 30)
                     for vn in self.HC.V[x].nn:
                         logging.info('x = {} || f = {}'.format(vn.x, vn.f))
@@ -1277,11 +1275,11 @@ class SHGO:
         # TODO: Check discarded bound rules
 
         if self.callback is not None:
-            print('Callback for '
+            logging.info('Callback for '
                   'minimizer starting at {}:'.format(x_min))
 
         if self.disp:
-            print('--- Starting '
+            logging.info('--- Starting '
                   'minimization at {}...'.format(x_min))
 
         if self.sampling_method == 'simplicial':
@@ -1301,14 +1299,14 @@ class SHGO:
                 self.minimizer_kwargs['bounds'] = g_bounds
 
         if self.disp and 'bounds' in self.minimizer_kwargs:
-            print('bounds in kwarg:')
-            print(self.minimizer_kwargs['bounds'])
+            logging.info('bounds in kwarg:')
+            logging.info(self.minimizer_kwargs['bounds'])
 
         # Local minimization using scipy.optimize.minimize:
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
-            print('lres = {}'.format(lres))
+            logging.info('lres = {}'.format(lres))
 
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
@@ -1371,7 +1369,7 @@ class SHGO:
         """
         # Generate sampling points
         if self.disp:
-            print('Generating sampling points')
+            logging.info('Generating sampling points')
         self.sampling(self.nc, self.dim)
         # Append minimizer points
         #TODO: n_prc needs to add len(self.LMC.xl_maps) for self.delaunay_triangulation
@@ -1434,7 +1432,7 @@ class SHGO:
                                     + 'size.')
                 # sampling correctly for both 1D and >1D cases
                 if self.disp:
-                    print(self.res.message)
+                    logging.info(self.res.message)
 
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
