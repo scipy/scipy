@@ -286,7 +286,7 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
 @pytest.mark.skip(reason="This is not a test, but a wrapper for other tests.")
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
-             sampling_method='sobol', workers=None):
+             sampling_method='sobol', workers=1):
     res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
                n=n, iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs, options=options,
@@ -359,17 +359,14 @@ class TestShgoSobolTestFunctions:
     def test_f4_sobol(self):
         """NLP: (High-dimensional) Hock and Schittkowski 11 problem (HS11)"""
         options = {'infty_constraints': False}
-        #run_test(test4_1, n=990, options=options)
         run_test(test4_1, n=2048, options=options)
 
     def test_f5_1_sobol(self):
         """NLP: Eggholder, multimodal"""
-        #run_test(test5_1, n=30)
         run_test(test5_1, n=60)
 
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
-        # run_test(test5_1, n=60, iters=5)
         run_test(test5_1, n=60, iters=5)
 
 
