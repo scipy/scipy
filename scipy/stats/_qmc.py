@@ -903,8 +903,9 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
-    optimization : {None, "random-CD"}, optional, default None
+    optimization : {None, "random-CD"}, optional
         Whether to use an optimization scheme to construct a LHS.
+        Default is None.
 
         * ``random-CD``: random permutations of coordinates to lower the
           centered discrepancy [5]_. The best design based on the centered
@@ -955,7 +956,7 @@ class LatinHypercube(QMCEngine):
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.019558034794794565  # random
+    0.0196...  # random
 
     Samples can be scaled to bounds.
 
@@ -968,13 +969,12 @@ class LatinHypercube(QMCEngine):
            [6.80338249, 3.08795949],
            [2.65448791, 3.83491828]])
 
-    Alternatively, optimized LHS can be constructed with `optimization`.
-    It should give a sample with a lower discrepancy at a higher computational
-    cost:
+    Use the `optimization` keyword argument to produce a LHS with
+    lower discrepancy at higher computational cost.
     >>> sampler = qmc.LatinHypercube(d=2, optimization="random-CD")
     >>> sample = sampler.random(n=5)
     >>> qmc.discrepancy(sample)
-    0.017579341838451112  # random
+    0.0176...  # random
 
     """
 
@@ -986,17 +986,20 @@ class LatinHypercube(QMCEngine):
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        optimization_methods: Dict[str, Callable] = {
+        lhs_methods: Dict[Optional[Literal["random-CD"]], Callable] = {
             None: self._random,
-            "random-CD": self._random_optimal,
+            "random-CD": self._random_cd,
         }
 
         try:
-            self.optimization = optimization_methods[optimization]
+            self.lhs_method = lhs_methods[optimization]
         except KeyError:
             raise ValueError(f"{optimization!r} is not a valid optimization"
                              " method. It must be one of"
-                             f" {set(optimization_methods)!r}")
+                             f" {set(lhs_methods)!r}")
+
+        self._n_nochange = 100
+        self._n_iters = 10_000
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -1012,22 +1015,10 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        return self.optimization(n)
+        return self.lhs_method(n)
 
     def _random(self, n: IntNumber = 1) -> np.ndarray:
-        """Draw `n` in the half-open interval ``[0, 1)``.
-
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
-
-        Returns
-        -------
-        sample : array_like (n, d)
-            LHS sample.
-
-        """
+        """Base LHS algorithm."""
         if self.centered:
             samples: np.ndarray | float = 0.5
         else:
@@ -1043,19 +1034,17 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return samples
 
-    def _random_optimal(self, n: IntNumber = 1) -> np.ndarray:
-        """Draw `n` in the half-open interval ``[0, 1)``.
+    def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
+        """Optimal LHS on CD.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
+        Create a base LHS and do random permutations of coordinates to
+        lower the centered discrepancy.
+        Because it starts with a normal LHS, it also works with the
+        `centered` keyword argument.
 
-        Returns
-        -------
-        sample : array_like (n, d)
-            LHS sample.
-
+        Two stopping criterion are used to stop the algorithm: at most,
+        `_n_iters` iterations are performed; or if there is no improvement
+        for `_n_nochange` consecutive iterations.
         """
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
@@ -1072,7 +1061,7 @@ class LatinHypercube(QMCEngine):
 
         n_nochange = 0
         n_iters = 0
-        while "Optimization loop":
+        while n_nochange < self._n_nochange and n_iters < self._n_iters:
             n_iters += 1
 
             col = rng_integers(self.rng, *bounds[0])
@@ -1088,14 +1077,7 @@ class LatinHypercube(QMCEngine):
                 best_disc = disc
                 n_nochange = 0
             else:
-                # stopping criterion: wait for no successive improvement
-                if abs(best_disc - disc) < 1e-10:
-                    n_nochange += 1
-                    if n_nochange >= 10:
-                        break
-
-            if n_iters >= 10_000:
-                break
+                n_nochange += 1
 
         self.num_generated += n
         return best_sample

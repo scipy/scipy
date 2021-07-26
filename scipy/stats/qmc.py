@@ -23,7 +23,6 @@ Engines
    Sobol
    Halton
    LatinHypercube
-   OptimalLatinHypercube
    MultinomialQMC
    MultivariateNormalQMC
 
