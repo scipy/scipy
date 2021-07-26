@@ -178,9 +178,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
             local minimization routine every iteration. If False then only the
-            final minimiser pool will be run. Defaults to False.
+            final minimizer pool will be run. Defaults to False.
         * local_iter : int
-            Only evaluate a few of the best minimiser pool candidates every
+            Only evaluate a few of the best minimizer pool candidates every
             iteration. If False all potential points are passed to the local
             minimization routine.
         * infty_constraints: bool
@@ -1060,8 +1060,8 @@ class SHGO:
                 if self.disp:
                     logging.info('=' * 60)
                     logging.info(
-                        'v.x = {} is minimiser'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                        'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
+                    logging.info('v.f = {} is minimizer'.format(self.HC.V[x].f))
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
@@ -1098,12 +1098,12 @@ class SHGO:
     def minimise_pool(self, force_iter=False, ignore_globals=False):
         """
         This processing method can optionally minimise only the best candidate
-        solutions in the minimiser pool
+        solutions in the minimizer pool
 
         Parameters
         ----------
         force_iter : int
-                     Number of starting minimisers to process (can be sepcified
+                     Number of starting minimizers to process (can be sepcified
                      globally or locally)
 
         """
@@ -1112,7 +1112,7 @@ class SHGO:
         # build the topograph first before minimizing
         lres_f_min = self.minimize(self.X_min[0], ind=self.minimizer_pool[0])
         logging.info(f'lres_f_min = {lres_f_min}')
-        # Trim minimised point from current minimiser set
+        # Trim minimised point from current minimizer set
         self.trim_min_pool(0)
 
         while not self.stop_l_iter:
@@ -1148,7 +1148,7 @@ class SHGO:
                 self.stop_l_iter = True
                 break
 
-            # Construct topograph from current minimiser set
+            # Construct topograph from current minimizer set
             # (NOTE: This is a very small topograph using only the miniser pool
             #        , it might be worth using some graph theory tools instead.
             self.g_topograph(lres_f_min.x, self.X_min)
@@ -1158,7 +1158,7 @@ class SHGO:
             ind_xmin_l = self.Z[:, -1]
             lres_f_min = self.minimize(self.Ss[-1, :], self.minimizer_pool[-1])
             logging.info(f'lres_f_min = {lres_f_min}')
-            # Trim minimised point from current minimiser set
+            # Trim minimised point from current minimizer set
             self.trim_min_pool(ind_xmin_l)
 
         # Reset controls
@@ -1205,7 +1205,7 @@ class SHGO:
         Parameters
         ----------
         v_min : Vertex object
-                The minimiser vertex
+                The minimizer vertex
 
         Returns
         -------
@@ -1238,7 +1238,7 @@ class SHGO:
         Parameters
         ----------
         v_min : Vertex object
-                The minimiser vertex
+                The minimizer vertex
 
         Returns
         -------
@@ -1268,7 +1268,7 @@ class SHGO:
         """
         # Use minima maps if vertex was already run
         if self.disp:
-            logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
+            logging.info('Vertex minimizer maps = {}'.format(self.LMC.v_maps))
 
         if self.LMC[x_min].lres is not None:
             return self.LMC[x_min].lres
@@ -1309,7 +1309,7 @@ class SHGO:
         if self.disp:
             logging.info('lres = {}'.format(lres))
 
-        # Local function evals for all minimisers
+        # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
         if 'njev' in lres:
             self.res.nljev += lres.njev
@@ -1541,7 +1541,7 @@ class LMapCache:
         results['funl'] = self.f_maps[ind_sorted]
         results['funl'] = results['funl'].T
 
-        # Find global of all minimisers
+        # Find global of all minimizers
         results['x'] = self.xl_maps[ind_sorted[0]]  # Save global minima
         results['fun'] = self.f_maps[ind_sorted[0]]  # Save global fun value
 
