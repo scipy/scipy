@@ -1,5 +1,5 @@
 """
-shgo: The simplicial homology global optimisation algorithm
+shgo: The simplicial homology global optimization algorithm
 """
 
 # Std. library imports
@@ -236,13 +236,13 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         ``nfev`` the total number of objective function evaluations including
         the sampling calls,
         ``nlfev`` the total number of objective function evaluations
-        culminating from all local search optimisations,
+        culminating from all local search optimizations,
         ``nit`` number of iterations performed by the global routine.
 
     Notes
     -----
-    Global optimization using simplicial homology global optimisation [1]_.
-    Appropriate for solving general purpose NLP and blackbox optimisation
+    Global optimization using simplicial homology global optimization [1]_.
+    Appropriate for solving general purpose NLP and blackbox optimization
     problems to global optimality (low-dimensional problems).
 
     In general, the optimization problems are of the form::
@@ -277,7 +277,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     References
     ----------
     .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
-           algorithm for lipschitz optimisation", Journal of Global Optimization.
+           algorithm for lipschitz optimization", Journal of Global Optimization.
     .. [2] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
