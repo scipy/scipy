@@ -1580,9 +1580,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
           :math:`r`.
         - ``'both'`` : observations are assigned to different samples without
           preserving pairs. Samples may contain different numbers of
-          observations. This permutations is appropriate for unpaired-sample
-          hypothesis tests such as the Mann-Whitney :math:`U` test and the
-          independent sample t-test.
+          observations. This permutation type is appropriate for
+          unpaired-sample hypothesis tests such as the Mann-Whitney :math:`U`
+          test and the independent sample t-test.
 
     vectorized : bool, optional (default: ``False``)
         By default, `statistic` is assumed to calculate the statistic only for
