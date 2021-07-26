@@ -43,8 +43,8 @@ def configuration(parent_package='', top_path=None):
         config.ext_modules.append(ext)
 
         ext = pythran.dist.PythranExtension(
-            'scipy.signal.morebsplines',
-            sources=["scipy/signal/morebsplines.py"],
+            'scipy.signal._bsplines_pythran',
+            sources=["scipy/signal/_bsplines_pythran.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     else:
