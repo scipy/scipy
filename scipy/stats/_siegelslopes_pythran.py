@@ -2,20 +2,9 @@ import numpy as np
 
 
 # pythran export siegelslopes(int[:] or float[:],
-#                             int[:] or float[:] or None,
+#                             float[:],
 #                             str)
 def siegelslopes(y, x, method):
-    if method not in ['hierarchical', 'separate']:
-        raise ValueError("method can only be 'hierarchical' or 'separate'")
-    y = np.asarray(y).ravel()
-    if x is None:
-        x = np.arange(len(y), dtype=float)
-    else:
-        x = np.asarray(x, dtype=float).ravel()
-        if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" %
-                             (len(y), len(x)))
-
     deltax = np.expand_dims(x, 1) - x
     deltay = np.expand_dims(y, 1) - y
     slopes, intercepts = [], []

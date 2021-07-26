@@ -426,4 +426,14 @@ def siegelslopes(y, x=None, method="hierarchical"):
     >>> plt.show()
 
     """
+    if method not in ['hierarchical', 'separate']:
+        raise ValueError("method can only be 'hierarchical' or 'separate'")
+    y = np.asarray(y).ravel()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).ravel()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
     return siegelslopes_pythran(y, x, method)
