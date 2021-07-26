@@ -1,7 +1,7 @@
 import numpy as np
 
+__all__ = ['cubic', 'quadratic']
 
-__all__ = [ 'cubic', 'quadratic']
 
 #pythran export cubic(int list)
 #pythran export cubic(float list)
