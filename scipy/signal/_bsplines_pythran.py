@@ -1,13 +1,11 @@
 import numpy as np
 
-__all__ = ['cubic', 'quadratic']
 
-
-#pythran export cubic(int list)
-#pythran export cubic(float list)
-#pythran export cubic(int[])
-#pythran export cubic(float[])
-#pythran export cubic(complex128[:, :])
+# pythran export cubic(int list)
+# pythran export cubic(float list)
+# pythran export cubic(int[])
+# pythran export cubic(float[])
+# pythran export cubic(complex128[:, :])
 def cubic(x):
     """A cubic B-spline.
 
@@ -60,11 +58,11 @@ def cubic(x):
     return res
 
 
-#pythran export quadratic(int list)
-#pythran export quadratic(float list)
-#pythran export quadratic(int[])
-#pythran export quadratic(float[])
-#pythran export quadratic(complex128[:, :])
+# pythran export quadratic(int list)
+# pythran export quadratic(float list)
+# pythran export quadratic(int[])
+# pythran export quadratic(float[])
+# pythran export quadratic(complex128[:, :])
 def quadratic(x):
     """A quadratic B-spline.
 
@@ -117,7 +115,7 @@ def quadratic(x):
     return res
 
 
-#pythran export _coeff_smooth(float)
+# pythran export _coeff_smooth(float)
 def _coeff_smooth(lam):
     xi = 1 - 96 * lam + 24 * lam * np.sqrt(3 + 144 * lam)
     omeg = np.arctan2(np.sqrt(144 * lam - 1), np.sqrt(xi))
@@ -126,13 +124,13 @@ def _coeff_smooth(lam):
     return rho, omeg
 
 
-#pythran export _hc(int or float, float, float, float)
+# pythran export _hc(int or float, float, float, float)
 def _hc(k, cs, rho, omega):
     return (cs / np.sin(omega) * (rho ** k) * np.sin(omega * (k + 1)) *
             np.greater(k, -1))
 
 
-#pythran export _hs(int[] or float[], float, float, float)
+# pythran export _hs(int[] or float[], float, float, float)
 def _hs(k, cs, rho, omega):
     c0 = (cs * cs * (1 + rho * rho) / (1 - rho * rho) /
           (1 - 2 * rho * rho * np.cos(2 * omega) + rho ** 4))
@@ -141,7 +139,7 @@ def _hs(k, cs, rho, omega):
     return c0 * rho ** ak * (np.cos(omega * ak) + gamma * np.sin(omega * ak))
 
 
-#pythran export _cubic_smooth_coeff(int[] or float[], float)
+# pythran export _cubic_smooth_coeff(int[] or float[], float)
 def _cubic_smooth_coeff(signal, lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1 - 2 * rho * np.cos(omega) + rho * rho
@@ -173,7 +171,7 @@ def _cubic_smooth_coeff(signal, lamb):
     return y
 
 
-#pythran export _cubic_coeff(int[] or float[])
+# pythran export _cubic_coeff(int[] or float[])
 def _cubic_coeff(signal):
     zi = -2 + np.sqrt(3)
     K = len(signal)
@@ -189,7 +187,7 @@ def _cubic_coeff(signal):
     return output * 6.0
 
 
-#pythran export _quadratic_coeff(int[] or float[])
+# pythran export _quadratic_coeff(int[] or float[])
 def _quadratic_coeff(signal):
     zi = -3 + 2 * np.sqrt(2.0)
     K = len(signal)
