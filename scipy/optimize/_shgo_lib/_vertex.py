@@ -175,14 +175,9 @@ class VertexCacheBase(object):
     """
     def __init__(self):
 
-        self.cache = collections.OrderedDict()  #TODO: Perhaps unneeded?
+        self.cache = collections.OrderedDict()
         self.nfev = 0  # Feasible points
-        self.index = -1  #TODO: Is this needed?
-
-        #TODO: Define a getitem method based on if indexing is on or not so
-        # that we do not have to do an if check every call (does the python
-        # compiler make this irrelevant or not?) and in addition whether or not
-        # we have defined a field function.
+        self.index = -1
 
     def __iter__(self):
         for v in self.cache:
@@ -206,7 +201,6 @@ class VertexCacheBase(object):
             self.cache[v].print_out()
 
 
-#TODO: Make a non-linear constraint cache with no scalar field
 class VertexCacheField(VertexCacheBase):
     def __init__(self, field=None, field_args=(), g_cons=None, g_cons_args=(),
                  workers=None):
@@ -232,7 +226,6 @@ class VertexCacheField(VertexCacheBase):
              functions in parrallel.
 
         """
-        #TODO: add possible h_cons tolerance check
         super().__init__()
         self.index = -1
         self.Vertex = VertexScalarField
@@ -257,8 +250,7 @@ class VertexCacheField(VertexCacheBase):
                 self.process_fpool = self.proc_fpool_g
         else:
             self.workers = workers
-            self.pool = mp.Pool(processes=workers)  #TODO: Move this pool to
-                                                    # the complex object
+            self.pool = mp.Pool(processes=workers)
             self.process_gpool = self.pproc_gpool
             if g_cons == None:
                 self.process_fpool = self.pproc_fpool_nog
@@ -266,7 +258,7 @@ class VertexCacheField(VertexCacheBase):
                 self.process_fpool = self.pproc_fpool_g
 
 
-    def __getitem__(self, x, nn=None): #TODO: Test to add optional nn argument?
+    def __getitem__(self, x, nn=None):
         try:
             return self.cache[x]
         except KeyError:
@@ -342,7 +334,6 @@ class VertexCacheField(VertexCacheBase):
         """
         Process all field functions with constraints supplied.
         """
-        # TODO: do try check if v.f exists
         for v in self.fpool:
             if v.feasible:
                 self.compute_sfield(v)
@@ -353,19 +344,16 @@ class VertexCacheField(VertexCacheBase):
         """
         Process all field functions with no constraints supplied.
         """
-        # TODO: do try check if v.f exists
         for v in self.fpool:
             self.compute_sfield(v)
         # Clean the pool
         self.fpool = set()
 
-    #TODO: Make static method to possibly improve pickling speed
+
     def pproc_fpool_g(self):
         """
         Process all field functions with constraints supplied in parallel.
         """
-        #TODO: Ensure that .f is not already computed? (it shouldn't be addable
-        #      to the self.fpool if it is).
         self.wfield.func
         fpool_l = []
         for v in self.fpool:
@@ -385,8 +373,6 @@ class VertexCacheField(VertexCacheBase):
         """
         Process all field functions with no constraints supplied in parallel.
         """
-        #TODO: Ensure that .f is not already computed? (it shouldn't be addable
-        #      to the self.fpool if it is).
         self.wfield.func
         fpool_l = []
         for v in self.fpool:
@@ -419,7 +405,7 @@ class ConstraintWraper(object):
     def gcons(self, v_x_a):
         vfeasible = True
         for g, args in zip(self.g_cons, self.g_cons_args):
-            if g(v_x_a, *args) < 0.0:  #TODO: Add exception handling?
+            if g(v_x_a, *args) < 0.0:
                 vfeasible = False
                 break
         return vfeasible
@@ -435,8 +421,7 @@ class FieldWraper(object):
     def func(self, v_x_a):
         try:
             v_f = self.field(v_x_a, *self.field_args)
-        except:  #TODO: except only various floating issues
-            # logging.warning(f"Field function not found at x = {self.x_a}")
+        except:
             v_f = np.inf
         if np.isnan(v_f):
             v_f = np.inf

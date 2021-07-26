@@ -22,8 +22,7 @@ from ._vertex import VertexCacheField
 class Complex:
     def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
                  symmetry=None, constraints=None,
-                 constraints_args=None, #TODO: Add
-                 workers=None):
+                 constraints_args=None, workers=None):
         """
         A base class for a simplicial complex described as a cache of vertices
         together with their connections.
@@ -33,12 +32,10 @@ class Complex:
                     Complex.triangulate, Complex.split_generation
             Triangulating arbitrary points (must be traingulable,
                 may exist outside domain):
-                    Complex.triangulate(sample_set)  #TODO
+                    Complex.triangulate(sample_set)
             Converting another simplicial complex structure data type to the
                 structure used in Complex (ex. OBJ wavefront)
-                    Complex.convert(datatype, data)  #TODO
-            Convert the structure in the Complex to other data type:
-                    #TODO
+                    Complex.convert(datatype, data)
 
         Important objects:
             HC.V: The cache of vertices and their connection
@@ -113,8 +110,8 @@ class Complex:
         if domain is None:
             self.bounds = [(float(0), float(1.0)), ] * dim
         else:
-            self.bounds = domain  # TODO: Assert that len(domain) is dim
-        self.symmetry = symmetry  # TODO: Define the functions to be used
+            self.bounds = domain
+        self.symmetry = symmetry
         #      here in init to avoid if checks
 
         # Field functions
@@ -154,7 +151,7 @@ class Complex:
         # 1st get new cells are stored in self.H[1] etc.
         # When a cell is sub-generated it is removed from this list
 
-        self.H = []  # Storage structure of vertex groups #TODO: Dated?
+        self.H = []  # Storage structure of vertex groups
 
         # Cache of all vertices
         # Initiate a vertex cache and an associated field cache, note that
@@ -174,8 +171,6 @@ class Complex:
     # %% Triangulation methods
     def cyclic_product(self, bounds, origin, supremum, centroid=True,
                        printout=False):
-        #TODO: Connect every vertex with the supremum before yielding
-        #TODO: Change self.origin and self. supremum to local origin
         vot = tuple(origin)
         vut = tuple(supremum)  # Hyperrectangle supremum
         self.V[vot]
@@ -261,7 +256,6 @@ class Complex:
                 # operation with a aN vertex
                 ab_Cc = copy.copy(ab_C)
 
-                #TODO: SHOULD THIS BE MOVED OUTSIDE THE try ?
                 for vp in ab_Cc:
                     b_v = list(vp[0].x)
                     ab_v = list(vp[1].x)
@@ -278,7 +272,6 @@ class Complex:
                     ab_C.append((b_v, ab_v))
 
             except IndexError:
-                #TODO: The above routine works for symm inits, so maybe test if
                 # vl exists and then work from there?
                 # Copy lists for iteration
                 # cC0x = [x[:] for x in C0x[:i + 1]]
@@ -352,8 +345,6 @@ class Complex:
             vo.disconnect(vs)
             # Build centroid
             vc = self.split_edge(vot, vut)
-            # TODO: If not initial triangulation, we'll need to use a different
-            # container
             for v in vo.nn:
                 v.connect(vc)
             yield vc.x
@@ -413,7 +404,6 @@ class Complex:
 
         self.supremum = supremum
 
-        #TODO: Add check that len(symmetry) is equal to len(self.bounds)
         if symmetry is None:
             cbounds = self.bounds
         else:
@@ -461,9 +451,6 @@ class Complex:
                 while len(self.V.cache) < n:
                     next(self.cp)
             except StopIteration:
-                #TODO: We should maybe append and add the possibility of
-                #      of starting new triangulated domains on different
-                #      complexes
                 try:
                     self.triangulated_vectors.append((tuple(self.origin),
                                                       tuple(self.supremum)))
@@ -473,7 +460,6 @@ class Complex:
         return
 
     def refine(self, n=1):
-        #TODO: Replace with while loop checking cache size instead?
         if n is None:
             try:
                 self.triangulated_vectors
@@ -490,9 +476,6 @@ class Complex:
         nt = len(self.V.cache) + n  # Target number of total vertices
         # In the outer while loop we iterate until we have added an extra `n`
         # vertices to the complex:
-        #TODO: We can reduce the number of exception handling and exceptions to
-        #  StopIteration if we try to generate the initial objects first and
-        #  then refine only have the first few while loop runs
         while len(self.V.cache) < nt:  # while loop 1
             try:  # try 1
                 # Try to access triangulated_vectors, this should only be
@@ -501,15 +484,10 @@ class Complex:
                 # Try a usual iteration of the current generator, if it
                 # does not exist or is exhausted then produce a new generator
                 try:  # try 2
-                    #next(self.rls)
-                    #print(f'next(self.rls) = {next(self.rls)}')
                     next(self.rls)
                 except (AttributeError, StopIteration, KeyError):
                     vp = self.triangulated_vectors[0]
-                    #print(f'vp = {vp}')
                     self.rls = self.refine_local_space(*vp, bounds=self.bounds)
-                    # next(self.rls)
-                    #print(f'next(self.rls) = {next(self.rls)}')
                     next(self.rls)
 
             except (AttributeError, KeyError):
@@ -671,10 +649,8 @@ class Complex:
                     bc_vc.connect(b_vu)  # Connect aN cross pairs
                     d_bc_vc.connect(b_vu)  # Connect all to centroid
 
-                    #TODO: Should be done in the cyclical loop somehow?
                     b_vl_c = self.split_edge(b_vu.x, b_vl.x)
                     bc_vc.connect(b_vl_c)
-                    ###
 
                     yield b_vu
                     ba_vu = self.V[tuple(ba_vu)]
@@ -685,7 +661,6 @@ class Complex:
                     os_v = self.split_edge(vectors[1].x, ba_vu.x)  # o-s
                     ss_v = self.split_edge(b_vl.x, ba_vu.x)  # s-s
 
-                    #TODO: Should be done in the cyclical loop somehow?
                     b_vu_c = self.split_edge(b_vu.x, ba_vu.x)
                     bc_vc.connect(b_vu_c)
                     yield os_v.x  # often equal to vco, but not always
@@ -865,8 +840,6 @@ class Complex:
                         yield(a_vc.x)
 
             except IndexError:
-                # TODO: The above routine works for symm inits, so maybe test if
-                # vl exists and then work from there?
                 for vectors in ab_Cc:
                     ba_vl = list(vectors[3].x)
                     ba_vu = list(vectors[4].x)
@@ -1028,7 +1001,6 @@ class Complex:
         try:
             vct = (v2.x_a - v1.x_a) / 2.0 + v1.x_a
         except TypeError:  # Allow for decimal operations
-            #TODO: Only except float
             vct = (v2.x_a - v1.x_a) / decimal.Decimal(2.0) + v1.x_a
 
         vc = self.V[tuple(vct)]
@@ -1055,8 +1027,6 @@ class Complex:
             if bu[i] < voi:
                 bu[i] = voi
 
-        # TODO: These for loops can easily be replaced by numpy operations,
-        #      tests should be run to determine which method is faster.
         #      NOTE: This is mostly done with sets/lists because we aren't sure
         #            how well the numpy arrays will scale to thousands of
         #             dimensions.
