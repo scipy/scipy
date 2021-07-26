@@ -4,7 +4,7 @@ import numpy as np
 import warnings
 from itertools import combinations
 import scipy.stats
-#from scipy.optimize import shgo  #TODO: This raises a circular import error
+from scipy.optimize import shgo
 from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
