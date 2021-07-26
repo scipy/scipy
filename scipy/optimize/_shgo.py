@@ -15,7 +15,6 @@ import sys
 import numpy as np
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize#, MemoizeJac
-from scipy.stats import qmc
 # Library imports
 from scipy.optimize._shgo_lib._complex import Complex
 __all__ = ['shgo', 'SHGO']
@@ -245,7 +244,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     -----
     Global optimization using simplicial homology global optimisation [1]_.
     Appropriate for solving general purpose NLP and blackbox optimisation
-    problems to global optimality (low dimensional problems).
+    problems to global optimality (low-dimensional problems).
 
     In general, the optimization problems are of the form::
 
@@ -262,14 +261,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     specified using the `bounds` argument.
 
     While most of the theoretical advantages of SHGO are only proven for when
-    ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
+    ``f(x)`` is a Lipschitz smooth function. the algorithm is also proven to
     converge to the global optimum for the more general case where ``f(x)`` is
     non-continuous, non-convex and non-smooth, if the default sampling method
     is used [1]_.
 
     The local search method may be specified using the ``minimizer_kwargs``
-    parameter which is passed on to ``scipy.optimize.minimize``. By default
-    the ``SLSQP`` method is used. In general it is recommended to use the
+    parameter which is passed on to ``scipy.optimize.minimize``. By default,
+    the ``SLSQP`` method is used. In general, it is recommended to use the
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
@@ -311,7 +310,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> result.x
     array([0.99999851, 0.99999704, 0.99999411, 0.9999882 ])
 
-    Next we consider the Eggholder function, a problem with several local
+    Next, we consider the Eggholder function, a problem with several local
     minima and one global minimum. We will demonstrate the use of arguments and
     the capabilities of `shgo`.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
@@ -326,6 +325,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     `shgo` has built-in low discrepancy sampling sequences. First, we will
     input 64 initial sampling points of the *Sobol'* sequence:
+
     >>> result = shgo(eggholder, bounds, n=64, sampling_method='sobol')
     >>> result.x, result.fun
     (array([512.        , 404.23180824]), -959.6406627208397)
@@ -366,9 +366,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
     (12, 20)
-
-    >>> result_2
-    None
 
     Note the difference between, e.g., ``n=192, iters=1`` and ``n=64,
     iters=3``.
@@ -474,19 +471,20 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     return shc.res
 
 
-class SHGO(object):
+class SHGO:
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='simplicial', workers=1):
+                 options=None, sampling_method='simplicial', *,workers=1):
 
+        # NOTE: Import needed here to avoid circular import:
+        from scipy.stats import qmc
+        
         # Input checks
         methods = ['halton', 'sobol', 'simplicial']
         if isinstance(sampling_method, str) and sampling_method not in methods:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
-        # Initiate class
-        
         # Split obj func if given with Jac
         try:
             if ((minimizer_kwargs['jac'] is True) and 
@@ -670,8 +668,8 @@ class SHGO(object):
             self.iterate_complex = self.iterate_hypercube
             self.sampling_method = sampling_method
 
-        elif sampling_method in ['halton', 'sobol'] \
-                or not isinstance(sampling_method, str):
+        elif sampling_method in ['halton', 'sobol'] or \
+                not isinstance(sampling_method, str):
             self.iterate_complex = self.iterate_delaunay
             # Sampling method used
             if sampling_method in ['halton', 'sobol']:
