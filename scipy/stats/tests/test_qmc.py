@@ -1,6 +1,5 @@
 import os
 from collections import Counter
-from functools import partial
 
 import pytest
 import numpy as np
@@ -8,7 +7,6 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
-from scipy.optimize import basinhopping
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
@@ -570,8 +568,8 @@ class TestLHS(QMCEngineTests):
         with pytest.raises(ValueError, match=r"'toto' is not a valid"
                                              r" optimization method"):
             seed = np.random.RandomState(12345)
-            engine = qmc.LatinHypercube(1, seed=seed, optimization="toto")
-            engine.random(10)
+            qmc.LatinHypercube(1, seed=seed, optimization="toto")
+
 
 class TestSobol(QMCEngineTests):
     qmce = qmc.Sobol

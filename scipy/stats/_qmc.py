@@ -42,8 +42,7 @@ from scipy.stats._qmc_cy import (
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton',
-           'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
