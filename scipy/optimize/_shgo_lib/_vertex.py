@@ -203,7 +203,7 @@ class VertexCacheBase(object):
 
 class VertexCacheField(VertexCacheBase):
     def __init__(self, field=None, field_args=(), g_cons=None, g_cons_args=(),
-                 workers=None):
+                 workers=1):
         """
         Class for a vertex cache for a simplicial complex with an associated
         field.
@@ -231,7 +231,7 @@ class VertexCacheField(VertexCacheBase):
         self.Vertex = VertexScalarField
         self.field = field
         self.field_args = field_args
-        self.wfield = FieldWraper(field, field_args)  # if workers is not None
+        self.wfield = FieldWraper(field, field_args)  # if workers is not 1
 
         self.g_cons = g_cons
         self.g_cons_args = g_cons_args
@@ -242,7 +242,7 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()  # A set of tuples to process for scalar function
         self.sfc_lock = False  # True if self.fpool is non-Empty
 
-        if workers == None:
+        if workers == 1:
             self.process_gpool = self.proc_gpool
             if g_cons == None:
                 self.process_fpool = self.proc_fpool_nog

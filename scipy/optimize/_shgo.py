@@ -24,8 +24,8 @@ __all__ = ['shgo', 'SHGO']
 
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
-         minimizer_kwargs=None, options=None, sampling_method='simplicial',
-         workers=None):
+         minimizer_kwargs=None, options=None, sampling_method='simplicial', *,
+         workers=1):
     """
     Finds the global minimum of a function using SHG optimization.
 
@@ -213,7 +213,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     workers : int  optional
         Uses `multiprocessing.Pool <multiprocessing>`) to sample and run the 
-        local serial minimizatons in parrallel.
+        local serial minimizatons in parrallel. Defaults to 1.
 
     Returns
     -------
@@ -469,7 +469,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='simplicial', workers=None):
+                 options=None, sampling_method='simplicial', workers=1):
 
         # Input checks
         methods = ['halton', 'sobol', 'simplicial']

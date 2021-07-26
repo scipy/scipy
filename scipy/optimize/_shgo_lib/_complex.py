@@ -22,7 +22,7 @@ from ._vertex import VertexCacheField
 class Complex:
     def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
                  symmetry=None, constraints=None,
-                 constraints_args=None, workers=None):
+                 constraints_args=None, workers=1):
         """
         A base class for a simplicial complex described as a cache of vertices
         together with their connections.
