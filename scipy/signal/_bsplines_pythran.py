@@ -149,11 +149,11 @@ def _cubic_smooth_coeff(signal, lamb):
     yp = np.zeros((K,), signal.dtype)
     k = np.arange(K)
     yp[0] = (_hc(0, cs, rho, omega) * signal[0] +
-             np.add.reduce(_hc(k + 1, cs, rho, omega) * signal))
+             np.sum(_hc(k + 1, cs, rho, omega) * signal))
 
     yp[1] = (_hc(0, cs, rho, omega) * signal[0] +
              _hc(1, cs, rho, omega) * signal[1] +
-             np.add.reduce(_hc(k + 2, cs, rho, omega) * signal))
+             np.sum(_hc(k + 2, cs, rho, omega) * signal))
 
     for n in range(2, K):
         yp[n] = (cs * signal[n] + 2 * rho * np.cos(omega) * yp[n - 1] -
@@ -161,9 +161,9 @@ def _cubic_smooth_coeff(signal, lamb):
 
     y = np.zeros((K,), signal.dtype)
 
-    y[K - 1] = np.add.reduce((_hs(k, cs, rho, omega) +
+    y[K - 1] = np.sum((_hs(k, cs, rho, omega) +
                            _hs(k + 1, cs, rho, omega)) * signal[::-1])
-    y[K - 2] = np.add.reduce((_hs(k - 1, cs, rho, omega) +
+    y[K - 2] = np.sum((_hs(k - 1, cs, rho, omega) +
                            _hs(k + 2, cs, rho, omega)) * signal[::-1])
 
     for n in range(K - 3, -1, -1):
@@ -179,7 +179,7 @@ def _cubic_coeff(signal):
     K = len(signal)
     yplus = np.zeros((K,), signal.dtype)
     powers = zi ** np.arange(K)
-    yplus[0] = signal[0] + zi * np.add.reduce(powers * signal)
+    yplus[0] = signal[0] + zi * np.sum(powers * signal)
     for k in range(1, K):
         yplus[k] = signal[k] + zi * yplus[k - 1]
     output = np.zeros((K,), signal.dtype)
@@ -195,7 +195,7 @@ def _quadratic_coeff(signal):
     K = len(signal)
     yplus = np.zeros((K,), signal.dtype)
     powers = zi ** np.arange(K)
-    yplus[0] = signal[0] + zi * np.add.reduce(powers * signal)
+    yplus[0] = signal[0] + zi * np.sum(powers * signal)
     for k in range(1, K):
         yplus[k] = signal[k] + zi * yplus[k - 1]
     output = np.zeros((K,), signal.dtype)

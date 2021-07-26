@@ -3,6 +3,7 @@ from numpy.core.umath import sqrt, exp, less, less_equal, greater_equal
 
 # From splinemodule.c
 from .spline import cspline2d, sepfir2d
+
 from ._bsplines_pythran import (
         _cubic_smooth_coeff, _cubic_coeff, _quadratic_coeff,
         cspline1d_eval as cspline1d_eval_pythran,
