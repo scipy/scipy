@@ -13,7 +13,7 @@ import sys
 # Scientific python imports
 import numpy as np
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize#, MemoizeJac
+from scipy.optimize import OptimizeResult, minimize
 # Library imports
 from scipy.optimize._shgo_lib._complex import Complex
 __all__ = ['shgo', 'SHGO']
@@ -477,6 +477,7 @@ class SHGO:
 
         # NOTE: Import needed here to avoid circular import:
         from scipy.stats import qmc
+        from .optimize import MemoizeJac
         
         # Input checks
         methods = ['halton', 'sobol', 'simplicial']
@@ -1547,32 +1548,3 @@ class LMapCache:
         self.xl_maps = np.ndarray.tolist(self.xl_maps)
         self.f_maps = np.ndarray.tolist(self.f_maps)
         return results
-
-# TODO: In scipy version delete this
-class MemoizeJac(object):
-    """ Decorator that caches the return values of a function returning `(fun, grad)`
-        each time it is called. """
-
-    def __init__(self, fun):
-        self.fun = fun
-        self.jac = None
-        self._value = None
-        self.x = None
-
-    def _compute_if_needed(self, x, *args):
-        if not np.all(x == self.x) or self._value is None or self.jac is None:
-            self.x = np.asarray(x).copy()
-            fg = self.fun(x, *args)
-            self.jac = fg[1]
-            self._value = fg[0]
-
-    def __call__(self, x, *args):
-        """ returns the the function value """
-        self._compute_if_needed(x, *args)
-        return self._value
-
-    def derivative(self, x, *args):
-        self._compute_if_needed(x, *args)
-        return self.jac
-    
-    
