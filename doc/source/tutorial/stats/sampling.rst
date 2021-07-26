@@ -63,6 +63,19 @@ More details on these algorithms can be found in the `appendix of the UNU.RAN
 user manual <http://statmath.wu.ac.at/software/unuran/doc/unuran.html#RVG>`__.
 
 
+When generating random variates of a distribution, two factors are important
+to determine the speed of a generator: the setup step and the actual sampling.
+Depending on the situation, different generators can be optimal. For example,
+if one repeatedly needs to draw large samples from a given distribution with
+a fixed shape parameter, a slow setup is acceptable if the sampling is fast.
+This is called the fixed parameter case. If one aims to generate samples of
+a distribution for different shape parameters (the varying parameter case),
+an expensive setup that needs to be repeated for each parameter would lead
+to very poor performance. In such a situation, a fast setup is crucial to
+achieve good performance. An overview of the setup and sampling speed of the
+different method is shown in Table [TODO: add table]
+
+
 Basic concepts of the Interface
 -------------------------------
 
@@ -135,16 +148,16 @@ distribution by calling the ``rvs`` method:
 
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
-          by these generators. In general, the aim of the generation
-          methods implemented in :class:`~rv_continuous` is to provide
-          generators that work reasonably well for common use cases, e.g.
-          to generate small samples using different shape parameters or to
-          generate large samples for a fixed shape parameter. Depending on
-          the goal, specialized methods can lead to a substantial speedup.
-          For example, at the cost of a rather expensive setup step, very
-          fast generation can be achieved for large samples and a fixed
-          shape parameter. Also, even if the same URNG (``seed``) is used,
-          the resulting rvs will be different in general.
+          by these generators. Even if the same URNG (``seed``) is used,
+          the resulting rvs will be different in general: the implementation
+          of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
+          module `random` for well-known distributions (e.g., for the normal
+          distribution, the beta distribution) and transformations of other
+          distributions (e.g., normal inverse Gaussian `norminvgauss` and the
+          lognormal distribution). If no specific  method is implemented,
+          `rv_continuous` defaults to a numerical inversion method of the CDF
+          that is very slow. As described in this tutorial, UNU.RAN implements
+          various approaches that will generally produce different samples.
 
 We can pass a ``domain`` parameter to truncate the distribution:
 
