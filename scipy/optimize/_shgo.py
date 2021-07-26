@@ -179,12 +179,12 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
-            local minimisation routine every iteration. If False then only the
+            local minimization routine every iteration. If False then only the
             final minimiser pool will be run. Defaults to False.
         * local_iter : int
             Only evaluate a few of the best minimiser pool candidates every
             iteration. If False all potential points are passed to the local
-            minimisation routine.
+            minimization routine.
         * infty_constraints: bool
             If True then any sampling points generated which are outside will
             the feasible domain will be saved and given an objective function
@@ -211,9 +211,17 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         sampling points of dimension ``dim`` per call and output an array of
         sampling points with shape `n x dim`.
 
-    workers : int  optional
-        Uses `multiprocessing.Pool <multiprocessing>`) to sample and run the 
-        local serial minimizatons in parrallel. Defaults to 1.
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply `-1` to use all cores available to the Process.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        This option will override the `updating` keyword to
+        `updating='deferred'` if `workers != 1`.
+        Requires that `func` be pickleable.
 
     Returns
     -------
@@ -365,7 +373,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Note the difference between, e.g., ``n=192, iters=1`` and ``n=64,
     iters=3``.
 
-    In the first case the promising points contained in the minimiser pool
+    In the first case the promising points contained in the minimizer pool
     are processed only once. In the latter case it is processed every 64
     sampling points for a total of 3 times.
 
@@ -445,7 +453,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         # with a warning
         shc.find_lowest_vertex()
         shc.break_routine = True
-        shc.fail_routine(mes="Failed to find a feasible minimiser point. "
+        shc.fail_routine(mes="Failed to find a feasible minimizer point. "
                              "Lowest sampling point = {}".format(shc.f_lowest))
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
@@ -690,7 +698,7 @@ class SHGO(object):
             self.qhull_incremental = True
 
         # Local controls
-        self.stop_l_iter = False  # Local minimisation iterations
+        self.stop_l_iter = False  # Local minimization iterations
         self.stop_complex_iter = False  # Sampling iterations
 
         # Initiate storage objects used in algorithm classes
@@ -702,9 +710,9 @@ class SHGO(object):
         # Initialize return object
         self.res = OptimizeResult()  # scipy.optimize.OptimizeResult object
         self.res.nfev = 0  # Includes each sampling point as func evaluation
-        self.res.nlfev = 0  # Local function evals for all minimisers
-        self.res.nljev = 0  # Local Jacobian evals for all minimisers
-        self.res.nlhev = 0  # Local Hessian evals for all minimisers
+        self.res.nlfev = 0  # Local function evals for all minimizers
+        self.res.nljev = 0  # Local Jacobian evals for all minimizers
+        self.res.nlhev = 0  # Local Hessian evals for all minimizers
 
     # Initiation aids
     def init_options(self, options):
@@ -776,11 +784,11 @@ class SHGO(object):
         while not self.stop_global:
             if self.break_routine:
                 break
-            # Iterate complex, process minimisers
+            # Iterate complex, process minimizers
             self.iterate()
             self.stopping_criteria()
 
-        # Build minimiser pool
+        # Build minimizer pool
         # Final iteration only needed if pools weren't minimised every iteration
         if not self.minimize_every_iter:
             if not self.break_routine:
@@ -793,16 +801,16 @@ class SHGO(object):
 
     def find_minima(self, ignore_globals=False):
         """
-        Construct the minimiser pool, map the minimisers to local minima
+        Construct the minimizer pool, map the minimizers to local minima
         and sort the results into a global return object.
         """
         if self.disp:
-            print('Search for minimiser pool')
+            print('Search for minimizer pool')
 
         self.minimizers()
         logging.info(f'self.X_min = {self.X_min}')
         if len(self.X_min) != 0:
-            # Minimise the pool of minimisers with local minimisation methods
+            # Minimise the pool of minimizers with local minimization methods
             # Note that if Options['local_iter'] is an `int` instead of default
             # value False then only that number of candidates will be minimised
             self.minimise_pool(self.local_iter, ignore_globals)
@@ -883,7 +891,7 @@ class SHGO(object):
         Specify in options (with ``self.f_min_true = options['f_min']``)
         and the tolerance with ``f_tol = options['f_tol']``
         """
-        # If no minimiser has been found use the lowest sampling value
+        # If no minimizer has been found use the lowest sampling value
         self.find_lowest_vertex()
         logging.info(f'Lowest function evaluation = {self.f_lowest}')
         logging.info(f'Specified minimum = {self.f_min_true}')
@@ -950,10 +958,10 @@ class SHGO(object):
     def iterate(self):
         self.iterate_complex()
 
-        # Build minimiser pool
+        # Build minimizer pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.find_minima()  # Process minimiser pool
+                self.find_minima()  # Process minimizer pool
 
         # Algorithm updates
         self.iters_done += 1
@@ -1088,7 +1096,7 @@ class SHGO(object):
 
         return self.X_min
 
-    # Local minimisation
+    # Local minimization
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False, ignore_globals=False):
         """
@@ -1322,7 +1330,7 @@ class SHGO(object):
 
         return lres
 
-    # Post local minimisation processing
+    # Post local minimization processing
     def sort_result(self):
         """
         Sort results and build the global return object
