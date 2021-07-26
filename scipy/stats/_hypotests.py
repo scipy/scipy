@@ -1540,7 +1540,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 def permutation_test(data, statistic, *, permutation_type='both',
                      vectorized=False, permutations=np.inf,
                      alternative="two-sided", axis=0, random_state=None):
-    """
+    r"""
     Performs a permutation test of a given statistic on provided data.
 
     Performs a two-sample permutation test. For independent sample statistics,
