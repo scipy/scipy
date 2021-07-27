@@ -103,6 +103,7 @@ def configuration(parent_package='', top_path=None):
                        include_dirs=[get_python_inc()],
                        **numpy_nodepr_api)
 
+    config.add_data_files('__direct.pyi')
     config.add_extension('_directmodule',
                          sources=['direct.c'],
                          libraries=['_direct_lib'],

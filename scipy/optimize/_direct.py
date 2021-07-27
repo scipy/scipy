@@ -27,7 +27,7 @@ SUCCESS_MESSAGES = (
 
 
 def _minimize_direct(func, bounds, args=(), disp=False,
-                     eps=1e-4, maxfun=20000, maxiter=6000,
+                     iatol=1e-4, maxfun=20000, maxiter=6000,
                      locally_biased=True, f_min=-np.inf, f_min_per=0.01,
                      vol_per=-1.0, sigma_per=-1.0):
     r"""
@@ -61,7 +61,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
         the bounds on that parameter.
     args : tuple, optional
         Extra arguments passed to the objective function.
-    eps : float, optional
+    iatol : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal hyper-rectangle is chosen.
     maxfun : int, optional
@@ -121,7 +121,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
     x, fun, ret_code, nfev, nit = direct(_func_wrap,
                                          np.asarray(lb), np.asarray(ub),
                                          args,
-                                         disp, eps, maxfun, maxiter,
+                                         disp, iatol, maxfun, maxiter,
                                          locally_biased,
                                          f_min, f_min_per,
                                          vol_per, sigma_per)
