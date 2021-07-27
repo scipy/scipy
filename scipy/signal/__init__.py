@@ -299,7 +299,6 @@ from ._upfirdn import upfirdn
 from .spline import *
 
 from .bsplines import *
-from ._bsplines_pythran import cubic, quadratic
 from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *

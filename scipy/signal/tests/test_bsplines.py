@@ -129,7 +129,7 @@ class TestBSplines:
 
     def test_cubic(self):
         np.random.seed(12460)
-        assert_array_equal(signal.cubic([0]), array([0]))
+        assert_array_equal(bsp.cubic([0]), array([0]))
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
         data_array_complex = 1+1j-2*data_array_complex
         # scaling the magnitude by 10 makes the results close enough to zero,
@@ -140,11 +140,11 @@ class TestBSplines:
              [0.17240848, 0.47055447, 0.63896278, 0.39756424],
              [0.12672571, 0.65862632, 0.1116695, 0.09700386],
              [0.3544116, 0.17856518, 0.1528841, 0.17285762]])
-        assert_allclose(signal.cubic(data_array_complex), result_array_complex)
+        assert_allclose(bsp.cubic(data_array_complex), result_array_complex)
 
     def test_quadratic(self):
         np.random.seed(12461)
-        assert_array_equal(signal.quadratic([0]), array([0]))
+        assert_array_equal(bsp.quadratic([0]), array([0]))
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
         # scaling the magnitude by 10 makes the results all zero,
         # so just make the elements have a mix of positive and negative
@@ -155,34 +155,34 @@ class TestBSplines:
              [0.14701256, 0.13277773, 0.29428615, 0.09814697],
              [0.52873842, 0.06484157, 0.09517566, 0.46420389],
              [0.09286829, 0.09371954, 0.1422526, 0.16007024]])
-        assert_allclose(signal.quadratic(data_array_complex),
+        assert_allclose(bsp.quadratic(data_array_complex),
                         result_array_complex)
 
     def test_cspline1d(self):
         np.random.seed(12462)
-        assert_array_equal(signal.cspline1d(array([0])), [0.])
+        assert_array_equal(bsp.cspline1d(array([0])), [0.])
         c1d = array([1.21037185, 1.86293902, 2.98834059, 4.11660378,
                      4.78893826])
         # test lamda != 0
-        assert_allclose(signal.cspline1d(array([1., 2, 3, 4, 5]), 1), c1d)
+        assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5]), 1), c1d)
         c1d0 = array([0.78683946, 2.05333735, 2.99981113, 3.94741812,
                       5.21051638])
-        assert_allclose(signal.cspline1d(array([1., 2, 3, 4, 5])), c1d0)
+        assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5])), c1d0)
 
     def test_qspline1d(self):
         np.random.seed(12463)
-        assert_array_equal(signal.qspline1d(array([0])), [0.])
+        assert_array_equal(bsp.qspline1d(array([0])), [0.])
         # test lamda != 0
-        raises(ValueError, signal.qspline1d, array([1., 2, 3, 4, 5]), 1.)
-        raises(ValueError, signal.qspline1d, array([1., 2, 3, 4, 5]), -1.)
+        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), 1.)
+        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), -1.)
         q1d0 = array([0.85350007, 2.02441743, 2.99999534, 3.97561055,
                       5.14634135])
-        assert_allclose(signal.qspline1d(array([1., 2, 3, 4, 5])), q1d0)
+        assert_allclose(bsp.qspline1d(array([1., 2, 3, 4, 5])), q1d0)
 
     def test_cspline1d_eval(self):
         np.random.seed(12464)
-        assert_allclose(signal.cspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(signal.cspline1d_eval(array([1., 0, 1]), []),
+        assert_allclose(bsp.cspline1d_eval(array([0., 0]), [0.]), array([0.]))
+        assert_array_equal(bsp.cspline1d_eval(array([1., 0, 1]), []),
                            array([]))
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1]-x[0]
@@ -192,7 +192,7 @@ class TestBSplines:
                 12.5]
         y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                    1.396, 4.094])
-        cj = signal.cspline1d(y)
+        cj = bsp.cspline1d(y)
         newy = array([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
                       4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
                       4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
@@ -200,12 +200,12 @@ class TestBSplines:
                       2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
                       7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
                       6.80717667, 6.203, 4.41570658])
-        assert_allclose(signal.cspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+        assert_allclose(bsp.cspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
     def test_qspline1d_eval(self):
         np.random.seed(12465)
-        assert_allclose(signal.qspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(signal.qspline1d_eval(array([1., 0, 1]), []),
+        assert_allclose(bsp.qspline1d_eval(array([0., 0]), [0.]), array([0.]))
+        assert_array_equal(bsp.qspline1d_eval(array([1., 0, 1]), []),
                            array([]))
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1]-x[0]
@@ -215,7 +215,7 @@ class TestBSplines:
                 12.5]
         y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                    1.396, 4.094])
-        cj = signal.qspline1d(y)
+        cj = bsp.qspline1d(y)
         newy = array([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
                       4.21600002, 5.91436915, 6.864, 5.18390821, 3.514,
                       4.49418159, 6.203, 6.71900226, 6.759, 7.03980488, 7.433,
@@ -223,7 +223,7 @@ class TestBSplines:
                       2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
                       7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                       6.71900226, 6.203, 4.49418159])
-        assert_allclose(signal.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+        assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
 
 def test_sepfir2d_invalid_filter():

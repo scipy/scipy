@@ -1,51 +1,8 @@
 import numpy as np
 
 
-# pythran export cubic(int list)
-# pythran export cubic(float list)
-# pythran export cubic(int[])
-# pythran export cubic(float[])
-# pythran export cubic(complex128[:, :])
-def cubic(x):
-    """A cubic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Cubic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    quadratic : A quadratic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    ax = abs(np.asarray(x))
+# pythran export cubic(int[] or float[] or complex128[:, :])
+def cubic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 1)
     if cond1.any():
@@ -58,51 +15,8 @@ def cubic(x):
     return res
 
 
-# pythran export quadratic(int list)
-# pythran export quadratic(float list)
-# pythran export quadratic(int[])
-# pythran export quadratic(float[])
-# pythran export quadratic(complex128[:, :])
-def quadratic(x):
-    """A quadratic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Quadratic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    cubic : A cubic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    ax = np.abs(np.asarray(x))
+# pythran export quadratic(int[] or float[] or complex128[:, :])
+def quadratic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 0.5)
     if cond1.any():
@@ -139,7 +53,7 @@ def _hs(k, cs, rho, omega):
     return c0 * rho ** ak * (np.cos(omega * ak) + gamma * np.sin(omega * ak))
 
 
-# pythran export _cubic_smooth_coeff(int[] or float[], float)
+# pythran export _cubic_smooth_coeff(int[] or float[], float or int)
 def _cubic_smooth_coeff(signal, lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1 - 2 * rho * np.cos(omega) + rho * rho
@@ -160,9 +74,9 @@ def _cubic_smooth_coeff(signal, lamb):
     y = np.zeros((K,), signal.dtype)
 
     y[K - 1] = np.sum((_hs(k, cs, rho, omega) +
-                           _hs(k + 1, cs, rho, omega)) * signal[::-1])
+                       _hs(k + 1, cs, rho, omega)) * signal[::-1])
     y[K - 2] = np.sum((_hs(k - 1, cs, rho, omega) +
-                           _hs(k + 2, cs, rho, omega)) * signal[::-1])
+                       _hs(k + 2, cs, rho, omega)) * signal[::-1])
 
     for n in range(K - 3, -1, -1):
         y[n] = (cs * yp[n] + 2 * rho * np.cos(omega) * y[n + 1] -
@@ -171,7 +85,7 @@ def _cubic_smooth_coeff(signal, lamb):
     return y
 
 
-# pythran export _cubic_coeff(int[] or float[])
+# pythran export _cubic_coeff(int[] or float[] or complex128[:])
 def _cubic_coeff(signal):
     zi = -2 + np.sqrt(3)
     K = len(signal)
@@ -203,11 +117,9 @@ def _quadratic_coeff(signal):
     return output * 8.0
 
 
-# pythran export cspline1d_eval(float[] or int[], 
-#                               float[] or int[], 
-#                               [int or float]?, 
-#                               int?)
-def cspline1d_eval(cj, newx, dx=1.0, x0=0):
+# pythran export cspline1d_eval(float[] or int[],
+#                               float[] or int[])
+def cspline1d_eval(cj, newx):
     res = np.zeros_like(newx, dtype=cj.dtype)
     if res.size == 0:
         return res
@@ -226,16 +138,14 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(4):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * cubic(newx - thisj)
+        result += cj[indj] * cubic(abs(np.asarray(newx - thisj)))
     res[cond3] = result
     return res
 
 
-# pythran export qspline1d_eval(float[] or int[], 
-#                               float[] or int[], 
-#                               [int or float]?, 
-#                               int?)
-def qspline1d_eval(cj, newx, dx=1.0, x0=0):
+# pythran export qspline1d_eval(float[] or int[],
+#                               float[] or int[])
+def qspline1d_eval(cj, newx):
     res = np.zeros_like(newx)
     if res.size == 0:
         return res
@@ -254,6 +164,6 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(3):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * quadratic(newx - thisj)
+        result += cj[indj] * quadratic(abs(np.asarray(newx - thisj)))
     res[cond3] = result
     return res

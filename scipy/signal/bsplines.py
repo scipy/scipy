@@ -6,14 +6,16 @@ from .spline import cspline2d, sepfir2d
 
 from ._bsplines_pythran import (
         _cubic_smooth_coeff, _cubic_coeff, _quadratic_coeff,
+        cubic as cubic_pythran,
+        quadratic as quadratic_pythran,
         cspline1d_eval as cspline1d_eval_pythran,
         qspline1d_eval as qspline1d_eval_pythran
         )
 from scipy.special import comb
 from scipy._lib._util import float_factorial
 
-__all__ = ['spline_filter', 'bspline', 'gauss_spline','cspline1d', 
-           'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
+__all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+           'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
 
 
 def spline_filter(Iin, lmbda=5.0):
@@ -244,6 +246,90 @@ def gauss_spline(x, n):
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
+def cubic(x):
+    """A cubic B-spline.
+
+    This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
+
+    Parameters
+    ----------
+    x : array_like
+        a knot vector
+
+    Returns
+    -------
+    res : ndarray
+        Cubic B-spline basis function values
+
+    See Also
+    --------
+    bspline : B-spline basis function of order n
+    quadratic : A quadratic B-spline.
+
+    Examples
+    --------
+    We can calculate B-Spline basis function of several orders:
+
+    >>> from scipy.signal import bspline, cubic, quadratic
+    >>> bspline(0.0, 1)
+    1
+
+    >>> knots = [-1.0, 0.0, -1.0]
+    >>> bspline(knots, 2)
+    array([0.125, 0.75, 0.125])
+
+    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
+    True
+
+    >>> np.array_equal(bspline(knots, 3), cubic(knots))
+    True
+
+    """
+    return cubic_pythran(abs(asarray(x)))
+
+
+def quadratic(x):
+    """A quadratic B-spline.
+
+    This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
+
+    Parameters
+    ----------
+    x : array_like
+        a knot vector
+
+    Returns
+    -------
+    res : ndarray
+        Quadratic B-spline basis function values
+
+    See Also
+    --------
+    bspline : B-spline basis function of order n
+    cubic : A cubic B-spline.
+
+    Examples
+    --------
+    We can calculate B-Spline basis function of several orders:
+
+    >>> from scipy.signal import bspline, cubic, quadratic
+    >>> bspline(0.0, 1)
+    1
+
+    >>> knots = [-1.0, 0.0, -1.0]
+    >>> bspline(knots, 2)
+    array([0.125, 0.75, 0.125])
+
+    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
+    True
+
+    >>> np.array_equal(bspline(knots, 3), cubic(knots))
+    True
+
+    """
+    return quadratic_pythran(abs(asarray(x)))
+
+
 def cspline1d(signal, lamb=0.0):
     """
     Compute cubic spline coefficients for rank-1 array.
@@ -392,7 +478,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     >>> plt.show()
 
     """
-    return cspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx, dx, x0)
+    return cspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx)
 
 
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
@@ -446,4 +532,4 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     >>> plt.show()
 
     """
-    return qspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx, dx, x0)
+    return qspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx)
