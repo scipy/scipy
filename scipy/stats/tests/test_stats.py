@@ -1659,7 +1659,7 @@ def test_theilslopes():
                   method='joint_separate')
 
     slope, intercept, lower, upper = stats.theilslopes([0, 1, 1],
-                                                method='joint')
+                                                       method='joint')
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.0)
 
@@ -1667,14 +1667,14 @@ def test_theilslopes():
     x = [1, 2, 3, 4, 10, 12, 18]
     y = [9, 15, 19, 20, 45, 55, 78]
     slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
-                                        method='separate')
+                                                       method='separate')
     assert_almost_equal(slope, 4)
     assert_almost_equal(intercept, 4.0)
     assert_almost_equal(upper, 4.38, decimal=2)
     assert_almost_equal(lower, 3.71, decimal=2)
 
     slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07,
-                                        method='joint')
+                                                       method='joint')
     assert_almost_equal(slope, 4)
     assert_almost_equal(intercept, 6.0)
     assert_almost_equal(upper, 4.38, decimal=2)
