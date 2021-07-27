@@ -136,6 +136,7 @@ class LinearOperator:
     array([ 2.,  3.])
 
     """
+    __array_ufunc__ = None
 
     ndim = 2
 
@@ -437,8 +438,20 @@ class LinearOperator:
     def __rmul__(self, x):
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
-        else:
+        elif isinstance(x, LinearOperator):
             return NotImplemented
+
+        x = np.asarray(x).T.conj()
+
+        if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+            return self.rmatvec(x).T.conj()
+        elif x.ndim == 2:
+            return self.rmatmat(x).T.conj()
+        else:
+            raise ValueError(
+                'expected scalar, 1-d or 2-d array/matrix or LinearOperator,'
+                f' got {x}'
+            )
 
     def __pow__(self, p):
         if np.isscalar(p):
