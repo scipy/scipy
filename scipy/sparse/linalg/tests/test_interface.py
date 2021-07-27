@@ -455,4 +455,4 @@ def test_right_matmul():
     A = interface.aslinearoperator(X)
     assert_equal(A @ X, X @ A)
     with pytest.raises(ValueError, match="expected scalar, 1-d or 2-d array"):
-        None @ X
+        None @ A

@@ -441,12 +441,12 @@ class LinearOperator:
         elif isinstance(x, LinearOperator):
             return NotImplemented
 
-        x = np.asarray(x).T.conj()
+        x = np.asarray(x)
 
         if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
-            return self.rmatvec(x).T.conj()
+            return self.rmatvec(x.T.conj()).T.conj()
         elif x.ndim == 2:
-            return self.rmatmat(x).T.conj()
+            return self.rmatmat(x.T.conj()).T.conj()
         else:
             raise ValueError(
                 'expected scalar, 1-d or 2-d array/matrix or LinearOperator,'
