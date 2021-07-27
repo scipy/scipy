@@ -1,7 +1,7 @@
 import numpy as np
 
 
-# pythran export cubic(int[] or float[])
+# pythran export cubic(int[] or float[] or float[:,:])
 def cubic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 1)
@@ -15,7 +15,7 @@ def cubic(ax):
     return res
 
 
-# pythran export quadratic(int[] or float[])
+# pythran export quadratic(int[] or float[] or float[:,:])
 def quadratic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 0.5)
@@ -117,7 +117,7 @@ def _quadratic_coeff(signal):
     return output * 8.0
 
 
-# pythran export cspline1d_eval(float[] or int[],
+# pythran export cspline1d_eval(float[] or int[] or complex128[],
 #                               float[] or int[])
 def cspline1d_eval(cj, newx):
     res = np.zeros_like(newx, dtype=cj.dtype)
@@ -143,10 +143,10 @@ def cspline1d_eval(cj, newx):
     return res
 
 
-# pythran export qspline1d_eval(float[] or int[],
+# pythran export qspline1d_eval(float[] or int[] or complex128[],
 #                               float[] or int[])
 def qspline1d_eval(cj, newx):
-    res = np.zeros_like(newx)
+    res = np.zeros_like(newx, dtype=cj.dtype)
     if res.size == 0:
         return res
     N = len(cj)
@@ -159,7 +159,7 @@ def qspline1d_eval(cj, newx):
     newx = newx[cond3]
     if newx.size == 0:
         return res
-    result = np.zeros_like(newx)
+    result = np.zeros_like(newx, dtype=cj.dtype)
     jlower = np.floor(newx - 1.5).astype(int) + 1
     for i in range(3):
         thisj = jlower + i
