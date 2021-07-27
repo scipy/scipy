@@ -2,13 +2,10 @@
 Unit test for DIRECT optimization algorithm.
 """
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_allclose, assert_equal)
-from numpy.testing._private.utils import assert_almost_equal, assert_array_less
-from pytest import raises as assert_raises
+                           assert_equal)
+from numpy.testing._private.utils import assert_almost_equal
 import pytest
 import numpy as np
-from scipy import optimize
-
 from scipy.optimize import minimize
 
 
@@ -28,7 +25,7 @@ class TestDIRECT:
         fact2 = 30 + fact2a*fact2b
 
         return fact1*fact2
-    
+
     def dot_func(x):
         if np.sum(np.abs(x)) > 20:
             return np.nan
@@ -46,11 +43,11 @@ class TestDIRECT:
           {'arg_min': np.array([0.0, -1.0]), 'min': 3.0,
            'arg_decimal': 4, 'decimal': 7,
            'status': 1, 'success': False}),
-         (neg_inv_func, 4*[(-10, 10)], 
+         (neg_inv_func, 4*[(-10, 10)],
           {'arg_min': np.array([0., 0., 0., 0.]), 'min': -np.inf,
            'arg_decimal': 7, 'decimal': 7,
            'status': 1, 'success': False}),
-         (dot_func, 4*[(-10, 10)], 
+         (dot_func, 4*[(-10, 10)],
           {'arg_min': np.array([-1., 2., -4., 3.]), 'min': 0.0,
            'arg_decimal': 7, 'decimal': 7,
            'status': 1, 'success': False}),
@@ -76,6 +73,6 @@ class TestDIRECT:
 
     def test_exception(self):
         bounds = 4*[(-10, 10)]
-        with pytest.raises(ZeroDivisionError): 
+        with pytest.raises(ZeroDivisionError):
             minimize(self.inv, None, bounds=bounds,
                      method='direct')
