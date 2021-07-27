@@ -6574,20 +6574,20 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     lambda_ : float or str, optional
         The power in the Cressie-Read power divergence statistic.  The default
         is 1.  For convenience, `lambda_` may be assigned one of the following
-        strings, in which case the corresponding numerical value is used
+        strings, in which case the corresponding numerical value is used:
 
-        Pearson (value 1)
+        * ``pearson`` (value 1)
             Pearson's chi-squared statistic. In this case, the function is
             equivalent to `chisquare`.
-        Log-Likelihood (value 0)
+        * ``"log-likelihood"`` (value 0)
             Log-likelihood ratio. Also known as the G-test [3]_.
-        Freeman-Turkey (value -1/2)
+        * ``"freeman-tukey"`` (value -1/2)
             Freeman-Tukey statistic.
-        Mod-Log-Likelihood (value -1)
+        * ``"mod-log-likelihood"`` (value -1)
             Modified log-likelihood ratio.
-        Neyman (value -2)
+        * ``"neyman"`` (value -2)
             Neyman's statistic.
-        Cressie-Read (value 2/3)
+        * ``"cressie-read"`` (value 2/3)
             The power recommended in [5]_.
 
     Returns
