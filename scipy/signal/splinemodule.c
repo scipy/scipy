@@ -19,12 +19,12 @@ extern int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
 extern int D_IIR_forback2(double,double,double*,double*,int,int,int,double);
 extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,npy_intp*,npy_intp*);
 
-
+#ifdef __GNUC__
 extern int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
 extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,npy_intp*,npy_intp*);
 extern int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
 extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,npy_intp*,npy_intp*);
-
+#endif
 
 static void
 convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
@@ -284,7 +284,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
-
+#ifdef __GNUC__
   case NPY_CFLOAT:
     ret = C_separable_2Dconvolve_mirror((__complex__ float *)PyArray_DATA(a_image),
 					(__complex__ float *)PyArray_DATA(out), M, N,
@@ -301,7 +301,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
-
+#endif
   default:
     PYERR("Incorrect type.");
   }
@@ -398,7 +398,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 			    instrides, outstrides, precision);
     }
     break;
-
+#ifdef __GNUC__
   case NPY_CFLOAT:
     {
       __complex__ float zc0 = c0.real + 1.0i*c0.imag;
@@ -419,7 +419,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 			    instrides, outstrides, precision);
     }
     break;
-
+#endif
   default:
     PYERR("Incorrect type.");
   }
