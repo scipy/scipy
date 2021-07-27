@@ -1437,6 +1437,8 @@ def _broadcast_shapes(shapes, axis=None):
 
     # Remove the shape elements of the axes to be ignored, but remember them.
     if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis[axis < 0] = n_dims + axis[axis < 0]
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -1455,7 +1457,6 @@ def _broadcast_shapes(shapes, axis=None):
 
     if axis is not None:
         # Add back the shape elements that were ignored
-        axis = np.atleast_1d(axis)
         new_axis = axis - np.arange(len(axis))
         new_shapes = [tuple(np.insert(new_shape, new_axis, removed_shape))
                       for removed_shape in removed_shapes]

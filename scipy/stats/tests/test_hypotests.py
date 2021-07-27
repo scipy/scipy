@@ -1403,7 +1403,7 @@ class TestPermutationTest:
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
         assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
-    # -- Exact Independent (Unpaired) Sample Tests -- #
+    # -- Independent (Unpaired) Sample Tests -- #
 
     def test_permutation_test_against_kstest(self):
         np.random.seed(0)
@@ -1501,7 +1501,52 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    # -- Exact Paired-Sample Tests -- #
+    @pytest.mark.parametrize('axis', (-1, 2))
+    def test_vectorized_nsamp_ptype_both(self, axis):
+        # Test that permutation_test with permutation_type='both' works
+        # properly for a 3-sample statistic with nd array samples of different
+        # (but compatible) shapes and ndims. Show that exact permutation test
+        # and random permutation tests approximate SciPy's asymptotic pvalues
+        # and that exact and random permutation test results are even closer
+        # to one another (than they are to the asymptotic results).
+        np.random.seed(0)
+        x = np.random.rand(3)
+        y = np.random.rand(1, 3, 2)
+        z = np.random.rand(2, 1, 4)
+        data = (x, y, z)
+
+        def statistic1d(*data):
+            return stats.kruskal(*data).statistic
+
+        def pvalue1d(*data):
+            return stats.kruskal(*data).pvalue
+
+        statistic = _bootstrap._vectorize_statistic(statistic1d)
+        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
+
+        x2 = np.broadcast_to(x, (2, 3, 3))
+        y2 = np.broadcast_to(y, (2, 3, 2))
+        z2 = np.broadcast_to(z, (2, 3, 4))
+        expected_statistic = statistic(x2, y2, z2, axis=axis)
+        expected_pvalue = pvalue(x2, y2, z2, axis=axis)
+
+        rng = np.random.default_rng(0)
+
+        res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
+                               permutations=np.inf, alternative='greater',
+                               permutation_type='both', random_state=rng)
+
+        res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
+                                permutations=1000, alternative='greater',
+                                permutation_type='both', random_state=rng)
+
+        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
+        assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
+
+        assert_allclose(res.pvalue, expected_pvalue, atol=6e-2)
+        assert_allclose(res.pvalue, res2.pvalue, atol=1.5e-2)
+
+    # -- Paired-Sample Tests -- #
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
     def test_permutation_test_against_wilcoxon(self, alternative):
@@ -1597,6 +1642,56 @@ class TestPermutationTest:
 
         assert_allclose(res.statistic, res2.statistic)
         assert_allclose(res.pvalue, res2.pvalue)
+
+    @pytest.mark.parametrize('axis', (-2, 1))
+    def test_vectorized_nsamp_ptype_samples(self, axis):
+        # Test that permutation_test with permutation_type='samples' works
+        # properly for a 3-sample statistic with nd array samples of different
+        # (but compatible) shapes and ndims. Show that exact permutation test
+        # reproduces SciPy's exact pvalue and that random permutation test
+        # approximates it.
+
+        np.random.seed(0)
+
+        x = np.random.rand(2, 4, 3)
+        y = np.random.rand(1, 4, 3)
+        z = np.random.rand(2, 4, 1)
+
+        x = stats.rankdata(x, axis=axis)
+        y = stats.rankdata(y, axis=axis)
+        z = stats.rankdata(z, axis=axis)
+        y = y[0]  # to check broadcast with different ndim
+        data = (x, y, z)
+
+        def statistic1d(*data):
+            return stats.page_trend_test(data, ranked=True,
+                                         method='asymptotic').statistic
+
+        def pvalue1d(*data):
+            return stats.page_trend_test(data, ranked=True,
+                                         method='exact').pvalue
+
+        statistic = _bootstrap._vectorize_statistic(statistic1d)
+        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
+
+        expected_statistic = statistic(*np.broadcast_arrays(*data), axis=axis)
+        expected_pvalue = pvalue(*np.broadcast_arrays(*data), axis=axis)
+
+        rng = np.random.default_rng(0)
+
+        res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
+                               permutations=np.inf, alternative='greater',
+                               permutation_type='pairings', random_state=rng)
+
+        res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
+                                permutations=5000, alternative='greater',
+                                permutation_type='pairings', random_state=rng)
+
+        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
+        assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
+
+        assert_allclose(res.pvalue, expected_pvalue, rtol=self.rtol)
+        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
 
     # -- Test Against External References -- #
 
