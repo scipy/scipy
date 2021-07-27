@@ -198,7 +198,7 @@ def linregress(x, y=None, alternative='two-sided'):
                             intercept_stderr=intercept_stderr)
 
 
-def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -223,7 +223,7 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
             * 'separate': Uses np.median(y) - medslope * np.median(x)
                           as intercept.
 
-        By default, 'separate'.
+        The default is 'separate'.
 
         .. versionadded:: 1.8.0
 
@@ -232,7 +232,8 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
     medslope : float
         Theil slope.
     medintercept : float
-        Intercept of the Theil line, as ``median(y - medslope*x)``.
+        Intercept of the Theil line, as
+        ``np.median(y) - medslope * np.median(x)``.
     lo_slope : float
         Lower bound of the confidence interval on `medslope`.
     up_slope : float
@@ -245,11 +246,11 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
     Notes
     -----
     The implementation of `theilslopes` follows [1]_. The intercept is
-    not defined in [1]_, and here it is defined as ``median(y -
-    medslope*x)``, which is given in [4]_. Other definitions of
-    the intercept exist in the literature. A confidence interval for
-    the intercept is not given as this question is not addressed in
-    [1]_.
+    not defined in [1]_, and here it is defined as ``median(y) -
+    medslope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature such as  ``median(y - medslope*x)``
+    in [4]_. A confidence interval for the intercept is not given as
+    this question is not addressed in [1]_.
 
     References
     ----------
@@ -294,6 +295,8 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
     >>> plt.show()
 
     """
+    if method != 'joint' and method != 'separate':
+        raise ValueError("'{}' method is not supported yet.".format(method))
     # We copy both x and y so we can use _find_repeats.
     y = np.array(y).flatten()
     if x is None:

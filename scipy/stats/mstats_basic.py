@@ -977,7 +977,7 @@ def linregress(x, y=None):
     return result
 
 
-def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -1001,8 +1001,8 @@ def theilslopes(y, x=None, alpha=0.95, *, method='separate'):
             * 'joint': Uses np.median(y - medslope * x) as intercept.
             * 'separate': Uses np.median(y) - medslope * np.median(x)
                           as intercept.
-        
-        By default, 'separate'.
+
+        The default is 'separate'.
 
         .. versionadded:: 1.8.0
 
