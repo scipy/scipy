@@ -454,5 +454,5 @@ def test_right_matmul():
     X = np.array([[1j, 2], [0, 2+1j]])
     A = interface.aslinearoperator(X)
     assert_equal(A @ X, X @ A)
-    with pytest.raises(ValueError, "expected scalar, 1-d or 2-d array"):
+    with pytest.raises(ValueError, match="expected scalar, 1-d or 2-d array"):
         None @ X
