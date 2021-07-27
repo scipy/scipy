@@ -1348,8 +1348,9 @@ class TestPermutationTest:
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=5e-2)
 
+        # Yes, I know it doesn't work like that
         ks = stats.ks_2samp(res.null_distribution, res2.null_distribution)
-        assert ks.pvalue > 0.2  # null distributions are no dissimilar
+        assert ks.pvalue > 0.1  # null distributions are not dissimilar
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('rng', (0, None, 'Generator',

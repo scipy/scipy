@@ -1548,8 +1548,6 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
     return data, n_permutations
 
-# generalize exact "both" method to n-samples and test
-# generalize exact "samples" method to n-samples and test
 # test n-sample random and n-sample vectorized better
 # batch
 
@@ -1557,39 +1555,53 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     """
     Permute observations between samples for paired-sample tests.
     """
-    # no need to optimize this as it will soon be generalized to n samples
-    if len(data) == 1:
-        a, b = data[0], -data[0]
-    else:
-        a, b = data
+    n_samples = len(data)
+    if n_samples == 1:
+        data = [data[0], -data[0]]
 
-    n_obs_a = a.shape[-1]
-    n_max = 2**n_obs_a
+    data = np.asarray(data)
+    data = list(np.swapaxes(data, 0, -1))
+    data, n_permutations = _data_permutations_pairings(data, n_permutations,
+                                                       random_state)
+    data = np.swapaxes(data, 0, -1)
 
-    _memory_check(data, min(n_permutations, n_max))
+    if n_samples == 1:
+        return data[0:1], n_permutations
+    return data, n_permutations
 
-    if n_permutations < n_max:
-        indices = random_state.random(size=(n_permutations, n_obs_a)) > 0.5
-    else:
-        n_permutations = n_max
-        indices = np.array(list(product(*([[False, True]]*n_obs_a))))
+    # # no need to optimize this as it will soon be generalized to n samples
+    # if len(data) == 1:
+    #     a, b = data[0], -data[0]
+    # else:
+    #     a, b = data
 
-    if a.ndim > 1:
-        indices = np.expand_dims(indices, tuple(1 + np.arange(a.ndim-1)))
+    # n_obs_a = a.shape[-1]
+    # n_max = 2**n_obs_a
 
-    new_shape = [n_permutations] + list(a.shape)
-    a = np.broadcast_to(a, new_shape)
-    b = np.broadcast_to(b, new_shape)
-    indices = np.broadcast_to(indices, new_shape)
+    # _memory_check(data, min(n_permutations, n_max))
 
-    x = a.copy()
-    x[indices] = b[indices]
-    if len(data) == 1:
-        return (x,), n_permutations
+    # if n_permutations < n_max:
+    #     indices = random_state.random(size=(n_permutations, n_obs_a)) > 0.5
+    # else:
+    #     n_permutations = n_max
+    #     indices = np.array(list(product(*([[False, True]]*n_obs_a))))
 
-    y = b.copy()
-    y[indices] = a[indices]
-    return (x, y), n_permutations
+    # if a.ndim > 1:
+    #     indices = np.expand_dims(indices, tuple(1 + np.arange(a.ndim-1)))
+
+    # new_shape = [n_permutations] + list(a.shape)
+    # a = np.broadcast_to(a, new_shape)
+    # b = np.broadcast_to(b, new_shape)
+    # indices = np.broadcast_to(indices, new_shape)
+
+    # x = a.copy()
+    # x[indices] = b[indices]
+    # if len(data) == 1:
+    #     return (x,), n_permutations
+
+    # y = b.copy()
+    # y[indices] = a[indices]
+    # return (x, y), n_permutations
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
