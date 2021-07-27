@@ -1062,6 +1062,17 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
+    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+                                       np.clongdouble, np.float16,])
+    def test_invalid_dtypes(self, dtype):
+        in_typed = np.array(self.IN, dtype=dtype)
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt(in_typed)
+
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt2d(in_typed)
+
+
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
