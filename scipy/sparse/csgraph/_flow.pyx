@@ -910,7 +910,7 @@ cdef void _trace_path(
         idx += 1
     return idx
 
-cdef void _find_cycle(
+cdef ITYPE_t _find_cycle(
     ITYPE_t i,
     ITYPE_t p,
     ITYPE_t q,
@@ -929,7 +929,8 @@ cdef void _find_cycle(
                             parent_edge,
                             Wn, We)
     offset = 0
-    if num_edges == 1 and We[0] != i:
+    if ((num_edges == 1 and We[0] != i) or
+        num_edges != 1):
         We[num_edges] = i
         offset = 1
 
@@ -950,6 +951,44 @@ cdef void _find_cycle(
         Wn[i + num_edges + 1] = WnR[i]
     for i in range(num_edges_R):
         We[i + num_edges + offset] = WeR[i]
+    return We.shape[0]
+
+cdef ITYPE_t _residual_capacity(
+    ITYPE_t i,
+    ITYPE_t p,
+    ITYPE_t[:] edge_sources,
+    ITYPE_t[:] edge_capacities,
+    ITYPE_t[:] edge_flow):
+    if edge_sources[i] == p:
+        return edge_capacities[i] - edge_flow[i]
+    else:
+        return edge_flow[i]
+
+cdef void _find_leaving_edge(
+    ITYPE_t[:] Wn,
+    ITYPE_t[:] We,
+    ITYPE_t Wne_len,
+    ITYPE_t[:] edge_sources,
+    ITYPE_t[:] edge_targets,
+    ITYPE_t[:] ret_values):
+    cdef ITYPE_t min_res_cap, res_cap
+    cdef ITYPE_t i, p, j, s, t
+    min_res_cap = np.inf
+    for idx in range(Wne_len, -1):
+        i = We[idx]
+        p = Wn[idx]
+        res_cap = _residual_capacity(i, p)
+        if res_cap < min_res_cap:
+            min_res_cap = res_cap
+            j = i
+            s = p
+    if edge_sources[j] == s:
+        t = edge_targets[j]
+    else:
+        t = edge_sources[j]
+    ret_values[0] = j
+    ret_values[1] = s
+    ret_values[2] = t
 
 cdef ITYPE_t[:] _network_simplex(
         ITYPE_t[:] heads,
@@ -961,6 +1000,7 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t idx, faux_inf, capacities_sum, cost_sum
+    cdef ITYPE_t Wne_len, j, s, t, i
     cdef ITYPE_t[:] edge_flow, vertex_potentials
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
     cdef ITYPE_t[:] next_node_dft, prev_node_dft
@@ -1024,14 +1064,19 @@ cdef ITYPE_t[:] _network_simplex(
                                           local_vars, prev_ret_value,
                                           result)
     while prev_ret_value:
-        Wn = np.empty(n_verts, dtype=ITYPE_t)
-        We = np.empty(n_edges, dtype=ITYPE_t)
-        _find_cycle(i, p, q,
-                    subtree_size,
-                    parent, parent_edge,
-                    n_edges, n_verts,
-                    Wn, We)
-        j, s, t = DEAF.find_leaving_edge(Wn, We)
+        Wn = np.empty(n_edges + 1, dtype=ITYPE_t)
+        We = np.empty(n_edges + 1, dtype=ITYPE_t)
+        Wne_len = _find_cycle(i, p, q,
+                              subtree_size,
+                              parent, parent_edge,
+                              n_edges, n_verts,
+                              Wn, We)
+        _find_leaving_edge(Wn, We, Wne_len,
+                           edge_sources, edge_targets,
+                           result)
+        j = result[0]
+        s = result[1]
+        t = result[2]
         DEAF.augment_flow(Wn, We, DEAF.residual_capacity(j, s))
         # Do nothing more if the entering edge is the same as the leaving edge.
         if i != j:
