@@ -1,7 +1,7 @@
 import numpy as np
 
 
-# pythran export cubic(int[] or float[] or complex128[:, :])
+# pythran export cubic(int[] or float[])
 def cubic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 1)
@@ -15,7 +15,7 @@ def cubic(ax):
     return res
 
 
-# pythran export quadratic(int[] or float[] or complex128[:, :])
+# pythran export quadratic(int[] or float[])
 def quadratic(ax):
     res = np.zeros_like(ax)
     cond1 = np.less(ax, 0.5)
