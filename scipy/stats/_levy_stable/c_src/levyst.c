@@ -1,6 +1,17 @@
-#include <stdlib.h>
+/*
+ * Implements special functions for stable distribution calculations.
+ *
+ * A function g appears in the integrand in Nolan's method for calculating
+ * stable densitities and distribution functions. It takes a different form for
+ * for alpha = 1 vs alpha ≠ 1. See [NO] for more info.
+ *
+ * References
+ * [NO] John P. Nolan (1997) Numerical calculation of stable densities and
+ *      distribution functions.
+ */
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <stdlib.h>
 #include "levyst.h"
 
 double
@@ -56,8 +67,14 @@ g_alpha_eq_one(struct nolan_precanned *sp, double theta)
 struct nolan_precanned *
 nolan_precan(double alpha, double beta, double x0)
 {
-    struct nolan_precanned *sp = (struct nolan_precanned *)malloc(
-        sizeof(struct nolan_precanned));
+    /* Stores results of intermediate computations so they need not be
+     * recomputed when g is called many times during numerical integration
+     * through QUADPACK.
+     */
+    struct nolan_precanned *sp = malloc(sizeof(struct nolan_precanned));
+    if (!sp) {
+        abort();
+    }
     sp->alpha = alpha;
     sp->zeta = -beta * tan(M_PI_2 * alpha);
 
@@ -69,19 +86,19 @@ nolan_precan(double alpha, double beta, double x0)
         sp->alpha_xi = atan(-sp->zeta);
         sp->zeta_offset = x0 - sp->zeta;
         if (alpha < 1.) {
-            sp->c1 = 0.5 - sp->xi / M_PI;
+            sp->c1 = 0.5 - sp->xi * M_1_PI;
             sp->c3 = M_1_PI;
         }
         else {
             sp->c1 = 1.;
             sp->c3 = -M_1_PI;
         }
-        sp->c2 = alpha / M_PI / fabs(alpha - 1.) / (x0 - sp->zeta);
+        sp->c2 = alpha * M_1_PI / fabs(alpha - 1.) / (x0 - sp->zeta);
         sp->g = &g_alpha_ne_one;
     }
     else {
         sp->xi = M_PI_2;
-        sp->two_beta_div_pi = beta / M_PI_2;
+        sp->two_beta_div_pi = beta * M_2_PI;
         sp->pi_div_two_beta = M_PI_2 / beta;
         sp->x0_div_term = x0 / sp->two_beta_div_pi;
         sp->c1 = 0.;
