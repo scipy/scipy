@@ -1524,7 +1524,6 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
     return data, n_permutations
 
-# change "pairings" to permute all data
 # add support for one-sample "sample" method
 # generalize exact "both" method to n-samples
 # generalize exact "sample" method to n-samples
@@ -1535,7 +1534,11 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     Permute observations between samples for paired-sample tests.
     """
     # no need to optimize this as it will soon be generalized to n samples
-    a, b = np.broadcast_arrays(*data)
+    if len(data) == 1:
+        a, b = data[0], -data[0]
+    else:
+        a, b = data
+
     n_obs_a = a.shape[-1]
     n_max = 2**n_obs_a
 
@@ -1556,8 +1559,11 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     indices = np.broadcast_to(indices, new_shape)
 
     x = a.copy()
-    y = b.copy()
     x[indices] = b[indices]
+    if len(data) == 1:
+        return (x,), n_permutations
+
+    y = b.copy()
     y[indices] = a[indices]
     return (x, y), n_permutations
 
@@ -1619,7 +1625,6 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 def _memory_check(data, permutations):
     needed = sum([sample.size for sample in data]) * permutations * 8
     available = psutil.virtual_memory()[1]
-    print(needed)
     if needed > 0.8 * available:
         raise MemoryError("Not enough memory available. "
                           "Consider reducing the batch size.")

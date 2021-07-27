@@ -1483,30 +1483,37 @@ class TestPermutationTest:
         x = stats.uniform.rvs(size=(3, 6, 2), loc=0)
         y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05)
 
-        def statistic1d(x, y):
-            # alternative 'less' ensures we get the same of two statistics
-            # every time
+        def statistic_1samp_1d(z):
+            # 'less' ensures we get the same of two statistics every time
+            return stats.wilcoxon(z, alternative='less').statistic
+
+        def statistic_2samp_1d(x, y):
             return stats.wilcoxon(x, y, alternative='less').statistic
 
-        def test1d(x, y):
-            # alternative 'less' ensures we get the same of two statistics
-            # every time
+        def test_1d(x, y):
             return stats.wilcoxon(x, y, alternative=alternative)
 
-        statistic = _bootstrap._vectorize_statistic(statistic1d)
-        test = _bootstrap._vectorize_statistic(test1d)
+        test = _bootstrap._vectorize_statistic(test_1d)
+
         expected = test(x, y, axis=1)
         expected_stat = expected[:, 0, :]
         expected_p = expected[:, 1, :]
 
-        res = permutation_test((x, y), statistic, vectorized=True,
+        res1 = permutation_test((x-y,), statistic_1samp_1d, vectorized=False,
+                               permutation_type='samples',
+                               alternative=alternative, axis=1)
+
+        res2 = permutation_test((x, y), statistic_2samp_1d, vectorized=False,
                                permutation_type='samples',
                                alternative=alternative, axis=1)
 
         # `wilcoxon` returns a different statistic with 'two-sided'
+        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
         if alternative != 'two-sided':
-            assert_allclose(res.statistic, expected_stat, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_p, rtol=self.rtol)
+            assert_allclose(res2.statistic, expected_stat, rtol=self.rtol)
+
+        assert_allclose(res2.pvalue, expected_p, rtol=self.rtol)
+        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     # -- Exact Association Tests -- #
 
