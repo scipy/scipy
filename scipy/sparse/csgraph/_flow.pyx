@@ -970,14 +970,19 @@ cdef void _find_leaving_edge(
     ITYPE_t Wne_len,
     ITYPE_t[:] edge_sources,
     ITYPE_t[:] edge_targets,
+    ITYPE_t[:] edge_capacities,
+    ITYPE_t[:] edge_flow,
     ITYPE_t[:] ret_values):
     cdef ITYPE_t min_res_cap, res_cap
     cdef ITYPE_t i, p, j, s, t
     min_res_cap = np.inf
-    for idx in range(Wne_len, -1):
+    for idx in range(Wne_len - 1, -1, -1):
         i = We[idx]
         p = Wn[idx]
-        res_cap = _residual_capacity(i, p)
+        res_cap = _residual_capacity(i, p,
+                                     edge_sources,
+                                     edge_capacities,
+                                     edge_flow)
         if res_cap < min_res_cap:
             min_res_cap = res_cap
             j = i
@@ -990,6 +995,62 @@ cdef void _find_leaving_edge(
     ret_values[1] = s
     ret_values[2] = t
 
+cdef ITYPE_t _index(
+    ITYPE_t[:] We,
+    ITYPE_t Wne_len,
+    ITYPE_t i):
+    cdef ITYPE_t idx
+    for idx in range(Wne_len):
+        if We[idx] == i:
+            return idx
+    return -1
+
+cdef void _augment_flow(
+    ITYPE_t[:] Wn,
+    ITYPE_t[:] We,
+    ITYPE_t f,
+    ITYPE_t[:] edge_sources,
+    ITYPE_t[:] edge_flow):
+    cdef ITYPE_t i, p, idx
+    for idx in range(Wne_len):
+        i = We[idx]
+        p = Wn[idx]
+        if edge_sources[i] == p:
+            edge_flow[i] += f
+        else:
+            edge_flow[i] -= f
+
+def void _remove_edge(
+    ITYPE_t s,
+    ITYPE_t t,
+    ITYPE_t[:] subtree_size,
+    ITYPE_t[:] prev_node_dft,
+    ITYPE_t[:] last_descendent_dft,
+    ITYPE_t[:] next_node_dft,
+    ITYPE_t[:] parent,
+    ITYPE_t[:] parent_edge):
+    cdef ITYPE_t size_t, prev_t, last_t
+    cdef ITYPE_t next_last_t
+    size_t = subtree_size[t]
+    prev_t = prev_node_dft[t]
+    last_t = last_descendent_dft[t]
+    next_last_t = next_node_dft[last_t]
+    # Remove (s, t).
+    parent[t] = -2
+    parent_edge[t] = -2
+    # Remove the subtree rooted at t from the depth-first thread.
+    next_node_dft[prev_t] = next_last_t
+    prev_node_dft[next_last_t] = prev_t
+    next_node_dft[last_t] = t
+    prev_node_dft[t] = last_t
+    # Update the subtree sizes and last descendants of the (old) acenstors
+    # of t.
+    while s != -2:
+        subtree_size[s] -= size_t
+        if last_descendent_dft[s] == last_t:
+            last_descendent_dft[s] = prev_t
+        s = parent[s]
+
 cdef ITYPE_t[:] _network_simplex(
         ITYPE_t[:] heads,
         ITYPE_t[:] tails,
@@ -1000,7 +1061,7 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t idx, faux_inf, capacities_sum, cost_sum
-    cdef ITYPE_t Wne_len, j, s, t, i
+    cdef ITYPE_t Wne_len, j, s, t, i, tmp
     cdef ITYPE_t[:] edge_flow, vertex_potentials
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
     cdef ITYPE_t[:] next_node_dft, prev_node_dft
@@ -1073,20 +1134,29 @@ cdef ITYPE_t[:] _network_simplex(
                               Wn, We)
         _find_leaving_edge(Wn, We, Wne_len,
                            edge_sources, edge_targets,
+                           edge_capacities, edge_flow,
                            result)
         j = result[0]
         s = result[1]
         t = result[2]
-        DEAF.augment_flow(Wn, We, DEAF.residual_capacity(j, s))
+        _augment_flow(Wn, We, _residual_capacity(j, s), edge_sources, edge_flow)
         # Do nothing more if the entering edge is the same as the leaving edge.
         if i != j:
-            if DEAF.parent[t] != s:
+            if parent[t] != s:
                 # Ensure that s is the parent of t.
-                s, t = t, s
-            if We.index(i) > We.index(j):
+                tmp = t
+                t = s
+                s = tmp
+            if _index(We, Wne_len, i) > _index(We, Wne_len, j):
                 # Ensure that q is in the subtree rooted at t.
-                p, q = q, p
-            DEAF.remove_edge(s, t)
+                tmp = q
+                q = p
+                p = tmp
+            _remove_edge(s, t, subtree_size,
+                         prev_node_dft,
+                         last_descendent_dft,
+                         next_node_dft,
+                         parent, parent_edge)
             DEAF.make_root(q)
             DEAF.add_edge(i, p, q)
             DEAF.update_potentials(i, p, q)
