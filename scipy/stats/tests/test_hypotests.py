@@ -1299,9 +1299,15 @@ class TestPermutationTest:
             except AttributeError:
                 pytest.skip("Old numpy doesn't have Generator")
 
+        np.random.seed(0)
+
         if permutation_type == 'both':
             nx, ny, permutations = 8, 9, 24000
             assert special.binom(nx + ny, nx) > permutations
+
+            x = stats.norm.rvs(size=nx)
+            y = stats.norm.rvs(size=ny)
+            data = x, y
 
             def statistic(x, y, axis):
                 return np.mean(x, axis=axis) - np.mean(y, axis=axis)
@@ -1310,6 +1316,10 @@ class TestPermutationTest:
             nx, ny, permutations = 15, 15, 32000
             assert 2**nx > permutations
 
+            x = stats.norm.rvs(size=nx)
+            y = stats.norm.rvs(size=ny)
+            data = x, y
+
             def statistic(x, y, axis):
                 return np.mean(x - y, axis=axis)
 
@@ -1317,20 +1327,21 @@ class TestPermutationTest:
             nx, ny, permutations = 7, 7, 5000
             assert special.factorial(nx) > permutations
 
-            def statistic1d(x, y):
+            x = stats.norm.rvs(size=nx)
+            y = stats.norm.rvs(size=ny)
+            data = [x]
+
+            def statistic1d(x):
                 return stats.pearsonr(x, y)[0]
 
             statistic = _bootstrap._vectorize_statistic(statistic1d)
 
-        np.random.seed(0)
-        x = stats.norm.rvs(size=nx)
-        y = stats.norm.rvs(size=ny)
 
-        res = permutation_test((x, y), statistic, vectorized=True,
+        res = permutation_test(data, statistic, vectorized=True,
                                permutation_type=permutation_type,
                                permutations=permutations,
                                alternative=alternative, random_state=rng)
-        res2 = permutation_test((x, y), statistic, vectorized=True,
+        res2 = permutation_test(data, statistic, vectorized=True,
                                 permutation_type=permutation_type,
                                 alternative=alternative)
 
@@ -1351,14 +1362,14 @@ class TestPermutationTest:
             except AttributeError:
                 pytest.skip("Old numpy doesn't have Generator")
 
-        def statistic(x, y):
+        def statistic(x):
             return stats.spearmanr(x, y).correlation
 
         np.random.seed(0)
         x = stats.norm.rvs(size=500)
         y = stats.norm.rvs(size=500)
 
-        res = permutation_test((x, y), statistic, permutation_type='pairings',
+        res = permutation_test((x,), statistic, permutation_type='pairings',
                                permutations=5000, alternative=alternative,
                                random_state=rng)
         res2 = stats.spearmanr(x, y, alternative=alternative)
@@ -1506,11 +1517,11 @@ class TestPermutationTest:
 
         expected = stats.kendalltau(x, y, method='exact')
 
-        def statistic1d(x, y):
+        def statistic1d(x):
             return stats.kendalltau(x, y, method='asymptotic').correlation
 
         # kendalltau has only one alternative, two-sided
-        res = permutation_test((x, y), statistic1d,
+        res = permutation_test((x,), statistic1d,
                                permutation_type='pairings')
 
         assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
@@ -1519,7 +1530,7 @@ class TestPermutationTest:
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_randomized_test_against_fisher_exact(self, alternative):
 
-        def statistic(x, y):
+        def statistic(x,):
             return np.sum((x == 1) & (y == 1))
 
         np.random.seed(0)
@@ -1528,7 +1539,7 @@ class TestPermutationTest:
         y = (np.random.rand(8) + 0.25*x > 0.6).astype(float)
         tab = stats.contingency.crosstab(x, y)[1]
 
-        res = permutation_test((x, y), statistic, permutation_type='pairings',
+        res = permutation_test((x,), statistic, permutation_type='pairings',
                                alternative=alternative)
         res2 = stats.fisher_exact(tab, alternative=alternative)
 
@@ -1633,10 +1644,10 @@ class TestPermutationTest:
 
         expected_statistic = 0.7714285714285715
 
-        def statistic1d(x, y):
+        def statistic1d(x):
             return stats.spearmanr(x, y).correlation
 
-        res = permutation_test((x, y), statistic1d,
+        res = permutation_test((x,), statistic1d,
                                permutation_type='pairings',
                                alternative=alternative)
 
