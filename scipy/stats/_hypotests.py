@@ -1464,6 +1464,28 @@ def _broadcast_shapes(shapes, axis=None):
         return tuple(new_shape)
 
 
+def _all_partitions_concatenated(ns):
+    def all_partitions(z, n):
+        for c in combinations(z, n):
+            x0 = set(c)
+            x1 = z - x0
+            yield [x0, x1]
+
+    def all_partitions_n(z, ns):
+        if len(ns) == 0:
+            yield [z]
+            return
+        for c in all_partitions(z, ns[0]):
+            for d in all_partitions_n(c[1], ns[1:]):
+                yield c[0:1] + d
+
+    z = set(range(np.sum(ns)))
+    for partitioning in all_partitions_n(z, ns[:]):
+        x = np.concatenate([list(partition)
+                            for partition in partitioning]).astype(int)
+        yield x
+
+
 # Could combine with scipy.stats.stats _data_partitions, but probably not
 # not worth the time; eventually, the permutation t-test should just
 # be implemented by this function.
@@ -1483,10 +1505,9 @@ def _data_permutations(data, n_permutations, random_state=None):
 
     _memory_check(data, min(n_permutations, n_max))
 
-    if n_permutations >= n_max and n_samples==2:
+    if n_permutations >= n_max:
         n_permutations = n_max
-        indices = [np.concatenate(z)
-                   for z in _all_partitions(*n_obs_i)]
+        indices = list(_all_partitions_concatenated(n_obs_i))
     else:
         indices = [random_state.permutation(n_obs_ic[-1])
                    for i in range(n_permutations)]
@@ -1509,25 +1530,28 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
     _memory_check(data, min(n_permutations, n_max))
 
-    if n_permutations >= n_max and n_samples==1:
+    if n_permutations >= n_max:
         n_permutations = n_max
-        indices = [list(permutations(range(n_obs_sample)))]
+        indices = list(product(*(permutations(range(n_obs_sample))
+                                 for i in range(n_samples))))
+        indices = np.array(indices)
+        indices = np.swapaxes(indices, 0, 1)
     else:
         indices = [[random_state.permutation(n_obs_sample)
                     for i in range(n_permutations)]
                    for j in range(n_samples)]
+        indices = np.array(indices)
 
-    indices = np.array(indices)
     for i in range(n_samples):
         data[i] = data[i][..., indices[i]]
         data[i] = np.moveaxis(data[i], -2, 0)
 
     return data, n_permutations
 
-# add support for one-sample "sample" method
-# generalize exact "both" method to n-samples
-# generalize exact "sample" method to n-samples
-# write n-sample tests
+# generalize exact "both" method to n-samples and test
+# generalize exact "samples" method to n-samples and test
+# test n-sample random and n-sample vectorized better
+# batch
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
     """

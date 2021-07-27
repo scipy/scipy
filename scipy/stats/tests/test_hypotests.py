@@ -1458,6 +1458,31 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
+    def test_permutation_test_against_kruskal(self):
+        np.random.seed(0)
+        x = stats.uniform.rvs(size=(2, 24, 3), loc=0)
+        y = stats.uniform.rvs(size=(2, 25, 3), loc=0.07)
+        z = stats.uniform.rvs(size=(2, 26, 3), loc=-0.025)
+
+        def statistic1d(x, y, z):
+            return stats.kruskal(x, y, z)[0]
+
+        def pvalue1d(x, y, z):
+            return stats.kruskal(x, y, z)[1]
+
+        statistic = _bootstrap._vectorize_statistic(statistic1d)
+        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
+
+        expected_statistic = statistic(x, y, z, axis=1)
+        expected_pvalue = pvalue(x, y, z, axis=1)
+
+        res = permutation_test((x, y, z), statistic1d, vectorized=False,
+                               axis=1, permutations=2000,
+                               alternative='greater')
+
+        assert_allclose(res.statistic, expected_statistic, atol=2e-2)
+        assert_allclose(res.pvalue, expected_pvalue, atol=2e-2)
+
     def test_permutation_test_against_cvm(self):
         np.random.seed(0)
         x = stats.norm.rvs(size=4, scale=1)
@@ -1535,7 +1560,7 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    def test_randomized_test_against_fisher_exact(self, alternative):
+    def test_permutation_test_against_fisher_exact(self, alternative):
 
         def statistic(x,):
             return np.sum((x == 1) & (y == 1))
@@ -1551,6 +1576,26 @@ class TestPermutationTest:
         res2 = stats.fisher_exact(tab, alternative=alternative)
 
         assert_allclose(res.pvalue, res2[1])
+
+    @pytest.mark.parametrize('size', [(2, 5), (3, 4), (4, 3)])
+    def test_permutation_test_against_pagel(self, size):
+
+        def statistic(*data):
+            return stats.page_trend_test(data, ranked=True,
+                                         method='asymptotic').statistic
+
+        np.random.seed(0)
+        m, n = size
+        data = np.random.rand(m, n)
+        data = stats.rankdata(data, axis=1)
+
+        res = permutation_test(data, statistic, vectorized=False,
+                               alternative='greater',
+                               permutation_type='pairings')
+        res2 = stats.page_trend_test(data, ranked=True, method='exact')
+
+        assert_allclose(res.statistic, res2.statistic)
+        assert_allclose(res.pvalue, res2.pvalue)
 
     # -- Test Against External References -- #
 
