@@ -13,6 +13,7 @@ import scipy.stats._bootstrap as _bootstrap
 import scipy.stats.stats as statsstats
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+import psutil
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -1480,6 +1481,8 @@ def _data_permutations(data, n_permutations, random_state=None):
     n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
                      for i in range(n_samples-1, 0, -1)])
 
+    _memory_check(data, min(n_permutations, n_max))
+
     if n_permutations >= n_max and n_samples==2:
         n_permutations = n_max
         indices = [np.concatenate(z)
@@ -1503,6 +1506,8 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
     n_obs_sample = data[0].shape[-1]
 
     n_max = factorial(n_obs_sample)**n_samples
+
+    _memory_check(data, min(n_permutations, n_max))
 
     if n_permutations >= n_max and n_samples==1:
         n_permutations = n_max
@@ -1533,6 +1538,8 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
     a, b = np.broadcast_arrays(*data)
     n_obs_a = a.shape[-1]
     n_max = 2**n_obs_a
+
+    _memory_check(data, min(n_permutations, n_max))
 
     if n_permutations < n_max:
         indices = random_state.random(size=(n_permutations, n_obs_a)) > 0.5
@@ -1604,6 +1611,18 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     return (data_iv, statistic, permutation_type, vectorized, permutations_int,
             alternative, axis_int, random_state)
+
+
+# This is mostly to protect me while developing. Eventually we want to batch
+# the computations, so this will be less of an issue, but if it sounds like a
+# good feature, let me know.
+def _memory_check(data, permutations):
+    needed = sum([sample.size for sample in data]) * permutations * 8
+    available = psutil.virtual_memory()[1]
+    print(needed)
+    if needed > 0.8 * available:
+        raise MemoryError("Not enough memory available. "
+                          "Consider reducing the batch size.")
 
 
 def permutation_test(data, statistic, *, permutation_type='both',
