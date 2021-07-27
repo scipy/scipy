@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Callable
 from .optimize import OptimizeResult
 from ._constraints import Bounds
 import numpy as np
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 def _minimize_direct(
-        func: callable,
+        func: Callable[...],
         bounds: Bounds,
         args: tuple,
         disp: bool,
