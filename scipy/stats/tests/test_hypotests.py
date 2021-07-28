@@ -1336,7 +1336,6 @@ class TestPermutationTest:
 
             statistic = _bootstrap._vectorize_statistic(statistic1d)
 
-
         res = permutation_test(data, statistic, vectorized=True,
                                permutation_type=permutation_type,
                                permutations=permutations,
