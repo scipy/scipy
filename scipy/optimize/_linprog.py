@@ -16,6 +16,7 @@ Functions
 """
 
 import numpy as np
+import scipy.sparse as sps
 
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
@@ -207,17 +208,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. Accepts sparse 
-        matrix. If method="simplex" or "revised simplex", tries to convert
-        sparse matrix to dense.
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
     A_eq : 2-D array, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``.  Accepts sparse 
-        matrix. If method="simplex" or "revised simplex", tries to convert 
-        sparse matrix to dense.
+        coefficients of a linear equality constraint on ``x``.
     b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
@@ -592,9 +589,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
         
-    if 'simplex' in meth:
-        A_eq = A_eq.todense()
-        A_ub = A_ub.todense()
+    if meth in {'revised simplex', 'simplex'}:
+        if sps.issparse(A_eq):
+            A_eq = A_eq.todense()
+        if sps.issparse(A_ub):
+            A_ub = A_ub.todense()
+        
         
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options, meth)
