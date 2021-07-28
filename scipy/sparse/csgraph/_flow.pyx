@@ -701,7 +701,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     tails = _make_tails(csgraph)
     flow = _network_simplex(csgraph.indices, tails, csgraph.data,
                             demand, cost)
-    flow_array = np.asarray(flow)
+    flow_array = np.asarray(flow[csgraph.data.shape[0]:])
     return flow_array
 
 def _network_simplex_checks(
@@ -1243,7 +1243,7 @@ cdef ITYPE_t[:] _network_simplex(
         edge_capacities[v + n_edges] = faux_inf
         edge_weights[v + n_edges] = faux_inf
 
-    edge_flow = np.empty(n_edges + n_verts, dtype=ITYPE_t)
+    edge_flow = np.zeros(n_edges + n_verts, dtype=ITYPE_t)
     vertex_potentials = np.empty(n_verts, dtype=ITYPE_t)
     parent = np.empty(n_verts + 1, dtype=ITYPE_t)
     parent_edge = np.empty(n_edges, dtype=ITYPE_t)
@@ -1318,3 +1318,5 @@ cdef ITYPE_t[:] _network_simplex(
                                               edge_sources, edge_targets,
                                               local_vars, prev_ret_value,
                                               result)
+
+    return edge_flow
