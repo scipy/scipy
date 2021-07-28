@@ -68,7 +68,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Cosine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Sine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
