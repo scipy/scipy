@@ -13,6 +13,7 @@ import scipy.stats._bootstrap as _bootstrap
 import scipy.stats.stats as statsstats
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+import psutil
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -1403,6 +1404,89 @@ attributes = ('statistic', 'pvalue', 'null_distribution')
 PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
 
 
+# Functions like these are under review in gh-13312; nice to have them here
+# Remove when they are added to scipy/stats/stats.py or a utility file
+def _broadcast_arrays(arrays, axis=None):
+    """
+    Broadcast shapes of arrays, ignoring incompatibility of specified axes
+    """
+    new_shapes = _broadcast_array_shapes(arrays, axis=axis)
+    if axis is None:
+        new_shapes = [new_shapes]*len(arrays)
+    return [np.broadcast_to(array, new_shape)
+            for array, new_shape in zip(arrays, new_shapes)]
+
+
+def _broadcast_array_shapes(arrays, axis=None):
+    """
+    Broadcast shapes of arrays, ignoring incompatibility of specified axes
+    """
+    shapes = [np.asarray(arr).shape for arr in arrays]
+    return _broadcast_shapes(shapes, axis)
+
+
+def _broadcast_shapes(shapes, axis=None):
+    """
+    Broadcast shapes, ignoring incompatibility of specified axes
+    """
+    # First, ensure all shapes have same number of dimensions by prepending 1s.
+    n_dims = max([len(shape) for shape in shapes])
+    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
+    for row, shape in zip(new_shapes, shapes):
+        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+
+    # Remove the shape elements of the axes to be ignored, but remember them.
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis[axis < 0] = n_dims + axis[axis < 0]
+        removed_shapes = new_shapes[:, axis]
+        new_shapes = np.delete(new_shapes, axis, axis=1)
+
+    # If arrays are broadcastable, shape elements that are 1 may be replaced
+    # with a corresponding non-1 shape element. Assuming arrays are
+    # broadcastable, that final shape element can be found with:
+    new_shape = np.max(new_shapes, axis=0)
+    # except in case of an empty array:
+    new_shape *= new_shapes.all(axis=0)
+
+    # Among all arrays, there can only be one unique non-1 shape element.
+    # Therefore, if any non-1 shape element does not match what we found
+    # above, the arrays must not be broadcastable after all.
+    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+
+    if axis is not None:
+        # Add back the shape elements that were ignored
+        new_axis = axis - np.arange(len(axis))
+        new_shapes = [tuple(np.insert(new_shape, new_axis, removed_shape))
+                      for removed_shape in removed_shapes]
+        return new_shapes
+    else:
+        return tuple(new_shape)
+
+
+def _all_partitions_concatenated(ns):
+    def all_partitions(z, n):
+        for c in combinations(z, n):
+            x0 = set(c)
+            x1 = z - x0
+            yield [x0, x1]
+
+    def all_partitions_n(z, ns):
+        if len(ns) == 0:
+            yield [z]
+            return
+        for c in all_partitions(z, ns[0]):
+            for d in all_partitions_n(c[1], ns[1:]):
+                yield c[0:1] + d
+
+    z = set(range(np.sum(ns)))
+    for partitioning in all_partitions_n(z, ns[:]):
+        x = np.concatenate([list(partition)
+                            for partition in partitioning]).astype(int)
+        yield x
+
+
 # Could combine with scipy.stats.stats _data_partitions, but probably not
 # not worth the time; eventually, the permutation t-test should just
 # be implemented by this function.
@@ -1411,80 +1495,80 @@ def _data_permutations(data, n_permutations, random_state=None):
     Permute unpaired observations between samples for independent sample tests.
     """
     # no need to optimize this as it will soon be generalized to n samples
-
-    n_obs_a = data[0].shape[-1]  # number of observations in first sample
-    data = statsstats._broadcast_concatenate(data, axis=-1)
-    n_obs = data.shape[-1]  # total number of observations
+    n_samples = len(data)
+    n_obs_i = [sample.shape[-1] for sample in data]
+    n_obs_ic = np.cumsum(n_obs_i)
+    data = np.concatenate(data, axis=-1)
 
     # number of distinct combinations
-    n_max = comb(n_obs, n_obs_a)
+    n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
+                     for i in range(n_samples-1, 0, -1)])
 
-    if n_permutations < n_max:
-        indices = np.array([random_state.permutation(n_obs)
-                            for i in range(n_permutations)])
-    else:
+    _memory_check(data, min(n_permutations, n_max))
+
+    if n_permutations >= n_max:
         n_permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(n_obs_a, n_obs-n_obs_a)])
+        indices = list(_all_partitions_concatenated(n_obs_i))
+    else:
+        indices = [random_state.permutation(n_obs_ic[-1])
+                   for i in range(n_permutations)]
 
+    indices = np.array(indices)
     data = data[..., indices]        # generate permutations
     data = np.moveaxis(data, -2, 0)  # permutations indexed along axis 0
-    x = data[..., :n_obs_a]
-    y = data[..., n_obs_a:]
-    return x, y, n_permutations
+    data = np.split(data, n_obs_ic[:-1], axis=-1)
+    return data, n_permutations
 
 
 def _data_permutations_pairings(data, n_permutations, random_state=None):
     """
     Permute observations between pairs for association tests.
     """
-    a, b = data
-    n_obs_a = a.shape[-1]
-    n_max = factorial(n_obs_a)
+    n_samples = len(data)
+    n_obs_sample = data[0].shape[-1]
 
-    if n_permutations < n_max:
-        indices = np.array([random_state.permutation(n_obs_a)
-                            for i in range(n_permutations)])
-    else:
+    n_max = factorial(n_obs_sample)**n_samples
+
+    _memory_check(data, min(n_permutations, n_max))
+
+    if n_permutations >= n_max:
         n_permutations = n_max
-        indices = np.array(list(permutations(range(n_obs_a))))
+        indices = list(product(*(permutations(range(n_obs_sample))
+                                 for i in range(n_samples))))
+        indices = np.array(indices)
+        indices = np.swapaxes(indices, 0, 1)
+    else:
+        indices = [[random_state.permutation(n_obs_sample)
+                    for i in range(n_permutations)]
+                   for j in range(n_samples)]
+        indices = np.array(indices)
 
-    x = a[..., indices]
-    x = np.moveaxis(x, -2, 0)
-    y = b
-    x, y = np.broadcast_arrays(x, y)
-    return x, y, n_permutations
+    for i in range(n_samples):
+        data[i] = data[i][..., indices[i]]
+        data[i] = np.moveaxis(data[i], -2, 0)
 
+    return data, n_permutations
+
+# test n-sample random and n-sample vectorized better
+# batch
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
     """
     Permute observations between samples for paired-sample tests.
     """
-    # no need to optimize this as it will soon be generalized to n samples
-    a, b = np.broadcast_arrays(*data)
-    n_obs_a = a.shape[-1]
-    n_max = 2**n_obs_a
+    n_samples = len(data)
+    if n_samples == 1:
+        data = [data[0], -data[0]]
 
-    if n_permutations < n_max:
-        indices = random_state.random(size=(n_permutations, n_obs_a)) > 0.5
-    else:
-        n_permutations = n_max
-        indices = np.array(list(product(*([[False, True]]*n_obs_a))))
+    data = np.asarray(data)
+    data = list(np.swapaxes(data, 0, -1))
+    data, n_permutations = _data_permutations_pairings(data, n_permutations,
+                                                       random_state)
+    data = np.swapaxes(data, 0, -1)
 
-    # expand_dims doesn't support axis tuples until NumPy 1.18
-    for i in range(a.ndim - 1):
-        indices = np.expand_dims(indices, axis=1)
-
-    new_shape = [n_permutations] + list(a.shape)
-    a = np.broadcast_to(a, new_shape)
-    b = np.broadcast_to(b, new_shape)
-    indices = np.broadcast_to(indices, new_shape)
-
-    x = a.copy()
-    y = b.copy()
-    x[indices] = b[indices]
-    y[indices] = a[indices]
-    return x, y, n_permutations
+    if n_samples == 1:
+        return data[0:1], n_permutations
+    return data, n_permutations
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
@@ -1503,13 +1587,14 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
-    message = "`data` must be a tuple containing exactly two samples"
+    message = "`data` must be a tuple containing at least two samples"
     try:
-        if len(data) != 2:
+        if len(data) < 2 and permutation_type == "both":
             raise ValueError(message)
     except TypeError:
         raise TypeError(message)
 
+    data = _broadcast_arrays(data, axis)
     data_iv = []
     for sample in data:
         sample = np.atleast_1d(sample)
@@ -1535,6 +1620,17 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     return (data_iv, statistic, permutation_type, vectorized, permutations_int,
             alternative, axis_int, random_state)
+
+
+# This is mostly to protect me while developing. Eventually we want to batch
+# the computations, so this will be less of an issue, but if it sounds like a
+# good feature, let me know.
+def _memory_check(data, permutations):
+    needed = sum([sample.size for sample in data]) * permutations * 8
+    available = psutil.virtual_memory()[1]
+    if needed > 0.8 * available:
+        raise MemoryError("Not enough memory available. "
+                          "Consider reducing the batch size.")
 
 
 def permutation_test(data, statistic, *, permutation_type='both',
@@ -1770,7 +1866,6 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     observed = statistic_vectorized(*data, axis=-1)
 
-    # TODO: generalize to n-samples
     if permutation_type == "pairings":
         tmp = _data_permutations_pairings(data, permutations,
                                           random_state=random_state)
@@ -1780,9 +1875,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     else:
         tmp = _data_permutations(data, permutations,
                                  random_state=random_state)
-    x, y, permutations = tmp
+    data, permutations = tmp
 
-    null_distribution = statistic_vectorized(x, y, axis=-1)
+    null_distribution = statistic_vectorized(*data, axis=-1)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
