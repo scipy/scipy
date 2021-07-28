@@ -352,8 +352,12 @@ stages:
 
         mkdir dist
         pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
-        ls dist -r | Foreach-Object {
-            pip install $_.FullName
+        If ($lastExitCode -ne "0") {
+            Write-Host "##vso[task.complete result=Failed;]DONE"
+        }else {
+          ls dist -r | Foreach-Object {
+              pip install $_.FullName
+          }
         }
       displayName: 'Build SciPy'
     - powershell: |
