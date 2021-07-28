@@ -1516,7 +1516,6 @@ def _get_fixed_fit_value(kwds, names):
 #                Also, the derivative of the percent-point function.
 
 
-
 class rv_continuous(rv_generic):
     """A generic continuous random variable class meant for subclassing.
 
