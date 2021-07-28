@@ -1285,6 +1285,7 @@ class TestPermutationTest:
 
     # -- Randomized Permutation Tests -- #
 
+    @pytest.mark.xfail_on_32bit("Memory intensive; need batch parameter")
     @pytest.mark.parametrize('permutation_type',
                              ('samples', 'pairings', 'both'))
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -1529,21 +1530,19 @@ class TestPermutationTest:
         expected_statistic = statistic(x2, y2, z2, axis=axis)
         expected_pvalue = pvalue(x2, y2, z2, axis=axis)
 
-        rng = np.random.default_rng(0)
-
         res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
                                permutations=np.inf, alternative='greater',
-                               permutation_type='both', random_state=rng)
+                               permutation_type='both', random_state=0)
 
         res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
                                 permutations=1000, alternative='greater',
-                                permutation_type='both', random_state=rng)
+                                permutation_type='both', random_state=0)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
 
         assert_allclose(res.pvalue, expected_pvalue, atol=6e-2)
-        assert_allclose(res.pvalue, res2.pvalue, atol=1.5e-2)
+        assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Paired-Sample Tests -- #
 
@@ -1697,21 +1696,19 @@ class TestPermutationTest:
         expected_statistic = statistic(*np.broadcast_arrays(*data), axis=axis)
         expected_pvalue = pvalue(*np.broadcast_arrays(*data), axis=axis)
 
-        rng = np.random.default_rng(0)
-
         res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
                                permutations=np.inf, alternative='greater',
-                               permutation_type='pairings', random_state=rng)
+                               permutation_type='pairings', random_state=0)
 
         res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
                                 permutations=5000, alternative='greater',
-                                permutation_type='pairings', random_state=rng)
+                                permutation_type='pairings', random_state=0)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
 
         assert_allclose(res.pvalue, expected_pvalue, rtol=self.rtol)
-        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+        assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Test Against External References -- #
 
