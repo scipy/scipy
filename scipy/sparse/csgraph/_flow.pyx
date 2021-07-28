@@ -741,8 +741,8 @@ cdef void initialize_spanning_tree(
     ITYPE_t[:] parent,
     ITYPE_t[:] parent_edge,
     ITYPE_t[:] subtree_size,
-    ITYPE_t[:] next_node_dft,
-    ITYPE_t[:] prev_node_dft,
+    ITYPE_t[:] next_vertex_dft,
+    ITYPE_t[:] prev_vertex_dft,
     ITYPE_t[:] last_descendent_dft):
 
     # edge_flow initialization
@@ -772,15 +772,15 @@ cdef void initialize_spanning_tree(
         subtree_size[v] = 1
     subtree_size[v] = n + 1
 
-    # next_node_dft initialization
+    # next_vertex_dft initialization
     for v in range(n_verts):
-        next_node_dft[v] = v + 1
-    next_node_dft[n_verts] = -1
-    next_node_dft[n_verts + 1] = 0
+        next_vertex_dft[v] = v + 1
+    next_vertex_dft[n_verts] = -1
+    next_vertex_dft[n_verts + 1] = 0
 
-    # prev_node_dft initialization
+    # prev_vertex_dft initialization
     for i in range(n_verts + 1):
-        prev_node_dft[i] = i - 1
+        prev_vertex_dft[i] = i - 1
 
     # last_descendent_dft initialization
     for v in range(n_verts):
@@ -1040,25 +1040,25 @@ def void _remove_edge(
     ITYPE_t s,
     ITYPE_t t,
     ITYPE_t[:] subtree_size,
-    ITYPE_t[:] prev_node_dft,
+    ITYPE_t[:] prev_vertex_dft,
     ITYPE_t[:] last_descendent_dft,
-    ITYPE_t[:] next_node_dft,
+    ITYPE_t[:] next_vertex_dft,
     ITYPE_t[:] parent,
     ITYPE_t[:] parent_edge):
     cdef ITYPE_t size_t, prev_t, last_t
     cdef ITYPE_t next_last_t
     size_t = subtree_size[t]
-    prev_t = prev_node_dft[t]
+    prev_t = prev_vertex_dft[t]
     last_t = last_descendent_dft[t]
-    next_last_t = next_node_dft[last_t]
+    next_last_t = next_vertex_dft[last_t]
     # Remove (s, t).
     parent[t] = -2
     parent_edge[t] = -2
     # Remove the subtree rooted at t from the depth-first thread.
-    next_node_dft[prev_t] = next_last_t
-    prev_node_dft[next_last_t] = prev_t
-    next_node_dft[last_t] = t
-    prev_node_dft[t] = last_t
+    next_vertex_dft[prev_t] = next_last_t
+    prev_vertex_dft[next_last_t] = prev_t
+    next_vertex_dft[last_t] = t
+    prev_vertex_dft[t] = last_t
     # Update the subtree sizes and last descendants of the (old) acenstors
     # of t.
     while s != -2:
@@ -1066,6 +1066,129 @@ def void _remove_edge(
         if last_descendent_dft[s] == last_t:
             last_descendent_dft[s] = prev_t
         s = parent[s]
+
+cdef void _make_root(
+    ITYPE_t n_verts,
+    ITYPE_t q,
+    ITYPE_t[:] subtree_size,
+    ITYPE_t[:] last_descendent_dft,
+    ITYPE_t[:] prev_vertex_dft,
+    ITYPE_t[:] next_vertex_dft,
+    ITYPE_t[:] parent,
+    ITYPE_t[:] parent_edge):
+    cdef ITYPE_t idx, path_len, p
+    cdef ITYPE_t size_p, last_p, last_q, prev_q
+    cdef ITYPE_t next_last_q
+    cdef ITYPE_t[:] ancestors = np.empty(n_verts, dtype=ITYPE_t)
+    idx = 0
+    while q != -2:
+        ancestors[idx] = q
+        q = parent[q]
+        idx += 1
+    path_len = idx
+    idx = path_len - 1
+    while idx > 0:
+        p = ancestors[idx]
+        q = ancestors[idx - 1]
+        size_p = subtree_size[p]
+        last_p = last_descendent_dft[p]
+        prev_q = prev_vertex_dft[q]
+        last_q = last_descendent_dft[q]
+        next_last_q = next_vertex_dft[last_q]
+        # Make p a child of q.
+        parent[p] = q
+        parent[q] = -2
+        parent_edge[p] = parent_edge[q]
+        parent_edge[q] = -2
+        subtree_size[p] = size_p - subtree_size[q]
+        subtree_size[q] = size_p
+        # Remove the subtree rooted at q from the depth-first thread.
+        next_vertex_dft[prev_q] = next_last_q
+        prev_vertex_dft[next_last_q] = prev_q
+        next_vertex_dft[last_q] = q
+        prev_vertex_dft[q] = last_q
+        if last_p == last_q:
+            last_descendent_dft[p] = prev_q
+            last_p = prev_q
+        # Add the remaining parts of the subtree rooted at p as a subtree
+        # of q in the depth-first thread.
+        prev_vertex_dft[p] = last_q
+        next_vertex_dft[last_q] = p
+        next_vertex_dft[last_p] = q
+        prev_vertex_dft[q] = last_p
+        last_descendent_dft[q] = last_p
+        idx -= 1
+
+cdef void _add_edge(
+    ITYPE_t i,
+    ITYPE_t p,
+    ITYPE_t q,
+    ITYPE_t[:] last_descendent_dft,
+    ITYPE_t[:] next_vertex_dft,
+    ITYPE_t[:] prev_vertex_dft,
+    ITYPE_t[:] subtree_size,
+    ITYPE_t[:] parent,
+    ITYPE_t[:] parent_edge):
+    cdef ITYPE_t last_p, next_last_p
+    cdef ITYPE_t size_q, last_q
+
+    last_p = last_descendent_dft[p]
+    next_last_p = next_vertex_dft[last_p]
+    size_q = subtree_size[q]
+    last_q = last_descendent_dft[q]
+    # Make q a child of p.
+    parent[q] = p
+    parent_edge[q] = i
+    # Insert the subtree rooted at q into the depth-first thread.
+    next_vertex_dft[last_p] = q
+    prev_vertex_dft[q] = last_p
+    prev_vertex_dft[next_last_p] = last_q
+    next_vertex_dft[last_q] = next_last_p
+    # Update the subtree sizes and last descendants of the (new) ancestors
+    # of q.
+    while p != -2:
+        subtree_size[p] += size_q
+        if last_descendent_dft[p] == last_p:
+            last_descendent_dft[p] = last_q
+        p = parent[p]
+
+def bint _trace_subtree(
+    ITYPE_t p,
+    ITYPE_t[:] last_descendent_dft,
+    ITYPE_t[:] next_vertex_dft,
+    ITYPE_t[:] subtree):
+    cdef ITYPE_t idx, l
+
+    subtree[0] = p
+    idx = 1
+    l = last_descendent_dft[p]
+    while p != l:
+        p = next_vertex_dft[p]
+        subtree[idx] = p
+        idx += 1
+    return idx
+
+cdef void _update_potentials(
+    ITYPE_t i,
+    ITYPE_t p,
+    ITYPE_t q,
+    ITYPE_t n_verts,
+    ITYPE_t[:] edge_targets,
+    ITYPE_t[:] edge_weights,
+    ITYPE_t[:] last_descendent_dft,
+    ITYPE_t[:] next_vertex_dft,
+    ITYPE_t[:] vertex_potentials):
+    cdef ITYPE_t idx, d, path_len
+    cdef ITYPE_t[:] subtree = np.empty(n_verts, dtype=ITYPE_t)
+    if q == edge_targets[i]:
+        d = vertex_potentials[p] - edge_weights[i] - vertex_potentials[q]
+    else:
+        d = vertex_potentials[p] + edge_weights[i] - vertex_potentials[q]
+    path_len = _trace_subtree(p, last_descendent_dft,
+                              next_vertex_dft, subtree)
+    for idx in range(path_len):
+        q = subtree[idx]
+        vertex_potentials[q] += d
 
 cdef ITYPE_t[:] _network_simplex(
         ITYPE_t[:] heads,
@@ -1080,7 +1203,7 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t j, s, t, i, tmp
     cdef ITYPE_t[:] edge_flow, vertex_potentials, Wne_len
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
-    cdef ITYPE_t[:] next_node_dft, prev_node_dft
+    cdef ITYPE_t[:] next_vertex_dft, prev_vertex_dft
     cdef ITYPE_t[:] last_descendent_dft
     cdef ITYPE_t[:] local_vars, result, Wn, We
     cdef bint prev_ret_value
@@ -1125,13 +1248,13 @@ cdef ITYPE_t[:] _network_simplex(
     parent = np.empty(n_verts + 1, dtype=ITYPE_t)
     parent_edge = np.empty(n_edges, dtype=ITYPE_t)
     subtree_size = np.empty(n_verts + 1, dtype=ITYPE_t)
-    next_node_dft = np.empty(n_verts + 2, dtype=ITYPE_t)
-    prev_node_dft = np.empty(n_verts + 1, dtype=ITYPE_t)
+    next_vertex_dft = np.empty(n_verts + 2, dtype=ITYPE_t)
+    prev_vertex_dft = np.empty(n_verts + 1, dtype=ITYPE_t)
     last_descendent_dft = np.empty(n_verts + 1, dtype=ITYPE_t)
     _initialize_spanning_tree(n_verts, n_edges, faux_inf,
                               demand, edge_flow, vertex_potentials,
                               parent, parent_edge, subtree_size,
-                              next_node_dft, prev_node_dft,
+                              next_vertex_dft, prev_vertex_dft,
                               last_descendent_dft)
 
     local_vars = np.empty(4, dtype=ITYPE_t)
@@ -1170,13 +1293,27 @@ cdef ITYPE_t[:] _network_simplex(
                 q = p
                 p = tmp
             _remove_edge(s, t, subtree_size,
-                         prev_node_dft,
+                         prev_vertex_dft,
                          last_descendent_dft,
-                         next_node_dft,
+                         next_vertex_dft,
                          parent, parent_edge)
-            DEAF.make_root(q)
-            DEAF.add_edge(i, p, q)
-            DEAF.update_potentials(i, p, q)
+            _make_root(n_verts, q,
+                       subtree_size,
+                       last_descendent_dft,
+                       prev_vertex_dft,
+                       next_vertex_dft,
+                       parent, parent_edge)
+            _add_edge(i, p, q,
+                      last_descendent_dft,
+                      next_vertex_dft,
+                      prev_vertex_dft,
+                      subtree_size,
+                      parent, parent_edge)
+            _update_potentials(i, p, q, n_verts,
+                               edge_targets, edge_weights,
+                               last_descendent_dft,
+                               next_vertex_dft,
+                               vertex_potentials)
         prev_ret_value = _find_entering_edges(n_edges, edge_flow,
                                               edge_sources, edge_targets,
                                               local_vars, prev_ret_value,
