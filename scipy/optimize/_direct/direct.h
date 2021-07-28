@@ -54,7 +54,8 @@ extern PyObject* direct_optimize(
     FILE *logfile,
     direct_algorithm algorithm,
     direct_return_info *info,
-    direct_return_code *ret_code);
+    direct_return_code *ret_code,
+    PyObject* callback);
 
 #ifdef __cplusplus
 }  /* extern "C" */

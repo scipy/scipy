@@ -54,7 +54,8 @@ PyObject* direct_optimize(
     FILE *logfile,
     direct_algorithm algorithm,
     direct_return_info *info,
-    direct_return_code* ret_code)
+    direct_return_code* ret_code,
+    PyObject* callback)
 {
      integer algmethod = algorithm == DIRECT_GABLONSKY;
      integer ierror;
@@ -96,7 +97,7 @@ PyObject* direct_optimize(
             logfile,
             &fglobal, &fglobal_reltol,
             &volume_reltol, &sigma_reltol,
-            args, &numfunc, &numiter);
+            args, &numfunc, &numiter, callback);
 
     info->numfunc = numfunc;
     info->numiter = numiter;

@@ -681,9 +681,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                               "'direct' method."))
         locally_biased = options.get('locally_biased', True)
         f_min = options.get('f_min', -np.inf)
+        maxiter = options.get('maxiter', 6000)
+        maxfun = options.get('maxfun', 20000)
         return _minimize_direct(fun, bounds=bounds, *args,
                                 locally_biased=locally_biased,
-                                f_min=f_min)
+                                f_min=f_min, callback=callback,
+                                maxiter=maxiter, maxfun=maxfun)
     else:
         raise ValueError('Unknown solver %s' % method)
 

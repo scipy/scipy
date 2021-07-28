@@ -66,6 +66,12 @@ class TestDIRECT:
         assert_(res['nfev'] >= self.MAXFEVAL)
         assert_(res['nit'] <= self.MAXITER)
 
+        def callback(x):
+            print("DIRECT minimization algorithm callback test")
+
+        minimize(func, None, bounds=bounds, method='direct',
+                 callback=callback, options={'maxiter': 2})
+
     def inv(self, x):
         if np.sum(x) == 0:
             raise ZeroDivisionError()

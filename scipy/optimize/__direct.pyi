@@ -1,8 +1,8 @@
 from __future__ import annotations
+from _typeshed import NoneType
 from typing import Any, TYPE_CHECKING, Callable, Tuple
 from .optimize import OptimizeResult
 from ._constraints import Bounds
-import numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -19,5 +19,6 @@ def _minimize_direct(
         f_min: float,
         f_min_per: float,
         vol_per: float,
-        sigma_per: float
+        sigma_per: float,
+        callback: Callable[[npt.ArrayLike], NoneType]
 ) -> OptimizeResult: ...

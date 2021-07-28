@@ -44,10 +44,11 @@
 /* |   Lipschitz continues. However, DIRECT has proven to be effective on  | */
 /* |   more complex problems than these.                                   | */
 /* +-----------------------------------------------------------------------+ */
-/* Subroutine */ PyObject* direct_direct_(PyObject* fcn, doublereal *x, PyObject *x_seq, integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop, doublereal *minf, doublereal *l, 
-    doublereal *u, integer *algmethod, integer *ierror, FILE *logfile, 
-    doublereal *fglobal, doublereal *fglper, doublereal *volper, 
-    doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter)
+/* Subroutine */ PyObject* direct_direct_(PyObject* fcn, doublereal *x, PyObject *x_seq,
+    integer *n, doublereal *eps, doublereal epsabs, integer *maxf, integer *maxt, int *force_stop,
+    doublereal *minf, doublereal *l, doublereal *u, integer *algmethod, integer *ierror,
+    FILE *logfile, doublereal *fglobal, doublereal *fglper, doublereal *volper, 
+    doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter, PyObject* callback)
 {
     /* System generated locals */
     integer i__1, i__2;
@@ -717,6 +718,14 @@
 "DIRECT could not find a feasible point after %d function evaluations.\n"
 "DIRECT continues until a feasible point is found.\n", *numfunc);
         *maxf = *numfunc + oldmaxf;
+        }
+    }
+    if( callback != Py_None ) {
+        PyObject* arg_tuple = Py_BuildValue("(O)", x_seq);
+        PyObject* callback_py = PyObject_CallObject(callback, arg_tuple);
+        Py_DECREF(arg_tuple);
+        if( !callback_py ) {
+            return NULL;
         }
     }
 /* L10: */

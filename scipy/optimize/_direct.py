@@ -29,7 +29,7 @@ SUCCESS_MESSAGES = (
 def _minimize_direct(func, bounds, args=(), disp=False,
                      iatol=1e-4, maxfun=20000, maxiter=6000,
                      locally_biased=True, f_min=-np.inf, f_min_per=0.01,
-                     vol_per=-1.0, sigma_per=-1.0):
+                     vol_per=-1.0, sigma_per=-1.0, callback=None):
     r"""
 
     Solve an optimization problem using the DIRECT
@@ -124,7 +124,7 @@ def _minimize_direct(func, bounds, args=(), disp=False,
                                          disp, iatol, maxfun, maxiter,
                                          locally_biased,
                                          f_min, f_min_per,
-                                         vol_per, sigma_per)
+                                         vol_per, sigma_per, callback)
 
     format_val = (maxfun, maxiter, f_min_per, vol_per, vol_per)
     if ret_code > 2:
