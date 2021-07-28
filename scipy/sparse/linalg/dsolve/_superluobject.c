@@ -213,7 +213,7 @@ PyGetSetDef SuperLU_getset[] = {
     {"perm_c", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
     {"U", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
     {"L", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
-    NULL
+    {NULL}
 };
 
 
