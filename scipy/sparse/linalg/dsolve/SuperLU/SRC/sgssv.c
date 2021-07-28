@@ -146,7 +146,7 @@ sgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 {
 
     DNformat *Bstore;
-    SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
+    SuperMatrix *AA = NULL;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
     int      lwork = 0, *etree, i;
     GlobalLU_t Glu; /* Not needed on return. */

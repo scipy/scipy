@@ -372,7 +372,7 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     trans_t   trant;
     char      norm[1];
     int       i, j, info1;
-    float    amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
+    float    amax, anorm, colcnd, rowcnd, rcmax, rcmin;
     int       relax, panel_size;
     float    diag_pivot_thresh;
     double    t0;      /* temporary time */
@@ -400,8 +400,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     } else {
 	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
 	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
-	smlnum = smach("Safe minimum");   /* lamch_("Safe minimum"); */
-	bignum = 1. / smlnum;
     }
 
 #if 0
@@ -426,6 +424,9 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	*info = -6;
     else {
 	if (rowequ) {
+      float smlnum, bignum;
+      smlnum = smach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {
@@ -438,6 +439,9 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	    else rowcnd = 1.;
 	}
 	if (colequ && *info == 0) {
+      float smlnum, bignum;
+      smlnum = smach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {

@@ -418,7 +418,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     trans_t   trant;
     char      norm[1];
     int       i, j, info1;
-    double    amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
+    double    amax, anorm, colcnd, rowcnd, rcmax, rcmin;
     int       relax, panel_size;
     double    diag_pivot_thresh;
     double    t0;      /* temporary time */
@@ -450,8 +450,6 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     } else {
 	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
 	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
-	smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
-	bignum = 1. / smlnum;
     }
 
     /* Test the input parameters */
@@ -471,6 +469,9 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	*info = -6;
     else {
 	if (rowequ) {
+      float smlnum, bignum;
+      smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {
@@ -483,6 +484,9 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    else rowcnd = 1.;
 	}
 	if (colequ && *info == 0) {
+      float smlnum, bignum;
+      smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {

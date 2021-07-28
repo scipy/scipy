@@ -12,6 +12,7 @@ at the top-level directory.
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "slu_ddefs.h"
 
 double dmach(char *cmach)
 {
@@ -58,7 +59,7 @@ double dmach(char *cmach)
    =====================================================================
 */
 
-    double sfmin, small, rmach;
+    double sfmin, small, rmach = 0.;
 
     if (strncmp(cmach, "E", 1)==0) {
 	rmach = DBL_EPSILON * 0.5;
@@ -87,6 +88,8 @@ double dmach(char *cmach)
 	rmach = DBL_MAX_EXP;
     } else if (strncmp(cmach, "O", 1)==0) {
 	rmach = DBL_MAX;
+    } else {
+  ABORT("Not implemented.");
     }
 
     return rmach;

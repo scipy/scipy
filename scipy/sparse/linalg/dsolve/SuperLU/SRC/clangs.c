@@ -80,7 +80,7 @@ float clangs(char *norm, SuperMatrix *A)
 
     Astore = A->Store;
     Aval   = Astore->nzval;
-
+    value = 0.;
     if ( SUPERLU_MIN(A->nrow, A->ncol) == 0) {
 	value = 0.;
 
