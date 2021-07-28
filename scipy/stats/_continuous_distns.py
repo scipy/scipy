@@ -5090,6 +5090,7 @@ class levy_stable_gen(rv_continuous):
             [0, -0.061, -0.279, -0.659, -1.198]]
 
         psi_1 = interpolate.interp2d(nu_beta_range, nu_alpha_range, alpha_table, kind='linear')
+        psi_1_1 = lambda nu_beta, nu_alpha: psi_1(nu_beta, nu_alpha) if nu_beta > 0 else psi_1(-nu_beta, nu_alpha)
         psi_2 = interpolate.interp2d(nu_beta_range, nu_alpha_range, beta_table, kind='linear')
         psi_2_1 = lambda nu_beta, nu_alpha: psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
 
@@ -5109,14 +5110,14 @@ class levy_stable_gen(rv_continuous):
         nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
 
         if nu_alpha >= 2.439:
-            alpha = np.clip(psi_1(abs(nu_beta), nu_alpha)[0], np.finfo(float).eps, 2.)
+            alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
             beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
         else:
             alpha = 2.0
             beta = np.sign(nu_beta)
         c = (p75 - p25) / phi_3_1(beta, alpha)[0]
         zeta = p50 + c*phi_5_1(beta, alpha)[0]
-        delta = zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta
+        delta = zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha != 1. else zeta
 
         return (alpha, beta, delta, c)
 
