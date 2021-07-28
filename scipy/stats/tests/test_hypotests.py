@@ -1274,6 +1274,14 @@ class TestPermutationTest:
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, permutations=1000.5)
 
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            permutation_test(([1, 2, 3], [1, 2, 3]), stat, batch=-1000)
+
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            permutation_test(([1, 2, 3], [1, 2, 3]), stat, batch=1000.5)
+
         message = "`alternative` must be in..."
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, alternative='ekki')
@@ -1285,7 +1293,6 @@ class TestPermutationTest:
 
     # -- Randomized Permutation Tests -- #
 
-    @pytest.mark.xfail_on_32bit("Memory intensive; need batch parameter")
     @pytest.mark.parametrize('permutation_type',
                              ('samples', 'pairings', 'both'))
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -1339,10 +1346,10 @@ class TestPermutationTest:
 
         res = permutation_test(data, statistic, vectorized=True,
                                permutation_type=permutation_type,
-                               permutations=permutations,
+                               permutations=permutations, batch=100,
                                alternative=alternative, random_state=rng)
         res2 = permutation_test(data, statistic, vectorized=True,
-                                permutation_type=permutation_type,
+                                permutation_type=permutation_type, batch=100,
                                 alternative=alternative)
 
         assert res.statistic == res2.statistic
