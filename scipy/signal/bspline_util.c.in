@@ -12,8 +12,13 @@
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
+#ifdef __GNUC__
 #define CONJ(a) (~((__complex__)a))
 #define ABSQ(a) (__real__ (a*CONJ(a)))
+#else
+#define CONJ(a) ((a))
+#define ABSQ(a) ( (a*CONJ(a)))
+#endif
 
 void
 compute_root_from_lambda(lambda, r, omega)
