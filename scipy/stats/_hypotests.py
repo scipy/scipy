@@ -13,7 +13,6 @@ import scipy.stats._bootstrap as _bootstrap
 import scipy.stats.stats as statsstats
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
-import psutil
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -1627,7 +1626,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 # good feature, let me know.
 def _memory_check(data, permutations):
     needed = sum([sample.size for sample in data]) * permutations * 8
-    available = psutil.virtual_memory()[1]
+    available = 1e9  # psutil.virtual_memory()[1] # can't use in SciPy
     if needed > 0.8 * available:
         raise MemoryError("Not enough memory available. "
                           "Consider reducing the batch size.")
