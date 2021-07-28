@@ -1510,29 +1510,52 @@ def _data_permutations(data, statistic, n_permutations, batch,
     Permute unpaired observations between samples for independent sample tests.
     """
     n_samples = len(data)
-    n_obs_i = [sample.shape[-1] for sample in data]
-    n_obs_ic = np.cumsum(n_obs_i)
-    data = np.concatenate(data, axis=-1)
 
-    # number of distinct combinations
+    # compute number of permutations
+    # (distinct partitions of data into samples of these sizes)
+    n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
+    n_obs_ic = np.cumsum(n_obs_i)
+    n_obs = n_obs_ic[-1]  # total number of observations
     n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
                      for i in range(n_samples-1, 0, -1)])
 
     _memory_check(data, min(n_permutations, n_max))
 
+    # perm_generator is an iterator that produces permutations of indices
+    # from 0 to n_obs. We'll concatenate the samples, use these indices to
+    # permute the data, then split the samples apart again.
     if n_permutations >= n_max:
         n_permutations = n_max
         perm_generator = _all_partitions_concatenated(n_obs_i)
     else:
-        perm_generator = (random_state.permutation(n_obs_ic[-1])
+        # Neither RandomState.permutation nor Generator.permutation
+        # can permute axis-slices independently. If this feature is
+        # added in the future, batches of the desired size should be
+        # generated in a single call.
+        perm_generator = (random_state.permutation(n_obs)
                           for i in range(n_permutations))
 
     batch = batch or int(n_permutations)
     null_distribution = []
+
+    # First, concatenate all the samples. In batches, permute samples with
+    # indices produced by the `perm_generator`, split them into new samples of
+    # the original sizes, compute the statistic for each batch, and add these
+    # statistic values to the null distribution.
+    data = np.concatenate(data, axis=-1)
     for indices in _batch_generator(perm_generator, batch=batch):
         indices = np.array(indices)
-        data_batch = data[..., indices]        # generate permutations
-        # permutations indexed along axis 0
+
+        # `indices` is 2D: each row is a permutation of the indices.
+        # We use it to index `data` along its last axis, which corresponds
+        # with observations.
+        # After indexing, the second to last axis of `data_batch` corresponds
+        # with permutations, and the last axis corresponds with observations.
+        data_batch = data[..., indices]
+
+        # Move the permutation axis to the front: we'll concatenate a list
+        # of batched statistic values along this zeroth axis to form the
+        # null distribution.
         data_batch = np.moveaxis(data_batch, -2, 0)
         data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
         null_distribution.append(statistic(*data_batch, axis=-1))
