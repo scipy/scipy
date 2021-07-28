@@ -1291,6 +1291,60 @@ class TestPermutationTest:
             permutation_test(([1, 2, 3], [1, 2, 3]), stat,
                              random_state='herring')
 
+    # -- Test Parameters -- #
+    def test_batch(self):
+        np.random.seed(0)
+        x = np.random.rand(7)
+        y = np.random.rand(7)
+
+        def statistic(x, y, axis):
+            statistic.counter += 1
+            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+
+        statistic.counter = 0
+        res1 = stats.permutation_test((x, y), statistic, vectorized=True,
+                                      permutations=1000, batch=1,
+                                      random_state=0)
+        assert_equal(statistic.counter, 1001)
+
+        statistic.counter = 0
+        res2 = stats.permutation_test((x, y), statistic, vectorized=True,
+                                      permutations=1000, batch=50,
+                                      random_state=0)
+        assert_equal(statistic.counter, 21)
+
+        statistic.counter = 0
+        res3 = stats.permutation_test((x, y), statistic, vectorized=True,
+                                      permutations=1000,
+                                      random_state=0)
+        assert_equal(statistic.counter, 2)
+
+        assert_equal(res1.pvalue, res3.pvalue)
+        assert_equal(res2.pvalue, res3.pvalue)
+
+    @pytest.mark.parametrize('permutation_type, exact_size',
+                             [('pairings', special.factorial(3)**2),
+                              ('samples', 2**3),
+                              ('both', special.binom(6, 3))])
+    def test_permutations(self, permutation_type, exact_size):
+        np.random.seed(0)
+        x = np.random.rand(3)
+        y = np.random.rand(3)
+
+        def statistic(x, y, axis):
+            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+
+        permutation_type = 'pairings'
+        exact_size = 36
+        res = stats.permutation_test((x, y), statistic, vectorized=True,
+                                     permutation_type=permutation_type,
+                                     permutations=3)
+        assert_equal(res.null_distribution.size, 3)
+
+        res = stats.permutation_test((x, y), statistic, vectorized=True,
+                                     permutation_type=permutation_type)
+        assert_equal(res.null_distribution.size, exact_size)
+
     # -- Randomized Permutation Tests -- #
 
     @pytest.mark.parametrize('permutation_type',

@@ -1553,7 +1553,6 @@ def _data_permutations_pairings(data, statistic, n_permutations, batch,
 
     _memory_check(data, min(n_permutations, n_max))
 
-
     if n_permutations >= n_max:
         n_permutations = n_max
         perm_generator = product(*(permutations(range(n_obs_sample))
