@@ -232,8 +232,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     medslope : float
         Theil slope.
     medintercept : float
-        Intercept of the Theil line, as
-        ``np.median(y) - medslope * np.median(x)``.
+        Intercept of the Theil line.
     lo_slope : float
         Lower bound of the confidence interval on `medslope`.
     up_slope : float
@@ -249,8 +248,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     not defined in [1]_, and here it is defined as ``median(y) -
     medslope*median(x)``, which is given in [3]_. Other definitions of
     the intercept exist in the literature such as  ``median(y - medslope*x)``
-    in [4]_. A confidence interval for the intercept is not given as
-    this question is not addressed in [1]_.
+    in [4]_. The approach to compute the intercept can be determined by the
+    parameter ``method``. A confidence interval for the intercept is not
+    given as this question is not addressed in [1]_.
 
     References
     ----------
@@ -295,8 +295,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     >>> plt.show()
 
     """
-    if method != 'joint' and method != 'separate':
-        raise ValueError("'{}' method is not supported yet.".format(method))
+    if method not in ['joint', 'separate']:
+        raise ValueError(("method must be either 'joint' or 'separate'"
+                          "'{}' is invalid.".format(method)))
     # We copy both x and y so we can use _find_repeats.
     y = np.array(y).flatten()
     if x is None:
