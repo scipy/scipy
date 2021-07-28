@@ -35,7 +35,7 @@ class MinCostFlowResult:
         self.residual = residual
 
     def __repr__(self):
-        return 'MaximumFlowResult with value of %d' % self.flow_value
+        return 'MinCostFlowResult with value of %d' % self.flow_value
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -702,7 +702,9 @@ def minimum_cost_flow(csgraph, demand, cost):
     flow = _network_simplex(csgraph.indices, tails, csgraph.data,
                             demand, cost)
     flow_array = np.asarray(flow[csgraph.data.shape[0]:])
-    return flow_array
+    flow_matrix = csr_matrix((flow_array, m.indices, m.indptr),
+                                 shape=m.shape)
+    return MaximumFlowResult(flow_array.sum(), flow_matrix)
 
 def _network_simplex_checks(
         ITYPE_t[:] capacities,
