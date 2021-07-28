@@ -1485,14 +1485,29 @@ def _all_partitions_concatenated(ns):
         yield x
 
 
-# Could combine with scipy.stats.stats _data_partitions, but probably not
-# not worth the time; eventually, the permutation t-test should just
-# be implemented by this function.
-def _data_permutations(data, n_permutations, random_state=None):
+def _batch_generator(iterable, batch):
+    """A generator that yields batches of elements from an iterable"""
+    iterator = iter(iterable)
+    if batch <= 0:
+        raise ValueError("`batch` must be positive.")
+    while True:
+        z = []
+        try:
+            # get elements from iterator `batch` at a time
+            for i in range(batch):
+                z.append(next(iterator))
+            yield z
+        except StopIteration:
+            # when there are no more elements, yield the final batch and stop
+            if z:
+                yield z
+            break
+
+
+def _data_permutations(data, statistic, n_permutations, random_state=None):
     """
     Permute unpaired observations between samples for independent sample tests.
     """
-    # no need to optimize this as it will soon be generalized to n samples
     n_samples = len(data)
     n_obs_i = [sample.shape[-1] for sample in data]
     n_obs_ic = np.cumsum(n_obs_i)
@@ -1506,19 +1521,26 @@ def _data_permutations(data, n_permutations, random_state=None):
 
     if n_permutations >= n_max:
         n_permutations = n_max
-        indices = list(_all_partitions_concatenated(n_obs_i))
+        perm_generator = _all_partitions_concatenated(n_obs_i)
     else:
-        indices = [random_state.permutation(n_obs_ic[-1])
-                   for i in range(n_permutations)]
+        perm_generator = (random_state.permutation(n_obs_ic[-1])
+                          for i in range(n_permutations))
 
-    indices = np.array(indices)
-    data = data[..., indices]        # generate permutations
-    data = np.moveaxis(data, -2, 0)  # permutations indexed along axis 0
-    data = np.split(data, n_obs_ic[:-1], axis=-1)
-    return data, n_permutations
+    null_distribution = []
+    for indices in _batch_generator(perm_generator, batch=50):
+        indices = np.array(indices)
+        data_batch = data[..., indices]        # generate permutations
+        # permutations indexed along axis 0
+        data_batch = np.moveaxis(data_batch, -2, 0)
+        data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
+        null_distribution.append(statistic(*data_batch, axis=-1))
+    null_distribution = np.concatenate(null_distribution, axis=0)
+
+    return null_distribution, n_permutations
 
 
-def _data_permutations_pairings(data, n_permutations, random_state=None):
+def _data_permutations_pairings(data, statistic, n_permutations,
+                                random_state=None):
     """
     Permute observations between pairs for association tests.
     """
@@ -1529,26 +1551,37 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
     _memory_check(data, min(n_permutations, n_max))
 
+
     if n_permutations >= n_max:
         n_permutations = n_max
-        indices = list(product(*(permutations(range(n_obs_sample))
-                                 for i in range(n_samples))))
-        indices = np.array(indices)
-        indices = np.swapaxes(indices, 0, 1)
+        perm_generator = product(*(permutations(range(n_obs_sample))
+                                   for i in range(n_samples)))
+        swapaxes_needed = True
     else:
-        indices = [[random_state.permutation(n_obs_sample)
-                    for i in range(n_permutations)]
-                   for j in range(n_samples)]
+        perm_generator = ([random_state.permutation(n_obs_sample)
+                           for i in range(n_permutations)]
+                          for j in range(n_samples))
+        swapaxes_needed = False
+
+    null_distribution = []
+    for indices in _batch_generator(perm_generator, batch=50):
         indices = np.array(indices)
+        if swapaxes_needed:
+            indices = np.swapaxes(indices, 0, 1)
 
-    for i in range(n_samples):
-        data[i] = data[i][..., indices[i]]
-        data[i] = np.moveaxis(data[i], -2, 0)
+        data_batch = [None]*n_samples
+        for i in range(n_samples):
+            data_batch[i] = data[i][..., indices[i]]
+            data_batch[i] = np.moveaxis(data_batch[i], -2, 0)
 
-    return data, n_permutations
+        null_distribution.append(statistic(*data_batch, axis=-1))
+    null_distribution = np.concatenate(null_distribution, axis=0)
+
+    return null_distribution, n_permutations
 
 
-def _data_permutations_samples(data, n_permutations, random_state=None):
+def _data_permutations_samples(data, statistic, n_permutations,
+                               random_state=None):
     """
     Permute observations between samples for paired-sample tests.
     """
@@ -1557,14 +1590,16 @@ def _data_permutations_samples(data, n_permutations, random_state=None):
         data = [data[0], -data[0]]
 
     data = np.asarray(data)
-    data = list(np.swapaxes(data, 0, -1))
-    data, n_permutations = _data_permutations_pairings(data, n_permutations,
-                                                       random_state)
     data = np.swapaxes(data, 0, -1)
 
-    if n_samples == 1:
-        return data[0:1], n_permutations
-    return data, n_permutations
+    def statistic_wrapped(*data, axis):
+        data = np.swapaxes(data, 0, -1)
+        if n_samples == 1:
+            data = data[0:1]
+        return statistic(*data, axis=axis)
+
+    return _data_permutations_pairings(data, statistic_wrapped, n_permutations,
+                                       random_state)
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
@@ -1931,17 +1966,19 @@ def permutation_test(data, statistic, *, permutation_type='both',
     observed = statistic_vectorized(*data, axis=-1)
 
     if permutation_type == "pairings":
-        tmp = _data_permutations_pairings(data, permutations,
+        tmp = _data_permutations_pairings(data, statistic_vectorized,
+                                          permutations,
                                           random_state=random_state)
     elif permutation_type == "samples":
-        tmp = _data_permutations_samples(data, permutations,
+        tmp = _data_permutations_samples(data, statistic_vectorized,
+                                         permutations,
                                          random_state=random_state)
     else:
-        tmp = _data_permutations(data, permutations,
+        tmp = _data_permutations(data, statistic_vectorized, permutations,
                                  random_state=random_state)
-    data, permutations = tmp
+    null_distribution, permutations = tmp
 
-    null_distribution = statistic_vectorized(*data, axis=-1)
+    # null_distribution = statistic_vectorized(*data, axis=-1)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
