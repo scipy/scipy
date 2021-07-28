@@ -74,7 +74,7 @@ ilu_zcopy_to_ucol(
     int       nzumax;
     int       m; /* number of entries in the nonzero U-segments */
     register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
-    register double tmp 0.0;
+    register double tmp = 0.0;
     doublecomplex zero = {0.0, 0.0};
     int i_1 = 1;
 
