@@ -10,7 +10,6 @@ from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln, comb, factorial
 from . import _wilcoxon_data
 import scipy.stats._bootstrap as _bootstrap
-import scipy.stats.stats as statsstats
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
@@ -1548,8 +1547,6 @@ def _data_permutations_pairings(data, n_permutations, random_state=None):
 
     return data, n_permutations
 
-# test n-sample random and n-sample vectorized better
-# batch
 
 def _data_permutations_samples(data, n_permutations, random_state=None):
     """

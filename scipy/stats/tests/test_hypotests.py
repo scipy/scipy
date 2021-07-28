@@ -1569,12 +1569,12 @@ class TestPermutationTest:
         expected_p = expected[:, 1, :]
 
         res1 = permutation_test((x-y,), statistic_1samp_1d, vectorized=False,
-                               permutation_type='samples',
-                               alternative=alternative, axis=1)
+                                permutation_type='samples',
+                                alternative=alternative, axis=1)
 
         res2 = permutation_test((x, y), statistic_2samp_1d, vectorized=False,
-                               permutation_type='samples',
-                               alternative=alternative, axis=1)
+                                permutation_type='samples',
+                                alternative=alternative, axis=1)
 
         # `wilcoxon` returns a different statistic with 'two-sided'
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
