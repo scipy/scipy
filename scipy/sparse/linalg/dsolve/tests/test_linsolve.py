@@ -225,7 +225,7 @@ class TestLinsolve:
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
-        cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
+        cond_A = norm(A.toarray(), 2) * norm(inv(A.toarray()), 2)
 
         for t in ['f','d','F','D']:
             eps = finfo(t).eps  # floating point epsilon
@@ -260,7 +260,7 @@ class TestLinsolve:
         Bdense = As.dot(x)
         Bs = csc_matrix(Bdense)
         x2 = spsolve(As, Bs)
-        assert_array_almost_equal(x, x2.todense())
+        assert_array_almost_equal(x, x2.toarray())
 
     @sup_sparse_efficiency
     def test_non_square(self):
@@ -279,18 +279,18 @@ class TestLinsolve:
         col = array([0,2,2,0,1,2])
         data = array([1,2,3,-4,5,6])
         sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-        M = sM.todense()
+        M = sM.toarray()
 
         row = array([0,0,1,1,0,0])
         col = array([0,2,1,1,0,0])
         data = array([1,1,1,1,1,1])
         sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-        N = sN.todense()
+        N = sN.toarray()
 
         sX = spsolve(sM, sN)
         X = scipy.linalg.solve(M, N)
 
-        assert_array_almost_equal(X, sX.todense())
+        assert_array_almost_equal(X, sX.toarray())
 
     @sup_sparse_efficiency
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")

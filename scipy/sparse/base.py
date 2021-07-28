@@ -396,11 +396,11 @@ class spmatrix:
         return self.tocsr()._sub_sparse(other)
 
     def _sub_dense(self, other):
-        return self.todense() - other
+        return self.toarray() - other
 
     def _rsub_dense(self, other):
         # note: this can't be replaced by other + (-self) for unsigned types
-        return other - self.todense()
+        return other - self.toarray()
 
     def __add__(self, other):  # self + other
         if isscalarlike(other):
@@ -573,9 +573,9 @@ class spmatrix:
         if isscalarlike(other):
             if rdivide:
                 if true_divide:
-                    return np.true_divide(other, self.todense())
+                    return np.true_divide(other, self.toarray())
                 else:
-                    return np.divide(other, self.todense())
+                    return np.divide(other, self.toarray())
 
             if true_divide and np.can_cast(self.dtype, np.float_):
                 return self.astype(np.float_)._mul_scalar(1./other)
@@ -592,14 +592,14 @@ class spmatrix:
         elif isdense(other):
             if not rdivide:
                 if true_divide:
-                    return np.true_divide(self.todense(), other)
+                    return np.true_divide(self.toarray(), other)
                 else:
-                    return np.divide(self.todense(), other)
+                    return np.divide(self.toarray(), other)
             else:
                 if true_divide:
-                    return np.true_divide(other, self.todense())
+                    return np.true_divide(other, self.toarray())
                 else:
-                    return np.divide(other, self.todense())
+                    return np.divide(other, self.toarray())
         elif isspmatrix(other):
             if rdivide:
                 return other._divide(self, true_divide, rdivide=False)

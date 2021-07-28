@@ -859,10 +859,10 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> matrix
     <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
-    >>> matrix.todense()
-    matrix([[0.05641158, 0.        , 0.        , 0.65088847],
-            [0.        , 0.        , 0.        , 0.14286682],
-            [0.        , 0.        , 0.        , 0.        ]])
+    >>> matrix.toarray()
+    array([[0.05641158, 0.        , 0.        , 0.65088847],
+           [0.        , 0.        , 0.        , 0.14286682],
+           [0.        , 0.        , 0.        , 0.        ]])
 
     """
     return random(m, n, density, format, dtype, random_state)
