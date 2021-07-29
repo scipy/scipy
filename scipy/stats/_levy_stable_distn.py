@@ -217,7 +217,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     zeta = _nolan.zeta
     xi = _nolan.xi
     c2 = _nolan.c2
-    g = lambda x: _nolan.g(x)
+    g = _nolan.g
 
     # handle Nolan's initial case logic
     if x0 == zeta:
@@ -334,7 +334,7 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     c1 = _nolan.c1
     c2 = _nolan.c2
     c3 = _nolan.c3
-    g = lambda x: _nolan.g(x)
+    g = _nolan.g
 
     # handle Nolan's initial case logic
     if (alpha == 1 and beta < 0) or x0 < zeta:
@@ -572,22 +572,23 @@ def _fitstart_S1(data):
     psi_2 = interpolate.interp2d(
         nu_beta_range, nu_alpha_range, beta_table, kind="linear"
     )
-    psi_2_1 = lambda nu_beta, nu_alpha: (
-        psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
-    )
+
+    def psi_2_1(nu_beta, nu_alpha):
+        return psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
 
     phi_3 = interpolate.interp2d(
         beta_range, alpha_range, nu_c_table, kind="linear"
     )
-    phi_3_1 = lambda beta, alpha: (
-        phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
-    )
+
+    def phi_3_1(beta, alpha):
+        return phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
+
     phi_5 = interpolate.interp2d(
         beta_range, alpha_range, nu_zeta_table, kind="linear"
     )
-    phi_5_1 = lambda beta, alpha: (
-        phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
-    )
+
+    def phi_5_1(beta, alpha):
+        return phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
 
     # quantiles
     p05 = np.percentile(data, 5)

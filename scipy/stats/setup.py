@@ -90,7 +90,6 @@ def configuration(parent_package='', top_path=None):
         sources=[join('_levy_stable/c_src', 'levyst.c')],
         headers=[join('_levy_stable/c_src', 'levyst.h')]
     )
-    config.add_data_files(join('_levy_stable', '*.pxd'))
     config.add_extension(
         '_levy_stable.levyst',
         libraries=['levyst'],
