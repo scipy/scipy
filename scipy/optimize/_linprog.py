@@ -18,6 +18,7 @@ Functions
 import numpy as np
 import scipy.sparse as sps
 
+from scipy.sparse import SparseEfficiencyWarning
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
 from ._linprog_highs import _linprog_highs
@@ -206,15 +207,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : 1-D array
         The coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
+    A_ub : 2-D array or sparse matrix, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``.
+        coefficients of a linear inequality constraint on ``x``. If method =
+        'simplex' or 'revised simplex', and input is sparse, converts to dense
+        array.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
-    A_eq : 2-D array, optional
+    A_eq : 2-D array or sparse matrix, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``.
+        coefficients of a linear equality constraint on ``x``. If method =
+        'simplex' or 'revised simplex', and input is sparse, converts to dense
+        array.
     b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
@@ -589,12 +594,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
         
-    if meth in {'revised simplex', 'simplex'}:
+    # convert sparse matrices to dense array if a simplex method is used and warn
+    if meth in {'revised simplex', 'simplex'}:           
+        conversion_message = '''Converting sparse input {0} to dense array 
+        because a simplex method is used. May run out of memory if {0} is very 
+        large; consider HiGHS method instead.'''.replace('\n', '')
         if sps.issparse(A_eq):
-            A_eq = A_eq.todense()
+            # warn first before trying to convert so user knows where error is.
+            warn(conversion_message.format('A_eq'), SparseEfficiencyWarning)
+            A_eq = A_eq.toarray()
         if sps.issparse(A_ub):
-            A_ub = A_ub.todense()
-        
+            warn(conversion_message.format('A_ub'), SparseEfficiencyWarning)
+            A_ub = A_ub.toarray()        
+
         
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options, meth)
