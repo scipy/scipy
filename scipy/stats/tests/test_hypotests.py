@@ -1576,7 +1576,7 @@ class TestPermutationTest:
 
         # Calculate exact and randomized permutation results
         kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
-                'permutation_type':'both', 'random_state': 0}
+                'permutation_type': 'both', 'random_state': 0}
         res = permutation_test(data, statistic1d, permutations=np.inf, **kwds)
         res2 = permutation_test(data, statistic1d, permutations=1000, **kwds)
 
@@ -1632,13 +1632,13 @@ class TestPermutationTest:
     def test_against_binomtest(self, alternative):
         np.random.seed(0)
         x = np.random.randint(0, 2, size=10)
-        x[x==0] = -1
+        x[x == 0] = -1
         # More naturally, the test would flip elements between 0 and one.
         # However, permutation_test will flip the _signs_ of the elements.
         # So we have to work with +1/-1 instead of 1/0.
 
         def statistic(x, axis=0):
-            return np.sum(x>0, axis=axis)
+            return np.sum(x > 0, axis=axis)
 
         k, n, p = statistic(x), 10, 0.5
         expected = stats.binomtest(k, n, p, alternative=alternative)
@@ -1809,8 +1809,7 @@ class TestPermutationTest:
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),
                               ('two-sided', 0.1027777777778)))
-    def test_against_spearmanr_in_R(self, alternative,
-                                                     expected_pvalue):
+    def test_against_spearmanr_in_R(self, alternative, expected_pvalue):
         """
         Results above from R cor.test, e.g.
 
