@@ -1570,30 +1570,45 @@ def _data_permutations_pairings(data, statistic, n_permutations, batch,
     Permute observations between pairs for association tests.
     """
     n_samples = len(data)
-    n_obs_sample = data[0].shape[-1]
 
+    # compute number of permutations (factorial(n) permutations of each sample)
+    n_obs_sample = data[0].shape[-1]  # observations per sample; same for each
     n_max = factorial(n_obs_sample)**n_samples
 
     _memory_check(data, min(n_permutations, n_max))
 
+    # `perm_generator` is an iterator that produces a list of permutations of
+    # indices from 0 to n_obs_sample, one for each sample.
     if n_permutations >= n_max:
         n_permutations = n_max
+        # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
-        swapaxes_needed = True
     else:
+        # Separate random permutations of indices for each sample.
+        # Again, it would be nice if RandomState/Generator.permutation
+        # could permute each axis-slice separately.
         perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_permutations)]
-                          for j in range(n_samples))
-        swapaxes_needed = False
+                           for i in range(n_samples)]
+                          for j in range(n_permutations))
 
     batch = batch or int(n_permutations)
     null_distribution = []
+
     for indices in _batch_generator(perm_generator, batch=batch):
         indices = np.array(indices)
-        if swapaxes_needed:
-            indices = np.swapaxes(indices, 0, 1)
 
+        # `indices` is 3D: the zeroth axis is for permutations, the next is
+        # for samples, and the last is for observations. Swap the first two
+        # to make the zeroth axis correspond with samples, as it does for
+        # `data`.
+        indices = np.swapaxes(indices, 0, 1)
+
+        # When we're done, `data_batch` will be a list of length `n_samples`.
+        # Each element will be a batch of random permutations of one sample.
+        # The zeroth axis of each batch will correspond with permutations,
+        # and the last will correspond with observations. (This makes it
+        # easy to pass into `statistic`.)
         data_batch = [None]*n_samples
         for i in range(n_samples):
             data_batch[i] = data[i][..., indices[i]]
@@ -1611,12 +1626,21 @@ def _data_permutations_samples(data, statistic, n_permutations, batch,
     Permute observations between samples for paired-sample tests.
     """
     n_samples = len(data)
+
+    # By convention, the meaning of the "samples" permutations type for
+    # data with only one sample is to flip the sign of the observations.
+    # Achieve this by adding a second sample - the negative of the original.
     if n_samples == 1:
         data = [data[0], -data[0]]
 
-    data = np.asarray(data)
+    # The "samples" permutation strategy is the same as the "pairings"
+    # strategy except the roles of samples and observations are flipped.
+    # So swap these axes, then we'll use the function for the "pairings"
+    # strategy to do all the work!
     data = np.swapaxes(data, 0, -1)
 
+    # (Of course, the user's statistic doesn't know what we've done here,
+    # so we need to pass it what it's expecting.)
     def statistic_wrapped(*data, axis):
         data = np.swapaxes(data, 0, -1)
         if n_samples == 1:
