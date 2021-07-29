@@ -73,7 +73,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
     Notes
     -----
-    All functions in `ndimage.interpolation` do spline interpolation of
+    All of the interpolation functions in `ndimage` do spline interpolation of
     the input image. If using B-splines of `order > 1`, the input image
     values have to be converted to B-spline coefficients first, which is
     done by applying this 1-D filter sequentially along all
