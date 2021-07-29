@@ -3049,6 +3049,41 @@ class TestLevyStable:
         assert_equal(beta2, -1)
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
+        
+    def test_fit_beta_flip(self):
+        # Confirm that sign of beta affects loc, not alpha or scale.
+        x = np.array([1, 1, 3, 3, 10, 10, 10, 30, 30, 100, 100])
+        alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
+        alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(-x)
+        assert_equal(beta1, 1)
+        assert loc1 != 0
+        assert_almost_equal(alpha2, alpha1)
+        assert_almost_equal(beta2, -beta1)
+        assert_almost_equal(loc2, -loc1)
+        assert_almost_equal(scale2, scale1)
+        
+    def test_fit_delta_shift(self):
+        # Confirm that loc slides up and down if data shifts.
+        SHIFT = 1
+        x = np.array([1, 1, 3, 3, 10, 10, 10, 30, 30, 100, 100])
+        alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(-x)
+        alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(-x + SHIFT)
+        assert_almost_equal(alpha2, alpha1)
+        assert_almost_equal(beta2, beta1)
+        assert_almost_equal(loc2, loc1 + SHIFT)
+        assert_almost_equal(scale2, scale1)
+        
+    def test_fit_loc_extrap(self):
+        # Confirm that loc goes out of sample for alpha close to 1.
+        x = [1, 1, 3, 3, 10, 10, 10, 30, 30, 140, 140]
+        alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
+        assert alpha1 < 1, f"Expected alpha < 1, got {alpha1}"
+        assert loc1 < min(x), f"Expected loc < {min(x)}, got {loc1}"
+
+        x2 = [1, 1, 3, 3, 10, 10, 10, 30, 30, 130, 130]
+        alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(x2)
+        assert alpha2 > 1, f"Expected alpha > 1, got {alpha2}"
+        assert loc2 > max(x2), f"Expected loc > {max(x2)}, got {loc2}"
 
     @pytest.mark.slow
     def test_pdf_nolan_samples(self):
