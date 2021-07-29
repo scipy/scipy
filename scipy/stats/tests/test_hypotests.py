@@ -1359,7 +1359,7 @@ class TestPermutationTest:
     # parameters.
 
     def test_randomized_test_against_exact_both(self):
-        # make sure that the randomized and exact tests agree to reasonable
+        # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='both
 
         alternative, rng = 'less', 0
@@ -1384,7 +1384,7 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
 
     def test_randomized_test_against_exact_samples(self):
-        # make sure that the randomized and exact tests agree to reasonable
+        # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='samples'
 
         alternative, rng = 'greater', None
@@ -1409,7 +1409,7 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
 
     def test_randomized_test_against_exact_pairings(self):
-        # make sure that the randomized and exact tests agree to reasonable
+        # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='pairings'
 
         alternative = 'two-sided'
@@ -1491,7 +1491,7 @@ class TestPermutationTest:
         x = stats.norm.rvs(size=4, scale=1)
         y = stats.norm.rvs(size=5, scale=3)
 
-        # Ansari has a different convention for 'alternative'
+        # ansari has a different convention for 'alternative'
         alternative_correspondence = {"less": "greater",
                                       "greater": "less",
                                       "two-sided": "two-sided"}
@@ -1507,10 +1507,10 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_permutation_test_against_mannwhitneyu(self, alternative):
+    def test_against_mannwhitneyu(self, alternative):
         np.random.seed(0)
-        x = stats.uniform.rvs(size=(3, 6, 2), loc=0)
-        y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05)
+        x = stats.uniform.rvs(size=(3, 5, 2), loc=0)
+        y = stats.uniform.rvs(size=(3, 5, 2), loc=0.05)
 
         expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
 
@@ -1523,32 +1523,7 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    def test_permutation_test_against_kruskal(self):
-        np.random.seed(0)
-        x = stats.uniform.rvs(size=(2, 24, 3), loc=0)
-        y = stats.uniform.rvs(size=(2, 25, 3), loc=0.07)
-        z = stats.uniform.rvs(size=(2, 26, 3), loc=-0.025)
-
-        def statistic1d(x, y, z):
-            return stats.kruskal(x, y, z)[0]
-
-        def pvalue1d(x, y, z):
-            return stats.kruskal(x, y, z)[1]
-
-        statistic = _bootstrap._vectorize_statistic(statistic1d)
-        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
-
-        expected_statistic = statistic(x, y, z, axis=1)
-        expected_pvalue = pvalue(x, y, z, axis=1)
-
-        res = permutation_test((x, y, z), statistic1d, vectorized=False,
-                               axis=1, permutations=2000,
-                               alternative='greater')
-
-        assert_allclose(res.statistic, expected_statistic, atol=2e-2)
-        assert_allclose(res.pvalue, expected_pvalue, atol=2e-2)
-
-    def test_permutation_test_against_cvm(self):
+    def test_against_cvm(self):
         np.random.seed(0)
         x = stats.norm.rvs(size=4, scale=1)
         y = stats.norm.rvs(size=5, loc=3, scale=3)
@@ -1565,6 +1540,7 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
+    @pytest.mark.slow()
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis):
         # Test that permutation_test with permutation_type='both' works
@@ -1574,11 +1550,14 @@ class TestPermutationTest:
         # and that exact and random permutation test results are even closer
         # to one another (than they are to the asymptotic results).
         np.random.seed(0)
+
+        # Three samples, different (but compatible) shapes with different ndims
         x = np.random.rand(3)
         y = np.random.rand(1, 3, 2)
         z = np.random.rand(2, 1, 4)
         data = (x, y, z)
 
+        # Define the statistic (and pvalue for comparison)
         def statistic1d(*data):
             return stats.kruskal(*data).statistic
 
@@ -1588,34 +1567,35 @@ class TestPermutationTest:
         statistic = _bootstrap._vectorize_statistic(statistic1d)
         pvalue = _bootstrap._vectorize_statistic(pvalue1d)
 
-        x2 = np.broadcast_to(x, (2, 3, 3))
-        y2 = np.broadcast_to(y, (2, 3, 2))
+        # Calculate the expected results
+        x2 = np.broadcast_to(x, (2, 3, 3))  # broadcast manually because
+        y2 = np.broadcast_to(y, (2, 3, 2))  # _vectorize_statistic doesn't
         z2 = np.broadcast_to(z, (2, 3, 4))
         expected_statistic = statistic(x2, y2, z2, axis=axis)
         expected_pvalue = pvalue(x2, y2, z2, axis=axis)
 
-        res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
-                               permutations=np.inf, alternative='greater',
-                               permutation_type='both', random_state=0)
+        # Calculate exact and randomized permutation results
+        kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
+                'permutation_type':'both', 'random_state': 0}
+        res = permutation_test(data, statistic1d, permutations=np.inf, **kwds)
+        res2 = permutation_test(data, statistic1d, permutations=1000, **kwds)
 
-        res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
-                                permutations=1000, alternative='greater',
-                                permutation_type='both', random_state=0)
-
+        # Check results
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
-
         assert_allclose(res.pvalue, expected_pvalue, atol=6e-2)
         assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Paired-Sample Tests -- #
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_permutation_test_against_wilcoxon(self, alternative):
+    def test_against_wilcoxon(self, alternative):
         np.random.seed(0)
         x = stats.uniform.rvs(size=(3, 6, 2), loc=0)
         y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05)
 
+        # We'll check both 1- and 2-sample versions of the same test;
+        # we expect identical results to wilcoxon in all cases.
         def statistic_1samp_1d(z):
             # 'less' ensures we get the same of two statistics every time
             return stats.wilcoxon(z, alternative='less').statistic
@@ -1649,29 +1629,28 @@ class TestPermutationTest:
         assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_permutation_test_against_binomtest(self, alternative):
+    def test_against_binomtest(self, alternative):
         np.random.seed(0)
-        x = stats.uniform.rvs(size=10)
-        y = stats.uniform.rvs(size=10)
+        x = np.random.randint(0, 2, size=10)
+        x[x==0] = -1
+        # More naturally, the test would flip elements between 0 and one.
+        # However, permutation_test will flip the _signs_ of the elements.
+        # So we have to work with +1/-1 instead of 1/0.
 
-        def statistic(x, y, axis=0):
-            return np.sum(x > y, axis=axis)
+        def statistic(x, axis=0):
+            return np.sum(x>0, axis=axis)
 
-        k = statistic(x, y)
-        n = 10
-        p = 0.5
-
+        k, n, p = statistic(x), 10, 0.5
         expected = stats.binomtest(k, n, p, alternative=alternative)
 
-        res = permutation_test((x, y), statistic, vectorized=True,
-                               permutation_type='samples',
-                               alternative=alternative)
-
+        res = stats.permutation_test((x,), statistic, vectorized=True,
+                                     permutation_type='samples',
+                                     alternative=alternative)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     # -- Exact Association Tests -- #
 
-    def test_permutation_test_against_kendalltau(self):
+    def test_against_kendalltau(self):
         np.random.seed(0)
         x = stats.norm.rvs(size=6)
         y = x + stats.norm.rvs(size=6)
@@ -1681,23 +1660,22 @@ class TestPermutationTest:
         def statistic1d(x):
             return stats.kendalltau(x, y, method='asymptotic').correlation
 
-        # kendalltau has only one alternative, two-sided
-        res = permutation_test((x,), statistic1d,
-                               permutation_type='pairings')
+        # kendalltau currently has only one alternative, two-sided
+        res = permutation_test((x,), statistic1d, permutation_type='pairings')
 
         assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    def test_permutation_test_against_fisher_exact(self, alternative):
+    def test_against_fisher_exact(self, alternative):
 
         def statistic(x,):
             return np.sum((x == 1) & (y == 1))
 
         np.random.seed(0)
         # x and y are binary random variables with some dependence
-        x = (np.random.rand(8) > 0.6).astype(float)
-        y = (np.random.rand(8) + 0.25*x > 0.6).astype(float)
+        x = (np.random.rand(7) > 0.6).astype(float)
+        y = (np.random.rand(7) + 0.25*x > 0.6).astype(float)
         tab = stats.contingency.crosstab(x, y)[1]
 
         res = permutation_test((x,), statistic, permutation_type='pairings',
@@ -1706,26 +1684,7 @@ class TestPermutationTest:
 
         assert_allclose(res.pvalue, res2[1])
 
-    @pytest.mark.parametrize('size', [(2, 5), (3, 4), (4, 3)])
-    def test_permutation_test_against_pagel(self, size):
-
-        def statistic(*data):
-            return stats.page_trend_test(data, ranked=True,
-                                         method='asymptotic').statistic
-
-        np.random.seed(0)
-        m, n = size
-        data = np.random.rand(m, n)
-        data = stats.rankdata(data, axis=1)
-
-        res = permutation_test(data, statistic, vectorized=False,
-                               alternative='greater',
-                               permutation_type='pairings')
-        res2 = stats.page_trend_test(data, ranked=True, method='exact')
-
-        assert_allclose(res.statistic, res2.statistic)
-        assert_allclose(res.pvalue, res2.pvalue)
-
+    @pytest.mark.slow()
     @pytest.mark.parametrize('axis', (-2, 1))
     def test_vectorized_nsamp_ptype_samples(self, axis):
         # Test that permutation_test with permutation_type='samples' works
@@ -1739,7 +1698,6 @@ class TestPermutationTest:
         x = np.random.rand(2, 4, 3)
         y = np.random.rand(1, 4, 3)
         z = np.random.rand(2, 4, 1)
-
         x = stats.rankdata(x, axis=axis)
         y = stats.rankdata(y, axis=axis)
         z = stats.rankdata(z, axis=axis)
@@ -1760,17 +1718,13 @@ class TestPermutationTest:
         expected_statistic = statistic(*np.broadcast_arrays(*data), axis=axis)
         expected_pvalue = pvalue(*np.broadcast_arrays(*data), axis=axis)
 
-        res = permutation_test(data, statistic1d, vectorized=False, axis=axis,
-                               permutations=np.inf, alternative='greater',
-                               permutation_type='pairings', random_state=0)
-
-        res2 = permutation_test(data, statistic1d, vectorized=False, axis=axis,
-                                permutations=5000, alternative='greater',
-                                permutation_type='pairings', random_state=0)
+        kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
+                'permutation_type': 'pairings', 'random_state': 0}
+        res = permutation_test(data, statistic1d, permutations=np.inf, **kwds)
+        res2 = permutation_test(data, statistic1d, permutations=5000, **kwds)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
-
         assert_allclose(res.pvalue, expected_pvalue, rtol=self.rtol)
         assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
 
@@ -1792,7 +1746,7 @@ class TestPermutationTest:
 
     @pytest.mark.slow()  # only the second case is slow, really
     @pytest.mark.parametrize('case', (tie_case_1, tie_case_2))
-    def test_permutation_test_with_ties(self, case):
+    def test_with_ties(self, case):
         """
         Results above from SAS PROC NPAR1WAY, e.g.
 
@@ -1855,7 +1809,7 @@ class TestPermutationTest:
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),
                               ('two-sided', 0.1027777777778)))
-    def test_permutation_test_against_spearmanr_in_R(self, alternative,
+    def test_against_spearmanr_in_R(self, alternative,
                                                      expected_pvalue):
         """
         Results above from R cor.test, e.g.
