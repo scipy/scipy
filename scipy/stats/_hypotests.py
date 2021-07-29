@@ -1727,9 +1727,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     r"""
     Performs a permutation test of a given statistic on provided data.
 
-    Performs a permutation test. For independent sample statistics,
-    the null hypothesis is that the data are randomly sampled from the same
-    distribution. For paired statistics, two null hypothesis can be tested:
+    For independent sample statistics, the null hypothesis is that the data are
+    randomly sampled from the same distribution.
+    For paired sample statistics, two null hypothesis can be tested:
     that the data are paired at random or that the data are assigned to samples
     at random.
 
@@ -1737,26 +1737,27 @@ def permutation_test(data, statistic, *, permutation_type='both',
     ----------
     data : iterable of array-like
         Contains the samples, each of which is an array of observations.
-        Dimensions of arrays must be compatible for broadcasting except along
-        `axis`. Below, let ``a, b = data``, but ``data`` is not restricted to
-        containing two samples.
+        Dimensions of sample arrays must be compatible for broadcasting except
+        along `axis`.
     statistic : callable
         Statistic for which the p-value of the hypothesis test is to be
-        calculated. `statistic` must be a callable that accepts ``a`` and ``b``
-        as separate arguments and returns the resulting statistic.
+        calculated. `statistic` must be a callable that accepts samples
+        as separate arguments (e.g. ``statistic(*data)``) and returns the
+        resulting statistic.
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
-        provided `axis` of ND arrays ``a`` and ``b``.
+        provided `axis` of the sample arrays.
     permutation_type : {'both', 'sample', 'order'}
         The type of permutations to be performed, in accordance with the
-        null hypothesis. The first two permutation types are for "paired"
-        statistics in which all samples contain the same number of
-        observations and corresponding elements are considered to be paired;
-        the third is for "unpaired" statistics.
+        null hypothesis. The first two permutation types are for paired sample
+        statistics, in which all samples contain the same number of
+        observations and observations with corresponding indices along `axis`
+        are considered to be paired; the third is for independent sample
+        statistics.
 
         - ``'samples'`` : observations are assigned to different samples
           but remain paired with the same observations from other samples.
-          This permutation type is appropriate for paired-sample hypothesis
+          This permutation type is appropriate for paired sample hypothesis
           tests such as the Wilcoxon signed-rank test and the paired t-test.
         - ``'pairings'`` : observations are paired with different observations,
           but they remain within the same sample. This permutation type is
@@ -1766,30 +1767,32 @@ def permutation_test(data, statistic, *, permutation_type='both',
         - ``'both'`` : observations are assigned to different samples without
           preserving pairs. Samples may contain different numbers of
           observations. This permutation type is appropriate for
-          unpaired-sample hypothesis tests such as the Mann-Whitney :math:`U`
-          test and the independent sample t-test.
+          independent sample hypothesis tests such as the Mann-Whitney
+          :math:`U` test and the independent sample t-test.
 
           Please see the Notes section below for more detailed descriptions
           of the permutation types.
 
-    vectorized : bool, optional (default: ``False``)
+    vectorized : bool, default: ``False``
         By default, `statistic` is assumed to calculate the statistic only for
-        1D arrays contained in ``data``. If `vectorized` is set ``True``,
+        1D arrays contained in `data`. If `vectorized` is set ``True``,
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis` of the ND
-        arrays in ``data``.
-    permutations: int, optional (default: ``np.inf``)
-        Number of permutations used to estimate the p-value. If greater than or
-        equal to the number of distinct permutations, perform an exact test.
+        arrays in `data`. Use of a vectorized statistic can reduce computation
+        time.
+    permutations : int, default: ``np.inf``
+        Number of random permutations used to approximate the null
+        distribution. If greater than or equal to the number of distinct
+        permutations, the exact null distribution will be computed.
         Note that the number of distinct permutations grows very rapidly with
         the sizes of samples, so exact tests are feasible only for very small
         data sets.
     batch : int, optional
-        The number of permutations to process in each vectorized call to
-        `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
-        sample size. Default is ``None``, in which case
-        ``batch = permutations``.
-    alternative: str in {'two-sided', 'less', 'greater'} (default:'two-sided')
+        The number of permutations to process in each call to `statistic`.
+        Memory usage is *O*(`batch`*``n``), where ``n`` is the total size
+        of all samples, regardless of the value of `vectorized`. Default is
+        ``None``, in which case ``batch`` is the number of permutations.
+    alternative : {'two-sided', 'less', 'greater'}
         The alternative hypothesis for which the p-value is calculated.
         For each alternative, the p-value is defined as follows.
 
@@ -1799,8 +1802,11 @@ def permutation_test(data, statistic, *, permutation_type='both',
           less than or equal to the observed value of the test statistic.
         - ``'two-sided'`` : twice the smaller of the p-values above.
 
-    axis : int, optional (default: 0)
-        The axis of samples over which to calculate the statistic.
+    axis : int, default: 0
+        The axis of the (broadcasted) samples over which to calculate the
+        statistic. If samples have a different number of dimensions,
+        singleton dimensions are prepended to samples with fewer dimensions
+        before `axis` is considered.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -1828,11 +1834,12 @@ def permutation_test(data, statistic, *, permutation_type='both',
     The three types of permutation tests supported by this function are
     described below.
 
-    *Unpaired statistics*: ``permutation_type='both'``
+    Unpaired statistics: ``permutation_type='both'``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The null hypothesis associated with this permutation type is that all
     observations are sampled from the same underlying distribution and that
-    the have been assigned to one of the two samples at random.
+    they have been assigned to one of the samples at random.
 
     Suppose ``data`` contains two samples; e.g. ``a, b = data``.
     When ``1 < permutations < binom(n, k)``, where
@@ -1844,26 +1851,28 @@ def permutation_test(data, statistic, *, permutation_type='both',
     the data are pooled (concatenated), randomly assigned to either sample
     ``a`` or ``b``, and the statistic is calculated. This process is performed
     repeatedly, `permutation` times, generating a distribution of the
-    statistic under the null hypothesis. The statistic of the observed
+    statistic under the null hypothesis. The statistic of the original
     data is compared to this distribution to determine the p-value.
 
     When ``permutations >= binom(n, k)``, an exact test is performed: the data
-    are *partitioned* between the samples in each distinct way exactly once.
+    are *partitioned* between the samples in each distinct way exactly once,
+    and the exact null distribution is formed.
     Note that for a given partitioning of the data between the samples,
     only one ordering/permutation of the data *within* each sample is
     considered. For statistics that do not depend on the order of the data
-    within groups, this dramatically reduces computational cost without
+    within samples, this dramatically reduces computational cost without
     affecting the shape of the null distribution (because the frequency/count
     of each value is affected by the same factor).
 
     ``permutation_type='both'`` does not support one-sample statistics, but it
-    can be applied to multi-sample statistics. In this case, if ``n`` is an
-    array of the number of observations within each sample, the number of
-    distinct partitions is::
+    can be applied to statistics with more than two samples. In this case, if
+    ``n`` is an array of the number of observations within each sample, the
+    number of distinct partitions is::
 
         np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
-    *Paired statistics*: ``permutation_type='pairings'``
+    Paired statistics, permute pairings (``permutation_type='pairings'``)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The null hypothesis associated with this permutation type is that
     observations within each sample are drawn from the same underlying
@@ -1880,12 +1889,13 @@ def permutation_test(data, statistic, *, permutation_type='both',
     say ``a_perm``, and calculates the statistic considering ``a_perm`` and
     ``b``. This process is performed repeatedly, `permutation` times,
     generating a distribution of the statistic under the null hypothesis.
-    The statistic of the observed data is compared to this distribution to
+    The statistic of the original data is compared to this distribution to
     determine the p-value.
 
     When ``permutations >= factorial(n)``, an exact test is performed:
-    ``a`` is permuted in each distinct way exactly once, pairing the samples
-    between ``a`` and ``b`` in each distinct way exactly once.
+    ``a`` is permuted in each distinct way exactly once. Therefore, the
+    `statistic` is computed for each unique pairing of samples between ``a``
+    and ``b`` exactly once.
 
     ``permutation_type='pairings'`` supports ``data`` containing any number
     of samples, each of which must contain the same number of observations.
@@ -1902,7 +1912,8 @@ def permutation_test(data, statistic, *, permutation_type='both',
     affecting the shape of the null distribution (because the frequency/count
     of each value is affected by the same factor).
 
-    *Paired statistics*: ``permutation_type='samples'``
+    Paired statistics, permute between samples (``permutation_type='samples'``)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     The null hypothesis associated with this permutation type is that
     observations within each pair are drawn from the same underlying
@@ -1912,36 +1923,35 @@ def permutation_test(data, statistic, *, permutation_type='both',
     Let ``n`` be the number of observations in ``a``, which must also equal
     the number of observations in ``b``.
 
-    When ``1 < permutations < 2**n``, where ``n`` is the number of
-    observations in ``a``, the elements of ``a`` are ``b`` are randomly
-    swapped between samples (maintaining their pairings) and the statistic is
-    calculated. This process is performed repeatedly, `permutation` times,
-    generating a distribution of the statistic under the null hypothesis.
-    The statistic of the observed data is compared to this distribution to
-    determine the p-value.
+    When ``1 < permutations < 2**n``, the elements of ``a`` are ``b`` are
+    randomly swapped between samples (maintaining their pairings) and the
+    statistic is calculated. This process is performed repeatedly,
+    `permutation` times,  generating a distribution of the statistic under the
+    null hypothesis. The statistic of the original data is compared to this
+    distribution to determine the p-value.
 
-    When ``permutations >= 2**n``, an exact test is
-    performed: the observations are assigned to the two samples in each
-    distinct way (while maintaining pairings) exactly once.
+    When ``permutations >= 2**n``, an exact test is performed: the observations
+    are assigned to the two samples in each distinct way (while maintaining
+    pairings) exactly once.
 
     ``permutation_type='samples'`` supports ``data`` containing any number
     of samples, each of which must contain the same number of observations.
-    Paired observations within ``data`` are exchanged between samples
-    *independently*. Therefore, if ``m`` is the number of samples and ``n``
-    is the number of observations within each sample, then the number of
-    permutations in an exact test is::
+    If ``data`` contains more than one sample, paired observations within
+    ``data`` are exchanged between samples *independently*. Therefore, if ``m``
+    is the number of samples and ``n`` is the number of observations within
+    each sample, then the number of permutations in an exact test is::
 
         factorial(m)**n
 
-    except when ``data`` contains only one sample. Several paired-sample
-    statistical tests, such as the Wilcoxon signed rank test and paired-sample
-    t-test, can be performed considering only the *difference* between two
-    paired elements. Accordingly, if ``data`` contains only one sample,
-    then the null distribution is formed by independently changing the *sign*
-    of each observation.
+    Several paired-sample statistical tests, such as the Wilcoxon signed rank
+    test and paired-sample t-test, can be performed considering only the
+    *difference* between two paired elements. Accordingly, if ``data`` contains
+    only one sample, then the null distribution is formed by independently
+    changing the *sign* of each observation.
 
     Examples
     --------
+
     Suppose we wish to test whether two samples are drawn from the same
     distribution. Assume that the underlying distributions are unknown to us,
     and that before observing the data, we hypothesized that the mean of the
@@ -1950,7 +1960,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     and we will consider a p-value of 0.05 to be statistically significant.
 
     For efficiency, we write the function defining the test statistic in a
-    vectorized fashion: the samples `x` and `y` can be ND arrays, and the
+    vectorized fashion: the samples ``x`` and ``y`` can be ND arrays, and the
     statistic will be calculated for each axis-slice along `axis`.
 
     >>> def statistic(x, y, axis):
