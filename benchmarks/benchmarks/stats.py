@@ -98,24 +98,6 @@ class KS(Benchmark):
         stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)
 
 
-class MannWhitneyU(Benchmark):
-    param_names = ['alternative', 'method']
-    params = [
-        ['two-sided', 'less', 'greater'],
-        ['auto', 'asymptotic', 'exact'],
-    ]
-
-    def setup(self, alternative, method):
-        rng = np.random.default_rng(0x2cedaefb4c66ab35f32d163376cc0c1b)
-        self.u1 = rng.uniform(-1, 1, 50)
-        self.u2 = rng.uniform(-0.5, 1.5, 100)
-
-    def time_mannwhitneyu(self, alternative, method):
-        stats.mannwhitneyu(self.u1, self.u2, 
-                           alternative=alternative, 
-                           method=method)
-
-
 class RankSums(Benchmark):
     param_names = ['alternative']
     params = [
