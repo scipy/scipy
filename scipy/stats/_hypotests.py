@@ -1789,7 +1789,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
         data sets.
     batch : int, optional
         The number of permutations to process in each call to `statistic`.
-        Memory usage is *O*(`batch`*``n``), where ``n`` is the total size
+        Memory usage is O(`batch`*``n``), where ``n`` is the total size
         of all samples, regardless of the value of `vectorized`. Default is
         ``None``, in which case ``batch`` is the number of permutations.
     alternative : {'two-sided', 'less', 'greater'}
@@ -1834,8 +1834,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     The three types of permutation tests supported by this function are
     described below.
 
-    Unpaired statistics: ``permutation_type='both'``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **Unpaired statistics** (``permutation_type='both'``):
 
     The null hypothesis associated with this permutation type is that all
     observations are sampled from the same underlying distribution and that
@@ -1871,8 +1870,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
         np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
-    Paired statistics, permute pairings (``permutation_type='pairings'``)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **Paired statistics, permute pairings** (``permutation_type='pairings'``):
 
     The null hypothesis associated with this permutation type is that
     observations within each sample are drawn from the same underlying
@@ -1912,8 +1910,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     affecting the shape of the null distribution (because the frequency/count
     of each value is affected by the same factor).
 
-    Paired statistics, permute between samples (``permutation_type='samples'``)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **Paired statistics, permute samples** (``permutation_type='samples'``):
 
     The null hypothesis associated with this permutation type is that
     observations within each pair are drawn from the same underlying
