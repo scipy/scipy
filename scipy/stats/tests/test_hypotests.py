@@ -1292,10 +1292,12 @@ class TestPermutationTest:
                              random_state='herring')
 
     # -- Test Parameters -- #
-    def test_batch(self):
+    @pytest.mark.parametrize('permutation_type',
+                             ['pairings', 'samples', 'both'])
+    def test_batch(self, permutation_type):
         np.random.seed(0)
-        x = np.random.rand(7)
-        y = np.random.rand(7)
+        x = np.random.rand(10)
+        y = np.random.rand(10)
 
         def statistic(x, y, axis):
             statistic.counter += 1
@@ -1304,18 +1306,21 @@ class TestPermutationTest:
         statistic.counter = 0
         res1 = stats.permutation_test((x, y), statistic, vectorized=True,
                                       permutations=1000, batch=1,
+                                      permutation_type = permutation_type,
                                       random_state=0)
         assert_equal(statistic.counter, 1001)
 
         statistic.counter = 0
         res2 = stats.permutation_test((x, y), statistic, vectorized=True,
                                       permutations=1000, batch=50,
+                                      permutation_type = permutation_type,
                                       random_state=0)
         assert_equal(statistic.counter, 21)
 
         statistic.counter = 0
         res3 = stats.permutation_test((x, y), statistic, vectorized=True,
                                       permutations=1000,
+                                      permutation_type = permutation_type,
                                       random_state=0)
         assert_equal(statistic.counter, 2)
 
