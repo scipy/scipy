@@ -593,12 +593,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
-        
-    # convert sparse matrices to dense array if a simplex method is used and warn
-    if meth in {'revised simplex', 'simplex'}:           
-        conversion_message = '''Converting sparse input {0} to dense array 
-        because a simplex method is used. May run out of memory if {0} is very 
-        large; consider HiGHS method instead.'''.replace('\n', '')
+
+    # convert sparse to dense array if a simplex method is used and warn
+    if meth in {'revised simplex', 'simplex'}:
+        conversion_message = '''Converting sparse input {0} to dense array
+        because a simplex method is used. May run out of memory if {0} is very
+        large; consider HiGHS method instead.'''.replace('\n', ' ')
         if sps.issparse(A_eq):
             # warn first before trying to convert so user knows where error is.
             warn(conversion_message.format('A_eq'), SparseEfficiencyWarning)
@@ -606,7 +606,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if sps.issparse(A_ub):
             warn(conversion_message.format('A_ub'), SparseEfficiencyWarning)
             A_ub = A_ub.toarray()        
- 
+
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options, meth)
     tol = solver_options.get('tol', 1e-9)

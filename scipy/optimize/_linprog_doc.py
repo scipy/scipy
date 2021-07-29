@@ -53,7 +53,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array or sparse matrix, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. 
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
@@ -309,7 +309,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array or sparse matrix, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. 
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
@@ -550,7 +550,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array or sparse matrix, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. 
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
@@ -778,13 +778,13 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array or sparse matrix, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. 
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
     A_eq : 2-D array or sparse matrix, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``. 
+        coefficients of a linear equality constraint on ``x``.
     b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
@@ -1101,14 +1101,14 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. If input is 
+        coefficients of a linear inequality constraint on ``x``. If input is
         sparse matrix, converts to dense array.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
     A_eq : 2-D array, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``. If input is 
+        coefficients of a linear equality constraint on ``x``. If input is
         sparse matrix, converts to dense array.
     b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
@@ -1284,14 +1284,14 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The coefficients of the linear objective function to be minimized.
     A_ub : 2-D array, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``. If input is 
+        coefficients of a linear inequality constraint on ``x``. If input is
         sparse matrix, converts to dense array.
     b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
     A_eq : 2-D array, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``. If input is 
+        coefficients of a linear equality constraint on ``x``. If input is
         sparse matrix, converts to dense array.
     b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal

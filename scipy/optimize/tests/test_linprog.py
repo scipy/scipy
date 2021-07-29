@@ -426,7 +426,7 @@ class LinprogCommonTests:
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
 
     def test_sparse_constraints(self):
-        
+
         def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
@@ -441,10 +441,9 @@ class LinprogCommonTests:
         lb = x_valid - np.random.rand((n))
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
-        
-        #gh-14488 - simplex methods now convert sparse matrix to dense array and give SparseEfficiencyWarning
-        if self.method in {'simplex', 'revised simplex'}:
-            
+
+        # simplex methods now convert sparse to dense array and warn gh-14448
+        if self.method in {'simplex', 'revised simplex'}:  
             with assert_warns(scipy.sparse.SparseEfficiencyWarning):
                 linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                         method=self.method, options=self.options)
