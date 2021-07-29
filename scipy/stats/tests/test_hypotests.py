@@ -13,7 +13,8 @@ from scipy.stats import distributions
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
-                                    boschloo_exact, permutation_test)
+                                    boschloo_exact, permutation_test,
+                                    _all_partitions_concatenated)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 import scipy.stats._bootstrap as _bootstrap
 from .common_tests import check_named_results
@@ -1230,6 +1231,27 @@ class TestCvm_2samp:
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+
+
+def test_all_partitions_concatenated():
+    # make sure that _all_paritions_concatenated produces the correct number
+    # of partitions of the data into samples of the given sizes and that
+    # all are unique
+    n = np.array([3, 2, 4], dtype=int)
+    nc = np.cumsum(n)
+
+    all_partitions = set()
+    counter = 0
+    for partition_concatenated in _all_partitions_concatenated(n):
+        counter += 1
+        partitioning = np.split(partition_concatenated, nc[:-1])
+        all_partitions.add(tuple([frozenset(i) for i in partitioning]))
+
+    expected = np.product([special.binom(sum(n[i:]), sum(n[i+1:]))
+                           for i in range(len(n)-1)])
+
+    assert_equal(counter, expected)
+    assert_equal(len(all_partitions), expected)
 
 
 class TestPermutationTest:
