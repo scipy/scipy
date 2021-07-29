@@ -853,7 +853,7 @@ def _identity_arg_replacer(args, kwargs, arrays):
 
 @_create_ndimage(_identity_arg_replacer)
 def generate_binary_structure(rank, connectivity):
-    return
+    return ()
 
 
 def _binary_erosion_dilation_arg_replacer(args, kwargs, dispatchables):
@@ -862,7 +862,7 @@ def _binary_erosion_dilation_arg_replacer(args, kwargs, dispatchables):
     """
     def self_method(input, structure=None, iterations=1, mask=None,
                     output=None, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1], iterations, mask,
+        return (dispatchables[0], dispatchables[1], iterations,
                 dispatchables[2], dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
@@ -882,7 +882,6 @@ def binary_erosion(input, structure=None, iterations=1, mask=None,
 def binary_dilation(input, structure=None, iterations=1, mask=None,
                     output=None, border_value=0, origin=0,
                     brute_force=False):
-
     return input, structure, mask, _mark_non_coercible(output)
 
 
@@ -890,10 +889,10 @@ def _binary_opening_closing_arg_replacer(args, kwargs, dispatchables):
     """
     uarray argument replacer for ``binary_opening`` and ``binary_closing``.
     """
-    def self_method(input, structure=None, iterations=1,
-                    output=None, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1],
-                iterations, dispatchables[2]) + args, kwargs
+    def self_method(input, structure=None, iterations=1, output=None,
+                    origin=0, mask=None, *args, **kwargs):
+        return (dispatchables[0], dispatchables[1], iterations,
+                dispatchables[2], origin, dispatchables[3]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -903,7 +902,7 @@ def _binary_opening_closing_arg_replacer(args, kwargs, dispatchables):
 @_get_docs
 def binary_opening(input, structure=None, iterations=1, output=None,
                    origin=0, mask=None, border_value=0, brute_force=False):
-    return input, structure, mask, _mark_non_coercible(output)
+    return input, structure, _mark_non_coercible(output), mask
 
 
 @_create_ndimage(_binary_opening_closing_arg_replacer)
@@ -911,7 +910,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
 @_get_docs
 def binary_closing(input, structure=None, iterations=1, output=None,
                    origin=0, mask=None, border_value=0, brute_force=False):
-    return input, structure, mask, _mark_non_coercible(output)
+    return input, structure, _mark_non_coercible(output), mask
 
 
 def _binary_hit_or_miss_arg_replacer(args, kwargs, dispatchables):
