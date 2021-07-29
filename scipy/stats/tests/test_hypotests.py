@@ -1295,34 +1295,35 @@ class TestPermutationTest:
     @pytest.mark.parametrize('permutation_type',
                              ['pairings', 'samples', 'both'])
     def test_batch(self, permutation_type):
+        # make sure that the `batch` parameter is respected by checking the
+        # maximum batch size provided in calls to `statistic`
         np.random.seed(0)
         x = np.random.rand(10)
         y = np.random.rand(10)
 
         def statistic(x, y, axis):
+            batch_size = 1 if x.ndim == 1 else len(x)
+            statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
             return np.mean(x, axis=axis) - np.mean(y, axis=axis)
-
         statistic.counter = 0
-        res1 = stats.permutation_test((x, y), statistic, vectorized=True,
-                                      permutations=1000, batch=1,
-                                      permutation_type = permutation_type,
-                                      random_state=0)
+        statistic.batch_size = 0
+
+        kwds = {'permutations': 1000, 'permutation_type': permutation_type,
+                'vectorized': True, 'random_state': 0}
+        res1 = stats.permutation_test((x, y), statistic, batch=1, **kwds)
         assert_equal(statistic.counter, 1001)
+        assert_equal(statistic.batch_size, 1)
 
         statistic.counter = 0
-        res2 = stats.permutation_test((x, y), statistic, vectorized=True,
-                                      permutations=1000, batch=50,
-                                      permutation_type = permutation_type,
-                                      random_state=0)
+        res2 = stats.permutation_test((x, y), statistic, batch=50, **kwds)
         assert_equal(statistic.counter, 21)
+        assert_equal(statistic.batch_size, 50)
 
         statistic.counter = 0
-        res3 = stats.permutation_test((x, y), statistic, vectorized=True,
-                                      permutations=1000,
-                                      permutation_type = permutation_type,
-                                      random_state=0)
+        res3 = stats.permutation_test((x, y), statistic, batch=1000, **kwds)
         assert_equal(statistic.counter, 2)
+        assert_equal(statistic.batch_size, 1000)
 
         assert_equal(res1.pvalue, res3.pvalue)
         assert_equal(res2.pvalue, res3.pvalue)
@@ -1332,6 +1333,8 @@ class TestPermutationTest:
                               ('samples', 2**3),
                               ('both', special.binom(6, 3))])
     def test_permutations(self, permutation_type, exact_size):
+        # make sure that the `permutations` parameter is respected by checking
+        # the size of the null distribution
         np.random.seed(0)
         x = np.random.rand(3)
         y = np.random.rand(3)
@@ -1339,118 +1342,112 @@ class TestPermutationTest:
         def statistic(x, y, axis):
             return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 
-        permutation_type = 'pairings'
-        exact_size = 36
-        res = stats.permutation_test((x, y), statistic, vectorized=True,
-                                     permutation_type=permutation_type,
-                                     permutations=3)
+        kwds = {'permutation_type': permutation_type,
+                'vectorized': True, 'random_state': 0}
+        res = stats.permutation_test((x, y), statistic, permutations=3, **kwds)
         assert_equal(res.null_distribution.size, 3)
 
-        res = stats.permutation_test((x, y), statistic, vectorized=True,
-                                     permutation_type=permutation_type)
+        res = stats.permutation_test((x, y), statistic, **kwds)
         assert_equal(res.null_distribution.size, exact_size)
 
     # -- Randomized Permutation Tests -- #
 
-    @pytest.mark.parametrize('permutation_type',
-                             ('samples', 'pairings', 'both'))
-    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    @pytest.mark.parametrize('rng', (0, None, 'Generator',
-                                     np.random.RandomState(0)))
-    def test_randomized_test_against_exact(self, permutation_type,
-                                           alternative, rng):
+    # To get reasonable accuracy, these next three tests are somewhat slow.
+    # Originally, I had them passing for all combinations of permutation type,
+    # alternative, and RNG, but that takes too long for CI. Instead, split
+    # into three tests, each testing a particular combination of the three
+    # parameters.
 
-        if rng == 'Generator':
-            try:
-                rng = np.random.default_rng(0)
-            except AttributeError:
-                pytest.skip("Old numpy doesn't have Generator")
+    def test_randomized_test_against_exact_both(self):
+        # make sure that the randomized and exact tests agree to reasonable
+        # precision for permutation_type='both
 
-        np.random.seed(0)
+        alternative, rng = 'less', 0
 
-        if permutation_type == 'both':
-            nx, ny, permutations = 8, 9, 24000
-            assert special.binom(nx + ny, nx) > permutations
+        nx, ny, permutations = 8, 9, 24000
+        assert special.binom(nx + ny, nx) > permutations
 
-            x = stats.norm.rvs(size=nx)
-            y = stats.norm.rvs(size=ny)
-            data = x, y
+        x = stats.norm.rvs(size=nx)
+        y = stats.norm.rvs(size=ny)
+        data = x, y
 
-            def statistic(x, y, axis):
-                return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+        def statistic(x, y, axis):
+            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 
-        elif permutation_type == 'samples':
-            nx, ny, permutations = 15, 15, 32000
-            assert 2**nx > permutations
-
-            x = stats.norm.rvs(size=nx)
-            y = stats.norm.rvs(size=ny)
-            data = x, y
-
-            def statistic(x, y, axis):
-                return np.mean(x - y, axis=axis)
-
-        elif permutation_type == 'pairings':
-            nx, ny, permutations = 7, 7, 5000
-            assert special.factorial(nx) > permutations
-
-            x = stats.norm.rvs(size=nx)
-            y = stats.norm.rvs(size=ny)
-            data = [x]
-
-            def statistic1d(x):
-                return stats.pearsonr(x, y)[0]
-
-            statistic = _bootstrap._vectorize_statistic(statistic1d)
-
-        res = permutation_test(data, statistic, vectorized=True,
-                               permutation_type=permutation_type,
-                               permutations=permutations, batch=100,
-                               alternative=alternative, random_state=rng)
-        res2 = permutation_test(data, statistic, vectorized=True,
-                                permutation_type=permutation_type, batch=100,
-                                alternative=alternative)
+        kwds = {'vectorized': True, 'permutation_type': 'both',
+                'batch': 100, 'alternative': alternative, 'random_state': rng}
+        res = permutation_test(data, statistic, **kwds,
+                               permutations=permutations)
+        res2 = permutation_test(data, statistic, **kwds)
 
         assert res.statistic == res2.statistic
-        assert_allclose(res.pvalue, res2.pvalue, atol=5e-2)
-
-        # Yes, I know it doesn't work like that
-        ks = stats.ks_2samp(res.null_distribution, res2.null_distribution)
-        assert ks.pvalue > 0.1  # null distributions are not dissimilar
-
-    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    @pytest.mark.parametrize('rng', (0, None, 'Generator',
-                                     np.random.RandomState(0)))
-    def test_random_state(self, alternative, rng):
-
-        if rng == 'Generator':
-            try:
-                rng = np.random.default_rng(0)
-            except AttributeError:
-                pytest.skip("Old numpy doesn't have Generator")
-
-        def statistic(x):
-            return stats.spearmanr(x, y).correlation
-
-        np.random.seed(0)
-        x = stats.norm.rvs(size=500)
-        y = stats.norm.rvs(size=500)
-
-        res = permutation_test((x,), statistic, permutation_type='pairings',
-                               permutations=5000, alternative=alternative,
-                               random_state=rng)
-        res2 = stats.spearmanr(x, y, alternative=alternative)
-
-        assert res.statistic == res2.correlation
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
 
-    # different conventions for two-sided p-value here and in permutation ttest
-    # the plan is to resolve that by adding multiple options for two-sided
-    # p-values to permutation_test
+    def test_randomized_test_against_exact_samples(self):
+        # make sure that the randomized and exact tests agree to reasonable
+        # precision for permutation_type='samples'
+
+        alternative, rng = 'greater', None
+
+        nx, ny, permutations = 15, 15, 32000
+        assert 2**nx > permutations
+
+        x = stats.norm.rvs(size=nx)
+        y = stats.norm.rvs(size=ny)
+        data = x, y
+
+        def statistic(x, y, axis):
+            return np.mean(x - y, axis=axis)
+
+        kwds = {'vectorized': True, 'permutation_type': 'samples',
+                'batch': 100, 'alternative': alternative, 'random_state': rng}
+        res = permutation_test(data, statistic, **kwds,
+                               permutations=permutations)
+        res2 = permutation_test(data, statistic, **kwds)
+
+        assert res.statistic == res2.statistic
+        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+
+    def test_randomized_test_against_exact_pairings(self):
+        # make sure that the randomized and exact tests agree to reasonable
+        # precision for permutation_type='pairings'
+
+        alternative = 'two-sided'
+        try:
+            rng = np.random.default_rng(1)
+        except AttributeError:
+            rng = np.random.RandomState(1)
+
+        nx, ny, permutations = 8, 8, 40000
+        assert special.factorial(nx) > permutations
+
+        x = stats.norm.rvs(size=nx)
+        y = stats.norm.rvs(size=ny)
+        data = [x]
+
+        def statistic1d(x):
+            return stats.pearsonr(x, y)[0]
+
+        statistic = _bootstrap._vectorize_statistic(statistic1d)
+
+        kwds = {'vectorized': True, 'permutation_type': 'samples',
+                'batch': 100, 'alternative': alternative, 'random_state': rng}
+        res = permutation_test(data, statistic, **kwds,
+                               permutations=permutations)
+        res2 = permutation_test(data, statistic, **kwds)
+
+        assert res.statistic == res2.statistic
+        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+
     @pytest.mark.parametrize('alternative', ('less', 'greater'))
+    # Different conventions for two-sided p-value here VS ttest_ind.
+    # Eventually, we can add multiple options for the two-sided alternative
+    # here in permutation_test.
     @pytest.mark.parametrize('permutations', (30, 1e9))
     @pytest.mark.parametrize('axis', (0, 1, 2))
     def test_against_permutation_ttest(self, alternative, permutations, axis):
+        # check that this function and ttest_ind with permutations give
+        # essentially identical results.
 
         x = np.arange(3*4*5).reshape(3, 4, 5)
         y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
@@ -1471,7 +1468,7 @@ class TestPermutationTest:
 
     # -- Independent (Unpaired) Sample Tests -- #
 
-    def test_permutation_test_against_kstest(self):
+    def test_against_kstest(self):
         np.random.seed(0)
         x = stats.norm.rvs(size=4, scale=1)
         y = stats.norm.rvs(size=5, loc=3, scale=3)
@@ -1489,11 +1486,12 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_permutation_test_against_ansari(self, alternative):
+    def test_against_ansari(self, alternative):
         np.random.seed(0)
         x = stats.norm.rvs(size=4, scale=1)
         y = stats.norm.rvs(size=5, scale=3)
 
+        # Ansari has a different convention for 'alternative'
         alternative_correspondence = {"less": "greater",
                                       "greater": "less",
                                       "two-sided": "two-sided"}
