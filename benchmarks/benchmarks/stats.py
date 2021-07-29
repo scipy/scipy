@@ -74,8 +74,8 @@ class Kendalltau(Benchmark):
         self.b = b
 
     def time_kendalltau(self, nan_policy, method, variant):
-        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, 
-                                        method=method, variant=variant)
+        stats.kendalltau(self.a, self.b, nan_policy=nan_policy,
+                         method=method, variant=variant)
 
 
 class KS(Benchmark):
@@ -88,10 +88,10 @@ class KS(Benchmark):
     def setup(self, alternative, mode):
         rng = np.random.default_rng(0x2e7c964ff9a5cd6be22014c09f1dbba9)
         self.a = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
-        self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)                                           
-    
+        self.b = stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
+
     def time_ks_1samp(self, alternative, mode):
-        stats.ks_1samp(self.a, stats.norm.cdf, 
+        stats.ks_1samp(self.a, stats.norm.cdf,
                        alternative=alternative, mode=mode)
 
     def time_ks_2samp(self, alternative, mode):
@@ -127,7 +127,7 @@ class BrunnerMunzel(Benchmark):
         self.u2 = rng.uniform(-0.5, 1.5, 300)
 
     def time_brunnermunzel(self, alternative, nan_policy, distribution):
-        stats.brunnermunzel(self.u1, self.u2, alternative=alternative, 
+        stats.brunnermunzel(self.u1, self.u2, alternative=alternative,
                             distribution=distribution, nan_policy=nan_policy)
 
 
@@ -151,10 +151,10 @@ class InferentialStats(Benchmark):
 
     def time_chisqure(self):
         stats.chisquare(self.chisq)
-    
+
     def time_friedmanchisquare(self):
         stats.friedmanchisquare(self.a, self.b, self.c)
-    
+
     def time_epps_singleton_2samp(self):
         stats.epps_singleton_2samp(self.a, self.b)
 
