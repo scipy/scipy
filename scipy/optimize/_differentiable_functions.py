@@ -82,6 +82,10 @@ class ScalarFunction:
         2. After one of the methods is called, the corresponding attribute
            will be set. However, a subsequent call with a different argument
            of *any* of the methods may overwrite the attribute.
+
+    If any of the entries have lower and upper bounds that are equal, and the
+    derivatives are calculated by finite differences, then the corresponding
+    entries in grad and hess are set to zero.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
                  finite_diff_bounds, epsilon=None):
