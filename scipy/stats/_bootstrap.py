@@ -264,6 +264,7 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         statistics at this time.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`

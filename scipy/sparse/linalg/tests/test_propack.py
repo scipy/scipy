@@ -17,13 +17,17 @@ TOLS = {
 _dtype_map = {
     "single": np.float32,
     "double": np.float64,
-    # "complex8": np.complex64,  # TODO
-    # "complex16": np.complex128,  # TODO
+    "complex8": np.complex64,
+    "complex16": np.complex128,
 }
 
 
 def is_complex_type(dtype):
     return np.dtype(dtype).char.isupper()
+
+
+def is_32bit():
+    return np.intp(0).itemsize < 8
 
 
 def generate_matrix(constructor, n, m, f,
@@ -81,7 +85,11 @@ def test_svdp(ctor, precision, irl, which):
         with assert_raises(ValueError):
             check_svdp(n, m, ctor, dtype, k, irl, which)
     else:
-        check_svdp(n, m, ctor, dtype, k, irl, which)
+        if is_32bit() and is_complex_type(dtype):
+            with assert_raises(TypeError):
+                check_svdp(n, m, ctor, dtype, k, irl, which)
+        else:
+            check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
 def load_real(folder, precision, file='illc1850.coord'):
@@ -129,7 +137,7 @@ def load_complex(folder, precision):
     data = _concatenate_lines(contents[line_data:])
     data = np.asarray([float(data[i:i+datum_length])
                        for i in range(0, len(data), datum_length)])
-    real, imag= data[::2], data[1::2]
+    real, imag = data[::2], data[1::2]
     data = real + imag*1.0j
     data.astype(dtype)
 
@@ -162,7 +170,9 @@ def load_uv(folder, precision="double", uv="U", irl=False):
 
 
 @pytest.mark.parametrize('precision', [
-    pytest.param(p, marks=pytest.mark.slow)
+    pytest.param(p, marks=[
+        ] + [pytest.mark.skip]
+        if is_32bit() and 'complex' in p else [])
     if 'complex' in p else p for p in _dtype_map
 ])
 @pytest.mark.parametrize('irl', (False, True))
@@ -222,7 +232,7 @@ def test_examples(precision, irl):
 
 
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
-@pytest.mark.parametrize('precision', _dtype_map.keys())
+@pytest.mark.parametrize('precision', {'single', 'double'})
 def test_shifts(shifts, precision):
     np.random.seed(0)
     dtype = _dtype_map[precision]

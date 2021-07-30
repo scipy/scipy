@@ -99,11 +99,12 @@ class SVDSCommonTests:
     _A_dtype_msg = "`A` must be of floating or complex floating data type"
     _A_type_msg = "type not understood"
     _A_ndim_msg = "array must have ndim <= 2"
-    _A_validation_inputs =[
+    _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
         (np.asarray([[1, 2], [3, 4]]), ValueError, _A_dtype_msg),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
+
     @pytest.mark.parametrize("args", _A_validation_inputs)
     def test_svds_input_validation_A(self, args):
         A, error_type, message = args

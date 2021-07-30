@@ -46,7 +46,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
           return ``None`` for the right singular vectors. Otherwise, compute
           all singular vectors.
         - ``"vh"``: if ``M > N``, compute only the right singular vectors and
-          return ``None` for the left singular vectors. Otherwise, compute
+          return ``None`` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
     solver : str, optional
@@ -56,6 +56,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             are also supported.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
@@ -170,7 +171,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
           return ``None`` for the right singular vectors. Otherwise, compute
           all singular vectors.
         - ``"vh"``: if ``M > N``, compute only the right singular vectors and
-          return ``None` for the left singular vectors. Otherwise, compute
+          return ``None`` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
     solver : str, optional
@@ -180,6 +181,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             are also supported.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
@@ -303,6 +305,7 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             are also supported.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`

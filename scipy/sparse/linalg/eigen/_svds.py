@@ -173,7 +173,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
           return ``None`` for the right singular vectors. Otherwise, compute
           all singular vectors.
         - ``"vh"``: if ``M > N``, compute only the right singular vectors and
-          return ``None` for the left singular vectors. Otherwise, compute
+          return ``None`` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
         If ``solver='propack'``, the option is respected regardless of the
@@ -187,6 +187,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             Default: `'arpack'`.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
