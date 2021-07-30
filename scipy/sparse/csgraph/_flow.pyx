@@ -755,40 +755,41 @@ cdef void _initialize_spanning_tree(
         edge_flow[v + n_edges] = abs(demand[v])
 
     # vertex_potentials initialization
-    for v in range(n_verts):
-        if demand[v] <= 0:
+    for v in range(1, n_verts + 1):
+        if demand[v - 1] <= 0:
             vertex_potentials[v] = faux_inf
         else:
             vertex_potentials[v] = -faux_inf
 
     # parent initialization
-    for v in range(n_verts):
-        parent[v] = -1
-    parent[n_verts] = -2
+    for v in range(1, n_verts):
+        parent[v] = 0
+    parent[0] = -2
 
     # parent_edge initialization
-    for e in range(n_verts):
-        parent_edge[e] = n_edges + e
+    for v in range(1, n_verts + 1):
+        parent_edge[v] = n_edges + v - 1
 
     # subtree_size initialization
-    for v in range(n_verts):
+    for v in range(1, n_verts + 1):
         subtree_size[v] = 1
-    subtree_size[n_verts] = n_verts + 1
+    subtree_size[0] = n_verts + 1
 
     # next_vertex_dft initialization
-    for v in range(n_verts):
-        next_vertex_dft[v] = v + 1
-    next_vertex_dft[n_verts] = -1
-    next_vertex_dft[n_verts + 1] = 0
+    for v in range(1, n_verts + 1):
+        next_vertex_dft[v] = v
+    next_vertex_dft[n_verts] = 0
+    next_vertex_dft[0] = 1
 
     # prev_vertex_dft initialization
-    for i in range(n_verts + 1):
+    for i in range(1, n_verts + 1):
         prev_vertex_dft[i] = i - 1
+    prev_vertex_dft[0] = n_verts
 
     # last_descendent_dft initialization
-    for v in range(n_verts):
+    for v in range(1, n_verts + 1):
         last_descendent_dft[v] = v
-    last_descendent_dft[n_verts] = n_verts - 1
+    last_descendent_dft[0] = n_verts
 
 cdef ITYPE_t _reduced_cost(
     ITYPE_t e,
@@ -860,7 +861,7 @@ cdef bint _find_entering_edges(
                     i = e
                     min_r_cost = r_cost
         local_vars[3] = l
-        # print("min_r_cost: ", min_r_cost)
+        print("min_r_cost: ", min_r_cost)
         if min_r_cost >= 0:
             # No entering edge found in the current block.
             local_vars[2] += 1
@@ -915,7 +916,7 @@ cdef ITYPE_t _trace_path(
     ITYPE_t[:] parent_edge,
     ITYPE_t[:] Wn,
     ITYPE_t[:] We,
-    ITYPE_t parent_len):
+    ITYPE_t n_verts):
     Wn[0] = p
     idx = 0
     while p != w:
@@ -945,7 +946,7 @@ cdef void _find_cycle(
     print("After _find_apex")
     num_edges = _trace_path(p, w, parent, 
                             parent_edge,
-                            Wn, We, n_verts + 1)
+                            Wn, We, n_verts)
     print("Wn: ", end="")
     _print_array(Wn)
     print("We: ", end="")
@@ -962,7 +963,7 @@ cdef void _find_cycle(
     num_edges_R = _trace_path(q, w, parent, 
                               parent_edge,
                               WnR, WeR,
-                              n_verts + 1)
+                              n_verts)
     for idx in range(We_len//2):
         tmp = We[idx]
         We[idx] = We[We_len - idx - 1]
@@ -1070,7 +1071,7 @@ cdef void _remove_edge(
     ITYPE_t[:] next_vertex_dft,
     ITYPE_t[:] parent,
     ITYPE_t[:] parent_edge,
-    ITYPE_t parent_len):
+    ITYPE_t n_verts):
     cdef ITYPE_t size_t, prev_t, last_t
     cdef ITYPE_t next_last_t
     size_t = subtree_size[t]
@@ -1102,8 +1103,7 @@ cdef void _make_root(
     ITYPE_t[:] prev_vertex_dft,
     ITYPE_t[:] next_vertex_dft,
     ITYPE_t[:] parent,
-    ITYPE_t[:] parent_edge,
-    ITYPE_t parent_len):
+    ITYPE_t[:] parent_edge):
     cdef ITYPE_t idx, path_len, p
     cdef ITYPE_t size_p, last_p, last_q, prev_q
     cdef ITYPE_t next_last_q
@@ -1157,7 +1157,7 @@ cdef void _add_edge(
     ITYPE_t[:] subtree_size,
     ITYPE_t[:] parent,
     ITYPE_t[:] parent_edge,
-    ITYPE_t parent_len):
+    ITYPE_t n_verts):
     cdef ITYPE_t last_p, next_last_p
     cdef ITYPE_t size_q, last_q
 
@@ -1242,15 +1242,15 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t[:] local_vars, result, Wn, We
     cdef bint prev_ret_value = False
 
-    cdef ITYPE_t[:] edge_sources = np.empty(n_edges + n_verts, dtype=ITYPE)
-    cdef ITYPE_t[:] edge_targets = np.empty(n_edges + n_verts, dtype=ITYPE)
-    cdef ITYPE_t[:] edge_capacities = np.empty(n_edges + n_verts, dtype=ITYPE)
-    cdef ITYPE_t[:] edge_weights = np.empty(n_edges + n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] edge_sources = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
+    cdef ITYPE_t[:] edge_targets = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
+    cdef ITYPE_t[:] edge_capacities = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
+    cdef ITYPE_t[:] edge_weights = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
     idx = 0
     for e in range(n_edges):
         if capacities[e] != 0:
-            edge_sources[idx] = tails[e]
-            edge_targets[idx] = heads[e]
+            edge_sources[idx] = tails[e] + 1
+            edge_targets[idx] = heads[e] + 1
             idx += 1
     # print("edge_sources: ", end=" ")
     _print_array(edge_sources)
@@ -1258,11 +1258,11 @@ cdef ITYPE_t[:] _network_simplex(
     _print_array(edge_targets)
     for v in range(n_verts):
         if demand[v] > 0:
-            edge_sources[idx] = -1
-            edge_targets[idx] = v
+            edge_sources[idx] = 0
+            edge_targets[idx] = v + 1
         else:
-            edge_sources[idx] = v
-            edge_targets[idx] = -1
+            edge_sources[idx] = v + 1
+            edge_targets[idx] = 0
         idx += 1
 
     capacities_sum, cost_sum = 0, 0
@@ -1283,7 +1283,7 @@ cdef ITYPE_t[:] _network_simplex(
         edge_weights[v + n_edges] = faux_inf
 
     edge_flow = np.zeros(n_edges + n_verts, dtype=ITYPE)
-    vertex_potentials = np.empty(n_verts, dtype=ITYPE)
+    vertex_potentials = np.empty(n_verts + 1, dtype=ITYPE)
     parent = np.empty(n_verts + 1, dtype=ITYPE)
     parent_edge = np.empty(n_edges + n_verts, dtype=ITYPE)
     subtree_size = np.empty(n_verts + 1, dtype=ITYPE)
@@ -1358,7 +1358,7 @@ cdef ITYPE_t[:] _network_simplex(
                          last_descendent_dft,
                          next_vertex_dft,
                          parent, parent_edge,
-                         n_verts + 1)
+                         n_verts)
             print("After _remove_edge")
             # return edge_flow
             _make_root(n_verts, q,
@@ -1366,8 +1366,7 @@ cdef ITYPE_t[:] _network_simplex(
                        last_descendent_dft,
                        prev_vertex_dft,
                        next_vertex_dft,
-                       parent, parent_edge,
-                       parent_len)
+                       parent, parent_edge)
             print("After _make_root")
             _add_edge(i, p, q,
                       last_descendent_dft,
@@ -1375,7 +1374,7 @@ cdef ITYPE_t[:] _network_simplex(
                       prev_vertex_dft,
                       subtree_size,
                       parent, parent_edge,
-                      n_verts + 1)
+                      n_verts)
             print("After _add_edge")
             _update_potentials(i, p, q, n_verts,
                                edge_targets, edge_weights,
