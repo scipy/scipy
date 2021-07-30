@@ -605,7 +605,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             A_eq = A_eq.toarray()
         if sps.issparse(A_ub):
             warn(conversion_message.format('A_ub'), SparseEfficiencyWarning)
-            A_ub = A_ub.toarray()        
+            A_ub = A_ub.toarray()       
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options, meth)

@@ -443,7 +443,7 @@ class LinprogCommonTests:
         b_eq = A_eq * x_valid
 
         # simplex methods now convert sparse to dense array and warn gh-14448
-        if self.method in {'simplex', 'revised simplex'}:  
+        if self.method in {'simplex', 'revised simplex'}: 
             with assert_warns(scipy.sparse.SparseEfficiencyWarning):
                 linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                         method=self.method, options=self.options)
