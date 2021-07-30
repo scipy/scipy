@@ -148,8 +148,14 @@ def load_sigma(folder, precision="double", irl=False):
     dtype = _dtype_map[precision]
     s_name = "Sigma_IRL.ascii" if irl else "Sigma.ascii"
     path = os.path.join(folder, precision, 'Examples', 'Output', s_name)
+    pydtype = {
+        np.complex64: complex,
+        np.complex128: complex,
+        np.float32: float,
+        np.float64: float,
+    }[dtype]
     with open(path) as f:
-        data = np.array([dtype(line.split()[1]) for line in f], dtype=dtype)
+        data = np.array([pydtype(line.split()[1]) for line in f]).astype(dtype)
     return data
 
 
@@ -171,8 +177,7 @@ def load_uv(folder, precision="double", uv="U", irl=False):
 
 @pytest.mark.parametrize('precision', [
     pytest.param(p, marks=[
-        ] + [pytest.mark.skip]
-        if is_32bit() and 'complex' in p else [])
+        pytest.mark.slow] + ([pytest.mark.skip] if is_32bit() else []))
     if 'complex' in p else p for p in _dtype_map
 ])
 @pytest.mark.parametrize('irl', (False, True))
