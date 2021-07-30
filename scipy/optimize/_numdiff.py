@@ -304,6 +304,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation. Bounds checking is not implemented
         when `as_linear_operator` is True.
+        If a lower and upper bound are equal then the relevant derivatives for
+        that parameter will be np.nan.
     sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
@@ -556,13 +558,13 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
         if method == '2-point':
             x = x0 + h_vecs[i]
             dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
-            if np.count_nonzero(dx):
+            if dx:
                 df = fun(x) - f0
         elif method == '3-point' and use_one_sided[i]:
             x1 = x0 + h_vecs[i]
             x2 = x0 + 2 * h_vecs[i]
             dx = x2[i] - x0[i]
-            if np.count_nonzero(dx):
+            if dx:
                 f1 = fun(x1)
                 f2 = fun(x2)
                 df = -3.0 * f0 + 4 * f1 - f2
@@ -570,7 +572,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             x1 = x0 - h_vecs[i]
             x2 = x0 + h_vecs[i]
             dx = x2[i] - x1[i]
-            if np.count_nonzero(dx):
+            if dx:
                 f1 = fun(x1)
                 f2 = fun(x2)
                 df = f2 - f1
