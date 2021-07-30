@@ -701,7 +701,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     tails = _make_tails(csgraph)
     flow = _network_simplex(csgraph.indices, tails, csgraph.data,
                             demand, cost, csgraph.indptr.shape[0] - 1)
-    flow_array = np.asarray(flow[csgraph.data.shape[0]:])
+    flow_array = np.asarray(flow[0:csgraph.data.shape[0]])
     flow_matrix = csr_matrix((flow_array, csgraph.indices, csgraph.indptr),
                                  shape=csgraph.shape)
     return MaximumFlowResult(flow_array.sum(), flow_matrix)
@@ -1336,6 +1336,8 @@ cdef ITYPE_t[:] _network_simplex(
                                          edge_capacities,
                                          edge_flow),
                       edge_sources, edge_flow)
+        print("edge_flow:", end=" ")
+        _print_array(edge_flow)
         print("After _augment_flow")
         print("i, j: ", i, j)
         # Do nothing more if the entering edge is the same as the leaving edge.
@@ -1390,4 +1392,6 @@ cdef ITYPE_t[:] _network_simplex(
         print("After _find_entering_edges")
         itr += 1
 
+    print("edge_flow:", end=" ")
+    _print_array(edge_flow)
     return edge_flow
