@@ -27,7 +27,6 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
 from scipy.optimize.optimize import MemoizeJac, show_options
-from scipy.optimize._constraints import Bounds
 
 
 def test_check_grad():
