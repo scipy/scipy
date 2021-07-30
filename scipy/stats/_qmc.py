@@ -902,11 +902,11 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
-    optimization : {None, "random-CD"}, optional
+    optimization : {None, "random-cd"}, optional
         Whether to use an optimization scheme to construct a LHS.
         Default is None.
 
-        * ``random-CD``: random permutations of coordinates to lower the
+        * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy [5]_. The best design based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
@@ -970,7 +970,8 @@ class LatinHypercube(QMCEngine):
 
     Use the `optimization` keyword argument to produce a LHS with
     lower discrepancy at higher computational cost.
-    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-CD")
+
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
     >>> sample = sampler.random(n=5)
     >>> qmc.discrepancy(sample)
     0.0176...  # random
@@ -979,18 +980,20 @@ class LatinHypercube(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
-        optimization: Optional[Literal["random-CD"]] = None,
+        optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        lhs_methods: Dict[Optional[Literal["random-CD"]], Callable] = {
+        lhs_methods: Dict[Optional[Literal["random-cd"]], Callable] = {
             None: self._random,
-            "random-CD": self._random_cd,
+            "random-cd": self._random_cd,
         }
 
         try:
+            if optimization is not None:
+                optimization = optimization.lower()
             self.lhs_method = lhs_methods[optimization]
         except KeyError:
             raise ValueError(f"{optimization!r} is not a valid optimization"
