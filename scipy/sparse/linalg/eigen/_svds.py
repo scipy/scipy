@@ -6,7 +6,7 @@ from . import eigsh
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg.interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
-import scipy.sparse.linalg as spla
+from scipy.sparse.linalg._svdp import _svdp
 
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
@@ -312,9 +312,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
-        res = spla._svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
-                         compute_u=jobu, compute_v=jobv, irl_mode=True,
-                         kmax=maxiter, v0=v0, random_state=random_state)
+        res = _svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
+                    compute_u=jobu, compute_v=jobv, irl_mode=True,
+                    kmax=maxiter, v0=v0, random_state=random_state)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 

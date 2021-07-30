@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises
 
-from scipy.sparse.linalg import _svdp
+from scipy.sparse.linalg._svdp import _svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
 TOLS = {

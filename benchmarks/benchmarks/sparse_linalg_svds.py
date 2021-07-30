@@ -1,5 +1,4 @@
 import os
-import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
