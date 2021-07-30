@@ -17,14 +17,13 @@ def check_propack_submodule():
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils import get_g77_abi_wrappers
     config = Configuration('_propack', parent_package, top_path)
     lapack_opt = get_info('lapack_opt')
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
 
-    #------------------------------------------------------------
-    # Set up the libraries.
+    #  ------------------------------------------------------------
+    #  Set up the libraries.
     #  We need a different python extension file for each, because
     #  names resue between functions in the LAPACK extensions.  This
     #  could probably be remedied with some work.
