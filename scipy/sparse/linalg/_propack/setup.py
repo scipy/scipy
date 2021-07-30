@@ -28,6 +28,8 @@ def configuration(parent_package='', top_path=None):
     #  We need a different python extension file for each, because
     #  names resue between functions in the LAPACK extensions.  This
     #  could probably be remedied with some work.
+    #  NOTES: this might not longer apply now that we build without
+    #         LAPACK extensions
     type_dict = dict(s='single',
                      d='double',
                      c='complex8',
@@ -35,21 +37,18 @@ def configuration(parent_package='', top_path=None):
     check_propack_submodule()
 
     for prefix, directory in type_dict.items():
-        lapack_lib = f'sp_{prefix}lapack_util'
         propack_lib = f'_{prefix}propack'
 
-        lapack_sources = join('PROPACK', directory, 'Lapack_Util', '*.f')
-
-        # Need to use risc for 32-bit machines
+        # Need to use risc implementation for 32-bit machines
         if _is_32bit:
-            propack_sources = list((pathlib.Path(__file__).parent / 'PROPACK' / directory).glob('*.F'))
-            propack_sources = [str(p) for p in propack_sources if 'risc' not in str(p)]
+            src = list((pathlib.Path(
+                __file__).parent / 'PROPACK' / directory).glob('*.F'))
+            src = [str(p) for p in src if 'risc' not in str(p)]
         else:
-            propack_sources = join('PROPACK', directory, '*.F')
-        # propack_sources += get_g77_abi_wrappers(lapack_opt)
-            
+            src = join('PROPACK', directory, '*.F')
+
         config.add_library(propack_lib,
-                           sources=propack_sources,
+                           sources=src,
                            macros=[('_OPENMP',)])
         config.add_extension(f'_{prefix}propack',
                              sources=f'{prefix}propack.pyf',
