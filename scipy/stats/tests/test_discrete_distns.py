@@ -6,7 +6,6 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 from scipy.special import binom as special_binom
-import pytest
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
 
