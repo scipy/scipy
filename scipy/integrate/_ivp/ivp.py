@@ -287,10 +287,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     rtol, atol : float or array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be lower than the lowest value that can
+        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
