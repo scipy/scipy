@@ -958,6 +958,7 @@ class DifferentialEvolutionSolver:
         num_members = np.size(population, 0)
         nfevs = min(num_members,
                     self.maxfun - num_members)
+        nfevs = max(nfevs, 0)
 
         energies = np.full(num_members, np.inf)
 
