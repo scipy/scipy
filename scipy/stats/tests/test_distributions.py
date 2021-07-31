@@ -3049,7 +3049,7 @@ class TestLevyStable:
         assert_equal(beta2, -1)
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
-        
+
     def test_fit_beta_flip(self):
         # Confirm that sign of beta affects loc, not alpha or scale.
         x = np.array([1, 1, 3, 3, 10, 10, 10, 30, 30, 100, 100])
@@ -3061,7 +3061,7 @@ class TestLevyStable:
         assert_almost_equal(beta2, -beta1)
         assert_almost_equal(loc2, -loc1)
         assert_almost_equal(scale2, scale1)
-        
+
     def test_fit_delta_shift(self):
         # Confirm that loc slides up and down if data shifts.
         SHIFT = 1
@@ -3072,7 +3072,7 @@ class TestLevyStable:
         assert_almost_equal(beta2, beta1)
         assert_almost_equal(loc2, loc1 + SHIFT)
         assert_almost_equal(scale2, scale1)
-        
+
     def test_fit_loc_extrap(self):
         # Confirm that loc goes out of sample for alpha close to 1.
         x = [1, 1, 3, 3, 10, 10, 10, 30, 30, 140, 140]
