@@ -993,7 +993,7 @@ class LatinHypercube(QMCEngine):
 
         try:
             if optimization is not None:
-                optimization = optimization.lower()
+                optimization = optimization.lower()  # type: ignore[assignment]
             self.lhs_method = lhs_methods[optimization]
         except KeyError:
             raise ValueError(f"{optimization!r} is not a valid optimization"
