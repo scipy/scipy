@@ -45,8 +45,8 @@ def generate_matrix(constructor, n, m, f,
 
 def assert_orthogonal(u1, u2, rtol, atol):
     """Check that the first k rows of u1 and u2 are orthogonal"""
-    I = abs(np.dot(u1.conj().T, u2))
-    assert_allclose(I, np.eye(u1.shape[1], u2.shape[1]), rtol=rtol, atol=atol)
+    A = abs(np.dot(u1.conj().T, u2))
+    assert_allclose(A, np.eye(u1.shape[1], u2.shape[1]), rtol=rtol, atol=atol)
 
 
 def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
@@ -240,7 +240,6 @@ def test_examples(precision, irl):
 @pytest.mark.parametrize('precision', {'single', 'double'})
 def test_shifts(shifts, precision):
     np.random.seed(0)
-    dtype = _dtype_map[precision]
     n, k = 70, 10
     A = np.random.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):

@@ -47,6 +47,7 @@ _which_converter = {
     'SM': 'S',
 }
 
+
 class _AProd:
     """
     Wrapper class for linear operator
@@ -79,9 +80,9 @@ class _AProd:
 
 
 def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
-         compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
-         delta=None, eta=None, anorm=0, cgs=False, elr=True,
-         min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
+          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
+          delta=None, eta=None, anorm=0, cgs=False, elr=True,
+          min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
