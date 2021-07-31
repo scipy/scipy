@@ -253,8 +253,8 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 
 def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-                     maxiter=None, return_singular_vectors=True,
-                     solver='propack', random_state=None):
+                      maxiter=None, return_singular_vectors=True,
+                      solver='propack', random_state=None):
     """
     Partial singular value decomposition of a sparse matrix using PROPACK.
 

@@ -2,13 +2,11 @@ import re
 import copy
 import numpy as np
 
-from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
-                           assert_equal, assert_array_equal)
-from pytest import raises as assert_raises
+from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import hilbert, svd
-from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+from scipy.sparse import csc_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg.eigen.arpack import ArpackNoConvergence
@@ -419,7 +417,7 @@ class SVDSCommonTests:
             assert_allclose(np.abs(vh2), np.abs(vh))
         else:
             u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                              solver=self.solver, random_state=rng)
+                               solver=self.solver, random_state=rng)
             assert_allclose(np.abs(u2), np.abs(u))
             assert_allclose(s2, s)
             assert_allclose(np.abs(vh2), np.abs(vh))
@@ -570,12 +568,14 @@ class SVDSCommonTests:
 
 # --- Perform tests with each solver ---
 
+
 class Test_SVDS_once():
     @pytest.mark.parametrize("solver", ['ekki', object])
     def test_svds_input_validation_solver(self, solver):
         message = "solver must be one of"
         with pytest.raises(ValueError, match=message):
             svds(np.ones((3, 4)), k=2, solver=solver)
+
 
 class Test_SVDS_ARPACK(SVDSCommonTests):
 
@@ -611,6 +611,7 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
     # I can't see a robust relationship between `ncv` and relevant outputs
     # (e.g. accuracy, time), so no test of the parameter.
 
+
 class Test_SVDS_LOBPCG(SVDSCommonTests):
 
     def setup_method(self):
@@ -618,6 +619,7 @@ class Test_SVDS_LOBPCG(SVDSCommonTests):
 
     def test_svd_random_state_3(self):
         pytest.xfail("LOBPCG is having trouble with accuracy.")
+
 
 class Test_SVDS_PROPACK(SVDSCommonTests):
 
