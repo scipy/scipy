@@ -25,7 +25,7 @@ compliance before pushing your code:
 
    ::
 
-      flake8 scipy/optimize/linprog.py
+      flake8 scipy/optimize/_linprog.py
 
    The absence of output indicates that there are no PEP8 issues with
    the file. Unfortunately, there is also no output if you get the file
@@ -38,6 +38,22 @@ compliance before pushing your code:
    (``linprog2.py`` doesn’t exist.) To make sure you have the path
    right, consider introducing (and then removing) a small PEP8 issue in
    the target file, such as a line that is over 79 characters long.
+
+-  Before sending a Pull Request, we recommend running the lint tests only
+   for the changes you've made in your feature branch. This will mimic
+   the continuous integration linting checks setup on GitHub.
+   You can run the following in the SciPy root directory.
+
+   ::
+
+      python tools/lint_diff.py
+
+   If you want to run the diff based lint tests only for specific files
+   or directories, please consider using the ``--files`` option.
+
+   ::
+
+      python tools/lint_diff.py --files scipy/odr/models.py scipy/ndimage
 
 -  If you have existing code with a lot of PEP8 issues, consider using
    |autopep8|_ to automatically fix most of them.
