@@ -175,11 +175,11 @@ def load_uv(folder, precision="double", uv="U", irl=False):
     return data.reshape((n, m)).T
 
 
-@pytest.mark.parametrize('precision', [
+@pytest.mark.parametrize('precision', (
     pytest.param(p, marks=[
         pytest.mark.slow] + ([pytest.mark.skip] if is_32bit() else []))
     if 'complex' in p else p for p in _dtype_map
-])
+))
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
@@ -237,7 +237,7 @@ def test_examples(precision, irl):
 
 
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
-@pytest.mark.parametrize('precision', {'single', 'double'})
+@pytest.mark.parametrize('precision', ('single', 'double'))
 def test_shifts(shifts, precision):
     np.random.seed(0)
     n, k = 70, 10
