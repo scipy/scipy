@@ -410,6 +410,22 @@ class BenchQMCDiscrepancy(Benchmark):
         disc = stats.qmc.discrepancy(self.sample, method=method)
 
 
+class BenchQMCHalton(Benchmark):
+    param_names = ['d', 'scramble', 'n']
+    params = [
+        [1, 10],
+        [True, False],
+        [10, 1_000, 100_000]
+    ]
+
+    def setup(self, d, scramble, n):
+        self.rng = np.random.default_rng(1234)
+
+    def time_discrepancy(self, d, scramble, n):
+        seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
+        out = seq.random(n)
+
+
 class NumericalInverseHermite(Benchmark):
 
     param_names = ['distribution']
