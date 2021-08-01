@@ -58,14 +58,17 @@ def find_diff(sha, files=None):
         for file_or_dir in files:
             msg = f"{file_or_dir} doesn't exist. Please provide a valid path."
             assert os.path.exists(file_or_dir), msg
+        res = subprocess.run(
+            ['git', 'diff', '--unified=0', sha, '--', *files],
+            stdout=subprocess.PIPE,
+            encoding='utf-8',
+        )
     else:
-        files = '*.py'
-
-    res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha, '--', *files],
-        stdout=subprocess.PIPE,
-        encoding='utf-8',
-    )
+        res = subprocess.run(
+            ['git', 'diff', '--unified=0', sha, '--', '*.py'],
+            stdout=subprocess.PIPE,
+            encoding='utf-8',
+        )
     res.check_returncode()
     return res.stdout
 
