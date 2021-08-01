@@ -11,18 +11,12 @@ def siegelslopes(y, x, method):
 
     for j in range(len(x)):
         id_nonzero, = np.nonzero(deltax[j, :])
-        slopes_j = np.empty(len(id_nonzero))
-        for i in range(len(id_nonzero)):
-            slopes_j[i] = deltay[j, id_nonzero[i]] / deltax[j, id_nonzero[i]]
         slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
         medslope_j = np.median(slopes_j)
         slopes.append(medslope_j)
         if method == 'separate':
             z = y*x[j] - y[j]*x
-            intercept_j = np.empty(len(id_nonzero))
-            for i in range(len(id_nonzero)):
-                intercept_j[i] = z[id_nonzero[i]] / deltax[j, id_nonzero[i]]
-            medintercept_j = np.median(intercept_j)
+            medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
             intercepts.append(medintercept_j)
 
     medslope = np.median(np.asarray(slopes))
