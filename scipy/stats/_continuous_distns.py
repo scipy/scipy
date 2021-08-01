@@ -5096,14 +5096,20 @@ class levy_stable_gen(rv_continuous):
         )
 
         def psi_1_1(nu_beta, nu_alpha):
-            return psi_1(nu_beta, nu_alpha) if nu_beta > 0 else psi_1(-nu_beta, nu_alpha)
+            return (psi_1(nu_beta, nu_alpha)
+                    if nu_beta > 0
+                    else psi_1(-nu_beta, nu_alpha)
+                    )
 
         psi_2 = interpolate.interp2d(
             nu_beta_range, nu_alpha_range, beta_table, kind='linear'
         )
 
         def psi_2_1(nu_beta, nu_alpha):
-            return psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+            return (psi_2(nu_beta, nu_alpha)
+                    if nu_beta > 0
+                    else -psi_2(-nu_beta, nu_alpha)
+                    )
 
         phi_3 = interpolate.interp2d(
             beta_range, alpha_range, nu_c_table, kind='linear'
