@@ -421,7 +421,7 @@ class BenchQMCHalton(Benchmark):
     def setup(self, d, scramble, n):
         self.rng = np.random.default_rng(1234)
 
-    def time_discrepancy(self, d, scramble, n):
+    def time_halton(self, d, scramble, n):
         seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
         out = seq.random(n)
 
