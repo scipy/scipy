@@ -1,5 +1,6 @@
 import os
 import pytest
+import sys
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises
@@ -27,16 +28,16 @@ def is_complex_type(dtype):
 
 
 def is_32bit():
-    return np.intp(0).itemsize < 8
+    return sys.maxsize <= 2**32  # (usually 2**31-1 on 32-bit)
 
 
 _dtype_testing = []
 for dtype in _dtype_map:
-    if 'complex' in dtype:
-        marks = [pytest.mark.slow]
-    elif 'complex' in dtype and is_32bit():
+    if 'complex' in dtype and is_32bit():
         # PROPACK has issues w/ complex on 32-bit; see gh-14433
         marks = [pytest.mark.skip]
+    elif 'complex' in dtype:
+        marks = [pytest.mark.slow]
     else:
         marks = []
     _dtype_testing.append(pytest.param(dtype, marks=marks))
