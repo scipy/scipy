@@ -338,6 +338,11 @@ stages:
       displayName: 'Copy in _distributor_init.py'
       condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
     - powershell: |
+      # The below 3 lines ensure exit status of every line in this step is checked
+      Set-StrictMode -Version Latest
+      $ErrorActionPreference = "Stop"
+      $PSDefaultParameterValues['*:ErrorAction']='Stop'
+
         If ($(BITS) -eq 32) {
             # 32-bit build requires careful adjustments
             # until Microsoft has a switch we can use
