@@ -338,6 +338,11 @@ stages:
       displayName: 'Copy in _distributor_init.py'
       condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
     - powershell: |
+      # The below 3 lines ensure exit status of every line in this step is checked
+      Set-StrictMode -Version Latest
+      $ErrorActionPreference = "Stop"
+      $PSDefaultParameterValues['*:ErrorAction']='Stop'
+
         If ($(BITS) -eq 32) {
             # 32-bit build requires careful adjustments
             # until Microsoft has a switch we can use
@@ -352,12 +357,8 @@ stages:
 
         mkdir dist
         pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
-        If ($lastExitCode -ne "0") {
-            Write-Host "##vso[task.complete result=Failed;]DONE"
-        }else {
-          ls dist -r | Foreach-Object {
-              pip install $_.FullName
-          }
+        ls dist -r | Foreach-Object {
+            pip install $_.FullName
         }
       displayName: 'Build SciPy'
     - powershell: |
