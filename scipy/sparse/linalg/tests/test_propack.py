@@ -30,6 +30,19 @@ def is_32bit():
     return np.intp(0).itemsize < 8
 
 
+_dtype_testing = []
+for dtype in _dtype_map:
+    if 'complex' in dtype:
+        marks = [pytest.mark.slow]
+    elif 'complex' in dtype and is_32bit():
+        # PROPACK has issues w/ complex on 32-bit; see gh-14433
+        marks = [pytest.mark.skip]
+    else:
+        marks = []
+    _dtype_testing.append(pytest.param(dtype, marks=marks))
+_dtype_testing = tuple(_dtype_testing)  # avoid possibility of collection issue
+
+
 def generate_matrix(constructor, n, m, f,
                     dtype=float, rseed=0, **kwargs):
     """Generate a random sparse matrix"""
@@ -74,7 +87,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
 
 @pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
-@pytest.mark.parametrize('precision', _dtype_map.keys())
+@pytest.mark.parametrize('precision', _dtype_testing)
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
 def test_svdp(ctor, precision, irl, which):
@@ -175,11 +188,7 @@ def load_uv(folder, precision="double", uv="U", irl=False):
     return data.reshape((n, m)).T
 
 
-@pytest.mark.parametrize('precision', (
-    pytest.param(p, marks=[
-        pytest.mark.slow] + ([pytest.mark.skip] if is_32bit() else []))
-    if 'complex' in p else p for p in _dtype_map
-))
+@pytest.mark.parametrize('precision', _dtype_testing)
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
