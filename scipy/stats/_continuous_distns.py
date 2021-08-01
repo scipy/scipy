@@ -5008,7 +5008,8 @@ class levy_stable_gen(rv_continuous):
         # of Stable Distribution Parameters
 
         # Table III and IV
-        nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4, 5, 6, 8, 10, 15, 25]
+        nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4,
+                          5, 6, 8, 10, 15, 25]
         nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
 
         # table III - alpha = psi_1(nu_alpha, nu_beta)
@@ -5048,7 +5049,8 @@ class levy_stable_gen(rv_continuous):
             [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
 
         # Table V and VII
-        alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1, 0.9, 0.8, 0.7, 0.6, 0.5]
+        alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
+                       1, 0.9, 0.8, 0.7, 0.6, 0.5]
         beta_range = [0, 0.25, 0.5, 0.75, 1]
 
         # Table V - nu_c = psi_3(alpha, beta)
@@ -5089,18 +5091,33 @@ class levy_stable_gen(rv_continuous):
             [0, -0.078, -0.272, -0.581, -0.997],
             [0, -0.061, -0.279, -0.659, -1.198]]
 
-        psi_1 = interpolate.interp2d(nu_beta_range, nu_alpha_range, alpha_table, kind='linear')
+        psi_1 = interpolate.interp2d(
+            nu_beta_range, nu_alpha_range, alpha_table, kind='linear'
+        )
 
-        def psi_1_1(nu_beta, nu_alpha): 
+        def psi_1_1(nu_beta, nu_alpha):
             return psi_1(nu_beta, nu_alpha) if nu_beta > 0 else psi_1(-nu_beta, nu_alpha)
 
-        psi_2 = interpolate.interp2d(nu_beta_range, nu_alpha_range, beta_table, kind='linear')
-        psi_2_1 = lambda nu_beta, nu_alpha: psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+        psi_2 = interpolate.interp2d(
+            nu_beta_range, nu_alpha_range, beta_table, kind='linear'
+        )
 
-        phi_3 = interpolate.interp2d(beta_range, alpha_range, nu_c_table, kind='linear')
-        phi_3_1 = lambda beta, alpha: phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
-        phi_5 = interpolate.interp2d(beta_range, alpha_range, nu_zeta_table, kind='linear')
-        phi_5_1 = lambda beta, alpha: phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
+        def psi_2_1(nu_beta, nu_alpha):
+            return psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+
+        phi_3 = interpolate.interp2d(
+            beta_range, alpha_range, nu_c_table, kind='linear'
+        )
+
+        def phi_3_1(beta, alpha):
+            return phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
+
+        phi_5 = interpolate.interp2d(
+            beta_range, alpha_range, nu_zeta_table, kind='linear'
+        )
+
+        def phi_5_1(beta, alpha):
+            return phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
 
         # quantiles
         p05 = np.percentile(data, 5)
@@ -5113,8 +5130,9 @@ class levy_stable_gen(rv_continuous):
         nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
 
         if nu_alpha >= 2.439:
-            alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0], 
-                            np.finfo(float).eps, 2.)
+            alpha = np.clip(psi_1_1(nu_beta, nu_alpha)[0],
+                            np.finfo(float).eps,
+                            2.)
             beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
         else:
             alpha = 2.0
