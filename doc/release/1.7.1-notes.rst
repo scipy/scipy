@@ -51,4 +51,6 @@ Pull requests for 1.7.1
 * `#14417 <https://github.com/scipy/scipy/pull/14417>`__: DOC/CI: pin sphinx to !=4.1.0
 * `#14460 <https://github.com/scipy/scipy/pull/14460>`__: DOC: add required scipy version to kwarg
 * `#14466 <https://github.com/scipy/scipy/pull/14466>`__: MAINT: 1.7.1 backports (round 1)
+* `#14508 <https://github.com/scipy/scipy/pull/14508>`__: MAINT: bump scipy-mathjax
+* `#14509 <https://github.com/scipy/scipy/pull/14509>`__: MAINT: 1.7.1 backports (round 2)
 
