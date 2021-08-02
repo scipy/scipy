@@ -20,7 +20,7 @@ import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
-from .optimize import (OptimizeResult, _check_unknown_options,
+from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function, _clip_x_for_func,
                        _check_clip_x)
 from ._numdiff import approx_derivative
@@ -284,6 +284,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check function
         if 'fun' not in con:
             raise ValueError('Constraint %d has no function defined.' % ic)
+        else:
+            con_fun = con['fun']
 
         # check Jacobian
         cjac = con.get('jac')
@@ -305,9 +307,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
                 return cjac
             cjac = cjac_factory(con['fun'])
+        elif cjac is True:
+            # constraint fun returns (value, jac)
+            con_fun = MemoizeJac(con['fun'])
+            cjac = con_fun.derivative
 
         # update constraints' dictionary
-        cons[ctype] += ({'fun': con['fun'],
+        cons[ctype] += ({'fun': con_fun,
                          'jac': cjac,
                          'args': con.get('args', ())}, )
 
