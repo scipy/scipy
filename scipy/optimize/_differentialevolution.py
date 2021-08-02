@@ -975,7 +975,6 @@ class DifferentialEvolutionSolver:
                 "returning a sequence of numbers the same length as 'iterable'"
             ) from e
 
-        # nfecs can be negative
         if calc_energies.size != nfevs:
             raise RuntimeError("func(x, *args) must return a scalar value")
 
