@@ -169,8 +169,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 Constraint type: 'eq' for equality, 'ineq' for inequality.
             fun : callable
                 The function defining the constraint.
-            jac : callable, optional
-                The Jacobian of `fun` (only for SLSQP).
+            jac : {callable, bool} optional
+                The Jacobian of `fun` (only for SLSQP). If `jac` is a Boolean 
+                and is True, `fun` is assumed to return a tuple ``(c, J)`` 
+                containing the evaluated constraint c and Jacobian J
+                function and the gradient.
             args : sequence, optional
                 Extra arguments to be passed to the function and Jacobian.
 
