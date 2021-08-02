@@ -1306,3 +1306,8 @@ def test_concatenate():
     split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
     result = Rotation.concatenate(split)
     assert_equal(rotation.as_quat(), result.as_quat())
+
+
+def test_concatenate_wrong_type():
+    with pytest.raises(TypeError, match='Rotation objects only'):
+        Rotation.concatenate([Rotation.identity(), 1, None])
