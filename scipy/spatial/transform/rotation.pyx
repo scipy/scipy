@@ -1591,13 +1591,10 @@ cdef class Rotation:
         -----
         .. versionadded:: 1.8.0
         """
-        quats = []
-        for rotation in rotations:
-            if not isinstance(rotation, Rotation):
-                raise TypeError("input must contain Rotation objects only")
-            quats.extend(np.atleast_2d(rotation.as_quat()))
+        if not all([isinstance(x, Rotation) for x in rotations]):
+            raise TypeError("input must contain Rotation objects only")
 
-        # normalization can change the data, so we leave it out here
+        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
         return cls(quats, normalize=False)
 
     def apply(self, vectors, inverse=False):
