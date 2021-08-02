@@ -956,8 +956,10 @@ class DifferentialEvolutionSolver:
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
+        # these are the number of function evals left to stay under the
+        # maxfun budget
         nfevs = min(num_members,
-                    self.maxfun - num_members)
+                    self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
