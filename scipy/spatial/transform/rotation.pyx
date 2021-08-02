@@ -1586,6 +1586,10 @@ cdef class Rotation:
         -------
         concatenated : `Rotation` instance
             The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
         """
         quats = []
         for rotation in rotations:
