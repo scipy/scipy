@@ -37,11 +37,11 @@ for dtype in _dtype_map:
         # PROPACK has issues w/ complex on 32-bit; see gh-14433
         marks = [pytest.mark.skip]
     elif 'complex' in dtype:
-        marks = [pytest.mark.slow]
+        marks = [pytest.mark.slow]  # type: ignore[list-item]
     else:
         marks = []
     _dtype_testing.append(pytest.param(dtype, marks=marks))
-_dtype_testing = tuple(_dtype_testing)  # avoid possibility of collection issue
+_dtype_testing = tuple(_dtype_testing)  # type: ignore[assignment]
 
 
 def generate_matrix(constructor, n, m, f,
