@@ -1,4 +1,4 @@
-# cython: wraparound=False, boundscheck=False
+# cython: wraparound=False, boundscheck=True
 
 import numpy as np
 
@@ -723,6 +723,7 @@ def _network_simplex_checks(
         if demand[i] == 1<<31 - 1 or demand[i] == -1<<31 :
             raise ValueError("vertex %d has infinite demand"%(i))
         demand_sum += demand[i]
+        print("demand[%d]: %d"%(i, demand[i]))
 
     # TODO: Should we add support for selfloop edges?
     for i in range(n_edges):
@@ -762,7 +763,7 @@ cdef void _initialize_spanning_tree(
             vertex_potentials[v] = -faux_inf
 
     # parent initialization
-    for v in range(1, n_verts):
+    for v in range(1, n_verts + 1):
         parent[v] = 0
     parent[0] = -2
 
@@ -776,8 +777,8 @@ cdef void _initialize_spanning_tree(
     subtree_size[0] = n_verts + 1
 
     # next_vertex_dft initialization
-    for v in range(1, n_verts + 1):
-        next_vertex_dft[v] = v
+    for v in range(1, n_verts):
+        next_vertex_dft[v] = v + 1
     next_vertex_dft[n_verts] = 0
     next_vertex_dft[0] = 1
 
@@ -798,7 +799,7 @@ cdef ITYPE_t _reduced_cost(
     ITYPE_t[:] edge_sources,
     ITYPE_t[:] edge_targets,
     ITYPE_t[:] edge_flow):
-    # print("Reduced cost args: ", e, edge_weights[e], edge_sources[e], vertex_potentials[edge_sources[e]], edge_targets[e], vertex_potentials[edge_targets[e]])
+    print("Reduced cost args: ", e, edge_weights[e], edge_sources[e], vertex_potentials[edge_sources[e]], edge_targets[e], vertex_potentials[edge_targets[e]])
     c = (edge_weights[e]
          - vertex_potentials[edge_sources[e]]
          + vertex_potentials[edge_targets[e]])
@@ -886,21 +887,24 @@ cdef ITYPE_t _find_apex(
     ITYPE_t p,
     ITYPE_t q,
     ITYPE_t[:] subtree_size,
-    ITYPE_t[:] parent,
-    ITYPE_t n_Ver):
+    ITYPE_t[:] parent):
     cdef ITYPE_t size_p, size_q
     print("p, q: ", p, q)
     size_p = subtree_size[p]
     size_q = subtree_size[q]
     print("size_p, size_q: ", size_p, size_q)
     while True:
+        print("Outside find_apex loop: ", p, size_p, q, size_q)
         while size_p < size_q:
             p = parent[p]
             size_p = subtree_size[p]
+            print("Inside find_apex: ", p)
         while size_p > size_q:
             q = parent[q]
             size_q = subtree_size[q]
         if size_p == size_q:
+            print("parent: ")
+            _print_array(parent)
             if p != q:
                 p = parent[p]
                 size_p = subtree_size[p]
@@ -917,6 +921,7 @@ cdef ITYPE_t _trace_path(
     ITYPE_t[:] Wn,
     ITYPE_t[:] We,
     ITYPE_t n_verts):
+    print("Inside _trace_path, p: ", p, Wn.shape[0], We.shape[0])
     Wn[0] = p
     idx = 0
     while p != w:
@@ -941,7 +946,8 @@ cdef void _find_cycle(
     cdef ITYPE_t num_edges, num_edges_R
     cdef ITYPE_t offset, Wn_len, We_len
     cdef ITYPE_t[:] WnR, WeR
-    w = _find_apex(p, q, subtree_size, parent, n_verts + 1)
+    print("n_verts: ", n_verts)
+    w = _find_apex(p, q, subtree_size, parent)
     print("w: ", w)
     print("After _find_apex")
     num_edges = _trace_path(p, w, parent, 
@@ -964,6 +970,7 @@ cdef void _find_cycle(
                               parent_edge,
                               WnR, WeR,
                               n_verts)
+    print("After _trace_path")
     for idx in range(We_len//2):
         tmp = We[idx]
         We[idx] = We[We_len - idx - 1]
@@ -984,6 +991,7 @@ cdef void _find_cycle(
     We_len += num_edges_R
     Wne_len[0] = Wn_len
     Wne_len[1] = We_len
+    print("Exiting _find_cycle")
 
 cdef ITYPE_t _residual_capacity(
     ITYPE_t i,
@@ -1086,6 +1094,7 @@ cdef void _remove_edge(
     prev_vertex_dft[next_last_t] = prev_t
     next_vertex_dft[last_t] = t
     prev_vertex_dft[t] = last_t
+    print("prev_t, next_last_t, last_t, t: ", prev_t, next_last_t, last_t, t)
     # Update the subtree sizes and last descendants of the (old) acenstors
     # of t.
     while s != -2:
@@ -1107,7 +1116,7 @@ cdef void _make_root(
     cdef ITYPE_t idx, path_len, p
     cdef ITYPE_t size_p, last_p, last_q, prev_q
     cdef ITYPE_t next_last_q
-    cdef ITYPE_t[:] ancestors = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] ancestors = np.empty(n_verts + 1, dtype=ITYPE)
     idx = 0
     while q != -2:
         ancestors[idx] = q
@@ -1187,15 +1196,22 @@ cdef bint _trace_subtree(
     ITYPE_t[:] next_vertex_dft,
     ITYPE_t[:] subtree):
     cdef ITYPE_t idx, l
-
-    subtree[0] = p
-    idx = 1
-    l = last_descendent_dft[p]
-    while p != l:
-        p = next_vertex_dft[p]
-        subtree[idx] = p
-        idx += 1
-    return idx
+    try:
+        print("Inside _trace_subtree, p: ", p)
+        subtree[0] = p
+        idx = 1
+        l = last_descendent_dft[p]
+        print("Inside _trace_subtree, l: ", l)
+        print("next_vertex_node: ", end="")
+        _print_array(next_vertex_dft)
+        while p != l:
+            p = next_vertex_dft[p]
+            print("Inside _trace_subtree, p: ", p)
+            subtree[idx] = p
+            idx += 1
+        return idx
+    except IndexError:
+        raise IndexError("Except IndexError: %d, %d, %d, %d"%(p, l, idx, subtree.shape[0]))
 
 cdef void _print_array(ITYPE_t[:] arr):
     cdef ITYPE_t i
@@ -1214,13 +1230,15 @@ cdef void _update_potentials(
     ITYPE_t[:] next_vertex_dft,
     ITYPE_t[:] vertex_potentials):
     cdef ITYPE_t idx, d, path_len
-    cdef ITYPE_t[:] subtree = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] subtree = np.empty(2*n_verts, dtype=ITYPE)
     if q == edge_targets[i]:
         d = vertex_potentials[p] - edge_weights[i] - vertex_potentials[q]
     else:
         d = vertex_potentials[p] + edge_weights[i] - vertex_potentials[q]
-    path_len = _trace_subtree(p, last_descendent_dft,
+    path_len = _trace_subtree(q, last_descendent_dft,
                               next_vertex_dft, subtree)
+    print("Inside _update_potentials, path_len: ", path_len)
+    print("Inside _update_potentials, d: ", d)
     for idx in range(path_len):
         q = subtree[idx]
         vertex_potentials[q] += d
@@ -1287,7 +1305,7 @@ cdef ITYPE_t[:] _network_simplex(
     parent = np.empty(n_verts + 1, dtype=ITYPE)
     parent_edge = np.empty(n_edges + n_verts, dtype=ITYPE)
     subtree_size = np.empty(n_verts + 1, dtype=ITYPE)
-    next_vertex_dft = np.empty(n_verts + 2, dtype=ITYPE)
+    next_vertex_dft = np.empty(n_verts + 1, dtype=ITYPE)
     prev_vertex_dft = np.empty(n_verts + 1, dtype=ITYPE)
     last_descendent_dft = np.empty(n_verts + 1, dtype=ITYPE)
     _initialize_spanning_tree(n_verts, n_edges, faux_inf,
@@ -1331,6 +1349,9 @@ cdef ITYPE_t[:] _network_simplex(
         s = result[1]
         t = result[2]
         print("j, s, t: ", j, s, t)
+        print("_residual_capacity: ", _residual_capacity(j, s, edge_sources,
+                                         edge_capacities,
+                                         edge_flow))
         _augment_flow(Wn, We, Wne_len,
                       _residual_capacity(j, s, edge_sources,
                                          edge_capacities,
@@ -1355,12 +1376,16 @@ cdef ITYPE_t[:] _network_simplex(
             print("_index_i, _index_j: ", _index(We, Wne_len[1], i),
                                           _index(We, Wne_len[1], j))
             print("parent[-1]: ", parent[n_verts])
+            print("Before _remove_edge, next_vertex_dft: ")
+            _print_array(next_vertex_dft)
             _remove_edge(s, t, subtree_size,
                          prev_vertex_dft,
                          last_descendent_dft,
                          next_vertex_dft,
                          parent, parent_edge,
                          n_verts)
+            print("After _remove_edge, next_vertex_dft: ")
+            _print_array(next_vertex_dft)
             print("After _remove_edge")
             # return edge_flow
             _make_root(n_verts, q,
