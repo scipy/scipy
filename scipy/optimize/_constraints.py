@@ -42,14 +42,16 @@ class NonlinearConstraint:
         constraint. Note that you can mix constraints of different types:
         interval, one-sided or equality, by setting different components of
         `lb` and `ub` as  necessary.
-    jac : {callable,  '2-point', '3-point', 'cs'}, optional
+    jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method of computing the Jacobian matrix (an m-by-n matrix,
         where element (i, j) is the partial derivative of f[i] with
         respect to x[j]).  The keywords {'2-point', '3-point',
         'cs'} select a finite difference scheme for the numerical estimation.
         A callable must have the following signature:
         ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``.
-        Default is '2-point'.
+        Default is '2-point'. If `jac` is a Boolean and is True, `fun` is 
+        assumed to return a tuple ``(c, J)`` containing the evaluated constraint 
+        c and Jacobian J function and the gradient.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
         Method for computing the Hessian matrix. The keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme for
@@ -358,7 +360,7 @@ def new_constraint_to_old(con, x0):
                  "are ignored by this method.", OptimizeWarning)
 
         fun = con.fun
-        if callable(con.jac):
+        if callable(con.jac) or con.jac is True:
             jac = con.jac
         else:
             jac = None
@@ -469,7 +471,7 @@ def old_constraint_to_new(ic, con):
     if 'args' in con:
         args = con['args']
         fun = lambda x: con['fun'](x, *args)
-        if 'jac' in con:
+        if 'jac' in con and callable(con['jac']):
             jac = lambda x: con['jac'](x, *args)
     else:
         fun = con['fun']

@@ -299,8 +299,8 @@ class VectorFunction:
     def __init__(self, fun, x0, jac, hess,
                  finite_diff_rel_step, finite_diff_jac_sparsity,
                  finite_diff_bounds, sparse_jacobian):
-        if not callable(jac) and jac not in FD_METHODS:
-            raise ValueError("`jac` must be either callable or one of {}."
+        if not callable(jac) and jac not in FD_METHODS and jac is not True:
+            raise ValueError("`jac` must be either callable, True or one of {}."
                              .format(FD_METHODS))
 
         if not (callable(hess) or hess in FD_METHODS
@@ -344,6 +344,12 @@ class VectorFunction:
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
+
+        if jac is True:
+            from scipy.optimize.optimize import MemoizeJac # no circular import
+            # constr fun returns (value, jac)
+            fun = MemoizeJac(fun)
+            jac = fun.derivative
 
         # Function evaluation
         def fun_wrapped(x):
