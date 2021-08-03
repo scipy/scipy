@@ -7,7 +7,9 @@ import numbers
 from abc import ABC, abstractmethod
 import math
 from typing import (
+    Callable,
     ClassVar,
+    Dict,
     List,
     Optional,
     overload,
@@ -23,7 +25,6 @@ if TYPE_CHECKING:
     from scipy._lib._util import (
         DecimalNumber, GeneratorType, IntNumber, SeedType
     )
-
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
@@ -386,6 +387,96 @@ def update_discrepancy(
         raise ValueError("x_new and sample must be broadcastable")
 
     return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
+
+
+def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
+                         disc: float):
+    """Centered discrepancy after an elementary perturbation of a LHS.
+
+    An elementary perturbation consists of an exchange of coordinates between
+    two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
+    this operation conserves the LHS properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample (before permutation) to compute the discrepancy from.
+    i1 : int
+        The first line of the elementary permutation.
+    i2 : int
+        The second line of the elementary permutation.
+    k : int
+        The column of the elementary permutation.
+    disc : float
+        Centered discrepancy of the design before permutation.
+
+    Returns
+    -------
+    discrepancy : float
+        Centered discrepancy of the design after permutation.
+
+    References
+    ----------
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
+
+    """
+    n = sample.shape[0]
+
+    z_ij = sample - 0.5
+
+    # Eq (19)
+    c_i1j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i1, :])
+                              + abs(z_ij) - abs(z_ij[i1, :] - z_ij)), axis=1))
+    c_i2j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i2, :])
+                              + abs(z_ij) - abs(z_ij[i2, :] - z_ij)), axis=1))
+
+    # Eq (20)
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :])
+                                 - 0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :])
+                                 - 0.5 * z_ij[i2, :] ** 2))
+
+    # Eq (22), typo in the article in the denominator i2 -> i1
+    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k])
+           - abs(z_ij[i2, k] - z_ij[:, k]))
+    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k])
+             - abs(z_ij[i1, k] - z_ij[:, k]))
+    gamma = num / denum
+
+    # Eq (23)
+    c_p_i1j = gamma * c_i1j
+    # Eq (24)
+    c_p_i2j = c_i2j / gamma
+
+    alpha = (1 + abs(z_ij[i2, k])) / (1 + abs(z_ij[i1, k]))
+    beta = (2 - abs(z_ij[i2, k])) / (2 - abs(z_ij[i1, k]))
+
+    g_i1 = np.prod(1. + abs(z_ij[i1, :]))
+    g_i2 = np.prod(1. + abs(z_ij[i2, :]))
+    h_i1 = np.prod(1. + 0.5 * abs(z_ij[i1, :]) - 0.5 * (z_ij[i1, :] ** 2))
+    h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
+
+    # Eq (25), typo in the article g is missing
+    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
+    # Eq (26), typo in the article n ** 2
+    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
+
+    # Eq (26)
+    sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
+
+    mask = np.ones(n, dtype=bool)
+    mask[[i1, i2]] = False
+    sum_ = sum(sum_[mask])
+
+    disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
+
+    return disc_ep
 
 
 def primes_from_2_to(n: int) -> np.ndarray:
@@ -811,6 +902,18 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
+    optimization : {None, "random-cd"}, optional
+        Whether to use an optimization scheme to construct a LHS.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy [5]_. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures [6]_.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -821,7 +924,7 @@ class LatinHypercube(QMCEngine):
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code",
+       of Input Variables in the Analysis of Output from a Computer Code."
        Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
@@ -829,6 +932,11 @@ class LatinHypercube(QMCEngine):
        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
        24, no. 5: 2058-2080, 1996.
+    .. [5] Fang et al. "Design and modeling for computer experiments".
+       Computer Science and Data Analysis Series, 2006.
+    .. [6] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties."
+       Journal of Simulation, 2013.
 
     Examples
     --------
@@ -847,9 +955,9 @@ class LatinHypercube(QMCEngine):
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.019558034794794565  # random
+    0.0196...  # random
 
-    Finally, samples can be scaled to bounds.
+    Samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
@@ -860,14 +968,40 @@ class LatinHypercube(QMCEngine):
            [6.80338249, 3.08795949],
            [2.65448791, 3.83491828]])
 
+    Use the `optimization` keyword argument to produce a LHS with
+    lower discrepancy at higher computational cost.
+
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
+    >>> sample = sampler.random(n=5)
+    >>> qmc.discrepancy(sample)
+    0.0176...  # random
+
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
+
+        lhs_methods: Dict[Optional[Literal["random-cd"]], Callable] = {
+            None: self._random,
+            "random-cd": self._random_cd,
+        }
+
+        try:
+            if optimization is not None:
+                optimization = optimization.lower()  # type: ignore[assignment]
+            self.lhs_method = lhs_methods[optimization]
+        except KeyError:
+            raise ValueError(f"{optimization!r} is not a valid optimization"
+                             " method. It must be one of"
+                             f" {set(lhs_methods)!r}")
+
+        self._n_nochange = 100
+        self._n_iters = 10_000
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -883,6 +1017,10 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
+        return self.lhs_method(n)
+
+    def _random(self, n: IntNumber = 1) -> np.ndarray:
+        """Base LHS algorithm."""
         if self.centered:
             samples: np.ndarray | float = 0.5
         else:
@@ -897,6 +1035,54 @@ class LatinHypercube(QMCEngine):
         samples = (perms - samples) / n
         self.num_generated += n
         return samples
+
+    def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
+        """Optimal LHS on CD.
+
+        Create a base LHS and do random permutations of coordinates to
+        lower the centered discrepancy.
+        Because it starts with a normal LHS, it also works with the
+        `centered` keyword argument.
+
+        Two stopping criterion are used to stop the algorithm: at most,
+        `_n_iters` iterations are performed; or if there is no improvement
+        for `_n_nochange` consecutive iterations.
+        """
+        if self.d == 0 or n == 0:
+            return np.empty((n, self.d))
+
+        best_sample = self._random(n=n)
+        best_disc = discrepancy(best_sample)
+
+        if n == 1:
+            return best_sample
+
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
+
+        n_nochange = 0
+        n_iters = 0
+        while n_nochange < self._n_nochange and n_iters < self._n_iters:
+            n_iters += 1
+
+            col = rng_integers(self.rng, *bounds[0])
+            row_1 = rng_integers(self.rng, *bounds[1])
+            row_2 = rng_integers(self.rng, *bounds[2])
+            disc = _perturb_discrepancy(best_sample,
+                                        row_1, row_2, col,
+                                        best_disc)
+            if disc < best_disc:
+                best_sample[row_1, col], best_sample[row_2, col] = (
+                    best_sample[row_2, col], best_sample[row_1, col])
+
+                best_disc = disc
+                n_nochange = 0
+            else:
+                n_nochange += 1
+
+        self.num_generated += n
+        return best_sample
 
 
 class Sobol(QMCEngine):
