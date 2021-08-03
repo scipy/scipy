@@ -38,7 +38,9 @@ Some methods to do that are:
   We just generate a uniformly U(0,1) distributed random number U and
   return :math:`X = F^{-1}(U)`. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
-  the inverse. See :class:`~NumericalInverseHermite`.
+  the inverse (e.g. :class:`~scipy.special.ndtri`,
+  :class:`scipy.special.stdtrit`). In general, the implementation of special
+  functions are quite slow compared to the inversion methods in UNU.RAN.
 * The Rejection Method: The rejection method, often called
   acceptance-rejection method, has been suggested by John von Neumann in
   1951 [1]_. It involves computing an upper bound to the PDF (also called the
