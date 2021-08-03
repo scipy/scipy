@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
@@ -23,4 +24,5 @@ class BenchSVDS(Benchmark):
 
     def time_svds(self, k, problem, solver):
         # consider k = int(np.min(self.A.shape) * k)
+        np.random.seed(0)
         svds(self.A, k=k, solver=solver)
