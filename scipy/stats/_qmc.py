@@ -914,6 +914,11 @@ class LatinHypercube(QMCEngine):
 
         .. versionadded:: 1.8.0
 
+    orthogonal_array_p : int, optional
+        Orthogonal array based LHS. `orthogonal_array_p` must be a prime.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -980,28 +985,36 @@ class LatinHypercube(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        orthogonal_array_p: Optional[int] = None,
         optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        lhs_methods: Dict[Optional[Literal["random-cd"]], Callable] = {
-            None: self._random,
+        optimization_method: Dict[Literal["random-cd"], Callable] = {
             "random-cd": self._random_cd,
         }
 
-        try:
-            if optimization is not None:
+        if optimization is not None:
+            try:
                 optimization = optimization.lower()  # type: ignore[assignment]
-            self.lhs_method = lhs_methods[optimization]
-        except KeyError:
-            raise ValueError(f"{optimization!r} is not a valid optimization"
-                             " method. It must be one of"
-                             f" {set(lhs_methods)!r}")
+                self.optimization_method = optimization_method[optimization]
+            except KeyError:
+                raise ValueError(f"{optimization!r} is not a valid"
+                                 " optimization method. It must be one of"
+                                 f" {set(optimization_method)!r}")
 
-        self._n_nochange = 100
-        self._n_iters = 10_000
+            self._n_nochange = 100
+            self._n_iters = 10_000
+        else:
+            self.optimization_method = None
+
+        if orthogonal_array_p is None:
+            self.lhs_method = self._random
+        else:
+            self._p = orthogonal_array_p
+            self.lhs_method = self._random_oa_lhs
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -1017,7 +1030,10 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        return self.lhs_method(n)
+        if self.optimization_method is None:
+            return self.lhs_method(n)
+        else:
+            return self.optimization_method(n)
 
     def _random(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
@@ -1036,6 +1052,46 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return samples
 
+    def _random_oa_lhs(self, n: IntNumber = 1) -> np.ndarray:
+        """Orthogonal array based LHS of strength 2."""
+        # TODO check for n
+
+        n_row = self._p**2
+        n_col = self._p + 1
+
+        oa_sample = np.zeros(shape=(n_row, n_col))
+
+        # OA of strength 2
+        arrays = np.tile(np.arange(self._p), (2, 1))
+        oa_sample[:, :2] = np.stack(np.meshgrid(*arrays),
+                                    axis=-1).reshape(-1, 2)
+        for p_ in range(1, self._p):
+            oa_sample[:, 2+p_-1] = np.mod(oa_sample[:, 0]
+                                          + p_*oa_sample[:, 1], self._p)
+
+        # scramble the OA
+        oa_sample_ = np.empty(shape=(n_row, n_col))
+        for j in range(n_col):
+            perms = self.rng.permutation(self._p)
+            for k in range(self._p):
+                idx = np.where(oa_sample[:, j] == k)[0]
+                oa_sample_[idx, j] = perms[k]
+
+        # following is making a scrambled OA into an OA-LHS
+        oa_lhs_sample = np.zeros(shape=(n_row, n_col))
+        for j in range(n_col):
+            for k in range(self._p):
+                idx = np.where(oa_sample[:, j] == k)[0]
+                lhs_engine = LatinHypercube(d=1, centered=True, seed=self.rng)
+                lhs = lhs_engine.random(self._p).flatten()
+                oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
+
+        oa_lhs_sample /= self._p
+
+        idx = self.rng.permutation(n_col)[:self.d]
+        oa_lhs_sample = oa_lhs_sample[:, idx]
+        return oa_lhs_sample
+
     def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
         """Optimal LHS on CD.
 
@@ -1051,7 +1107,7 @@ class LatinHypercube(QMCEngine):
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        best_sample = self._random(n=n)
+        best_sample = self.lhs_method(n=n)
         best_disc = discrepancy(best_sample)
 
         if n == 1:
@@ -1331,7 +1387,7 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        engine: Sobol
+        engine : Sobol
             The fast-forwarded engine.
 
         """
