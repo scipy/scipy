@@ -158,8 +158,21 @@ distribution by calling the ``rvs`` method:
           distributions (e.g., normal inverse Gaussian `norminvgauss` and the
           lognormal distribution). If no specific  method is implemented,
           `rv_continuous` defaults to a numerical inversion method of the CDF
-          that is very slow. As described in this tutorial, UNU.RAN implements
-          various approaches that will generally produce different samples.
+          that is very slow. As UNU.RAN transforms uniform random numbers
+          differently than SciPy or NumPy, the resulting stream of RVs is
+          different even for the same stream of uniform random numbers. For
+          example, the random number stream of SciPy's ``~norm`` and UNU.RAN's
+          :class:`~TransformedDensityRejection` would not be the same even for
+          the same seed/random_state:
+
+          >>> from scipy.stats import norm, TransformedDensityRejection
+          >>> 
+          >>> dist = StandardNormal()
+          >>> rng = TransformedDensityRejection(dist, seed=123)
+          >>> rng.rvs()
+          0.474548717355228
+          >>> norm.rvs(random_state=123)
+          -1.0856306033005612
 
 We can pass a ``domain`` parameter to truncate the distribution:
 
