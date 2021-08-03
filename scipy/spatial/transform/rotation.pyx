@@ -1591,7 +1591,7 @@ cdef class Rotation:
         -----
         .. versionadded:: 1.8.0
         """
-        if not all([isinstance(x, Rotation) for x in rotations]):
+        if not all(isinstance(x, Rotation) for x in rotations):
             raise TypeError("input must contain Rotation objects only")
 
         quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
