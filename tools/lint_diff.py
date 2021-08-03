@@ -9,16 +9,6 @@ CONFIG = os.path.join(
     'lint_diff.ini',
 )
 
-# taken from
-# https://github.com/numpy/numpy/commit/e377d071ea502f396a7da299633bad74922c04eb
-# NOTE: The `diff` and `exclude` options of pycodestyle seem to be
-# incompatible, so instead just exclude the necessary files when
-# computing the diff itself.
-EXCLUDE = (
-    "scipy/stats/tests/test_sampling.py",
-    "scipy/__config__.py",
-)
-
 
 def rev_list(branch, num_commits):
     """List commits in reverse chronological order.
@@ -64,9 +54,8 @@ def find_branch_point(branch):
 
 def find_diff(sha):
     """Find the diff since the given sha."""
-    exclude = [f':(exclude){i}' for i in EXCLUDE]
     res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha, '--', '*.py', *exclude],
+        ['git', 'diff', '--unified=0', sha, '--', '*.py'],
         stdout=subprocess.PIPE,
         encoding='utf-8',
     )
