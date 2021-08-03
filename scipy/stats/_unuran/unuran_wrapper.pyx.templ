@@ -540,8 +540,9 @@ cdef class TransformedDensityRejection(Method):
     specialized to that distribution. Algorithms that are fast have a slow
     setup and require large tables. The aim of this universal method is to
     provide an algorithm that is not too slow and needs only a short setup.
-    This method can be applied to continuous unimodal distributions with
-    T-concave density function. See [1]_ and [2]_ for more details.
+    This method can be applied to univariate and unimodal continuous
+    distributions with T-concave density function. See [1]_ and [2]_ for
+    more details.
 
     Parameters
     ----------
@@ -876,10 +877,10 @@ cdef class DiscreteAliasUrn(Method):
     r"""
     Discrete Alias-Urn Method.
 
-    This method is used to sample from discrete distributions with a finite
-    domain. It uses the probability vector of size :math:`N` or a probability
-    mass function with a finite support to generator random numbers from the
-    distribution.
+    This method is used to sample from univariate discrete distributions with
+    a finite domain. It uses the probability vector of size :math:`N` or a
+    probability mass function with a finite support to generator random
+    numbers from the distribution.
 
     Parameters
     ----------
