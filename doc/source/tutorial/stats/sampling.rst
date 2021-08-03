@@ -77,6 +77,14 @@ to very poor performance. In such a situation, a fast setup is crucial to
 achieve good performance. An overview of the setup and sampling speed of the
 different method is shown in Table [TODO: add table]
 
+=====================================  ==============  ===============  ===========  ==============
+Method                                 Required Input  Optional Inputs  Setup Speed  Sampling Speed
+=====================================  ==============  ===============  ===========  ==============
+:class:`~TransformedDensityRejection`  pdf, dpdf       None             slow         fast
+:class:`~DiscreteAliasUrn`             pv              pmf              slow         very fast
+:class:`~NumericalInverseHermite`      cdf             pdf, dpdf        (very) slow  (very) fast
+=====================================  ==============  ===============  ===========  ==============
+
 
 Basic concepts of the Interface
 -------------------------------
