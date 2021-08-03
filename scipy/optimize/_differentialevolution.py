@@ -265,6 +265,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
+    If your objective function can be vectorized, then you may possibly
+    achieve speedups by the following:
+
+    >>> def maplike_for_vectorized_func(func, x):
+    ...     # func needs to return an array that's the same length as the
+    ...     # population, so transpose may be needed
+    ...     return func(x.T)
+    >>>
+    >>> differential_evolution(rosen, bounds=[(0, 2), (0, 2)],
+    ...                        workers=maplike_for_vectorized_func,
+    ...                        updating="deferred")
+
     Let's try and do a constrained minimization
 
     >>> from scipy.optimize import NonlinearConstraint, Bounds
