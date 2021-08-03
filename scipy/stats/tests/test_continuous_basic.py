@@ -2,6 +2,8 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
+import hypothesis.extra.numpy as npst
+from hypothesis import given, strategies as st
 from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
 
@@ -828,3 +830,34 @@ def test_broadcasting_in_moments_gh12192_regression():
                           [np.nan, np.nan, 6.78730736]])
     npt.assert_allclose(vals3, expected3, rtol=1e-8)
     assert vals3.shape == expected3.shape
+    npt.assert_(vals3.shape == expected3.shape)
+
+
+# A strategy to generate the shape of a one-dimensional array of length [0..7]
+# Subsequent draws will use the same shape to ensure compatibility.  For fancier
+# tricks see `npst.broadcastable_shapes()` or `mutually_broadcastable_shapes()`.
+shared_shapes = st.shared(st.tuples(st.integers(0, 7)))
+
+
+def scalar_or_array(**kwargs):
+    return st.floats(**kwargs) | npst.arrays(
+        dtype=float, shape=shared_shapes, elements=kwargs
+    )
+
+
+@given(
+    # Our moment `n`, between one and four (inclusive)
+    n=st.integers(1, 4),
+    # Our locations and scale are each either a scalar (Python-native) float,
+    # or an ndarray of floats.  If both are arrays, they will have the same shape.
+    loc=scalar_or_array(min_value=0, max_value=1000),  # what should the bounds be?
+    scale=scalar_or_array(min_value=-1, max_value=1000),
+)
+def test_moments_gh12192_regression(n, loc, scale):
+    got = stats.norm.moment(n, loc=loc, scale=scale)
+    ref = np.vectorize(stats.norm.moment, otypes=[float])(n, loc=loc, scale=scale)
+
+    if isinstance(got, np.ndarray):
+        assert got.shape == ref.shape
+        assert got.dtype == ref.dtype
+    np.testing.assert_allclose(got, ref)
