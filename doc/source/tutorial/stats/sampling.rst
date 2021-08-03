@@ -120,8 +120,8 @@ An example of this interface is shown below:
 
 As shown in the example, we first initialize a distribution object that
 contains an implementation of the methods required by the generator. In
-our case, we use the :class:`~TransformedDensityRejection` method which
-requires a PDF and its derivative w.r.t. x (i.e. the variate).
+our case, we use the :class:`~TransformedDensityRejection` (TDR) method
+which requires a PDF and its derivative w.r.t. ``x`` (i.e. the variate).
 
 .. note:: Note that the methods of the distribution (i.e. ``pdf``,
           ``dpdf``, etc) need not be vectorized. They should
