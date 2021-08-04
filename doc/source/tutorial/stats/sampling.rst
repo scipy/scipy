@@ -175,6 +175,24 @@ distribution by calling the ``rvs`` method:
            [-0.60954752,  0.29071797, -0.57167182],
            [ 0.9331694 , -0.95605208,  1.72195199]])
 
+.. plot::
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(norm.ppf(0.01), norm.ppf(0.99), 100)
+    >>> # PDF
+    >>> pdf = norm.pdf(x)
+    >>> ax.plot(x, pdf, "-", lw=5, alpha=0.6)
+    >>> # Empirical PDF
+    >>> sample = rng.rvs(size=1000)
+    >>> # discrete samples
+    >>> delta = np.max(pdf) * 5e-2
+    >>> ax.plot(sample[:100], -delta - delta * np.random.random(100), "+k")
+    >>> ax.set_title("PDF")
+    >>> ax.set_ylabel(r"$f$")
+    >>> ax.set_xlabel(r"$x$")
+    >>> plt.show()
+
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
           by these generators. Even if the same URNG (``seed``) is used,
