@@ -204,13 +204,16 @@ def test_seed_setter():
 
 def test_threading_behaviour():
     errors = {"err1": None, "err2": None}
+
     class Distribution:
         def __init__(self, pdf_msg):
             self.pdf_msg = pdf_msg
+
         def pdf(self, x):
             if 49.9 < x < 50.0:
                 raise ValueError(self.pdf_msg)
             return x
+
         def dpdf(self, x):
             return 1
 
@@ -262,8 +265,10 @@ class TestTransformedDensityRejection:
     class dist0:
         def pdf(self, x):
             return 3/4 * (1-x*x) if abs(x) <= 1 else 0
+
         def dpdf(self, x):
             return 3/4 * (-2*x) if abs(x) <= 1 else 0
+
         def cdf(self, x):
             return 3/4 * (x - x**3/3 + 2/3) if abs(x) <= 1 else 1*(x >= 1)
 
@@ -271,8 +276,10 @@ class TestTransformedDensityRejection:
     class dist1:
         def pdf(self, x):
             return stats.norm._pdf(x / 0.1)
+
         def dpdf(self, x):
             return -x / 0.01 * stats.norm._pdf(x / 0.1)
+
         def cdf(self, x):
             return stats.norm._cdf(x / 0.1)
 
@@ -282,15 +289,18 @@ class TestTransformedDensityRejection:
     class dist2:
         def __init__(self, shift):
             self.shift = shift
+
         def pdf(self, x):
             x -= self.shift
             y = 1. / (abs(x) + 1.)
             return 0.5 * y * y
+
         def dpdf(self, x):
             x -= self.shift
             y = 1. / (abs(x) + 1.)
             y = y * y * y
             return y if (x < 0.) else -y
+
         def cdf(self, x):
             x -= self.shift
             if x <= 0.:
@@ -352,7 +362,6 @@ class TestTransformedDensityRejection:
     def test_inf_nan_domains(self, domain, err, msg):
         with pytest.raises(err, match=msg):
             TransformedDensityRejection(common_cont_dist, domain=domain)
-
 
     # TODO: for cpoints < 0, UNU.RAN throws a warning and sets cpoints
     #       to a default value. This is not consistent with other invalid
@@ -442,12 +451,15 @@ class TestTransformedDensityRejection:
         # Empty distribution
         class dist:
             ...
+
         msg = r"`pdf` required but not found."
         with pytest.raises(ValueError, match=msg):
             rng = TransformedDensityRejection(dist)
+
         # dPDF not present in dist
         class dist:
             pdf = lambda x: 1-x*x
+
         msg = r"`dpdf` required but not found."
         with pytest.raises(ValueError, match=msg):
             rng = TransformedDensityRejection(dist)
@@ -588,6 +600,5 @@ class TestDiscreteAliasUrn:
         class dist:
             ...
         msg = r"`pmf` required but not found"
-              # `pmf` required but not found.
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn(dist=dist, domain=(0, 10))

@@ -3,8 +3,6 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import stats
-with safe_import():
-    from scipy.stats._distr_params import distdiscrete
 
 
 # Beta distribution with a = 2, b = 3
@@ -13,16 +11,19 @@ class contdist1:
         if 0 < x < 1:
             return x * (1-x)**2
         return 0
+
     def dpdf(self, x):
         if 0 < x < 1:
             return (1-x)**2 - 2*x*(1-x)
         return 0
+
     def cdf(self, x):
         if x < 0:
             return 0
         if x > 1:
             return 1
         return stats.beta._cdf(x, 2, 3)
+
     def __repr__(self):
         # asv prints this.
         return 'beta(2, 3)'
@@ -32,10 +33,13 @@ class contdist1:
 class contdist2:
     def pdf(self, x):
         return stats.norm._pdf(x)
+
     def dpdf(self, x):
         return -x * stats.norm._pdf(x)
+
     def cdf(self, x):
         return stats.norm._cdf(x)
+
     def __repr__(self):
         return 'norm(0, 1)'
 
@@ -45,20 +49,24 @@ class contdist2:
 class contdist3:
     def __init__(self, shift=0.):
         self.shift = shift
+
     def pdf(self, x):
         x -= self.shift
         y = 1. / (abs(x) + 1.)
         return y * y
+
     def dpdf(self, x):
         x -= self.shift
         y = 1. / (abs(x) + 1.)
         y = 2. * y * y * y
         return y if (x < 0.) else -y
+
     def cdf(self, x):
         x -= self.shift
         if x <= 0.:
             return 0.5 / (1. - x)
         return 1. - 0.5 / (1. + x)
+
     def __repr__(self):
         return f'sqrtlinshft({self.shift})'
 
