@@ -179,6 +179,19 @@ distribution by calling the ``rvs`` method:
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
+    >>> from math import exp
+    >>> 
+    >>> class StandardNormal:
+    ...     def pdf(self, x: float) -> float:
+    ...         # note that the normalization constant isn't required
+    ...         return exp(-0.5 * x*x)
+    ...     def dpdf(self, x: float) -> float:
+    ...         return -x * exp(-0.5 * x*x)
+    ... 
+    >>> 
+    >>> dist = StandardNormal()
+    >>> urng = np.random.default_rng()
+    >>> rng = TransformedDensityRejection(dist, seed=urng)
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(norm.ppf(0.01), norm.ppf(0.99), 100)
     >>> # PDF
