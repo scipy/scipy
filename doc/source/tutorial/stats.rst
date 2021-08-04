@@ -203,7 +203,7 @@ For further info, see `NumPy's documentation
 
 To learn more about the random number samplers implemented in SciPy, see
 :ref:`non-uniform random number sampling tutorial
-<non-uniform-random-number-sampling>` and `quasi monte carlo tutorial
+<non-uniform-random-number-sampling>` and :ref:`quasi monte carlo tutorial
 <stats>`
 
 Shifting and scaling

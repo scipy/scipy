@@ -817,7 +817,7 @@ cdef class TransformedDensityRejection(Method):
 
     def ppf_hat(self, u):
         """
-        Evaluate the inverse of the CDF of the hat distribution at u.
+        Evaluate the inverse of the CDF of the hat distribution at `u`.
 
         This call does not work for variant IA (immediate acceptance).
         In this case the hat CDF is evaluated as if variant PS is used.

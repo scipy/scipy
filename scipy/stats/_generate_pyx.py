@@ -24,14 +24,14 @@ def make_biasedurn():
 
 
 def make_unuran():
-    '''Substitute True/False values for NPY_OLD Cython build variable.'''
+    """Substitute True/False values for NPY_OLD Cython build variable."""
     import re
     unuran_base = (
-        pathlib.Path(__file__).parent / '_unuran' / 'unuran_wrapper'
+        pathlib.Path(__file__).parent / "_unuran" / "unuran_wrapper"
     ).absolute()
-    with open(unuran_base.with_suffix('.pyx.templ'), 'r') as src:
+    with open(unuran_base.with_suffix(".pyx.templ"), "r") as src:
         contents = src.read()
-    with open(unuran_base.with_suffix('.pyx'), 'w') as dest:
+    with open(unuran_base.with_suffix(".pyx"), "w") as dest:
         dest.write(re.sub("DEF NPY_OLD = isNPY_OLD",
                           f"DEF NPY_OLD = {isNPY_OLD()}",
                           contents))

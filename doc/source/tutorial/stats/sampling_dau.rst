@@ -38,8 +38,8 @@ distribution from ``(0, N)`` to ``(domain[0]``, ``domain[0] + N)``.
    >>> rng.rvs()
    12
 
-The method also works when no probability vector but a PMF is given. However
-then additionally a bounded (finite) domain must also be given.
+The method also works when no probability vector but a PMF is given. 
+In that case, a bounded (finite) domain must also be given.
 
     >>> class Distribution:
     ...     def pmf(self, x, c):

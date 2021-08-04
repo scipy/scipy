@@ -23,7 +23,7 @@ called T-concave. Currently the following transformations are implemented:
     c = 0.: T(x) &= \log(x)\\
     c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
 
-In addition to the PDF, it also requires the derivative of the PDF w.r.t x
+In addition to the PDF, it also requires the derivative of the PDF w.r.t ``x``
 (i.e. the variate). These functions must be present as methods of a python
 object which can then be passed to the generators to instantiate their object.
 

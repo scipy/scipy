@@ -137,8 +137,8 @@ def configuration(parent_package="", top_path=None):
     )
     ext.pre_build_hook = unuran_pre_build_hook
 
-    config.add_data_files('*.pxd')
-    config.add_data_files('*.pyi')
+    config.add_data_files("*.pxd")
+    config.add_data_files("*.pyi")
 
     return config
 

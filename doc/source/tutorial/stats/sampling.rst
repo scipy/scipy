@@ -196,12 +196,12 @@ distribution by calling the ``rvs`` method:
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
           by these generators. Even if the same URNG (``seed``) is used,
-          the resulting rvs will be different in general: the implementation
+          the resulting ``rvs`` will be different in general: the implementation
           of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
-          module `random` for well-known distributions (e.g., for the normal
+          module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
           distributions (e.g., normal inverse Gaussian `norminvgauss` and the
-          lognormal distribution). If no specific  method is implemented,
+          lognormal distribution). If no specific method is implemented,
           `rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is
