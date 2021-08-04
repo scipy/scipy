@@ -68,30 +68,28 @@ allcontdists = [contdist1(), contdist2(), contdist3(), contdist3(10000.)]
 
 class TransformedDensityRejection(Benchmark):
 
-    param_names = ['dist', 'c', 'cpoints']
+    param_names = ['dist', 'c']
 
-    params = [allcontdists, [0., -0.5], [10, 20, 30, 50]]
+    params = [allcontdists, [0., -0.5]]
 
-    def setup(self, dist, c, cpoints):
+    def setup(self, dist, c):
         self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
         with np.testing.suppress_warnings() as sup:
             sup.filter(UserWarning)
             try:
                 self.rng = stats.TransformedDensityRejection(dist, c=c,
-                                                             cpoints=cpoints,
                                                              seed=self.urng)
             except RuntimeError:
                 # contdist3 is not T-concave for c=0. So, skip such test-cases
                 raise NotImplementedError(f"{dist} not T-concave for c={c}")
 
-    def time_tdr_setup(self, dist, c, cpoints):
+    def time_tdr_setup(self, dist, c):
         with np.testing.suppress_warnings() as sup:
             sup.filter(UserWarning)
             rng = stats.TransformedDensityRejection(dist, c=c,
-                                                    cpoints=cpoints,
                                                     seed=self.urng)
 
-    def time_tdr_rvs(self, dist, c, cpoints):
+    def time_tdr_rvs(self, dist, c):
         rvs = self.rng.rvs(100000)
 
 
