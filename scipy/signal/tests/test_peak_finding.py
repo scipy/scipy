@@ -837,12 +837,12 @@ class TestFindPeaksCwt:
         # when window_size is too large
         test_data[250:320] -= 1
 
-        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=20,
                                     min_length=None, window_size=None)
         with pytest.raises(AssertionError):
             assert found_locs.size == act_locs.size
 
-        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=20,
                                     min_length=None, window_size=20)
         assert found_locs.size == act_locs.size
 
