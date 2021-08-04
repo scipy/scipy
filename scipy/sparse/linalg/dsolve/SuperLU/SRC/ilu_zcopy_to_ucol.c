@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -74,7 +74,7 @@ ilu_zcopy_to_ucol(
     int       nzumax;
     int       m; /* number of entries in the nonzero U-segments */
     register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
-    register double tmp;
+    register double tmp = 0.0;
     doublecomplex zero = {0.0, 0.0};
     int i_1 = 1;
 

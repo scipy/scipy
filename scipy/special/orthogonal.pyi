@@ -16,6 +16,16 @@ _FloatingType = Union[float, numpy.floating]
 _PointsAndWeights = Tuple[numpy.ndarray, numpy.ndarray]
 _PointsAndWeightsAndMu = Tuple[numpy.ndarray, numpy.ndarray, float]
 
+_ArrayLike0D = Union[
+    bool,
+    int,
+    float,
+    complex,
+    str,
+    bytes,
+    numpy.generic,
+]
+
 __all__ = [
     'legendre',
     'chebyt',
@@ -273,8 +283,8 @@ def roots_sh_legendre(
 class orthopoly1d(numpy.poly1d):
     def __init__(
             self,
-            roots: Any,  # TODO: ArrayLike
-            weights: Optional[Any],  # TODO: ArrayLike
+            roots: numpy.typing.ArrayLike,
+            weights: Optional[numpy.typing.ArrayLike],
             hn: float = ...,
             kn: float = ...,
             wfunc = Optional[Callable[[float], float]],
@@ -285,8 +295,12 @@ class orthopoly1d(numpy.poly1d):
     @property
     def limits(self) -> Tuple[float, float]: ...
     def weight_func(self, x: float) -> float: ...
-    # TODO: ArrayLike
-    def __call__(self, x: Any) -> Any: ...
+    @overload
+    def __call__(self, x: _ArrayLike0D) -> Any: ...
+    @overload
+    def __call__(self, x: numpy.poly1d) -> numpy.poly1d: ...  # type: ignore[misc]
+    @overload
+    def __call__(self, x: numpy.typing.ArrayLike) -> numpy.ndarray: ...
 
 def legendre(n: _IntegerType, monic: bool = ...) -> orthopoly1d: ...
 def chebyt(n: _IntegerType, monic: bool = ...) -> orthopoly1d: ...

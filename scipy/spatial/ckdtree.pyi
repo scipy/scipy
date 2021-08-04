@@ -22,7 +22,7 @@ else:
     from typing_extensions import Literal
 
 # TODO: Replace `ndarray` with a 1D float64 array when possible
-_BoxType = TypeVar("_BoxType", None, np.ndarray)
+_BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])
 
 # Copied from `numpy.typing._scalar_like._ScalarLike`
 # TODO: Expand with 0D arrays once we have shape support
@@ -35,13 +35,16 @@ _ArrayLike0D = Union[
     bytes,
     np.generic,
 ]
-_WeightType = Union[npt.ArrayLike, Tuple[npt.ArrayLike, npt.ArrayLike]]
+_WeightType = Union[
+    npt.ArrayLike,
+    Tuple[Optional[npt.ArrayLike], Optional[npt.ArrayLike]],
+]
 
 class cKDTreeNode:
     @property
-    def data_points(self) -> np.ndarray: ...
+    def data_points(self) -> npt.NDArray[np.float64]: ...
     @property
-    def indices(self) -> np.ndarray: ...
+    def indices(self) -> npt.NDArray[np.intp]: ...
 
     # These are read-only attributes in cython, which behave like properties
     @property
@@ -75,13 +78,13 @@ class cKDTree(Generic[_BoxType]):
 
     # These are read-only attributes in cython, which behave like properties
     @property
-    def data(self) -> np.ndarray: ...
+    def data(self) -> npt.NDArray[np.float64]: ...
     @property
-    def maxes(self) -> np.ndarray: ...
+    def maxes(self) -> npt.NDArray[np.float64]: ...
     @property
-    def mins(self) -> np.ndarray: ...
+    def mins(self) -> npt.NDArray[np.float64]: ...
     @property
-    def indices(self) -> np.ndarray: ...
+    def indices(self) -> npt.NDArray[np.float64]: ...
     @property
     def boxsize(self) -> _BoxType: ...
 
@@ -107,7 +110,7 @@ class cKDTree(Generic[_BoxType]):
         copy_data: bool = ...,
         balanced_tree: bool = ...,
         boxsize: npt.ArrayLike = ...,
-    ) -> cKDTree[np.ndarray]: ...
+    ) -> cKDTree[npt.NDArray[np.float64]]: ...
 
     # TODO: returns a 2-tuple of scalars if `x.ndim == 1` and `k == 1`,
     # returns a 2-tuple of arrays otherwise
@@ -157,7 +160,7 @@ class cKDTree(Generic[_BoxType]):
         p: float = ...,
         eps: float = ...,
         output_type: Literal["ndarray"] = ...,
-    ) -> np.ndarray: ...
+    ) -> npt.NDArray[np.intp]: ...
 
     @overload
     def count_neighbors(  # type: ignore[misc]
@@ -165,7 +168,7 @@ class cKDTree(Generic[_BoxType]):
         other: cKDTree,
         r: _ArrayLike0D,
         p: float = ...,
-        weights: None = ...,
+        weights: None | Tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> int: ...
     @overload
@@ -178,14 +181,23 @@ class cKDTree(Generic[_BoxType]):
         cumulative: bool = ...,
     ) -> np.float64: ...
     @overload
+    def count_neighbors(  # type: ignore[misc]
+        self,
+        other: cKDTree,
+        r: npt.ArrayLike,
+        p: float = ...,
+        weights: None | Tuple[None, None] = ...,
+        cumulative: bool = ...,
+    ) -> npt.NDArray[np.intp]: ...
+    @overload
     def count_neighbors(
         self,
         other: cKDTree,
         r: npt.ArrayLike,
         p: float = ...,
-        weights: Optional[_WeightType] = ...,
+        weights: _WeightType = ...,
         cumulative: bool = ...,
-    ) -> np.ndarray: ...
+    ) -> npt.NDArray[np.float64]: ...
 
     @overload
     def sparse_distance_matrix(  # type: ignore[misc]
@@ -218,4 +230,4 @@ class cKDTree(Generic[_BoxType]):
         max_distance: float,
         p: float = ...,
         output_type: Literal["ndarray"] = ...,
-    ) -> np.ndarray: ...
+    ) -> npt.NDArray[np.void]: ...

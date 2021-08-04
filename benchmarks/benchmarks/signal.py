@@ -92,8 +92,6 @@ class FFTConvolve(Benchmark):
 
     def setup(self, mode, size):
         rng = np.random.default_rng(1234)
-        # sample a bunch of pairs of 2d arrays
-        pairs = []
         self.a = rng.standard_normal(size[0])
         self.b = rng.standard_normal(size[1])
 
@@ -111,8 +109,6 @@ class OAConvolve(Benchmark):
 
     def setup(self, mode, size):
         rng = np.random.default_rng(1234)
-        # sample a bunch of pairs of 2d arrays
-        pairs = []
         self.a = rng.standard_normal(size[0])
         self.b = rng.standard_normal(size[1])
 

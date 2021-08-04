@@ -62,7 +62,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -399,6 +399,18 @@ def getfullargspec_no_self(func):
                    if p.annotation is not p.empty}
     return FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
                        kwdefaults or None, annotations)
+
+
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
 
 
 class MapWrapper:

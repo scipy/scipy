@@ -241,7 +241,7 @@ class BSpline:
 
         Parameters
         ----------
-        t : ndarray, shape (k+1,)
+        t : ndarray, shape (k+2,)
             internal knots
         extrapolate : bool or 'periodic', optional
             whether to extrapolate beyond the base interval, ``t[0] .. t[k+1]``,
