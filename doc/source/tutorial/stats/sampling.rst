@@ -75,15 +75,34 @@ a distribution for different shape parameters (the varying parameter case),
 an expensive setup that needs to be repeated for each parameter would lead
 to very poor performance. In such a situation, a fast setup is crucial to
 achieve good performance. An overview of the setup and sampling speed of the
-different method is shown in Table [TODO: add table]
+different method is shown in Table :ref:`unuran-methods-summary`.
 
-=====================================  ==============  ===============  ===========  ==============
-Method                                 Required Input  Optional Inputs  Setup Speed  Sampling Speed
-=====================================  ==============  ===============  ===========  ==============
-:class:`~TransformedDensityRejection`  pdf, dpdf       None             slow         fast
-:class:`~DiscreteAliasUrn`             pv              pmf              slow         very fast
-:class:`~NumericalInverseHermite`      cdf             pdf, dpdf        (very) slow  (very) fast
-=====================================  ==============  ===============  ===========  ==============
+.. table:: unuran-methods-summary
+
+=====================================  ===============  ===============  ===========  ==============
+Methods for continuous distributions   Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
+=====================================  ===============  ===============  ===========  ==============
+:class:`~TransformedDensityRejection`  pdf, dpdf        None             slow         fast
+:class:`~NumericalInverseHermite`      cdf              pdf, dpdf        (very) slow  (very) fast
+=====================================  ===============  ===============  ===========  ==============
+
+where
+
+* pdf: probability density function
+* dpdf: derivative of the pdf
+* cdf: cumulative distribution function
+
+
+=====================================  ===============  ===============  ===========  ==============
+Methods for discrete distributions     Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
+=====================================  ===============  ===============  ===========  ==============
+:class:`~DiscreteAliasUrn`             pv               pmf              slow         very fast
+=====================================  ===============  ===============  ===========  ==============
+
+where
+
+* pv: probability vector
+* pmf: probability mass function
 
 
 Basic concepts of the Interface
