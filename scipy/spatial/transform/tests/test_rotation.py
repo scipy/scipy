@@ -1298,3 +1298,16 @@ def test_as_euler_contiguous():
     assert all(i >= 0 for i in e1.strides)
     assert all(i >= 0 for i in e2.strides)
 
+
+def test_concatenate():
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0] + list(np.cumsum(sizes))
+    split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
+    result = Rotation.concatenate(split)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+
+def test_concatenate_wrong_type():
+    with pytest.raises(TypeError, match='Rotation objects only'):
+        Rotation.concatenate([Rotation.identity(), 1, None])

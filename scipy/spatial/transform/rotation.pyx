@@ -333,6 +333,7 @@ cdef class Rotation:
     as_rotvec
     as_mrp
     as_euler
+    concatenate
     apply
     __mul__
     inv
@@ -1571,6 +1572,30 @@ cdef class Rotation:
             return np.asarray(mrps[0])
         else:
             return np.asarray(mrps)
+
+    @classmethod
+    def concatenate(cls, rotations):
+        """Concatenate a sequence of `Rotation` objects.
+
+        Parameters
+        ----------
+        rotations : sequence of `Rotation` objects
+            The rotations to concatenate.
+
+        Returns
+        -------
+        concatenated : `Rotation` instance
+            The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+        """
+        if not all(isinstance(x, Rotation) for x in rotations):
+            raise TypeError("input must contain Rotation objects only")
+
+        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
+        return cls(quats, normalize=False)
 
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
