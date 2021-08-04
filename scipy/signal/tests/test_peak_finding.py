@@ -856,4 +856,4 @@ class TestFindPeaksCwt:
         widths = 1
         found_locs = find_peaks_cwt(test_data, widths)
 
-        np.testing.assert_equal(found_locs, 32)
+        np.testing.assert_equal(found_locs, np.argmax(test_data))
