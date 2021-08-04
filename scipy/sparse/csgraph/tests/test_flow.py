@@ -2,8 +2,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
 
-from scipy.sparse import csr_matrix, csc_matrix
-from scipy.sparse.csgraph import maximum_flow
+from scipy.sparse import csr_matrix, csc_matrix, rand
+from scipy.sparse.csgraph import maximum_flow, minimum_cost_flow
 from scipy.sparse.csgraph._flow import (
     _add_reverse_edges, _make_edge_pointers, _make_tails
 )
@@ -199,3 +199,35 @@ def test_make_tails(a, expected):
     a = csr_matrix(a, dtype=np.int32)
     tails = _make_tails(a)
     assert_array_equal(tails, expected)
+
+@pytest.mark.parametrize("n_nodes,seed,expected_result",
+[(2, 900, (0, 0)), (8, 100, (29, 1342)), (8, 200, (25, 765)),
+ (8, 600, (26, 1042)), (8, 800, (22, 446)), (16, 0, (97, 3704)),
+ (16, 100, (60, 1954)), (16, 200, (68, 1784)), (16, 300, (82, 1969)),
+ (16, 400, (37, 1614)), (16, 500, (49, 1583)), (16, 600, (43, 1236)),
+ (16, 700, (58, 1835)), (16, 800, (75, 2445)), (16, 900, (38, 1949)),
+ (100, 0, (453, 2210)), (100, 999, (450, 1671))])
+def test_minimum_cost_flow(n_nodes, seed, expected_result):
+    rng = np.random.default_rng(seed=seed)
+    A = (rand(n_nodes, n_nodes, 0.3, format='csr', random_state=rng)*100).astype(np.uint32)
+    A_mat = A.toarray()
+    for i in range(n_nodes):
+        A_mat[i][i] = 0
+    x = rng.integers(0, 10, size=(n_nodes//2,))
+    demand = np.array(x.tolist() + (-x).tolist())
+    cost = rng.integers(0, 100, size=(int(0.3*n_nodes*n_nodes),))
+    res = minimum_cost_flow(csr_matrix(A_mat), demand, cost)
+    assert(res.flow_value == expected_result[0])
+    assert(res.flow_cost == expected_result[1])
+
+def test_minimum_cost_flow_exceptions():
+    pytest.raises(ValueError, minimum_cost_flow,
+                  csr_matrix(np.array([[0, -1], [0, 0]],
+                             dtype=np.int32)),
+                  np.array([0, 0], dtype=np.int32),
+                  np.array([0], dtype=np.int32))
+    pytest.raises(ValueError, minimum_cost_flow,
+                  csr_matrix(np.array([[0, 1], [0, 0]],
+                             dtype=np.int32)),
+                  np.array([0, 1], dtype=np.int32),
+                  np.array([0], dtype=np.int32))

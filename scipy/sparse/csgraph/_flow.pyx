@@ -698,17 +698,17 @@ def minimum_cost_flow(csgraph, demand, cost):
     elif cost.dtype != ITYPE:
         cost = cost.astype(ITYPE)
 
-    _network_simplex_checks(csgraph.data, demand, cost, csgraph.indptr.shape[0] - 1)
+    _network_simplex_checks(csgraph.data, demand, cost, n_verts)
     tails = _make_tails(csgraph)
     row = np.empty(cost.shape, dtype=ITYPE)
     col = np.empty(cost.shape, dtype=ITYPE)
     flow_data = np.empty(cost.shape, dtype=ITYPE)
     result = _network_simplex(csgraph.indices, tails, csgraph.data,
-                            demand, cost, csgraph.indptr.shape[0] - 1,
+                            demand, cost, n_verts,
                             row, col, flow_data)
     if result[3] == 0:
         raise ValueError("no flow satisfies all node demands")
-    flow_matrix = csr_matrix((flow_data[0:result[1]], (row[0:result[1]], col[0:result[1]])), shape=(csgraph.indptr.shape[0] - 1, csgraph.indptr.shape[0] - 1))
+    flow_matrix = csr_matrix((flow_data[0:result[1]], (row[0:result[1]], col[0:result[1]])), shape=(n_verts, n_verts))
     return MinCostFlowResult(result[2], flow_matrix, result[0])
 
 def _network_simplex_checks(
@@ -718,9 +718,6 @@ def _network_simplex_checks(
         ITYPE_t n_verts):
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t demand_sum
-
-    if n_verts == 0:
-        raise ValueError("graph has no vertices")
 
     # # # print(n_verts, demand)
     demand_sum = 0
