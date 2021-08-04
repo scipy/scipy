@@ -473,7 +473,7 @@ class TestBSpline:
         for k in range(2, 7):
             run_design_matrix_tests(n, k, "periodic")
     
-    def test_design_matrix_x_shapes(self):
+    def test_design_matrix_x_t_shapes(self):
         # test for different `x` shapes
         np.random.seed(1234)
         n = 10
@@ -490,6 +490,11 @@ class TestBSpline:
                                                  k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
         
+        # test for minimal possible `t` shape
+        t = [0., 1., 1., 1., 2.]
+        des_matr = BSpline.design_matrix(1., t, 3).toarray()
+        assert_allclose(des_matr, [[1.]], atol=1e-14)
+        
     def test_design_matrix_asserts(self):
         np.random.seed(1234)
         n = 10
@@ -497,7 +502,7 @@ class TestBSpline:
         x = np.sort(np.random.random_sample(n) * 40 - 20)
         y = np.random.random_sample(n) * 40 - 20
         bspl = make_interp_spline(x, y, k=k)
-        # invalid vector of knots (should a 1D non-descending array_like)
+        # invalid vector of knots (should be a 1D non-descending array)
         # here the actual vector of knots is reversed, so it is invalid
         with assert_raises(ValueError):
             des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
