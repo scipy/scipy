@@ -178,6 +178,7 @@ distribution by calling the ``rvs`` method:
 .. plot::
 
     >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import norm
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(norm.ppf(0.01), norm.ppf(0.99), 100)
     >>> # PDF
