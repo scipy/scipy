@@ -2,10 +2,10 @@ import numpy as np
 from typing import Union, Any, Tuple, List, overload, Callable
 from typing_extensions import Protocol
 import numpy.typing as npt
+from scipy._lib._util import SeedType
 
 
-SeedType = Union[np.random.RandomState, np.random.Generator, int,
-                 npt.ArrayLike, np.random.SeedSequence]
+UNURANSeedType = Union[SeedType, np.random.SeedSequence]
 ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
 
 
@@ -21,6 +21,10 @@ class Method:
     def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
     @overload
     def rvs(self, size: int | Tuple[int, ...] = ...) -> np.ndarray: ...
+    @property
+    def seed(self) -> np.random.Generator | np.random.RandomState: ...
+    @seed.setter
+    def seed(self, seed: UNURANSeedType) -> None: ...
 
 
 class TDRDist(Protocol):
@@ -46,7 +50,7 @@ class TransformedDensityRejection(Method):
                  use_center: bool = ...,
                  use_mode: bool = ...,
                  guide_factor: float = ...,
-                 seed: SeedType = ...) -> None: ...
+                 seed: UNURANSeedType = ...) -> None: ...
 
     @property
     def sqhratio(self) -> float: ...
