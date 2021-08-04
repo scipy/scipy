@@ -30,9 +30,10 @@ class MaximumFlowResult:
 
 class MinCostFlowResult:
 
-    def __init__(self, flow_value, residual):
+    def __init__(self, flow_value, residual, flow_cost):
         self.flow_value = flow_value
         self.residual = residual
+        self.flow_cost = flow_cost
 
     def __repr__(self):
         return 'MinCostFlowResult with value of %d' % self.flow_value
@@ -699,13 +700,14 @@ def minimum_cost_flow(csgraph, demand, cost):
 
     _network_simplex_checks(csgraph.data, demand, cost, csgraph.indptr.shape[0] - 1)
     tails = _make_tails(csgraph)
-    flow = _network_simplex(csgraph.indices, tails, csgraph.data,
-                            demand, cost, csgraph.indptr.shape[0] - 1)
-    # flow_array = np.asarray(flow[0:csgraph.data.shape[0]])
-    flow_array = np.asarray(flow)
-    # flow_matrix = csr_matrix((flow_array, csgraph.indices, csgraph.indptr),
-    #                              shape=csgraph.shape)
-    return MaximumFlowResult(flow_array.sum(), flow_array)
+    row = np.empty(cost.shape, dtype=ITYPE)
+    col = np.empty(cost.shape, dtype=ITYPE)
+    flow_data = np.empty(cost.shape, dtype=ITYPE)
+    result = _network_simplex(csgraph.indices, tails, csgraph.data,
+                            demand, cost, csgraph.indptr.shape[0] - 1,
+                            row, col, flow_data)
+    flow_matrix = csr_matrix((flow_data[0:result[1]], (row[0:result[1]], col[0:result[1]])), shape=(csgraph.indptr.shape[0] - 1, csgraph.indptr.shape[0] - 1))
+    return MinCostFlowResult(result[2], flow_matrix, result[0])
 
 def _network_simplex_checks(
         ITYPE_t[:] capacities,
@@ -1254,13 +1256,28 @@ cdef void _update_potentials(
         q = subtree[idx]
         vertex_potentials[q] += d
 
+cdef void _add_entry(
+    ITYPE_t edge_source,
+    ITYPE_t edge_target,
+    ITYPE_t flow,
+    ITYPE_t idx,
+    ITYPE_t[:] row,
+    ITYPE_t[:] col,
+    ITYPE_t[:] flow_data):
+        row[idx] = edge_source - 1
+        col[idx] = edge_target - 1
+        flow_data[idx] = flow
+
 cdef ITYPE_t[:] _network_simplex(
         ITYPE_t[:] heads,
         ITYPE_t[:] tails,
         ITYPE_t[:] capacities,
         ITYPE_t[:] demand,
         ITYPE_t[:] cost,
-        ITYPE_t n_verts):
+        ITYPE_t n_verts,
+        ITYPE_t[:] row,
+        ITYPE_t[:] col,
+        ITYPE_t[:] flow_data):
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t idx, faux_inf, capacities_sum, cost_sum
     cdef ITYPE_t j, s, t, i, tmp, p, q
@@ -1445,10 +1462,22 @@ cdef ITYPE_t[:] _network_simplex(
         # # # print("After _find_entering_edges")
         itr += 1
 
-    # # # print("edge_flow:", end=" ")
-    # # # _print_array(edge_flow)
-    edge_flow_final = np.zeros(n_edges + n_verts, dtype=ITYPE)
-    # print("flow: ", np.asarray(edge_flow)[0:n_edges_new].sum())
-    for i in range(n_edges + n_verts):
-        edge_flow_final[i] = edge_flow[i]
-    return edge_flow_final
+    # print("edge_weights:", end=" ")
+    # _print_array(edge_weights)
+    # print("edge_flow:", end=" ")
+    # _print_array(edge_flow)
+    flow_cost = 0
+    flow_value = 0
+    for i in range(n_edges):
+        flow_cost += edge_weights[i]*edge_flow[i]
+        flow_value += edge_flow[i]
+    idx = 0
+    for i in range(n_edges):
+        if edge_flow[i] != 0 and edge_capacities[i] != 0:
+            _add_entry(edge_sources[i], edge_targets[i],
+                       edge_flow[i], idx, row, col, flow_data)
+            idx += 1
+    result[0] = flow_cost
+    result[1] = idx
+    result[2] = flow_value
+    return result
