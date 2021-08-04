@@ -112,6 +112,7 @@ to fit the distribution more tightly.
 Let's see how this affects the callbacks to the PDF method of the
 distribution:
 
+    >>> from copy import copy
     >>> class StandardNormal:
     ...     def __init__(self):
     ...         self.callbacks = 0
@@ -122,25 +123,25 @@ distribution:
     ...         return -x * np.exp(-0.5 * x*x)
     ... 
     >>> dist1 = StandardNormal()
-    >>> urng = np.random.default_rng(0x7344aca86f1dafd8820be998b639551c)
-    >>> rng = TransformedDensityRejection(dist1, seed=urng)
+    >>> urng1 = np.random.default_rng()
+    >>> urng2 = copy(urng1)
+    >>> rng = TransformedDensityRejection(dist1, seed=urng1)
     >>> dist1.callbacks  # evaluations during setup
     139
     >>> dist1.callbacks = 0  # don't consider evaluations during setup
     >>> rvs = rng.rvs(100000)
     >>> dist1.callbacks  # evaluations during sampling
-    551
+    527
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
-    >>> urng = np.random.default_rng(0x7344aca86f1dafd8820be998b639551c)
     >>> rng = TransformedDensityRejection(dist2, max_sqhratio=0.999,
-    ...                                   max_intervals=1000, seed=urng)
+    ...                                   max_intervals=1000, seed=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
     >>> dist2.callbacks = 0  # don't consider evaluations during setup
     >>> rvs = rng.rvs(100000)
     >>> dist2.callbacks  # evaluations during sampling
-    63
+    84
 
 As we can see, far fewer PDF evaluations are required during sampling when
 we increase the ``sqhratio``. Also, notice that this comes at the cost of
