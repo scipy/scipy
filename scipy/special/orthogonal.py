@@ -178,7 +178,7 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
-    k = np.arange(n, dtype='d')
+    k = arange(n, dtype='d')
     c = np.zeros((2, n))
     c[0,1:] = bn_func(k[1:])
     c[1,:] = an_func(k)
@@ -271,8 +271,8 @@ def roots_jacobi(n, alpha, beta, mu=False):
         an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b),
                   (b*b - a*a) / ((2.0*k+a+b)*(2.0*k+a+b+2)))
 
-    bn_func = lambda k: 2.0 / (2.0*k+a+b)*np.sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
-              * np.where(k == 1, 1.0, np.sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
+    bn_func = lambda k: 2.0 / (2.0*k+a+b)*sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
+              * np.where(k == 1, 1.0, sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
 
     f = lambda n, x: cephes.eval_jacobi(n, a, b, x)
     df = lambda n, x: 0.5 * (n + a + b + 1) \
@@ -545,7 +545,7 @@ def roots_genlaguerre(n, alpha, mu=False):
             return x, w
 
     an_func = lambda k: 2 * k + alpha + 1
-    bn_func = lambda k: -np.sqrt(k * (k + alpha))
+    bn_func = lambda k: -sqrt(k * (k + alpha))
     f = lambda n, x: cephes.eval_genlaguerre(n, alpha, x)
     df = lambda n, x: (n*cephes.eval_genlaguerre(n, alpha, x)
                      - (n + alpha)*cephes.eval_genlaguerre(n-1, alpha, x))/x
@@ -773,10 +773,10 @@ def roots_hermite(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(np.pi)
+    mu0 = sqrt(pi)
     if n <= 150:
         an_func = lambda k: 0.0*k
-        bn_func = lambda k: np.sqrt(k/2.0)
+        bn_func = lambda k: sqrt(k/2.0)
         f = cephes.eval_hermite
         df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
@@ -1277,10 +1277,10 @@ def roots_hermitenorm(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(2.0*np.pi)
+    mu0 = sqrt(2.0*pi)
     if n <= 150:
         an_func = lambda k: 0.0*k
-        bn_func = lambda k: np.sqrt(k)
+        bn_func = lambda k: sqrt(k)
         f = cephes.eval_hermitenorm
         df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
@@ -1401,9 +1401,9 @@ def roots_gegenbauer(n, alpha, mu=False):
         # keep doing so.
         return roots_chebyt(n, mu)
 
-    mu0 = np.sqrt(np.pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
+    mu0 = sqrt(pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
     an_func = lambda k: 0.0 * k
-    bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
+    bn_func = lambda k: sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
     f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
     df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
@@ -1533,7 +1533,7 @@ def roots_chebyt(n, mu=False):
     m = int(n)
     if n < 1 or n != m:
         raise ValueError('n must be a positive integer.')
-    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2*m))
+    x = _ufuncs._sinpi(arange(-m + 1, m, 2) / (2*m))
     w = np.full_like(x, pi/m)
     if mu:
         return x, w, pi
@@ -1635,9 +1635,9 @@ def roots_chebyu(n, mu=False):
     m = int(n)
     if n < 1 or n != m:
         raise ValueError('n must be a positive integer.')
-    t = np.arange(m, 0, -1) * pi / (m + 1)
-    x = np.cos(t)
-    w = pi * np.sin(t)**2 / (m + 1)
+    t = arange(m, 0, -1) * pi / (m + 1)
+    x = cos(t)
+    w = pi * sin(t)**2 / (m + 1)
     if mu:
         return x, w, pi / 2
     else:
@@ -2110,7 +2110,7 @@ def roots_legendre(n, mu=False):
 
     mu0 = 2.0
     an_func = lambda k: 0.0 * k
-    bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
+    bn_func = lambda k: k * sqrt(1.0 / (4 * k * k - 1))
     f = cephes.eval_legendre
     df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
                      + n*cephes.eval_legendre(n-1, x))/(1-x**2)
