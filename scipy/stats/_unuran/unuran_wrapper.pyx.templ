@@ -845,7 +845,7 @@ cdef class TransformedDensityRejection(Method):
         ...         return -x * exp(-0.5 * x**2)
         ... 
         >>> dist = MyDist()
-        >>> rng = TransformedDensityRejection(dist, seed=123)
+        >>> rng = TransformedDensityRejection(dist)
         >>> 
         >>> rng.ppf_hat(0.5)
         -0.00018050266342393984

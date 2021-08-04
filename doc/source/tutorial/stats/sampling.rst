@@ -142,7 +142,7 @@ An example of this interface is shown below:
     ... 
     >>> dist = StandardNormal()
     >>> 
-    >>> urng = np.random.default_rng(0x6be00a9336fc82258fe73bfa672d3d52)
+    >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, seed=urng)
 
 As shown in the example, we first initialize a distribution object that
@@ -167,13 +167,13 @@ standard normal distribution. Now, we can start sampling from our
 distribution by calling the ``rvs`` method:
 
     >>> rng.rvs()
-    -0.6853213192313732
+    -1.526829048388144
     >>> rng.rvs((5, 3))
-    array([[ 0.24129542,  1.28709556,  0.43244247],
-           [ 0.88977668,  1.22981663, -0.09820373],
-           [ 1.38588147, -1.06629264,  0.54475257],
-           [-0.55153436, -0.67281406,  0.01830143],
-           [ 1.37709649, -1.33036774,  0.62131967]])
+    array([[ 2.06206883,  0.15205036,  1.11587367],
+           [-0.30775562,  0.29879802, -0.61858268],
+           [-1.01049115,  0.78853694, -0.23060766],
+           [-0.60954752,  0.29071797, -0.57167182],
+           [ 0.9331694 , -0.95605208,  1.72195199]])
 
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
@@ -205,11 +205,11 @@ We can pass a ``domain`` parameter to truncate the distribution:
 
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), seed=urng)
     >>> rng.rvs((5, 3))
-    array([[ 0.89612408,  0.03455796,  0.02369241],
-           [ 0.60741875, -0.86184683,  0.49225344],
-           [-0.18349351,  0.55651665, -0.65822471],
-           [ 0.53502455, -0.91848951,  0.72540482],
-           [-0.63404952,  0.28427289,  0.98542246]])
+    array([[-0.99865691,  0.38104014,  0.31633526],
+           [ 0.88433909, -0.45181849,  0.78574461],
+           [ 0.3337244 ,  0.12924307,  0.40499404],
+           [-0.51865761,  0.43252222, -0.6514866 ],
+           [-0.82666174,  0.71525582,  0.49006743]])
 
 Invalid and bad arguments are handled either by SciPy or by UNU.RAN. The
 latter throws a ``RuntimeError`` that follows a common format:

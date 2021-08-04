@@ -50,10 +50,10 @@ An example of using this method is shown below:
     ... 
     >>> dist = StandardNormal()
     >>> 
-    >>> urng = np.random.default_rng(0xbb51a838c8a087854ad3643b2b268d43)
+    >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, seed=urng)
     >>> rng.rvs()
-    0.7771420061983989
+    -1.526829048388144
 
 In the above example, we have used the TDR method to sample from the standard
 normal distribution. Note that we can drop the normalization constant while

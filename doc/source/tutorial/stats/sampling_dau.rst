@@ -23,10 +23,10 @@ constructing the tables is O(N).
     >>> from scipy.stats import DiscreteAliasUrn
     >>> 
     >>> pv = [0.18, 0.02, 0.8]
-    >>> urng = np.random.default_rng(0x8383b295ecbf0874ac910b13adcc85a0)
+    >>> urng = np.random.default_rng()
     >>> rng = DiscreteAliasUrn(pv, seed=urng)
     >>> rng.rvs()
-    2
+    0
 
 By default, the probability vector is indexed starting at 0. However, this
 can be changed by passing a ``domain`` parameter. When ``domain`` is given
@@ -49,7 +49,7 @@ then additionally a bounded (finite) domain must also be given.
     >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), params=(2, ),
     ...                        seed=urng)
     >>> rng.rvs()
-    9
+    10
 
 .. note:: As :class:`~DiscreteAliasUrn` expects PMF with signature
           ``def pmf(x: float, ...) -> float``, it first vectorizes the
