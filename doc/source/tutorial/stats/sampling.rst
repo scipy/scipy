@@ -195,8 +195,10 @@ distribution by calling the ``rvs`` method:
 
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
-          by these generators. Even if the same URNG (``seed``) is used,
-          the resulting ``rvs`` will be different in general: the implementation
+          by these generators. UNU.RAN generators must be considered
+          independent in a sense that they will produce a different stream
+          of random numbers than the one produced by the equivalent
+          distribution in :mod:`scipy.stats` for any seed. The implementation
           of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
