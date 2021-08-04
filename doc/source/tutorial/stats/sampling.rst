@@ -213,13 +213,15 @@ distribution by calling the ``rvs`` method:
           the same seed/random_state:
 
           >>> from scipy.stats import norm, TransformedDensityRejection
-          >>> 
+          >>> from copy import copy
           >>> dist = StandardNormal()
-          >>> rng = TransformedDensityRejection(dist, seed=123)
+          >>> urng1 = np.random.default_rng()
+          >>> urng1_copy = copy(urng1)
+          >>> rng = TransformedDensityRejection(dist, seed=urng1)
           >>> rng.rvs()
-          0.474548717355228
-          >>> norm.rvs(random_state=123)
-          -1.0856306033005612
+          -1.526829048388144
+          >>> norm.rvs(random_state=urng1_copy)
+          1.3194816698862635
 
 We can pass a ``domain`` parameter to truncate the distribution:
 
