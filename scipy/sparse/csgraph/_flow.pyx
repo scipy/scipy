@@ -706,6 +706,8 @@ def minimum_cost_flow(csgraph, demand, cost):
     result = _network_simplex(csgraph.indices, tails, csgraph.data,
                             demand, cost, csgraph.indptr.shape[0] - 1,
                             row, col, flow_data)
+    if result[3] == 0:
+        raise ValueError("no flow satisfies all node demands")
     flow_matrix = csr_matrix((flow_data[0:result[1]], (row[0:result[1]], col[0:result[1]])), shape=(csgraph.indptr.shape[0] - 1, csgraph.indptr.shape[0] - 1))
     return MinCostFlowResult(result[2], flow_matrix, result[0])
 
@@ -1354,7 +1356,7 @@ cdef ITYPE_t[:] _network_simplex(
                               last_descendent_dft)
 
     local_vars = np.empty(4, dtype=ITYPE)
-    result = np.empty(3, dtype=ITYPE)
+    result = np.empty(4, dtype=ITYPE)
     prev_ret_value = _find_entering_edges(n_edges_new, edge_weights,
                                           vertex_potentials, edge_flow,
                                           edge_sources, edge_targets,
@@ -1466,18 +1468,26 @@ cdef ITYPE_t[:] _network_simplex(
     # _print_array(edge_weights)
     # print("edge_flow:", end=" ")
     # _print_array(edge_flow)
-    flow_cost = 0
-    flow_value = 0
-    for i in range(n_edges):
-        flow_cost += edge_weights[i]*edge_flow[i]
-        flow_value += edge_flow[i]
-    idx = 0
-    for i in range(n_edges):
-        if edge_flow[i] != 0 and edge_capacities[i] != 0:
-            _add_entry(edge_sources[i], edge_targets[i],
-                       edge_flow[i], idx, row, col, flow_data)
-            idx += 1
-    result[0] = flow_cost
-    result[1] = idx
-    result[2] = flow_value
+
+    result[3] = 1
+    for v in range(n_verts):
+        if edge_flow[v + n_edges_new] != 0:
+            result[3] = 0
+            break
+
+    if result[3] == 1:
+        flow_cost = 0
+        flow_value = 0
+        for i in range(n_edges):
+            flow_cost += edge_weights[i]*edge_flow[i]
+            flow_value += edge_flow[i]
+        idx = 0
+        for i in range(n_edges):
+            if edge_flow[i] != 0 and edge_capacities[i] != 0:
+                _add_entry(edge_sources[i], edge_targets[i],
+                        edge_flow[i], idx, row, col, flow_data)
+                idx += 1
+        result[0] = flow_cost
+        result[1] = idx
+        result[2] = flow_value
     return result
