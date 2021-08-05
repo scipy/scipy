@@ -891,10 +891,6 @@ class LatinHypercube(QMCEngine):
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
-    LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
-    but not necessarily for optimized LHS.
 
     Parameters
     ----------
@@ -915,7 +911,9 @@ class LatinHypercube(QMCEngine):
         .. versionadded:: 1.8.0
 
     orthogonal_array_p : int, optional
-        Orthogonal array based LHS. `orthogonal_array_p` must be a prime.
+        Orthogonal array based LHS of strength 2 [7]_, [8]_.
+        `orthogonal_array_p` must be a prime. It also constrains
+        ``d <= orthogonal_array_p + 1`` and ``n = orthogonal_array_p**2``.
 
         .. versionadded:: 1.8.0
 
@@ -925,6 +923,23 @@ class LatinHypercube(QMCEngine):
         seeded with `seed`.
         If `seed` is already a ``Generator`` instance then that instance is
         used.
+
+    Notes
+    -----
+
+    LHS is extremely effective on integrands that are nearly additive [2]_.
+    LHS on :math:`n` points never has more variance than plain MC on
+    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
+    but not necessarily for optimized LHS.
+
+    LHS is an orthogonal array of strength 1.
+    :math:`A` is called an orthogonal array of strength :math:`t` if in each
+    n-row-by-t-column submatrix of :math:`A`, all :math:`q^t` possible
+    distinct rows occur the same number of times.
+
+    Strength 1 (LHS) brings an advantage over strength 0 (MC) and strength 2
+    is a useful increment over strength 1. Going to strength 3 is a smaller
+    increment and scrambled QMC like Sobol', Halton are more performant [7]_.
 
     References
     ----------
@@ -942,6 +957,10 @@ class LatinHypercube(QMCEngine):
     .. [6] Damblin et al., "Numerical studies of space filling designs:
        optimization of Latin Hypercube Samples and subprojection properties."
        Journal of Simulation, 2013.
+    .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
+       integration and visualization." Statistica Sinica, 1992.
+    .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
+       Journal of the American Statistical Association, 1993.
 
     Examples
     --------
