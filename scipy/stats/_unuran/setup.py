@@ -1,4 +1,3 @@
-import pathlib
 import os
 
 
@@ -14,14 +13,14 @@ def unuran_pre_build_hook(build_clib, build_info):
     deps = {"unistd.h": ["HAVE_DECL_GETOPT", "HAVE_UNISTD_H"],
             "dlfcn.h": ["HAVE_DLFCN_H"],
             "sys/time.h": ["HAVE_GETTIMEOFDAY", "HAVE_SYS_TIME_H",
-                             "TIME_WITH_SYS_TIME"],
+                           "TIME_WITH_SYS_TIME"],
             "memory.h": ["HAVE_MEMORY_H"],
             "strings.h": ["HAVE_STRCASECMP", "HAVE_STRINGS_H"],
             "sys/stat.h": ["HAVE_SYS_STAT_H"],
             "sys/types.h": ["HAVE_SYS_TYPES_H"]}
     for dep in deps:
         has_dep = try_compile(c, code=f"#include <{dep}>\n"
-                                       "int main(int argc, char **argv){}")
+                                      "int main(int argc, char **argv){}")
         if has_dep:
             for macro in deps[dep]:
                 build_info["macros"].append((macro, "1"))

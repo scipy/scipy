@@ -14,8 +14,8 @@ def check_unuran_submodule():
     from scipy._lib._unuran_utils import _unuran_dir
 
     if not os.path.exists(_unuran_dir(ret_path=True) / 'README.md'):
-        raise RuntimeError("Missing the `unuran` submodule! Run `git submodule "
-                           "update --init` to fix this.")
+        raise RuntimeError("Missing the `unuran` submodule! Run `git "
+                           "submodule update --init` to fix this.")
 
 
 def build_clib_pre_build_hook(cmd, ext):

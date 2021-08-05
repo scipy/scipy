@@ -21,7 +21,7 @@ class common_cont_dist:
     # methods as we know that the data is guaranteed to be inside the domain
     # and a scalar (so, no masking bad values and broadcasting required).
     pdf = stats.norm._pdf
-    dpdf = lambda x: -x * stats.norm._pdf(x)
+    dpdf = lambda x: -x * stats.norm._pdf(x)  # noqa: E731
     cdf = stats.norm._cdf
 
 
@@ -44,7 +44,7 @@ bad_pdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"50 : PDF\(x\) overflow"),
     # NaN value => internal error in UNU.RAN
@@ -68,7 +68,7 @@ bad_dpdf_common = [
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -83,7 +83,7 @@ bad_pmf_common = [
     (lambda x: np.nan, UNURANError, r"240 : unknown error"),
     (lambda x: 0.0, UNURANError, r"240 : unknown error"),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
     # probabilities < 0
@@ -138,7 +138,7 @@ nan_domains = [
 # all the methods should throw errors for nan, bad sized, and bad valued
 # domains.
 @pytest.mark.parametrize("domain, err, msg",
-                         bad_domains + bad_sized_domains + nan_domains)  # type: ignore[operator]
+                         bad_domains + bad_sized_domains + nan_domains)  # type: ignore[operator]  # noqa: E501
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
     Method = getattr(stats, method)
@@ -390,7 +390,7 @@ class TestTransformedDensityRejection:
         # cpoints containing nans
         cpoints = [np.nan, np.nan, np.nan]
         with pytest.raises(UNURANError, match=r"50 : bad construction "
-                                               r"points."):
+                                              r"points."):
             TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
         # cpoints out of domain
@@ -407,7 +407,7 @@ class TestTransformedDensityRejection:
             TransformedDensityRejection(common_cont_dist, c=-1.)
         # -0.5 < c < 0. => Warning: Not recommended. Using default
         msg = (r"33 : -0.5 < c < 0 not recommended. using c = -0.5 "
-                r"instead.")
+               r"instead.")
         with pytest.warns(RuntimeWarning, match=msg):
             TransformedDensityRejection(common_cont_dist, c=-0.1)
         # c > 0. => Warning: Using default
@@ -434,7 +434,8 @@ class TestTransformedDensityRejection:
         rng = TransformedDensityRejection(common_cont_dist,
                                           max_sqhratio=0.9999,
                                           max_intervals=10000)
-        # Older versions of NumPy throw RuntimeWarnings for comparisons with nan.
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in greater")
             sup.filter(RuntimeWarning, "invalid value encountered in "
@@ -454,15 +455,15 @@ class TestTransformedDensityRejection:
 
         msg = r"`pdf` required but not found."
         with pytest.raises(ValueError, match=msg):
-            rng = TransformedDensityRejection(dist)
+            TransformedDensityRejection(dist)
 
         # dPDF not present in dist
         class dist:
-            pdf = lambda x: 1-x*x
+            pdf = lambda x: 1-x*x  # noqa: E731
 
         msg = r"`dpdf` required but not found."
         with pytest.raises(ValueError, match=msg):
-            rng = TransformedDensityRejection(dist)
+            TransformedDensityRejection(dist)
 
 
 class TestDiscreteAliasUrn:
@@ -521,7 +522,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa: F821
+        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,

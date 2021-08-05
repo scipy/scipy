@@ -94,11 +94,11 @@ class TransformedDensityRejection(Benchmark):
     def time_tdr_setup(self, dist, c):
         with np.testing.suppress_warnings() as sup:
             sup.filter(UserWarning)
-            rng = stats.TransformedDensityRejection(dist, c=c,
-                                                    seed=self.urng)
+            stats.TransformedDensityRejection(dist, c=c,
+                                              seed=self.urng)
 
     def time_tdr_rvs(self, dist, c):
-        rvs = self.rng.rvs(100000)
+        self.rng.rvs(100000)
 
 
 class DiscreteAliasUrn(Benchmark):
@@ -123,7 +123,7 @@ class DiscreteAliasUrn(Benchmark):
         self.rng = stats.DiscreteAliasUrn(self.pv, seed=self.urng)
 
     def time_dau_setup(self, distribution):
-        rng = stats.DiscreteAliasUrn(self.pv, seed=self.urng)
+        stats.DiscreteAliasUrn(self.pv, seed=self.urng)
 
     def time_dau_rvs(self, distribution):
-        rvs = self.rng.rvs(100000)
+        self.rng.rvs(100000)
