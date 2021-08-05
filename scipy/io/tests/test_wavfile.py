@@ -4,7 +4,7 @@ from io import BytesIO
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           suppress_warnings)
+                           break_cycles, suppress_warnings, IS_PYPY)
 import pytest
 from pytest import raises, warns
 
@@ -408,3 +408,9 @@ def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
     else:
         with pytest.raises(ValueError, match='read-only'):
             data2[0] = 0
+
+    if realfile and mmap and IS_PYPY and sys.platform == 'win32':
+        # windows cannot remove a dead file held by a mmap but not collected in PyPy;
+        # since the same filename gets reused in this test over and over, clean it up
+        break_cycles()
+        break_cycles()
