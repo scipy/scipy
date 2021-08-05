@@ -24,7 +24,7 @@ __all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn']
 
 
 cdef extern from "Python.h":
-    PyObject *PyErr_Occurred() nogil
+    PyObject *PyErr_Occurred()
 
 
 # Internal API for handling Python callbacks.
@@ -681,6 +681,8 @@ cdef class TransformedDensityRejection(Method):
     ...                                   cpoints=10, variant='ia', seed=urng)
     >>> rvs = rng.rvs(1000)
     """
+    cdef double[::1] cpoints_array
+
     def __cinit__(self,
                   dist,
                   mode=None,
@@ -698,9 +700,7 @@ cdef class TransformedDensityRejection(Method):
                   use_mode=True,
                   guide_factor=2,
                   seed=None):
-        cdef double[::1] cpoints_array
-        (params, domain, c, cpoints, cpoints_array,
-         variant) = self._validate_args(params, domain, c, cpoints, variant)
+        (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c, cpoints, variant)
 
         cdef:
             unur_distr *distr
@@ -737,11 +737,11 @@ cdef class TransformedDensityRejection(Method):
             if self.par == NULL:
                 raise UNURANError(self._messages.get())
             self._check_errorcode(unur_tdr_set_c(self.par, c))
-            if cpoints_array is None:
+            if self.cpoints_array is None:
                 self._check_errorcode(unur_tdr_set_cpoints(self.par, cpoints, NULL))
             else:
-                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(cpoints_array),
-                                                           &cpoints_array[0]))
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.cpoints_array),
+                                                           &self.cpoints_array[0]))
 
             if variant == "ps":
                 self._check_errorcode(unur_tdr_set_variant_ps(self.par))
@@ -763,21 +763,22 @@ cdef class TransformedDensityRejection(Method):
             release_unuran_callback(&callback)
 
     cdef object _validate_args(self, params, domain, c, cpoints, variant):
-        cdef double[::1] cpoints_array = None
         domain = _validate_domain(domain)
         if np.isnan(c):
             raise ValueError("`c` must be a non-nan value.")
         if variant not in {"ps", "gw", "ia"}:
             raise ValueError("Invalid option for the `variant`.")
         if not np.isscalar(cpoints):
-            cpoints_array = np.ascontiguousarray(cpoints, dtype=np.float64)
-            if len(cpoints_array) == 0:
+            self.cpoints_array = np.ascontiguousarray(cpoints, dtype=np.float64)
+            if len(self.cpoints_array) == 0:
                 raise ValueError("`cpoints` must either be a scalar or a "
                                  "non-empty array.")
+        else:
+            self.cpoints_array = None
 
         params = tuple(params)
 
-        return params, domain, c, cpoints, cpoints_array, variant
+        return params, domain, c, cpoints, variant
 
     @property
     def sqhratio(self):
@@ -797,6 +798,8 @@ cdef class TransformedDensityRejection(Method):
         """Get the area below the squeeze for the generator."""
         return unur_tdr_get_squeezearea(self.rng)
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef inline void _ppf_hat(self, const double *u, double *out, size_t N) except *:
         cdef:
             ccallback_t callback
@@ -1002,6 +1005,8 @@ cdef class DiscreteAliasUrn(Method):
     This uses a table twice the size of the probability vector to generate
     random variates from the distribution.
     """
+    cdef double[::1] pv_view
+
     def __cinit__(self,
                   pv=None,
                   dist=None,
@@ -1012,6 +1017,8 @@ cdef class DiscreteAliasUrn(Method):
                   seed=None):
         cdef double[::1] pv_view
         (pv_view, params, domain) = self._validate_args(pv, dist, params, domain)
+        # increment ref count of pv_view to make sure it doesn't get garbage collected.
+        self.pv_view = pv_view
 
         cdef:
             unur_distr *distr

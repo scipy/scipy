@@ -3,6 +3,7 @@
 #include "unuran.h"
 
 #define UNURAN_THUNK(CAST_FUNC, FUNCNAME, LEN)                                              \
+    PyGILState_STATE gstate = PyGILState_Ensure();                                          \
     /* If an error has occured, return INFINITY. */                                         \
     if (PyErr_Occurred()) return UNUR_INFINITY;                                             \
     ccallback_t *callback = ccallback_obtain();                                             \
@@ -47,12 +48,14 @@
     }                                                                                       \
                                                                                             \
     result = PyFloat_AsDouble(res);                                                         \
+                                                                                            \
     if (PyErr_Occurred()) {                                                                 \
         error = 1;                                                                          \
         goto done;                                                                          \
     }                                                                                       \
                                                                                             \
 done:                                                                                       \
+    PyGILState_Release(gstate);                                                             \
     Py_XDECREF(arg1);                                                                       \
     Py_XDECREF(argobj);                                                                     \
     Py_XDECREF(funcname);                                                                   \
@@ -74,8 +77,9 @@ void error_handler(const char *objid, const char *file, int line, const char *er
 {
     if ( unur_errno != UNUR_SUCCESS ) {
         FILE *LOG = unur_get_stream();
-        const char *objid_    = (objid  == NULL || strcmp(objid , "") == 0) ? "unknown"        : objid;
-        const char *reason_   = (reason == NULL || strcmp(reason, "") == 0) ? "unknown error!" : reason;
+        char objid_[256], reason_[256];
+        (objid == NULL || strcmp(objid, "") == 0) ? strcpy(objid_, "unknown") : strcpy(objid_, objid);
+        (reason == NULL || strcmp(reason, "") == 0) ? strcpy(reason_, "unknown error!") : strcpy(reason_, reason);
         const char *errno_msg = unur_get_strerror(unur_errno);
         if ( strcmp(errortype, "error") == 0 ) {
             fprintf(LOG, "[objid: %s] %d : %s => %s", objid_, unur_errno, reason_, errno_msg);
