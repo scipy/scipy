@@ -73,8 +73,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> m, n = 9, 6
-    >>> a = np.random.randn(m, n) + 1.j*np.random.randn(m, n)
+    >>> a = rng.standard_normal((m, n)) + 1.j*rng.standard_normal((m, n))
     >>> U, s, Vh = linalg.svd(a)
     >>> U.shape,  s.shape, Vh.shape
     ((9, 9), (6,), (6, 6))
@@ -213,7 +215,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     `scipy.stats.ortho_group`.
 
     >>> from scipy.stats import ortho_group
-    >>> np.random.seed(123)
     >>> orth = ortho_group.rvs(4)
     >>> svdvals(orth)
     array([ 1.,  1.,  1.,  1.])
@@ -364,7 +365,9 @@ def null_space(A, rcond=None):
 
     2-D null space:
 
-    >>> B = np.random.rand(3, 5)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> B = rng.random((3, 5))
     >>> Z = null_space(B)
     >>> Z.shape
     (5, 2)
@@ -429,7 +432,9 @@ def subspace_angles(A, B):
     An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
+    >>> from numpy.random import default_rng
     >>> from scipy.linalg import hadamard, subspace_angles
+    >>> rng = default_rng()
     >>> H = hadamard(4)
     >>> print(H)
     [[ 1  1  1  1]
@@ -446,9 +451,9 @@ def subspace_angles(A, B):
 
     The angles between non-orthogonal subspaces are in between these extremes:
 
-    >>> x = np.random.RandomState(0).randn(4, 3)
+    >>> x = rng.standard_normal((4, 3))
     >>> np.rad2deg(subspace_angles(x[:, :2], x[:, [2]]))
-    array([ 55.832])
+    array([ 55.832])  # random
     """
     # Steps here omit the U and V calculation steps from the paper
 

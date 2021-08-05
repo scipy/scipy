@@ -14,15 +14,32 @@
 #ifndef SIMPLEX_HSIMPLEX_H_
 #define SIMPLEX_HSIMPLEX_H_
 
-#include "HConfig.h"
 #include "lp_data/HighsModelObject.h"
-#include "lp_data/HighsOptions.h"
-#include "lp_data/HighsStatus.h"
+
+enum class LpAction {
+  DUALISE = 0,
+  PERMUTE,
+  SCALE,
+  NEW_COSTS,
+  NEW_BOUNDS,
+  NEW_BASIS,
+  NEW_COLS,
+  NEW_ROWS,
+  DEL_COLS,
+  DEL_ROWS,
+  DEL_ROWS_BASIS_OK,
+  SCALED_COL,
+  SCALED_ROW,
+  BACKTRACKING
+};
 
 void setSimplexOptions(
     HighsModelObject& highs_model_object  //!< Model object in which simplex
                                           //!< options are to be set
 );
+
+int initialiseSimplexLpBasisAndFactor(HighsModelObject& highs_model_object,
+                                      const bool only_from_known_basis = false);
 
 HighsStatus transition(HighsModelObject& highs_model_object  //!< Model object
 );
@@ -41,7 +58,8 @@ void initialiseNonbasicWorkValue(const HighsLp& simplex_lp,
                                  const SimplexBasis& simplex_basis,
                                  HighsSimplexInfo& simplex_info);
 
-bool basisConditionOk(HighsModelObject& highs_model_object);
+bool basisConditionOk(HighsModelObject& highs_model_object,
+                      const double tolerance);
 
 // Methods not requiring HighsModelObject
 
@@ -77,6 +95,8 @@ void analysePrimalObjectiveValue(const HighsModelObject& highs_model_object);
 
 void initialiseSimplexLpDefinition(HighsModelObject& highs_model);
 void initialiseSimplexLpRandomVectors(HighsModelObject& highs_model);
+void extendSimplexLpRandomVectors(HighsModelObject& highs_model_object,
+                                  const int num_new_col, const int num_new_row);
 
 // SCALE:
 
@@ -119,8 +139,6 @@ void initialisePhase2RowCost(HighsModelObject& highs_model_object);
 
 void initialiseCost(HighsModelObject& highs_model_object, int perturb = 0);
 
-void populateWorkArrays(HighsModelObject& highs_model_object);
-
 #ifdef HiGHSDEV
 void reportSimplexProfiling(HighsModelObject& highs_model_object);
 
@@ -134,7 +152,7 @@ double computeBasisCondition(const HighsModelObject& highs_model_object);
 
 void flip_bound(HighsModelObject& highs_model_object, int iCol);
 
-int simplexHandleRankDeficiency(HighsModelObject& highs_model_object);
+void simplexHandleRankDeficiency(HighsModelObject& highs_model_object);
 
 int computeFactor(HighsModelObject& highs_model_object);
 
@@ -185,7 +203,7 @@ void update_matrix(HighsModelObject& highs_model_object, int columnIn,
                    int columnOut);
 
 bool reinvertOnNumericalTrouble(const std::string method_name,
-                                const HighsModelObject& highs_model_object,
+                                HighsModelObject& highs_model_object,
                                 double& numerical_trouble_measure,
                                 const double alpha_from_col,
                                 const double alpha_from_row,

@@ -215,7 +215,7 @@ class _kde_subclass1(stats.gaussian_kde):
 class _kde_subclass2(stats.gaussian_kde):
     def __init__(self, dataset):
         self.covariance_factor = self.scotts_factor
-        super(_kde_subclass2, self).__init__(dataset)
+        super().__init__(dataset)
 
 
 class _kde_subclass3(stats.gaussian_kde):
@@ -396,6 +396,7 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
+@pytest.mark.xslow
 def test_logpdf_overflow():
     # regression test for gh-12988; testing against linalg instability for
     # very high dimensionality kde

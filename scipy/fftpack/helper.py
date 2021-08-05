@@ -75,8 +75,9 @@ def next_fast_len(target):
     On a particular machine, an FFT of prime length takes 133 ms:
 
     >>> from scipy import fftpack
+    >>> rng = np.random.default_rng()
     >>> min_len = 10007  # prime length is worst case for speed
-    >>> a = np.random.randn(min_len)
+    >>> a = rng.standard_normal(min_len)
     >>> b = fftpack.fft(a)
 
     Zero-padding to the next 5-smooth length reduces computation time to
@@ -101,7 +102,7 @@ def _good_shape(x, shape, axes):
 
     scipy.fftpack does not support len(shape) < x.ndim when axes is not given.
     """
-    if shape and not axes:
+    if shape is not None and axes is None:
         shape = _helper._iterable_of_int(shape, 'shape')
         if len(shape) != np.ndim(x):
             raise ValueError("when given, axes and shape arguments"

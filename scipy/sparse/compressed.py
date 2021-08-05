@@ -51,7 +51,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from .coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape))
+                    other = self.__class__(coo_matrix(arg1, shape=shape,
+                                                      dtype=dtype))
                     self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
@@ -685,10 +686,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape)
 
-        row_nnz = np.diff(self.indptr)
+        row_nnz = self.indptr[indices + 1] - self.indptr[indices]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
-        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+        np.cumsum(row_nnz, out=res_indptr[1:])
 
         nnz = res_indptr[-1]
         res_indices = np.empty(nnz, dtype=idx_dtype)
@@ -712,10 +713,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape)
 
-        row_nnz = np.diff(self.indptr)
+        # Work out what slices are needed for `row_nnz`
+        # start,stop can be -1, only if step is negative
+        start0, stop0 = start, stop
+        if stop == -1 and start >= 0:
+            stop0 = None
+        start1, stop1 = start + 1, stop + 1
+
+        row_nnz = self.indptr[start1:stop1:step] - \
+            self.indptr[start0:stop0:step]
         idx_dtype = self.indices.dtype
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
-        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+        np.cumsum(row_nnz, out=res_indptr[1:])
 
         if step == 1:
             all_idx = slice(self.indptr[start], self.indptr[stop])
@@ -1074,8 +1083,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # not sorted => not canonical
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
-            self.has_canonical_format = _sparsetools.csr_has_canonical_format(
-                len(self.indptr) - 1, self.indptr, self.indices)
+            self.has_canonical_format = bool(
+                _sparsetools.csr_has_canonical_format(
+                    len(self.indptr) - 1, self.indptr, self.indices))
         return self._has_canonical_format
 
     def __set_has_canonical_format(self, val):
@@ -1113,8 +1123,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # first check to see if result was cached
         if not hasattr(self, '_has_sorted_indices'):
-            self._has_sorted_indices = _sparsetools.csr_has_sorted_indices(
-                len(self.indptr) - 1, self.indptr, self.indices)
+            self._has_sorted_indices = bool(
+                _sparsetools.csr_has_sorted_indices(
+                    len(self.indptr) - 1, self.indptr, self.indices))
         return self._has_sorted_indices
 
     def __set_sorted(self, val):

@@ -18,7 +18,7 @@ def _generate_spherical_points(ndim=3, n_pts=2):
     return points[0], points[1]
 
 
-class TestGeometricSlerp(object):
+class TestGeometricSlerp:
     # Test various properties of the geometric slerp code
 
     @pytest.mark.parametrize("n_dims", [2, 3, 5, 7, 9])
@@ -353,15 +353,25 @@ class TestGeometricSlerp(object):
     @pytest.mark.parametrize('start', [
         np.array([1, 0, 0]),
         np.array([0, 1]),
-        ])
-    def test_degenerate_input(self, start):
-        # handle start == end with repeated value
-        # like np.linspace
-        expected = [start] * 5
-        actual = geometric_slerp(start=start,
-                                 end=start,
-                                 t=np.linspace(0, 1, 5))
+    ])
+    @pytest.mark.parametrize('t', [
+        np.array(1),
+        np.array([1]),
+        np.array([[1]]),
+        np.array([[[1]]]),
+        np.array([]),
+        np.linspace(0, 1, 5),
+    ])
+    def test_degenerate_input(self, start, t):
+        shape = (t.size,) + start.shape
+        expected = np.full(shape, start)
+
+        actual = geometric_slerp(start=start, end=start, t=t)
         assert_allclose(actual, expected)
+
+        # Check that degenerate and non-degenerate inputs yield the same size
+        non_degenerate = geometric_slerp(start=start, end=start[::-1], t=t)
+        assert actual.size == non_degenerate.size
 
     @pytest.mark.parametrize('k', np.logspace(-10, -1, 10))
     def test_numerical_stability_pi(self, k):

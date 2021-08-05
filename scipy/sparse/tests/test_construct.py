@@ -26,7 +26,7 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(object):
+class TestConstructUtils:
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -274,9 +274,11 @@ class TestConstructUtils(object):
 
         for a in cases:
             for b in cases:
-                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = np.kron(a,b)
-                assert_array_equal(result,expected)
+                expected = np.kron(a, b)
+                for fmt in sparse_formats:
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    assert_equal(result.format, fmt)
+                    assert_array_equal(result.todense(), expected)
 
     def test_kron_large(self):
         n = 2**16

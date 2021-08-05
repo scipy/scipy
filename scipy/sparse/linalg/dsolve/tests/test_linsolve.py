@@ -54,7 +54,7 @@ def setup_bug_8278():
     return A, b
 
 
-class TestFactorized(object):
+class TestFactorized:
     def setup_method(self):
         n = 5
         d = arange(n) + 1
@@ -190,7 +190,7 @@ class TestFactorized(object):
         assert_array_almost_equal(A @ x, b)
 
 
-class TestLinsolve(object):
+class TestLinsolve:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
@@ -211,10 +211,12 @@ class TestLinsolve(object):
         b = np.arange(20)
 
         try:
-            # should either raise a runtimeerror or return value
-            # appropriate for singular input
-            x = spsolve(A, b)
-            assert_(not np.isfinite(x).any())
+            # should either raise a runtime error or return value
+            # appropriate for singular input (which yields the warning)
+            with suppress_warnings() as sup:
+                sup.filter(MatrixRankWarning, "Matrix is exactly singular")
+                x = spsolve(A, b)
+            assert not np.isfinite(x).any()
         except RuntimeError:
             pass
 
@@ -434,7 +436,7 @@ class TestLinsolve(object):
         assert_array_almost_equal(A @ x, b)
 
 
-class TestSplu(object):
+class TestSplu:
     def setup_method(self):
         use_solver(useUmfpack=False)
         n = 40
@@ -716,7 +718,7 @@ class TestSplu(object):
         assert_equal(len(oks), 20)
 
 
-class TestSpsolveTriangular(object):
+class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 

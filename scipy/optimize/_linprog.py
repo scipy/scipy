@@ -19,10 +19,10 @@ import numpy as np
 
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
+from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
-from ._linprog_highs import _linprog_highs
 from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
                            _linprog_rs_doc, _linprog_simplex_doc,
                            _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
@@ -34,6 +34,8 @@ from copy import deepcopy
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
+
+LINPROG_METHODS = ['simplex', 'revised simplex', 'interior-point', 'highs', 'highs-ds', 'highs-ipm']
 
 
 def linprog_verbose_callback(res):
@@ -90,7 +92,7 @@ def linprog_verbose_callback(res):
     np.set_printoptions(linewidth=500,
                         formatter={'float': lambda x: "{0: 12.4f}".format(x)})
     if status:
-        print('--------- Simplex Early Exit -------\n'.format(nit))
+        print('--------- Simplex Early Exit -------\n')
         print('The simplex method exited early with status {0:d}'.format(status))
         print(message)
     elif complete:
@@ -405,7 +407,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
@@ -578,6 +580,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     meth = method.lower()
     methods = {"simplex", "revised simplex", "interior-point",
                "highs", "highs-ds", "highs-ipm"}
+
     if meth not in methods:
         raise ValueError(f"Unknown solver '{method}'")
 
@@ -586,7 +589,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warn(warning_message, OptimizeWarning)
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
-    lp, solver_options = _parse_linprog(lp, options)
+    lp, solver_options = _parse_linprog(lp, options, meth)
     tol = solver_options.get('tol', 1e-9)
 
     # Give unmodified problem to HiGHS

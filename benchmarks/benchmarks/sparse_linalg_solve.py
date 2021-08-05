@@ -74,8 +74,8 @@ class Lgmres(Benchmark):
     param_names = ['n', 'm']
 
     def setup(self, n, m):
-        np.random.seed(1234)
-        self.A = sparse.eye(n, n) + sparse.rand(n, n, density=0.01)
+        rng = np.random.default_rng(1234)
+        self.A = sparse.eye(n, n) + sparse.rand(n, n, density=0.01, random_state=rng)
         self.b = np.ones(n)
 
     def time_inner(self, n, m):

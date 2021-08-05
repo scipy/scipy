@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sps
 
 
-class CanonicalConstraint(object):
+class CanonicalConstraint:
     """Canonical constraint to use with trust-constr algorithm.
 
     It represents the set of constraints of the form::

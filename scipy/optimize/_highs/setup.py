@@ -6,12 +6,23 @@ Some CMake files are used to create source lists for compilation
 
 import pathlib
 from datetime import datetime
+import os
+from os.path import join
+
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
     if std_flag is not None:
         ext.extra_compile_args.append(std_flag)
+
+def basiclu_pre_build_hook(build_clib, build_info):
+    from scipy._build_utils.compiler_helper import get_c_std_flag
+    c_flag = get_c_std_flag(build_clib.compiler)
+    if c_flag is not None:
+        if 'extra_compiler_args' not in build_info:
+            build_info['extra_compiler_args'] = []
+        build_info['extra_compiler_args'].append(c_flag)
 
 def _get_sources(CMakeLists, start_token, end_token):
     # Read in sources from CMakeLists.txt
@@ -85,34 +96,35 @@ def configuration(parent_package='', top_path=None):
         'basiclu',
         sources=basiclu_sources,
         include_dirs=[
-            'src/',
-            'src/ipm/basiclu/include/',
+            'src',
+            join('src', 'ipm', 'basiclu', 'include'),
         ],
         language='c',
         macros=DEFINE_MACROS,
+        _pre_build_hook=basiclu_pre_build_hook,
     )
 
     # highs_wrapper:
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
+    # filter out MIP sources until MIP is officially supported
+    highs_sources = [s for s in highs_sources
+                     if pathlib.Path(s).parent.name != 'mip']
     ext = config.add_extension(
-        'highs_wrapper',
-        sources=['cython/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        '_highs_wrapper',
+        sources=([join('cython', 'src', '_highs_wrapper.cxx')] +
+                 highs_sources + ipx_sources),
         include_dirs=[
-
             # highs_wrapper
-            'cython/src/',
-            'src/',
-            'src/lp_data/',
-
+            'src',
+            join('cython', 'src'),
+            join('src', 'lp_data'),
             # highs
-            'src/',
-            'src/io/',
-            'src/ipm/ipx/include/',
-
+            join('src', 'io'),
+            join('src', 'ipm', 'ipx', 'include'),
             # IPX
-            'src/ipm/ipx/include/',
-            'src/ipm/basiclu/include/',
+            join('src', 'ipm', 'ipx', 'include'),
+            join('src', 'ipm', 'basiclu', 'include'),
         ],
         language='c++',
         libraries=['basiclu'],
@@ -122,46 +134,22 @@ def configuration(parent_package='', top_path=None):
     # Add c++11/14 support:
     ext._pre_build_hook = pre_build_hook
 
-    # wrapper around HiGHS writeMPS:
+    # Export constants and enums from HiGHS:
     ext = config.add_extension(
-        'mpswriter',
-        sources=[
-            # we should be using using highs shared library;
-            # next best thing is compiling minimal set of sources
-            'cython/src/mpswriter.cxx',
-            'src/util/HighsUtils.cpp',
-            'src/io/HighsIO.cpp',
-            'src/io/HMPSIO.cpp',
-            'src/lp_data/HighsModelUtils.cpp',
-            'src/util/stringutil.cpp',
-        ],
+        '_highs_constants',
+        sources=[join('cython', 'src', '_highs_constants.cxx')],
         include_dirs=[
-            'cython/src/',
-            'src/',
-            'src/io/',
-            'src/lp_data/',
+            'src',
+            join('cython', 'src'),
+            join('src', 'io'),
+            join('src', 'lp_data'),
+            join('src', 'simplex'),
         ],
         language='c++',
-        libraries=['basiclu'],
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS,
     )
     ext._pre_build_hook = pre_build_hook
 
-    # Export constants and enums from HiGHS:
-    ext = config.add_extension(
-        'constants',
-        sources=['cython/src/constants.cxx'],
-        include_dirs=[
-            'cython/src/',
-            'src/',
-            'src/io/',
-            'src/lp_data/',
-            'src/simplex/',
-        ],
-        language='c++',
-    )
-    ext._pre_build_hook = pre_build_hook
+    config.add_data_files(os.path.join('cython', 'src', '*.pxd'))
 
     return config
 

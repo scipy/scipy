@@ -14,7 +14,7 @@ from numpy.testing import (assert_,
 KrylovQP = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
 KrylovQP_disp = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6, disp=True)
 
-class TestKrylovQuadraticSubproblem(object):
+class TestKrylovQuadraticSubproblem:
 
     def test_for_the_easy_case(self):
 

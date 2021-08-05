@@ -1,5 +1,5 @@
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 
@@ -34,5 +34,5 @@ def lagrange_inversion(a):
     b = [mp.mpf(0)]
     for k in range(1, n):
         b.append(hpower[k].coeff(x, k - 1)/k)
-    b = map(lambda x: mp.mpf(x), b)
+    b = [mp.mpf(x) for x in b]
     return b

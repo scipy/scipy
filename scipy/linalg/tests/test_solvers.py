@@ -23,7 +23,7 @@ def _load_data(name):
         return dict(f.items())
 
 
-class TestSolveLyapunov(object):
+class TestSolveLyapunov:
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -703,7 +703,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(object):
+class TestSolveSylvester:
 
     cases = [
         # a, b, c all real.
