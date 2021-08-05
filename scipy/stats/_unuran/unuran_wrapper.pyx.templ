@@ -275,7 +275,7 @@ def _validate_domain(domain):
         # Length of the domain must be exactly 2.
         if len(domain) != 2:
             raise ValueError("`domain` must be a length 2 tuple.")
-        # Throw an error here if it can't converted into a tuple.
+        # Throw an error here if it can't be converted into a tuple.
         domain = tuple(domain)
     return domain
 
@@ -314,7 +314,7 @@ cdef class Method:
       the module-level lock.
     * `_check_errorcode` must be called after calling a UNU.RAN function
       that returns a error code. It raises an error if Python error variable
-      has been set or if an error has occured in UNU.RAN.
+      has been set or if an error has occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
     * Provides the `seed` property to get and set the NumPy URNG.
@@ -337,7 +337,7 @@ cdef class Method:
         # check for non-zero errorcode
         if errorcode != UNUR_SUCCESS:
             # check if the Python error variable has been set. We need
-            # to do this because it is possible that an error has occured
+            # to do this because it is possible that an error has occurred
             # during a call to the callback. As we can't perform a non-local
             # return (because that leads to memory leaks), there is no way
             # to know whether a callback has errored out until a non-zero
@@ -759,8 +759,8 @@ cdef class TransformedDensityRejection(Method):
 
             self._set_rng(seed)
         finally:
-            release_unuran_callback(&callback)
             _lock.release()
+            release_unuran_callback(&callback)
 
     cdef object _validate_args(self, params, domain, c, cpoints, variant):
         cdef double[::1] cpoints_array = None
@@ -1062,7 +1062,7 @@ cdef class DiscreteAliasUrn(Method):
                                  "PMF method required but none given.")
             if not hasattr(dist, "pmf"):
                 raise ValueError("`pmf` required but not found.")
-            # we assume the PMF to accept and return floats. So, we need
+            # we assume the PMF accepts and return floats. So, we need
             # to vectorize it to call with an array of points in the domain.
             pmf = np.vectorize(dist.pmf)
             k = np.arange(domain[0], domain[1]+1)

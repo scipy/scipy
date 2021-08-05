@@ -67,7 +67,6 @@ def configuration(parent_package="", top_path=None):
     UNURAN_VERSION = _get_version(UNURAN_DIR, "unuran/configure.ac",
                                   "AM_INIT_AUTOMAKE")
 
-    # Define macros assuming we have C99 standard headers
     DEFINE_MACROS = [
         ("HAVE_ALARM", "1"),
         ("HAVE_DECL_ALARM", "1"),

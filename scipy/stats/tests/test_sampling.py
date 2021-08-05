@@ -73,12 +73,14 @@ bad_dpdf_common = [
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
+# XXX: currently this list is not being used in any of the test. But as we
+# add more discrete methods from UNU.RAN, this list can be used.
 bad_pmf_common = [
     # UNU.RAN fails to validate float inf, nan values returned
     # by the PMF and throws an unhelpful "unknown error". One
-    # helpful thing to do here is to calculate the PV ourselves
-    # and check for inf, nan, if the domain is known and distribution
-    # doesn't have infinite tails.
+    # potentially helpful thing to do here is to calculate the PV
+    # ourselves and check for inf, nan, if the domain is known and
+    # distribution doesn't have infinite tails.
     (lambda x: np.inf, UNURANError, r"240 : unknown error"),
     (lambda x: np.nan, UNURANError, r"240 : unknown error"),
     (lambda x: 0.0, UNURANError, r"240 : unknown error"),
@@ -138,7 +140,8 @@ nan_domains = [
 # all the methods should throw errors for nan, bad sized, and bad valued
 # domains.
 @pytest.mark.parametrize("domain, err, msg",
-                         bad_domains + bad_sized_domains + nan_domains)  # type: ignore[operator]  # noqa: E501
+                         bad_domains + bad_sized_domains +
+                         nan_domains)  # type: ignore[operator]
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
     Method = getattr(stats, method)
@@ -472,7 +475,7 @@ class TestDiscreteAliasUrn:
     basic_fail_dists = {
         'nchypergeom_fisher',  # numerical erros on tails
         'nchypergeom_wallenius',  # numerical erros on tails
-        'randint'  # fails on 32.but ubuntu
+        'randint'  # fails on 32-bit ubuntu
     }
 
     @pytest.mark.parametrize("distname, params", distdiscrete)
