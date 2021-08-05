@@ -960,9 +960,6 @@ class DifferentialEvolutionSolver:
         # maxfun budget
         nfevs = min(num_members,
                     self.maxfun - self._nfev)
-        # the following line should not be needed (self._nfev shouldn't be
-        # greater than self.maxfun), but just in case.
-        nfevs = max(nfevs, 0)
 
         energies = np.full(num_members, np.inf)
 
