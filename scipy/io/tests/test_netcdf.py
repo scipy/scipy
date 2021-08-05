@@ -133,7 +133,8 @@ def test_read_write_files():
 
     finally:
         if IS_PYPY:
-            # windows cannot remove a dead file held by a mmap but not collected in PyPy
+            # windows cannot remove a dead file held by a mmap
+            # that has not been collected in PyPy
             break_cycles()
             break_cycles()
         os.chdir(cwd)
