@@ -994,6 +994,12 @@ def test_setitem_integer():
     assert_equal(r1[1].as_quat(), r2.as_quat())
 
 
+def test_setitem_wrong_type():
+    r = Rotation.random(10, random_state=0)
+    with pytest.raises(TypeError, match='Rotation object'):
+        r[0] = 1
+
+
 def test_n_rotations():
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([

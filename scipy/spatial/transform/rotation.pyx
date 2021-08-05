@@ -2164,6 +2164,9 @@ cdef class Rotation:
         if self._single:
             raise TypeError("Single rotation is not subscriptable.")
 
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
         quat = np.asarray(self._quat)
         quat[indexer] = value.as_quat()
         self._quat = quat
