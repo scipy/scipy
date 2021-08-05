@@ -178,7 +178,7 @@ distribution by calling the ``rvs`` method:
 .. plot::
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import norm
+    >>> from scipy.stats import norm, TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
