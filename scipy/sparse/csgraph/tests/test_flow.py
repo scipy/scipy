@@ -202,23 +202,27 @@ def test_make_tails(a, expected):
 
 
 @pytest.mark.parametrize("n_nodes,seed,expected_result", [
-    (2, 900, (0, 0)), (8, 100, (29, 1342)), (8, 200, (25, 765)),
-    (8, 600, (26, 1042)), (8, 800, (22, 446)), (16, 0, (97, 3704)),
-    (16, 100, (60, 1954)), (16, 200, (68, 1784)), (16, 300, (82, 1969)),
-    (16, 400, (37, 1614)), (16, 500, (49, 1583)), (16, 600, (43, 1236)),
-    (16, 700, (58, 1835)), (16, 800, (75, 2445)), (16, 900, (38, 1949)),
-    (100, 0, (453, 2210)), (100, 999, (450, 1671))
+    (2, 100, (0, 0)), (8, 0, (22, 1027)), (8, 100, (25, 709)),
+    (8, 500, (38, 2365)), (8, 700, (25, 683)), (8, 800, (19, 850)),
+    (8, 900, (33, 915)), (16, 0, (45, 1228)), (16, 100, (67, 2957)),
+    (16, 200, (49, 1357)), (16, 300, (66, 1707)), (16, 400, (71, 2095)),
+    (16, 500, (59, 2598)), (16, 600, (85, 1619)), (16, 700, (52, 1741)),
+    (16, 800, (62, 1447)), (16, 900, (71, 1656)), (100, 0, (410, 2022)),
+    (100, 999, (419, 1395))
 ])
 def test_minimum_cost_flow(n_nodes, seed, expected_result):
-    rng = np.random.default_rng(seed=seed)
+    rng = np.random.RandomState(seed=seed)
     A = rand(n_nodes, n_nodes, 0.3, format='csr', random_state=rng)*100
     A = A.astype(np.uint32)
     A_mat = A.toarray()
+    total_edges = int(np.ceil(0.3*n_nodes*n_nodes))
     for i in range(n_nodes):
-        A_mat[i][i] = 0
-    x = rng.integers(0, 10, size=(n_nodes//2,))
+        if A_mat[i][i] != 0:
+            total_edges -= 1
+            A_mat[i][i] = 0
+    x = rng.randint(0, 10, size=(n_nodes//2,))
     demand = np.array(x.tolist() + (-x).tolist())
-    cost = rng.integers(0, 100, size=(int(0.3*n_nodes*n_nodes),))
+    cost = rng.randint(0, 100, size=(total_edges, ))
     res = minimum_cost_flow(csr_matrix(A_mat), demand, cost)
     assert(res.flow_value == expected_result[0])
     assert(res.flow_cost == expected_result[1])

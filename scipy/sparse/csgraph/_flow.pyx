@@ -1,4 +1,4 @@
-# cython: wraparound=False, boundscheck=True
+# cython: wraparound=False, boundscheck=False
 
 import numpy as np
 
@@ -1254,7 +1254,7 @@ cdef ITYPE_t[:] _network_simplex(
         ):
     cdef ITYPE_t n_edges = capacities.shape[0]
     cdef ITYPE_t idx, faux_inf, capacities_sum, cost_sum
-    cdef ITYPE_t j, s, t, i, tmp, p, q, n_non_zero_edges
+    cdef ITYPE_t j, s, t, i, tmp, p, q, n_non_zero_edges, v
     cdef ITYPE_t flow_cost, flow_value
     cdef ITYPE_t[:] edge_flow, vertex_potentials, Wne_len, edge_flow_final
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
