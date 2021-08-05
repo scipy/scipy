@@ -201,8 +201,7 @@ class TestDifferentialEvolutionSolver:
 
         with assert_raises(
                 RuntimeError,
-                match=r"func\(x, \*args\) must return a scalar value"
-            ):
+                match=r"func\(x, \*args\) must return a scalar value"):
             differential_evolution(func, [(-2, 2), (-2, 2)])
 
     def test__scale_parameters(self):
