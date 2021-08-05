@@ -1013,6 +1013,16 @@ class LatinHypercube(QMCEngine):
         if orthogonal_array_p is None:
             self.lhs_method = self._random
         else:
+            primes = primes_from_2_to(orthogonal_array_p+2)
+            if orthogonal_array_p not in primes:
+                raise ValueError(
+                    "orthogonal_array_p is not a prime number. Closest"
+                    f" values are {primes[-2:]}"
+                )
+            if d > orthogonal_array_p + 1:
+                raise ValueError(
+                    "d is too large. Must be <= orthogonal_array_p + 1"
+                )
             self._p = orthogonal_array_p
             self.lhs_method = self._random_oa_lhs
 
@@ -1054,12 +1064,15 @@ class LatinHypercube(QMCEngine):
 
     def _random_oa_lhs(self, n: IntNumber = 1) -> np.ndarray:
         """Orthogonal array based LHS of strength 2."""
-        # TODO check for n
-
         n_row = self._p**2
         n_col = self._p + 1
 
-        oa_sample = np.zeros(shape=(n_row, n_col))
+        if n != n_row:
+            raise ValueError(
+                "n is not equal to orthogonal_array_p**2"
+            )
+
+        oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
 
         # OA of strength 2
         arrays = np.tile(np.arange(self._p), (2, 1))
@@ -1070,21 +1083,21 @@ class LatinHypercube(QMCEngine):
                                           + p_*oa_sample[:, 1], self._p)
 
         # scramble the OA
-        oa_sample_ = np.empty(shape=(n_row, n_col))
+        oa_sample_ = np.empty(shape=(n_row, n_col), dtype=int)
         for j in range(n_col):
             perms = self.rng.permutation(self._p)
-            for k in range(self._p):
-                idx = np.where(oa_sample[:, j] == k)[0]
-                oa_sample_[idx, j] = perms[k]
+            oa_sample_[:, j] = perms[oa_sample[:, j]]
 
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
+        lhs_engine = LatinHypercube(d=1, centered=self.centered, seed=self.rng)
         for j in range(n_col):
             for k in range(self._p):
                 idx = np.where(oa_sample[:, j] == k)[0]
-                lhs_engine = LatinHypercube(d=1, centered=True, seed=self.rng)
                 lhs = lhs_engine.random(self._p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
+
+                lhs_engine = lhs_engine.reset()
 
         oa_lhs_sample /= self._p
 

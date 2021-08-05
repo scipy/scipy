@@ -534,20 +534,24 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
+    @pytest.mark.parametrize("orthogonal_array_p", [None, 5])
+    @pytest.mark.parametrize("centered", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
-    def test_sample_stratified(self, optimization):
-        d, n = 4, 20
+    def test_sample_stratified(self, optimization, centered,
+                               orthogonal_array_p):
+        d, n = 4, 25
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=True,
+        engine = self.engine(d=d, scramble=False, centered=centered,
+                             orthogonal_array_p=orthogonal_array_p,
                              optimization=optimization)
         sample = engine.random(n=n)
+        assert sample.shape == (n, d)
+
         sorted_sample = np.sort(sample, axis=0)
 
-        assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
-
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
 
@@ -569,6 +573,16 @@ class TestLHS(QMCEngineTests):
                                              r" optimization method"):
             seed = np.random.RandomState(12345)
             qmc.LatinHypercube(1, seed=seed, optimization="toto")
+
+        with pytest.raises(ValueError, match=r"not a prime number"):
+            qmc.LatinHypercube(d=2, orthogonal_array_p=4, seed=seed)
+
+        with pytest.raises(ValueError, match=r"d is too large"):
+            qmc.LatinHypercube(d=5, orthogonal_array_p=3, seed=seed)
+
+        with pytest.raises(ValueError, match=r"n is not equal"):
+            engine = qmc.LatinHypercube(d=4, orthogonal_array_p=3, seed=seed)
+            engine.random(10)
 
 
 class TestSobol(QMCEngineTests):
