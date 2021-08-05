@@ -1406,11 +1406,11 @@ class TestKendallTauAlternative:
         stat_expected = 0.1115906717716673
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
-    case_R_gt_171 = (list(zip(alternatives, [False]*3)) +
-                     list(zip(alternatives, [True]*3)))
+    case_gt_171 = (list(zip(alternatives, [False]*3)) +
+                   list(zip(alternatives, [True]*3)))
 
-    @pytest.mark.parametrize("alternative, rev", case_R_gt_171)
-    def test_against_R_gt_171(self, alternative, rev):
+    @pytest.mark.parametrize("alternative, rev", case_gt_171)
+    def test_gt_171(self, alternative, rev):
         np.random.seed(0)
         x = np.random.rand(400)
         y = np.random.rand(400)
