@@ -195,6 +195,15 @@ class TestDifferentialEvolutionSolver:
         assert_equal(0.5, solver.scale)
         assert_equal(None, solver.dither)
 
+    def test_invalid_functional(self):
+        def func(x):
+            return np.array([np.sum(x ** 2), np.sum(x)])
+
+        with assert_raises(
+                RuntimeError,
+                match=r"func\(x, \*args\) must return a scalar value"):
+            differential_evolution(func, [(-2, 2), (-2, 2)])
+
     def test__scale_parameters(self):
         trial = np.array([0.3])
         assert_equal(30, self.dummy_solver._scale_parameters(trial))
