@@ -2155,6 +2155,11 @@ cdef class Rotation:
         Raises
         ------
         TypeError if the instance was created as a single rotation.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.8.0
         """
         if self._single:
             raise TypeError("Single rotation is not subscriptable.")
