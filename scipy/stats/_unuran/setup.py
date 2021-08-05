@@ -56,6 +56,10 @@ def configuration(parent_package="", top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._lib._unuran_utils import _unuran_dir
 
+    if not os.path.exists(_unuran_dir(ret_path=True) / 'README.md'):
+        raise RuntimeError("Missing the `unuran` submodule! Run `git "
+                           "submodule update --init` to fix this.")
+
     config = Configuration("_unuran", parent_package, top_path)
 
     # UNU.RAN info
