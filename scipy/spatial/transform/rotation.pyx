@@ -2140,6 +2140,37 @@ cdef class Rotation:
 
         return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
 
+    def __setitem__(self, indexer, value):
+        """Set rotation(s) at given index(es) from object.
+
+        Parameters
+        ----------
+        indexer : index, slice, or index array
+            Specifies which rotation(s) to replace. A single indexer must be
+            specified, i.e. as if indexing a 1 dimensional array or list.
+
+        value : `Rotation` instance
+            The rotations to set.
+
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.8.0
+        """
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
+        quat = np.asarray(self._quat)
+        quat[indexer] = value.as_quat()
+        self._quat = quat
+
     @classmethod
     def identity(cls, num=None):
         """Get identity rotation(s).
