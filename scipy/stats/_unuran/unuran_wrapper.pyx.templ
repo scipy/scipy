@@ -16,6 +16,7 @@ from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
 import threading
+import functools
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 
@@ -332,6 +333,8 @@ cdef class Method:
     cdef object _callback_wrapper
     cdef object params
     cdef MessageStream _messages
+    # save all the arguments to enable pickling
+    cdef object _kwargs
 
     cdef inline void _check_errorcode(self, int errorcode) except *:
         # check for non-zero errorcode
@@ -529,6 +532,12 @@ cdef class Method:
             unur_urng_free(self.urng)
             self.urng = NULL
 
+    # Pickling support
+    @cython.final
+    def __reduce__(self):
+        klass = functools.partial(self.__class__, **self._kwargs)
+        return (klass, ())
+
 
 cdef class TransformedDensityRejection(Method):
     r"""
@@ -701,6 +710,25 @@ cdef class TransformedDensityRejection(Method):
                   guide_factor=2,
                   seed=None):
         (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c, cpoints, variant)
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'mode': mode,
+            'center': center,
+            'params': params,
+            'domain': domain,
+            'c': c,
+            'cpoints': cpoints,
+            'variant': variant,
+            'use_dars': use_dars,
+            'max_sqhratio': max_sqhratio,
+            'max_intervals': max_intervals,
+            'use_center': use_center,
+            'use_mode': use_mode,
+            'guide_factor': guide_factor,
+            'seed': seed
+        }
 
         cdef:
             unur_distr *distr
@@ -1019,6 +1047,15 @@ cdef class DiscreteAliasUrn(Method):
         (pv_view, params, domain) = self._validate_args(pv, dist, params, domain)
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'pv': pv,
+            'dist': dist,
+            'params': params,
+            'domain': domain,
+            'urn_factor': urn_factor,
+            'seed': seed
+        }
 
         cdef:
             unur_distr *distr

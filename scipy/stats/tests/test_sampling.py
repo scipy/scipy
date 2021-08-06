@@ -1,4 +1,5 @@
 import threading
+import pickle
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
@@ -247,6 +248,15 @@ def test_threading_behaviour():
 
     assert errors['err1'] == 'foo'
     assert errors['err2'] == 'bar'
+
+
+@pytest.mark.parametrize("method, kwargs", all_methods)
+def test_pickle(method, kwargs):
+    Method = getattr(stats, method)
+    rng1 = Method(**kwargs, seed=123)
+    obj = pickle.dumps(rng1)
+    rng2 = pickle.loads(obj)
+    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
 @pytest.mark.parametrize("size", [None, 0, (0, ), 1, (10, 3), (2, 3, 4, 5),
