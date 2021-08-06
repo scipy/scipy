@@ -286,7 +286,7 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         If not specified, PROPACK will generate a starting vector.
     maxiter : int, optional
         Maximum number of iterations / maximal dimension of the Krylov
-        subspace. Default is ``5 * k``.
+        subspace. Default is ``10 * k``.
     return_singular_vectors : {True, False, "u", "vh"}
         Singular values are always computed and returned; this parameter
         controls the computation and return of singular vectors.

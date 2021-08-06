@@ -254,9 +254,9 @@ def test_shifts(shifts, precision):
     A = np.random.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):
         with pytest.raises(ValueError):
-            _svdp(A, k, shifts=shifts, irl_mode=True)
+            _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True)
     else:
-        _svdp(A, k, shifts=shifts, irl_mode=True)
+        _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True)
 
 
 @pytest.mark.slow
