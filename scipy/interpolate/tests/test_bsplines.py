@@ -430,6 +430,30 @@ class TestBSpline:
         spl1 = BSpline(t, c[1], k)
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
+    @pytest.mark.parametrize('bc_type', ['natural', 'clamped', 'periodic'])
+    def test_from_cubic(self, bc_type):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(20))
+        y = np.random.random(20)
+        cb = CubicSpline(x, y, bc_type=bc_type)
+        bspl = BSpline.from_cubic(cb, bc_type=bc_type)
+        bspl_new = make_interp_spline(x, y, bc_type=bc_type)
+        assert_allclose(bspl.c, bspl_new.c)
+
+    def test_from_cubic_exmp(self):
+        '''
+        For x = [0, 1, 2, 3, 4] and y = [1, 1, 1, 1, 1]
+        the coefficients of Cubic Spline:
+        [[0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0],
+         [1, 1, 1, 1, 1]]
+        '''
+        x = np.array([0, 1, 2, 3, 4])
+        y = np.array([1, 1, 1, 1, 1])
+        bspl = BSpline.from_cubic(CubicSpline(x, y))
+        assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1])
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
