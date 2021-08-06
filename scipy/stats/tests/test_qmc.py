@@ -336,6 +336,10 @@ class TestVDC:
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
 
+    def test_invalid_base_error(self):
+        with pytest.raises(ValueError, match=r"'base' must be at least 2"):
+            van_der_corput(10, base=1)
+
 
 class RandomEngine(qmc.QMCEngine):
     def __init__(self, d, seed):
@@ -510,14 +514,14 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.34229571, 0.89178423],
-                            [0.84229571, 0.07696942],
-                            [0.21729571, 0.41030275],
-                            [0.71729571, 0.74363609],
-                            [0.46729571, 0.18808053],
-                            [0.96729571, 0.52141386],
-                            [0.06104571, 0.8547472],
-                            [0.56104571, 0.29919164]])
+    scramble_nd = np.array([[0.40770429, 0.77219711],
+                            [0.90770429, 0.10553045],
+                            [0.15770429, 0.43886378],
+                            [0.65770429, 0.88330823],
+                            [0.28270429, 0.21664156],
+                            [0.78270429, 0.54997489],
+                            [0.03270429, 0.99441934],
+                            [0.53270429, 0.32775267]])
 
 
 class TestLHS(QMCEngineTests):

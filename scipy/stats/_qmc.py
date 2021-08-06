@@ -37,7 +37,9 @@ from scipy.stats._qmc_cy import (
     _cy_wrapper_wrap_around_discrepancy,
     _cy_wrapper_mixture_discrepancy,
     _cy_wrapper_l2_star_discrepancy,
-    _cy_wrapper_update_discrepancy
+    _cy_wrapper_update_discrepancy,
+    _cy_van_der_corput_scrambled,
+    _cy_van_der_corput,
 )
 
 
@@ -594,25 +596,26 @@ def van_der_corput(
        arXiv:1706.02808, 2017.
 
     """
-    rng = check_random_state(seed)
-    sequence = np.zeros(n)
+    if base < 2:
+        raise ValueError("'base' must be at least 2")
 
-    quotient = np.arange(start_index, start_index + n)
-    b2r = 1 / base
+    if scramble:
+        rng = check_random_state(seed)
+        # In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
+        # created for each positive integer `k` such that `1 - base**-k < 1`
+        # using floating-point arithmetic. For double precision floats, the
+        # condition `1 - base**-k < 1` can also be written as `base**-k >
+        # 2**-54`, which makes it more apparent how many permutations we need
+        # to create.
+        count = math.ceil(54 / math.log2(base)) - 1
+        permutations = np.repeat(np.arange(base)[None], count, axis=0)
+        for perm in permutations:
+            rng.shuffle(perm)
 
-    while (1 - b2r) < 1:
-        remainder = quotient % base
+        return _cy_van_der_corput_scrambled(n, base, start_index, permutations)
 
-        if scramble:
-            # permutation must be the same for all points of the sequence
-            perm = rng.permutation(base)
-            remainder = perm[np.array(remainder).astype(int)]
-
-        sequence += remainder * b2r
-        b2r /= base
-        quotient = (quotient - remainder) / base
-
-    return sequence
+    else:
+        return _cy_van_der_corput(n, base, start_index)
 
 
 class QMCEngine(ABC):
