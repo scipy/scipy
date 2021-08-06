@@ -978,6 +978,17 @@ def test_getitem():
     assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
+def test_getitem_single():
+    with pytest.raises(TypeError, match='not subscriptable'):
+        Rotation.identity()[0]
+
+
+def test_setitem_single():
+    r = Rotation.identity()
+    with pytest.raises(TypeError, match='not subscriptable'):
+        r[0] = Rotation.identity()
+
+
 def test_setitem_slice():
     rng = np.random.RandomState(seed=0)
     r1 = Rotation.random(10, random_state=rng)
