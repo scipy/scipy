@@ -423,7 +423,7 @@ class BenchQMCHalton(Benchmark):
 
     def time_halton(self, d, scramble, n):
         seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
-        out = seq.random(n)
+        seq.random(n)
 
 
 class NumericalInverseHermite(Benchmark):
