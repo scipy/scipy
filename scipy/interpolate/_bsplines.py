@@ -373,7 +373,7 @@ class BSpline:
 
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
             raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
-                                "got t={t}.")
+                             f"got t={t}.")
         # There are `nt - k - 1` basis elemets in a BSpline built on the
         # vector of knots with length `nt`, so to have at least one basis
         # element we need to have at least `k + 2` elements in the vector
