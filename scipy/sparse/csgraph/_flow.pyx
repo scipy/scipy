@@ -726,17 +726,16 @@ def _network_simplex_checks(
         ):
     n_edges = capacities.shape[0]
 
-    demand_sum = 0
-    for i in range(n_verts):
-        if demand[i] == 1 << 31 - 1 or demand[i] == -1 << 31:
-            raise ValueError("vertex %d has infinite demand" % (i))
-        demand_sum += demand[i]
+    if np.any(demand == 1 << 31 - 1) or np.any(demand == -1 << 31):
+        raise ValueError("one of the vertices has infinite demand")
 
-    for i in range(n_edges):
-        if cost[i] == 1 << 31 - 1 or cost[i] == -1 << 31:
-            raise ValueError("edge %d has infinite cost" % (i))
-        if capacities[i] < 0:
-            raise ValueError("edge %d has negative capacity" % (i))
+    if np.any(cost == 1 << 31 - 1) or np.any(cost == -1 << 31):
+        raise ValueError("one of the edges has infinite cost")
+
+    if np.any(capacities < 0):
+        raise ValueError("one of the edges has negative capacity")
+
+    demand_sum = demand.sum()
 
     if demand_sum != 0:
         raise ValueError("sum of demands is not zero")
