@@ -257,7 +257,7 @@ class SVDSCommonTests:
 
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
-        accuracies = {'propack': [1e-14, 1e-13, 1e-5],
+        accuracies = {'propack': [1e-12, 1e-6, 1e-4],
                       'arpack': [1e-15, 1e-10, 1e-10],
                       'lobpcg': [1e-11, 1e-3, 10]}
 
@@ -359,8 +359,8 @@ class SVDSCommonTests:
         # not necessarily identical - results
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state)
-        _check_svds(A, k, *res1a)
-        _check_svds(A, k, *res2a)
+        _check_svds(A, k, *res1a, rtol=1e-6)
+        _check_svds(A, k, *res2a, rtol=1e-6)
 
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
@@ -377,11 +377,15 @@ class SVDSCommonTests:
             message = "ARPACK error -1: No convergence"
             with pytest.raises(ArpackNoConvergence, match=message):
                 svds(A, k, ncv=3, maxiter=1, solver=self.solver)
-        else:
+        elif self.solver == 'lobpcg':
             message = "Not equal to tolerance"
             with pytest.raises(AssertionError, match=message):
                 u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
                 assert_allclose(np.abs(u2), np.abs(u))
+        elif self.solver == 'propack':
+            message = "k=1 singular triplets did not converge within"
+            with pytest.raises(np.linalg.LinAlgError, match=message):
+                svds(A, k, maxiter=1, solver=self.solver)
 
         u, s, vh = svds(A, k, solver=self.solver)  # default maxiter
         _check_svds(A, k, u, s, vh)

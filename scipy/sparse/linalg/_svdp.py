@@ -106,7 +106,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         mode.  Default is `True`.
     kmax : int, optional
         Maximal number of iterations / maximal dimension of the Krylov
-        subspace. Default is ``5 * k``.
+        subspace. Default is ``10 * k``.
     compute_u : bool, optional
         If `True` (default) then compute left singular vectors, `u`.
     compute_v : bool, optional
@@ -222,7 +222,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         raise ValueError("k must be positive and not greater than m or n")
 
     if kmax is None:
-        kmax = 5*k
+        kmax = 10*k
     if maxiter is None:
         maxiter = 1000
 

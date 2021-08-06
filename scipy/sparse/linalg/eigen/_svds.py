@@ -312,8 +312,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
+        irl_mode = (which == 'SM')
         res = _svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
-                    compute_u=jobu, compute_v=jobv, irl_mode=True,
+                    compute_u=jobu, compute_v=jobv, irl_mode=irl_mode,
                     kmax=maxiter, v0=v0, random_state=random_state)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
