@@ -89,7 +89,7 @@ def connected_components(csgraph, directed=True, connection='weak',
     """
     if connection.lower() not in ['weak', 'strong']:
         raise ValueError("connection must be 'weak' or 'strong'")
-    
+
     # weak connections <=> components of undirected graph
     if connection.lower() == 'weak':
         directed = False
@@ -117,7 +117,7 @@ def connected_components(csgraph, directed=True, connection='weak',
         return n_components, labels
     else:
         return n_components
-    
+
 
 def breadth_first_tree(csgraph, i_start, directed=True):
     r"""
@@ -350,7 +350,7 @@ cpdef breadth_first_order(csgraph, i_start,
         return node_list[:length], predecessors
     else:
         return node_list[:length]
-    
+
 
 cdef unsigned int _breadth_first_directed(
                            unsigned int head_node,
@@ -390,7 +390,7 @@ cdef unsigned int _breadth_first_directed(
         i_nl += 1
 
     return i_nl
-    
+
 
 cdef unsigned int _breadth_first_undirected(
                            unsigned int head_node,
@@ -538,7 +538,7 @@ cpdef depth_first_order(csgraph, i_start,
         return node_list[:length], predecessors
     else:
         return node_list[:length]
-    
+
 
 cdef unsigned int _depth_first_directed(
                            unsigned int head_node,
@@ -577,12 +577,12 @@ cdef unsigned int _depth_first_directed(
 
         if i_nl_end == N:
             break
-        
+
         if no_children:
             i_root -= 1
-    
+
     return i_nl_end
-    
+
 
 cdef unsigned int _depth_first_undirected(
                            unsigned int head_node,
@@ -639,10 +639,10 @@ cdef unsigned int _depth_first_undirected(
 
         if i_nl_end == N:
             break
-        
+
         if no_children:
             i_root -= 1
-    
+
     return i_nl_end
 
 
@@ -663,7 +663,7 @@ cdef int _connected_components_directed(
     http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
 
     For more details of the memory optimisations used see here:
-    http://www.timl.id.au/?p=327
+    http://www.timl.id.au/SCC
     """
     cdef int v, w, index, low_v, low_w, label, j
     cdef int SS_head, root, stack_head, f, b
