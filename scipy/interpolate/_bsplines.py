@@ -298,12 +298,12 @@ class BSpline:
         c = np.zeros_like(t)
         c[k] = 1.
         return cls.construct_fast(t, c, k, extrapolate)
-    
+
     @classmethod
     def design_matrix(cls, x, t, k):
         """
         Returns a design matrix in CSR format.
-        
+
         Parameters
         ----------
         x : array_like, shape (n,)
@@ -312,7 +312,7 @@ class BSpline:
             Sorted 1D array of knots.
         k : int
             B-spline degree.
- 
+
         Returns
         -------
         design_matrix : `csr_matrix` object
@@ -362,20 +362,22 @@ class BSpline:
         In each row of the design matrix all the basis elemets are evaluated
         at the certain point (first row - x[0], ..., last row - x[-1]).
 
-        `nt` is a lenght of the vector of knots: as far as there are `nt - k - 1`
-        basis elements, `nt` should be not less than `k + 2` to have at least one
-        basis element.
+        `nt` is a lenght of the vector of knots: as far as there are
+        `nt - k - 1` basis elements, `nt` should be not less than `k + 2`
+        to have at least one basis element.
 
         Out of bounds `x` raises a ValueError.
         """
         x = _as_float_array(x, True)
         t = _as_float_array(t, True)
-        
+
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
-            raise ValueError(f"Expect t to be a 1-D sorted array_like, but got t={t}.")
-        # There are `nt - k - 1` basis elemets in a BSpline built on the vector
-        # of knots with length `nt`, so to have at least one basis element we need
-        # to have at least `k + 2` elements in the vector of knots.
+            raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
+                                "got t={t}.")
+        # There are `nt - k - 1` basis elemets in a BSpline built on the
+        # vector of knots with length `nt`, so to have at least one basis
+        # element we need to have at least `k + 2` elements in the vector
+        # of knots.
         if len(t) <= k + 1:
             raise ValueError(f"Length t is not enough for k={k}.")
         if (min(x) < t[k]) or (max(x) > t[-k]):

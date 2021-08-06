@@ -429,7 +429,7 @@ class TestBSpline:
         spl0 = BSpline(t, c[0], k)
         spl1 = BSpline(t, c[1], k)
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
-    
+
     def test_design_matrix_bc_types(self):
         '''
         Splines with different boundary conditions are built on different
@@ -447,12 +447,12 @@ class TestBSpline:
             y = np.random.random_sample(n) * 40 - 20
             if bc_type == "periodic":
                 y[0] = y[-1]
-       
+
             bspl = make_interp_spline(x, y, k=k, bc_type=bc_type)
 
             c = np.eye(len(bspl.t) - k - 1)
             des_matr_def = BSpline(bspl.t, c, k)(x)
-            des_matr_csr = BSpline.design_matrix(x, 
+            des_matr_csr = BSpline.design_matrix(x,
                                                  bspl.t,
                                                  k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
@@ -463,7 +463,7 @@ class TestBSpline:
         k = 3
         for bc in ["clamped", "natural"]:
             run_design_matrix_tests(n, k, bc)
-        
+
         # "not-a-knot" works with odd `k`
         for k in range(3, 8, 2):
             run_design_matrix_tests(n, k, "not-a-knot")
@@ -472,7 +472,7 @@ class TestBSpline:
         n = 5  # smaller `n` to test `k > n` case
         for k in range(2, 7):
             run_design_matrix_tests(n, k, "periodic")
-    
+
     def test_design_matrix_x_t_shapes(self):
         # test for different `x` shapes
         np.random.seed(1234)
@@ -489,12 +489,12 @@ class TestBSpline:
                                                  bspl.t,
                                                  k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
-        
+
         # test for minimal possible `t` shape
         t = [0., 1., 1., 1., 2.]
         des_matr = BSpline.design_matrix(1., t, 3).toarray()
         assert_allclose(des_matr, [[1.]], atol=1e-14)
-        
+
     def test_design_matrix_asserts(self):
         np.random.seed(1234)
         n = 10
@@ -511,7 +511,7 @@ class TestBSpline:
         x = [1., 2., 3., 4.]
         # out of bounds
         with assert_raises(ValueError):
-            des_test = BSpline.design_matrix(x, t, k)
+            BSpline.design_matrix(x, t, k)
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
