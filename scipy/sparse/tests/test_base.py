@@ -4348,6 +4348,13 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_getnnz_axis(self):
         pass
 
+    def test_convert_gh14555(self):
+        # regression test for gh-14555
+        m = dia_matrix(([[1, 1, 0]], [-1]), shape=(4, 2))
+        expected = m.toarray()
+        assert_array_equal(m.tocsc().toarray(), expected)
+        assert_array_equal(m.tocsr().toarray(), expected)
+
 
 TestDIA.init_class()
 
