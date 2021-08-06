@@ -505,7 +505,7 @@ class TestBSpline:
         # invalid vector of knots (should be a 1D non-descending array)
         # here the actual vector of knots is reversed, so it is invalid
         with assert_raises(ValueError):
-            des_test = BSpline.design_matrix(x, bspl.t[::-1], k)
+            BSpline.design_matrix(x, bspl.t[::-1], k)
         k = 2
         t = [0., 1., 2., 3., 4., 5.]
         x = [1., 2., 3., 4.]
