@@ -702,7 +702,7 @@ def minimum_cost_flow(csgraph, demand, cost):
 
     n_verts = csgraph.indptr.shape[0] - 1
 
-    _network_simplex_checks(csgraph.data, demand, cost, n_verts)
+    _network_simplex_checks(csgraph.data, demand, cost)
     tails = _make_tails(csgraph)
     row = np.empty(cost.shape, dtype=ITYPE)
     col = np.empty(cost.shape, dtype=ITYPE)
@@ -722,9 +722,7 @@ def _network_simplex_checks(
         capacities,  # IN
         demand,  # IN
         cost,  # IN
-        n_verts  # IN
         ):
-    n_edges = capacities.shape[0]
 
     if np.any(demand == 1 << 31 - 1) or np.any(demand == -1 << 31):
         raise ValueError("one of the vertices has infinite demand")
