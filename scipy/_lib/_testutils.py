@@ -6,6 +6,7 @@ Generic test utilities.
 import os
 import re
 import sys
+import numpy as np
 
 
 __all__ = ['PytestTester', 'check_free_memory']
@@ -69,6 +70,16 @@ class PytestTester:
             code = exc.code
 
         return (code == 0)
+
+
+class PythranFunc:
+    '''
+    Inherit from this class to generate a bunch of relevant test cases
+    '''
+    def __init__(self):
+        self.ALL_INTEGER = [np.int32, np.int64]
+        self.ALL_FLOAT = [np.float32, np.float64]
+        self.ALL_COMPLEX = [np.complex64, np.complex128]
 
 
 def _pytest_has_xdist():
