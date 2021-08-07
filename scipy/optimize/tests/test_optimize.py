@@ -2241,7 +2241,7 @@ def test_gh12696():
 
 
 
-    @pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
                                     'trust-constr'])
 def test_equal_bounds(method):
     """
@@ -2252,9 +2252,16 @@ def test_equal_bounds(method):
     def f(x):
         return optimize.rosen([x, 2.0])
 
+    def func_and_grad(x):
+        assert x.size == 2
+        return optimize.rosen(x), optimize.rosen_der(x)
+
     def wrapped_rosen(x):
         assert x.size == 2
         return optimize.rosen(x)
+
+    def callback(x, *args):
+        assert x.size == 2
 
     # test example fixes one parameter of N=2, allowing us to work out
     # the best solution with minimize_scalar
@@ -2270,7 +2277,7 @@ def test_equal_bounds(method):
 
         # the minimization with one parameter having lb == ub
         res = optimize.minimize(
-            wrapped_rosen, x0, method=method, bounds=bounds,
+            wrapped_rosen, x0, method=method, bounds=bounds, callback=callback
         )
         assert res.success
         assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
@@ -2309,14 +2316,14 @@ def test_equal_bounds(method):
             assert_allclose(res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6)
 
         # check that minimize works if func returns func and grad.
-        def func_and_grad(x):
-            return rosen(x), rosen_der(x)
+        if method not in ['Powell']:
+            # powell doesn't use jac
+            res = optimize.minimize(
+                func_and_grad, x0, method=method, bounds=bounds, jac=True
+            )
+            assert res.success
+            assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
-        res = optimize.minimize(
-            func_and_grad, x0, method=method, bounds=bounds, jac=True
-        )
-        assert res.success
-        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
 def test_show_options():
     solver_methods = {

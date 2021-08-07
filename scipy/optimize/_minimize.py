@@ -604,37 +604,46 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
-    remove_vars = False
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
+
+    # Finite differences cannot work if a lb == ub, so factorise out those
+    # variables.
+    remove_vars = False
+    if bounds is not None and meth in {'powell', 'l-bfgs-b', 'slsqp'}:
+        # only need to factorise problem for powell, l-bfgs-b, slsqp.
         # for intermediate work use a Bounds object
         _new_bounds = standardize_bounds(bounds, x0, "new")
-        i_fixed = (_new_bounds.lb == _new_bounds.ub)
-        remove_vars = i_fixed.any() and meth in {'powell', 'l-bfgs-b', 'slsqp'}
+        lb, ub = _new_bounds.lb, _new_bounds.ub
+        i_fixed = (lb == ub)
+        remove_vars = i_fixed.any()
 
-    if remove_vars:
-        x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
-        x0 = x0[~i_fixed]   # remove fixed variables from x0
-        # eliminate fixed variables from a Bounds object and convert
-        # that to the bounds used by a method
-        _new_bounds = _remove_from_bounds(_new_bounds, i_fixed)
-        bounds = standardize_bounds(_new_bounds, x0, meth)
-
-        fun = _remove_from_func(fun, i_fixed, x_fixed)
-        if callable(jac):
-            jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
-        if callable(hess):
-            hess = _remove_from_func(hess, i_fixed, x_fixed, remove=2)
-        if callable(callback):
-            callback = _remove_from_func(callback, i_fixed, x_fixed)
-        for con in constraints:
-            if isinstance(con, dict):
-                con['fun'] = _remove_from_func(con['fun'], i_fixed, x_fixed,
-                                               min_dim=1, remove=0)
-                if 'jac' in con and callable(con['jac']):
-                    con['jac'] = _remove_from_func(con['jac'], i_fixed,
-                                                   x_fixed, min_dim=2,
-                                                   remove=1)
+        if remove_vars:
+            x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
+            x0 = x0[~i_fixed]   # remove fixed variables from x0
+            # eliminate fixed variables from a Bounds object and convert
+            # that to the bounds used by a method
+            _new_bounds = _remove_from_bounds(_new_bounds, i_fixed)
+            bounds = standardize_bounds(_new_bounds, x0, meth)
+            fun = _remove_from_func(fun, i_fixed, x_fixed)
+            if callable(jac):
+                # whilst technically we don't need to factorise if an
+                # analytic function is provided for jac, SLSQP constraints
+                # may use FD for their jacobian.
+                jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+            # not factorising hess/hessp because SLSQP and l-bfgs-b don't
+            # use those functions.
+            if callable(callback):
+                callback = _remove_from_func(callback, i_fixed, x_fixed)
+            for con in constraints:
+                if isinstance(con, dict):
+                    con['fun'] = _remove_from_func(
+                        con['fun'], i_fixed, x_fixed, min_dim=1, remove=0
+                    )
+                    if 'jac' in con and callable(con['jac']):
+                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                                                       x_fixed, min_dim=2,
+                                                       remove=1)
 
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
