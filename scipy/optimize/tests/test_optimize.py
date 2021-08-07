@@ -2256,6 +2256,8 @@ def test_equal_bounds(method):
         assert x.size == 2
         return optimize.rosen(x)
 
+    # test example fixes one parameter of N=2, allowing us to work out
+    # the best solution with minimize_scalar
     best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
     x0 = np.array([0.5, 3.0])
     bounds = [(0.0, 3.0), (2.0, 2.0)]
@@ -2266,6 +2268,7 @@ def test_equal_bounds(method):
         # function is linear.
         warnings.simplefilter('ignore', category=UserWarning)
 
+        # the minimization with one parameter having lb == ub
         res = optimize.minimize(
             wrapped_rosen, x0, method=method, bounds=bounds,
         )
@@ -2275,6 +2278,7 @@ def test_equal_bounds(method):
             assert np.array(res.jac).size == 2
             assert np.isnan(res.jac[1])
 
+        # check that SLSQP can deal with equal bounds if it has constraints
         if method == "slsqp":
             constr_best_x = optimize.minimize_scalar(
                 f, method="bounded", bounds=(2.0, 3.0)
@@ -2294,9 +2298,7 @@ def test_equal_bounds(method):
                 constraints=[constr]
             )
             assert res.success
-            assert_allclose(
-                res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6
-            )
+            assert_allclose(res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6)
 
             constr = optimize.NonlinearConstraint(con, 2, 3, jac=conjac)
             res = optimize.minimize(
@@ -2304,10 +2306,17 @@ def test_equal_bounds(method):
                 constraints=[constr]
             )
             assert res.success
-            assert_allclose(
-                res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6
-            )
+            assert_allclose(res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6)
 
+        # check that minimize works if func returns func and grad.
+        def func_and_grad(x):
+            return rosen(x), rosen_der(x)
+
+        res = optimize.minimize(
+            func_and_grad, x0, method=method, bounds=bounds, jac=True
+        )
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
 def test_show_options():
     solver_methods = {
