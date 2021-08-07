@@ -255,6 +255,33 @@ def test_sepfir2d_invalid_image():
     with pytest.raises(ValueError, match="object of too small depth"):
         signal.sepfir2d(image[0], filt, filt)
 
+def test_sepfir2d():
+    np.random.seed(181819140)
+    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
+    image = np.random.rand(4, 4)
+
+    expected = array([[33.772956, 31.264141, 36.075042, 39.040313],
+       [38.942419, 36.574301, 37.060368, 37.403998],
+       [37.563456, 35.758501, 33.46929 , 30.447159],
+       [24.466602, 23.506581, 24.316481, 19.806113]])
+    assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+
+    filt = np.array([1, 2, 4, 2, 1, 3, 2])
+    image = np.random.randint(4, size=(5, 5))
+
+    expected = array([[171., 160., 123., 154., 140.],
+       [130., 128., 116., 122., 112.],
+       [108., 113., 124., 118., 113.],
+       [112., 119., 138., 155., 151.],
+       [ 88., 101., 142., 153., 145.]])
+    assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+
+    expected = array([[69., 63., 46., 34., 40.],
+       [53., 47., 38., 34., 36.],
+       [39., 36., 37., 41., 43.],
+       [36., 36., 39., 47., 61.],
+       [34., 30., 29., 41., 63.]])
+    assert_allclose(signal.sepfir2d(image, filt[::3], filt[::3]), expected)
 
 def test_cspline2d():
     np.random.seed(181819142)
