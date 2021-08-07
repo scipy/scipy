@@ -541,6 +541,8 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
+    TransformedDensityRejection(dist, mode=None, center=None, *, params=(), domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_sqhratio=0.99, max_intervals=100, use_center=True, use_mode=True, guide_factor=2, seed=None)
+
     Transformed Density Rejection (TDR) Method.
 
     TDR is an acceptance/rejection method that uses the concavity of a
@@ -567,11 +569,11 @@ cdef class TransformedDensityRejection(Method):
           have the same signature as the PDF.
 
     mode : float, optional
-        Mode of the distribution. It is optional and only required if
-        `use_mode` is ``True``.
+        (Exact) Mode of the distribution.
     center : float, optional
-        Center (``loc``) of the distribution. It is optional and only
-        required if `use_center` is ``True``. Default is 0.
+        Approximate location of the mode or the mean of the distribution.
+        This location provides some information about the main part of the
+        PDF and is used to avoid numerical problems.
     params : tuple, optional
         Parameters that the PDF and DPDF take. Default is an empty tuple.
     domain : list or tuple of length 2, optional
@@ -579,8 +581,10 @@ cdef class TransformedDensityRejection(Method):
         Default is ``None``. When ``None``, the support is assumed to be
         :math:`(-\infty, \infty)`.
     c : float, optional
-        The transformation function. See Notes for the allowed values for
-        this parameter and their interpretation. Default is -0.5.
+        Set parameter ``c`` for transformation ``T``. Currently only values
+        between 0 and -0.5 are allowed. If ``c`` is between 0 and -0.5 it is
+        set to -0.5. See Notes for definition of the transformation function
+        ``T``. Default is -0.5.
     cpoints : int, optional
         The number of construction points. Default is 30.
     variant : str, optional
@@ -600,11 +604,6 @@ cdef class TransformedDensityRejection(Method):
         It must be a number between 0 and 1. Default is 0.99.
     max_intervals : int, optional
         Set maximum number of intervals. Default is 100.
-    use_center : bool, optional
-        Use the center as construction point, if given. Default is True.
-    use_mode : bool, optional
-        Use the (exact!) mode as construction point, if given. Default is
-        True.
     guide_factor : float, optional
         Set factor for relative size of the guide table for indexed search.
         It must be greater than or equal to 0. When set to 0, then sequential
@@ -614,9 +613,9 @@ cdef class TransformedDensityRejection(Method):
 
     Notes
     -----
-    The transformation of the PDF must be concave in order to
-    construct the hat function. Such a PDF is called T-concave. Currently
-    the following transformations are supported:
+    The transformation of the PDF must be concave in order to construct the
+    hat function. Such a PDF is called T-concave. Currently the following
+    transformations are supported:
 
     .. math::
 
@@ -705,8 +704,6 @@ cdef class TransformedDensityRejection(Method):
                   use_dars=True,
                   max_sqhratio=0.99,
                   max_intervals=100,
-                  use_center=True,
-                  use_mode=True,
                   guide_factor=2,
                   seed=None):
         (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c, cpoints, variant)
@@ -724,8 +721,6 @@ cdef class TransformedDensityRejection(Method):
             'use_dars': use_dars,
             'max_sqhratio': max_sqhratio,
             'max_intervals': max_intervals,
-            'use_center': use_center,
-            'use_mode': use_mode,
             'guide_factor': guide_factor,
             'seed': seed
         }
@@ -781,8 +776,6 @@ cdef class TransformedDensityRejection(Method):
             self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
             self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_sqhratio))
             self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
-            self._check_errorcode(unur_tdr_set_usecenter(self.par, use_center))
-            self._check_errorcode(unur_tdr_set_usemode(self.par, use_mode))
             self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
 
             self._set_rng(seed)
@@ -906,6 +899,8 @@ cdef class TransformedDensityRejection(Method):
 
 cdef class DiscreteAliasUrn(Method):
     r"""
+    DiscreteAliasUrn(pv=None, dist=None, *, params=(), domain=None, urn_factor=1, seed=None)
+
     Discrete Alias-Urn Method.
 
     This method is used to sample from univariate discrete distributions with

@@ -47,8 +47,6 @@ class TransformedDensityRejection(Method):
                  use_dars: bool = ...,
                  max_sqhratio: float = ...,
                  max_intervals: int = ...,
-                 use_center: bool = ...,
-                 use_mode: bool = ...,
                  guide_factor: float = ...,
                  seed: UNURANSeedType = ...) -> None: ...
 

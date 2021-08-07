@@ -379,7 +379,6 @@ Random variate generation / CDF Inversion
    NumericalInverseHermite
    TransformedDensityRejection
    DiscreteAliasUrn
-   UNURANError
 
 Circular statistical functions
 ------------------------------
@@ -427,8 +426,8 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
-Warnings used in :mod:`scipy.stats`
------------------------------------
+Warnings / Errors used in :mod:`scipy.stats`
+--------------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -438,6 +437,7 @@ Warnings used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
+   UNURANError
 
 """
 

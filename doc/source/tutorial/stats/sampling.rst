@@ -248,7 +248,7 @@ We can pass a ``domain`` parameter to truncate the distribution:
            [-0.82666174,  0.71525582,  0.49006743]])
 
 Invalid and bad arguments are handled either by SciPy or by UNU.RAN. The
-latter throws a ``UNURANError`` that follows a common format:
+latter throws a :class:`~UNURANError` that follows a common format:
 
 ``UNURANError: [objid: <object id>] <error code>: <reason> => <type of error>``
 

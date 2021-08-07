@@ -125,27 +125,34 @@ distribution:
     >>> dist1 = StandardNormal()
     >>> urng1 = np.random.default_rng()
     >>> urng2 = copy(urng1)
-    >>> rng = TransformedDensityRejection(dist1, seed=urng1)
+    >>> rng1 = TransformedDensityRejection(dist1, seed=urng1)
     >>> dist1.callbacks  # evaluations during setup
     139
     >>> dist1.callbacks = 0  # don't consider evaluations during setup
-    >>> rvs = rng.rvs(100000)
+    >>> rvs = rng1.rvs(100000)
     >>> dist1.callbacks  # evaluations during sampling
     527
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
-    >>> rng = TransformedDensityRejection(dist2, max_sqhratio=0.999,
-    ...                                   max_intervals=1000, seed=urng2)
+    >>> rng2 = TransformedDensityRejection(dist2, max_sqhratio=0.999,
+    ...                                    max_intervals=1000, seed=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
     >>> dist2.callbacks = 0  # don't consider evaluations during setup
-    >>> rvs = rng.rvs(100000)
+    >>> rvs = rng2.rvs(100000)
     >>> dist2.callbacks  # evaluations during sampling
     84
 
 As we can see, far fewer PDF evaluations are required during sampling when
-we increase the ``sqhratio``. Also, notice that this comes at the cost of
-increased PDF evaluations during setup.
+we increase the ``sqhratio``. The PPF-hat function is also more accurate:
+
+    >>> abs(norm.ppf(0.975) - rng1.ppf_hat(0.975))
+    0.0027054565421578136
+    >>> abs(norm.ppf(0.975) - rng2.ppf_hat(0.975))
+    0.00047824084476300044
+
+Though, notice that this comes at the cost of increased PDF evaluations
+during setup.
 
 For densities with modes not close to 0, it is suggested to set either the
 mode or the center of the distribution by passing ``mode`` or ``center``
