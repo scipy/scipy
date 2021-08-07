@@ -607,15 +607,19 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     remove_vars = False
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
-
-        lb, ub = _split_bounds(bounds)
-        i_fixed = (lb == ub)
+        # for intermediate work use a Bounds object
+        _new_bounds = standardize_bounds(bounds, x0, "new")
+        i_fixed = (_new_bounds.lb == _new_bounds.ub)
         remove_vars = i_fixed.any() and meth in {'powell', 'l-bfgs-b', 'slsqp'}
 
     if remove_vars:
         x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
         x0 = x0[~i_fixed]   # remove fixed variables from x0
-        bounds = _remove_from_bounds(bounds, i_fixed)
+        # eliminate fixed variables from a Bounds object and convert
+        # that to the bounds used by a method
+        _new_bounds = _remove_from_bounds(_new_bounds, i_fixed)
+        bounds = standardize_bounds(_new_bounds, x0, meth)
+
         fun = _remove_from_func(fun, i_fixed, x_fixed)
         if callable(jac):
             jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
@@ -843,31 +847,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         raise ValueError('Unknown solver %s' % method)
 
 
-def _split_bounds(bounds):
-    """Splits bounds into upper and lower parts"""
-    if isinstance(bounds, Bounds):
-        lb = bounds.lb
-        ub = bounds.ub
-    else:
-        bounds_a = np.array(bounds)
-        lb = bounds_a[:, 0]
-        ub = bounds_a[:, 1]
-
-    if lb.dtype == np.dtype('object'):
-        lb[lb == None] = -np.inf
-    if ub.dtype == np.dtype('object'):
-        ub[ub == None] = np.inf
-
-    return lb, ub
-
-
 def _remove_from_bounds(bounds, i_fixed):
-    """Removes bounds for which upper and lower parts are equal"""
-    if isinstance(bounds, Bounds):
-        bounds.lb = bounds.lb[~i_fixed]
-        bounds.ub = bounds.ub[~i_fixed]
-    else:
-        bounds = np.array(bounds)[~i_fixed, :].tolist()
+    """Removes bounds for which upper and lower parts are equal
+    Bounds should be a `Bounds` instance
+    """
+    bounds.lb = bounds.lb[~i_fixed]
+    bounds.ub = bounds.ub[~i_fixed]
     return bounds
 
 
@@ -907,11 +892,11 @@ def _add_to_array(x_in, i_fixed, x_fixed):
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'old'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds

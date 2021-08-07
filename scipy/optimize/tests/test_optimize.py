@@ -2240,7 +2240,8 @@ def test_gh12696():
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
 
 
-@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+
+    @pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
                                     'trust-constr'])
 def test_equal_bounds(method):
     """
@@ -2250,6 +2251,10 @@ def test_equal_bounds(method):
     """
     def f(x):
         return optimize.rosen([x, 2.0])
+
+    def wrapped_rosen(x):
+        assert x.size == 2
+        return optimize.rosen(x)
 
     best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
     x0 = np.array([0.5, 3.0])
@@ -2262,10 +2267,46 @@ def test_equal_bounds(method):
         warnings.simplefilter('ignore', category=UserWarning)
 
         res = optimize.minimize(
-            optimize.rosen, x0, method=method, bounds=bounds,
+            wrapped_rosen, x0, method=method, bounds=bounds,
         )
         assert res.success
         assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
+        if hasattr(res, "jac") and method in {"Powell", "L-BFGS-B", "SLSQP"}:
+            assert np.array(res.jac).size == 2
+            assert np.isnan(res.jac[1])
+
+        if method == "slsqp":
+            constr_best_x = optimize.minimize_scalar(
+                f, method="bounded", bounds=(2.0, 3.0)
+            )
+
+            def con(x):
+                assert len(x) == 2
+                return x[0]
+
+            def conjac(x):
+                assert len(x) == 2
+                return 1
+
+            constr = optimize.NonlinearConstraint(con, 2, 3)
+            res = optimize.minimize(
+                optimize.rosen, x0, method=method, bounds=bounds,
+                constraints=[constr]
+            )
+            assert res.success
+            assert_allclose(
+                res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6
+            )
+
+            constr = optimize.NonlinearConstraint(con, 2, 3, jac=conjac)
+            res = optimize.minimize(
+                optimize.rosen, x0, method=method, bounds=bounds,
+                constraints=[constr]
+            )
+            assert res.success
+            assert_allclose(
+                res.x, np.r_[constr_best_x.x, 2.0], rtol=3e-6
+            )
 
 
 def test_show_options():
