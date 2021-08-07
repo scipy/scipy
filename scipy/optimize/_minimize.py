@@ -609,8 +609,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         bounds = standardize_bounds(bounds, x0, meth)
 
         lb, ub = _split_bounds(bounds)
-        btol = 1e-8  # tolerance for bounds being considered equal. Expose?
-        i_fixed = np.abs(ub - lb) < btol
+        i_fixed = (lb == ub)
         remove_vars = i_fixed.any() and meth in {'powell', 'l-bfgs-b', 'slsqp'}
 
     if remove_vars:
@@ -853,6 +852,12 @@ def _split_bounds(bounds):
         bounds_a = np.array(bounds)
         lb = bounds_a[:, 0]
         ub = bounds_a[:, 1]
+
+    if lb.dtype == np.dtype('object'):
+        lb[lb == None] = -np.inf
+    if ub.dtype == np.dtype('object'):
+        ub[ub == None] = np.inf
+
     return lb, ub
 
 
