@@ -337,10 +337,11 @@ def jacobi(n, alpha, beta, monic=False):
     >>> import numpy as np
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
-    >>> np.allclose(jacobi(0, 2, 2)(x), jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
+    >>> np.allclose(jacobi(0, 2, 2)(x),
+    ...             jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
     True
 
-    Plot of the Jacobi polynomaial :math:`P_5^{(\alpha, -0.5)}` for
+    Plot of the Jacobi polynomial :math:`P_5^{(\alpha, -0.5)}` for
     different values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
@@ -737,8 +738,9 @@ def laguerre(n, monic=False):
 
     Examples
     --------
-    The Laguerre polynomials :math:`L_n` are the special case :math:`\alpha = 0`
-    of the generalized Laguerre polynomials :math:`L_n^{(\alpha)}`.
+    The Laguerre polynomials :math:`L_n` are the special case
+    :math:`\alpha = 0` of the generalized Laguerre polynomials
+    :math:`L_n^{(\alpha)}`.
     Let's verify it on the interval :math:`[-1, 1]`:
 
     >>> from scipy.special import genlaguerre
@@ -1701,7 +1703,8 @@ def chebyt(n, monic=False):
     >>> from scipy.special import chebyt
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
-    >>> np.allclose(jacobi(3, -0.5, -0.5)(x), 1/64 * binom(6, 3) * chebyt(3)(x))
+    >>> np.allclose(jacobi(3, -0.5, -0.5)(x),
+    ...             1/64 * binom(6, 3) * chebyt(3)(x))
     True
 
     We can plot the Chebyshev polynomials :math:`T_n` for some values
