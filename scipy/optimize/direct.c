@@ -30,6 +30,10 @@ direct(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (disp) {
+        logfile = stdout;
+    }
+
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
     MY_ALLOC(x, double, dimension + 1, &ret_code);
     PyObject *x_seq = PyList_New(dimension);

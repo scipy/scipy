@@ -683,10 +683,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         f_min = options.get('f_min', -np.inf)
         maxiter = options.get('maxiter', 6000)
         maxfun = options.get('maxfun', 20000)
+        disp = options.get('disp', False)
         return _minimize_direct(fun, bounds=bounds, *args,
                                 locally_biased=locally_biased,
                                 f_min=f_min, callback=callback,
-                                maxiter=maxiter, maxfun=maxfun)
+                                maxiter=maxiter, maxfun=maxfun,
+                                disp=disp)
     else:
         raise ValueError('Unknown solver %s' % method)
 

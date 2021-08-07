@@ -70,7 +70,8 @@ class TestDIRECT:
             print("DIRECT minimization algorithm callback test")
 
         minimize(func, None, bounds=bounds, method='direct',
-                 callback=callback, options={'maxiter': 2})
+                 callback=callback,
+                 options={'maxiter': 2, 'disp': True, 'maxfun': 1})
 
     def inv(self, x):
         if np.sum(x) == 0:
