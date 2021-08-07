@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 from itertools import product
-from scipy.stats.contingency import expected_freq
 
 import numpy as np
 import pytest
@@ -17,7 +16,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
-from scipy._lib._testutils import PythranFunc
 
 class TestEppsSingleton:
     def test_statistic_1(self):
@@ -615,23 +613,20 @@ class TestMannWhitneyU:
         assert_allclose(res, expected, rtol=1e-12)
 
 
-class TestSomersD(PythranFunc):
-    def __init__(self):
-        super().__init__()
-        self.dtypes = self.ALL_INTEGER+self.ALL_FLOAT
-
+class TestSomersD:
     def test_pythran_dtypes(self):
         # test different dtypes
-        for dtype in self.dtypes:
+        for dtype in [np.int32, np.int64, np.float32, np.float64]:
             x = np.array([5, 2, 1, 3, 6, 4, 7, 8], dtype=dtype)
             y = np.array([5, 2, 6, 3, 1, 8, 7, 4], dtype=dtype)
             expected = (0.000000000000000, 1.000000000000000)
             res = stats.somersd(x, y)
             assert_allclose(res.statistic, expected[0], atol=1e-15)
             assert_allclose(res.pvalue, expected[1], atol=1e-15)
-        
+
     def test_pythran_views(self):
-        table = np.array([[1, 2, 27, 25, 14, 7, 0], [1, 2, 7, 14, 18, 35, 12], [1, 2, 1, 3, 2, 7, 17]])[:, 2:]
+        table = np.array([[1, 2, 27, 25, 14, 7, 0], [1, 2, 7, 14, 18, 35, 12],
+                          [1, 2, 1, 3, 2, 7, 17]])[:, 2:]
         expected = (0.6032766111513396, 1.0007091191074533e-27)
         res = stats.somersd(table)
         assert_allclose(res.statistic, expected[0], atol=1e-15)
