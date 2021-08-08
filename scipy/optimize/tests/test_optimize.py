@@ -43,7 +43,7 @@ def test_check_grad():
 
     r = optimize.check_grad(logit, der_logit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, 
+    r = optimize.check_grad(logit, der_logit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
@@ -2240,10 +2240,9 @@ def test_gh12696():
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
 
 
-
 @pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
                                     'trust-constr'])
-def test_equal_bounds(method):
+def test_equal_bounds1(method):
     """
     Tests that minimizers still work if (bounds.lb == bounds.ub).any()
     gh12502 - Divide by zero in Jacobian numerical differentiation when
@@ -2324,7 +2323,43 @@ def test_equal_bounds(method):
             assert res.success
             assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
+ 
+eb_cases = ({"fun": optimize.rosen, "jac": False},
+            {"fun": optimize.rosen, "jac": optimize.rosen_der},
+            {"fun": (lambda x: optimize.rosen, optimize.rosen_der),
+             "jac": True})
 
+
+# keeping both version intact for now; will combine them later
+@pytest.mark.parametrize('method', ['L-BFGS-B', 'SLSQP',
+                                    'trust-constr', 'TNC'])
+@pytest.mark.parametrize('kwds', eb_cases)
+def test_equal_bounds2(method, kwds):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    def f(x):
+        return optimize.rosen([x, 2.0])
+
+    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
+    x0 = np.array([0.5, 3.0])
+    bounds = [(0.0, 3.0), (2.0, 2.0)]
+
+    kwds.update({"x0": x0, "method": method, "bounds": bounds})
+
+    with warnings.catch_warnings(record=True):
+        # warning filter is for trust-constr
+        # UserWarning: delta_grad == 0.0.Check if the approximated
+        # function is linear.
+        warnings.simplefilter('ignore', category=UserWarning)
+
+        res = optimize.minimize(**kwds)
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
+
+        
 def test_show_options():
     solver_methods = {
         'minimize': MINIMIZE_METHODS,

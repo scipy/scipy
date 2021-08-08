@@ -605,45 +605,43 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         constraints = standardize_constraints(constraints, x0, meth)
 
     if bounds is not None:
-        bounds = standardize_bounds(bounds, x0, meth)
+        if meth.upper() in {"TNC", "SLSQP", "L-BFGS-B"}:
+            # These methods can't take the finite-difference derivatives they
+            # need when a variable is fixed by the bounds. To avoid this issue,
+            # remove fixed variables from the problem.
 
-    # Finite differences cannot work if a lb == ub, so factorise out those
-    # variables.
-    remove_vars = False
-    if bounds is not None and meth in {'powell', 'l-bfgs-b', 'slsqp'}:
-        # only need to factorise problem for powell, l-bfgs-b, slsqp.
-        # for intermediate work use a Bounds object
-        _new_bounds = standardize_bounds(bounds, x0, "new")
-        lb, ub = _new_bounds.lb, _new_bounds.ub
-        i_fixed = (lb == ub)
-        remove_vars = i_fixed.any()
+            # convert to new-style bounds so we only have to consider one case
+            bounds = standardize_bounds(bounds, x0, 'new')
 
-        if remove_vars:
-            x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
-            x0 = x0[~i_fixed]   # remove fixed variables from x0
-            # eliminate fixed variables from a Bounds object and convert
-            # that to the bounds used by a method
-            _new_bounds = _remove_from_bounds(_new_bounds, i_fixed)
-            bounds = standardize_bounds(_new_bounds, x0, meth)
-            fun = _remove_from_func(fun, i_fixed, x_fixed)
-            if callable(jac):
-                # whilst technically we don't need to factorise if an
-                # analytic function is provided for jac, SLSQP constraints
-                # may use FD for their jacobian.
-                jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
-            # not factorising hess/hessp because SLSQP and l-bfgs-b don't
-            # use those functions.
-            if callable(callback):
-                callback = _remove_from_func(callback, i_fixed, x_fixed)
+            # determine whether any variables are fixed
+            i_fixed = (bounds.lb == bounds.ub)
+
+            # determine whether finite differences are needed for any grad/jac
+            fd_needed = not(callable(jac))
             for con in constraints:
-                if isinstance(con, dict):
-                    con['fun'] = _remove_from_func(
-                        con['fun'], i_fixed, x_fixed, min_dim=1, remove=0
-                    )
-                    if 'jac' in con and callable(con['jac']):
+                if not callable(con.get('jac', None)):
+                    fd_needed = True
+
+            # if F.D. are ever used, remove all fixed variables
+            remove_vars = i_fixed.any() and fd_needed
+            if remove_vars:
+                x_fixed = (bounds.lb)[i_fixed]
+                x0 = x0[~i_fixed]
+                bounds = _remove_from_bounds(bounds, i_fixed)
+                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                if callable(callback):
+                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                if callable(jac):
+                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                for con in constraints:  # yes, guaranteed to be a list
+                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                                                   x_fixed, min_dim=1,
+                                                   remove=0)
+                    if callable(con.get('jac', None)):
                         con['jac'] = _remove_from_func(con['jac'], i_fixed,
                                                        x_fixed, min_dim=2,
                                                        remove=1)
+        bounds = standardize_bounds(bounds, x0, meth)
 
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
@@ -689,11 +687,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
-        if "jac" in res:
-            res.jac = _add_to_array(res.jac, i_fixed, np.nan)
-        if "direc" in res:
-            res.direc = _add_to_array(res.direc, i_fixed, np.nan)
-        # hess_inv?
+        res.jac = _add_to_array(res.jac, i_fixed, np.nan)
+        if "hess_inv" in res:
+            res.hess_inv = None  # unknown
 
     return res
 
@@ -857,9 +853,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
 
 def _remove_from_bounds(bounds, i_fixed):
-    """Removes bounds for which upper and lower parts are equal
-    Bounds should be a `Bounds` instance
-    """
+    """Removes fixed variables from a `Bounds` instance"""
     bounds.lb = bounds.lb[~i_fixed]
     bounds.ub = bounds.ub[~i_fixed]
     return bounds
