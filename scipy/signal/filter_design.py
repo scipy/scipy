@@ -2251,7 +2251,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         A scalar or length-2 sequence giving the critical frequencies.
 
         For digital filters, `Wn` are in the same units as `fs`. By default,
-        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        `fs` is None, so 'Wn' should be normalized from 0 to 1,
         where 1 is the Nyquist frequency. (`Wn` is thus in
         half-cycles / sample.)
 
@@ -2298,6 +2298,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     fs : float, optional
         The sampling frequency of the digital system.
+        If it is specified then units of 'fs' and 'Wn' will be the same i.e. half-cycles/sample.
+        Typical value of fs is 2 half-cycles/sample.
 
         .. versionadded:: 1.2.0
 
