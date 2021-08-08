@@ -221,6 +221,34 @@ class TestSepfir2d:
         assert_allclose(result_strided, result_contig, atol=1e-15)
         assert result_strided.dtype == result_contig.dtype
 
+    def test_sepfir2d_2(self):
+        np.random.seed(1234)
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
+        image = np.random.rand(4, 4)
+
+        expected = array([[36.018162, 30.239061, 38.71187 , 43.878183],
+              [38.180999, 35.824583, 43.525247, 43.874945],
+              [43.269533, 40.834018, 46.757772, 44.276423],
+              [49.120928, 39.681844, 43.596067, 45.085854]])
+        assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+
+        filt = np.array([1, 2, 4, 2, 1, 3, 2])
+        image = np.random.randint(4, size=(5, 5))
+
+        expected = array([[123., 101.,  91., 136., 127.],
+             [133., 125., 126., 152., 160.],
+             [136., 137., 150., 162., 177.],
+             [133., 124., 132., 148., 147.],
+             [173., 158., 152., 164., 141.]])
+        assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+
+        expected = array([[22., 35., 41., 31., 47.],
+             [27., 39., 48., 47., 55.],
+             [33., 42., 49., 53., 59.],
+             [39., 44., 41., 36., 48.],
+             [67., 62., 47., 34., 46.]])
+        assert_allclose(signal.sepfir2d(image, filt[::3], filt[::3]), expected)
+
 
 def test_cspline2d():
     np.random.seed(181819142)
