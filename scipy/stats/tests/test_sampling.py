@@ -443,9 +443,10 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("u", u)
     def test_ppf_hat(self, u):
-        # Increase the `max_sqhratio` so the ppf_hat is more accurate.
+        # Increase the `max_squeeze_hat_ratio` so the ppf_hat is more
+        # accurate.
         rng = TransformedDensityRejection(common_cont_dist,
-                                          max_sqhratio=0.9999,
+                                          max_squeeze_hat_ratio=0.9999,
                                           max_intervals=10000)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.

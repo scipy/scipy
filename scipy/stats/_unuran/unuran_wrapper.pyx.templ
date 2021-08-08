@@ -541,7 +541,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, params=(), domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_sqhratio=0.99, max_intervals=100, use_center=True, use_mode=True, guide_factor=2, seed=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, params=(), domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, seed=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -599,7 +599,7 @@ cdef class TransformedDensityRejection(Method):
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
         is True.
-    max_sqhratio : float, optional
+    max_squeeze_hat_ratio : float, optional
         Set upper bound for the ratio (area below squeeze) / (area below hat).
         It must be a number between 0 and 1. Default is 0.99.
     max_intervals : int, optional
@@ -702,7 +702,7 @@ cdef class TransformedDensityRejection(Method):
                   cpoints=30,
                   variant="ps",
                   use_dars=True,
-                  max_sqhratio=0.99,
+                  max_squeeze_hat_ratio=0.99,
                   max_intervals=100,
                   guide_factor=2,
                   seed=None):
@@ -719,7 +719,7 @@ cdef class TransformedDensityRejection(Method):
             'cpoints': cpoints,
             'variant': variant,
             'use_dars': use_dars,
-            'max_sqhratio': max_sqhratio,
+            'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
             'max_intervals': max_intervals,
             'guide_factor': guide_factor,
             'seed': seed
@@ -774,7 +774,7 @@ cdef class TransformedDensityRejection(Method):
                 self._check_errorcode(unur_tdr_set_variant_gw(self.par))
 
             self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
-            self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_sqhratio))
+            self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_squeeze_hat_ratio))
             self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
 
@@ -802,7 +802,7 @@ cdef class TransformedDensityRejection(Method):
         return params, domain, c, cpoints, variant
 
     @property
-    def sqhratio(self):
+    def squeeze_hat_ratio(self):
         """
         Get the current ratio (area below squeeze) / (area below hat) for the
         generator.

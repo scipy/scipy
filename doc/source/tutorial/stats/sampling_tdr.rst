@@ -79,35 +79,35 @@ directly using the ``ppf_hat`` method.
 Apart from the PPF method, other attributes can be accessed
 to see how well the generator fits the given distribution. These are:
 
-* 'sqhratio': (area below squeeze) / (area below hat) for the generator. It
+* 'squeeze_hat_ratio': (area below squeeze) / (area below hat) for the generator. It
   is a number between 0 and 1. Closer to 1 means that the hat and the squeeze
   functions tightly envelop the distribution and fewer PDF evaluations are
   required to generate samples. The expected number of evaluations of the
-  density is bounded by ``(1/sqhratio) - 1`` per sample. By default, it is
-  kept above 0.99 but that can be changed by passing a ``max_sqhratio``
+  density is bounded by ``(1/squeeze_hat_ratio) - 1`` per sample. By default, it is
+  kept above 0.99 but that can be changed by passing a ``max_squeeze_hat_ratio``
   parameter.
 * 'hat_area': area below the hat for the generator.
 * 'squeeze_area': area below the squeeze for the generator.
 
-    >>> rng.sqhratio
+    >>> rng.squeeze_hat_ratio
     0.9947024204884917
     >>> rng.hat_area
     2.510253139791547
     >>> rng.squeeze_area
     2.4969548741894876
-    >>> rng.sqhratio == rng.squeeze_area / rng.hat_area
+    >>> rng.squeeze_hat_ratio == rng.squeeze_area / rng.hat_area
     True
 
-To increase ``sqhratio``, pass ``max_sqhratio``:
+To increase ``squeeze_hat_ratio``, pass ``max_squeeze_hat_ratio``:
 
-    >>> rng = TransformedDensityRejection(dist, max_sqhratio=0.999,
+    >>> rng = TransformedDensityRejection(dist, max_squeeze_hat_ratio=0.999,
     ...                                   max_intervals=1000, seed=urng)
-    >>> rng.sqhratio
+    >>> rng.squeeze_hat_ratio
     0.999364900465214
 
 Note that we need to increase the ``max_intervals`` parameter when we want
-a higher ``sqhratio``. This is because more construction points are required
-to fit the distribution more tightly.
+a higher ``squeeze_hat_ratio``. This is because more construction points are
+required to fit the distribution more tightly.
 
 Let's see how this affects the callbacks to the PDF method of the
 distribution:
@@ -134,7 +134,7 @@ distribution:
     527
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
-    >>> rng2 = TransformedDensityRejection(dist2, max_sqhratio=0.999,
+    >>> rng2 = TransformedDensityRejection(dist2, max_squeeze_hat_ratio=0.999,
     ...                                    max_intervals=1000, seed=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
@@ -144,7 +144,7 @@ distribution:
     84
 
 As we can see, far fewer PDF evaluations are required during sampling when
-we increase the ``sqhratio``. The PPF-hat function is also more accurate:
+we increase the ``squeeze_hat_ratio``. The PPF-hat function is also more accurate:
 
     >>> abs(norm.ppf(0.975) - rng1.ppf_hat(0.975))
     0.0027054565421578136
