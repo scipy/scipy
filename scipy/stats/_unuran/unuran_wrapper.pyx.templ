@@ -806,6 +806,8 @@ cdef class TransformedDensityRejection(Method):
                                  "non-empty array.")
         else:
             self.cpoints_array = None
+            if cpoints <= 0 or cpoints != int(cpoints):
+                raise ValueError("`cpoints` must be a positive integer.")
 
         params = tuple(params)
 
@@ -1003,6 +1005,8 @@ cdef class DiscreteAliasUrn(Method):
     >>> from scipy.stats import chisquare
     >>> _, freqs = np.unique(rvs, return_counts=True)
     >>> freqs = freqs / np.sum(freqs)
+    >>> freqs
+    array([0.092, 0.292, 0.616])
     >>> chisquare(freqs, pv).pvalue
     0.9993602047563164
 
@@ -1038,7 +1042,6 @@ cdef class DiscreteAliasUrn(Method):
     >>> obs_freqs = np.zeros(11)  # some frequencies may be zero.
     >>> obs_freqs[:freqs.size] = freqs
     >>> pv = [dist.pmf(i) for i in range(0, 11)]
-    >>> # Correct for some numerical error
     >>> pv = np.asarray(pv) / np.sum(pv)
     >>> chisquare(obs_freqs, pv).pvalue
     0.9999999999999999

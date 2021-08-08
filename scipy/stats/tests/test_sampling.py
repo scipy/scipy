@@ -207,6 +207,9 @@ def test_seed_setter():
 
 
 def test_threading_behaviour():
+    # Test if the API is thread-safe.
+    # This verifies if the lock mechanism and the use of `PyErr_Occurred`
+    # is correct.
     errors = {"err1": None, "err2": None}
 
     class Distribution:
@@ -323,6 +326,7 @@ class TestTransformedDensityRejection:
 
     dists = [dist0(), dist1(), dist2(0.), dist2(10000.)]
 
+    # exact mean and variance of the distributions in the list dists
     mv0 = [0., 4./15.]
     mv1 = [0., 0.01]
     mv2 = [0., np.inf]
@@ -376,14 +380,10 @@ class TestTransformedDensityRejection:
         with pytest.raises(err, match=msg):
             TransformedDensityRejection(common_cont_dist, domain=domain)
 
-    # TODO: for cpoints < 0, UNU.RAN throws a warning and sets cpoints
-    #       to a default value. This is not consistent with other invalid
-    #       values of cpoints for which it throws errors. Hence, We should
-    #       validate this parameter ourself.
-    @pytest.mark.parametrize("cpoints", [0, 0.1])
+    @pytest.mark.parametrize("cpoints", [-1, 0, 0.1])
     def test_bad_cpoints_scalar(self, cpoints):
-        with pytest.raises(UNURANError, match=r"50 : bad construction "
-                                              r"points."):
+        with pytest.raises(ValueError, match=r"`cpoints` must be a "
+                                             r"positive integer."):
             TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
 
     def test_bad_cpoints_array(self):
