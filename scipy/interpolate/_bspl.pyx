@@ -4,6 +4,7 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
+from scipy.sparse import csr_matrix
 cimport numpy as cnp
 
 cimport cython
@@ -412,3 +413,48 @@ def _norm_eq_lsq(const double[::1] x,
                 # ... and A.T @ y
                 for ci in range(rhs.shape[1]):
                     rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _make_design_matrix(const double[::1] x,
+                const double[::1] t,
+                int k):
+    """
+    Returns a design matrix in CSR format
+    
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        Points to evaluate the spline at.   
+    t : array_like, shape (nt,)
+        Sorted 1D array of knots.
+    k : int
+        B-spline degree.
+
+    Returns
+    -------
+    design_matrix : `csr_matrix` object
+        Sparse matrix in CSR format where in each row all the basis
+        elemets are evaluated at the certain point (first row - x[0],
+        ..., last row - x[-1]).
+    """
+    cdef:
+        cnp.npy_intp n = x.shape[0]
+        cnp.npy_intp nt = t.shape[0]
+        double[::1] wrk = np.empty(2*k+2, dtype=float)
+        double[::1] data = np.zeros(n * (k + 1), dtype=float)
+        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
+        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+    for i in range(n):
+        ind = find_interval(t, k, x[i], k - 1, 0)
+        if ind <  k:
+            raise ValueError(f'Out of bounds w/ x = {x}.')
+        _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
+
+        data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
+        row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
+        col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k
+                                                            ,min(ind + 1, nt - k - 1)
+                                                            ,dtype=int)
+
+    return csr_matrix((data, (row_ind, col_ind)), (n, nt - k - 1))       

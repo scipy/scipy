@@ -86,6 +86,7 @@ class BSpline:
     antiderivative
     integrate
     construct_fast
+    design_matrix
 
     Notes
     -----
@@ -297,6 +298,92 @@ class BSpline:
         c = np.zeros_like(t)
         c[k] = 1.
         return cls.construct_fast(t, c, k, extrapolate)
+
+    @classmethod
+    def design_matrix(cls, x, t, k):
+        """
+        Returns a design matrix in CSR format.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Points to evaluate the spline at.
+        t : array_like, shape (nt,)
+            Sorted 1D array of knots.
+        k : int
+            B-spline degree.
+
+        Returns
+        -------
+        design_matrix : `csr_matrix` object
+            Sparse matrix in CSR format where in each row all the basis
+            elemets are evaluated at the certain point (first row - x[0],
+            ..., last row - x[-1]).
+
+        Examples
+        --------
+        Construct a design matrix for a B-spline
+
+        >>> from scipy.interpolate import make_interp_spline, BSpline
+        >>> x = np.linspace(0, np.pi * 2, 4)
+        >>> y = np.sin(x)
+        >>> k = 3
+        >>> bspl = make_interp_spline(x, y, k=k)
+        >>> design_matrix = bspl.design_matrix(x, bspl.t, k)
+        >>> design_matrix.toarray()
+        [[1.        , 0.        , 0.        , 0.        ],
+        [0.2962963 , 0.44444444, 0.22222222, 0.03703704],
+        [0.03703704, 0.22222222, 0.44444444, 0.2962963 ],
+        [0.        , 0.        , 0.        , 1.        ]]
+
+        Construct a design matrix for some vector of knots
+
+        >>> k = 2
+        >>> t = [-1, 0, 1, 2, 3, 4, 5, 6]
+        >>> x = [1, 2, 3, 4]
+        >>> design_matrix = BSpline.design_matrix(x, t, k).toarray()
+        >>> design_matrix
+        [[0.5, 0.5, 0. , 0. , 0. ],
+        [0. , 0.5, 0.5, 0. , 0. ],
+        [0. , 0. , 0.5, 0.5, 0. ],
+        [0. , 0. , 0. , 0.5, 0.5]]
+
+        This result is equivalent to the one created in the sparse format
+
+        >>> c = np.eye(len(t) - k - 1)
+        >>> design_matrix_gh = BSpline(t, c, k)(x)
+        >>> np.allclose(design_matrix, design_matrix_gh, atol=1e-14)
+        True
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+
+        In each row of the design matrix all the basis elemets are evaluated
+        at the certain point (first row - x[0], ..., last row - x[-1]).
+
+        `nt` is a lenght of the vector of knots: as far as there are
+        `nt - k - 1` basis elements, `nt` should be not less than `k + 2`
+        to have at least one basis element.
+
+        Out of bounds `x` raises a ValueError.
+        """
+        x = _as_float_array(x, True)
+        t = _as_float_array(t, True)
+
+        if t.ndim != 1 or np.any(t[1:] < t[:-1]):
+            raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
+                             f"got t={t}.")
+        # There are `nt - k - 1` basis elemets in a BSpline built on the
+        # vector of knots with length `nt`, so to have at least one basis
+        # element we need to have at least `k + 2` elements in the vector
+        # of knots.
+        if len(t) <= k + 1:
+            raise ValueError(f"Length t is not enough for k={k}.")
+        if (min(x) < t[k]) or (max(x) > t[-k]):
+            raise ValueError(f'Out of bounds w/ x = {x}.')
+
+        return _bspl._make_design_matrix(x, t, k)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
