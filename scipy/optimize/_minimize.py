@@ -606,31 +606,43 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     remove_vars = False
     if bounds is not None:
+        if meth.upper() in {"TNC", "SLSQP", "L-BFGS-B"}:
+            # These methods can't take the finite-difference derivatives they
+            # need when a variable is fixed by the bounds. To avoid this issue,
+            # remove fixed variables from the problem.
+
+            # convert to new-style bounds so we only have to consider one case
+            bounds = standardize_bounds(bounds, x0, 'new')
+
+            # determine whether any variables are fixed
+            i_fixed = (bounds.lb == bounds.ub)
+
+            # determine whether finite differences are needed for any grad/jac
+            fd_needed = not(callable(jac))
+            for con in constraints:
+                if not callable(con.get('jac', None)):
+                    fd_needed = True
+
+            # if F.D. are ever used, remove all fixed variables
+            remove_vars = i_fixed.any() and fd_needed
+            if remove_vars:
+                x_fixed = (bounds.lb)[i_fixed]
+                x0 = x0[~i_fixed]
+                bounds = _remove_from_bounds(bounds, i_fixed)
+                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                if callable(callback):
+                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                if callable(jac):
+                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                for con in constraints:  # yes, guaranteed to be a list
+                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                                                   x_fixed, min_dim=1,
+                                                   remove=0)
+                    if callable(con.get('jac', None)):
+                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                                                       x_fixed, min_dim=2,
+                                                       remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
-
-        lb, ub = _split_bounds(bounds)
-        i_fixed = (lb == ub)
-        remove_vars = i_fixed.any() and meth in {'powell', 'l-bfgs-b', 'slsqp'}
-
-    if remove_vars:
-        x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
-        x0 = x0[~i_fixed]   # remove fixed variables from x0
-        bounds = _remove_from_bounds(bounds, i_fixed)
-        fun = _remove_from_func(fun, i_fixed, x_fixed)
-        if callable(jac):
-            jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
-        if callable(hess):
-            hess = _remove_from_func(hess, i_fixed, x_fixed, remove=2)
-        if callable(callback):
-            callback = _remove_from_func(callback, i_fixed, x_fixed)
-        for con in constraints:
-            if isinstance(con, dict):
-                con['fun'] = _remove_from_func(con['fun'], i_fixed, x_fixed,
-                                               min_dim=1, remove=0)
-                if 'jac' in con and callable(con['jac']):
-                    con['jac'] = _remove_from_func(con['jac'], i_fixed,
-                                                   x_fixed, min_dim=2,
-                                                   remove=1)
 
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
@@ -676,11 +688,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
-        if "jac" in res:
-            res.jac = _add_to_array(res.jac, i_fixed, np.nan)
-        if "direc" in res:
-            res.direc = _add_to_array(res.direc, i_fixed, np.nan)
-        # hess_inv?
+        res.jac = _add_to_array(res.jac, i_fixed, np.nan)
+        if "hess_inv" in res:
+            res.hess_inv = None  # unknown
 
     return res
 
@@ -843,31 +853,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         raise ValueError('Unknown solver %s' % method)
 
 
-def _split_bounds(bounds):
-    """Splits bounds into upper and lower parts"""
-    if isinstance(bounds, Bounds):
-        lb = bounds.lb
-        ub = bounds.ub
-    else:
-        bounds_a = np.array(bounds)
-        lb = bounds_a[:, 0]
-        ub = bounds_a[:, 1]
-
-    if lb.dtype == np.dtype('object'):
-        lb[lb == None] = -np.inf
-    if ub.dtype == np.dtype('object'):
-        ub[ub == None] = np.inf
-
-    return lb, ub
-
-
 def _remove_from_bounds(bounds, i_fixed):
     """Removes bounds for which upper and lower parts are equal"""
-    if isinstance(bounds, Bounds):
-        bounds.lb = bounds.lb[~i_fixed]
-        bounds.ub = bounds.ub[~i_fixed]
-    else:
-        bounds = np.array(bounds)[~i_fixed, :].tolist()
+    bounds.lb = bounds.lb[~i_fixed]
+    bounds.ub = bounds.ub[~i_fixed]
     return bounds
 
 
@@ -907,7 +896,7 @@ def _add_to_array(x_in, i_fixed, x_fixed):
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
