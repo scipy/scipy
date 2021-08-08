@@ -2323,10 +2323,10 @@ def test_equal_bounds1(method):
             assert res.success
             assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
- 
+
 eb_cases = ({"fun": optimize.rosen, "jac": False},
             {"fun": optimize.rosen, "jac": optimize.rosen_der},
-            {"fun": (lambda x: optimize.rosen, optimize.rosen_der),
+            {"fun": (lambda x: (optimize.rosen(x), optimize.rosen_der(x))),
              "jac": True})
 
 
@@ -2359,7 +2359,7 @@ def test_equal_bounds2(method, kwds):
         assert res.success
         assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
-        
+
 def test_show_options():
     solver_methods = {
         'minimize': MINIMIZE_METHODS,

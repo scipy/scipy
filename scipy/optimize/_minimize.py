@@ -604,6 +604,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
+    remove_vars = False
     if bounds is not None:
         if meth.upper() in {"TNC", "SLSQP", "L-BFGS-B"}:
             # These methods can't take the finite-difference derivatives they
