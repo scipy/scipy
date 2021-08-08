@@ -604,7 +604,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
-    remove_vars = False
     if bounds is not None:
         if meth.upper() in {"TNC", "SLSQP", "L-BFGS-B"}:
             # These methods can't take the finite-difference derivatives they
@@ -854,7 +853,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
 
 def _remove_from_bounds(bounds, i_fixed):
-    """Removes bounds for which upper and lower parts are equal"""
+    """Removes fixed variables from a `Bounds` instance"""
     bounds.lb = bounds.lb[~i_fixed]
     bounds.ub = bounds.ub[~i_fixed]
     return bounds
@@ -900,7 +899,7 @@ def standardize_bounds(bounds, x0, meth):
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'old'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds
