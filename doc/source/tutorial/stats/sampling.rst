@@ -175,6 +175,9 @@ distribution by calling the ``rvs`` method:
            [-0.60954752,  0.29071797, -0.57167182],
            [ 0.9331694 , -0.95605208,  1.72195199]])
 
+We can also check that the samples are drawn from the correct distribution
+by visualizing the histogram of the samples:
+
 .. plot::
 
     >>> import matplotlib.pyplot as plt
@@ -192,26 +195,22 @@ distribution by calling the ``rvs`` method:
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, seed=urng)
-    >>> fig, ax = plt.subplots()
-    >>> x = np.linspace(norm.ppf(0.01), norm.ppf(0.99), 100)
-    >>> # PDF
-    >>> pdf = norm.pdf(x)
-    >>> ax.plot(x, pdf, "-", lw=5, alpha=0.6)
-    >>> # Empirical PDF
-    >>> sample = rng.rvs(size=1000)
-    >>> # discrete samples
-    >>> delta = np.max(pdf) * 5e-2
-    >>> ax.plot(sample[:100], -delta - delta * np.random.random(100), "+k")
-    >>> ax.set_title("PDF")
-    >>> ax.set_ylabel(r"$f$")
-    >>> ax.set_xlabel(r"$x$")
+    >>> rvs = rng.rvs(size=1000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=1000)
+    >>> fx = norm.pdf(x)
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Transformed Density Rejection Samples')
+    >>> plt.legend()
     >>> plt.show()
 
 .. note:: Please note the difference between the `rvs` method of the
           distributions present in :mod:`scipy.stats` and the one provided
           by these generators. UNU.RAN generators must be considered
-          independent in a sense that they will produce a different stream
-          of random numbers than the one produced by the equivalent
+          independent in a sense that they will generally produce a different
+          stream of random numbers than the one produced by the equivalent
           distribution in :mod:`scipy.stats` for any seed. The implementation
           of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal

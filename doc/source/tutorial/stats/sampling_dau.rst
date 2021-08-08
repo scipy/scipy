@@ -31,7 +31,7 @@ constructing the tables is O(N).
 By default, the probability vector is indexed starting at 0. However, this
 can be changed by passing a ``domain`` parameter. When ``domain`` is given
 in combination with the PV, it has the effect of relocating the
-distribution from ``(0, N)`` to ``(domain[0]``, ``domain[0] + N)``.
+distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
 ``domain[1]`` is ignored in this case.
 
    >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), seed=urng)
@@ -50,6 +50,34 @@ In that case, a bounded (finite) domain must also be given.
     ...                        seed=urng)
     >>> rng.rvs()
     10
+
+.. plot::
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import DiscreteAliasUrn
+    >>> class Distribution:
+    ...     def pmf(self, x, c):
+    ...         return x**c
+    ... 
+    >>> dist = Distribution()
+    >>> urng = np.random.default_rng()
+    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), params=(2, ),
+    ...                        seed=urng)
+    >>> rvs = rng.rvs(1000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> x = np.arange(1, 11)
+    >>> fx = dist.pmf(x, 2)
+    >>> fx = fx / fx.sum()
+    >>> ax.plot(x, fx, 'bo', label='true distribution')
+    >>> ax.vlines(x, 0, fx, lw=2)
+    >>> ax.hist(rvs, bins=np.r_[x, 11]-0.5, density=True, alpha=0.5, color='r',
+    ...         label='samples')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PMF(x)')
+    >>> ax.set_title('Discrete Alias Urn Samples')
+    >>> plt.legend()
+    >>> plt.show()
 
 .. note:: As :class:`~DiscreteAliasUrn` expects PMF with signature
           ``def pmf(x: float, ...) -> float``, it first vectorizes the

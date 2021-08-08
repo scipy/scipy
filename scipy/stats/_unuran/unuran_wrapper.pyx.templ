@@ -569,11 +569,11 @@ cdef class TransformedDensityRejection(Method):
           have the same signature as the PDF.
 
     mode : float, optional
-        (Exact) Mode of the distribution.
+        (Exact) Mode of the distribution. Default is ``None``.
     center : float, optional
         Approximate location of the mode or the mean of the distribution.
         This location provides some information about the main part of the
-        PDF and is used to avoid numerical problems.
+        PDF and is used to avoid numerical problems. Default is ``None``.
     params : tuple, optional
         Parameters that the PDF and DPDF take. Default is an empty tuple.
     domain : list or tuple of length 2, optional
@@ -587,14 +587,8 @@ cdef class TransformedDensityRejection(Method):
         ``T``. Default is -0.5.
     cpoints : int, optional
         The number of construction points. Default is 30.
-    variant : str, optional
-        The variant to use. Available options are:
-
-          * 'ps': PS variant (Default)
-          * 'gw': GW variant
-          * 'ia': IA variant
-
-        See Notes for their explainations.
+    variant : {'ps', 'gw', 'ia'}, optional
+        The variant to use. The default is 'ps'. See Notes for their explaination.
     use_dars : bool, optional
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
@@ -609,7 +603,8 @@ cdef class TransformedDensityRejection(Method):
         It must be greater than or equal to 0. When set to 0, then sequential
         search is used. Default is 2.
     seed : int, BitGenerator, Generator, RandomState, SeedSequence, optional
-        Seed for the underlying uniform random number generation.
+        Seed for the underlying uniform random number generation. Default is
+        ``None`` in which case a random seed is used.
 
     Notes
     -----
@@ -624,7 +619,7 @@ cdef class TransformedDensityRejection(Method):
 
     Three variants of this method are available:
 
-    * GW: squeezes between construction points.
+    * GW: squeezes between construction points, see [3]_.
     * PS: squeezes proportional to hat function. (Default)
     * IA: same as variant PS but uses a compositon method with
       "immediate acceptance" in the region below the squeeze.
@@ -682,6 +677,20 @@ cdef class TransformedDensityRejection(Method):
 
     >>> rvs = rng.rvs(1000)
 
+    We can check that the samples are from the given distribution by visualizing
+    its histogram:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-1, 1, 1000)
+    >>> fx = 3/4 * dist.pdf(x)  # 3/4 is the normalizing constant
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Transformed Density Rejection Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
     To use the log transformation with 10 construction points and the
     immediate acceptance variant of the method, do:
 
@@ -706,7 +715,8 @@ cdef class TransformedDensityRejection(Method):
                   max_intervals=100,
                   guide_factor=2,
                   seed=None):
-        (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c, cpoints, variant)
+        (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c,
+                                                                    cpoints, variant)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -912,24 +922,30 @@ cdef class DiscreteAliasUrn(Method):
     ----------
     pv : array_like, optional
         Probability vector (PV) of the distribution. If PV isn't available,
-        PMF of the distribution is expected.
+        PMF of the distribution is expected. Default is ``None``.
     dist : object, optional
         An instance of a class with a 'pmf' method. Only required if PV isn't
         available. The signature of the PMF is expected to be:
         ``def pmf(k: int, *params) -> float``. i.e it should accecpt a Python
-        integer and return a Python float.
+        integer and return a Python float. Default is ``None``.
     params : tuple, optional
         Parameters that the PMF takes. If a probability vector is available,
         this parameter is ignored. Default is an empty tuple.
     domain : int, optional
         Support of the PMF. If a probability vector is not available, a
         finite domain must be given. i.e. the PMF must have a finite support.
+        Default is ``None``. When ``None``, the support is assumed to be
+        ``(0, len(pv))``. When this parameter is passes in combination with
+        ``pv``, ``domain[0]`` is used to relocate the distribution and
+        ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
+        explanation.
     urnfactor : float, optional
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result is faster
-        generation times but require a more expensive setup.
+        generation times but require a more expensive setup. Default is 1.
     seed : int, BitGenerator, Generator, RandomState, SeedSequence, optional
-        Seed for the underlying uniform random number generation.
+        Seed for the underlying uniform random number generation. Default is
+        ``None`` in which case a random seed is used.
 
     Notes
     -----
@@ -942,6 +958,12 @@ cdef class DiscreteAliasUrn(Method):
     If a probability vector is given, it must be a 1-dimensional array of
     non-negative floats without any ``inf`` or ``nan`` values. Also, there
     must be at least one non-zero entry otherwise an exception is raised.
+
+    By default, the probability vector is indexed starting at 0. However, this
+    can be changed by passing a ``domain`` parameter. When ``domain`` is given
+    in combination with the PV, it has the effect of relocating the
+    distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
+    ``domain[1]`` is ignored in this case.
 
     The parameter ``urn_factor`` can be increased for faster generation at the
     cost of increased setup time. This method uses a table for random
@@ -1020,6 +1042,26 @@ cdef class DiscreteAliasUrn(Method):
     >>> pv = np.asarray(pv) / np.sum(pv)
     >>> chisquare(obs_freqs, pv).pvalue
     0.9999999999999999
+
+    To check that the samples have been drawn from the correct distribution,
+    we can visualize the histogram of the samples:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(1000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> x = np.arange(0, n+1)
+    >>> fx = dist.pmf(x)
+    >>> fx = fx / fx.sum()
+    >>> ax.plot(x, fx, 'bo', label='true distribution')
+    >>> ax.vlines(x, 0, fx, lw=2)
+    >>> ax.hist(rvs, bins=np.r_[x, n+1]-0.5, density=True, alpha=0.5,
+    ...         color='r', label='samples')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PMF(x)')
+    >>> ax.set_title('Discrete Alias Urn Samples')
+    >>> plt.legend()
+    >>> plt.show()
 
     To set the ``urn_factor``, use:
 
