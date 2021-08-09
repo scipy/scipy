@@ -977,7 +977,7 @@ def linregress(x, y=None):
     return result
 
 
-def theilslopes(y, x=None, alpha=0.95):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -994,6 +994,17 @@ def theilslopes(y, x=None, alpha=0.95):
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+            * 'joint': Uses np.median(y - medslope * x) as intercept.
+            * 'separate': Uses np.median(y) - medslope * np.median(x)
+                          as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -1030,7 +1041,7 @@ def theilslopes(y, x=None, alpha=0.95):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
-    return stats_theilslopes(y, x, alpha=alpha)
+    return stats_theilslopes(y, x, alpha=alpha, method=method)
 
 
 def siegelslopes(y, x=None, method="hierarchical"):
