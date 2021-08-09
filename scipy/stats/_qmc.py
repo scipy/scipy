@@ -910,10 +910,11 @@ class LatinHypercube(QMCEngine):
 
         .. versionadded:: 1.8.0
 
-    orthogonal_array_p : int, optional
+    orthogonal : bool, optional
         Orthogonal array based LHS of strength 2 [7]_, [8]_.
-        `orthogonal_array_p` must be a prime. It also constrains
-        ``d <= orthogonal_array_p + 1`` and ``n = orthogonal_array_p**2``.
+        When used, only ``n=p**2`` points can be sampled, with ``p`` a prime
+        number. It also constrains ``d <= p + 1``.
+        Default is False.
 
         .. versionadded:: 1.8.0
 
@@ -1000,11 +1001,23 @@ class LatinHypercube(QMCEngine):
     >>> qmc.discrepancy(sample)
     0.0176...  # random
 
+    Use the `orthogonal` keyword argument to produce an orthogonal array based
+    LHS. The construction imposes to use a square of a prime number.
+
+    >>> sampler = qmc.LatinHypercube(d=2, orthogonal=True)
+    >>> sample = sampler.random(n=9)
+    >>> qmc.discrepancy(sample)
+    0.00526...  # random
+
+    Options could be combined as a same time to produce an optimized centered
+    orthogonal array based LHS. After optimization, the result would not
+    be guaranteed to be orthogonal.
+
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
-        orthogonal_array_p: Optional[int] = None,
+        orthogonal: bool = False,
         optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
@@ -1029,20 +1042,9 @@ class LatinHypercube(QMCEngine):
         else:
             self.optimization_method = None
 
-        if orthogonal_array_p is None:
+        if not orthogonal:
             self.lhs_method = self._random
         else:
-            primes = primes_from_2_to(orthogonal_array_p+2)
-            if orthogonal_array_p not in primes:
-                raise ValueError(
-                    "orthogonal_array_p is not a prime number. Closest"
-                    f" values are {primes[-2:]}"
-                )
-            if d > orthogonal_array_p + 1:
-                raise ValueError(
-                    "d is too large. Must be <= orthogonal_array_p + 1"
-                )
-            self._p = orthogonal_array_p
             self.lhs_method = self._random_oa_lhs
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
@@ -1083,42 +1085,50 @@ class LatinHypercube(QMCEngine):
 
     def _random_oa_lhs(self, n: IntNumber = 1) -> np.ndarray:
         """Orthogonal array based LHS of strength 2."""
-        n_row = self._p**2
-        n_col = self._p + 1
+        p = np.sqrt(n).astype(int)
+        n_row = p**2
+        n_col = p + 1
 
-        if n != n_row:
+        primes = primes_from_2_to(p + 2)
+        if p not in primes or n != n_row:
             raise ValueError(
-                "n is not equal to orthogonal_array_p**2"
+                "n is not the square of a prime number. Closest"
+                f" values are {primes[-2:]**2}"
+            )
+        if self.d > p + 1:
+            raise ValueError(
+                "d is too large. Must be <= sqrt(n) + 1"
             )
 
         oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
 
         # OA of strength 2
-        arrays = np.tile(np.arange(self._p), (2, 1))
+        arrays = np.tile(np.arange(p), (2, 1))
         oa_sample[:, :2] = np.stack(np.meshgrid(*arrays),
                                     axis=-1).reshape(-1, 2)
-        for p_ in range(1, self._p):
+        for p_ in range(1, p):
             oa_sample[:, 2+p_-1] = np.mod(oa_sample[:, 0]
-                                          + p_*oa_sample[:, 1], self._p)
+                                          + p_*oa_sample[:, 1], p)
 
         # scramble the OA
         oa_sample_ = np.empty(shape=(n_row, n_col), dtype=int)
         for j in range(n_col):
-            perms = self.rng.permutation(self._p)
+            perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
 
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
-        lhs_engine = LatinHypercube(d=1, centered=self.centered, seed=self.rng)
+        lhs_engine = LatinHypercube(d=1, centered=self.centered,
+                                    orthogonal=False, seed=self.rng)
         for j in range(n_col):
-            for k in range(self._p):
+            for k in range(p):
                 idx = np.where(oa_sample[:, j] == k)[0]
-                lhs = lhs_engine.random(self._p).flatten()
+                lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
                 lhs_engine = lhs_engine.reset()
 
-        oa_lhs_sample /= self._p
+        oa_lhs_sample /= p
 
         return oa_lhs_sample[:, :self.d]
 
