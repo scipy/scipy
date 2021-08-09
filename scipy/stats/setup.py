@@ -100,7 +100,7 @@ def configuration(parent_package='', top_path=None):
             sources=["scipy/stats/_exact_2kssamp.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
-    
+
     return config
 
 

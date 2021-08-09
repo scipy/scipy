@@ -1,7 +1,7 @@
-import math
 import numpy as np
 
-#pythran export _compute_prob_inside_method(int, int, int, int)
+
+# pythran export _compute_prob_inside_method(int, int, int, int)
 def _compute_prob_inside_method(m, n, g, h):
     """
     Count the proportion of paths that stay strictly inside two diagonal lines.
@@ -57,17 +57,16 @@ def _compute_prob_inside_method(m, n, g, h):
     # This is an integer calculation, but the entries are essentially
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
-    # large binomial coefficent at the end, but is not sufficient to avoid
+    # large binomial coefficient at the end, but is not sufficient to avoid
     # the large dyanamic range which appears during the calculation.
     # Instead we rescale based on the magnitude of the right most term in
     # the column and keep track of an exponent separately and apply
     # it at the end of the calculation.  Similarly when multiplying by
     # the binomial coefficint
     dtype = np.float64
-    A = np.zeros(lenA, dtype=dtype)
+    A = np.ones(lenA, dtype=dtype)
     # Initialize the first column
-    A[minj:maxj] = 1
-    expnt = 0
+    A[minj:maxj] = 0.0
     for i in range(1, m + 1):
         # Generate the next column.
         # First calculate the sliding window
@@ -76,33 +75,20 @@ def _compute_prob_inside_method(m, n, g, h):
         minj = min(minj, n)
         maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)
         if maxj <= minj:
-            return 0
-        # Now fill in the values
-        A[0:maxj - minj] = np.cumsum(A[minj - lastminj:maxj - lastminj])
+            return 0.0
+        # Now fill in the values. We cannot use cumsum, unfortunately.
+        val = 0.0 if minj == 0 else 1.0
+        for jj in range(maxj - minj):
+            j = jj + minj
+            val = (A[jj + minj - lastminj] * i + val * j) / (i + j)
+            A[jj] = val
         curlen = maxj - minj
         if lastlen > curlen:
-            # Set some carried-over elements to 0
-            A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
-        # Rescale if the right most value is over 2**900
-        val = A[maxj - minj - 1]
-        _, valexpt = math.frexp(val)
-        if valexpt > 900:
-            # Scaling to bring down to about 2**800 appears
-            # sufficient for sizes under 10000.
-            valexpt -= 800
-            A = np.ldexp(A, -valexpt)
-            expnt += valexpt
+            # Set some carried-over elements to 1
+            A[maxj - minj:maxj - minj + (lastlen - curlen)] = 1
 
-    val = A[maxj - minj - 1]
-    # Now divide by the binomial (m+n)!/m!/n!
-    for i in range(1, n + 1):
-        val = (val * i) / (m + i)
-        _, valexpt = math.frexp(val)
-        if valexpt < -128:
-            val = np.ldexp(val, -valexpt)
-            expnt += valexpt
-    # Finally scale if needed.
-    return np.ldexp(val, expnt)
+    return 1 - A[maxj - minj - 1]
+
 
 # pythran export _compute_prob_outside_square(int, int)
 def _compute_prob_outside_square(n, h):
@@ -140,4 +126,3 @@ def _compute_prob_outside_square(n, h):
         P = p1 * (1.0 - P)
         k -= 1
     return 2 * P
-
