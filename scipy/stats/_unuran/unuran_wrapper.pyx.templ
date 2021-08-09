@@ -916,7 +916,7 @@ cdef class DiscreteAliasUrn(Method):
     dist : object, optional
         An instance of a class with a 'pmf' method. Only required if PV isn't
         available. The signature of the PMF is expected to be:
-        ``def pmf(k: int) -> float``. i.e it should accecpt a Python
+        ``def pmf(k: int) -> float``. i.e it should accept a Python
         integer and return a Python float. Default is ``None``.
     domain : int, optional
         Support of the PMF. If a probability vector is not available, a
@@ -926,7 +926,7 @@ cdef class DiscreteAliasUrn(Method):
         ``pv``, ``domain[0]`` is used to relocate the distribution and
         ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
         explanation.
-    urnfactor : float, optional
+    urn_factor : float, optional
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result is faster
         generation times but require a more expensive setup. Default is 1.
