@@ -75,9 +75,9 @@ a distribution for different shape parameters (the varying parameter case),
 an expensive setup that needs to be repeated for each parameter would lead
 to very poor performance. In such a situation, a fast setup is crucial to
 achieve good performance. An overview of the setup and sampling speed of the
-different method is shown in Table unuran-method-summary_.
+different methods is shown in the table below.
 
-.. _unuran-method-summary:
+.. _unuran-methods-summary:
 
 =====================================  ===============  ===============  ===========  ==============
 Methods for continuous distributions   Required Inputs  Optional Inputs  Setup Speed  Sampling Speed

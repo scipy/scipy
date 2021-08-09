@@ -7,9 +7,8 @@
     /* If an error has occured, return INFINITY. */                                         \
     if (PyErr_Occurred()) return UNUR_INFINITY;                                             \
     ccallback_t *callback = ccallback_obtain();                                             \
-    PyObject *extra_args = (PyObject *)callback->info_p;                                    \
                                                                                             \
-    PyObject *arg1 = NULL, *argobj = NULL, *arglist = NULL, *res = NULL, *funcname = NULL;  \
+    PyObject *arg1 = NULL, *argobj = NULL, *res = NULL, *funcname = NULL;                   \
     double result = 0.;                                                                     \
     int error = 0;                                                                          \
                                                                                             \
@@ -35,13 +34,7 @@
     PyTuple_SET_ITEM(arg1, 1, funcname);                                                    \
     argobj = NULL; funcname = NULL;                                                         \
                                                                                             \
-    arglist = PySequence_Concat(arg1, extra_args);                                          \
-    if (arglist == NULL) {                                                                  \
-        error = 1;                                                                          \
-        goto done;                                                                          \
-    }                                                                                       \
-                                                                                            \
-    res = PyObject_CallObject(callback->py_function, arglist);                              \
+    res = PyObject_CallObject(callback->py_function, arg1);                                 \
     if (res == NULL) {                                                                      \
         error = 1;                                                                          \
         goto done;                                                                          \
@@ -59,7 +52,6 @@ done:                                                                           
     Py_XDECREF(arg1);                                                                       \
     Py_XDECREF(argobj);                                                                     \
     Py_XDECREF(funcname);                                                                   \
-    Py_XDECREF(arglist);                                                                    \
     Py_XDECREF(res);                                                                        \
                                                                                             \
     if (error) {                                                                            \
@@ -94,7 +86,7 @@ static ccallback_signature_t unuran_call_signatures[] = {
     {NULL}
 };
 
-int init_unuran_callback(ccallback_t *callback, PyObject *fcn, PyObject *extra_args)
+int init_unuran_callback(ccallback_t *callback, PyObject *fcn)
 {
     int ret;
     int flags = CCALLBACK_OBTAIN;
@@ -104,7 +96,7 @@ int init_unuran_callback(ccallback_t *callback, PyObject *fcn, PyObject *extra_a
         return -1;
     }
 
-    callback->info_p = (void *)extra_args;
+    callback->info_p = (void *)0;
 
     return 0;
 }

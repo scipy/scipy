@@ -31,7 +31,7 @@ cdef extern from "Python.h":
 # Internal API for handling Python callbacks.
 # TODO: Maybe, support ``LowLevelCallable``s in the future?
 cdef extern from "unuran_callback.h":
-    int init_unuran_callback(ccallback_t *callback, fcn, extra_args) except -1
+    int init_unuran_callback(ccallback_t *callback, fcn) except -1
     int release_unuran_callback(ccallback_t *callback) except -1
 
     double pdf_thunk(double x, const unur_distr *distr) nogil
@@ -332,7 +332,6 @@ cdef class Method:
     cdef _URNG _urng_builder
     cdef object callbacks
     cdef object _callback_wrapper
-    cdef object params
     cdef MessageStream _messages
     # save all the arguments to enable pickling
     cdef object _kwargs
@@ -402,8 +401,7 @@ cdef class Method:
             size_t size = len(out)
 
         if self._callback_wrapper is not None:
-            init_unuran_callback(&callback, self._callback_wrapper,
-                                 self.params)
+            init_unuran_callback(&callback, self._callback_wrapper)
         _lock.acquire()
         try:
             self._messages.clear()
@@ -440,8 +438,7 @@ cdef class Method:
             size_t size = len(out)
 
         if self._callback_wrapper is not None:
-            init_unuran_callback(&callback, self._callback_wrapper,
-                                 self.params)
+            init_unuran_callback(&callback, self._callback_wrapper)
         _lock.acquire()
         try:
             self._messages.clear()
@@ -538,7 +535,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, params=(), domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, seed=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, seed=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -558,7 +555,7 @@ cdef class TransformedDensityRejection(Method):
         An instance of a class with 'pdf' and 'dpdf' methods.
 
         * 'pdf': PDF of the distribution. The signature of the PDF is
-          expected to be: ``def pdf(x: float, *params) -> float``. i.e.
+          expected to be: ``def pdf(x: float) -> float``. i.e.
           the PDF should accept a Python float and the parameters and
           return a Python float. It doesn't need to integrate to 1 i.e.
           the PDF doesn't need to be normalized.
@@ -571,8 +568,6 @@ cdef class TransformedDensityRejection(Method):
         Approximate location of the mode or the mean of the distribution.
         This location provides some information about the main part of the
         PDF and is used to avoid numerical problems. Default is ``None``.
-    params : tuple, optional
-        Parameters that the PDF and DPDF take. Default is an empty tuple.
     domain : list or tuple of length 2, optional
         The support of the distribution. Must not contain `nan` values.
         Default is ``None``. When ``None``, the support is assumed to be
@@ -704,7 +699,6 @@ cdef class TransformedDensityRejection(Method):
                   mode=None,
                   center=None,
                   *,
-                  params=(),
                   domain=None,
                   c=-0.5,
                   cpoints=30,
@@ -714,15 +708,13 @@ cdef class TransformedDensityRejection(Method):
                   max_intervals=100,
                   guide_factor=2,
                   seed=None):
-        (params, domain, c, cpoints, variant) = self._validate_args(params, domain, c,
-                                                                    cpoints, variant)
+        (domain, c, cpoints, variant) = self._validate_args(domain, c, cpoints, variant)
 
         # save all the arguments for pickling support
         self._kwargs = {
             'dist': dist,
             'mode': mode,
             'center': center,
-            'params': params,
             'domain': domain,
             'c': c,
             'cpoints': cpoints,
@@ -741,11 +733,10 @@ cdef class TransformedDensityRejection(Method):
             ccallback_t callback
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
-        self.params = params
-        def _callback_wrapper(x, name, *args):
-            return self.callbacks[name](x, *args)
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
         self._callback_wrapper = _callback_wrapper
-        init_unuran_callback(&callback, self._callback_wrapper, self.params)
+        init_unuran_callback(&callback, self._callback_wrapper)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -792,7 +783,7 @@ cdef class TransformedDensityRejection(Method):
             _lock.release()
             release_unuran_callback(&callback)
 
-    cdef object _validate_args(self, params, domain, c, cpoints, variant):
+    cdef object _validate_args(self, domain, c, cpoints, variant):
         domain = _validate_domain(domain)
         if np.isnan(c):
             raise ValueError("`c` must be a non-nan value.")
@@ -808,9 +799,7 @@ cdef class TransformedDensityRejection(Method):
             if cpoints <= 0 or cpoints != int(cpoints):
                 raise ValueError("`cpoints` must be a positive integer.")
 
-        params = tuple(params)
-
-        return params, domain, c, cpoints, variant
+        return domain, c, cpoints, variant
 
     @property
     def squeeze_hat_ratio(self):
@@ -836,7 +825,7 @@ cdef class TransformedDensityRejection(Method):
         cdef:
             ccallback_t callback
             size_t i
-        init_unuran_callback(&callback, self._callback_wrapper, self.params)
+        init_unuran_callback(&callback, self._callback_wrapper)
         _lock.acquire()
         try:
             self._messages.clear()
@@ -910,7 +899,7 @@ cdef class TransformedDensityRejection(Method):
 
 cdef class DiscreteAliasUrn(Method):
     r"""
-    DiscreteAliasUrn(pv=None, dist=None, *, params=(), domain=None, urn_factor=1, seed=None)
+    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, seed=None)
 
     Discrete Alias-Urn Method.
 
@@ -927,11 +916,8 @@ cdef class DiscreteAliasUrn(Method):
     dist : object, optional
         An instance of a class with a 'pmf' method. Only required if PV isn't
         available. The signature of the PMF is expected to be:
-        ``def pmf(k: int, *params) -> float``. i.e it should accecpt a Python
+        ``def pmf(k: int) -> float``. i.e it should accecpt a Python
         integer and return a Python float. Default is ``None``.
-    params : tuple, optional
-        Parameters that the PMF takes. If a probability vector is available,
-        this parameter is ignored. Default is an empty tuple.
     domain : int, optional
         Support of the PMF. If a probability vector is not available, a
         finite domain must be given. i.e. the PMF must have a finite support.
@@ -1078,23 +1064,15 @@ cdef class DiscreteAliasUrn(Method):
                   pv=None,
                   dist=None,
                   *,
-                  params=(),
                   domain=None,
                   urn_factor=1,
                   seed=None):
         cdef double[::1] pv_view
-        (pv_view, params, domain) = self._validate_args(pv, dist, params, domain)
+        (pv_view, domain) = self._validate_args(pv, dist, domain)
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
         # save all the arguments for pickling support
-        self._kwargs = {
-            'pv': pv,
-            'dist': dist,
-            'params': params,
-            'domain': domain,
-            'urn_factor': urn_factor,
-            'seed': seed
-        }
+        self._kwargs = {'pv': pv, 'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'seed': seed}
 
         cdef:
             unur_distr *distr
@@ -1126,10 +1104,8 @@ cdef class DiscreteAliasUrn(Method):
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, pv, dist, params, domain):
+    cdef object _validate_args(self, pv, dist, domain):
         cdef double[::1] pv_view
-
-        params = tuple(params)
 
         if domain is not None:
             domain = _validate_domain(domain)
@@ -1149,7 +1125,7 @@ cdef class DiscreteAliasUrn(Method):
             # to vectorize it to call with an array of points in the domain.
             pmf = np.vectorize(dist.pmf)
             k = np.arange(domain[0], domain[1]+1)
-            pv = pmf(k, *params)
+            pv = pmf(k)
             try:
                 pv_view = _validate_pv(pv)
             except ValueError as err:
@@ -1158,4 +1134,4 @@ cdef class DiscreteAliasUrn(Method):
         else:
             pv_view = _validate_pv(pv)
 
-        return pv_view, params, domain
+        return pv_view, domain

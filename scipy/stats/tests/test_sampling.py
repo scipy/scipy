@@ -1,3 +1,4 @@
+from functools import partial
 import threading
 import pickle
 import pytest
@@ -29,8 +30,8 @@ class common_cont_dist:
 # A binomial distribution to share between all the discrete methods
 class common_discr_dist:
     params = (10, 0.2)
-    pmf = stats.binom._pmf
-    cdf = stats.binom._cdf
+    pmf = partial(stats.binom._pmf, *params)
+    cdf = partial(stats.binom._cdf, *params)
 
 
 all_methods = [
@@ -572,8 +573,7 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteAliasUrn(dist=common_discr_dist, domain=domain,
-                             params=common_discr_dist.params)
+            DiscreteAliasUrn(dist=common_discr_dist, domain=domain)
 
     def test_bad_urn_factor(self):
         with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
@@ -587,8 +587,7 @@ class TestDiscreteAliasUrn:
 
         msg = r"`domain` must be provided if `pv` is not available"
         with pytest.raises(ValueError, match=msg):
-            DiscreteAliasUrn(dist=common_discr_dist,
-                             params=common_discr_dist.params)
+            DiscreteAliasUrn(dist=common_discr_dist)
 
     def test_bad_dist(self):
         # Empty distribution

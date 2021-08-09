@@ -83,7 +83,7 @@ class TransformedDensityRejection(Benchmark):
     def setup(self, dist, c):
         self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
         with np.testing.suppress_warnings() as sup:
-            sup.filter(UserWarning)
+            sup.filter(RuntimeWarning)
             try:
                 self.rng = stats.TransformedDensityRejection(dist, c=c,
                                                              seed=self.urng)
@@ -93,7 +93,7 @@ class TransformedDensityRejection(Benchmark):
 
     def time_tdr_setup(self, dist, c):
         with np.testing.suppress_warnings() as sup:
-            sup.filter(UserWarning)
+            sup.filter(RuntimeWarning)
             stats.TransformedDensityRejection(dist, c=c,
                                               seed=self.urng)
 

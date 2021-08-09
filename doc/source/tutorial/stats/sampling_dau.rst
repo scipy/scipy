@@ -42,12 +42,13 @@ The method also works when no probability vector but a PMF is given.
 In that case, a bounded (finite) domain must also be given.
 
     >>> class Distribution:
-    ...     def pmf(self, x, c):
-    ...         return x**c
+    ...     def __init__(self, c):
+    ...         self.c = c
+    ...     def pmf(self, x):
+    ...         return x**self.c
     ... 
-    >>> dist = Distribution()
-    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), params=(2, ),
-    ...                        seed=urng)
+    >>> dist = Distribution(2)
+    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), seed=urng)
     >>> rng.rvs()
     10
 
@@ -56,18 +57,19 @@ In that case, a bounded (finite) domain must also be given.
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import DiscreteAliasUrn
     >>> class Distribution:
-    ...     def pmf(self, x, c):
-    ...         return x**c
+    ...     def __init__(self, c):
+    ...         self.c = c
+    ...     def pmf(self, x):
+    ...         return x**self.c
     ... 
-    >>> dist = Distribution()
+    >>> dist = Distribution(2)
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), params=(2, ),
-    ...                        seed=urng)
+    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), seed=urng)
     >>> rvs = rng.rvs(1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
     >>> x = np.arange(1, 11)
-    >>> fx = dist.pmf(x, 2)
+    >>> fx = dist.pmf(x)
     >>> fx = fx / fx.sum()
     >>> ax.plot(x, fx, 'bo', label='true distribution')
     >>> ax.vlines(x, 0, fx, lw=2)
@@ -80,7 +82,7 @@ In that case, a bounded (finite) domain must also be given.
     >>> plt.show()
 
 .. note:: As :class:`~DiscreteAliasUrn` expects PMF with signature
-          ``def pmf(x: float, ...) -> float``, it first vectorizes the
+          ``def pmf(x: float) -> float``, it first vectorizes the
           PMF using ``np.vectorize`` and then evaluates it over all the
           points in the domain. But if the PMF is already vectorized,
           it is much faster to just evaluate it at each point in the domain
