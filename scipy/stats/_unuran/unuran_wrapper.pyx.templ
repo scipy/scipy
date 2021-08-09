@@ -582,8 +582,10 @@ cdef class TransformedDensityRejection(Method):
         between 0 and -0.5 are allowed. If ``c`` is between 0 and -0.5 it is
         set to -0.5. See Notes for definition of the transformation function
         ``T``. Default is -0.5.
-    cpoints : int, optional
-        The number of construction points. Default is 30.
+    cpoints : int or array_like, optional
+        If an interger, it defines the number of construction points. If it
+        is array-like, the elements of the array are used as construction
+        points. Default is 30.
     variant : {'ps', 'gw', 'ia'}, optional
         The variant to use. The default is 'ps'. See Notes for their explaination.
     use_dars : bool, optional
