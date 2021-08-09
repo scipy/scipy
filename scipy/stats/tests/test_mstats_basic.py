@@ -871,8 +871,6 @@ def test_theilslopes():
     assert_almost_equal(upper, 4.38, decimal=2)
     assert_almost_equal(lower, 3.71, decimal=2)
 
-    x = [1, 2, 3, 4, 10, 12, 18]
-    y = [9, 15, 19, 20, 45, 55, 78]
     slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
                                                         method='joint')
     assert_almost_equal(slope, 4)
