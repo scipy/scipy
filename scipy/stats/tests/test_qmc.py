@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from itertools import combinations
 
 import pytest
 import numpy as np
@@ -554,6 +555,18 @@ class TestLHS(QMCEngineTests):
         assert np.any(sample != expected)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
+
+    @pytest.mark.parametrize("centered", [False, True])
+    def test_orthogonal_array(self, centered):
+        p = 5
+
+        engine = self.engine(d=3, scramble=False, centered=centered,
+                             orthogonal_array_p=p)
+        oa_lhs_sample = engine.random(25)
+        for i, j in combinations(range(engine.d), 2):
+            samples_2d = oa_lhs_sample[:, [i, j]]
+            assert np.all(np.unique((samples_2d * p).astype(int),
+                                    return_counts=True, axis=0)[1] == 1)
 
     def test_discrepancy_hierarchy(self):
         seed = np.random.RandomState(123456)

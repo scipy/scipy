@@ -1120,9 +1120,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= self._p
 
-        idx = self.rng.permutation(n_col)[:self.d]
-        oa_lhs_sample = oa_lhs_sample[:, idx]
-        return oa_lhs_sample
+        return oa_lhs_sample[:, :self.d]
 
     def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
         """Optimal LHS on CD.
