@@ -146,19 +146,21 @@ def test_0_rank_input():
                                                     )))
 @pytest.mark.parametrize('m', (1, 3, 5, 8, 101, 1021))
 @pytest.mark.parametrize('a', (1, 2, 0.5, 1.1))
-@pytest.mark.parametrize('w', (None, 0.7+0.7j))
+# Step that tests away from the unit circle, but not so far it explodes from
+# numerical error
+@pytest.mark.parametrize('w', (None, 0.98534 + 0.17055j))
 def test_czt_math(impulse, m, w, a):
     # z-transform of an impulse is 1 everywhere
     assert_allclose(czt(impulse[2:], m=m, w=w, a=a),
-                    np.ones(m), rtol=1e-14)
+                    np.ones(m), rtol=1e-10)
 
     # z-transform of a delayed impulse is z**-1
     assert_allclose(czt(impulse[1:], m=m, w=w, a=a),
-                    czt_points(m=m, w=w, a=a)**-1, rtol=1e-14)
+                    czt_points(m=m, w=w, a=a)**-1, rtol=1e-10)
 
     # z-transform of a 2-delayed impulse is z**-2
     assert_allclose(czt(impulse, m=m, w=w, a=a),
-                    czt_points(m=m, w=w, a=a)**-2, rtol=1e-14)
+                    czt_points(m=m, w=w, a=a)**-2, rtol=1e-10)
 
 
 def test_int_args():
