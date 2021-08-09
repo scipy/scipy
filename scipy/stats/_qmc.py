@@ -1028,6 +1028,7 @@ class LatinHypercube(QMCEngine):
             "random-cd": self._random_cd,
         }
 
+        self.optimization_method: Optional[Callable]
         if optimization is not None:
             try:
                 optimization = optimization.lower()  # type: ignore[assignment]
@@ -1119,7 +1120,8 @@ class LatinHypercube(QMCEngine):
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, centered=self.centered,
-                                    orthogonal=False, seed=self.rng)
+                                    orthogonal=False,
+                                    seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
                 idx = np.where(oa_sample[:, j] == k)[0]
@@ -1130,7 +1132,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]
+        return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
 
     def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
         """Optimal LHS on CD.
