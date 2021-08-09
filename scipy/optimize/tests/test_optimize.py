@@ -2324,6 +2324,7 @@ def test_equal_bounds1(method):
             assert res.success
             assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
+
 # --- Test minimize with equal upper and lower bounds --- #
 
 np.random.seed(0)
@@ -2405,7 +2406,7 @@ def test_equal_bounds2(method, kwds, bound_type, constraints):
     equality bounds constraints are used
     """
     test_constraints, reference_constraints = constraints
-    if test_constraints and not method=='SLSQP':
+    if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
     # reference constraints always have analytical jacobian
     # if test constraints are not the same, we'll need finite differences
