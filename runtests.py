@@ -130,7 +130,7 @@ def main(argv):
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
-                        help="Perform pep8 check with pycodestyle.")
+                        help="Perform pep8 check with flake8.")
     parser.add_argument("--mypy", action="store_true", default=False,
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
@@ -139,7 +139,7 @@ def main(argv):
 
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
-        os.system("pycodestyle scipy benchmarks/benchmarks")
+        os.system("flake8 scipy benchmarks/benchmarks")
         # Lint just the diff since branching off of master using a
         # stricter configuration.
         lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')

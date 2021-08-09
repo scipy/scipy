@@ -96,12 +96,12 @@ steps:
 
 # Build and test SciPy
 - script: |
-    set -e
+    set -euo pipefail
     python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
     python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
 - ${{ if eq(parameters.use_wheel, true) }}:
   - script: |
-      set -e
+      set -euo pipefail
       # Run setup.py build before pip wheel, to build in current directory
       # and make more efficient use of ccache
       echo "setup.py build"
@@ -112,7 +112,7 @@ steps:
     displayName: 'Install SciPy from Wheel'
 - ${{ if eq(parameters.use_sdist, true) }}:
   - script: |
-      set -e
+      set -euo pipefail
       echo "setup.py sdist"
       python tools/suppress_output.py python setup.py sdist
       # Move out of source directory to avoid finding local scipy
@@ -124,7 +124,7 @@ steps:
       #       messes with build isolation.
       pip install $PWD/scipy* -v
     displayName: 'Install SciPy from SDist'
-- script: 'python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD'
+- script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
   env:
     ${{ if eq(parameters.coverage, true) }}:
       COVERAGE: '--coverage --gcov'
@@ -132,8 +132,8 @@ steps:
       USE_WHEEL_BUILD: '--no-build'
   displayName: 'Build SciPy'
 - script: |
-    set -e
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 2>&1 | tee runtests.log
+    set -euo pipefail
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:
@@ -149,7 +149,7 @@ steps:
     displayName: 'Refguide Check'
 - ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.asv_check, true)) }}:
   - script: |
-      set -e
+      set -euo pipefail
       cd benchmarks
       python -masv check -E existing
       # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
@@ -160,7 +160,7 @@ steps:
   failOnStderr: true
 - ${{ if eq(parameters.coverage, true) }}:
   - script: |
-      set -e
+      set -euo pipefail
       RUN_DIR=`echo build/testenv/lib/python*/site-packages`
       # Produce gcov output for codecov to find
       find build -name '*.gcno' -type f -exec gcov -pb {} +

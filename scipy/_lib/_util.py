@@ -7,8 +7,25 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+from typing import (
+    Optional,
+    Union,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import numpy as np
+
+IntNumber = Union[int, np.integer]
+DecimalNumber = Union[float, np.floating, np.integer]
+
+# Since Generator was introduced in numpy 1.17, the following condition is needed for
+# backward compatibility
+if TYPE_CHECKING:
+    SeedType = Optional[Union[IntNumber, np.random.Generator,
+                              np.random.RandomState]]
+    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
+                                                         np.random.RandomState])
 
 try:
     from numpy.random import Generator as Generator
@@ -45,7 +62,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -384,6 +401,18 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
@@ -483,7 +512,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         If provided, one above the largest (signed) integer to be drawn from
         the distribution (see above for behavior if high=None). If array-like,
         must contain integer values.
-    size : None
+    size : array-like of ints, optional
         Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
         samples are drawn. Default is None, in which case a single value is
         returned.

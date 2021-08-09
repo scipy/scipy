@@ -35,7 +35,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper
+from scipy._lib._util import MapWrapper, check_random_state, rng_integers
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -315,11 +315,11 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-    
+
     For higher-dimensional input ``rosen`` broadcasts.
     In the following example, we use this to plot a 2D landscape.
     Note that ``rosen_hess`` does not broadcast in this manner.
-    
+
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
     >>> x = np.linspace(-1, 1, 50)
@@ -451,17 +451,26 @@ def rosen_hess_prod(x, p):
     return Hp
 
 
-def _wrap_function(function, args):
+def _wrap_scalar_function(function, args):
     # wraps a minimizer function to count number of evaluations
     # and to easily provide an args kwd.
-    # A copy of x is sent to the user function (gh13740)
     ncalls = [0]
     if function is None:
         return ncalls, None
 
     def function_wrapper(x, *wrapper_args):
         ncalls[0] += 1
-        return function(np.copy(x), *(wrapper_args + args))
+        # A copy of x is sent to the user function (gh13740)
+        fx = function(np.copy(x), *(wrapper_args + args))
+        # Ideally, we'd like to a have a true scalar returned from f(x). For
+        # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError("The user-provided objective function "
+                                 "must return a scalar value.") from e
+        return fx
 
     return ncalls, function_wrapper
 
@@ -669,7 +678,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
+
+    x0 = asfarray(x0).flatten()
 
     if adaptive:
         dim = float(len(x0))
@@ -685,8 +696,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     nonzdelt = 0.05
     zdelt = 0.00025
-
-    x0 = asfarray(x0).flatten()
 
     if bounds is not None:
         lower_bound, upper_bound = bounds.lb, bounds.ub
@@ -926,7 +935,8 @@ def approx_fprime(xk, f, epsilon, *args):
                              args=args, f0=f0)
 
 
-def check_grad(func, grad, x0, *args, **kwargs):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, 
+                direction='all', seed=None):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -944,6 +954,24 @@ def check_grad(func, grad, x0, *args, **kwargs):
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
         ``sqrt(np.finfo(float).eps)``, which is approximately 1.49e-08.
+    direction : str, optional
+        If set to ``'random'``, then gradients along a random vector 
+        are used to check `grad` against forward difference approximation 
+        using `func`. By default it is ``'all'``, in which case, all
+        the one hot direction vectors are considered to check `grad`.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Specify `seed` for reproducing the return value from this function. 
+        The random numbers generated with this seed affect the random vector
+        along which gradients are computed to check ``grad``. Note that `seed`
+        is only used when `direction` argument is set to `'random'`.
 
     Returns
     -------
@@ -965,14 +993,36 @@ def check_grad(func, grad, x0, *args, **kwargs):
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
+    >>> rng = np.random.default_rng()
+    >>> check_grad(func, grad, [1.5, -1.5], 
+    ...             direction='random', seed=rng)
+    2.9802322387695312e-08
 
     """
-    step = kwargs.pop('epsilon', _epsilon)
-    if kwargs:
-        raise ValueError("Unknown keyword arguments: %r" %
-                         (list(kwargs.keys()),))
-    return sqrt(sum((grad(x0, *args) -
-                     approx_fprime(x0, func, step, *args))**2))
+    step = epsilon
+    x0 = np.asarray(x0)
+    
+    def g(w, func, x0, v, *args):
+        return func(x0 + w*v, *args)
+
+    if direction == 'random':
+        random_state = check_random_state(seed)
+        v = random_state.normal(0, 1, size=(x0.shape))
+        _args = (func, x0, v) + args
+        _func = g
+        vars = np.zeros((1,))
+        analytical_grad = np.dot(grad(x0, *args), v)
+    elif direction == 'all':
+        _args = args
+        _func = func
+        vars = x0
+        analytical_grad = grad(x0, *args)
+    else:
+        raise ValueError("{} is not a valid string for "
+                         "``direction`` argument".format(direction))
+
+    return sqrt(sum((analytical_grad -
+                     approx_fprime(vars, _func, step, *_args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
@@ -1039,29 +1089,29 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Parameters
     ----------
-    f : callable f(x,*args)
+    f : callable ``f(x,*args)``
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    fprime : callable f'(x,*args), optional
+    fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than gtol before successful termination.
+        Gradient norm must be less than `gtol` before successful termination.
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
-        If fprime is approximated, use this value for the step size.
+        If `fprime` is approximated, use this value for the step size.
     callback : callable, optional
         An optional user-supplied function to call after each
-        iteration. Called as callback(xk), where xk is the
+        iteration. Called as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
     maxiter : int, optional
         Maximum number of iterations to perform.
     full_output : bool, optional
-        If True,return fopt, func_calls, grad_calls, and warnflag
-        in addition to xopt.
+        If True, return ``fopt``, ``func_calls``, ``grad_calls``, and
+        ``warnflag`` in addition to ``xopt``.
     disp : bool, optional
         Print convergence message if True.
     retall : bool, optional
@@ -1070,7 +1120,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Returns
     -------
     xopt : ndarray
-        Parameters which minimize f, i.e., f(xopt) == fopt.
+        Parameters which minimize f, i.e., ``f(xopt) == fopt``.
     fopt : float
         Minimum value.
     gopt : ndarray
@@ -1085,23 +1135,52 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
         3 : NaN result encountered.
-    allvecs  :  list
-        The value of xopt at each iteration. Only returned if retall is True.
-
-    See also
-    --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See the 'BFGS' `method` in particular.
+    allvecs : list
+        The value of `xopt` at each iteration. Only returned if `retall` is
+        True.
 
     Notes
     -----
-    Optimize the function, f, whose gradient is given by fprime
+    Optimize the function, `f`, whose gradient is given by `fprime`
     using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
-    and Shanno (BFGS)
+    and Shanno (BFGS).
+
+    See Also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See ``method='BFGS'`` in particular.
 
     References
     ----------
     Wright, and Nocedal 'Numerical Optimization', 1999, p. 198.
+
+    Examples
+    --------
+    >>> from scipy.optimize import fmin_bfgs
+    >>> def quadratic_cost(x, Q):
+    ...     return x @ Q @ x
+    ...
+    >>> x0 = np.array([-3, -4])
+    >>> cost_weight =  np.diag([1., 10.])
+    >>> # Note that a trailing comma is necessary for a tuple with single element
+    >>> fmin_bfgs(quadratic_cost, x0, args=(cost_weight,))
+    Optimization terminated successfully.
+            Current function value: 0.000000
+            Iterations: 7                   # may vary
+            Function evaluations: 24        # may vary
+            Gradient evaluations: 8         # may vary
+    array([ 2.85169950e-06, -4.61820139e-07])
+
+    >>> def quadratic_cost_grad(x, Q):
+    ...     return 2 * Q @ x
+    ...
+    >>> fmin_bfgs(quadratic_cost, x0, quadratic_cost_grad, args=(cost_weight,))
+    Optimization terminated successfully.
+            Current function value: 0.000000
+            Iterations: 7
+            Function evaluations: 8
+            Gradient evaluations: 8
+    array([ 2.85916637e-06, -4.54371951e-07])
 
     """
     opts = {'gtol': gtol,
@@ -1177,14 +1256,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     old_fval = f(x0)
     gfk = myfprime(x0)
-
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
 
     k = 0
     N = len(x0)
@@ -1498,14 +1569,6 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     old_fval = f(x0)
     gfk = myfprime(x0)
-
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
 
     k = 0
     xk = x0
@@ -2944,7 +3007,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]

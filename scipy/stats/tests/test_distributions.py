@@ -6,6 +6,7 @@ import re
 import sys
 import pickle
 import os
+import json
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -20,16 +21,18 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad, trapezoid
+from scipy.integrate import (IntegrationWarning, quad, trapezoid,
+                             cumulative_trapezoid)
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy, polygamma, entr
-from .test_continuous_basic import distcont, invdistcont
+from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
-from scipy.stats._continuous_distns import FitDataError
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
+from itertools import product
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -2837,6 +2840,56 @@ class TestBeta:
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
+    def test_issue_12635(self):
+        # Confirm that Boost's beta distribution resolves gh-12635.
+        # Check against R:
+        # options(digits=16)
+        # p = 0.9999999999997369
+        # a = 75.0
+        # b = 66334470.0
+        # print(qbeta(p, a, b))
+        p, a, b = 0.9999999999997369, 75.0, 66334470.0
+        assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
+
+    def test_issue_12794(self):
+        # Confirm that Boost's beta distribution resolves gh-12794.
+        # Check against R.
+        # options(digits=16)
+        # p = 1e-11
+        # count_list = c(10,100,1000)
+        # print(qbeta(1-p, count_list + 1, 100000 - count_list))
+        inv_R = np.array([0.0004944464889611935,
+                          0.0018360586912635726,
+                          0.0122663919942518351])
+        count_list = np.array([10, 100, 1000])
+        p = 1e-11
+        inv = stats.beta.isf(p, count_list + 1, 100000 - count_list)
+        assert_allclose(inv, inv_R)
+        res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
+        assert_allclose(res, p)
+
+    def test_issue_12796(self):
+        # Confirm that Boost's beta distribution succeeds in the case
+        # of gh-12796
+        alpha_2 = 5e-6
+        count_ = np.arange(1, 20)
+        nobs = 100000
+        q, a, b = 1 - alpha_2, count_ + 1, nobs - count_
+        inv = stats.beta.ppf(q, a, b)
+        res = stats.beta.cdf(inv, a, b)
+        assert_allclose(res, 1 - alpha_2)
+
+    def test_endpoints(self):
+        # Confirm that boost's beta distribution returns inf at x=1
+        # when b<1
+        a, b = 1, 0.5
+        assert_equal(stats.beta.pdf(1, a, b), np.inf)
+
+        # Confirm that boost's beta distribution returns inf at x=0
+        # when a<1
+        a, b = 0.2, 3
+        assert_equal(stats.beta.pdf(0, a, b), np.inf)
+
 
 class TestBetaPrime:
     def test_logpdf(self):
@@ -4440,6 +4493,148 @@ class TestBurr:
         assert_(np.isfinite(e4))
 
 
+class TestStudentizedRange:
+    # For alpha = .05, .01, and .001, and for each value of
+    # v = [1, 3, 10, 20, 120, inf], a Q was picked from each table for
+    # k = [2, 8, 14, 20].
+
+    # these arrays are written with `k` as column, and `v` as rows.
+    # Q values are taken from table 3:
+    # https://www.jstor.org/stable/2237810
+    q05 = [17.97, 45.40, 54.33, 59.56,
+           4.501, 8.853, 10.35, 11.24,
+           3.151, 5.305, 6.028, 6.467,
+           2.950, 4.768, 5.357, 5.714,
+           2.800, 4.363, 4.842, 5.126,
+           2.772, 4.286, 4.743, 5.012]
+    q01 = [90.03, 227.2, 271.8, 298.0,
+           8.261, 15.64, 18.22, 19.77,
+           4.482, 6.875, 7.712, 8.226,
+           4.024, 5.839, 6.450, 6.823,
+           3.702, 5.118, 5.562, 5.827,
+           3.643, 4.987, 5.400, 5.645]
+    q001 = [900.3, 2272, 2718, 2980,
+            18.28, 34.12, 39.69, 43.05,
+            6.487, 9.352, 10.39, 11.03,
+            5.444, 7.313, 7.966, 8.370,
+            4.772, 6.039, 6.448, 6.695,
+            4.654, 5.823, 6.191, 6.411]
+    qs = np.concatenate((q05, q01, q001))
+    ps = [.95, .99, .999]
+    vs = [1, 3, 10, 20, 120, np.inf]
+    ks = [2, 8, 14, 20]
+
+    data = zip(product(ps, vs, ks), qs)
+
+    # A small selection of large-v cases generated with R's `ptukey`
+    # Each case is in the format (q, k, v, r_result)
+    r_data = [
+        (0.1, 3, 9001, 0.002752818526842),
+        (1, 10, 1000, 0.000526142388912),
+        (1, 3, np.inf, 0.240712641229283),
+        (4, 3, np.inf, 0.987012338626815),
+        (1, 10, np.inf, 0.000519869467083),
+    ]
+
+    def test_cdf_against_tables(self):
+        for pvk, q in self.data:
+            p_expected, v, k = pvk
+            res_p = stats.studentized_range.cdf(q, k, v)
+            assert_allclose(res_p, p_expected, rtol=1e-4)
+
+    @pytest.mark.slow
+    def test_ppf_against_tables(self):
+        for pvk, q_expected in self.data:
+            res_q = stats.studentized_range.ppf(*pvk)
+            assert_allclose(res_q, q_expected, rtol=1e-4)
+
+    path_prefix = os.path.dirname(__file__)
+    relative_path = "data/studentized_range_mpmath_ref.json"
+    with open(os.path.join(path_prefix, relative_path), "r") as file:
+        pregenerated_data = json.load(file)
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
+    def test_cdf_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.cdf(*qkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["pdf_data"])
+    def test_pdf_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.pdf(*qkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
+    def test_moment_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        mkv = src_case["m"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.moment(*mkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    def test_pdf_integration(self):
+        k, v = 3, 10
+        # Test whether PDF integration is 1 like it should be.
+        res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
+        assert_allclose(res[0], 1)
+
+    @pytest.mark.xslow
+    def test_pdf_against_cdf(self):
+        k, v = 3, 10
+
+        # Test whether the integrated PDF matches the CDF using cumulative
+        # integration. Use a small step size to reduce error due to the
+        # summation. This is slow, but tests the results well.
+        x = np.arange(0, 10, step=0.01)
+
+        y_cdf = stats.studentized_range.cdf(x, k, v)[1:]
+        y_pdf_raw = stats.studentized_range.pdf(x, k, v)
+        y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
+
+        # Because of error caused by the summation, use a relatively large rtol
+        assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
+
+    @pytest.mark.parametrize("r_case_result", r_data)
+    def test_cdf_against_r(self, r_case_result):
+        # Test large `v` values using R
+        q, k, v, r_res = r_case_result
+        res = stats.studentized_range.cdf(q, k, v)
+        assert_allclose(res, r_res)
+
+    @pytest.mark.slow
+    def test_moment_vectorization(self):
+        # Test moment broadcasting. Calls `_munp` directly because
+        # `rv_continuous.moment` is broken at time of writing. See gh-12192
+        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+        assert_allclose(m.shape, (2,))
+
+        with pytest.raises(ValueError, match="...could not be broadcast..."):
+            stats.studentized_range._munp(1, [4, 5], [10, 11, 12])
+
+    @pytest.mark.xslow
+    def test_fitstart_valid(self):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            # the integration warning message may differ
+            sup.filter(IntegrationWarning)
+            k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
+        assert_(stats.studentized_range._argcheck(k, df))
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
@@ -5420,7 +5615,7 @@ def test_invweibull():
     def optimizer(func, x0, args=(), disp=0):
         return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
 
-    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    x = np.array([1, 1.25, 2, 2.5, 2.8, 3, 3.8, 4, 5, 8, 10, 12, 64, 99])
     c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0
@@ -5599,6 +5794,79 @@ class TestArgus:
     def test_var(self, chi, expected_var, rtol):
         v = stats.argus.var(chi, scale=1)
         assert_allclose(v, expected_var, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize('chi, expected, rtol',
+                             [(0.9, 0.07646314974436118, 1e-14),
+                              (0.5, 0.015429797891863365, 1e-14),
+                              (0.1, 0.0001325825293278049, 1e-14),
+                              (0.01, 1.3297677078224565e-07, 1e-15),
+                              (1e-3, 1.3298072023958999e-10, 1e-14),
+                              (1e-4, 1.3298075973486862e-13, 1e-14),
+                              (1e-6, 1.32980760133771e-19, 1e-14),
+                              (1e-9, 1.329807601338109e-28, 1e-15)])
+    def test_argus_phi_small_chi(self, chi, expected, rtol):
+        assert_allclose(_argus_phi(chi), expected, rtol=rtol)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.28414073302940573, 1.2742227939992954, 1.2381254688255896)),
+         (0.2, (0.296172952995264, 1.2951290588110516, 1.1865767100877576)),
+         (0.1, (0.29791447523536274, 1.29806307956989, 1.1793168289857412)),
+         (0.01, (0.2984904104866452, 1.2990283628160553, 1.1769268414080531)),
+         (1e-3, (0.298496172925224, 1.2990380082487925, 1.176902956021053)),
+         (1e-4, (0.29849623054991836, 1.2990381047023793, 1.1769027171686324)),
+         (1e-6, (0.2984962311319278, 1.2990381056765605, 1.1769027147562232)),
+         (1e-9, (0.298496231131986, 1.299038105676658, 1.1769027147559818))])
+    def test_pdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.pdf(x, chi), expected, rtol=1e-13)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.9857660526895221, 0.6616565930168475, 0.08796070398429937)),
+         (0.2, (0.9851555052359501, 0.6514666238985464, 0.08362690023746594)),
+         (0.1, (0.9850670974995661, 0.6500061310508574, 0.08302050640683846)),
+         (0.01, (0.9850378582451867, 0.6495239242251358, 0.08282109244852445)),
+         (1e-3, (0.9850375656906663, 0.6495191015522573, 0.08281910005231098)),
+         (1e-4, (0.9850375627651049, 0.6495190533254682, 0.08281908012852317)),
+         (1e-6, (0.9850375627355568, 0.6495190528383777, 0.08281907992729293)),
+         (1e-9, (0.9850375627355538, 0.649519052838329, 0.0828190799272728))])
+    def test_sf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected',
+        [(0.5, (0.0142339473104779, 0.3383434069831524, 0.9120392960157007)),
+         (0.2, (0.014844494764049919, 0.34853337610145363, 0.916373099762534)),
+         (0.1, (0.014932902500433911, 0.34999386894914264, 0.9169794935931616)),
+         (0.01, (0.014962141754813293, 0.35047607577486417, 0.9171789075514756)),
+         (1e-3, (0.01496243430933372, 0.35048089844774266, 0.917180899947689)),
+         (1e-4, (0.014962437234895118, 0.3504809466745317, 0.9171809198714769)),
+         (1e-6, (0.01496243726444329, 0.3504809471616223, 0.9171809200727071)),
+         (1e-9, (0.014962437264446245, 0.350480947161671, 0.9171809200727272))])
+    def test_cdf_small_chi(self, chi, expected):
+        x = np.array([0.1, 0.5, 0.9])
+        assert_allclose(stats.argus.cdf(x, chi), expected, rtol=1e-12)
+
+    # Expected values were computed with mpmath (code: see gh-13370).
+    @pytest.mark.parametrize(
+        'chi, expected, rtol',
+        [(0.5, (0.5964284712757741, 0.052890651988588604), 1e-12),
+         (0.101, (0.5893490968089076, 0.053017469847275685), 1e-11),
+         (0.1, (0.5893431757009437, 0.05301755449499372), 1e-13),
+         (0.01, (0.5890515677940915, 0.05302167905837031), 1e-13),
+         (1e-3, (0.5890486520005177, 0.053021719862088104), 1e-13),
+         (1e-4, (0.5890486228426105, 0.0530217202700811), 1e-13),
+         (1e-6, (0.5890486225481156, 0.05302172027420182), 1e-13),
+         (1e-9, (0.5890486225480862, 0.05302172027420224), 1e-13)])
+    def test_stats_small_chi(self, chi, expected, rtol):
+        val = stats.argus.stats(chi, moments='mv')
+        assert_allclose(val, expected, rtol=rtol)
 
 
 class TestNakagami:

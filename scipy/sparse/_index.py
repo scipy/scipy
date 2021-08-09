@@ -159,7 +159,7 @@ class IndexMixin:
             raise IndexError('invalid index') from e
 
         if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be <= 2')
+            raise IndexError('Index dimension must be 1 or 2')
 
         if x.size == 0:
             return x

@@ -35,6 +35,7 @@
 import os.path
 
 from functools import wraps, partial
+import weakref
 
 import numpy as np
 import warnings
@@ -46,9 +47,11 @@ from numpy.testing import (verbose, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
-                                    num_obs_dm, is_valid_dm, is_valid_y,
-                                    _validate_vector, _METRICS_NAMES)
+import scipy.spatial.distance
+from scipy.spatial import _distance_pybind
+from scipy.spatial.distance import (
+    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
+    _validate_vector, _METRICS_NAMES, _METRICS)
 
 # these were missing: chebyshev cityblock kulsinski
 # jensenshannon, matching and seuclidean are referenced by string name.
@@ -611,6 +614,7 @@ class TestCdist:
                               cdist, X1, X2, metric, out=out3, **kwargs)
                 assert_raises(ValueError,
                               cdist, X1, X2, metric, out=out4, **kwargs)
+
                 # test for incorrect dtype
                 out5 = np.empty((out_r, out_c), dtype=np.int64)
                 assert_raises(ValueError,
@@ -646,6 +650,28 @@ class TestCdist:
                 Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
                 # test that output is numerically equivalent
                 _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+    def test_cdist_refcount(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
+            for metric in _METRICS_NAMES:
+                x1 = np.random.rand(10, 10)
+                x2 = np.random.rand(10, 10)
+
+                kwargs = dict()
+                if metric in ['minkowski', 'wminkowski']:
+                    kwargs['p'] = 1.23
+                    if metric == 'wminkowski':
+                        kwargs['w'] = 1.0 / x1.std(axis=0)
+
+                out = cdist(x1, x2, metric=metric, **kwargs)
+
+                # Check reference counts aren't messed up. If we only hold weak
+                # references, the arrays should be deallocated.
+                weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+                del x1, x2, out
+                assert all(weak_ref() is None for weak_ref in weak_refs)
+
 
 class TestPdist:
 
@@ -2200,3 +2226,32 @@ def test_yule_all_same():
 
     d = cdist(x[:1], x[:1], 'yule')
     assert_equal(d, [[0.0]])
+
+
+def test_jensenshannon():
+    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0),
+                        1.0)
+    assert_almost_equal(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                        0.46450140402245893)
+    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
+
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
+                        [0.0, 0.0])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
+                        [0.0649045])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0,
+                                      keepdims=True), [[0.0, 0.0]])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1,
+                                      keepdims=True), [[0.0649045]])
+
+    a = np.array([[1, 2, 3, 4],
+                  [5, 6, 7, 8],
+                  [9, 10, 11, 12]])
+    b = np.array([[13, 14, 15, 16],
+                  [17, 18, 19, 20],
+                  [21, 22, 23, 24]])
+
+    assert_almost_equal(jensenshannon(a, b, axis=0),
+                        [0.1954288, 0.1447697, 0.1138377, 0.0927636])
+    assert_almost_equal(jensenshannon(a, b, axis=1),
+                        [0.1402339, 0.0399106, 0.0201815])

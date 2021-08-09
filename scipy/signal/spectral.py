@@ -504,7 +504,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
     average : { 'mean', 'median' }, optional
-        Method to use when averaging periodograms. Defaults to 'mean'.
+        Method to use when averaging periodograms. If the spectrum is
+        complex, the average is computed separately for the real and
+        imaginary parts. Defaults to 'mean'.
 
         .. versionadded:: 1.2.0
 
@@ -585,7 +587,13 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
         if Pxy.shape[-1] > 1:
             if average == 'median':
-                Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+                # np.median must be passed real arrays for the desired result
+                if np.iscomplexobj(Pxy):
+                    Pxy = (np.median(np.real(Pxy), axis=-1)
+                           + 1j * np.median(np.imag(Pxy), axis=-1))
+                    Pxy /= _median_bias(Pxy.shape[-1])
+                else:
+                    Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:

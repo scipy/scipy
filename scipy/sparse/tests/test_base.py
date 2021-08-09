@@ -21,6 +21,7 @@ import contextlib
 import functools
 import operator
 import platform
+import itertools
 import sys
 from distutils.version import LooseVersion
 
@@ -714,6 +715,7 @@ class _TestCommon:
         mats.append([[1],[0],[2]])
         mats.append([[0,1],[0,2],[0,3]])
         mats.append([[0,0,1],[0,0,2],[0,3,0]])
+        mats.append([[1,0],[0,0]])
 
         mats.append(kron(mats[0],[[1,2]]))
         mats.append(kron(mats[0],[[1],[2]]))
@@ -738,6 +740,19 @@ class _TestCommon:
         assert_equal(self.spmatrix((0, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((15, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((0, 5)).diagonal(10), np.empty(0))
+
+    def test_trace(self):
+        # For square matrix
+        A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        B = self.spmatrix(A)
+        for k in range(-2, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
+
+        # For rectangular matrix
+        A = np.array([[1, 2, 3], [4, 5, 6]])
+        B = self.spmatrix(A)
+        for k in range(-1, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
 
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
@@ -842,6 +857,7 @@ class _TestCommon:
     def test_setdiag(self):
         # simple test cases
         m = self.spmatrix(np.eye(3))
+        m2 = self.spmatrix((4, 4))
         values = [3, 2, 1]
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning,
@@ -861,6 +877,13 @@ class _TestCommon:
             assert_array_equal(m.A[0,2], 9)
             m.setdiag((9,), k=-2)
             assert_array_equal(m.A[2,0], 9)
+            # test short values on an empty matrix
+            m2.setdiag([1], k=2)
+            assert_array_equal(m2.A[0], [0, 0, 1, 0])
+            # test overwriting that same diagonal
+            m2.setdiag([1, 1], k=2)
+            assert_array_equal(m2.A[:2], [[0, 0, 1, 0],
+                                          [0, 0, 0, 1]])
 
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
@@ -2465,6 +2488,19 @@ class _TestSlicing:
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
                 check_2(a, b)
+
+        # Check out of bounds etc. systematically
+        extra_slices = []
+        for a, b, c in itertools.product(*([(None, 0, 1, 2, 5, 15,
+                                             -1, -2, 5, -15)]*3)):
+            if c == 0:
+                continue
+            extra_slices.append(slice(a, b, c))
+
+        for a in extra_slices:
+            check_2(a, a)
+            check_2(a, -2)
+            check_2(-2, a)
 
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))

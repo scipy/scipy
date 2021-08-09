@@ -3,7 +3,7 @@ from collections import Counter
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_allclose, assert_almost_equal, assert_,
+from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
@@ -11,7 +11,8 @@ from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy, QMCEngine)
+                              update_discrepancy, QMCEngine,
+                              _perturb_discrepancy)  # noqa
 
 
 class TestUtils:
@@ -209,8 +210,26 @@ class TestUtils:
                                              r"broadcastable"):
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
+    def test_perm_discrepancy(self):
+        seed = np.random.RandomState(123456)
+        qmc_gen = qmc.LatinHypercube(5, seed=seed)
+        sample = qmc_gen.random(10)
+        disc = qmc.discrepancy(sample)
+
+        for i in range(100):
+            row_1 = np.random.randint(10)
+            row_2 = np.random.randint(10)
+            col = np.random.randint(5)
+
+            disc = _perturb_discrepancy(sample, row_1, row_2, col, disc)
+            sample[row_1, col], sample[row_2, col] = (
+                sample[row_2, col], sample[row_1, col])
+            disc_reference = qmc.discrepancy(sample)
+            assert_allclose(disc, disc_reference)
+
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
+
         def disc_c2(x):
             n, s = x.shape
             xij = x
@@ -317,6 +336,10 @@ class TestVDC:
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
 
+    def test_invalid_base_error(self):
+        with pytest.raises(ValueError, match=r"'base' must be at least 2"):
+            van_der_corput(10, base=1)
+
 
 class RandomEngine(qmc.QMCEngine):
     def __init__(self, d, seed):
@@ -356,7 +379,7 @@ def test_subclassing_QMCEngine():
 
     # input validation
     with pytest.raises(ValueError, match=r"d must be an integer value"):
-            RandomEngine((2,), seed=seed)
+        RandomEngine((2,), seed=seed)  # noqa
 
 
 class QMCEngineTests:
@@ -404,8 +427,8 @@ class QMCEngineTests:
     def test_bounds(self, scramble):
         engine = self.engine(d=100, scramble=scramble)
         sample = engine.random(512)
-        assert_(np.all(sample >= 0))
-        assert_(np.all(sample <= 1))
+        assert np.all(sample >= 0)
+        assert np.all(sample <= 1)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_sample(self, scramble):
@@ -418,7 +441,9 @@ class QMCEngineTests:
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_continuing(self, scramble):
-        ref_sample = self.reference(scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+        ref_sample = engine.random(n=8)
+
         engine = self.engine(d=2, scramble=scramble)
 
         n_half = len(ref_sample) // 2
@@ -440,7 +465,9 @@ class QMCEngineTests:
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_fast_forward(self, scramble):
-        ref_sample = self.reference(scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+        ref_sample = engine.random(n=8)
+
         engine = self.engine(d=2, scramble=scramble)
 
         engine.fast_forward(4)
@@ -487,14 +514,14 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.34229571, 0.89178423],
-                            [0.84229571, 0.07696942],
-                            [0.21729571, 0.41030275],
-                            [0.71729571, 0.74363609],
-                            [0.46729571, 0.18808053],
-                            [0.96729571, 0.52141386],
-                            [0.06104571, 0.8547472],
-                            [0.56104571, 0.29919164]])
+    scramble_nd = np.array([[0.40770429, 0.77219711],
+                            [0.90770429, 0.10553045],
+                            [0.15770429, 0.43886378],
+                            [0.65770429, 0.88330823],
+                            [0.28270429, 0.21664156],
+                            [0.78270429, 0.54997489],
+                            [0.03270429, 0.99441934],
+                            [0.53270429, 0.32775267]])
 
 
 class TestLHS(QMCEngineTests):
@@ -511,23 +538,41 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
-    def test_sample_stratified(self):
+    @pytest.mark.parametrize("optimization", [None, "random-CD"])
+    def test_sample_stratified(self, optimization):
         d, n = 4, 20
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=True)
+        engine = self.engine(d=d, scramble=False, centered=True,
+                             optimization=optimization)
         sample = engine.random(n=n)
         sorted_sample = np.sort(sample, axis=0)
 
         assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
 
-        engine = self.engine(d=d, scramble=False, centered=False)
-        sample = engine.random(n=n)
-        sorted_sample = np.sort(sample, axis=0)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
+
+    def test_discrepancy_hierarchy(self):
+        seed = np.random.RandomState(123456)
+        lhs = qmc.LatinHypercube(d=2, seed=seed)
+        sample_ref = lhs.random(n=20)
+        disc_ref = qmc.discrepancy(sample_ref)
+
+        seed = np.random.RandomState(123456)
+        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
+        sample_ = optimal_.random(n=20)
+        disc_ = qmc.discrepancy(sample_)
+
+        assert disc_ < disc_ref
+
+    def test_warning(self):
+        with pytest.raises(ValueError, match=r"'toto' is not a valid"
+                                             r" optimization method"):
+            seed = np.random.RandomState(12345)
+            qmc.LatinHypercube(1, seed=seed, optimization="toto")
 
 
 class TestSobol(QMCEngineTests):
@@ -593,17 +638,28 @@ class TestSobol(QMCEngineTests):
 
 
 class TestMultinomialQMC:
-    def test_MultinomialNegativePs(self):
+    def test_validations(self):
+        # negative Ps
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
             qmc.MultinomialQMC(p)
 
-    def test_MultinomialSumOfPTooLarge(self):
+        # sum of P too large
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
-        with pytest.raises(ValueError, match=r"Elements of pvals must sum "
-                                             r"to 1."):
+        message = r"Elements of pvals must sum to 1."
+        with pytest.raises(ValueError, match=message):
             qmc.MultinomialQMC(p)
+
+        p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
+        seed = np.random.RandomState(12345)
+        message = r"Dimension of `engine` must be 1."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2, seed=seed))
+
+        message = r"`engine` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultinomialQMC(p, engine=np.random.RandomState)
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
@@ -647,6 +703,23 @@ class TestMultinomialQMC:
         engine.reset()
         samples_reset = engine.random(2)
         assert_array_equal(samples, samples_reset)
+
+
+def _wrapper_mv_qmc(*args, **kwargs):
+    d = kwargs.pop("d")
+    return qmc.MultivariateNormalQMC(mean=np.zeros(d), **kwargs)
+
+
+class TestMultivariateNormalQMCEngine(QMCEngineTests):
+    qmce = _wrapper_mv_qmc
+    can_scramble = False
+
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
+
+    def test_bounds(self, *args):
+        pytest.skip("Not applicable: normal is not bounded.")
 
 
 class TestNormalQMC:
@@ -743,46 +816,58 @@ class TestNormalQMC:
         seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=seed)
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0)) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # make sure samples are uncorrelated
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1]) < 1e-2)
+        assert np.abs(cov[0, 1]) < 1e-2
 
     def test_NormalQMCShapiroInvTransform(self):
         seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(2), seed=seed, inv_transform=True)
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0)) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # make sure samples are uncorrelated
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1]) < 1e-2)
-
-    def test_reset(self):
-        seed = np.random.RandomState(12345)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1), seed=seed)
-        samples = engine.random(2)
-        engine.reset()
-        samples_reset = engine.random(2)
-        assert_array_equal(samples, samples_reset)
+        assert np.abs(cov[0, 1]) < 1e-2
 
 
 class TestMultivariateNormalQMC:
-    def test_MultivariateNormalQMCNonPSD(self):
-        # try with non-psd, non-pd cov and expect an assertion error
-        with pytest.raises(ValueError, match=r"Covariance matrix not PSD."):
-            seed = np.random.RandomState(123456)
+
+    def test_validations(self):
+        seed = np.random.RandomState()
+
+        message = r"Dimension of `engine` must be consistent"
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2, seed=seed),
+                                      seed=seed)
+
+        message = r"`engine` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState,
+                                      seed=seed)
+
+        message = r"Covariance matrix not PSD."
+        with pytest.raises(ValueError, match=message):
             qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]], seed=seed)
+
+        message = r"Covariance matrix is not symmetric."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
+
+        message = r"Dimension mismatch between mean and covariance."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
 
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
@@ -791,21 +876,7 @@ class TestMultivariateNormalQMC:
             [0, 0, 0], [[1, 0, 1], [0, 1, 1], [1, 1, 2]],
             seed=seed
         )
-        assert_(engine._corr_matrix is not None)
-
-    def test_MultivariateNormalQMCSymmetric(self):
-        # try with non-symmetric cov and expect an error
-        with pytest.raises(ValueError, match=r"Covariance matrix is not "
-                                             r"symmetric."):
-            seed = np.random.RandomState(123456)
-            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
-
-    def test_MultivariateNormalQMCDim(self):
-        # incompatible dimension of mean/cov
-        with pytest.raises(ValueError, match=r"Dimension mismatch between "
-                                             r"mean and covariance."):
-            seed = np.random.RandomState(123456)
-            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
+        assert engine._corr_matrix is not None
 
     def test_MultivariateNormalQMC(self):
         # d = 1 scalar
@@ -932,15 +1003,15 @@ class TestMultivariateNormalQMC:
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed
         )
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0)) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # make sure samples are uncorrelated
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1]) < 1e-2)
+        assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
         seed = np.random.RandomState(12345)
@@ -948,15 +1019,15 @@ class TestMultivariateNormalQMC:
             mean=[1.0, 2.0], cov=[[1.5, 0.5], [0.5, 1.5]], seed=seed
         )
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # check covariance
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1] - 0.5) < 1e-2)
+        assert np.abs(cov[0, 1] - 0.5) < 1e-2
 
     def test_MultivariateNormalQMCShapiroInvTransform(self):
         # test the standard case
@@ -965,15 +1036,15 @@ class TestMultivariateNormalQMC:
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed, inv_transform=True
         )
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0)) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # make sure samples are uncorrelated
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1]) < 1e-2)
+        assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
         seed = np.random.RandomState(12345)
@@ -984,15 +1055,15 @@ class TestMultivariateNormalQMC:
             inv_transform=True,
         )
         samples = engine.random(n=256)
-        assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
-        assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
+        assert all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2)
+        assert all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2)
         # perform Shapiro-Wilk test for normality
         for i in (0, 1):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert pval > 0.9
         # check covariance
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1] - 0.5) < 1e-2)
+        assert np.abs(cov[0, 1] - 0.5) < 1e-2
 
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
@@ -1003,17 +1074,16 @@ class TestMultivariateNormalQMC:
             seed=seed,
         )
         samples = engine.random(n=512)
-        assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
-        assert_(np.abs(np.std(samples[:, 0]) - 1) < 1e-2)
-        assert_(np.abs(np.std(samples[:, 1]) - 1) < 1e-2)
-        assert_(np.abs(np.std(samples[:, 2]) - np.sqrt(2)) < 1e-2)
+        assert all(np.abs(samples.mean(axis=0)) < 1e-2)
+        assert np.abs(np.std(samples[:, 0]) - 1) < 1e-2
+        assert np.abs(np.std(samples[:, 1]) - 1) < 1e-2
+        assert np.abs(np.std(samples[:, 2]) - np.sqrt(2)) < 1e-2
         for i in (0, 1, 2):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.8)
+            assert pval > 0.8
         cov = np.cov(samples.transpose())
-        assert_(np.abs(cov[0, 1]) < 1e-2)
-        assert_(np.abs(cov[0, 2] - 1) < 1e-2)
+        assert np.abs(cov[0, 1]) < 1e-2
+        assert np.abs(cov[0, 2] - 1) < 1e-2
         # check to see if X + Y = Z almost exactly
-        assert_(
-            all(np.abs(samples[:, 0] + samples[:, 1] - samples[:, 2]) < 1e-5)
-        )
+        assert all(np.abs(samples[:, 0] + samples[:, 1] - samples[:, 2])
+                   < 1e-5)

@@ -4,10 +4,10 @@ import warnings
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray,
-                   zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, compress,
-                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
+from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   compress, pi, exp, ravel, count_nonzero, sin, cos,
+                   arctan2, hypot)
 
 from scipy import optimize
 from scipy import special
@@ -18,7 +18,6 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
-from .stats import _normtest_finish
 
 
 __all__ = ['mvsdist',
@@ -631,11 +630,11 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """Calculate the shape parameter that maximizes the PPCC.
 
-    The probability plot correlation coefficient (PPCC) plot can be used to
-    determine the optimal shape parameter for a one-parameter family of
-    distributions.  ppcc_max returns the shape parameter that would maximize the
-    probability plot correlation coefficient for the given data to a
-    one-parameter family of distributions.
+    The probability plot correlation coefficient (PPCC) plot can be used
+    to determine the optimal shape parameter for a one-parameter family
+    of distributions. ``ppcc_max`` returns the shape parameter that would
+    maximize the probability plot correlation coefficient for the given
+    data to a one-parameter family of distributions.
 
     Parameters
     ----------
@@ -668,37 +667,33 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     References
     ----------
-    .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
-           Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
-
-    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test
+           for Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
+    .. [2] Engineering Statistics Handbook, NIST/SEMATEC,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
-    First we generate some random data from a Tukey-Lambda distribution,
-    with shape parameter -0.7:
+    First we generate some random data from a Weibull distribution
+    with shape parameter 2.5:
 
     >>> from scipy import stats
-    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
-    ...                           random_state=1234567) + 1e4
-
-    Now we explore this data with a PPCC plot as well as the related
-    probability plot and Box-Cox normplot.  A red line is drawn where we
-    expect the PPCC value to be maximal (at the shape parameter -0.7 used
-    above):
-
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure(figsize=(8, 6))
-    >>> ax = fig.add_subplot(111)
-    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax)
+    >>> rng = np.random.default_rng()
+    >>> c = 2.5
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
 
-    We calculate the value where the shape should reach its maximum and a red
-    line is drawn there. The line should coincide with the highest point in the
-    ppcc_plot.
+    Generate the PPCC plot for this data with the Weibull distribution.
 
-    >>> max = stats.ppcc_max(x)
-    >>> ax.vlines(max, 0, 1, colors='r', label='Expected shape value')
+    >>> fig, ax = plt.subplots(figsize=(8, 6))
+    >>> res = stats.ppcc_plot(x, c/2, 2*c, dist='weibull_min', plot=ax)
 
+    We calculate the value where the shape should reach its maximum and a
+    red line is drawn there. The line should coincide with the highest
+    point in the PPCC graph.
+
+    >>> cmax = stats.ppcc_max(x, brack=(c/2, 2*c), dist='weibull_min')
+    >>> ax.axvline(cmax, color='r')
     >>> plt.show()
 
     """
@@ -771,28 +766,35 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
     Examples
     --------
-    First we generate some random data from a Tukey-Lambda distribution,
-    with shape parameter -0.7:
+    First we generate some random data from a Weibull distribution
+    with shape parameter 2.5, and plot the histogram of the data:
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
-    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5,
-    ...                           size=10000, random_state=rng) + 1e4
+    >>> c = 2.5
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
+
+    Take a look at the histogram of the data.
+
+    >>> fig1, ax = plt.subplots(figsize=(9, 4))
+    >>> ax.hist(x, bins=50)
+    >>> ax.set_title('Histogram of x')
+    >>> plt.show()
 
     Now we explore this data with a PPCC plot as well as the related
     probability plot and Box-Cox normplot.  A red line is drawn where we
-    expect the PPCC value to be maximal (at the shape parameter -0.7 used
-    above):
+    expect the PPCC value to be maximal (at the shape parameter ``c``
+    used above):
 
-    >>> fig = plt.figure(figsize=(12, 4))
-    >>> ax1 = fig.add_subplot(131)
-    >>> ax2 = fig.add_subplot(132)
-    >>> ax3 = fig.add_subplot(133)
+    >>> fig2 = plt.figure(figsize=(12, 4))
+    >>> ax1 = fig2.add_subplot(1, 3, 1)
+    >>> ax2 = fig2.add_subplot(1, 3, 2)
+    >>> ax3 = fig2.add_subplot(1, 3, 3)
     >>> res = stats.probplot(x, plot=ax1)
-    >>> res = stats.boxcox_normplot(x, -5, 5, plot=ax2)
-    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax3)
-    >>> ax3.vlines(-0.7, 0, 1, colors='r', label='Expected shape value')
+    >>> res = stats.boxcox_normplot(x, -4, 4, plot=ax2)
+    >>> res = stats.ppcc_plot(x, c/2, 2*c, dist='weibull_min', plot=ax3)
+    >>> ax3.axvline(c, color='r')
     >>> plt.show()
 
     """
@@ -1058,7 +1060,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     if np.all(x == x[0]):
         raise ValueError("Data must not be constant.")
 
-    if any(x <= 0):
+    if np.any(x <= 0):
         raise ValueError("Data must be positive.")
 
     if lmbda is not None:  # single transformation
@@ -2103,7 +2105,7 @@ def anderson_ksamp(samples, midrank=True):
                          "observation")
 
     n = np.array([sample.size for sample in samples])
-    if any(n == 0):
+    if np.any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
@@ -2927,6 +2929,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
         x = x.flatten()
         y = y.flatten()
         axis = 0
+
+    if axis < 0:
+        axis = x.ndim + axis
 
     # Determine shape of the result arrays
     res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])

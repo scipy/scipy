@@ -5,6 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
+from functools import wraps
 import ctypes
 
 import numpy as np
@@ -16,6 +17,7 @@ from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
+
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
@@ -28,6 +30,7 @@ from ._distn_infrastructure import (
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+import scipy.stats._boost as _boost
 
 
 def _remove_optimizer_parameters(kwds):
@@ -52,6 +55,7 @@ def _remove_optimizer_parameters(kwds):
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm', this decorator calls generic implementation
+    @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
         if method == 'mm':
@@ -602,7 +606,7 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return np.exp(self._logpdf(x, a, b))
+        return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -610,18 +614,23 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return sc.btdtr(a, b, x)
+        return _boost._beta_cdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _boost._beta_sf(x, a, b)
+
+    def _isf(self, x, a, b):
+        return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        return sc.btdtri(a, b, q)
+        return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
-        mn = a*1.0 / (a + b)
-        var = (a*b*1.0)/(a+b+1.0)/(a+b)**2.0
-        g1 = 2.0*(b-a)*np.sqrt((1.0+a+b)/(a*b)) / (2+a+b)
-        g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
-        g2 /= a*b*(a+b+2)*(a+b+3)
-        return mn, var, g1, g2
+        return(
+            _boost._beta_mean(a, b),
+            _boost._beta_variance(a, b),
+            _boost._beta_skewness(a, b),
+            _boost._beta_kurtosis_excess(a, b))
 
     def _fitstart(self, data):
         g1 = _skew(data)
@@ -6934,7 +6943,7 @@ class rdist_gen(rv_continuous):
     """
     # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        return 0.5*beta._pdf((x + 1)/2, c/2, c/2)
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return -np.log(2) + beta._logpdf((x + 1)/2, c/2, c/2)
@@ -9007,11 +9016,16 @@ crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Functi
 
 def _argus_phi(chi):
     """
-    Utility function for the argus distribution
-    used in the CDF and norm of the Argus Funktion
+    Utility function for the argus distribution used in the pdf, sf and
+    moment calculation.
+    Note that for all x > 0:
+    gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
+    This can be verified directly by noting that the cdf of Gamma(1.5) can
+    be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
+    We use gammainc instead of the usual definition because it is more precise
+    for small chi.
     """
-    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
-
+    return sc.gammainc(1.5, chi**2/2) / 2
 
 class argus_gen(rv_continuous):
     r"""
@@ -9050,10 +9064,15 @@ class argus_gen(rv_continuous):
 
     %(example)s
     """
+    def _logpdf(self, x, chi):
+        # for x = 0 or 1, logpdf returns -np.inf
+        with np.errstate(divide='ignore'):
+            y = 1.0 - x*x
+            A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
+            return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+
     def _pdf(self, x, chi):
-        y = 1.0 - x**2
-        A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
-        return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        return np.exp(self._logpdf(x, chi))
 
     def _cdf(self, x, chi):
         return 1.0 - self._sf(x, chi)
@@ -9158,11 +9177,20 @@ class argus_gen(rv_continuous):
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
-        chi2 = chi**2
+        # need to ensure that dtype is float
+        # otherwise the mask below does not work for integers
+        chi = np.asarray(chi, dtype=float)
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
-        v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
-        return m, v, None, None
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi**2/4) / phi
+        # compute second moment, use Taylor expansion for small chi (<= 0.1)
+        mu2 = np.empty_like(chi)
+        mask = chi > 0.1
+        c = chi[mask]
+        mu2[mask] = 1 - 3 / c**2 + c * _norm_pdf(c) / phi[mask]
+        c = chi[~mask]
+        coef = [-358/65690625, 0, -94/1010625, 0, 2/2625, 0, 6/175, 0, 0.4]
+        mu2[~mask] = np.polyval(coef, c)
+        return m, mu2 - m**2, None, None
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
@@ -9307,6 +9335,193 @@ class rv_histogram(rv_continuous):
         dct = super()._updated_ctor_param()
         dct['histogram'] = self._histogram
         return dct
+
+
+class studentized_range_gen(rv_continuous):
+    r"""A studentized range continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    t: Student's t distribution
+
+    Notes
+    -----
+    The probability density function for `studentized_range` is:
+
+    .. math::
+
+         f(x; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
+                        2^{\nu/2-1}} \int_{0}^{\infty} \int_{-\infty}^{\infty}
+                        s^{\nu} e^{-\nu s^2/2} \phi(z) \phi(sx + z)
+                        [\Phi(sx + z) - \Phi(z)]^{k-2} \,dz \,ds
+
+    for :math:`x ≥ 0`, :math:`k > 1`, and :math:`\nu > 0`.
+
+    `studentized_range` takes ``k`` for :math:`k` and ``df`` for :math:`\nu`
+    as shape parameters.
+
+    When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinite
+    degrees of freedom) is used to compute the cumulative distribution
+    function [4]_.
+
+    %(after_notes)s
+
+    References
+    ----------
+
+    .. [1] "Studentized range distribution",
+           https://en.wikipedia.org/wiki/Studentized_range_distribution
+    .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
+           Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
+           378-389., doi:10.1590/1413-70542017414047716.
+    .. [3] Harter, H. Leon. "Tables of Range and Studentized Range." The Annals
+           of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122-1147.
+           JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.
+    .. [4] Lund, R. E., and J. R. Lund. "Algorithm AS 190: Probabilities and
+           Upper Quantiles for the Studentized Range." Journal of the Royal
+           Statistical Society. Series C (Applied Statistics), vol. 32, no. 2,
+           1983, pp. 204-210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
+           Feb. 2021.
+
+    Examples
+    --------
+    >>> from scipy.stats import studentized_range
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Calculate the first four moments:
+
+    >>> k, df = 3, 10
+    >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
+
+    Display the probability density function (``pdf``):
+
+    >>> x = np.linspace(studentized_range.ppf(0.01, k, df),
+    ...                 studentized_range.ppf(0.99, k, df), 100)
+    >>> ax.plot(x, studentized_range.pdf(x, k, df),
+    ...         'r-', lw=5, alpha=0.6, label='studentized_range pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = studentized_range(k, df)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = studentized_range.ppf([0.001, 0.5, 0.999], k, df)
+    >>> np.allclose([0.001, 0.5, 0.999], studentized_range.cdf(vals, k, df))
+    True
+
+    Rather than using (``studentized_range.rvs``) to generate random variates,
+    which is very slow for this distribution, we can approximate the inverse
+    CDF using an interpolator, and then perform inverse transform sampling
+    with this approximate inverse CDF.
+
+    This distribution has an infinite but thin right tail, so we focus our
+    attention on the leftmost 99.9 percent.
+
+    >>> a, b = studentized_range.ppf([0, .999], k, df)
+    >>> a, b
+    0, 7.41058083802274
+
+    >>> from scipy.interpolate import interp1d
+    >>> rng = np.random.default_rng()
+    >>> xs = np.linspace(a, b, 50)
+    >>> cdf = studentized_range.cdf(xs, k, df)
+    # Create an interpolant of the inverse CDF
+    >>> ppf = interp1d(cdf, xs, fill_value='extrapolate')
+    # Perform inverse transform sampling using the interpolant
+    >>> r = ppf(rng.uniform(size=1000))
+
+    And compare the histogram:
+
+    >>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    """
+
+    def _argcheck(self, k, df):
+        return (k > 1) & (df > 0)
+
+    def _fitstart(self, data):
+        # Default is k=1, but that is not a valid value of the parameter.
+        return super(studentized_range_gen, self)._fitstart(data, args=(2, 1))
+
+    def _munp(self, K, k, df):
+        cython_symbol = '_studentized_range_moment'
+        _a, _b = self._get_support()
+        # all three of these are used to create a numpy array so they must
+        # be the same shape.
+
+        def _single_moment(K, k, df):
+            log_const = _stats._studentized_range_pdf_logconst(k, df)
+            arg = [K, k, df, log_const]
+            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
+
+            ranges = [(-np.inf, np.inf), (0, np.inf), (_a, _b)]
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
+
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
+
+        ufunc = np.frompyfunc(_single_moment, 3, 1)
+        return np.float64(ufunc(K, k, df))
+
+    def _pdf(self, x, k, df):
+        cython_symbol = '_studentized_range_pdf'
+
+        def _single_pdf(q, k, df):
+            log_const = _stats._studentized_range_pdf_logconst(k, df)
+            arg = [q, k, df, log_const]
+            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
+
+            ranges = [(-np.inf, np.inf), (0, np.inf)]
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
+
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
+
+        ufunc = np.frompyfunc(_single_pdf, 3, 1)
+        return np.float64(ufunc(x, k, df))
+
+    def _cdf(self, x, k, df):
+
+        def _single_cdf(q, k, df):
+            # "When the degrees of freedom V are infinite the probability
+            # integral takes [on a] simpler form," and a single asymptotic
+            # integral is evaluated rather than the standard double integral.
+            # (Lund, Lund, page 205)
+            if df < 100000:
+                cython_symbol = '_studentized_range_cdf'
+                log_const = _stats._studentized_range_cdf_logconst(k, df)
+                arg = [q, k, df, log_const]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf), (0, np.inf)]
+            else:
+                cython_symbol = '_studentized_range_cdf_asymptotic'
+                arg = [q, k]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf)]
+
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
+
+        ufunc = np.frompyfunc(_single_cdf, 3, 1)
+        return np.float64(ufunc(x, k, df))
+
+
+studentized_range = studentized_range_gen(name='studentized_range', a=0,
+                                          b=np.inf)
 
 
 # Collect names of classes and objects in this module.

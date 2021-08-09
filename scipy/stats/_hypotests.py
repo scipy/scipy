@@ -9,9 +9,10 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -395,51 +396,6 @@ def _get_wilcoxon_distr(n):
     return np.array(cnt, dtype=int)
 
 
-def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
-
-
-def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
-
-
-def _P(A):
-    """Twice the number of concordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
-    return count
-
-
-def _Q(A):
-    """Twice the number of discordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
-    return count
-
-
-def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See [2] section 4: Modified ASEs to test the null hypothesis...
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
-    return count
-
-
 def _tau_b(A):
     """Calculate Kendall's tau-b and p-value from contingency table."""
     # See [2] 2.2 and 4.2
@@ -667,6 +623,22 @@ def somersd(x, y=None):
     return SomersDResult(d, p, table)
 
 
+def _all_partitions(nx, ny):
+    """
+    Partition a set of indices into two fixed-length sets in all possible ways
+
+    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
+    ny in all possible ways (ignoring order of elements).
+    """
+    z = np.arange(nx+ny)
+    for c in combinations(z, nx):
+        x = np.array(c)
+        mask = np.ones(nx+ny, bool)
+        mask[x] = False
+        y = z[mask]
+        yield x, y
+
+        
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -713,14 +685,17 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             on the user choice of `pooled`.
 
         pvalue : float
-            The probability of obtaining a test statistic at least as extreme
-            as the one observed under the null hypothesis.
+            P-value, the probability of obtaining a distribution at least as
+            extreme as the one that was actually observed, assuming that the
+            null hypothesis is true.
 
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
+    boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
+        which is an uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----
@@ -940,6 +915,215 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
+BoschlooExactResult = make_dataclass(
+    "BoschlooExactResult", [("statistic", float), ("pvalue", float)]
+)
+
+
+def boschloo_exact(table, alternative="two-sided", n=32):
+    r"""Perform Boschloo's exact test on a 2x2 contingency table.
+
+    Parameters
+    ----------
+    table : array_like of ints
+        A 2x2 contingency table.  Elements should be non-negative integers.
+
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the null and alternative hypotheses. Default is 'two-sided'.
+        Please see explanations in the Notes section below.
+
+    n : int, optional
+        Number of sampling points used in the construction of the sampling
+        method. Note that this argument will automatically be converted to
+        the next higher power of 2 since `scipy.stats.qmc.Sobol` is used to
+        select sample points. Default is 32. Must be positive. In most cases,
+        32 points is enough to reach good precision. More points comes at
+        performance cost.
+
+    Returns
+    -------
+    ber : BoschlooExactResult
+        A result object with the following attributes.
+
+        statistic : float
+            The statistic used in Boschloo's test; that is, the p-value
+            from Fisher's exact test.
+
+        pvalue : float
+            P-value, the probability of obtaining a distribution at least as
+            extreme as the one that was actually observed, assuming that the
+            null hypothesis is true.
+
+    See Also
+    --------
+    chi2_contingency : Chi-square test of independence of variables in a
+        contingency table.
+    fisher_exact : Fisher exact test on a 2x2 contingency table.
+    barnard_exact : Barnard's exact test, which is a more powerful alternative
+        than Fisher's exact test for 2x2 contingency tables.
+
+    Notes
+    -----
+    Boschloo's test is an exact test used in the analysis of contingency
+    tables. It examines the association of two categorical variables, and
+    is a uniformly more powerful alternative to Fisher's exact test
+    for 2x2 contingency tables.
+
+    Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
+    where each column stores the binomial experiment, as in the example
+    below. Let's also define :math:`p_1, p_2` the theoretical binomial
+    probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
+    Boschloo exact test, we can assert three different null hypotheses :
+
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
+      with `alternative` = "less"
+
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 > p_2`,
+      with `alternative` = "greater"
+
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
+      with `alternative` = "two-sided" (default one)
+
+    Boschloo's exact test uses the p-value of Fisher's exact test as a 
+    statistic, and Boschloo's p-value is the probability under the null 
+    hypothesis of observing such an extreme value of this statistic.
+
+    Boschloo's and Barnard's are both more powerful than Fisher's exact
+    test.
+
+    .. versionadded:: 1.7.0
+
+    References
+    ----------
+    .. [1] R.D. Boschloo. "Raised conditional level of significance for the
+       2 x 2-table when testing the equality of two probabilities",
+       Statistica Neerlandica, 24(1), 1970
+
+    .. [2] "Boschloo's test", Wikipedia,
+       https://en.wikipedia.org/wiki/Boschloo%27s_test
+
+    .. [3] Lise M. Saari et al. "Employee attitudes and job satisfaction",
+       Human Resource Management, 43(4), 395-407, 2004,
+       :doi:`10.1002/hrm.20032`.
+
+    Examples
+    --------
+    In the following example, we consider the article "Employee
+    attitudes and job satisfaction" [3]_
+    which reports the results of a survey from 63 scientists and 117 college
+    professors. Of the 63 scientists, 31 said they were very satisfied with
+    their jobs, whereas 74 of the college professors were very satisfied
+    with their work. Is this significant evidence that college
+    professors are happier with their work than scientists?
+    The following table summarizes the data mentioned above::
+
+                         college professors   scientists
+        Very Satisfied   74                     31
+        Dissatisfied     43                     32
+
+    When working with statistical hypothesis testing, we usually use a
+    threshold probability or significance level upon which we decide
+    to reject the null hypothesis :math:`H_0`. Suppose we choose the common
+    significance level of 5%.
+
+    Our alternative hypothesis is that college professors are truly more
+    satisfied with their work than scientists. Therefore, we expect
+    :math:`p_1` the proportion of very satisfied college professors to be
+    greater than :math:`p_2`, the proportion of very satisfied scientists.
+    We thus call `boschloo_exact` with the ``alternative="greater"`` option:
+
+    >>> import scipy.stats as stats
+    >>> res = stats.boschloo_exact([[74, 31], [43, 32]], alternative="greater")
+    >>> res.statistic
+    0.0483...
+    >>> res.pvalue
+    0.0355...
+
+    Under the null hypothesis that scientists are happier in their work than
+    college professors, the probability of obtaining test
+    results at least as extreme as the observed data is approximately 3.55%.
+    Since this p-value is less than our chosen significance level, we have
+    evidence to reject :math:`H_0` in favor of the alternative hypothesis.
+
+    """
+    hypergeom = distributions.hypergeom
+
+    if n <= 0:
+        raise ValueError(
+            "Number of points `n` must be strictly positive,"
+            f" found {n!r}"
+        )
+
+    table = np.asarray(table, dtype=np.int64)
+
+    if not table.shape == (2, 2):
+        raise ValueError("The input `table` must be of shape (2, 2).")
+
+    if np.any(table < 0):
+        raise ValueError("All values in `table` must be nonnegative.")
+
+    if 0 in table.sum(axis=0):
+        # If both values in column are zero, the p-value is 1 and
+        # the score's statistic is NaN.
+        return BoschlooExactResult(np.nan, np.nan)
+
+    total_col_1, total_col_2 = table.sum(axis=0)
+    total = total_col_1 + total_col_2
+    x1 = np.arange(total_col_1 + 1, dtype=np.int64).reshape(1, -1)
+    x2 = np.arange(total_col_2 + 1, dtype=np.int64).reshape(-1, 1)
+    x1_sum_x2 = x1 + x2
+
+    if alternative == 'less':
+        pvalues = hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T
+    elif alternative == 'greater':
+        # Same formula as the 'less' case, but with the second column.
+        pvalues = hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T
+    elif alternative == 'two-sided':
+        boschloo_less = boschloo_exact(table, alternative="less", n=n)
+        boschloo_greater = boschloo_exact(table, alternative="greater", n=n)
+
+        res = (
+            boschloo_less if boschloo_less.pvalue < boschloo_greater.pvalue
+            else boschloo_greater
+        )
+
+        # Two-sided p-value is defined as twice the minimum of the one-sided
+        # p-values
+        pvalue = 2 * res.pvalue
+        return BoschlooExactResult(res.statistic, pvalue)
+    else:
+        msg = (
+            f"`alternative` should be one of {'two-sided', 'less', 'greater'},"
+            f" found {alternative!r}"
+        )
+        raise ValueError(msg)
+
+    fisher_stat = pvalues[table[0, 0], table[0, 1]]
+
+    # fisher_stat * (1+1e-13) guards us from small numerical error. It is
+    # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
+    # For more throughout explanations, see gh-14178
+    index_arr = pvalues <= fisher_stat * (1+1e-13)
+
+    x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
+    x1_log_comb = _compute_log_combinations(total_col_1)
+    x2_log_comb = _compute_log_combinations(total_col_2)
+    x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
+
+    result = shgo(
+        _get_binomial_log_p_value_with_nuisance_param,
+        args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
+        bounds=((0, 1),),
+        n=n,
+        sampling_method="sobol",
+    )
+
+    # result.fun is the negative log pvalue and therefore needs to be
+    # changed before return
+    p_value = np.clip(np.exp(-result.fun), a_min=0, a_max=1)
+    return BoschlooExactResult(fisher_stat, p_value)
+
+
 def _get_binomial_log_p_value_with_nuisance_param(
     nuisance_param, x1_sum_x2, x1_sum_x2_log_comb, index_arr
 ):
@@ -970,7 +1154,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Notes
     -----
 
-    Barnard exact test iterate over a nuisance parameter
+    Both Barnard's test and Boschloo's test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
     maxima, this function return the negative log pvalue with respect to the
     nuisance parameter passed in params. This negative log p-value is then
@@ -1037,28 +1221,21 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     for a given value s (float) of the test statistic by enumerating
     all possible combinations. nx and ny are the sizes of the samples.
     """
-    z = np.arange(1, nx+ny+1)
-    rangex = np.arange(1, nx+1)
-    rangey = np.arange(1, ny+1)
+    rangex = np.arange(nx)
+    rangey = np.arange(ny)
 
     us = []
-    # for the first sample x, select all possible combinations of
-    # the ranks of the elements of x in the combined sample
-    # note that the acutal values of the samples are irrelevant
-    # once the ranks of the elements of x are fixed, the
-    # ranks of the elements in the second sample
-    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all
-    for c in combinations(z, nx):
-        x = np.array(c)
-        # the ranks of the second sample y are given by the set z - x
-        # note than one needs to shift by -1 since the lowest rank is 1
-        mask = np.ones(nx+ny, bool)
-        mask[x-1] = False
-        y = z[mask]
+
+    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
+    # into two sets of length nx and ny
+    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
+    # this does not change the value of the statistic.
+    for x, y in _all_partitions(nx, ny):
         # compute the statistic
         u = nx * np.sum((x - rangex)**2)
         u += ny * np.sum((y - rangey)**2)
         us.append(u)
+
     # compute the values of u and the frequencies
     u, cnt = np.unique(us, return_counts=True)
     return np.sum(cnt[u >= s]) / np.sum(cnt)

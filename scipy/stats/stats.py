@@ -30,7 +30,6 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
-from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -49,6 +48,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._exact_2kssamp import (_compute_prob_inside_method,_compute_prob_outside_square)
 from dataclasses import make_dataclass
+from ._hypotests import _all_partitions
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -70,7 +70,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
-           'chisquare', 'power_divergence', 'mannwhitneyu',
+           'chisquare', 'power_divergence',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
@@ -1423,12 +1423,8 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
-        return mstats_basic.skewtest(a, axis)
+        return mstats_basic.skewtest(a, axis, alternative)
 
     if axis is None:
         a = np.ravel(a)
@@ -1526,12 +1522,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
-        return mstats_basic.kurtosistest(a, axis)
+        return mstats_basic.kurtosistest(a, axis, alternative)
 
     n = a.shape[axis]
     if n < 5:
@@ -3325,6 +3317,14 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         Trimmed version of array `a`. The order of the trimmed content is
         undefined.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.arange(20)
+    >>> b = stats.trim1(a, 0.5, 'left')
+    >>> b
+    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+
     """
     a = np.asarray(a)
     if axis is None:
@@ -3866,7 +3866,7 @@ class PearsonRConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the correlation coefficent "
+            msg = ("An input array is constant; the correlation coefficient "
                    "is not defined.")
         self.args = (msg,)
 
@@ -3877,7 +3877,7 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
     def __init__(self, msg=None):
         if msg is None:
             msg = ("An input array is nearly constant; the computed "
-                   "correlation coefficent may be inaccurate.")
+                   "correlation coefficient may be inaccurate.")
         self.args = (msg,)
 
 
@@ -3892,12 +3892,6 @@ def pearsonr(x, y):
     distribution of the correlation coefficient.)  Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear relationship.
-    Positive correlations imply that as x increases, so does y. Negative
-    correlations imply that as x increases, y decreases.
-
-    The p-value roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets.
 
     Parameters
     ----------
@@ -3939,13 +3933,13 @@ def pearsonr(x, y):
         r = \frac{\sum (x - m_x) (y - m_y)}
                  {\sqrt{\sum (x - m_x)^2 \sum (y - m_y)^2}}
 
-    where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
-    the mean of the vector :math:`y`.
+    where :math:`m_x` is the mean of the vector x and :math:`m_y` is
+    the mean of the vector y.
 
-    Under the assumption that :math:`x` and :math:`m_y` are drawn from
+    Under the assumption that x and y are drawn from
     independent normal distributions (so the population correlation coefficient
     is 0), the probability density function of the sample correlation
-    coefficient :math:`r` is ([1]_, [2]_):
+    coefficient r is ([1]_, [2]_):
 
     .. math::
 
@@ -3960,11 +3954,14 @@ def pearsonr(x, y):
 
         dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
 
-    The p-value returned by `pearsonr` is a two-sided p-value.  For a
+    The p-value returned by `pearsonr` is a two-sided p-value. The p-value
+    roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets. More precisely, for a
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
-    to abs(r).  In terms of the object ``dist`` shown above, the p-value
+    to abs(r). In terms of the object ``dist`` shown above, the p-value
     for a given r and length n can be computed as::
 
         p = 2*dist.cdf(-abs(r))
@@ -3992,14 +3989,53 @@ def pearsonr(x, y):
     Examples
     --------
     >>> from scipy import stats
-    >>> a = np.array([0, 0, 0, 1, 1, 1, 1])
-    >>> b = np.arange(7)
-    >>> stats.pearsonr(a, b)
-    (0.8660254037844386, 0.011724811003954649)
-
     >>> stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
     (-0.7426106572325057, 0.1505558088534455)
 
+    There is a linear dependence between x and y if y = a + b*x + e, where
+    a,b are constants and e is a random error term, assumed to be independent
+    of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
+    e follow a normal distribution with mean zero and standard deviation s>0.
+
+    >>> s = 0.5
+    >>> x = stats.norm.rvs(size=500)
+    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> y = x + e
+    >>> stats.pearsonr(x, y)
+    (0.9029601878969703, 8.428978827629898e-185) # may vary
+
+    This should be close to the exact value given by
+
+    >>> 1/np.sqrt(1 + s**2)
+    0.8944271909999159
+
+    For s=0.5, we observe a high level of correlation. In general, a large
+    variance of the noise reduces the correlation, while the correlation
+    approaches one as the variance of the error goes to zero.
+
+    It is important to keep in mind that no correlation does not imply
+    independence unless (x, y) is jointly normal. Correlation can even be zero
+    when there is a very simple dependence structure: if X follows a
+    standard normal distribution, let y = abs(x). Note that the correlation
+    between x and y is zero. Indeed, since the expectation of x is zero,
+    cov(x, y) = E[x*y]. By definition, this equals E[x*abs(x)] which is zero
+    by symmetry. The following lines of code illustrate this observation:
+
+    >>> y = np.abs(x)
+    >>> stats.pearsonr(x, y)
+    (-0.016172891856853524, 0.7182823678751942) # may vary
+
+    A non-zero correlation coefficient can be misleading. For example, if X has
+    a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
+    A simple calculation shows that corr(x, y) = sqrt(2/Pi) = 0.797...,
+    implying a high level of correlation:
+
+    >>> y = np.where(x < 0, x, 0)
+    >>> stats.pearsonr(x, y)
+    (0.8537091583771509, 3.183461621422181e-143) # may vary
+
+    This is unintuitive since there is no dependence of x and y if x is larger
+    than zero which happens in about half of the cases if we sample x and y.
     """
     n = len(x)
     if n != len(y):
@@ -4071,14 +4107,16 @@ def fisher_exact(table, alternative='two-sided'):
     Parameters
     ----------
     table : array_like of ints
-        A 2x2 contingency table.  Elements should be non-negative integers.
+        A 2x2 contingency table.  Elements must be non-negative integers.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided'
+        * 'less': one-sided
+        * 'greater': one-sided
+
+        See the Notes for more details.
 
     Returns
     -------
@@ -4092,19 +4130,106 @@ def fisher_exact(table, alternative='two-sided'):
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
-        contingency table.
+        contingency table.  This can be used as an alternative to
+        `fisher_exact` when the numbers in the table are large.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
+        than Fisher's exact test for 2x2 contingency tables.
+    boschloo_exact : Boschloo's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----
-    The calculated odds ratio is different from the one R uses. This scipy
+    *Null hypothesis and p-values*
+
+    The null hypothesis is that the input table is from the hypergeometric
+    distribution with parameters (as used in `hypergeom`)
+    ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
+    input table is ``[[a, b], [c, d]]``.  This distribution has support
+    ``max(0, N + n - M) <= x <= min(N, n)``, or, in terms of the values
+    in the input table, ``min(0, a - d) <= x <= a + min(b, c)``.  ``x``
+    can be interpreted as the upper-left element of a 2x2 table, so the
+    tables in the distribution have form::
+
+        [  x           n - x     ]
+        [N - x    M - (n + N) + x]
+
+    For example, if::
+
+        table = [6  2]
+                [1  4]
+
+    then the support is ``2 <= x <= 7``, and the tables in the distribution
+    are::
+
+        [2 6]   [3 5]   [4 4]   [5 3]   [6 2]  [7 1]
+        [5 0]   [4 1]   [3 2]   [2 3]   [1 4]  [0 5]
+
+    The probability of each table is given by the hypergeometric distribution
+    ``hypergeom.pmf(x, M, n, N)``.  For this example, these are (rounded to
+    three significant digits)::
+
+        x       2      3      4      5       6        7
+        p  0.0163  0.163  0.408  0.326  0.0816  0.00466
+
+    These can be computed with::
+
+        >>> from scipy.stats import hypergeom
+        >>> table = np.array([[6, 2], [1, 4]])
+        >>> M = table.sum()
+        >>> n = table[0].sum()
+        >>> N = table[:, 0].sum()
+        >>> start, end = hypergeom.support(M, n, N)
+        >>> hypergeom.pmf(np.arange(start, end+1), M, n, N)
+        array([0.01631702, 0.16317016, 0.40792541, 0.32634033, 0.08158508,
+               0.004662  ])
+
+    The two-sided p-value is the probability that, under the null hypothesis,
+    a random table would have a probability equal to or less than the
+    probability of the input table.  For our example, the probability of
+    the input table (where ``x = 6``) is 0.0816.  The x values where the
+    probability does not exceed this are 2, 6 and 7, so the two-sided p-value
+    is ``0.0163 + 0.0816 + 0.00466 ~= 0.10256``::
+
+        >>> from scipy.stats import fisher_exact
+        >>> oddsr, p = fisher_exact(table, alternative='two-sided')
+        >>> p
+        0.10256410256410257
+
+    The one-sided p-value for ``alternative='greater'`` is the probability
+    that a random table has ``x >= a``, which in our example is ``x >= 6``,
+    or ``0.0816 + 0.00466 ~= 0.08626``::
+
+        >>> oddsr, p = fisher_exact(table, alternative='greater')
+        >>> p
+        0.08624708624708627
+
+    This is equivalent to computing the survival function of the
+    distribution at ``x = 5`` (one less than ``x`` from the input table,
+    because we want to include the probability of ``x = 6`` in the sum)::
+
+        >>> hypergeom.sf(5, M, n, N)
+        0.08624708624708627
+
+    For ``alternative='less'``, the one-sided p-value is the probability
+    that a random table has ``x <= a``, (i.e. ``x <= 6`` in our example),
+    or ``0.0163 + 0.163 + 0.408 + 0.326 + 0.0816 ~= 0.9949``::
+
+        >>> oddsr, p = fisher_exact(table, alternative='less')
+        >>> p
+        0.9953379953379957
+
+    This is equivalent to computing the cumulative distribution function
+    of the distribution at ``x = 6``:
+
+        >>> hypergeom.cdf(6, M, n, N)
+        0.9953379953379957
+
+    *Odds ratio*
+
+    The calculated odds ratio is different from the one R uses. This SciPy
     implementation returns the (more common) "unconditional Maximum
     Likelihood Estimate", while R uses the "conditional Maximum Likelihood
     Estimate".
-
-    For tables with large numbers, the (inexact) chi-square test implemented
-    in the function `chi2_contingency` can also be used.
 
     Examples
     --------
@@ -4118,8 +4243,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     We use this table to find the p-value:
 
-    >>> import scipy.stats as stats
-    >>> oddsratio, pvalue = stats.fisher_exact([[8, 2], [1, 5]])
+    >>> from scipy.stats import fisher_exact
+    >>> oddsratio, pvalue = fisher_exact([[8, 2], [1, 5]])
     >>> pvalue
     0.0349...
 
@@ -4236,7 +4361,7 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the correlation coefficent "
+            msg = ("An input array is constant; the correlation coefficient "
                    "is not defined.")
         self.args = (msg,)
 
@@ -5460,7 +5585,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
-    This is a two-sided test for the null hypothesis that the expected value
+    This is a test for the null hypothesis that the expected value
     (mean) of a sample of independent observations `a` is equal to the given
     population mean, `popmean`.
 
@@ -5481,13 +5606,17 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the underlying distribution of the sample
+          is different than the given population mean (`popmean`)
+        * 'less': the mean of the underlying distribution of the sample is
+          less than the given population mean (`popmean`)
+        * 'greater': the mean of the underlying distribution of the sample is
+          greater than the given population mean (`popmean`)
 
         .. versionadded:: 1.6.0
 
@@ -5541,12 +5670,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis)
+        return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
 
     n = a.shape[axis]
     df = n - 1
@@ -5564,20 +5689,27 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
+    # We use ``stdtr`` directly here as it handles the case when ``nan``
+    # values are present in the data and masked arrays are passed
+    # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
+    # can be shared between the ``stats`` and ``mstats`` versions.
+
     if alternative == 'less':
-        prob = distributions.t.cdf(t, df)
+        pval = special.stdtr(df, t)
     elif alternative == 'greater':
-        prob = distributions.t.sf(t, df)
+        pval = special.stdtr(df, -t)
     elif alternative == 'two-sided':
-        prob = 2 * distributions.t.sf(np.abs(t), df)
+        pval = special.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
 
     if t.ndim == 0:
         t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
 
-    return t, prob
+    return t, pval
 
 
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
@@ -5618,7 +5750,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that two independent
+    This is a test for the null hypothesis that two independent
     samples have identical average (expected) values.
 
     Parameters
@@ -5644,9 +5776,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions are unequal.
+        * 'less': the mean of the first distribution is less than the
+          mean of the second distribution.
+        * 'greater': the mean of the first distribution is greater than the
+          mean of the second distribution.
 
         .. versionadded:: 1.6.0
 
@@ -5781,11 +5915,12 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided"):
+              permutations=None, random_state=None, alternative="two-sided",
+              trim=0):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
+    This is a test for the null hypothesis that 2 independent samples
     have identical average (expected) values. This test assumes that the
     populations have identical variances by default.
 
@@ -5816,12 +5951,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         The 'omit' option is not currently available for permutation tests or
         one-sided asympyotic tests.
 
-    permutations : int or None (default), optional
-        The number of random permutations that will be used to estimate
-        p-values using a permutation test. If `permutations` equals or exceeds
-        the number of distinct permutations, an exact test is performed
-        instead (i.e. each distinct permutation is used exactly once).
-        If None (default), use the t-distribution to calculate p-values.
+    permutations : non-negative int, np.inf, or None (default), optional
+        If 0 or None (default), use the t-distribution to calculate p-values.
+        Otherwise, `permutations` is  the number of random permutations that
+        will be used to estimate p-values using a permutation test. If
+        `permutations` equals or exceeds the number of distinct partitions of
+        the pooled data, an exact test is performed instead (i.e. each
+        distinct partition is used exactly once). See Notes for details.
 
         .. versionadded:: 1.7.0
 
@@ -5844,18 +5980,32 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
         .. versionadded:: 1.6.0
+
+    trim : float, optional
+        If nonzero, performs a trimmed (Yuen's) t-test.
+        Defines the fraction of elements to be trimmed from each end of the
+        input samples. If 0 (default), no elements will be trimmed from either
+        side. The number of trimmed elements from each tail is the floor of the
+        trim times the number of elements. Valid range is [0, .5).
+
+        .. versionadded:: 1.7
 
     Returns
     -------
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -5875,20 +6025,31 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     against the null hypothesis of equal population means.
 
     By default, the p-value is determined by comparing the t-statistic of the
-    observed data against a theoretical t-distribution, which assumes that the
-    populations are normally distributed.
-    When ``1 < permutations < factorial(n)``, where ``n`` is the total
-    number of data, the data are randomly assigned to either group `a`
+    observed data against a theoretical t-distribution.
+    When ``1 < permutations < binom(n, k)``, where
+
+    * ``k`` is the number of observations in `a`,
+    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are pooled (concatenated), randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations >= factorial(n)``, an exact test is performed: the data are
-    permuted within and between the groups in each distinct way exactly once.
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
     assumptions about the shape of the underlying distribution.
+
+    Use of trimming is commonly referred to as the trimmed t-test. At times
+    called Yuen's t-test, this is an extension of Welch's t-test, with the
+    difference being the use of winsorized means in calculation of the variance
+    and the trimmed sample size in calculation of the statistic. Trimming is
+    reccomended if the underlying distribution is long-tailed or contaminated
+    with outliers [4]_.
 
     References
     ----------
@@ -5897,6 +6058,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
     .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+
+    .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
+           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+
+    .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
+           Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
+           no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
+           Accessed 30 Mar. 2021.
 
     Examples
     --------
@@ -5945,7 +6115,23 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     ...                 random_state=rng)
     Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
 
+    Take these two samples, one of which has an extreme tail.
+
+    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+    >>> b = (1.1, 2.9, 4.2)
+
+    Use the `trim` keyword to perform a trimmed (Yuen) t-test. For example,
+    using 20% trimming, ``trim=.2``, the test will reduce the impact of one
+    (``np.floor(trim*len(a))``) element from each tail of sample `a`. It will
+    have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
+
+    >>> stats.ttest_ind(a, b, trim=.2)
+    Ttest_indResult(statistic=3.4463884028073513,
+                    pvalue=0.01369338726499547)
     """
+    if not (0 <= trim < .5):
+        raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
+
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
@@ -5956,21 +6142,25 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if permutations or alternative != 'two-sided':
+        if permutations or trim != 0:
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by permutation tests or one-sided"
-                             "asymptotic tests.")
+                             "supported by permutation tests or "
+                             "trimmed tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var, alternative)
 
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    if permutations:
-        if int(permutations) != permutations or permutations < 0:
-            raise ValueError("Permutations must be a positive integer.")
+    if permutations is not None and permutations != 0:
+        if trim != 0:
+            raise ValueError("Permutations are currently not supported "
+                             "with trimming.")
+        if permutations < 0 or (np.isfinite(permutations) and
+                                int(permutations) != permutations):
+            raise ValueError("Permutations must be a non-negative integer.")
 
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
@@ -5979,18 +6169,83 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                  alternative=alternative)
 
     else:
-        v1 = np.var(a, axis, ddof=1)
-        v2 = np.var(b, axis, ddof=1)
         n1 = a.shape[axis]
         n2 = b.shape[axis]
+
+        if trim == 0:
+            v1 = np.var(a, axis, ddof=1)
+            v2 = np.var(b, axis, ddof=1)
+            m1 = np.mean(a, axis)
+            m2 = np.mean(b, axis)
+        else:
+            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
         if equal_var:
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis),
-                                    denom, df, alternative)
+        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     return Ttest_indResult(*res)
+
+
+def _ttest_trim_var_mean_len(a, trim, axis):
+    """Variance, mean, and length of winsorized input along specified axis"""
+    # for use with `ttest_ind` when trimming.
+    # further calculations in this test assume that the inputs are sorted.
+    # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
+    a = np.sort(a, axis=axis)
+
+    # `g` is the number of elements to be replaced on each tail, converted
+    # from a percentage amount of trimming
+    n = a.shape[axis]
+    g = int(n * trim)
+
+    # Calculate the Winsorized variance of the input samples according to
+    # specified `g`
+    v = _calculate_winsorized_variance(a, g, axis)
+
+    # the total number of elements in the trimmed samples
+    n -= 2 * g
+
+    # calculate the g-times trimmed mean, as defined in [4] (1-1)
+    m = trim_mean(a, trim, axis=axis)
+    return v, m, n
+
+
+def _calculate_winsorized_variance(a, g, axis):
+    """Calculates g-times winsorized variance along specified axis"""
+    # it is expected that the input `a` is sorted along the correct axis
+    if g == 0:
+        return np.var(a, ddof=1, axis=axis)
+    # move the intended axis to the end that way it is easier to manipulate
+    a_win = np.moveaxis(a, axis, -1)
+
+    # save where NaNs are for later use.
+    nans_indices = np.any(np.isnan(a_win), axis=-1)
+
+    # Winsorization and variance calculation are done in one step in [4]
+    # (1-3), but here winsorization is done first; replace the left and
+    # right sides with the repeating value. This can be see in effect in (
+    # 1-3) in [4], where the leftmost and rightmost tails are replaced with
+    # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
+    # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
+    # array indexing.
+    a_win[..., :g] = a_win[..., [g]]
+    a_win[..., -g:] = a_win[..., [-g - 1]]
+
+    # Determine the variance. In [4], the degrees of freedom is expressed as
+    # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
+    # page 369, beginning of page 370). This is converted to NumPy's format,
+    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # array to accommodate indexing later.
+    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+
+    # with `nan_policy='propagate'`, NaNs may be completely trimmed out
+    # because they were sorted into the tail of the array. In these cases,
+    # replace computed variances with `np.nan`.
+    var_win[nans_indices] = np.nan
+    return var_win
 
 
 def _broadcast_concatenate(xs, axis):
@@ -6008,29 +6263,31 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
-def _data_permutations(data, n, axis=-1, random_state=None):
-    """
-    Vectorized permutation of data, assumes `random_state` is already checked.
-    """
+def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
+    """All partitions of data into sets of given lengths, ignoring order"""
+
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
 
     # prepare permutation indices
-    m = data.shape[axis]
-    n_max = float_factorial(m)  # number of distinct permutations
+    size = data.shape[axis]
+    # number of distinct combinations
+    n_max = special.comb(size, size_a)
 
-    if n < n_max:
-        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    if permutations < n_max:
+        indices = np.array([random_state.permutation(size)
+                            for i in range(permutations)]).T
     else:
-        n = n_max
-        indices = np.array(list(permutations(range(m)))).T
+        permutations = n_max
+        indices = np.array([np.concatenate(z)
+                            for z in _all_partitions(size_a, size-size_a)]).T
 
     data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
     data = data.swapaxes(-2, axis)   # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, n
+    return data, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6088,7 +6345,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     """
     random_state = check_random_state(random_state)
@@ -6099,8 +6356,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_permutations(mat, n=permutations,
-                                                random_state=random_state)
+    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
+                                              random_state=random_state)
+
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
@@ -6138,7 +6396,7 @@ Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
-    This is a two-sided test for the null hypothesis that 2 related or
+    This is a test for the null hypothesis that two related or
     repeated samples have identical average (expected) values.
 
     Parameters
@@ -6159,18 +6417,23 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
-          .. versionadded:: 1.6.0
+        .. versionadded:: 1.6.0
 
     Returns
     -------
     statistic : float or array
         t-statistic.
     pvalue : float or array
-        Two-sided p-value.
+        The p-value.
 
     Notes
     -----
@@ -6213,16 +6476,12 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         m = ma.mask_or(ma.getmask(a), ma.getmask(b))
         aa = ma.array(a, mask=m, copy=True)
         bb = ma.array(b, mask=m, copy=True)
-        return mstats_basic.ttest_rel(aa, bb, axis)
+        return mstats_basic.ttest_rel(aa, bb, axis, alternative)
 
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
@@ -6316,18 +6575,21 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     lambda_ : float or str, optional
         The power in the Cressie-Read power divergence statistic.  The default
         is 1.  For convenience, `lambda_` may be assigned one of the following
-        strings, in which case the corresponding numerical value is used::
+        strings, in which case the corresponding numerical value is used:
 
-            String              Value   Description
-            "pearson"             1     Pearson's chi-squared statistic.
-                                        In this case, the function is
-                                        equivalent to `stats.chisquare`.
-            "log-likelihood"      0     Log-likelihood ratio. Also known as
-                                        the G-test [3]_.
-            "freeman-tukey"      -1/2   Freeman-Tukey statistic.
-            "mod-log-likelihood" -1     Modified log-likelihood ratio.
-            "neyman"             -2     Neyman's statistic.
-            "cressie-read"        2/3   The power recommended in [5]_.
+        * ``"pearson"`` (value 1)
+            Pearson's chi-squared statistic. In this case, the function is
+            equivalent to `chisquare`.
+        * ``"log-likelihood"`` (value 0)
+            Log-likelihood ratio. Also known as the G-test [3]_.
+        * ``"freeman-tukey"`` (value -1/2)
+            Freeman-Tukey statistic.
+        * ``"mod-log-likelihood"`` (value -1)
+            Modified log-likelihood ratio.
+        * ``"neyman"`` (value -2)
+            Neyman's statistic.
+        * ``"cressie-read"`` (value 2/3)
+            The power recommended in [5]_.
 
     Returns
     -------
@@ -6546,12 +6808,18 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
+    scipy.stats.fisher_exact : Fisher exact test on a 2x2 contingency table.
+    scipy.stats.barnard_exact : An unconditional exact test. An alternative
+        to chi-squared test for small sample sizes.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5.
+    and expected frequencies should be at least 5. According to [3]_, the
+    total number of samples is recommended to be greater than 13,
+    otherwise exact tests (such as Barnard's Exact test) should be used
+    because they do not overreject.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
@@ -6571,6 +6839,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable
+           in the case of a correlated system of variables is such that it can be reasonably
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           (1900), pp. 157-175.
 
     Examples
     --------
@@ -7094,7 +7366,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
         # If lcm(n1, n2) is too big, switch from exact to asymp
-        if n1g >= np.iinfo(np.int_).max / n2g:
+        if n1g >= np.iinfo(np.int32).max / n2g:
             mode = 'asymp'
             warnings.warn(
                 f"Exact ks_2samp calculation not possible with samples sizes "
@@ -7339,106 +7611,6 @@ def tiecorrect(rankvals):
 
     size = np.float64(arr.size)
     return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
-
-
-MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
-
-
-def mannwhitneyu(x, y, use_continuity=True, alternative=None):
-    """Compute the Mann-Whitney rank test on samples x and y.
-
-    Parameters
-    ----------
-    x, y : array_like
-        Array of samples, should be one-dimensional.
-    use_continuity : bool, optional
-            Whether a continuity correction (1/2.) should be taken into
-            account. Default is True.
-    alternative : {None, 'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is None):
-
-          * None: computes p-value half the size of the 'two-sided' p-value and
-            a different U statistic. The default behavior is not the same as
-            using 'less' or 'greater'; it only exists for backward compatibility
-            and is deprecated.
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
-
-        Use of the None option is deprecated.
-
-    Returns
-    -------
-    statistic : float
-        The Mann-Whitney U statistic, equal to min(U for x, U for y) if
-        `alternative` is equal to None (deprecated; exists for backward
-        compatibility), and U for y otherwise.
-    pvalue : float
-        p-value assuming an asymptotic normal distribution. One-sided or
-        two-sided, depending on the choice of `alternative`.
-
-    Notes
-    -----
-    Use only when the number of observation in each sample is > 20 and
-    you have 2 independent samples of ranks. Mann-Whitney U is
-    significant if the u-obtained is LESS THAN or equal to the critical
-    value of U.
-
-    This test corrects for ties and by default uses a continuity correction.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Mann-Whitney_U_test
-
-    .. [2] H.B. Mann and D.R. Whitney, "On a Test of Whether one of Two Random
-           Variables is Stochastically Larger than the Other," The Annals of
-           Mathematical Statistics, vol. 18, no. 1, pp. 50-60, 1947.
-
-    """
-    if alternative is None:
-        warnings.warn("Calling `mannwhitneyu` without specifying "
-                      "`alternative` is deprecated.", DeprecationWarning)
-
-    x = np.asarray(x)
-    y = np.asarray(y)
-    n1 = len(x)
-    n2 = len(y)
-    ranked = rankdata(np.concatenate((x, y)))
-    rankx = ranked[0:n1]  # get the x-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
-    u2 = n1*n2 - u1  # remainder is U for y
-    T = tiecorrect(ranked)
-    if T == 0:
-        raise ValueError('All numbers are identical in mannwhitneyu')
-    sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
-
-    meanrank = n1*n2/2.0 + 0.5 * use_continuity
-    if alternative is None or alternative == 'two-sided':
-        bigu = max(u1, u2)
-    elif alternative == 'less':
-        bigu = u1
-    elif alternative == 'greater':
-        bigu = u2
-    else:
-        raise ValueError("alternative should be None, 'less', 'greater' "
-                         "or 'two-sided'")
-
-    z = (bigu - meanrank) / sd
-    if alternative is None:
-        # This behavior, equal to half the size of the two-sided
-        # p-value, is deprecated.
-        p = distributions.norm.sf(abs(z))
-    elif alternative == 'two-sided':
-        p = 2 * distributions.norm.sf(abs(z))
-    else:
-        p = distributions.norm.sf(z)
-
-    u = u2
-    # This behavior is deprecated.
-    if alternative is None:
-        u = min(u1, u2)
-    return MannwhitneyuResult(u, p)
 
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))

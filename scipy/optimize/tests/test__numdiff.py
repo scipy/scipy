@@ -219,7 +219,10 @@ class TestApproxDerivativesDense:
         return math.exp(x)
 
     def jac_non_numpy(self, x):
-        return math.exp(x)
+        # x can be a scalar or an array [val].
+        # Cast to true scalar before handing over to math.exp
+        xp = np.asarray(x).item()
+        return math.exp(xp)
 
     def test_scalar_scalar(self):
         x0 = 1.0

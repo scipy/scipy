@@ -64,8 +64,17 @@ def lagrange(x, w):
         \end{aligned}
 
     >>> from numpy.polynomial.polynomial import Polynomial
-    >>> Polynomial(poly).coef
-    array([ 3., -2.,  0.])
+    >>> Polynomial(poly.coef[::-1]).coef
+    array([ 0., -2.,  3.])
+
+    >>> import matplotlib.pyplot as plt
+    >>> x_new = np.arange(0, 2.1, 0.1)
+    >>> plt.scatter(x, y, label='data')
+    >>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial')
+    >>> plt.plot(x_new, 3*x_new**2 - 2*x_new + 0*x_new,
+    ...          label=r"$3 x^2 - 2 x$", linestyle='-.')
+    >>> plt.legend()
+    >>> plt.show()
 
     """
 
@@ -2400,7 +2409,8 @@ class RegularGridInterpolator:
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+    >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+    >>> data = f(xg, yg, zg)
 
     ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:

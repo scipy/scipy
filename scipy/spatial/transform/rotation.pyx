@@ -291,7 +291,7 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
-cdef class Rotation(object):
+cdef class Rotation:
     """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
@@ -333,6 +333,7 @@ cdef class Rotation(object):
     as_rotvec
     as_mrp
     as_euler
+    concatenate
     apply
     __mul__
     inv
@@ -791,6 +792,8 @@ cdef class Rotation(object):
         degrees : bool, optional
             If True, then the given magnitudes are assumed to be in degrees.
             Default is False.
+
+            .. versionadded:: 1.7.0
 
         Returns
         -------
@@ -1570,6 +1573,30 @@ cdef class Rotation(object):
         else:
             return np.asarray(mrps)
 
+    @classmethod
+    def concatenate(cls, rotations):
+        """Concatenate a sequence of `Rotation` objects.
+
+        Parameters
+        ----------
+        rotations : sequence of `Rotation` objects
+            The rotations to concatenate.
+
+        Returns
+        -------
+        concatenated : `Rotation` instance
+            The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+        """
+        if not all(isinstance(x, Rotation) for x in rotations):
+            raise TypeError("input must contain Rotation objects only")
+
+        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
+        return cls(quats, normalize=False)
+
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
 
@@ -2113,6 +2140,37 @@ cdef class Rotation(object):
 
         return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
 
+    def __setitem__(self, indexer, value):
+        """Set rotation(s) at given index(es) from object.
+
+        Parameters
+        ----------
+        indexer : index, slice, or index array
+            Specifies which rotation(s) to replace. A single indexer must be
+            specified, i.e. as if indexing a 1 dimensional array or list.
+
+        value : `Rotation` instance
+            The rotations to set.
+
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.8.0
+        """
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
+        quat = np.asarray(self._quat)
+        quat[indexer] = value.as_quat()
+        self._quat = quat
+
     @classmethod
     def identity(cls, num=None):
         """Get identity rotation(s).
@@ -2331,7 +2389,7 @@ cdef class Rotation(object):
             return cls.from_matrix(C), rmsd
 
 
-class Slerp(object):
+class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
     The interpolation between consecutive rotations is performed as a rotation

@@ -335,6 +335,7 @@ Again using the same generic example folder from above
    cd C:\Users\<user name>\Documents\GitHub
    git clone https://github.com/scipy/scipy.git
    cd scipy
+   git submodule update --init
 
 Now we need to copy the :code:`openblas.a` file that we've built earlier to the
 correct location. If your Python is installed somewhere like the following:
@@ -378,7 +379,7 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran pytest pytest-xdist
+    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran>=0.9.11 pytest pytest-xdist
 
 .. note::
 
