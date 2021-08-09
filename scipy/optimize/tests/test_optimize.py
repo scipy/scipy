@@ -2327,99 +2327,107 @@ def test_equal_bounds1(method):
 
 # --- Test minimize with equal upper and lower bounds --- #
 
-np.random.seed(0)
-eb_x0 = np.random.rand(4)
-eb_lb = np.array([0, 2, -1, -1])
-eb_ub = np.array([3, 2, 2, -1])
-eb_i = (eb_lb == eb_ub)
+def setup_test_equal_bounds():
+
+    np.random.seed(0)
+    x0 = np.random.rand(4)
+    lb = np.array([0, 2, -1, -1])
+    ub = np.array([3, 2, 2, -1])
+    i_eb = (lb == ub)
+
+    def check_x(x, check_size=True, check_values=True):
+        if check_size:
+            assert x.size == 4
+        if check_values:
+            assert_allclose(x[i_eb], lb[i_eb])
+
+    def func(x):
+        check_x(x)
+        return optimize.rosen(x)
+
+    def grad(x):
+        check_x(x)
+        return optimize.rosen_der(x)
+
+    def callback(x, *args):
+        check_x(x)
+
+    def constraint1(x):
+        check_x(x, check_values=False)
+        return x[0:1] - 1
+
+    def jacobian1(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[0] = 1
+        return dc
+
+    def constraint2(x):
+        check_x(x, check_values=False)
+        return x[2:3] - 0.5
+
+    def jacobian2(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[2] = 1
+        return dc
+
+    c1a = NonlinearConstraint(constraint1, -np.inf, 0)
+    c1b = NonlinearConstraint(constraint1, -np.inf, 0, jacobian1)
+    c2a = NonlinearConstraint(constraint2, -np.inf, 0)
+    c2b = NonlinearConstraint(constraint2, -np.inf, 0, jacobian2)
+
+    # test using the three methods that accept bounds, use derivatives, and
+    # have some trouble when bounds fix variables
+    methods = ('L-BFGS-B', 'SLSQP', 'TNC')
+
+    # test w/out gradient, w/ gradient, and w/ combined objective/gradient
+    kwds = ({"fun": func, "jac": False},
+            {"fun": func, "jac": grad},
+            {"fun": (lambda x: (func(x), grad(x))),
+             "jac": True})
+
+    # test with both old- and new-style bounds
+    bound_types = (lambda lb, ub: list(zip(lb, ub)),
+                   Bounds)
+
+    # Test for many combinations of constraints w/ and w/out jacobian
+    # Pairs in format: (test constraints, reference constraints)
+    # (always use analytical jacobian in reference)
+    constraints = ((None, None), ([], []),  # type: ignore[var-annotated]
+                   (c1a, c1b), (c2b, c2b),
+                   ([c1b], [c1b]), ([c2a], [c2b]),
+                   ([c1a, c2a], [c1b, c2b]),
+                   ([c1a, c2b], [c1b, c2b]),
+                   ([c1b, c2b], [c1b, c2b]))
+
+    # test with and without callback function
+    callbacks = (None, callback)
+
+    data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
+            "constraints": constraints, "callbacks": callbacks,
+            "lb": lb, "ub": ub, "x0": x0, "i_eb": i_eb}
+
+    return data
 
 
-def eb_rosen(x):
-    assert x.size == 4
-    assert_allclose(x[eb_i], eb_lb[eb_i])
-    return optimize.rosen(x)
+eb_data = setup_test_equal_bounds()
 
 
-def eb_drosen(x):
-    assert x.size == 4
-    assert_allclose(x[eb_i], eb_lb[eb_i])
-    return optimize.rosen_der(x)
-
-
-def eb_callback(x, *args):
-    assert x.size == 4
-    assert_allclose(x[eb_i], eb_lb[eb_i])
-
-
-# test without gradient, with gradient, and with combined objective/gradient
-eb_kwds = ({"fun": eb_rosen, "jac": False},
-           {"fun": eb_rosen, "jac": eb_drosen},
-           {"fun": (lambda x: (eb_rosen(x), eb_drosen(x))),
-            "jac": True})
-
-# test with both old- and new-style bounds
-eb_bound_types = (lambda lb, ub: list(zip(lb, ub)),
-                  Bounds)
-
-
-# constraints and jacobians
-def eb_constraint1(x):
-    assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
-    return x[0:1] - 1
-
-
-def eb_dconstraint1(x):
-    assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
-    dc = np.zeros_like(x)
-    dc[0] = 1
-    return dc
-
-
-def eb_constraint2(x):
-    assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
-    return x[2:3] - 0.5
-
-
-def eb_dconstraint2(x):
-    assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
-    dc = np.zeros_like(x)
-    dc[2] = 1
-    return dc
-
-
-c1a = NonlinearConstraint(eb_constraint1, -np.inf, 0)
-c1b = NonlinearConstraint(eb_constraint1, -np.inf, 0, eb_dconstraint1)
-c2a = NonlinearConstraint(eb_constraint2, -np.inf, 0)
-c2b = NonlinearConstraint(eb_constraint2, -np.inf, 0, eb_dconstraint2)
-
-# Test for many combinations of constraints w/ and w/out jacobian
-# Pairs in format: (test constraints, reference constraints)
-# (always use analytical jacobian in reference)
-eb_constraints = ((None, None), ([], []),  # type: ignore[var-annotated]
-                  (c1a, c1b), (c2b, c2b),
-                  ([c1b], [c1b]), ([c2a], [c2b]),
-                  ([c1a, c2a], [c1b, c2b]),
-                  ([c1a, c2b], [c1b, c2b]),
-                  ([c1b, c2b], [c1b, c2b]))
-
-eb_callbacks = (None, eb_callback)
-
-
-@pytest.mark.parametrize('method', ['L-BFGS-B', 'SLSQP', 'TNC'])
-@pytest.mark.parametrize('kwds', eb_kwds)
-@pytest.mark.parametrize('bound_type', eb_bound_types)
-@pytest.mark.parametrize('constraints', eb_constraints)
-@pytest.mark.parametrize('callback', eb_callbacks)
+@pytest.mark.parametrize('method', eb_data["methods"])
+@pytest.mark.parametrize('kwds', eb_data["kwds"])
+@pytest.mark.parametrize('bound_type', eb_data["bound_types"])
+@pytest.mark.parametrize('constraints', eb_data["constraints"])
+@pytest.mark.parametrize('callback', eb_data["callbacks"])
 def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     """
     Tests that minimizers still work if (bounds.lb == bounds.ub).any()
     gh12502 - Divide by zero in Jacobian numerical differentiation when
     equality bounds constraints are used
     """
+    lb, ub = eb_data["lb"], eb_data["ub"]
+    x0, i_eb = eb_data["x0"], eb_data["i_eb"]
+
     test_constraints, reference_constraints = constraints
     if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
@@ -2427,13 +2435,13 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     # if test constraints are not the same, we'll need finite differences
     fd_needed = (test_constraints != reference_constraints)
 
-    bounds = bound_type(eb_lb, eb_ub)  # old- or new-style
+    bounds = bound_type(lb, ub)  # old- or new-style
 
-    kwds.update({"x0": eb_x0, "method": method, "bounds": bounds,
+    kwds.update({"x0": x0, "method": method, "bounds": bounds,
                  "constraints": test_constraints, "callback": callback})
     res = optimize.minimize(**kwds)
 
-    expected = optimize.minimize(optimize.rosen, eb_x0, method=method,
+    expected = optimize.minimize(optimize.rosen, x0, method=method,
                                  jac=optimize.rosen_der, bounds=bounds,
                                  constraints=reference_constraints)
 
@@ -2442,9 +2450,9 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     assert_allclose(res.x, expected.x, rtol=1e-6)
 
     if fd_needed or kwds['jac'] is False:
-        expected.jac[eb_i] = np.nan
+        expected.jac[i_eb] = np.nan
     assert res.jac.shape[0] == 4
-    assert_allclose(res.jac[eb_i], expected.jac[eb_i], rtol=1e-6)
+    assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
 
 
 def test_show_options():
