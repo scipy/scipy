@@ -2335,14 +2335,14 @@ eb_i = (eb_lb == eb_ub)
 
 
 def eb_rosen(x):
-    # assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
+    assert x.size == 4
+    assert_allclose(x[eb_i], eb_lb[eb_i])
     return optimize.rosen(x)
 
 
 def eb_drosen(x):
-    # assert x.size == 4
-    # assert_allclose(x[eb_i], eb_lb[eb_i])
+    assert x.size == 4
+    assert_allclose(x[eb_i], eb_lb[eb_i])
     return optimize.rosen_der(x)
 
 
@@ -2358,25 +2358,34 @@ eb_kwds = ({"fun": eb_rosen, "jac": False},
             "jac": True})
 
 # test with both old- and new-style bounds
-eb_bound_types = (lambda lb, ub: list(zip(lb, ub)), Bounds)
+eb_bound_types = (lambda lb, ub: list(zip(lb, ub)),
+                  Bounds)
 
 
 # constraints and jacobians
 def eb_constraint1(x):
+    assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
     return x[0:1] - 1
 
 
 def eb_dconstraint1(x):
+    assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
     dc = np.zeros_like(x)
     dc[0] = 1
     return dc
 
 
 def eb_constraint2(x):
+    assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
     return x[2:3] - 0.5
 
 
 def eb_dconstraint2(x):
+    assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
     dc = np.zeros_like(x)
     dc[2] = 1
     return dc
@@ -2390,16 +2399,22 @@ c2b = NonlinearConstraint(eb_constraint2, -np.inf, 0, eb_dconstraint2)
 # Test for many combinations of constraints w/ and w/out jacobian
 # Pairs in format: (test constraints, reference constraints)
 # (always use analytical jacobian in reference)
-eb_constraints = (([], []), (c1a, c1b), (c2b, c2b), ([c1b], [c1b]),
-                  ([c2a], [c2b]), ([c1a, c2a], [c1b, c2b]),
-                  ([c1a, c2b], [c1b, c2b]), ([c1b, c2b], [c1b, c2b]))
+eb_constraints = ((None, None), ([], []),  # type: ignore[var-annotated]
+                  (c1a, c1b), (c2b, c2b),
+                  ([c1b], [c1b]), ([c2a], [c2b]),
+                  ([c1a, c2a], [c1b, c2b]),
+                  ([c1a, c2b], [c1b, c2b]),
+                  ([c1b, c2b], [c1b, c2b]))
+
+eb_callbacks = (None, eb_callback)
 
 
 @pytest.mark.parametrize('method', ['L-BFGS-B', 'SLSQP', 'TNC'])
 @pytest.mark.parametrize('kwds', eb_kwds)
 @pytest.mark.parametrize('bound_type', eb_bound_types)
 @pytest.mark.parametrize('constraints', eb_constraints)
-def test_equal_bounds2(method, kwds, bound_type, constraints):
+@pytest.mark.parametrize('callback', eb_callbacks)
+def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     """
     Tests that minimizers still work if (bounds.lb == bounds.ub).any()
     gh12502 - Divide by zero in Jacobian numerical differentiation when
@@ -2415,16 +2430,14 @@ def test_equal_bounds2(method, kwds, bound_type, constraints):
     bounds = bound_type(eb_lb, eb_ub)  # old- or new-style
 
     kwds.update({"x0": eb_x0, "method": method, "bounds": bounds,
-                 "constraints": test_constraints, "callback": eb_callback})
+                 "constraints": test_constraints, "callback": callback})
     res = optimize.minimize(**kwds)
 
     expected = optimize.minimize(optimize.rosen, eb_x0, method=method,
                                  jac=optimize.rosen_der, bounds=bounds,
                                  constraints=reference_constraints)
 
-    if method != "TNC":  # callback causes TNC to report failure; see gh-14565
-        assert res.success
-
+    assert res.success
     assert_allclose(res.fun, expected.fun, rtol=1e-6)
     assert_allclose(res.x, expected.x, rtol=1e-6)
 

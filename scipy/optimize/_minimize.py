@@ -605,7 +605,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     remove_vars = False
     if bounds is not None:
-        if meth.upper() in {"TNC", "SLSQP", "L-BFGS-B"}:
+        if meth in {"tnc", "slsqp", "l-bfgs-b"}:
             # These methods can't take the finite-difference derivatives they
             # need when a variable is fixed by the bounds. To avoid this issue,
             # remove fixed variables from the problem.
@@ -617,13 +617,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             i_fixed = (bounds.lb == bounds.ub)
 
             # determine whether finite differences are needed for any grad/jac
-            fd_needed = not(callable(jac))
+            fd_needed = (not callable(jac))
             for con in constraints:
                 if not callable(con.get('jac', None)):
                     fd_needed = True
 
-            # if F.D. are ever used, remove all fixed variables
-            remove_vars = i_fixed.any() and fd_needed
+            # If finite differences are ever used, remove all fixed variables
+            # Always remove fixed variables for TNC; see gh-14565
+            remove_vars = i_fixed.any() and (fd_needed or meth == "tnc")
             if remove_vars:
                 x_fixed = (bounds.lb)[i_fixed]
                 x0 = x0[~i_fixed]
