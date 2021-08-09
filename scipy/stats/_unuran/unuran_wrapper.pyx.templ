@@ -307,7 +307,7 @@ cdef class Method:
     """
     A base class for all the wrapped generators.
 
-    There are 5 basic functions of this base class:
+    There are 6 basic functions of this base class:
 
     * It provides a `_set_rng` method to initialize and set a `unur_gen`
       object. It should be called during the setup stage in the `__cinit__`
@@ -321,6 +321,7 @@ cdef class Method:
     * Provides the `seed` property to get and set the NumPy URNG.
     * Implements the __dealloc__ method. The child class must not overide
       this method.
+    * Implements __reduce__ method to allow pickling.
 
     """
     cdef unur_distr *distr
@@ -360,10 +361,6 @@ cdef class Method:
         seed : object
             Seed for the uniform random number generator. Can be a integer,
             NumPy BitGenerator, RandomState, or SeedSequence.
-        par : unur_par *
-            UNU.RAN parameter object.
-        distr : unur_distr *
-            UNU.RAN distribution object.
         """
         self.numpy_rng = get_numpy_rng(seed)
         self._urng_builder = _URNG(self.numpy_rng)
