@@ -74,26 +74,6 @@ bad_dpdf_common = [
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
-# XXX: currently this list is not being used in any of the test. But as we
-# add more discrete methods from UNU.RAN, this list can be used.
-bad_pmf_common = [
-    # UNU.RAN fails to validate float inf, nan values returned
-    # by the PMF and throws an unhelpful "unknown error". One
-    # potentially helpful thing to do here is to calculate the PV
-    # ourselves and check for inf, nan, if the domain is known and
-    # distribution doesn't have infinite tails.
-    (lambda x: np.inf, UNURANError, r"240 : unknown error"),
-    (lambda x: np.nan, UNURANError, r"240 : unknown error"),
-    (lambda x: 0.0, UNURANError, r"240 : unknown error"),
-    # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
-    # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
-    # probabilities < 0
-    (lambda x: -x, UNURANError, r"50 : probability < 0"),
-    # signature of PMF wrong
-    (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
-]
 
 bad_pv_common = [
     ([], r"must have at least one element"),
