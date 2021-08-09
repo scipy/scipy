@@ -601,8 +601,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
 
-    if constraints is not None:
-        constraints = standardize_constraints(constraints, x0, meth)
+    constraints = standardize_constraints(constraints, x0, meth)
 
     remove_vars = False
     if bounds is not None:
@@ -910,9 +909,12 @@ def standardize_constraints(constraints, x0, meth):
     """Converts constraints to the form required by the solver."""
     all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
     new_constraint_types = all_constraint_types[:-1]
-    if isinstance(constraints, all_constraint_types):
+    if constraints is None:
+        constraints = []
+    elif isinstance(constraints, all_constraint_types):
         constraints = [constraints]
-    constraints = list(constraints)  # ensure it's a mutable sequence
+    else:
+        constraints = list(constraints)  # ensure it's a mutable sequence
 
     if meth == 'trust-constr':
         for i, con in enumerate(constraints):
