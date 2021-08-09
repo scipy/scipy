@@ -7,6 +7,7 @@ from scipy.sparse import csr_matrix, isspmatrix_csr
 cimport cython
 cimport numpy as np
 from libc.math cimport ceil, sqrt
+from libc.stdlib cimport abs
 from libc.limits cimport INT_MAX, INT_MIN
 
 include 'parameters.pxi'
@@ -741,13 +742,6 @@ def _network_simplex_checks(
         raise ValueError("sum of demands is not zero")
 
 
-cdef inline ITYPE_t _abs(
-        ITYPE_t x  # IN
-        ) nogil:
-    if x >= 0:
-        return x
-    return -x
-
 cdef void _initialize_spanning_tree(
         ITYPE_t n_verts,  # IN
         ITYPE_t n_non_zero_edges,  # IN
@@ -768,7 +762,7 @@ cdef void _initialize_spanning_tree(
     for e in range(n_non_zero_edges):
         edge_flow[e] = 0
     for v in range(n_verts):
-        edge_flow[v + n_non_zero_edges] = _abs(demand[v])
+        edge_flow[v + n_non_zero_edges] = abs(demand[v])
 
     # vertex_potentials initialization
     for v in range(1, n_verts + 1):
@@ -1297,7 +1291,7 @@ cdef ITYPE_t[:] _network_simplex(
         for e in range(n_edges):
             if capacities[e] < INT_MAX:
                 capacities_sum += capacities[e]
-            cost_sum += _abs(cost[e])
+            cost_sum += abs(cost[e])
         faux_inf = max(cost_sum, capacities_sum)
         for v in range(n_verts):
             faux_inf = max(faux_inf, demand[v])
