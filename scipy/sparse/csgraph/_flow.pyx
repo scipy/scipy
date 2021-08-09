@@ -6,6 +6,8 @@ from scipy.sparse import csr_matrix, isspmatrix_csr
 
 cimport cython
 cimport numpy as np
+from libc.math cimport ceil, sqrt
+from libc.limits cimport INT_MAX, INT_MIN
 
 include 'parameters.pxi'
 
@@ -710,12 +712,13 @@ def minimum_cost_flow(csgraph, demand, cost):
     result = _network_simplex(csgraph.indices, tails, csgraph.data,
                               demand, cost, n_verts,
                               row, col, flow_data)
-    if result[3] == 0:
+    flow_cost, size, flow_value, is_correct = result
+    if is_correct == 0:
         raise ValueError("no flow satisfies all node demands")
-    flow_matrix = csr_matrix((flow_data[0:result[1]],
-                             (row[0:result[1]], col[0:result[1]])),
+    flow_matrix = csr_matrix((flow_data[0:size],
+                             (row[0:size], col[0:size])),
                              shape=(n_verts, n_verts))
-    return MinCostFlowResult(result[2], flow_matrix, result[0])
+    return MinCostFlowResult(flow_value, flow_matrix, flow_cost)
 
 
 def _network_simplex_checks(
@@ -723,11 +726,10 @@ def _network_simplex_checks(
         demand,  # IN
         cost,  # IN
         ):
-
-    if np.any(demand == 1 << 31 - 1) or np.any(demand == -1 << 31):
+    if np.any(demand == INT_MAX) or np.any(demand == INT_MIN):
         raise ValueError("one of the vertices has infinite demand")
 
-    if np.any(cost == 1 << 31 - 1) or np.any(cost == -1 << 31):
+    if np.any(cost == INT_MAX) or np.any(cost == INT_MIN):
         raise ValueError("one of the edges has infinite cost")
 
     if np.any(capacities < 0):
@@ -739,7 +741,7 @@ def _network_simplex_checks(
         raise ValueError("sum of demands is not zero")
 
 
-cdef ITYPE_t _abs(
+cdef inline ITYPE_t _abs(
         ITYPE_t x  # IN
         ) nogil:
     if x >= 0:
@@ -760,7 +762,7 @@ cdef void _initialize_spanning_tree(
         ITYPE_t[:] prev_vertex_dft,  # IN/OUT
         ITYPE_t[:] last_descendent_dft  # IN/OUT
         ) nogil:
-    cdef ITYPE_t e, v, i
+    cdef ITYPE_t e, v
 
     # edge_flow initialization
     for e in range(n_non_zero_edges):
@@ -776,36 +778,25 @@ cdef void _initialize_spanning_tree(
             vertex_potentials[v] = -faux_inf
 
     # parent initialization
+    parent[0] = -2
+    subtree_size[0] = n_verts + 1
+    prev_vertex_dft[0] = n_verts
+    last_descendent_dft[0] = n_verts
     for v in range(1, n_verts + 1):
         parent[v] = 0
-    parent[0] = -2
-
-    # parent_edge initialization
-    for v in range(1, n_verts + 1):
         parent_edge[v] = n_non_zero_edges + v - 1
-
-    # subtree_size initialization
-    for v in range(1, n_verts + 1):
         subtree_size[v] = 1
-    subtree_size[0] = n_verts + 1
+        prev_vertex_dft[v] = v - 1
+        last_descendent_dft[v] = v
 
     # next_vertex_dft initialization
+    next_vertex_dft[0] = 1
     for v in range(1, n_verts):
         next_vertex_dft[v] = v + 1
     next_vertex_dft[n_verts] = 0
-    next_vertex_dft[0] = 1
 
-    # prev_vertex_dft initialization
-    for i in range(1, n_verts + 1):
-        prev_vertex_dft[i] = i - 1
-    prev_vertex_dft[0] = n_verts
 
-    # last_descendent_dft initialization
-    for v in range(1, n_verts + 1):
-        last_descendent_dft[v] = v
-    last_descendent_dft[0] = n_verts
-
-cdef ITYPE_t _reduced_cost(
+cdef inline ITYPE_t _reduced_cost(
         ITYPE_t e,  # IN
         ITYPE_t[:] edge_weights,  # IN
         ITYPE_t[:] vertex_potentials,  # IN
@@ -827,9 +818,9 @@ cdef bint _find_entering_edges(
         ITYPE_t[:] edge_sources,  # IN
         ITYPE_t[:] edge_targets,  # IN
         bint prev_ret_value,  # IN
-        ITYPE_t[:] local_vars,  # IN/OUT
+        ITYPE_t[:] B_M_m_f,  # IN/OUT
         ITYPE_t[:] result  # IN/OUT
-        ):
+        ) nogil:
     cdef ITYPE_t l, i = -2, min_r_cost, p, q, c
     cdef ITYPE_t e, r_cost
 
@@ -837,18 +828,18 @@ cdef bint _find_entering_edges(
         if n_edges == 0:
             return False
 
-        local_vars[0] = np.ceil(np.sqrt(n_edges))  # B
-        local_vars[1] = (n_edges + local_vars[0] - 1) // local_vars[0]  # M
-        local_vars[2] = 0  # m
+        B_M_m_f[0] = <ITYPE_t>ceil(sqrt(n_edges))  # B
+        B_M_m_f[1] = (n_edges + B_M_m_f[0] - 1) // B_M_m_f[0]  # M
+        B_M_m_f[2] = 0  # m
         # entering edges
-        local_vars[3] = 0  # f
+        B_M_m_f[3] = 0  # f
 
-    while local_vars[2] < local_vars[1]:
+    while B_M_m_f[2] < B_M_m_f[1]:
         # Determine the next block of edges.
-        l = local_vars[3] + local_vars[0]
-        min_r_cost = 1 << 31 - 1
+        l = B_M_m_f[3] + B_M_m_f[0]
+        min_r_cost = INT_MAX
         if l <= n_edges:
-            for e in range(local_vars[3], l):
+            for e in range(B_M_m_f[3], l):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -858,7 +849,7 @@ cdef bint _find_entering_edges(
                     min_r_cost = r_cost
         else:
             l -= n_edges
-            for e in range(local_vars[3], n_edges):
+            for e in range(B_M_m_f[3], n_edges):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -874,10 +865,10 @@ cdef bint _find_entering_edges(
                 if r_cost < min_r_cost:
                     i = e
                     min_r_cost = r_cost
-        local_vars[3] = l
+        B_M_m_f[3] = l
         if min_r_cost >= 0:
             # No entering edge found in the current block.
-            local_vars[2] += 1
+            B_M_m_f[2] += 1
         else:
             # Entering edge found.
             if edge_flow[i] == 0:
@@ -889,7 +880,7 @@ cdef bint _find_entering_edges(
             result[0] = i
             result[1] = p
             result[2] = q
-            local_vars[2] = 0
+            B_M_m_f[2] = 0
             return True
 
     return False
@@ -985,7 +976,7 @@ cdef void _find_cycle(
     Wne_len[0] = Wn_len
     Wne_len[1] = We_len
 
-cdef ITYPE_t _residual_capacity(
+cdef inline ITYPE_t _residual_capacity(
         ITYPE_t i,  # IN
         ITYPE_t p,  # IN
         ITYPE_t[:] edge_sources,  # IN
@@ -1009,7 +1000,7 @@ cdef void _find_leaving_edge(
         ) nogil:
     cdef ITYPE_t min_res_cap, res_cap
     cdef ITYPE_t i = -2, p, j = -2, s = -2, t, idx_e, idx_n
-    min_res_cap = 1 << 31 - 1
+    min_res_cap = INT_MAX
     idx_n = Wne_len[0] - 1
     idx_e = Wne_len[1] - 1
     while idx_n >= 0 and idx_e >= 0:
@@ -1033,7 +1024,7 @@ cdef void _find_leaving_edge(
     ret_values[1] = s
     ret_values[2] = t
 
-cdef ITYPE_t _index(
+cdef inline ITYPE_t _index(
         ITYPE_t[:] W,  # IN
         ITYPE_t W_len,  # IN
         ITYPE_t i  # IN
@@ -1044,7 +1035,7 @@ cdef ITYPE_t _index(
             return idx
     return -1
 
-cdef void _augment_flow(
+cdef inline void _augment_flow(
         ITYPE_t[:] Wn,  # IN
         ITYPE_t[:] We,  # IN
         ITYPE_t[:] Wne_len,  # IN
@@ -1186,7 +1177,7 @@ cdef void _add_edge(
             last_descendent_dft[p] = last_q
         p = parent[p]
 
-cdef bint _trace_subtree(
+cdef inline bint _trace_subtree(
         ITYPE_t p,  # IN
         ITYPE_t[:] last_descendent_dft,  # IN
         ITYPE_t[:] next_vertex_dft,  # IN
@@ -1225,7 +1216,7 @@ cdef void _update_potentials(
         q = subtree[idx]
         vertex_potentials[q] += d
 
-cdef void _add_entry(
+cdef inline void _add_entry(
         ITYPE_t edge_source,  # IN
         ITYPE_t edge_target,  # IN
         ITYPE_t flow,  # IN
@@ -1253,11 +1244,11 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t idx, faux_inf, capacities_sum, cost_sum
     cdef ITYPE_t j, s, t, i, tmp, p, q, n_non_zero_edges, v
     cdef ITYPE_t flow_cost, flow_value
-    cdef ITYPE_t[:] edge_flow, vertex_potentials, Wne_len, edge_flow_final
+    cdef ITYPE_t[:] edge_flow, vertex_potentials, Wne_len
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
     cdef ITYPE_t[:] next_vertex_dft, prev_vertex_dft
     cdef ITYPE_t[:] last_descendent_dft
-    cdef ITYPE_t[:] local_vars, result, Wn, We, WnR, WeR, ancestors, subtree
+    cdef ITYPE_t[:] B_M_m_f, result, Wn, We, WnR, WeR, ancestors, subtree
     cdef bint prev_ret_value = False
 
     cdef ITYPE_t[:] edge_sources = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
@@ -1265,42 +1256,6 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t[:] edge_capacities = np.empty(n_edges + n_verts + 1,
                                                dtype=ITYPE)
     cdef ITYPE_t[:] edge_weights = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
-    idx = 0
-    n_non_zero_edges = 0
-    for e in range(n_edges):
-        if capacities[e] != 0:
-            n_non_zero_edges += 1
-            edge_sources[idx] = tails[e] + 1
-            edge_targets[idx] = heads[e] + 1
-            idx += 1
-    for v in range(n_verts):
-        if demand[v] > 0:
-            edge_sources[idx] = 0
-            edge_targets[idx] = v + 1
-        else:
-            edge_sources[idx] = v + 1
-            edge_targets[idx] = 0
-        idx += 1
-
-    capacities_sum, cost_sum = 0, 0
-    for e in range(n_edges):
-        if capacities[e] < 1 << 31 - 1:
-            capacities_sum += capacities[e]
-        cost_sum += abs(cost[e])
-    faux_inf = max(cost_sum, capacities_sum)
-    for v in range(n_verts):
-        faux_inf = max(faux_inf, demand[v])
-    faux_inf = 3*faux_inf or 1
-    idx = 0
-    for e in range(n_edges):
-        if capacities[e] != 0:
-            edge_capacities[idx] = capacities[e]
-            edge_weights[idx] = cost[e]
-            idx += 1
-    for v in range(n_verts):
-        edge_capacities[idx] = faux_inf
-        edge_weights[idx] = faux_inf
-        idx += 1
 
     edge_flow = np.zeros(n_edges + n_verts, dtype=ITYPE)
     vertex_potentials = np.empty(n_verts + 1, dtype=ITYPE)
@@ -1310,109 +1265,148 @@ cdef ITYPE_t[:] _network_simplex(
     next_vertex_dft = np.empty(n_verts + 1, dtype=ITYPE)
     prev_vertex_dft = np.empty(n_verts + 1, dtype=ITYPE)
     last_descendent_dft = np.empty(n_verts + 1, dtype=ITYPE)
-    _initialize_spanning_tree(n_verts, n_non_zero_edges, faux_inf,
-                              demand, edge_flow, vertex_potentials,
-                              parent, parent_edge, subtree_size,
-                              next_vertex_dft, prev_vertex_dft,
-                              last_descendent_dft)
-
-    local_vars = np.empty(4, dtype=ITYPE)
-    result = np.empty(4, dtype=ITYPE)
-    prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
-                                          vertex_potentials, edge_flow,
-                                          edge_sources, edge_targets,
-                                          prev_ret_value, local_vars,
-                                          result)
-    itr = 0
     Wn = np.empty(n_edges + 1, dtype=ITYPE)
     We = np.empty(n_edges + 1, dtype=ITYPE)
+    Wne_len = np.empty(2, dtype=ITYPE)
     WnR = np.empty(n_verts, dtype=ITYPE)
     WeR = np.empty(n_edges, dtype=ITYPE)
     ancestors = np.empty(n_verts + 1, dtype=ITYPE)
     subtree = np.empty(2*n_verts, dtype=ITYPE)
-    while prev_ret_value:
-        Wne_len = np.empty(2, dtype=ITYPE)
-        i, p, q = result[0], result[1], result[2]
-        _find_cycle(i, p, q,
-                    subtree_size,
-                    parent, parent_edge,
-                    n_edges, n_verts,
-                    WnR, WeR, Wn, We,
-                    Wne_len)
-        _find_leaving_edge(Wn, We, Wne_len,
-                           edge_sources, edge_targets,
-                           edge_capacities, edge_flow,
-                           result)
-        j = result[0]
-        s = result[1]
-        t = result[2]
-        _augment_flow(Wn, We, Wne_len,
-                      _residual_capacity(j, s, edge_sources,
-                                         edge_capacities,
-                                         edge_flow),
-                      edge_sources, edge_flow)
-        # Do nothing more if the entering edge is the same as the leaving edge.
-        if i != j:
-            if parent[t] != s:
-                # Ensure that s is the parent of t.
-                tmp = t
-                t = s
-                s = tmp
-            if _index(We, Wne_len[1], i) > _index(We, Wne_len[1], j):
-                # Ensure that q is in the subtree rooted at t.
-                tmp = q
-                q = p
-                p = tmp
-            _remove_edge(s, t, subtree_size,
-                         prev_vertex_dft,
-                         last_descendent_dft,
-                         next_vertex_dft,
-                         parent, parent_edge,
-                         n_verts)
-            _make_root(n_verts, q,
-                       subtree_size,
-                       last_descendent_dft,
-                       prev_vertex_dft,
-                       next_vertex_dft,
-                       parent, parent_edge,
-                       ancestors)
-            _add_edge(i, p, q,
-                      last_descendent_dft,
-                      next_vertex_dft,
-                      prev_vertex_dft,
-                      subtree_size,
-                      parent, parent_edge)
-            _update_potentials(i, p, q,
-                               edge_targets, edge_weights,
-                               last_descendent_dft,
-                               next_vertex_dft,
-                               vertex_potentials, subtree)
-        prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
-                                              vertex_potentials, edge_flow,
-                                              edge_sources, edge_targets,
-                                              prev_ret_value, local_vars,
-                                              result)
-        itr += 1
+    B_M_m_f = np.empty(4, dtype=ITYPE)
+    result = np.empty(4, dtype=ITYPE)
 
-    result[3] = 1
-    for v in range(n_verts):
-        if edge_flow[v + n_non_zero_edges] != 0:
-            result[3] = 0
-            break
-
-    if result[3] == 1:
-        flow_cost = 0
-        flow_value = 0
-        for i in range(n_edges):
-            flow_cost += edge_weights[i]*edge_flow[i]
-            flow_value += edge_flow[i]
+    with nogil:
         idx = 0
-        for i in range(n_edges):
-            if edge_flow[i] != 0 and edge_capacities[i] != 0:
-                _add_entry(edge_sources[i], edge_targets[i],
-                           edge_flow[i], idx, row, col, flow_data)
+        n_non_zero_edges = 0
+        for e in range(n_edges):
+            if capacities[e] != 0:
+                n_non_zero_edges += 1
+                edge_sources[idx] = tails[e] + 1
+                edge_targets[idx] = heads[e] + 1
                 idx += 1
-        result[0] = flow_cost
-        result[1] = idx
-        result[2] = flow_value
-    return result
+        for v in range(n_verts):
+            if demand[v] > 0:
+                edge_sources[idx] = 0
+                edge_targets[idx] = v + 1
+            else:
+                edge_sources[idx] = v + 1
+                edge_targets[idx] = 0
+            idx += 1
+
+        capacities_sum, cost_sum = 0, 0
+        for e in range(n_edges):
+            if capacities[e] < INT_MAX:
+                capacities_sum += capacities[e]
+            cost_sum += _abs(cost[e])
+        faux_inf = max(cost_sum, capacities_sum)
+        for v in range(n_verts):
+            faux_inf = max(faux_inf, demand[v])
+        faux_inf = 3*faux_inf or 1
+        idx = 0
+        for e in range(n_edges):
+            if capacities[e] != 0:
+                edge_capacities[idx] = capacities[e]
+                edge_weights[idx] = cost[e]
+                idx += 1
+        for v in range(n_verts):
+            edge_capacities[idx] = faux_inf
+            edge_weights[idx] = faux_inf
+            idx += 1
+
+        _initialize_spanning_tree(n_verts, n_non_zero_edges, faux_inf,
+                                demand, edge_flow, vertex_potentials,
+                                parent, parent_edge, subtree_size,
+                                next_vertex_dft, prev_vertex_dft,
+                                last_descendent_dft)
+
+        prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
+                                            vertex_potentials, edge_flow,
+                                            edge_sources, edge_targets,
+                                            prev_ret_value, B_M_m_f,
+                                            result)
+
+        while prev_ret_value:
+            i, p, q = result[0], result[1], result[2]
+            _find_cycle(i, p, q,
+                        subtree_size,
+                        parent, parent_edge,
+                        n_edges, n_verts,
+                        WnR, WeR, Wn, We,
+                        Wne_len)
+            _find_leaving_edge(Wn, We, Wne_len,
+                            edge_sources, edge_targets,
+                            edge_capacities, edge_flow,
+                            result)
+            j = result[0]
+            s = result[1]
+            t = result[2]
+            _augment_flow(Wn, We, Wne_len,
+                        _residual_capacity(j, s, edge_sources,
+                                            edge_capacities,
+                                            edge_flow),
+                        edge_sources, edge_flow)
+            # Do nothing more if the entering edge is the same as the leaving edge.
+            if i != j:
+                if parent[t] != s:
+                    # Ensure that s is the parent of t.
+                    tmp = t
+                    t = s
+                    s = tmp
+                if _index(We, Wne_len[1], i) > _index(We, Wne_len[1], j):
+                    # Ensure that q is in the subtree rooted at t.
+                    tmp = q
+                    q = p
+                    p = tmp
+                _remove_edge(s, t, subtree_size,
+                            prev_vertex_dft,
+                            last_descendent_dft,
+                            next_vertex_dft,
+                            parent, parent_edge,
+                            n_verts)
+                _make_root(n_verts, q,
+                        subtree_size,
+                        last_descendent_dft,
+                        prev_vertex_dft,
+                        next_vertex_dft,
+                        parent, parent_edge,
+                        ancestors)
+                _add_edge(i, p, q,
+                        last_descendent_dft,
+                        next_vertex_dft,
+                        prev_vertex_dft,
+                        subtree_size,
+                        parent, parent_edge)
+                _update_potentials(i, p, q,
+                                edge_targets, edge_weights,
+                                last_descendent_dft,
+                                next_vertex_dft,
+                                vertex_potentials, subtree)
+            prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
+                                                vertex_potentials, edge_flow,
+                                                edge_sources, edge_targets,
+                                                prev_ret_value, B_M_m_f,
+                                                result)
+
+        result[3] = 1
+        for v in range(n_verts):
+            if edge_flow[v + n_non_zero_edges] != 0:
+                result[3] = 0
+                break
+
+        if result[3] == 1:
+            flow_cost = 0
+            flow_value = 0
+            for i in range(n_edges):
+                flow_cost += edge_weights[i]*edge_flow[i]
+                flow_value += edge_flow[i]
+            idx = 0
+            for i in range(n_edges):
+                if edge_flow[i] != 0 and edge_capacities[i] != 0:
+                    _add_entry(edge_sources[i], edge_targets[i],
+                            edge_flow[i], idx, row, col, flow_data)
+                    idx += 1
+            result[0] = flow_cost
+            result[1] = idx
+            result[2] = flow_value
+        return result
+        # end: with nogil

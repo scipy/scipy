@@ -203,39 +203,51 @@ def test_make_tails(a, expected):
 
 @pytest.mark.parametrize("n_nodes,seed,expected_result", [
     (2, 100, (0, 0)), (8, 0, (22, 1027)), (8, 100, (25, 709)),
-    (8, 500, (38, 2365)), (8, 700, (25, 683)), (8, 800, (19, 850)),
-    (8, 900, (33, 915)), (16, 0, (45, 1228)), (16, 100, (67, 2957)),
-    (16, 200, (49, 1357)), (16, 300, (66, 1707)), (16, 400, (71, 2095)),
+    (8, 500, (44, 1961)), (8, 700, (25, 683)), (8, 800, (19, 850)),
+    (8, 900, (33, 915)), (16, 0, (41, 858)), (16, 100, (67, 2957)),
+    (16, 200, (53, 1209)), (16, 300, (54, 1853)), (16, 400, (71, 2095)),
     (16, 500, (59, 2598)), (16, 600, (85, 1619)), (16, 700, (52, 1741)),
-    (16, 800, (62, 1447)), (16, 900, (71, 1656)), (100, 0, (410, 2022)),
-    (100, 999, (419, 1395))
+    (16, 800, (62, 1447)), (16, 900, (63, 1260)), (100, 0, (368, 1950)),
+    (100, 999, (399, 1329))
 ])
 def test_minimum_cost_flow(n_nodes, seed, expected_result):
     rng = np.random.RandomState(seed=seed)
-    A = rand(n_nodes, n_nodes, 0.3, format='csr', random_state=rng)*100
+    max_capacity = 100
+    density = 0.3
+
+    A = rand(n_nodes, n_nodes, density, format='dok',
+             random_state=rng)*max_capacity
     A = A.astype(np.uint32)
-    A_mat = A.toarray()
+
     total_edges = int(np.ceil(0.3*n_nodes*n_nodes))
     for i in range(n_nodes):
-        if A_mat[i][i] != 0:
+        if A[i, i] != 0:
             total_edges -= 1
-            A_mat[i][i] = 0
+            A[i, i] = 0
+
     x = rng.randint(0, 10, size=(n_nodes//2,))
     demand = np.array(x.tolist() + (-x).tolist())
     cost = rng.randint(0, 100, size=(total_edges, ))
-    res = minimum_cost_flow(csr_matrix(A_mat), demand, cost)
+
+    res = minimum_cost_flow(A.tocsr(), demand, cost)
+
     assert(res.flow_value == expected_result[0])
     assert(res.flow_cost == expected_result[1])
 
 
 def test_minimum_cost_flow_exceptions():
-    pytest.raises(ValueError, minimum_cost_flow,
-                  csr_matrix(np.array([[0, -1], [0, 0]],
-                             dtype=np.int32)),
-                  np.array([0, 0], dtype=np.int32),
-                  np.array([0], dtype=np.int32))
-    pytest.raises(ValueError, minimum_cost_flow,
-                  csr_matrix(np.array([[0, 1], [0, 0]],
-                             dtype=np.int32)),
-                  np.array([0, 1], dtype=np.int32),
-                  np.array([0], dtype=np.int32))
+    msg = "one of the edges has negative capacity"
+    with pytest.raises(ValueError, match=msg):
+        g = csr_matrix(np.array([[0, -1], [0, 0]],
+                       dtype=np.int32))
+        demand = np.array([0, 0], dtype=np.int32)
+        cost = np.array([0], dtype=np.int32)
+        minimum_cost_flow(g, demand, cost)
+
+    msg = "sum of demands is not zero"
+    with pytest.raises(ValueError, match=msg):
+        g = csr_matrix(np.array([[0, 1], [0, 0]],
+                       dtype=np.int32))
+        demand = np.array([0, 1], dtype=np.int32)
+        cost = np.array([0], dtype=np.int32)
+        minimum_cost_flow(g, demand, cost)
