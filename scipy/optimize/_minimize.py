@@ -855,9 +855,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
 def _remove_from_bounds(bounds, i_fixed):
     """Removes fixed variables from a `Bounds` instance"""
-    bounds.lb = bounds.lb[~i_fixed]
-    bounds.ub = bounds.ub[~i_fixed]
-    return bounds
+    lb = bounds.lb[~i_fixed]
+    ub = bounds.ub[~i_fixed]
+    return Bounds(lb, ub)  # don't mutate original Bounds object
 
 
 def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):

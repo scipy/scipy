@@ -20,6 +20,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
+from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
@@ -2323,41 +2324,113 @@ def test_equal_bounds1(method):
             assert res.success
             assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
 
+# --- Test minimize with equal upper and lower bounds --- #
 
-eb_cases = ({"fun": optimize.rosen, "jac": False},
-            {"fun": optimize.rosen, "jac": optimize.rosen_der},
-            {"fun": (lambda x: (optimize.rosen(x), optimize.rosen_der(x))),
-             "jac": True})
+np.random.seed(0)
+eb_x0 = np.random.rand(4)
+eb_lb = np.array([0, 2, -1, -1])
+eb_ub = np.array([3, 2, 2, -1])
+eb_i = (eb_lb == eb_ub)
 
 
-# keeping both version intact for now; will combine them later
-@pytest.mark.parametrize('method', ['L-BFGS-B', 'SLSQP',
-                                    'trust-constr', 'TNC'])
-@pytest.mark.parametrize('kwds', eb_cases)
-def test_equal_bounds2(method, kwds):
+def eb_rosen(x):
+    # assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
+    return optimize.rosen(x)
+
+
+def eb_drosen(x):
+    # assert x.size == 4
+    # assert_allclose(x[eb_i], eb_lb[eb_i])
+    return optimize.rosen_der(x)
+
+
+def eb_callback(x, *args):
+    assert x.size == 4
+    assert_allclose(x[eb_i], eb_lb[eb_i])
+
+
+# test without gradient, with gradient, and with combined objective/gradient
+eb_kwds = ({"fun": eb_rosen, "jac": False},
+           {"fun": eb_rosen, "jac": eb_drosen},
+           {"fun": (lambda x: (eb_rosen(x), eb_drosen(x))),
+            "jac": True})
+
+# test with both old- and new-style bounds
+eb_bound_types = (lambda lb, ub: list(zip(lb, ub)), Bounds)
+
+
+# constraints and jacobians
+def eb_constraint1(x):
+    return x[0:1] - 1
+
+
+def eb_dconstraint1(x):
+    dc = np.zeros_like(x)
+    dc[0] = 1
+    return dc
+
+
+def eb_constraint2(x):
+    return x[2:3] - 0.5
+
+
+def eb_dconstraint2(x):
+    dc = np.zeros_like(x)
+    dc[2] = 1
+    return dc
+
+
+c1a = NonlinearConstraint(eb_constraint1, -np.inf, 0)
+c1b = NonlinearConstraint(eb_constraint1, -np.inf, 0, eb_dconstraint1)
+c2a = NonlinearConstraint(eb_constraint2, -np.inf, 0)
+c2b = NonlinearConstraint(eb_constraint2, -np.inf, 0, eb_dconstraint2)
+
+# Test for many combinations of constraints w/ and w/out jacobian
+# Pairs in format: (test constraints, reference constraints)
+# (always use analytical jacobian in reference)
+eb_constraints = (([], []), (c1a, c1b), (c2b, c2b), ([c1b], [c1b]),
+                  ([c2a], [c2b]), ([c1a, c2a], [c1b, c2b]),
+                  ([c1a, c2b], [c1b, c2b]), ([c1b, c2b], [c1b, c2b]))
+
+
+@pytest.mark.parametrize('method', ['L-BFGS-B', 'SLSQP', 'TNC'])
+@pytest.mark.parametrize('kwds', eb_kwds)
+@pytest.mark.parametrize('bound_type', eb_bound_types)
+@pytest.mark.parametrize('constraints', eb_constraints)
+def test_equal_bounds2(method, kwds, bound_type, constraints):
     """
     Tests that minimizers still work if (bounds.lb == bounds.ub).any()
     gh12502 - Divide by zero in Jacobian numerical differentiation when
     equality bounds constraints are used
     """
-    def f(x):
-        return optimize.rosen([x, 2.0])
+    test_constraints, reference_constraints = constraints
+    if test_constraints and not method=='SLSQP':
+        pytest.skip('Only SLSQP supports nonlinear constraints')
+    # reference constraints always have analytical jacobian
+    # if test constraints are not the same, we'll need finite differences
+    fd_needed = (test_constraints != reference_constraints)
 
-    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
-    x0 = np.array([0.5, 3.0])
-    bounds = [(0.0, 3.0), (2.0, 2.0)]
+    bounds = bound_type(eb_lb, eb_ub)  # old- or new-style
 
-    kwds.update({"x0": x0, "method": method, "bounds": bounds})
+    kwds.update({"x0": eb_x0, "method": method, "bounds": bounds,
+                 "constraints": test_constraints, "callback": eb_callback})
+    res = optimize.minimize(**kwds)
 
-    with warnings.catch_warnings(record=True):
-        # warning filter is for trust-constr
-        # UserWarning: delta_grad == 0.0.Check if the approximated
-        # function is linear.
-        warnings.simplefilter('ignore', category=UserWarning)
+    expected = optimize.minimize(optimize.rosen, eb_x0, method=method,
+                                 jac=optimize.rosen_der, bounds=bounds,
+                                 constraints=reference_constraints)
 
-        res = optimize.minimize(**kwds)
+    if method != "TNC":  # callback causes TNC to report failure; see gh-14565
         assert res.success
-        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
+
+    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.x, expected.x, rtol=1e-6)
+
+    if fd_needed or kwds['jac'] is False:
+        expected.jac[eb_i] = np.nan
+    assert res.jac.shape[0] == 4
+    assert_allclose(res.jac[eb_i], expected.jac[eb_i], rtol=1e-6)
 
 
 def test_show_options():
