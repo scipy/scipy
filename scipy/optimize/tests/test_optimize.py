@@ -10,7 +10,6 @@ To run it in its simplest form::
 
 """
 import itertools
-import warnings
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_, assert_almost_equal,
@@ -2310,7 +2309,7 @@ def setup_test_equal_bounds():
     # Test for many combinations of constraints w/ and w/out jacobian
     # Pairs in format: (test constraints, reference constraints)
     # (always use analytical jacobian in reference)
-    constraints = ((None, None), ([], []),  # type: ignore[var-annotated]
+    constraints = ((None, None), ([], []),
                    (c1a, c1b), (c2b, c2b),
                    ([c1b], [c1b]), ([c2a], [c2b]),
                    ([c1a, c2a], [c1b, c2b]),
