@@ -828,7 +828,7 @@ cdef bint _find_entering_edges(
         if n_edges == 0:
             return False
 
-        B_M_m_f[0] = <ITYPE_t>ceil(sqrt(n_edges))  # B
+        B_M_m_f[0] = < ITYPE_t > ceil(sqrt(n_edges))  # B
         B_M_m_f[1] = (n_edges + B_M_m_f[0] - 1) // B_M_m_f[0]  # M
         B_M_m_f[2] = 0  # m
         # entering edges
@@ -1314,16 +1314,16 @@ cdef ITYPE_t[:] _network_simplex(
             idx += 1
 
         _initialize_spanning_tree(n_verts, n_non_zero_edges, faux_inf,
-                                demand, edge_flow, vertex_potentials,
-                                parent, parent_edge, subtree_size,
-                                next_vertex_dft, prev_vertex_dft,
-                                last_descendent_dft)
+                                  demand, edge_flow, vertex_potentials,
+                                  parent, parent_edge, subtree_size,
+                                  next_vertex_dft, prev_vertex_dft,
+                                  last_descendent_dft)
 
         prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
-                                            vertex_potentials, edge_flow,
-                                            edge_sources, edge_targets,
-                                            prev_ret_value, B_M_m_f,
-                                            result)
+                                              vertex_potentials, edge_flow,
+                                              edge_sources, edge_targets,
+                                              prev_ret_value, B_M_m_f,
+                                              result)
 
         while prev_ret_value:
             i, p, q = result[0], result[1], result[2]
@@ -1334,18 +1334,19 @@ cdef ITYPE_t[:] _network_simplex(
                         WnR, WeR, Wn, We,
                         Wne_len)
             _find_leaving_edge(Wn, We, Wne_len,
-                            edge_sources, edge_targets,
-                            edge_capacities, edge_flow,
-                            result)
+                               edge_sources, edge_targets,
+                               edge_capacities, edge_flow,
+                               result)
             j = result[0]
             s = result[1]
             t = result[2]
             _augment_flow(Wn, We, Wne_len,
-                        _residual_capacity(j, s, edge_sources,
-                                            edge_capacities,
-                                            edge_flow),
-                        edge_sources, edge_flow)
-            # Do nothing more if the entering edge is the same as the leaving edge.
+                          _residual_capacity(j, s, edge_sources,
+                                             edge_capacities,
+                                             edge_flow),
+                          edge_sources, edge_flow)
+            # Do nothing more if the entering edge is the
+            # same as the leaving edge.
             if i != j:
                 if parent[t] != s:
                     # Ensure that s is the parent of t.
@@ -1358,34 +1359,35 @@ cdef ITYPE_t[:] _network_simplex(
                     q = p
                     p = tmp
                 _remove_edge(s, t, subtree_size,
-                            prev_vertex_dft,
-                            last_descendent_dft,
-                            next_vertex_dft,
-                            parent, parent_edge,
-                            n_verts)
+                             prev_vertex_dft,
+                             last_descendent_dft,
+                             next_vertex_dft,
+                             parent, parent_edge,
+                             n_verts)
                 _make_root(n_verts, q,
-                        subtree_size,
-                        last_descendent_dft,
-                        prev_vertex_dft,
-                        next_vertex_dft,
-                        parent, parent_edge,
-                        ancestors)
+                           subtree_size,
+                           last_descendent_dft,
+                           prev_vertex_dft,
+                           next_vertex_dft,
+                           parent, parent_edge,
+                           ancestors)
                 _add_edge(i, p, q,
-                        last_descendent_dft,
-                        next_vertex_dft,
-                        prev_vertex_dft,
-                        subtree_size,
-                        parent, parent_edge)
+                          last_descendent_dft,
+                          next_vertex_dft,
+                          prev_vertex_dft,
+                          subtree_size,
+                          parent, parent_edge)
                 _update_potentials(i, p, q,
-                                edge_targets, edge_weights,
-                                last_descendent_dft,
-                                next_vertex_dft,
-                                vertex_potentials, subtree)
-            prev_ret_value = _find_entering_edges(n_non_zero_edges, edge_weights,
-                                                vertex_potentials, edge_flow,
-                                                edge_sources, edge_targets,
-                                                prev_ret_value, B_M_m_f,
-                                                result)
+                                   edge_targets, edge_weights,
+                                   last_descendent_dft,
+                                   next_vertex_dft,
+                                   vertex_potentials, subtree)
+            prev_ret_value = _find_entering_edges(n_non_zero_edges,
+                                                  edge_weights,
+                                                  vertex_potentials, edge_flow,
+                                                  edge_sources, edge_targets,
+                                                  prev_ret_value, B_M_m_f,
+                                                  result)
 
         result[3] = 1
         for v in range(n_verts):
@@ -1403,7 +1405,7 @@ cdef ITYPE_t[:] _network_simplex(
             for i in range(n_edges):
                 if edge_flow[i] != 0 and edge_capacities[i] != 0:
                     _add_entry(edge_sources[i], edge_targets[i],
-                            edge_flow[i], idx, row, col, flow_data)
+                               edge_flow[i], idx, row, col, flow_data)
                     idx += 1
             result[0] = flow_cost
             result[1] = idx
