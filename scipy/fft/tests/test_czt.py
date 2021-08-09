@@ -141,24 +141,24 @@ def test_0_rank_input():
         zoomfft(5, 0.5)
 
 
-def test_czt_math():
-    for impulse in ([0, 0, 1],
-                    [0, 0, 1, 0, 0],
-                    np.concatenate(([0, 0, 1], np.zeros(100)))):
-        for m in (1, 3, 5, 8, 101, 1021):
-            for a in (1, 2, 0.5, 1.1):
-                for w in (None, 0.7+0.7j):
-                    # z-transform of an impulse is 1 everywhere
-                    assert_allclose(czt(impulse[2:], m=m, a=a),
-                                    np.ones(m), rtol=1e-14)
+@pytest.mark.parametrize('impulse', ([0, 0, 1], [0, 0, 1, 0, 0],
+                                     np.concatenate(([0, 0, 1], np.zeros(100))
+                                                    )))
+@pytest.mark.parametrize('m', (1, 3, 5, 8, 101, 1021))
+@pytest.mark.parametrize('a', (1, 2, 0.5, 1.1))
+@pytest.mark.parametrize('w', (None, 0.7+0.7j))
+def test_czt_math(impulse, m, w, a):
+    # z-transform of an impulse is 1 everywhere
+    assert_allclose(czt(impulse[2:], m=m, w=w, a=a),
+                    np.ones(m), rtol=1e-14)
 
-                    # z-transform of a delayed impulse is z**-1
-                    assert_allclose(czt(impulse[1:], m=m, a=a),
-                                    czt_points(m=m, a=a)**-1, rtol=1e-14)
+    # z-transform of a delayed impulse is z**-1
+    assert_allclose(czt(impulse[1:], m=m, w=w, a=a),
+                    czt_points(m=m, w=w, a=a)**-1, rtol=1e-14)
 
-                    # z-transform of a 2-delayed impulse is z**-2
-                    assert_allclose(czt(impulse, m=m, a=a),
-                                    czt_points(m=m, a=a)**-2, rtol=1e-14)
+    # z-transform of a 2-delayed impulse is z**-2
+    assert_allclose(czt(impulse, m=m, w=w, a=a),
+                    czt_points(m=m, w=w, a=a)**-2, rtol=1e-14)
 
 
 def test_int_args():
