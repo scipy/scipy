@@ -7,7 +7,7 @@ from scipy.sparse import csr_matrix, isspmatrix_csr
 cimport cython
 cimport numpy as np
 from libc.math cimport ceil, sqrt
-from libc.stdlib cimport abs
+from libc.stdlib cimport abs, malloc, free
 from libc.limits cimport INT_MAX, INT_MIN
 
 include 'parameters.pxi'
@@ -710,16 +710,16 @@ def minimum_cost_flow(csgraph, demand, cost):
     row = np.empty(cost.shape, dtype=ITYPE)
     col = np.empty(cost.shape, dtype=ITYPE)
     flow_data = np.empty(cost.shape, dtype=ITYPE)
-    result = _network_simplex(csgraph.indices, tails, csgraph.data,
-                              demand, cost, n_verts,
-                              row, col, flow_data)
-    flow_cost, size, flow_value, is_correct = result
-    if is_correct == 0:
+    ns_result = _network_simplex(csgraph.indices, tails, csgraph.data,
+                                 demand, cost, n_verts,
+                                 row, col, flow_data)
+    if not ns_result.is_correct:
         raise ValueError("no flow satisfies all node demands")
-    flow_matrix = csr_matrix((flow_data[0:size],
-                             (row[0:size], col[0:size])),
+    flow_matrix = csr_matrix((flow_data[0:ns_result.size],
+                             (row[0:ns_result.size], col[0:ns_result.size])),
                              shape=(n_verts, n_verts))
-    return MinCostFlowResult(flow_value, flow_matrix, flow_cost)
+    return MinCostFlowResult(ns_result.flow_value, flow_matrix,
+                             ns_result.flow_cost)
 
 
 def _network_simplex_checks(
@@ -804,6 +804,23 @@ cdef inline ITYPE_t _reduced_cost(
          + vertex_potentials[edge_targets[e]])
     return c if edge_flow[e] == 0 else -c
 
+ctypedef struct local_vars:
+    ITYPE_t B
+    ITYPE_t M
+    ITYPE_t m
+    ITYPE_t f
+
+ctypedef struct network_simplex_result:
+    ITYPE_t flow_cost
+    ITYPE_t size
+    ITYPE_t flow_value
+    bint is_correct
+
+ctypedef struct edge_result:
+    ITYPE_t i
+    ITYPE_t p
+    ITYPE_t q
+
 cdef bint _find_entering_edges(
         ITYPE_t n_edges,  # IN
         ITYPE_t[:] edge_weights,  # IN
@@ -812,8 +829,8 @@ cdef bint _find_entering_edges(
         ITYPE_t[:] edge_sources,  # IN
         ITYPE_t[:] edge_targets,  # IN
         bint prev_ret_value,  # IN
-        ITYPE_t[:] B_M_m_f,  # IN/OUT
-        ITYPE_t[:] result  # IN/OUT
+        local_vars *B_M_m_f,  # IN/OUT
+        edge_result *i_p_q  # IN/OUT
         ) nogil:
     cdef ITYPE_t l, i = -2, min_r_cost, p, q, c
     cdef ITYPE_t e, r_cost
@@ -822,18 +839,18 @@ cdef bint _find_entering_edges(
         if n_edges == 0:
             return False
 
-        B_M_m_f[0] = < ITYPE_t > ceil(sqrt(n_edges))  # B
-        B_M_m_f[1] = (n_edges + B_M_m_f[0] - 1) // B_M_m_f[0]  # M
-        B_M_m_f[2] = 0  # m
+        B_M_m_f.B = < ITYPE_t > ceil(sqrt(n_edges))  # B
+        B_M_m_f.M = (n_edges + B_M_m_f.B - 1) // B_M_m_f.B  # M
+        B_M_m_f.m = 0  # m
         # entering edges
-        B_M_m_f[3] = 0  # f
+        B_M_m_f.f = 0  # f
 
-    while B_M_m_f[2] < B_M_m_f[1]:
+    while B_M_m_f.m < B_M_m_f.M:
         # Determine the next block of edges.
-        l = B_M_m_f[3] + B_M_m_f[0]
+        l = B_M_m_f.f + B_M_m_f.B
         min_r_cost = INT_MAX
         if l <= n_edges:
-            for e in range(B_M_m_f[3], l):
+            for e in range(B_M_m_f.f, l):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -843,7 +860,7 @@ cdef bint _find_entering_edges(
                     min_r_cost = r_cost
         else:
             l -= n_edges
-            for e in range(B_M_m_f[3], n_edges):
+            for e in range(B_M_m_f.f, n_edges):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -859,10 +876,10 @@ cdef bint _find_entering_edges(
                 if r_cost < min_r_cost:
                     i = e
                     min_r_cost = r_cost
-        B_M_m_f[3] = l
+        B_M_m_f.f = l
         if min_r_cost >= 0:
             # No entering edge found in the current block.
-            B_M_m_f[2] += 1
+            B_M_m_f.m += 1
         else:
             # Entering edge found.
             if edge_flow[i] == 0:
@@ -871,10 +888,10 @@ cdef bint _find_entering_edges(
             else:
                 p = edge_targets[i]
                 q = edge_sources[i]
-            result[0] = i
-            result[1] = p
-            result[2] = q
-            B_M_m_f[2] = 0
+            i_p_q.i = i
+            i_p_q.p = p
+            i_p_q.q = q
+            B_M_m_f.m = 0
             return True
 
     return False
@@ -990,7 +1007,7 @@ cdef void _find_leaving_edge(
         ITYPE_t[:] edge_targets,  # IN
         ITYPE_t[:] edge_capacities,  # IN
         ITYPE_t[:] edge_flow,  # IN
-        ITYPE_t[:] ret_values  # IN/OUT
+        edge_result *ret_values  # IN/OUT
         ) nogil:
     cdef ITYPE_t min_res_cap, res_cap
     cdef ITYPE_t i = -2, p, j = -2, s = -2, t, idx_e, idx_n
@@ -1014,9 +1031,9 @@ cdef void _find_leaving_edge(
         t = edge_targets[j]
     else:
         t = edge_sources[j]
-    ret_values[0] = j
-    ret_values[1] = s
-    ret_values[2] = t
+    ret_values.i = j
+    ret_values.p = s
+    ret_values.q = t
 
 cdef inline ITYPE_t _index(
         ITYPE_t[:] W,  # IN
@@ -1223,7 +1240,7 @@ cdef inline void _add_entry(
     col[idx] = edge_target - 1
     flow_data[idx] = flow
 
-cdef ITYPE_t[:] _network_simplex(
+cdef network_simplex_result* _network_simplex(
         ITYPE_t[:] heads,  # IN
         ITYPE_t[:] tails,  # IN
         ITYPE_t[:] capacities,  # IN
@@ -1242,7 +1259,10 @@ cdef ITYPE_t[:] _network_simplex(
     cdef ITYPE_t[:] parent, parent_edge, subtree_size
     cdef ITYPE_t[:] next_vertex_dft, prev_vertex_dft
     cdef ITYPE_t[:] last_descendent_dft
-    cdef ITYPE_t[:] B_M_m_f, result, Wn, We, WnR, WeR, ancestors, subtree
+    cdef ITYPE_t[:] Wn, We, WnR, WeR, ancestors, subtree
+    cdef local_vars *B_M_m_f
+    cdef edge_result *i_p_q
+    cdef network_simplex_result *ns_result
     cdef bint prev_ret_value = False
 
     cdef ITYPE_t[:] edge_sources = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
@@ -1266,8 +1286,9 @@ cdef ITYPE_t[:] _network_simplex(
     WeR = np.empty(n_edges, dtype=ITYPE)
     ancestors = np.empty(n_verts + 1, dtype=ITYPE)
     subtree = np.empty(2*n_verts, dtype=ITYPE)
-    B_M_m_f = np.empty(4, dtype=ITYPE)
-    result = np.empty(4, dtype=ITYPE)
+    B_M_m_f = <local_vars*>malloc(sizeof(local_vars))
+    i_p_q = <edge_result*>malloc(sizeof(edge_result))
+    ns_result = <network_simplex_result*>malloc(sizeof(network_simplex_result))
 
     with nogil:
         idx = 0
@@ -1317,10 +1338,10 @@ cdef ITYPE_t[:] _network_simplex(
                                               vertex_potentials, edge_flow,
                                               edge_sources, edge_targets,
                                               prev_ret_value, B_M_m_f,
-                                              result)
+                                              i_p_q)
 
         while prev_ret_value:
-            i, p, q = result[0], result[1], result[2]
+            i, p, q = i_p_q.i, i_p_q.p, i_p_q.q
             _find_cycle(i, p, q,
                         subtree_size,
                         parent, parent_edge,
@@ -1330,10 +1351,10 @@ cdef ITYPE_t[:] _network_simplex(
             _find_leaving_edge(Wn, We, Wne_len,
                                edge_sources, edge_targets,
                                edge_capacities, edge_flow,
-                               result)
-            j = result[0]
-            s = result[1]
-            t = result[2]
+                               i_p_q)
+            j = i_p_q.i
+            s = i_p_q.p
+            t = i_p_q.q
             _augment_flow(Wn, We, Wne_len,
                           _residual_capacity(j, s, edge_sources,
                                              edge_capacities,
@@ -1381,15 +1402,16 @@ cdef ITYPE_t[:] _network_simplex(
                                                   vertex_potentials, edge_flow,
                                                   edge_sources, edge_targets,
                                                   prev_ret_value, B_M_m_f,
-                                                  result)
+                                                  i_p_q)
 
-        result[3] = 1
+        free(i_p_q)
+        ns_result.is_correct = True
         for v in range(n_verts):
             if edge_flow[v + n_non_zero_edges] != 0:
-                result[3] = 0
+                ns_result.is_correct = False
                 break
 
-        if result[3] == 1:
+        if ns_result.is_correct:
             flow_cost = 0
             flow_value = 0
             for i in range(n_edges):
@@ -1401,8 +1423,9 @@ cdef ITYPE_t[:] _network_simplex(
                     _add_entry(edge_sources[i], edge_targets[i],
                                edge_flow[i], idx, row, col, flow_data)
                     idx += 1
-            result[0] = flow_cost
-            result[1] = idx
-            result[2] = flow_value
-        return result
+            ns_result.flow_cost = flow_cost
+            ns_result.size = idx
+            ns_result.flow_value = flow_value
+        free(B_M_m_f)
+        return ns_result
         # end: with nogil
