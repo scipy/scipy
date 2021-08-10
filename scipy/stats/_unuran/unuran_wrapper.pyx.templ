@@ -314,8 +314,8 @@ cdef class Method:
       method. As it uses MessageStream, the call must be protected under
       the module-level lock.
     * `_check_errorcode` must be called after calling a UNU.RAN function
-      that returns a error code. It raises an error if Python error variable
-      has been set or if an error has occurred in UNU.RAN.
+      that returns a error code. It raises an error if an error has
+      occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
     * Provides the `seed` property to get and set the NumPy URNG.
@@ -339,15 +339,9 @@ cdef class Method:
     cdef inline void _check_errorcode(self, int errorcode) except *:
         # check for non-zero errorcode
         if errorcode != UNUR_SUCCESS:
-            # check if the Python error variable has been set. We need
-            # to do this because it is possible that an error has occurred
-            # during a call to the callback. As we can't perform a non-local
-            # return (because that leads to memory leaks), there is no way
-            # to know whether a callback has errored out until a non-zero
-            # errorcode has been returned by UNU.RAN.
-            if PyErr_Occurred():
-                return
             msg = self._messages.get()
+            # the message must be non-empty whenever an error occurs in UNU.RAN.
+            # if the message is empty, means a warning was raised.
             if msg:
                 raise UNURANError(msg)
 
@@ -361,27 +355,30 @@ cdef class Method:
             Seed for the uniform random number generator. Can be a integer,
             NumPy BitGenerator, RandomState, or SeedSequence.
         """
+        cdef ccallback_t callback
         self.numpy_rng = get_numpy_rng(seed)
         self._urng_builder = _URNG(self.numpy_rng)
         self.urng = self._urng_builder.get_urng()
         if self.urng == NULL:
-            msg = self._messages.get()
-            if PyErr_Occurred():
-                return
-            raise UNURANError(msg)
+            raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
-        self.rng = unur_init(self.par)
-        # set self.par = NULL because a call to `unur_init` destroys
-        # the parameter object. See "Creating a generator object" in
-        # http://statmath.wu.ac.at/software/unuran/doc/unuran.html#Concepts
-        self.par = NULL
-        if self.rng == NULL:
-            msg = self._messages.get()
-            if PyErr_Occurred():
-                return
-            raise UNURANError(msg)
-        unur_distr_free(self.distr)
-        self.distr = NULL
+        try:
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
+            self.rng = unur_init(self.par)
+            # set self.par = NULL because a call to `unur_init` destroys
+            # the parameter object. See "Creating a generator object" in
+            # http://statmath.wu.ac.at/software/unuran/doc/unuran.html#Concepts
+            self.par = NULL
+            if self.rng == NULL:
+                if PyErr_Occurred():
+                    return
+                raise UNURANError(self._messages.get())
+            unur_distr_free(self.distr)
+            self.distr = NULL
+        finally:
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -400,18 +397,17 @@ cdef class Method:
             size_t i
             size_t size = len(out)
 
-        if self._callback_wrapper is not None:
-            init_unuran_callback(&callback, self._callback_wrapper)
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_cont(rng)
                 if PyErr_Occurred():
                     return
-
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
@@ -437,18 +433,17 @@ cdef class Method:
             size_t i
             size_t size = len(out)
 
-        if self._callback_wrapper is not None:
-            init_unuran_callback(&callback, self._callback_wrapper)
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_discr(rng)
                 if PyErr_Occurred():
                     return
-
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
@@ -730,13 +725,11 @@ cdef class TransformedDensityRejection(Method):
             unur_distr *distr
             unur_par *par
             unur_gen *rng
-            ccallback_t callback
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
         self._callback_wrapper = _callback_wrapper
-        init_unuran_callback(&callback, self._callback_wrapper)
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -781,7 +774,6 @@ cdef class TransformedDensityRejection(Method):
             self._set_rng(seed)
         finally:
             _lock.release()
-            release_unuran_callback(&callback)
 
     cdef object _validate_args(self, domain, c, cpoints, variant):
         domain = _validate_domain(domain)
@@ -823,21 +815,9 @@ cdef class TransformedDensityRejection(Method):
     @cython.wraparound(False)
     cdef inline void _ppf_hat(self, const double *u, double *out, size_t N) except *:
         cdef:
-            ccallback_t callback
             size_t i
-        init_unuran_callback(&callback, self._callback_wrapper)
-        _lock.acquire()
-        try:
-            self._messages.clear()
-            unur_set_stream(self._messages.handle)
-            for i in range(N):
-                out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
-            msg = self._messages.get()
-            if msg:
-                raise UNURANError(msg)
-        finally:
-            _lock.release()
-            release_unuran_callback(&callback)
+        for i in range(N):
+            out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
 
     def ppf_hat(self, u):
         """
