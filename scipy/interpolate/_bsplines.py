@@ -320,41 +320,6 @@ class BSpline:
             elemets are evaluated at the certain point (first row - x[0],
             ..., last row - x[-1]).
 
-        Examples
-        --------
-        Construct a design matrix for a B-spline
-
-        >>> from scipy.interpolate import make_interp_spline, BSpline
-        >>> x = np.linspace(0, np.pi * 2, 4)
-        >>> y = np.sin(x)
-        >>> k = 3
-        >>> bspl = make_interp_spline(x, y, k=k)
-        >>> design_matrix = bspl.design_matrix(x, bspl.t, k)
-        >>> design_matrix.toarray()
-        [[1.        , 0.        , 0.        , 0.        ],
-        [0.2962963 , 0.44444444, 0.22222222, 0.03703704],
-        [0.03703704, 0.22222222, 0.44444444, 0.2962963 ],
-        [0.        , 0.        , 0.        , 1.        ]]
-
-        Construct a design matrix for some vector of knots
-
-        >>> k = 2
-        >>> t = [-1, 0, 1, 2, 3, 4, 5, 6]
-        >>> x = [1, 2, 3, 4]
-        >>> design_matrix = BSpline.design_matrix(x, t, k).toarray()
-        >>> design_matrix
-        [[0.5, 0.5, 0. , 0. , 0. ],
-        [0. , 0.5, 0.5, 0. , 0. ],
-        [0. , 0. , 0.5, 0.5, 0. ],
-        [0. , 0. , 0. , 0.5, 0.5]]
-
-        This result is equivalent to the one created in the sparse format
-
-        >>> c = np.eye(len(t) - k - 1)
-        >>> design_matrix_gh = BSpline(t, c, k)(x)
-        >>> np.allclose(design_matrix, design_matrix_gh, atol=1e-14)
-        True
-
         Notes
         -----
         .. versionadded:: 1.8.0

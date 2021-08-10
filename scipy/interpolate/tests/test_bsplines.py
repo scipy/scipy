@@ -496,6 +496,7 @@ class TestBSpline:
         t = [0., 1., 1., 1., 2.]
         (data, (row_ind, col_ind)), (n, m) = BSpline.design_matrix(1., t, 3)
         des_matr = csr_matrix((data, (row_ind, col_ind)), (n, m)).toarray()
+        assert(1 == 0)
         assert_allclose(des_matr, [[1.]], atol=1e-14)
 
     # def test_design_matrix_asserts(self):
