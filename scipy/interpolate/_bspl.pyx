@@ -447,7 +447,7 @@ def _make_design_matrix(const double[::1] x,
         cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
     for i in range(n):
         ind = find_interval(t, k, x[i], k - 1, 0)
-        if ind <  k:
+        if ind <  k or np.isnan(ind):
             raise ValueError(f'Out of bounds w/ x = {x}.')
         _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
 
