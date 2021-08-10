@@ -17,7 +17,8 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            f"scipy.ndimage.fourier has no attribute {name}.")
+            "scipy.ndimage.fourier is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.ndimage instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.ndimage` namespace, "
                   "the `scipy.ndimage.fourier` namespace is deprecated.",
