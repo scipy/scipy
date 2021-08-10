@@ -549,6 +549,7 @@ class TestLHS(QMCEngineTests):
                              optimization=optimization)
         sample = engine.random(n=n)
         assert sample.shape == (n, d)
+        assert engine.num_generated == n
 
         sorted_sample = np.sort(sample, axis=0)
 
@@ -560,7 +561,7 @@ class TestLHS(QMCEngineTests):
     def test_orthogonal_array(self, centered):
         p = 5
 
-        engine = self.engine(d=3, scramble=False, centered=centered,
+        engine = self.engine(d=6, scramble=False, centered=centered,
                              orthogonal=True)
         oa_lhs_sample = engine.random(p**2)
         for i, j in combinations(range(engine.d), 2):

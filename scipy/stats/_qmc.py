@@ -1090,7 +1090,7 @@ class LatinHypercube(QMCEngine):
         n_row = p**2
         n_col = p + 1
 
-        primes = primes_from_2_to(p + 2)
+        primes = primes_from_2_to(p + 1)
         if p not in primes or n != n_row:
             raise ValueError(
                 "n is not the square of a prime number. Close"
@@ -1132,6 +1132,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
+        self.num_generated += n
         return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
 
     def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
@@ -1150,6 +1151,7 @@ class LatinHypercube(QMCEngine):
             return np.empty((n, self.d))
 
         best_sample = self.lhs_method(n=n)
+        # self.num_generated += n  # done when calling self.lhs_method
         best_disc = discrepancy(best_sample)
 
         if n == 1:
@@ -1179,7 +1181,6 @@ class LatinHypercube(QMCEngine):
             else:
                 n_nochange += 1
 
-        self.num_generated += n
         return best_sample
 
 
