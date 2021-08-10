@@ -1093,7 +1093,7 @@ class LatinHypercube(QMCEngine):
         primes = primes_from_2_to(p + 2)
         if p not in primes or n != n_row:
             raise ValueError(
-                "n is not the square of a prime number. Closest"
+                "n is not the square of a prime number. Close"
                 f" values are {primes[-2:]**2}"
             )
         if self.d > p + 1:
