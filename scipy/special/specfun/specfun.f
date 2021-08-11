@@ -1426,7 +1426,12 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (M.LE.12.OR.Q.LE.3.0*M.OR.Q.GT.M*M) THEN
             CALL CV0(KD,M,Q,A)
-            IF (Q.NE.0.0D0.AND.M.NE.2) CALL REFINE(KD,M,Q,A)
+            IF (Q.NE.0.0D0.AND.M.NE.2) THEN
+               CALL BISECTION_REFINE(KD,M,Q,A)
+               A_COPY=A
+               CALL REFINE(KD,M,Q,A)
+               IF (ABS(1.0 - A/A_COPY).GT.1.0D-1) A=A_COPY
+            ENDIF
             IF (Q.GT.2.0D-3.AND.M.EQ.2) CALL REFINE(KD,M,Q,A)
         ELSE
            NDIV=10
@@ -1794,6 +1799,47 @@ C
 
 C       **********************************
 
+        SUBROUTINE BISECTION_REFINE(KD,M,Q,A)
+C
+C       =====================================================
+C       Purpose: calculate the accurate characteristic value
+C                by the bisection method
+C       Input :  m --- Order of Mathieu functions
+C                q --- Parameter of Mathieu functions
+C                A --- Initial characteristic value
+C       Output:  A --- Refineed characteristic value
+C       Routine called:  CVF for computing the value of F for
+C                        characteristic equation
+C       ========================================================
+C
+        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        EPS=1.0D-8
+        MJ=10+M
+        CA=A
+        DELTA=0.0D0
+        X0=(1 - 0.001)*A
+        CALL CVF(KD,M,Q,X0,MJ,F0)
+        X1=(1 + 0.001)*A
+        CALL CVF(KD,M,Q,X1,MJ,F1)
+        DO IT=1,5000
+           MJ=MJ+1
+           X=(X0 + X1)/2.0
+           CALL CVF(KD,M,Q,X,MJ,F)
+           IF (ABS((X1 - X0)/2).LT.EPS.OR.F.EQ.0.0) GO TO 15
+           IF (SIGN(1.0D0, F).EQ.SIGN(1.0D0, F0)) THEN
+              X0=X
+              F0=F
+           ELSE
+              X1=X
+              F1=F
+           ENDIF
+        END DO
+15      A=X
+        RETURN
+        END
+
+C       **********************************
+
         SUBROUTINE REFINE(KD,M,Q,A)
 C
 C       =====================================================
@@ -1814,7 +1860,7 @@ C
         DELTA=0.0D0
         X0=A
         CALL CVF(KD,M,Q,X0,MJ,F0)
-        X1=1.002*A
+        X1=(1 + 1.0D-13)*A
         CALL CVF(KD,M,Q,X1,MJ,F1)
         DO 10 IT=1,100
            MJ=MJ+1
