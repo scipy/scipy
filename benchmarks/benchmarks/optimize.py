@@ -11,6 +11,8 @@ from . import test_functions as funcs
 from . import go_benchmark_functions as gbf
 from .common import Benchmark, is_xslow, safe_import
 from .lsq_problems import extract_lsq_problems
+from .cutest.calfun import calfun
+from .cutest.dfoxs import dfoxs
 
 with safe_import():
     import scipy.optimize
@@ -261,6 +263,48 @@ class _BenchOptimizers(Benchmark):
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
 
+
+class BenchDFO(Benchmark):
+    """
+    Benchmark the optimizers with the CUTEST DFO benchmark of Moré and Wild.
+    The original benchmark suite is available at https://www.mcs.anl.gov/~more/dfo/.
+    """
+    params = [
+        [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
+        20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,
+        40,41,42,43,44,45,46,47,48,49,50,51,52],
+        ["COBYLA", 'Powell', 'nelder-mead',
+         'L-BFGS-B', 'BFGS', 'trust-constr'],
+        ["mean_nfev", "mean_time"]
+    ]
+    param_names = ["DFO benchmark problem number", "solver", "result type"]
+
+    def setup(self, prob_number, method_name, ret_val):
+        probs = np.loadtxt(os.path.join(os.path.dirname(__file__), 'cutest', 'dfo.txt'))
+        params = probs[prob_number]
+        nprob = int(params[0])
+        n = int(params[1])
+        m = int(params[2])
+        s = params[3]
+        factor = 10**s
+        func = lambda x: calfun(x, m, nprob)
+        x0 = dfoxs(n, nprob, factor)
+        b = getattr(self, 'run_cutest')(func, x0, prob_number=prob_number, methods=[method_name])
+        r = b.average_results().get(method_name)
+        if r is None:
+            raise NotImplementedError()
+        self.result = getattr(r, ret_val)
+
+    def track_all(self, prob_number, method_name, ret_val):
+        return self.result
+
+    def run_cutest(self, func, x0, prob_number, methods=None):
+        if methods is None:
+            methods = MINIMIZE_METHODS
+        b = _BenchOptimizers(f"DFO benchmark problem {prob_number}",
+                            fun=func)
+        b.bench_run(x0, methods=methods)
+        return b
 
 class BenchSmoothUnbounded(Benchmark):
     """Benchmark the optimizers with smooth, unbounded, functions"""
