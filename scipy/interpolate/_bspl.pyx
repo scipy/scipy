@@ -457,4 +457,4 @@ def _make_design_matrix(const double[::1] x,
                                                             ,min(ind + 1, nt - k - 1)
                                                             ,dtype=int)
 
-    return csr_matrix((data, (row_ind, col_ind)), (n, nt - k - 1))       
+    return csr_matrix((data.base, (row_ind, col_ind)), (n, nt - k - 1))       
