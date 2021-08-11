@@ -47,6 +47,48 @@ def spherical_jn(n, z, derivative=False):
     .. [1] https://dlmf.nist.gov/10.47.E3
     .. [2] https://dlmf.nist.gov/10.51.E1
     .. [3] https://dlmf.nist.gov/10.51.E2
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The spherical Bessel functions of the first kind :math:`j_n` accept
+    both real and complex second argument. They can return a complex type:
+
+    >>> from scipy.special import spherical_jn
+    >>> spherical_jn(0, 3+5j)
+    (-9.878987731663194-8.021894345786002j)
+    >>> type(spherical_jn(0, 3+5j))
+    <class 'numpy.complex128'>
+
+    They satisfy the following relation for the derivative:
+
+    .. math::
+        j_n'(z) = -j_{n+1}(z) + \frac{n}{z} j_n(z)
+
+    This can be verified, for example, for :math:`n=3` in the interval
+    :math:`[1, 2]`:
+
+    >>> from scipy.special import spherical_jn
+    >>> x = np.arange(1.0, 2.0, 0.01)
+    >>> np.allclose(spherical_jn(3, x, True),
+    ...             3/x * spherical_jn(3, x) - spherical_jn(4, x))
+    True
+
+    The first few :math:`j_n` with real argument:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import spherical_jn
+    >>> x = np.arange(0.0, 10.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-0.5, 1.5)
+    >>> ax.set_title(r'Spherical Bessel functions $j_n$')
+    >>> for n in np.arange(0, 4):
+    ...     ax.plot(x, spherical_jn(n, x), label=rf'$j_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if derivative:
         return _spherical_jn_d(n, z)
@@ -98,6 +140,48 @@ def spherical_yn(n, z, derivative=False):
     .. [1] https://dlmf.nist.gov/10.47.E4
     .. [2] https://dlmf.nist.gov/10.51.E1
     .. [3] https://dlmf.nist.gov/10.51.E2
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The spherical Bessel functions of the second kind :math:`y_n` accept
+    both real and complex second argument. They can return a complex type:
+
+    >>> from scipy.special import spherical_yn
+    >>> spherical_yn(0, 3+5j)
+    (8.022343088587197-9.880052589376795j)
+    >>> type(spherical_yn(0, 3+5j))
+    <class 'numpy.complex128'>
+
+    They satisfy the following relation for the derivative:
+
+    .. math::
+        y_n'(z) = -y_{n+1}(z) + \frac{n}{z} y_n(z)
+
+    This can be verified, for example, for :math:`n=3` in the interval
+    :math:`[1, 2]`:
+
+    >>> from scipy.special import spherical_yn
+    >>> x = np.arange(1.0, 2.0, 0.01)
+    >>> np.allclose(spherical_yn(3, x, True),
+    ...             3/x * spherical_yn(3, x) - spherical_yn(4, x))
+    True
+
+    The first few :math:`y_n` with real argument:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import spherical_yn
+    >>> x = np.arange(0.0, 10.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 1.0)
+    >>> ax.set_title(r'Spherical Bessel functions $y_n$')
+    >>> for n in np.arange(0, 4):
+    ...     ax.plot(x, spherical_yn(n, x), label=rf'$y_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if derivative:
         return _spherical_yn_d(n, z)
@@ -147,6 +231,49 @@ def spherical_in(n, z, derivative=False):
     ----------
     .. [1] https://dlmf.nist.gov/10.47.E7
     .. [2] https://dlmf.nist.gov/10.51.E5
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The modified spherical Bessel functions of the first kind :math:`i_n`
+    accept both real and complex second argument.
+    They can return a complex type:
+
+    >>> from scipy.special import spherical_in
+    >>> spherical_in(0, 3+5j)
+    (-1.1689867793369182-1.2697305267234222j)
+    >>> type(spherical_in(0, 3+5j))
+    <class 'numpy.complex128'>
+
+    They satisfy the following relation for the derivative:
+
+    .. math::
+        i_n'(z) = i_{n+1}(z) + \frac{n}{z} i_n(z)
+
+    This can be verified, for example, for :math:`n=3` in the interval
+    :math:`[1, 2]`:
+
+    >>> from scipy.special import spherical_in
+    >>> x = np.arange(1.0, 2.0, 0.01)
+    >>> np.allclose(spherical_in(3, x, True),
+    ...             3/x * spherical_in(3, x) + spherical_in(4, x))
+    True
+
+    The first few :math:`i_n` with real argument:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import spherical_in
+    >>> x = np.arange(0.0, 6.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-0.5, 5.0)
+    >>> ax.set_title(r'Modified spherical Bessel functions $i_n$')
+    >>> for n in np.arange(0, 4):
+    ...     ax.plot(x, spherical_in(n, x), label=rf'$i_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if derivative:
         return _spherical_in_d(n, z)
@@ -155,7 +282,8 @@ def spherical_in(n, z, derivative=False):
 
 
 def spherical_kn(n, z, derivative=False):
-    r"""Modified spherical Bessel function of the second kind or its derivative.
+    r"""Modified spherical Bessel function of the second kind or its
+    derivative.
 
     Defined as [1]_,
 
@@ -196,6 +324,49 @@ def spherical_kn(n, z, derivative=False):
     ----------
     .. [1] https://dlmf.nist.gov/10.47.E9
     .. [2] https://dlmf.nist.gov/10.51.E5
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The modified spherical Bessel functions of the second kind :math:`k_n`
+    accept both real and complex second argument.
+    They can return a complex type:
+
+    >>> from scipy.special import spherical_kn
+    >>> spherical_kn(0, 3+5j)
+    (0.012985785614001561+0.003354691603137546j)
+    >>> type(spherical_kn(0, 3+5j))
+    <class 'numpy.complex128'>
+
+    They satisfy the following relation for the derivative:
+
+    .. math::
+        k_n'(z) = -k_{n+1}(z) + \frac{n}{z} k_n(z)
+
+    This can be verified, for example, for :math:`n=3` in the interval
+    :math:`[1, 2]`:
+
+    >>> from scipy.special import spherical_kn
+    >>> x = np.arange(1.0, 2.0, 0.01)
+    >>> np.allclose(spherical_kn(3, x, True),
+    ...             3/x * spherical_kn(3, x) - spherical_kn(4, x))
+    True
+
+    The first few :math:`k_n` with real argument:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import spherical_kn
+    >>> x = np.arange(0.0, 4.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(0.0, 5.0)
+    >>> ax.set_title(r'Modified spherical Bessel functions $k_n$')
+    >>> for n in np.arange(0, 4):
+    ...     ax.plot(x, spherical_kn(n, x), label=rf'$k_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if derivative:
         return _spherical_kn_d(n, z)
