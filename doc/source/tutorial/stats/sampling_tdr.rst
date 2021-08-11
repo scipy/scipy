@@ -51,7 +51,7 @@ An example of using this method is shown below:
     >>> dist = StandardNormal()
     >>> 
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, seed=urng)
+    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
     >>> rng.rvs()
     -1.526829048388144
 
@@ -101,7 +101,7 @@ to see how well the generator fits the given distribution. These are:
 To increase ``squeeze_hat_ratio``, pass ``max_squeeze_hat_ratio``:
 
     >>> rng = TransformedDensityRejection(dist, max_squeeze_hat_ratio=0.999,
-    ...                                   max_intervals=1000, seed=urng)
+    ...                                   max_intervals=1000, numpy_rng=urng)
     >>> rng.squeeze_hat_ratio
     0.999364900465214
 
@@ -125,7 +125,7 @@ distribution:
     >>> dist1 = StandardNormal()
     >>> urng1 = np.random.default_rng()
     >>> urng2 = copy(urng1)
-    >>> rng1 = TransformedDensityRejection(dist1, seed=urng1)
+    >>> rng1 = TransformedDensityRejection(dist1, numpy_rng=urng1)
     >>> dist1.callbacks  # evaluations during setup
     139
     >>> dist1.callbacks = 0  # don't consider evaluations during setup
@@ -135,7 +135,7 @@ distribution:
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
     >>> rng2 = TransformedDensityRejection(dist2, max_squeeze_hat_ratio=0.999,
-    ...                                    max_intervals=1000, seed=urng2)
+    ...                                    max_intervals=1000, numpy_rng=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
     >>> dist2.callbacks = 0  # don't consider evaluations during setup

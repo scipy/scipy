@@ -288,17 +288,18 @@ cdef double[::1] _validate_pv(pv) except *:
         pv = pv_view = np.ascontiguousarray(pv, dtype=np.float64)
         # Empty arrays not allowed.
         if pv.size == 0:
-            raise ValueError("`pv` must have at least one element.")
+            raise ValueError("probability vector must contain at least "
+                             "one element.")
         # NaNs and infs not recognized by UNU.RAN so throw an error here
         # only.
         if not np.isfinite(pv).all():
-            raise ValueError("`pv` must contain only finite / non-nan "
-                             "values.")
+            raise ValueError("probability vector must contain only "
+                             "finite / non-nan values.")
         # This special case is not handled by UNU.RAN and it just throws
         # an "unknown error".
         if (pv == 0).all():
-            raise ValueError("`pv` must contain at least one non-zero "
-                             "value.")
+            raise ValueError("probability vector must contain at least "
+                             "one non-zero value.")
     # return a contiguous memory view of the PV
     return pv_view
 
@@ -318,7 +319,7 @@ cdef class Method:
       occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
-    * Provides the `seed` property to get and set the NumPy URNG.
+    * Provides a `set_numpy_rng` method to change the seed.
     * Implements the __dealloc__ method. The child class must not overide
       this method.
     * Implements __reduce__ method to allow pickling.
@@ -345,18 +346,18 @@ cdef class Method:
             if msg:
                 raise UNURANError(msg)
 
-    cdef inline void _set_rng(self, object seed) except *:
+    cdef inline void _set_rng(self, object numpy_rng) except *:
         """
         Create a UNU.RAN random number generator.
 
         Parameters
         ----------
-        seed : object
+        numpy_rng : object
             Seed for the uniform random number generator. Can be a integer,
             NumPy BitGenerator, RandomState, or SeedSequence.
         """
         cdef ccallback_t callback
-        self.numpy_rng = get_numpy_rng(seed)
+        self.numpy_rng = get_numpy_rng(numpy_rng)
         self._urng_builder = _URNG(self.numpy_rng)
         self.urng = self._urng_builder.get_urng()
         if self.urng == NULL:
@@ -486,13 +487,8 @@ cdef class Method:
             raise NotImplementedError("only univariate continuous and "
                                       "discrete distributions supported")
 
-    @property
-    def seed(self):
-        return self.numpy_rng
-
-    @seed.setter
-    def seed(self, new_seed):
-        self.numpy_rng = get_numpy_rng(new_seed)
+    def set_numpy_rng(self, numpy_rng):
+        self.numpy_rng = get_numpy_rng(numpy_rng)
         _lock.acquire()
         try:
             self._messages.clear()
@@ -530,7 +526,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, seed=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, numpy_rng=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -567,17 +563,30 @@ cdef class TransformedDensityRejection(Method):
         The support of the distribution. Must not contain `nan` values.
         Default is ``None``. When ``None``, the support is assumed to be
         :math:`(-\infty, \infty)`.
-    c : float, optional
-        Set parameter ``c`` for transformation ``T``. Currently only values
-        between 0 and -0.5 are allowed. If ``c`` is between 0 and -0.5 it is
-        set to -0.5. See Notes for definition of the transformation function
-        ``T``. Default is -0.5.
+    c : {-0.5, 0.}, optional
+        Set parameter ``c`` for the transformation function ``T``. The
+        default is -0.5. The transformation of the PDF must be concave in
+        order to construct the hat function. Such a PDF is called T-concave.
+        Currently the following transformations are supported:
+
+        .. math::
+
+            c = 0.: T(x) &= \log(x)\\
+            c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
+
     cpoints : int or array_like, optional
         If an interger, it defines the number of construction points. If it
         is array-like, the elements of the array are used as construction
         points. Default is 30.
     variant : {'ps', 'gw', 'ia'}, optional
-        The variant to use. The default is 'ps'. See Notes for their explaination.
+        The variant to use. The default is 'ps'.
+        Three variants of this method are available:
+
+        * GW: squeezes between construction points, see [3]_.
+        * PS: squeezes proportional to hat function. (Default)
+        * IA: same as variant PS but uses a compositon method with
+          "immediate acceptance" in the region below the squeeze.
+
     use_dars : bool, optional
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
@@ -591,27 +600,9 @@ cdef class TransformedDensityRejection(Method):
         Set factor for relative size of the guide table for indexed search.
         It must be greater than or equal to 0. When set to 0, then sequential
         search is used. Default is 2.
-    seed : int, BitGenerator, Generator, RandomState, SeedSequence, optional
-        Seed for the underlying uniform random number generation. Default is
-        ``None`` in which case a random seed is used.
-
-    Notes
-    -----
-    The transformation of the PDF must be concave in order to construct the
-    hat function. Such a PDF is called T-concave. Currently the following
-    transformations are supported:
-
-    .. math::
-
-        c = 0.: T(x) &= \log(x)\\
-        c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
-
-    Three variants of this method are available:
-
-    * GW: squeezes between construction points, see [3]_.
-    * PS: squeezes proportional to hat function. (Default)
-    * IA: same as variant PS but uses a compositon method with
-      "immediate acceptance" in the region below the squeeze.
+    numpy_rng : int, BitGenerator, Generator, RandomState, SeedSequence, optional
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator. Default is ``None`` in which case a random seed is used.
 
     
     References
@@ -659,7 +650,8 @@ cdef class TransformedDensityRejection(Method):
     ...         return -2*x
     ... 
     >>> dist = MyDist()
-    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), seed=urng)
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
+    ...                                   numpy_rng=urng)
 
     Now, we can use the `rvs` method to generate samples from the
     distribution:
@@ -684,7 +676,8 @@ cdef class TransformedDensityRejection(Method):
     immediate acceptance variant of the method, do:
 
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), c=0.,
-    ...                                   cpoints=10, variant='ia', seed=urng)
+    ...                                   cpoints=10, variant='ia',
+    ...                                   numpy_rng=urng)
     >>> rvs = rng.rvs(1000)
     """
     cdef double[::1] cpoints_array
@@ -702,7 +695,7 @@ cdef class TransformedDensityRejection(Method):
                   max_squeeze_hat_ratio=0.99,
                   max_intervals=100,
                   guide_factor=2,
-                  seed=None):
+                  numpy_rng=None):
         (domain, c, cpoints, variant) = self._validate_args(domain, c, cpoints, variant)
 
         # save all the arguments for pickling support
@@ -718,7 +711,7 @@ cdef class TransformedDensityRejection(Method):
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
             'max_intervals': max_intervals,
             'guide_factor': guide_factor,
-            'seed': seed
+            'numpy_rng': numpy_rng
         }
 
         cdef:
@@ -771,14 +764,14 @@ cdef class TransformedDensityRejection(Method):
             self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
 
-            self._set_rng(seed)
+            self._set_rng(numpy_rng)
         finally:
             _lock.release()
 
     cdef object _validate_args(self, domain, c, cpoints, variant):
         domain = _validate_domain(domain)
-        if np.isnan(c):
-            raise ValueError("`c` must be a non-nan value.")
+        if c not in {-0.5, 0.}:
+            raise ValueError("`c` must either be -0.5 or 0.")
         if variant not in {"ps", "gw", "ia"}:
             raise ValueError("Invalid option for the `variant`.")
         if not np.isscalar(cpoints):
@@ -879,7 +872,7 @@ cdef class TransformedDensityRejection(Method):
 
 cdef class DiscreteAliasUrn(Method):
     r"""
-    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, seed=None)
+    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, numpy_rng=None)
 
     Discrete Alias-Urn Method.
 
@@ -890,29 +883,27 @@ cdef class DiscreteAliasUrn(Method):
 
     Parameters
     ----------
-    pv : array_like, optional
+    dist : array_like or object, optional
         Probability vector (PV) of the distribution. If PV isn't available,
-        PMF of the distribution is expected. Default is ``None``.
-    dist : object, optional
-        An instance of a class with a 'pmf' method. Only required if PV isn't
-        available. The signature of the PMF is expected to be:
-        ``def pmf(k: int) -> float``. i.e it should accept a Python
-        integer and return a Python float. Default is ``None``.
+        an instance of a class with a 'pmf' method is expected. The signature
+        of the PMF is expected to be: ``def pmf(k: int) -> float``. i.e it
+        should accept a Python integer and return a Python float.
     domain : int, optional
-        Support of the PMF. If a probability vector is not available, a
+        Support of the PMF. If a probability vector (``pv``) is not available, a
         finite domain must be given. i.e. the PMF must have a finite support.
         Default is ``None``. When ``None``, the support is assumed to be
-        ``(0, len(pv))``. When this parameter is passes in combination with
-        ``pv``, ``domain[0]`` is used to relocate the distribution and
+        ``(0, len(pv))``. When this parameter is passed in combination with a
+        probability vector, ``domain[0]`` is used to relocate the distribution
+        from ``(0, len(pv))`` to ``(domain[0], domain[0]+len(pv))`` and
         ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
         explanation.
     urn_factor : float, optional
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result is faster
         generation times but require a more expensive setup. Default is 1.
-    seed : int, BitGenerator, Generator, RandomState, SeedSequence, optional
-        Seed for the underlying uniform random number generation. Default is
-        ``None`` in which case a random seed is used.
+    numpy_rng : int, BitGenerator, Generator, RandomState, SeedSequence, optional
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator. Default is ``None`` in which case a random seed is used.
 
     Notes
     -----
@@ -957,7 +948,7 @@ cdef class DiscreteAliasUrn(Method):
 
     >>> pv = [0.1, 0.3, 0.6]
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(pv, seed=urng)
+    >>> rng = DiscreteAliasUrn(pv, numpy_rng=urng)
 
     The RNG has been setup. Now, we can now use the `rvs` method to
     generate samples from the distribution:
@@ -996,7 +987,7 @@ cdef class DiscreteAliasUrn(Method):
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
     >>> domain = 0, n
-    >>> rng = DiscreteAliasUrn(dist=dist, domain=domain, seed=urng)
+    >>> rng = DiscreteAliasUrn(dist, domain=domain, numpy_rng=urng)
 
     Now, we can sample from the distribution using the `rvs` method
     and also measure the goodness-of-fit of the samples:
@@ -1033,7 +1024,7 @@ cdef class DiscreteAliasUrn(Method):
 
     To set the ``urn_factor``, use:
 
-    >>> rng = DiscreteAliasUrn(pv, urn_factor=2, seed=urng)
+    >>> rng = DiscreteAliasUrn(pv, urn_factor=2, numpy_rng=urng)
 
     This uses a table twice the size of the probability vector to generate
     random variates from the distribution.
@@ -1041,18 +1032,17 @@ cdef class DiscreteAliasUrn(Method):
     cdef double[::1] pv_view
 
     def __cinit__(self,
-                  pv=None,
-                  dist=None,
+                  dist,
                   *,
                   domain=None,
                   urn_factor=1,
-                  seed=None):
+                  numpy_rng=None):
         cdef double[::1] pv_view
-        (pv_view, domain) = self._validate_args(pv, dist, domain)
+        (pv_view, domain) = self._validate_args(dist, domain)
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
         # save all the arguments for pickling support
-        self._kwargs = {'pv': pv, 'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'seed': seed}
+        self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'numpy_rng': numpy_rng}
 
         cdef:
             unur_distr *distr
@@ -1080,11 +1070,11 @@ cdef class DiscreteAliasUrn(Method):
                 raise UNURANError(self._messages.get())
             self._check_errorcode(unur_dau_set_urnfactor(self.par, urn_factor))
 
-            self._set_rng(seed)
+            self._set_rng(numpy_rng)
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, pv, dist, domain):
+    cdef object _validate_args(self, dist, domain):
         cdef double[::1] pv_view
 
         if domain is not None:
@@ -1092,15 +1082,10 @@ cdef class DiscreteAliasUrn(Method):
             if not np.isfinite(domain).all():
                 raise ValueError("`domain` must be finite.")
         else:
-            if dist is not None:
-                raise ValueError("`domain` must be provided if "
-                                 "`pv` is not available.")
-        if pv is None:
-            if dist is None:
-                raise ValueError("Either a `pv` or a `dist` object with a "
-                                 "PMF method required but none given.")
-            if not hasattr(dist, "pmf"):
-                raise ValueError("`pmf` required but not found.")
+            if hasattr(dist, 'pmf'):
+                raise ValueError("`domain` must be provided when the "
+                                 "probability vector is not available.")
+        if hasattr(dist, 'pmf'):
             # we assume the PMF accepts and return floats. So, we need
             # to vectorize it to call with an array of points in the domain.
             pmf = np.vectorize(dist.pmf)
@@ -1112,6 +1097,6 @@ cdef class DiscreteAliasUrn(Method):
                 msg = "PMF returned invalid values: " + err.args[0]
                 raise ValueError(msg) from None
         else:
-            pv_view = _validate_pv(pv)
+            pv_view = _validate_pv(dist)
 
         return pv_view, domain

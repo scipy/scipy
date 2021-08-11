@@ -36,7 +36,7 @@ class common_discr_dist:
 
 all_methods = [
     ("TransformedDensityRejection", {"dist": common_cont_dist}),
-    ("DiscreteAliasUrn", {"pv": [0.02, 0.18, 0.8]})
+    ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]})
 ]
 
 
@@ -77,7 +77,7 @@ bad_dpdf_common = [
 
 
 bad_pv_common = [
-    ([], r"must have at least one element"),
+    ([], r"must contain at least one element"),
     ([[1.0, 0.0]], r"wrong number of dimensions \(expected 1, got 2\)"),
     ([0.2, 0.4, np.nan, 0.8], r"must contain only finite / non-nan values"),
     ([0.2, 0.4, np.inf, 0.8], r"must contain only finite / non-nan values"),
@@ -132,21 +132,21 @@ def test_bad_domain(domain, err, msg, method, kwargs):
 
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
-def test_seed(method, kwargs):
+def test_numpy_rng(method, kwargs):
     Method = getattr(stats, method)
 
     # simple seed that works for any version of NumPy
     seed = 123
-    rng1 = Method(**kwargs, seed=seed)
-    rng2 = Method(**kwargs, seed=seed)
+    rng1 = Method(**kwargs, numpy_rng=seed)
+    rng2 = Method(**kwargs, numpy_rng=seed)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
 
     # RandomState seed for old numpy
     if NumpyVersion(np.__version__) < '1.19.0':
         seed1 = np.random.RandomState(123)
         seed2 = 123
-        rng1 = Method(**kwargs, seed=seed1)
-        rng2 = Method(**kwargs, seed=seed2)
+        rng1 = Method(**kwargs, numpy_rng=seed1)
+        rng2 = Method(**kwargs, numpy_rng=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
         rvs11 = rng1.rvs(550)
         rvs12 = rng1.rvs(50)
@@ -156,33 +156,33 @@ def test_seed(method, kwargs):
     else:  # Generator seed for new NumPy
         seed1 = np.random.default_rng(123)
         seed2 = np.random.PCG64(123)
-        rng1 = Method(**kwargs, seed=seed1)
-        rng2 = Method(**kwargs, seed=seed2)
+        rng1 = Method(**kwargs, numpy_rng=seed1)
+        rng2 = Method(**kwargs, numpy_rng=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
 
         # when a RandomState is given, it should take the bitgen_t
         # member of the class and create a Generator instance.
         seed1 = np.random.RandomState(np.random.MT19937(123))
         seed2 = np.random.Generator(np.random.MT19937(123))
-        rng1 = Method(**kwargs, seed=seed1)
-        rng2 = Method(**kwargs, seed=seed2)
+        rng1 = Method(**kwargs, numpy_rng=seed1)
+        rng2 = Method(**kwargs, numpy_rng=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
 
     # testing with seed sequence
     seed = [1, 2, 3]
-    rng1 = Method(**kwargs, seed=seed)
-    rng2 = Method(**kwargs, seed=seed)
+    rng1 = Method(**kwargs, numpy_rng=seed)
+    rng2 = Method(**kwargs, numpy_rng=seed)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
 
 
-def test_seed_setter():
-    rng1 = TransformedDensityRejection(common_cont_dist, seed=123)
+def test_set_numpy_rng():
+    rng1 = TransformedDensityRejection(common_cont_dist, numpy_rng=123)
     rng2 = TransformedDensityRejection(common_cont_dist)
-    rng2.seed = 123
+    rng2.set_numpy_rng(123)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
-    rng = TransformedDensityRejection(common_cont_dist, seed=123)
+    rng = TransformedDensityRejection(common_cont_dist, numpy_rng=123)
     rvs1 = rng.rvs(100)
-    rng.seed = 123
+    rng.set_numpy_rng(123)
     rvs2 = rng.rvs(100)
     assert_equal(rvs1, rvs2)
 
@@ -207,7 +207,8 @@ def test_threading_behaviour():
 
     def func1():
         dist = Distribution('foo')
-        rng = TransformedDensityRejection(dist, domain=(10, 100), seed=12)
+        rng = TransformedDensityRejection(dist, domain=(10, 100),
+                                          numpy_rng=12)
         try:
             rng.rvs(100000)
         except ValueError as e:
@@ -215,7 +216,8 @@ def test_threading_behaviour():
 
     def func2():
         dist = Distribution('bar')
-        rng = TransformedDensityRejection(dist, domain=(10, 100), seed=2)
+        rng = TransformedDensityRejection(dist, domain=(10, 100),
+                                          numpy_rng=2)
         try:
             rng.rvs(100000)
         except ValueError as e:
@@ -237,7 +239,7 @@ def test_threading_behaviour():
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_pickle(method, kwargs):
     Method = getattr(stats, method)
-    rng1 = Method(**kwargs, seed=123)
+    rng1 = Method(**kwargs, numpy_rng=123)
     obj = pickle.dumps(rng1)
     rng2 = pickle.loads(obj)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
@@ -320,7 +322,7 @@ class TestTransformedDensityRejection:
         with suppress_warnings() as sup:
             # filter the warnings thrown by UNU.RAN
             sup.filter(RuntimeWarning)
-            rng = TransformedDensityRejection(dist, seed=42)
+            rng = TransformedDensityRejection(dist, numpy_rng=42)
         rvs = rng.rvs(100000)
         mv = rvs.mean(), rvs.var()
         # test the moments only if the variance is finite
@@ -394,24 +396,11 @@ class TestTransformedDensityRejection:
             TransformedDensityRejection(common_cont_dist, domain=(-3, 3),
                                         cpoints=cpoints)
 
-    def test_bad_c(self):
-        # c < -0.5 => Not Implemented Error
-        msg = r"33 : c < -0.5 not implemented yet"
-        with pytest.raises(UNURANError, match=msg):
-            TransformedDensityRejection(common_cont_dist, c=-1.)
-        # -0.5 < c < 0. => Warning: Not recommended. Using default
-        msg = (r"33 : -0.5 < c < 0 not recommended. using c = -0.5 "
-               r"instead.")
-        with pytest.warns(RuntimeWarning, match=msg):
-            TransformedDensityRejection(common_cont_dist, c=-0.1)
-        # c > 0. => Warning: Using default
-        msg = r"33 : c > 0"
-        with pytest.warns(RuntimeWarning, match=msg):
-            TransformedDensityRejection(common_cont_dist, c=1.)
-        # nan c
-        msg = r"`c` must be a non-nan value."
+    @pytest.mark.parametrize("c", [-1., np.nan, np.inf, 0.1, 1.])
+    def test_bad_c(self, c):
+        msg = r"`c` must either be -0.5 or 0."
         with pytest.raises(ValueError, match=msg):
-            TransformedDensityRejection(common_cont_dist, c=np.nan)
+            TransformedDensityRejection(common_cont_dist, c=-1.)
 
     def test_bad_variant(self):
         msg = r"Invalid option for the `variant`"
@@ -489,7 +478,7 @@ class TestDiscreteAliasUrn:
         k = np.arange(domain[0], domain[1]+1)
         pv = dist.pmf(k)
         mv_ex = dist.stats('mv')
-        rng = DiscreteAliasUrn(pv, domain=domain, seed=42)
+        rng = DiscreteAliasUrn(pv, domain=domain, numpy_rng=42)
         rvs = rng.rvs(100000)
         # test if the first few moments match
         mv = rvs.mean(), rvs.var()
@@ -536,13 +525,13 @@ class TestDiscreteAliasUrn:
             pass
         dist.pmf = pmf
         with pytest.raises(err, match=msg):
-            DiscreteAliasUrn(dist=dist, domain=(1, 10))
+            DiscreteAliasUrn(dist, domain=(1, 10))
 
     @pytest.mark.parametrize("pv", [[0.18, 0.02, 0.8],
                                     [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
-        rng = DiscreteAliasUrn(pv, seed=123)
+        rng = DiscreteAliasUrn(pv, numpy_rng=123)
         rvs = rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))
@@ -573,26 +562,14 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteAliasUrn(dist=common_discr_dist, domain=domain)
+            DiscreteAliasUrn(common_discr_dist, domain=domain)
 
     def test_bad_urn_factor(self):
         with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
             DiscreteAliasUrn([0.5, 0.5], urn_factor=-1)
 
     def test_bad_args(self):
-        msg = (r"Either a `pv` or a `dist` object with a PMF method "
-               r"required but none given.")
+        msg = (r"`domain` must be provided when the "
+               r"probability vector is not available.")
         with pytest.raises(ValueError, match=msg):
-            DiscreteAliasUrn()
-
-        msg = r"`domain` must be provided if `pv` is not available"
-        with pytest.raises(ValueError, match=msg):
-            DiscreteAliasUrn(dist=common_discr_dist)
-
-    def test_bad_dist(self):
-        # Empty distribution
-        class dist:
-            ...
-        msg = r"`pmf` required but not found"
-        with pytest.raises(ValueError, match=msg):
-            DiscreteAliasUrn(dist=dist, domain=(0, 10))
+            DiscreteAliasUrn(common_discr_dist)

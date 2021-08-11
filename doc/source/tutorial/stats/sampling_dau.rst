@@ -24,7 +24,7 @@ constructing the tables is O(N).
     >>> 
     >>> pv = [0.18, 0.02, 0.8]
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(pv, seed=urng)
+    >>> rng = DiscreteAliasUrn(pv, numpy_rng=urng)
     >>> rng.rvs()
     0
 
@@ -34,7 +34,7 @@ in combination with the PV, it has the effect of relocating the
 distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
 ``domain[1]`` is ignored in this case.
 
-   >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), seed=urng)
+   >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), numpy_rng=urng)
    >>> rng.rvs()
    12
 
@@ -48,7 +48,7 @@ In that case, a bounded (finite) domain must also be given.
     ...         return x**self.c
     ... 
     >>> dist = Distribution(2)
-    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), seed=urng)
+    >>> rng = DiscreteAliasUrn(dist, domain=(1, 10), numpy_rng=urng)
     >>> rng.rvs()
     10
 
@@ -64,7 +64,7 @@ In that case, a bounded (finite) domain must also be given.
     ... 
     >>> dist = Distribution(2)
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(dist=dist, domain=(1, 10), seed=urng)
+    >>> rng = DiscreteAliasUrn(dist, domain=(1, 10), numpy_rng=urng)
     >>> rvs = rng.rvs(1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -104,7 +104,7 @@ table which can be changed by passing a ``urn_factor`` parameter.
 
     >>> # use a table twice the length of PV.
     >>> urn_factor = 2
-    >>> rng = DiscreteAliasUrn(pv, urn_factor=urn_factor, seed=urng)
+    >>> rng = DiscreteAliasUrn(pv, urn_factor=urn_factor, numpy_rng=urng)
     >>> rng.rvs()
     2
 

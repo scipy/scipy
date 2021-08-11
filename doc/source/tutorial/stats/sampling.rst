@@ -115,9 +115,9 @@ of required methods like PDF, CDF, etc. In addition to the distribution
 object, one can also pass parameters used to set up the generator. It is also
 possible to truncate the distributions using a ``domain`` parameter.  All
 generators need a stream of uniform random numbers that are transformed into
-random variates of the given distribution. This is done by passing a ``seed``
+random variates of the given distribution. This is done by passing a ``numpy_rng``
 parameter with a NumPy BitGenerator as the uniform random number generator.
-``seed`` can either be a integer, `np.random.Generator`,
+``numpy_rng`` can either be a integer, `np.random.Generator`,
 `np.random.BitGenerator`, `np.random.RandomState`, or
 `np.random.SeedSequence`.
 
@@ -143,7 +143,7 @@ An example of this interface is shown below:
     >>> dist = StandardNormal()
     >>> 
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, seed=urng)
+    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
 
 As shown in the example, we first initialize a distribution object that
 contains an implementation of the methods required by the generator. In
@@ -194,7 +194,7 @@ by visualizing the histogram of the samples:
     >>> 
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, seed=urng)
+    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
     >>> rvs = rng.rvs(size=1000)
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=1000)
     >>> fx = norm.pdf(x)
@@ -223,14 +223,14 @@ by visualizing the histogram of the samples:
           different even for the same stream of uniform random numbers. For
           example, the random number stream of SciPy's ``~norm`` and UNU.RAN's
           :class:`~TransformedDensityRejection` would not be the same even for
-          the same seed/random_state:
+          the same numpy_rng/random_state:
 
           >>> from scipy.stats import norm, TransformedDensityRejection
           >>> from copy import copy
           >>> dist = StandardNormal()
           >>> urng1 = np.random.default_rng()
           >>> urng1_copy = copy(urng1)
-          >>> rng = TransformedDensityRejection(dist, seed=urng1)
+          >>> rng = TransformedDensityRejection(dist, numpy_rng=urng1)
           >>> rng.rvs()
           -1.526829048388144
           >>> norm.rvs(random_state=urng1_copy)
@@ -238,7 +238,7 @@ by visualizing the histogram of the samples:
 
 We can pass a ``domain`` parameter to truncate the distribution:
 
-    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), seed=urng)
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), numpy_rng=urng)
     >>> rng.rvs((5, 3))
     array([[-0.99865691,  0.38104014,  0.31633526],
            [ 0.88433909, -0.45181849,  0.78574461],
