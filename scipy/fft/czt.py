@@ -160,7 +160,8 @@ class CZT:
 
     As this CZT is implemented using the Bluestein algorithm, it can compute
     large prime-length Fourier transforms in O(N log N) time, rather than the
-    O(N**2) time required by the direct DFT calculation.
+    O(N**2) time required by the direct DFT calculation.  (`scipy.fft` also
+    uses Bluestein's algorithm'.)
 
     (The name "chirp z-transform" comes from the use of a chirp in the
     Bluestein algorithm.  It does not decompose signals into chirps, like
@@ -310,7 +311,8 @@ class ZoomFFT(CZT):
     Frequency resolution can only be increased by increasing acquisition
     time.
 
-    These functions are implemented using Bluestein's algorithm. [2]_
+    These functions are implemented using Bluestein's algorithm (as is
+    `scipy.fft`). [2]_
 
     References
     ----------
