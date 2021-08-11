@@ -142,8 +142,8 @@ def test_0_rank_input():
 
 
 @pytest.mark.parametrize('impulse', ([0, 0, 1], [0, 0, 1, 0, 0],
-                                     np.concatenate(([0, 0, 1], np.zeros(100))
-                                                    )))
+                                     np.concatenate((np.array([0, 0, 1]),
+                                                     np.zeros(100)))))
 @pytest.mark.parametrize('m', (1, 3, 5, 8, 101, 1021))
 @pytest.mark.parametrize('a', (1, 2, 0.5, 1.1))
 # Step that tests away from the unit circle, but not so far it explodes from
