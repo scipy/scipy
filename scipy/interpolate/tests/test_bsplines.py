@@ -490,7 +490,6 @@ class TestBSpline:
                                                  k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
 
-    @pytest.mark.xfail_on_32bit("Win32bit des_matr is nan")
     def test_design_matrix_t_shapes(self):
         # test for minimal possible `t` shape
         t = [0., 1., 1., 1., 2.]
