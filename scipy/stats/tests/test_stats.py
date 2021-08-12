@@ -6982,8 +6982,8 @@ class TestPoissonETest(object):
         _, pval = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         assert_almost_equal(pval, 0.999999756892963, decimal=5)
 
-    # should return different value, this implementation is free of
-    # limitation in original code
+    # should return different value because this implementation solves
+    # odd behavior for large numbers found in original fortran code
     def test_different_results(self):
         count1, count2 = 10000, 10000
         nobs1, nobs2 = 10000, 10000
@@ -6991,7 +6991,8 @@ class TestPoissonETest(object):
         with assert_raises(AssertionError):
             assert_almost_equal(pval, 0.24866994128694545, decimal=5)
 
-    # the original code by author does not implement what they said in the paper
+    # the original fortran code by the author does not implement what
+    # they said in the paper, this implementation fixes that
     def test_less_than_zero_lambda_hat2(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1

@@ -150,7 +150,8 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
     distribution from descriptive statistics
 
     Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be independent
-    samples respectively, from :math:`Poisson(\lambda_1)` and :math:`Poisson(\lambda_2)` distributions. It is well known that
+    samples respectively, from :math:`Poisson(\lambda_1)` and :math:`Poisson(\lambda_2)`
+    distributions. It is well known that
     
     .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
     
@@ -162,10 +163,10 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
     respectively. The problem of interest here is to test
     
     .. math::
-       H_0: \lambda_1 - \lambda_2 \le \mathtt{diff} \quad vs. \quad
-       H_a: \lambda_1 - \lambda_2 > \mathtt{diff}
+       H_0: \lambda_1 = \lambda_2 + \mathtt{diff} \quad vs. \quad
+       H_a: \lambda_1 \ne \lambda_2 + \mathtt{diff}
     
-    for right sided `greater` hypothesis where :math:`\mathtt{diff} \ge 0` is a given
+    for `two-sided` hypothesis, where :math:`\mathtt{diff} \ge 0` is a given
     number, based on (`nobs1`, `count1`, `nobs2`, `count2`). `two-sided` and `greater`
     cases are demonstrated by [1]_.The `less` hypothesis performed by switching the
     arguments on `greater` hypothesis.
@@ -176,7 +177,7 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
         Count event of interest from the first and second samples respectively
     nobs1, nobs2 : int
         Sample size observed
-    diff : int of float, optional
+    diff : int or float, optional
         The difference of mean between two samples under null hypothesis
     alternative : {'two-sided', 'less', 'greater'}, optional
         Which alternative hypothesis to test
@@ -193,10 +194,10 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
     -----
     The Poisson distribution is commonly used to model many processes such as
     transactions per user. A simple test to compare difference between two
-    means of Poisson samples is C-test, based on conditional distribution.
-    Meanwhile the E-test is an unconditional test
+    means of Poisson samples is C-test [1]_, based on conditional distribution.
+    Meanwhile the E-test is an unconditional test.
 
-    Based the author results [1]_, E-test is more powerful than C-test. The E-test
+    Based on the results in [1]_, E-test is more powerful than C-test. The E-test
     is almost exact because the test exceed the nominal value only by negligible
     amount. Compared to C-test which produce smaller size than nominal value.
 
@@ -246,10 +247,10 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
         raise TypeError('int arguments required for count1, count2, nobs1, and nobs2')
 
     if count1 < 0 or count2 < 0:
-        raise ValueError('k1 and k2 should have values greater than or equal to 0')
+        raise ValueError('count1 and count2 should have values greater than or equal to 0')
 
     if nobs1 <= 0 or nobs2 <= 0:
-        raise ValueError('n1 and n2 should have values greater than 0')
+        raise ValueError('nobs1 and nobs2 should have values greater than 0')
 
     if diff < 0:
         raise ValueError('diff can not have negative values')
