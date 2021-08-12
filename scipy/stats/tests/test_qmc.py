@@ -540,13 +540,15 @@ class TestLHS(QMCEngineTests):
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
     def test_sample_stratified(self, optimization, centered,
                                orthogonal):
+        seed = np.random.RandomState(123456)
         d, n = 4, 25
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=centered,
-                             orthogonal=orthogonal,
-                             optimization=optimization)
+        engine = qmc.LatinHypercube(d=d, centered=centered,
+                                    orthogonal=orthogonal,
+                                    optimization=optimization,
+                                    seed=seed)
         sample = engine.random(n=n)
         assert sample.shape == (n, d)
         assert engine.num_generated == n
@@ -559,10 +561,11 @@ class TestLHS(QMCEngineTests):
 
     @pytest.mark.parametrize("centered", [False, True])
     def test_orthogonal_array(self, centered):
+        seed = np.random.RandomState(123456)
         p = 5
 
-        engine = self.engine(d=6, scramble=False, centered=centered,
-                             orthogonal=True)
+        engine = qmc.LatinHypercube(d=6, centered=centered,
+                                    orthogonal=True, seed=seed)
         oa_lhs_sample = engine.random(p**2)
         for i, j in combinations(range(engine.d), 2):
             samples_2d = oa_lhs_sample[:, [i, j]]
