@@ -270,7 +270,7 @@ class TestTransformedDensityRejection:
 
         def cdf(self, x):
             return 3/4 * (x - x**3/3 + 2/3)
-            
+
         def support(self):
             return -1, 1
 
