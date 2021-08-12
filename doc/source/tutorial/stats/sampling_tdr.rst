@@ -98,8 +98,43 @@ to see how well the generator fits the given distribution. These are:
     >>> rng.squeeze_hat_ratio == rng.squeeze_area / rng.hat_area
     True
 
+The distribution can be truncated by passing a domain parameter:
+
+    >>> urng = np.random.default_rng()
+    >>> rng = TransformedDensityRejection(dist, domain=[0, 1], numpy_rng=urng)
+    >>> rng.rvs(10)
+    array([0.05452512, 0.97251362, 0.49955877, 0.82789729, 0.33048885,
+           0.55558548, 0.23168323, 0.13423275, 0.73176575, 0.35739799])
+
+If the domain is not specified, the ``support`` method of the ``dist`` object
+is used to determine the domain. If the ``dist`` object does not provide a
+``support`` method, the support is assumed to be ``[-np.inf, np.inf]``.
+
+    >>> class StandardNormal:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x*x)
+    ...     def dpdf(self, x):
+    ...         return -x * np.exp(-0.5 * x*x)
+    ...     def support(self):
+    ...         return [0, np.inf]
+    ... 
+    >>> dist = StandardNormal()
+    >>> 
+    >>> urng = np.random.default_rng()
+    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
+    >>> rng.rvs(10)
+    array([0.08004725, 2.34495752, 0.77449185, 1.50916285, 0.49580376,
+           0.87497384, 0.34355863, 0.19764151, 1.24218599, 0.53833579])
+
 To increase ``squeeze_hat_ratio``, pass ``max_squeeze_hat_ratio``:
 
+    >>> class StandardNormal:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x*x)
+    ...     def dpdf(self, x):
+    ...         return -x * np.exp(-0.5 * x*x)
+    ... 
+    >>> dist = StandardNormal()
     >>> rng = TransformedDensityRejection(dist, max_squeeze_hat_ratio=0.999,
     ...                                   max_intervals=1000, numpy_rng=urng)
     >>> rng.squeeze_hat_ratio

@@ -267,7 +267,11 @@ cdef void _pack_distr(unur_distr *distr, dict callbacks) except *:
             unur_distr_discr_set_cdf(distr, discr_cdf_thunk)
 
 
-def _validate_domain(domain):
+def _validate_domain(domain, dist):
+    if domain is None and hasattr(dist, 'support'):
+        # if the distribution has a support method, use it
+        # to get the domain.
+        domain = dist.support()
     if domain is not None:
         # UNU.RAN doesn't recognize nans in the probability vector
         # and throws an "unknown error". Hence, check for nans ourselves
@@ -543,14 +547,14 @@ cdef class TransformedDensityRejection(Method):
     Parameters
     ----------
     dist : object
-        An instance of a class with 'pdf' and 'dpdf' methods.
+        An instance of a class with ``pdf`` and ``dpdf`` methods.
 
-        * 'pdf': PDF of the distribution. The signature of the PDF is
-          expected to be: ``def pdf(x: float) -> float``. i.e.
+        * ``pdf``: PDF of the distribution. The signature of the PDF is
+          expected to be: ``def pdf(self, x: float) -> float``. i.e.
           the PDF should accept a Python float and the parameters and
           return a Python float. It doesn't need to integrate to 1 i.e.
           the PDF doesn't need to be normalized.
-        * 'dpdf': Derivative of the PDF w.r.t x (i.e. the variate). Must
+        * ``dpdf``: Derivative of the PDF w.r.t x (i.e. the variate). Must
           have the same signature as the PDF.
 
     mode : float, optional
@@ -561,8 +565,12 @@ cdef class TransformedDensityRejection(Method):
         PDF and is used to avoid numerical problems. Default is ``None``.
     domain : list or tuple of length 2, optional
         The support of the distribution. Must not contain `nan` values.
-        Default is ``None``. When ``None``, the support is assumed to be
-        :math:`(-\infty, \infty)`.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
     c : {-0.5, 0.}, optional
         Set parameter ``c`` for the transformation function ``T``. The
         default is -0.5. The transformation of the PDF must be concave in
@@ -653,8 +661,22 @@ cdef class TransformedDensityRejection(Method):
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
     ...                                   numpy_rng=urng)
 
-    Now, we can use the `rvs` method to generate samples from the
-    distribution:
+    Domain can be very useful to truncate the distribution but to avoid passing
+    it everytime to the constructor, a default domain can be set by providing a
+    `support` method in the distribution object (`dist`):
+
+    >>> class MyDist:
+    ...     def pdf(self, x):
+    ...         return 1-x*x
+    ...     def dpdf(self, x):
+    ...         return -2*x
+    ...     def support(self):
+    ...         return (-1, 1)
+    ... 
+    >>> dist = MyDist()
+    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
+
+    Now, we can use the `rvs` method to generate samples from the distribution:
 
     >>> rvs = rng.rvs(1000)
 
@@ -696,7 +718,7 @@ cdef class TransformedDensityRejection(Method):
                   max_intervals=100,
                   guide_factor=2,
                   numpy_rng=None):
-        (domain, c, cpoints, variant) = self._validate_args(domain, c, cpoints, variant)
+        (domain, c, cpoints, variant) = self._validate_args(dist, domain, c, cpoints, variant)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -768,8 +790,8 @@ cdef class TransformedDensityRejection(Method):
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, domain, c, cpoints, variant):
-        domain = _validate_domain(domain)
+    cdef object _validate_args(self, dist, domain, c, cpoints, variant):
+        domain = _validate_domain(domain, dist)
         if c not in {-0.5, 0.}:
             raise ValueError("`c` must either be -0.5 or 0.")
         if variant not in {"ps", "gw", "ia"}:
@@ -885,18 +907,22 @@ cdef class DiscreteAliasUrn(Method):
     ----------
     dist : array_like or object, optional
         Probability vector (PV) of the distribution. If PV isn't available,
-        an instance of a class with a 'pmf' method is expected. The signature
-        of the PMF is expected to be: ``def pmf(k: int) -> float``. i.e it
+        an instance of a class with a ``pmf`` method is expected. The signature
+        of the PMF is expected to be: ``def pmf(self, k: int) -> float``. i.e it
         should accept a Python integer and return a Python float.
     domain : int, optional
         Support of the PMF. If a probability vector (``pv``) is not available, a
         finite domain must be given. i.e. the PMF must have a finite support.
-        Default is ``None``. When ``None``, the support is assumed to be
-        ``(0, len(pv))``. When this parameter is passed in combination with a
-        probability vector, ``domain[0]`` is used to relocate the distribution
-        from ``(0, len(pv))`` to ``(domain[0], domain[0]+len(pv))`` and
-        ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
-        explanation.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise, the support is assumed to be ``(0, len(pv))``. When this
+          parameter is passed in combination with a probability vector, ``domain[0]``
+          is used to relocate the distribution from ``(0, len(pv))`` to
+          ``(domain[0], domain[0]+len(pv))`` and ``domain[1]`` is ignored. See Notes
+          and tutorial for a more detailed explanation.
+
     urn_factor : float, optional
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result is faster
@@ -1077,8 +1103,8 @@ cdef class DiscreteAliasUrn(Method):
     cdef object _validate_args(self, dist, domain):
         cdef double[::1] pv_view
 
+        domain = _validate_domain(domain, dist)
         if domain is not None:
-            domain = _validate_domain(domain)
             if not np.isfinite(domain).all():
                 raise ValueError("`domain` must be finite.")
         else:

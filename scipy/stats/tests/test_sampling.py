@@ -263,13 +263,16 @@ class TestTransformedDensityRejection:
     # Simple Custom Distribution
     class dist0:
         def pdf(self, x):
-            return 3/4 * (1-x*x) if abs(x) <= 1 else 0
+            return 3/4 * (1-x*x)
 
         def dpdf(self, x):
-            return 3/4 * (-2*x) if abs(x) <= 1 else 0
+            return 3/4 * (-2*x)
 
         def cdf(self, x):
-            return 3/4 * (x - x**3/3 + 2/3) if abs(x) <= 1 else 1*(x >= 1)
+            return 3/4 * (x - x**3/3 + 2/3)
+            
+        def support(self):
+            return -1, 1
 
     # Standard Normal Distribution
     class dist1:
@@ -478,12 +481,12 @@ class TestDiscreteAliasUrn:
         k = np.arange(domain[0], domain[1]+1)
         pv = dist.pmf(k)
         mv_ex = dist.stats('mv')
-        rng = DiscreteAliasUrn(pv, domain=domain, numpy_rng=42)
+        rng = DiscreteAliasUrn(dist, numpy_rng=42)
         rvs = rng.rvs(100000)
         # test if the first few moments match
         mv = rvs.mean(), rvs.var()
         assert_allclose(mv, mv_ex, rtol=1e-3, atol=1e-1)
-        # correct for some numerical errors
+        # normalize
         pv = pv / pv.sum()
         # chi-squared test for goodness-of-fit
         obs_freqs = np.zeros_like(pv)
