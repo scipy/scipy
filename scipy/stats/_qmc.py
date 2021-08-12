@@ -928,19 +928,22 @@ class LatinHypercube(QMCEngine):
     Notes
     -----
 
+    When LHS is used for integrating a function :math:`f` over :math:`n`,
     LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
-    but not necessarily for optimized LHS.
+    With a LHS of :math:`n` points, the variance of the integral is always
+    lower than plain MC on :math:`n-1` points [3]_. There is a central limit
+    theorem for LHS on the mean and variance of the integral [4]_, but not
+    necessarily for optimized LHS due to the randomization.
 
-    LHS is an orthogonal array of strength 1.
     :math:`A` is called an orthogonal array of strength :math:`t` if in each
-    n-row-by-t-column submatrix of :math:`A`, all :math:`q^t` possible
-    distinct rows occur the same number of times.
+    n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
+    distinct rows occur the same number of times,
+    with :math:`p` a prime number.
 
-    Strength 1 (LHS) brings an advantage over strength 0 (MC) and strength 2
-    is a useful increment over strength 1. Going to strength 3 is a smaller
-    increment and scrambled QMC like Sobol', Halton are more performant [7]_.
+    Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
+    strength 2 is a useful increment over strength 1. Going to strength 3 is
+    a smaller increment and scrambled QMC like Sobol', Halton are more
+    performant [7]_.
 
     References
     ----------
