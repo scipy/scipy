@@ -147,7 +147,7 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>r2k(n,k,alpha,a,b,beta,c,trans,lower,lda,
   integer depend(a, b, trans, ka, lda, kb, ldb), intent(hide), &
         check(trans ? lda==ldb: ka==kb) :: k = (trans ? lda : ka)
 
-end subroutine <prefix><sy,\0,\0,\0,he,he>r2k
+end subroutine <prefix6><sy,\0,\0,\0,he,he>r2k
 
 
 subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, diag)

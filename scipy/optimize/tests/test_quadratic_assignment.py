@@ -46,7 +46,7 @@ def chr12c():
     return A, B, opt_perm
 
 
-class QAPCommonTests(object):
+class QAPCommonTests:
     """
     Base class for `quadratic_assignment` tests.
     """

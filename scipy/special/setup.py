@@ -4,13 +4,9 @@ from os.path import join, dirname
 from distutils.sysconfig import get_python_inc
 import subprocess
 import numpy
-from numpy.distutils.misc_util import get_numpy_include_dirs
+from numpy.distutils.misc_util import get_numpy_include_dirs, get_info
 
-try:
-    from numpy.distutils.misc_util import get_info
-except ImportError as e:
-    raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
-                     (numpy.__version__, numpy.__file__)) from e
+from scipy._build_utils.compiler_helper import set_c_flags_hook
 
 
 def configuration(parent_package='',top_path=None):
@@ -69,8 +65,10 @@ def configuration(parent_package='',top_path=None):
 
     # Extension _ufuncs
     headers = ['*.h', join('cephes', '*.h')]
-    ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
-                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+    ufuncs_src = ['_ufuncs.c', 'sf_error.c',
+                  'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
+                  '_cosine.c']
+
     ufuncs_dep = (
         headers
         + ufuncs_src
@@ -85,11 +83,12 @@ def configuration(parent_package='',top_path=None):
                        libraries=['sc_amos', 'sc_cephes', 'sc_mach',
                                   'sc_cdf', 'sc_specfun'],
                        define_macros=define_macros)
-    config.add_extension('_ufuncs',
-                         depends=ufuncs_dep,
-                         sources=ufuncs_src,
-                         extra_info=get_info("npymath"),
-                         **cfg)
+    _ufuncs = config.add_extension('_ufuncs',
+                                   depends=ufuncs_dep,
+                                   sources=ufuncs_src,
+                                   extra_info=get_info("npymath"),
+                                   **cfg)
+    _ufuncs._pre_build_hook = set_c_flags_hook
 
     # Extension _ufuncs_cxx
     ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.c',
@@ -112,8 +111,9 @@ def configuration(parent_package='',top_path=None):
     # Cython API
     config.add_data_files('cython_special.pxd')
 
-    cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
-                          "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+    cython_special_src = ['cython_special.c', 'sf_error.c',
+                          'amos_wrappers.c', 'cdf_wrappers.c',
+                          'specfun_wrappers.c', '_cosine.c']
     cython_special_dep = (
         headers
         + ufuncs_src
@@ -129,11 +129,12 @@ def configuration(parent_package='',top_path=None):
                        libraries=['sc_amos', 'sc_cephes', 'sc_mach',
                                   'sc_cdf', 'sc_specfun'],
                        define_macros=define_macros)
-    config.add_extension('cython_special',
-                         depends=cython_special_dep,
-                         sources=cython_special_src,
-                         extra_info=get_info("npymath"),
-                         **cfg)
+    cython_special = config.add_extension('cython_special',
+                                          depends=cython_special_dep,
+                                          sources=cython_special_src,
+                                          extra_info=get_info("npymath"),
+                                          **cfg)
+    cython_special._pre_build_hook = set_c_flags_hook
 
     # combinatorics
     config.add_extension('_comb',

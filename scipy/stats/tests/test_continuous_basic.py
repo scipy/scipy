@@ -1,4 +1,4 @@
-import pickle
+
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -7,7 +7,7 @@ from scipy.integrate import IntegrationWarning
 
 from scipy import stats
 from scipy.special import betainc
-from. common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_entropy_vect_scale,
@@ -33,52 +33,83 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-# Last three of these fail all around. Need to be checked
-distcont_extra = [
-    ['betaprime', (100, 86)],
-    ['fatiguelife', (5,)],
-    ['invweibull', (0.58847112119264788,)],
-    # burr: sample mean test fails still for c<1
-    ['burr', (0.94839838075366045, 4.3820284068855795)],
-    # genextreme: sample mean test, sf-logsf test fail
-    ['genextreme', (3.3184017469423535,)],
-]
-
-
-distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
-            'genexpon', 'vonmises', 'vonmises_line', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
+            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
+            'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
 
+distxslow = ['studentized_range']
+# distxslow are sorted by speed (very slow to slow)
+
 # skip check_fit_args (test is slow)
-skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                 'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
-                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapezoid',
-                 'vonmises', 'vonmises_line',
-                 'levy_stable', 'rv_histogram_instance']
+skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                     'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
+                     'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
+                     'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
+                     'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
+                     'rv_histogram_instance', 'studentized_range']
+
+# these were really slow in `test_fit`.py.
+# note that this list is used to skip both fit_test and fit_fix tests
+slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                    'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
+                    'studentized_range']
+# pearson3 fails due to something weird
+# the first list fails due to non-finite distribution moments encountered
+# most of the rest fail due to integration warnings
+# pearson3 is overriden as not implemented due to gh-11746
+fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
+                     'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
+                     'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                     'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
+                     'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
+                     'tukeylambda', 'invweibull']
+                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                        'nct', 'pareto', 'powernorm', 'powerlognorm']
+                     + ['pearson3'])
+skip_fit_test = {"MLE": skip_fit_test_mle,
+                 "MM": slow_fit_test_mm + fail_fit_test_mm}
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
-                     'gausshyper', 'genexpon', 'halfgennorm',
-                     'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
-                     'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapezoid', 'vonmises', 'vonmises_line']
+skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
+                         'genexpon', 'halfgennorm', 'gompertz', 'johnsonsb',
+                         'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
+                         'levy_stable', 'mielke', 'ncf', 'ncx2',
+                         'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
+                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'studentized_range']
+# the first list fails due to non-finite distribution moments encountered
+# most of the rest fail due to integration warnings
+# pearson3 is overriden as not implemented due to gh-11746
+fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
+                         'crystalball', 'f', 'fisk', 'foldcauchy',
+                         'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                         'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
+                         'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
+                         'invweibull']
+                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                            'pareto', 'powernorm', 'powerlognorm']
+                         + ['pearson3'])
+skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
+                     "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
-                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
+                   'gausshyper', 'gengamma', 'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'loguniform', 'maxwell', 'nakagami',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+                   'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -91,12 +122,15 @@ def cases_test_cont_basic():
             continue
         elif distname in distslow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        elif distname in distxslow:
+            yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
-def test_cont_basic(distname, arg):
+@pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
+def test_cont_basic(distname, arg, sn, n_fit_samples):
     # this test skips slow distributions
 
     if distname == 'truncnorm':
@@ -109,7 +143,6 @@ def test_cont_basic(distname, arg):
         distname = 'rv_histogram_instance'
 
     rng = np.random.RandomState(765456)
-    sn = 500
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     sm = rvs.mean()
     sv = rvs.var()
@@ -180,11 +213,13 @@ def test_cont_basic(distname, arg):
     if distname != 'truncnorm':
         check_ppf_private(distfn, arg, distname)
 
-    if distname not in skip_fit_test:
-        check_fit_args(distfn, arg, rvs[0:200])
+    for method in ["MLE", "MM"]:
+        if distname not in skip_fit_test[method]:
+            check_fit_args(distfn, arg, rvs[:n_fit_samples], method)
 
-    if distname not in skip_fit_fix_test:
-        check_fit_args_fix(distfn, arg, rvs[0:200])
+        if distname not in skip_fit_fix_test[method]:
+            check_fit_args_fix(distfn, arg, rvs[:n_fit_samples], method)
+
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 def test_rvs_scalar(distname, arg):
@@ -215,6 +250,13 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
+        if distname == 'studentized_range':
+            msg = ("studentized_range is far too slow for this test and it is "
+                   "redundant with test_distributions::TestStudentizedRange::"
+                   "test_moment_against_mp")
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xslow(reason=msg))
+            continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
@@ -260,7 +302,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon']:
+    if dist in ['gausshyper', 'genexpon', 'studentized_range']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the
@@ -274,8 +316,9 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
-                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
-                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
+                          'exponnorm', 'genhyperbolic', 'geninvgauss',
+                          'levy_stable', 'nct', 'norminvgauss', 'rice',
+                          'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -322,6 +365,7 @@ def test_rvs_gh2069_regression():
     assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
                      [[1], [2]], (4,))
+
 
 def test_nomodify_gh9900_regression():
     # Regression test for gh-9990
@@ -371,6 +415,7 @@ def test_broadcast_gh9990_regression():
     ans = [stats.reciprocal.cdf(_b, _a, _b) for _a, _b in zip(a,b)]
     npt.assert_array_almost_equal(stats.reciprocal.cdf(b, a, b), ans)
 
+
 def test_broadcast_gh7933_regression():
     # Check broadcast works
     stats.truncnorm.logpdf(
@@ -381,6 +426,7 @@ def test_broadcast_gh7933_regression():
         scale=3.0
     )
 
+
 def test_gh2002_regression():
     # Add a check that broadcast works in situations where only some
     # x-values are compatible with some of the shape arguments.
@@ -389,6 +435,7 @@ def test_gh2002_regression():
     expected = [stats.truncnorm.pdf(_x, _a, np.inf) for _x, _a in zip(x, a)]
     ans = stats.truncnorm.pdf(x, a, np.inf)
     npt.assert_array_almost_equal(ans, expected)
+
 
 def test_gh1320_regression():
     # Check that the first example from gh-1320 now works.
@@ -400,6 +447,19 @@ def test_gh1320_regression():
     # expected = np.array([25.50105963, 115.11191437])
     # stats.genextreme.moment(5, np.array([[c], [c + 0.5]]))
     # stats.genextreme.moment(5, np.array([c, c + 0.5]))
+
+
+def test_method_of_moments():
+    # example from https://en.wikipedia.org/wiki/Method_of_moments_(statistics)
+    np.random.seed(1234)
+    x = [0, 0, 0, 0, 1]
+    a = 1/5 - 2*np.sqrt(3)/5
+    b = 1/5 + 2*np.sqrt(3)/5
+    # force use of method of moments (uniform.fit is overriden)
+    loc, scale = super(type(stats.uniform), stats.uniform).fit(x, method="MM")
+    npt.assert_almost_equal(loc, a, decimal=4)
+    npt.assert_almost_equal(loc+scale, b, decimal=4)
+
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
@@ -593,43 +653,40 @@ def check_retrieving_support(distfn, args):
                             np.array(supp_loc_scale))
 
 
-def check_fit_args(distfn, arg, rvs):
+def check_fit_args(distfn, arg, rvs, method):
     with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
         sup.filter(category=RuntimeWarning,
                    message="floating point number truncated")
-        vals = distfn.fit(rvs)
-        vals2 = distfn.fit(rvs, optimizer='powell')
-
-    # Only check the length of the return
-    # FIXME: should check the actual results to see if we are 'close'
-    #   to what was created --- but what is 'close' enough
+        vals = distfn.fit(rvs, method=method)
+        vals2 = distfn.fit(rvs, optimizer='powell', method=method)
+    # Only check the length of the return; accuracy tested in test_fit.py
     npt.assert_(len(vals) == 2+len(arg))
     npt.assert_(len(vals2) == 2+len(arg))
 
 
-def check_fit_args_fix(distfn, arg, rvs):
+def check_fit_args_fix(distfn, arg, rvs, method):
     with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
 
-        vals = distfn.fit(rvs, floc=0)
-        vals2 = distfn.fit(rvs, fscale=1)
+        vals = distfn.fit(rvs, floc=0, method=method)
+        vals2 = distfn.fit(rvs, fscale=1, method=method)
         npt.assert_(len(vals) == 2+len(arg))
         npt.assert_(vals[-2] == 0)
         npt.assert_(vals2[-1] == 1)
         npt.assert_(len(vals2) == 2+len(arg))
         if len(arg) > 0:
-            vals3 = distfn.fit(rvs, f0=arg[0])
+            vals3 = distfn.fit(rvs, f0=arg[0], method=method)
             npt.assert_(len(vals3) == 2+len(arg))
             npt.assert_(vals3[0] == arg[0])
         if len(arg) > 1:
-            vals4 = distfn.fit(rvs, f1=arg[1])
+            vals4 = distfn.fit(rvs, f1=arg[1], method=method)
             npt.assert_(len(vals4) == 2+len(arg))
             npt.assert_(vals4[1] == arg[1])
         if len(arg) > 2:
-            vals5 = distfn.fit(rvs, f2=arg[2])
+            vals5 = distfn.fit(rvs, f2=arg[2], method=method)
             npt.assert_(len(vals5) == 2+len(arg))
             npt.assert_(vals5[2] == arg[2])
 
@@ -654,3 +711,11 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
+
+
+def test_burr_fisk_moment_gh13234_regression():
+    vals0 = stats.burr.moment(1, 5, 4)
+    assert isinstance(vals0, float)
+
+    vals1 = stats.fisk.moment(1, 8)
+    assert isinstance(vals1, float)

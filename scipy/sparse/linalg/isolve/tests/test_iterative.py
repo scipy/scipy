@@ -16,13 +16,13 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
 
 
-class Case(object):
+class Case:
     def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
@@ -43,10 +43,10 @@ class Case(object):
         return "<%s>" % self.name
 
 
-class IterativeParams(object):
+class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -141,9 +141,9 @@ class IterativeParams(object):
         data[1,:] = -1
         A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
 
         # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
@@ -161,7 +161,7 @@ class IterativeParams(object):
         assert (A == A.T).all()
         self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+                               nonconvergence=[cgs,bicg,bicgstab,qmr,tfqmr]))
 
 
 params = IterativeParams()
@@ -412,7 +412,7 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -457,7 +457,8 @@ def test_zero_rhs(solver):
     pytest.param(cgs, marks=pytest.mark.xfail),
     pytest.param(bicg, marks=pytest.mark.xfail),
     pytest.param(bicgstab, marks=pytest.mark.xfail),
-    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+    pytest.param(gcrotmk, marks=pytest.mark.xfail),
+    pytest.param(tfqmr, marks=pytest.mark.xfail)])
 def test_maxiter_worsening(solver):
     # Check error does not grow (boundlessly) with increasing maxiter.
     # This can occur due to the solvers hitting close to breakdown,
@@ -486,7 +487,7 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -512,7 +513,7 @@ def test_x0_working(solver):
 
 #------------------------------------------------------------------------------
 
-class TestQMR(object):
+class TestQMR:
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
@@ -556,7 +557,7 @@ class TestQMR(object):
         assert_normclose(A*x, b, tol=1e-8)
 
 
-class TestGMRES(object):
+class TestGMRES:
     def test_callback(self):
 
         def store_residual(r, rvec):

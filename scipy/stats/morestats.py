@@ -1,18 +1,19 @@
+from __future__ import annotations
 import math
 import warnings
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray,
-                   zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, compress,
-                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
+from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   compress, pi, exp, ravel, count_nonzero, sin, cos,
+                   arctan2, hypot)
 
 from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -256,17 +257,18 @@ def kstat(data, n=2):
     Examples
     --------
     >>> from scipy import stats
-    >>> rndm = np.random.RandomState(1234)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
 
     As sample size increases, n-th moment and n-th k-statistic converge to the
     same number (although they aren't identical). In the case of the normal
     distribution, they converge to zero.
 
     >>> for n in [2, 3, 4, 5, 6, 7]:
-    ...     x = rndm.normal(size=10**n)
+    ...     x = rng.normal(size=10**n)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
     ...     print("%.3g %.3g %.3g" % (m, k, m-k))
-    -0.631 -0.651 0.0194
+    -0.631 -0.651 0.0194  # random
     0.0282 0.0283 -8.49e-05
     -0.0454 -0.0454 1.36e-05
     7.53e-05 7.53e-05 -2.26e-09
@@ -305,8 +307,7 @@ def kstat(data, n=2):
 
 
 def kstatvar(data, n=2):
-    r"""
-    Return an unbiased estimator of the variance of the k-statistic.
+    r"""Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
 
@@ -357,8 +358,7 @@ def kstatvar(data, n=2):
 
 
 def _calc_uniform_order_statistic_medians(n):
-    """
-    Approximations of uniform order statistic medians.
+    """Approximations of uniform order statistic medians.
 
     Parameters
     ----------
@@ -389,9 +389,9 @@ def _calc_uniform_order_statistic_medians(n):
     >>> a = k
     >>> b = n-k+1
     >>> beta.mean(a, b)
-    array([ 0.2,  0.4,  0.6,  0.8])
+    array([0.2, 0.4, 0.6, 0.8])
     >>> beta.median(a, b)
-    array([ 0.15910358,  0.38572757,  0.61427243,  0.84089642])
+    array([0.15910358, 0.38572757, 0.61427243, 0.84089642])
 
     The Filliben approximation uses the exact medians of the smallest
     and greatest order statistics, and the remaining medians are approximated
@@ -399,7 +399,7 @@ def _calc_uniform_order_statistic_medians(n):
 
     >>> from scipy.morestats import _calc_uniform_order_statistic_medians
     >>> _calc_uniform_order_statistic_medians(n)
-    array([ 0.15910358,  0.38545246,  0.61454754,  0.84089642])
+    array([0.15910358, 0.38545246, 0.61454754, 0.84089642])
 
     This plot shows the skewed distributions of the order statistics
     of a sample of size four from a uniform distribution on the unit interval:
@@ -451,7 +451,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
 
 
 def _add_axis_labels_title(plot, xlabel, ylabel, title):
-    """Helper function to add axes labels and a title to stats plots"""
+    """Helper function to add axes labels and a title to stats plots."""
     try:
         if hasattr(plot, 'set_title'):
             # Matplotlib Axes instance or something that looks like it
@@ -494,7 +494,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         Fit a least-squares regression (best-fit) line to the sample data if
         True (default).
     plot : object, optional
-        If given, plots the quantiles and least squares fit.
+        If given, plots the quantiles.
+        If given and `fit` is True, also plots the least squares fit.
         `plot` is an object that has to have methods "plot" and "text".
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
@@ -539,31 +540,31 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
-    >>> np.random.seed(7654321)
+    >>> rng = np.random.default_rng()
 
     A t distribution with small degrees of freedom:
 
     >>> ax1 = plt.subplot(221)
-    >>> x = stats.t.rvs(3, size=nsample)
+    >>> x = stats.t.rvs(3, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     A t distribution with larger degrees of freedom:
 
     >>> ax2 = plt.subplot(222)
-    >>> x = stats.t.rvs(25, size=nsample)
+    >>> x = stats.t.rvs(25, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     A mixture of two normal distributions with broadcasting:
 
     >>> ax3 = plt.subplot(223)
     >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
-    ...                    size=(nsample//2,2)).ravel()
+    ...                    size=(nsample//2,2), random_state=rng).ravel()
     >>> res = stats.probplot(x, plot=plt)
 
     A standard normal distribution:
 
     >>> ax4 = plt.subplot(224)
-    >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample)
+    >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     Produce a new figure with a loggamma distribution, using the ``dist`` and
@@ -571,7 +572,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> x = stats.loggamma.rvs(c=2.5, size=500)
+    >>> x = stats.loggamma.rvs(c=2.5, size=500, random_state=rng)
     >>> res = stats.probplot(x, dist=stats.loggamma, sparams=(2.5,), plot=ax)
     >>> ax.set_title("Probplot for loggamma dist with shape parameter 2.5")
 
@@ -581,9 +582,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     """
     x = np.asarray(x)
-    _perform_fit = fit or (plot is not None)
     if x.size == 0:
-        if _perform_fit:
+        if fit:
             return (x, x), (np.nan, np.nan, 0.0)
         else:
             return x, x
@@ -599,12 +599,14 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     osm = dist.ppf(osm_uniform, *sparams)
     osr = sort(x)
-    if _perform_fit:
+    if fit:
         # perform a linear least squares fit.
         slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
-        plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
+        plot.plot(osm, osr, 'bo')
+        if fit:
+            plot.plot(osm, slope*osm + intercept, 'r-')
         _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
                                ylabel='Ordered Values',
                                title='Probability Plot')
@@ -626,14 +628,13 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
 
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
-    """
-    Calculate the shape parameter that maximizes the PPCC.
+    """Calculate the shape parameter that maximizes the PPCC.
 
-    The probability plot correlation coefficient (PPCC) plot can be used to
-    determine the optimal shape parameter for a one-parameter family of
-    distributions.  ppcc_max returns the shape parameter that would maximize the
-    probability plot correlation coefficient for the given data to a
-    one-parameter family of distributions.
+    The probability plot correlation coefficient (PPCC) plot can be used
+    to determine the optimal shape parameter for a one-parameter family
+    of distributions. ``ppcc_max`` returns the shape parameter that would
+    maximize the probability plot correlation coefficient for the given
+    data to a one-parameter family of distributions.
 
     Parameters
     ----------
@@ -666,37 +667,33 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     References
     ----------
-    .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
-           Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
-
-    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test
+           for Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
+    .. [2] Engineering Statistics Handbook, NIST/SEMATEC,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
-    First we generate some random data from a Tukey-Lambda distribution,
-    with shape parameter -0.7:
+    First we generate some random data from a Weibull distribution
+    with shape parameter 2.5:
 
     >>> from scipy import stats
-    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
-    ...                           random_state=1234567) + 1e4
-
-    Now we explore this data with a PPCC plot as well as the related
-    probability plot and Box-Cox normplot.  A red line is drawn where we
-    expect the PPCC value to be maximal (at the shape parameter -0.7 used
-    above):
-
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure(figsize=(8, 6))
-    >>> ax = fig.add_subplot(111)
-    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax)
+    >>> rng = np.random.default_rng()
+    >>> c = 2.5
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
 
-    We calculate the value where the shape should reach its maximum and a red
-    line is drawn there. The line should coincide with the highest point in the
-    ppcc_plot.
+    Generate the PPCC plot for this data with the Weibull distribution.
 
-    >>> max = stats.ppcc_max(x)
-    >>> ax.vlines(max, 0, 1, colors='r', label='Expected shape value')
+    >>> fig, ax = plt.subplots(figsize=(8, 6))
+    >>> res = stats.ppcc_plot(x, c/2, 2*c, dist='weibull_min', plot=ax)
 
+    We calculate the value where the shape should reach its maximum and a
+    red line is drawn there. The line should coincide with the highest
+    point in the PPCC graph.
+
+    >>> cmax = stats.ppcc_max(x, brack=(c/2, 2*c), dist='weibull_min')
+    >>> ax.axvline(cmax, color='r')
     >>> plt.show()
 
     """
@@ -713,22 +710,23 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         r, prob = stats.pearsonr(xvals, yvals)
         return 1 - r
 
-    return optimize.brent(tempfunc, brack=brack, args=(osm_uniform, osr, dist.ppf))
+    return optimize.brent(tempfunc, brack=brack,
+                          args=(osm_uniform, osr, dist.ppf))
 
 
 def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
-    """
-    Calculate and optionally plot probability plot correlation coefficient.
+    """Calculate and optionally plot probability plot correlation coefficient.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
-    distributions.  It cannot be used for distributions without shape parameters
+    distributions.  It cannot be used for distributions without shape
+    parameters
     (like the normal distribution) or with multiple shape parameters.
 
     By default a Tukey-Lambda distribution (`stats.tukeylambda`) is used. A
     Tukey-Lambda PPCC plot interpolates from long-tailed to short-tailed
-    distributions via an approximately normal one, and is therefore particularly
-    useful in practice.
+    distributions via an approximately normal one, and is therefore
+    particularly useful in practice.
 
     Parameters
     ----------
@@ -768,27 +766,35 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
     Examples
     --------
-    First we generate some random data from a Tukey-Lambda distribution,
-    with shape parameter -0.7:
+    First we generate some random data from a Weibull distribution
+    with shape parameter 2.5, and plot the histogram of the data:
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234567)
-    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+    >>> rng = np.random.default_rng()
+    >>> c = 2.5
+    >>> x = stats.weibull_min.rvs(c, scale=4, size=2000, random_state=rng)
+
+    Take a look at the histogram of the data.
+
+    >>> fig1, ax = plt.subplots(figsize=(9, 4))
+    >>> ax.hist(x, bins=50)
+    >>> ax.set_title('Histogram of x')
+    >>> plt.show()
 
     Now we explore this data with a PPCC plot as well as the related
     probability plot and Box-Cox normplot.  A red line is drawn where we
-    expect the PPCC value to be maximal (at the shape parameter -0.7 used
-    above):
+    expect the PPCC value to be maximal (at the shape parameter ``c``
+    used above):
 
-    >>> fig = plt.figure(figsize=(12, 4))
-    >>> ax1 = fig.add_subplot(131)
-    >>> ax2 = fig.add_subplot(132)
-    >>> ax3 = fig.add_subplot(133)
+    >>> fig2 = plt.figure(figsize=(12, 4))
+    >>> ax1 = fig2.add_subplot(1, 3, 1)
+    >>> ax2 = fig2.add_subplot(1, 3, 2)
+    >>> ax3 = fig2.add_subplot(1, 3, 3)
     >>> res = stats.probplot(x, plot=ax1)
-    >>> res = stats.boxcox_normplot(x, -5, 5, plot=ax2)
-    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax3)
-    >>> ax3.vlines(-0.7, 0, 1, colors='r', label='Expected shape value')
+    >>> res = stats.boxcox_normplot(x, -4, 4, plot=ax2)
+    >>> res = stats.ppcc_plot(x, c/2, 2*c, dist='weibull_min', plot=ax3)
+    >>> ax3.axvline(c, color='r')
     >>> plt.show()
 
     """
@@ -848,12 +854,12 @@ def boxcox_llf(lmb, data):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    >>> np.random.seed(1245)
 
     Generate some random variates and calculate Box-Cox log-likelihood values
     for them for a range of ``lmbda`` values:
 
-    >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
+    >>> rng = np.random.default_rng()
+    >>> x = stats.loggamma.rvs(5, loc=10, size=1000, random_state=rng)
     >>> lmbdas = np.linspace(-2, 10)
     >>> llf = np.zeros(lmbdas.shape, dtype=float)
     >>> for ii, lmbda in enumerate(lmbdas):
@@ -943,9 +949,8 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x, lmbda=None, alpha=None):
-    r"""
-    Return a dataset transformed by a Box-Cox power transformation.
+def boxcox(x, lmbda=None, alpha=None, optimizer=None):
+    r"""Return a dataset transformed by a Box-Cox power transformation.
 
     Parameters
     ----------
@@ -953,13 +958,29 @@ def boxcox(x, lmbda=None, alpha=None):
         Input array.  Must be positive 1-dimensional.  Must not be constant.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
-
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
     alpha : {None, float}, optional
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
+    optimizer : callable, optional
+        If `lmbda` is None, `optimizer` is the scalar optimizer used to find
+        the value of `lmbda` that minimizes the negative log-likelihood
+        function. `optimizer` is a callable that accepts one argument:
+
+        fun : callable
+            The objective function, which evaluates the negative
+            log-likelihood function at a provided value of `lmbda`
+
+        and returns an object, such as an instance of
+        `scipy.optimize.OptimizeResult`, which holds the optimal value of
+        `lmbda` in an attribute `x`.
+
+        See the example in `boxcox_normmax` or the documentation of
+        `scipy.optimize.minimize_scalar` for more information.
+
+        If `lmbda` is not None, `optimizer` is ignored.
 
     Returns
     -------
@@ -1039,14 +1060,14 @@ def boxcox(x, lmbda=None, alpha=None):
     if np.all(x == x[0]):
         raise ValueError("Data must not be constant.")
 
-    if any(x <= 0):
+    if np.any(x <= 0):
         raise ValueError("Data must be positive.")
 
     if lmbda is not None:  # single transformation
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, method='mle')
+    lmax = boxcox_normmax(x, method='mle', optimizer=optimizer)
     y = boxcox(x, lmax)
 
     if alpha is None:
@@ -1057,17 +1078,18 @@ def boxcox(x, lmbda=None, alpha=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
+def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
     ----------
     x : array_like
         Input array.
-    brack : 2-tuple, optional
-        The starting interval for a downhill bracket search with
-        `optimize.brent`.  Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket.
+    brack : 2-tuple, optional, default (-2.0, 2.0)
+         The starting interval for a downhill bracket search for the default
+         `optimize.brent` solver. Note that this is in most cases not
+         critical; the final result is allowed to be outside this bracket.
+         If `optimizer` is passed, `brack` must be None.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:
@@ -1084,6 +1106,21 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         'all'
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
+    optimizer : callable, optional
+        `optimizer` is a callable that accepts one argument:
+
+        fun : callable
+            The objective function to be optimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the negative
+            log-likelihood function at the provided value. The job of `optimizer`
+            is to find the value of `lmbda` that minimizes `fun`.
+
+        and returns an object, such as an instance of
+        `scipy.optimize.OptimizeResult`, which holds the optimal value of
+        `lmbda` in an attribute `x`.
+
+        See the example below or the documentation of
+        `scipy.optimize.minimize_scalar` for more information.
 
     Returns
     -------
@@ -1093,26 +1130,27 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
 
     See Also
     --------
-    boxcox, boxcox_llf, boxcox_normplot
+    boxcox, boxcox_llf, boxcox_normplot, scipy.optimize.minimize_scalar
 
     Examples
     --------
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)  # make this example reproducible
 
-    Generate some data and determine optimal ``lmbda`` in various ways:
+    We can generate some data and determine the optimal ``lmbda`` in various
+    ways:
 
-    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> rng = np.random.default_rng()
+    >>> x = stats.loggamma.rvs(5, size=30, random_state=rng) + 5
     >>> y, lmax_mle = stats.boxcox(x)
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    7.177...
+    1.4613865614008015
     >>> lmax_pearsonr
-    7.916...
+    1.6685004886804342
     >>> stats.boxcox_normmax(x, method='all')
-    array([ 7.91667384,  7.17718692])
+    array([1.66850049, 1.46138656])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1122,9 +1160,48 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
 
     >>> plt.show()
 
-    """
+    Alternatively, we can define our own `optimizer` function. Suppose we
+    are only interested in values of `lmbda` on the interval [6, 7], we
+    want to use `scipy.optimize.minimize_scalar` with ``method='bounded'``,
+    and we want to use tighter tolerances when optimizing the log-likelihood
+    function. To do this, we define a function that accepts positional argument
+    `fun` and uses `scipy.optimize.minimize_scalar` to minimize `fun` subject
+    to the provided bounds and tolerances:
 
-    def _pearsonr(x, brack):
+    >>> from scipy import optimize
+    >>> options = {'xatol': 1e-12}  # absolute tolerance on `x`
+    >>> def optimizer(fun):
+    ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
+    ...                                     method="bounded", options=options)
+    >>> stats.boxcox_normmax(x, optimizer=optimizer)
+    6.000...
+    """
+    # If optimizer is not given, define default 'brent' optimizer.
+    if optimizer is None:
+
+        # Set default value for `brack`.
+        if brack is None:
+            brack = (-2.0, 2.0)
+
+        def _optimizer(func, args):
+            return optimize.brent(func, args=args, brack=brack)
+
+    # Otherwise check optimizer.
+    else:
+        if not callable(optimizer):
+            raise ValueError("`optimizer` must be a callable")
+
+        if brack is not None:
+            raise ValueError("`brack` must be None if `optimizer` is given")
+
+        # `optimizer` is expected to return a `OptimizeResult` object, we here
+        # get the solution to the optimization problem.
+        def _optimizer(func, args):
+            def func_wrapped(x):
+                return func(x, *args)
+            return getattr(optimizer(func_wrapped), 'x', None)
+
+    def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
@@ -1138,19 +1215,19 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
             r, prob = stats.pearsonr(xvals, yvals)
             return 1 - r
 
-        return optimize.brent(_eval_pearsonr, brack=brack, args=(xvals, x))
+        return _optimizer(_eval_pearsonr, args=(xvals, x))
 
-    def _mle(x, brack):
+    def _mle(x):
         def _eval_mle(lmb, data):
             # function to minimize
             return -boxcox_llf(lmb, data)
 
-        return optimize.brent(_eval_mle, brack=brack, args=(x,))
+        return _optimizer(_eval_mle, args=(x,))
 
-    def _all(x, brack):
+    def _all(x):
         maxlog = np.empty(2, dtype=float)
-        maxlog[0] = _pearsonr(x, brack)
-        maxlog[1] = _mle(x, brack)
+        maxlog[0] = _pearsonr(x)
+        maxlog[1] = _mle(x)
         return maxlog
 
     methods = {'pearsonr': _pearsonr,
@@ -1160,13 +1237,20 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    return optimfunc(x, brack)
+    res = optimfunc(x)
+    if res is None:
+        message = ("`optimizer` must return an object containing the optimal "
+                   "`lmbda` in attribute `x`")
+        raise ValueError(message)
+    return res
 
 
 def _normplot(method, x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
-    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
-    details."""
+    optionally show it.
+
+    See `boxcox_normplot` or `yeojohnson_normplot` for details.
+    """
 
     if method == 'boxcox':
         title = 'Box-Cox Normality Plot'
@@ -1269,8 +1353,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
 
 def yeojohnson(x, lmbda=None):
-    r"""
-    Return a dataset transformed by a Yeo-Johnson power transformation.
+    r"""Return a dataset transformed by a Yeo-Johnson power transformation.
 
     Parameters
     ----------
@@ -1339,7 +1422,6 @@ def yeojohnson(x, lmbda=None):
     >>> plt.show()
 
     """
-
     x = np.asarray(x)
     if x.size == 0:
         return x
@@ -1362,9 +1444,9 @@ def yeojohnson(x, lmbda=None):
 
 
 def _yeojohnson_transform(x, lmbda):
-    """Return x transformed by the Yeo-Johnson power transform with given
-    parameter lmbda."""
-
+    """Returns `x` transformed by the Yeo-Johnson power transform with given
+    parameter `lmbda`.
+    """
     out = np.zeros_like(x)
     pos = x >= 0  # binary mask
 
@@ -1411,7 +1493,7 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
     where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
@@ -1424,7 +1506,6 @@ def yeojohnson_llf(lmb, data):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    >>> np.random.seed(1245)
 
     Generate some random variates and calculate Yeo-Johnson log-likelihood
     values for them for a range of ``lmbda`` values:
@@ -1480,9 +1561,8 @@ def yeojohnson_llf(lmb, data):
 
 
 def yeojohnson_normmax(x, brack=(-2, 2)):
-    """
-    Compute optimal Yeo-Johnson transform parameter.
-    
+    """Compute optimal Yeo-Johnson transform parameter.
+
     Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
@@ -1512,11 +1592,11 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     --------
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)  # make this example reproducible
 
     Generate some data and determine optimal ``lmbda``
 
-    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> rng = np.random.default_rng()
+    >>> x = stats.loggamma.rvs(5, size=30, random_state=rng) + 5
     >>> lmax = stats.yeojohnson_normmax(x)
 
     >>> fig = plt.figure()
@@ -1527,7 +1607,6 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     >>> plt.show()
 
     """
-
     def _neg_llf(lmbda, data):
         return -yeojohnson_llf(lmbda, data)
 
@@ -1606,9 +1685,9 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
+
 def shapiro(x):
-    """
-    Perform the Shapiro-Wilk test for normality.
+    """Perform the Shapiro-Wilk test for normality.
 
     The Shapiro-Wilk test tests the null hypothesis that the
     data was drawn from a normal distribution.
@@ -1652,15 +1731,15 @@ def shapiro(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(12345678)
-    >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
+    >>> rng = np.random.default_rng()
+    >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
-    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    ShapiroResult(statistic=0.9813305735588074, pvalue=0.16855233907699585)
     >>> shapiro_test.statistic
-    0.9772805571556091
+    0.9813305735588074
     >>> shapiro_test.pvalue
-    0.08144091814756393
+    0.16855233907699585
 
     """
     x = np.ravel(x)
@@ -1703,8 +1782,7 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
 
 
 def anderson(x, dist='norm'):
-    """
-    Anderson-Darling test for data coming from a particular distribution.
+    """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
@@ -1742,7 +1820,7 @@ def anderson(x, dist='norm'):
     -----
     Critical values provided are for the following significance levels:
 
-    normal/exponenential
+    normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
@@ -1831,8 +1909,7 @@ def anderson(x, dist='norm'):
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
-    """
-    Compute A2akN equation 7 of Scholz and Stephens.
+    """Compute A2akN equation 7 of Scholz and Stephens.
 
     Parameters
     ----------
@@ -1853,8 +1930,8 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     -------
     A2aKN : float
         The A2aKN statistics of Scholz and Stephens 1987.
-    """
 
+    """
     A2akN = 0.
     Z_ssorted_left = Z.searchsorted(Zstar, 'left')
     if N == Zstar.size:
@@ -1875,8 +1952,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
 
 def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
-    """
-    Compute A2akN equation 6 of Scholz & Stephens.
+    """Compute A2akN equation 6 of Scholz & Stephens.
 
     Parameters
     ----------
@@ -1897,8 +1973,8 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     -------
     A2KN : float
         The A2KN statistics of Scholz and Stephens 1987.
-    """
 
+    """
     A2kN = 0.
     lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
                                                               'left')
@@ -1988,7 +2064,7 @@ def anderson_ksamp(samples, midrank=True):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(314159)
+    >>> rng = np.random.default_rng()
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
@@ -1996,11 +2072,11 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.2%:
 
-    >>> stats.anderson_ksamp([np.random.normal(size=50),
-    ... np.random.normal(loc=0.5, size=30)])
-    (2.4615796189876105,
-      array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
-      0.03176687568842282)
+    >>> stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    (1.974403288713695,
+      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
+      0.04991293614572478)
 
 
     The null hypothesis cannot be rejected for three samples from an
@@ -2008,9 +2084,9 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.731):
 
-    >>> stats.anderson_ksamp([np.random.normal(size=50),
-    ... np.random.normal(size=30), np.random.normal(size=20)])
-    (-0.73091722665244196,
+    >>> stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    (-0.29103725200789504,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
       4.07210043, 5.56419101]),
       0.25)
@@ -2029,7 +2105,7 @@ def anderson_ksamp(samples, midrank=True):
                          "observation")
 
     n = np.array([sample.size for sample in samples])
-    if any(n == 0):
+    if np.any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
@@ -2078,18 +2154,86 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
-def ansari(x, y):
-    """
-    Perform the Ansari-Bradley test for equal scale parameters.
+class _ABW:
+    """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
+    # TODO: calculate exact distribution considering ties
+    # We could avoid summing over more than half the frequencies,
+    # but inititally it doesn't seem worth the extra complexity
+
+    def __init__(self):
+        """Minimal initializer."""
+        self.m = None
+        self.n = None
+        self.astart = None
+        self.total = None
+        self.freqs = None
+
+    def _recalc(self, n, m):
+        """When necessary, recalculate exact distribution."""
+        if n != self.n or m != self.m:
+            self.n, self.m = n, m
+            # distribution is NOT symmetric when m + n is odd
+            # n is len(x), m is len(y), and ratio of scales is defined x/y
+            astart, a1, _ = statlib.gscale(n, m)
+            self.astart = astart  # minimum value of statistic
+            # Exact distribution of test statistic under null hypothesis
+            # expressed as frequencies/counts/integers to maintain precision.
+            # Stored as floats to avoid overflow of sums.
+            self.freqs = a1.astype(np.float64)
+            self.total = self.freqs.sum()  # could calculate from m and n
+            # probability mass is self.freqs / self.total;
+
+    def pmf(self, k, n, m):
+        """Probability mass function."""
+        self._recalc(n, m)
+        # The convention here is that PMF at k = 12.5 is the same as at k = 12,
+        # -> use `floor` in case of ties.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[ind] / self.total
+
+    def cdf(self, k, n, m):
+        """Cumulative distribution function."""
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.ceil(k - self.astart).astype(int)
+        return self.freqs[:ind+1].sum() / self.total
+
+    def sf(self, k, n, m):
+        """Survival function."""
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[ind:].sum() / self.total
+
+
+# Maintain state for faster repeat calls to ansari w/ method='exact'
+_abw_state = _ABW()
+
+
+def ansari(x, y, alternative='two-sided'):
+    """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
     for the equality of the scale parameter of the distributions
-    from which two samples were drawn.
+    from which two samples were drawn. The null hypothesis states that
+    the ratio of the scale of the distribution underlying `x` to the scale
+    of the distribution underlying `y` is 1.
 
     Parameters
     ----------
     x, y : array_like
         Arrays of sample data.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the ratio of scales is not equal to 1.
+        * 'less': the ratio of scales is less than 1.
+        * 'greater': the ratio of scales is greater than 1.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -2116,20 +2260,22 @@ def ansari(x, y):
     .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
            statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
            Section 5.8.2.
+    .. [3] Nathaniel E. Helwig "Nonparametric Dispersion and Equality
+           Tests" at http://users.stat.umn.edu/~helwig/notes/npde-Notes.pdf
 
     Examples
     --------
     >>> from scipy.stats import ansari
+    >>> rng = np.random.default_rng()
 
     For these examples, we'll create three random data sets.  The first
     two, with sizes 35 and 25, are drawn from a normal distribution with
     mean 0 and standard deviation 2.  The third data set has size 25 and
     is drawn from a normal distribution with standard deviation 1.25.
 
-    >>> np.random.seed(1234567890)
-    >>> x1 = np.random.normal(loc=0, scale=2, size=35)
-    >>> x2 = np.random.normal(loc=0, scale=2, size=25)
-    >>> x3 = np.random.normal(loc=0, scale=1.25, size=25)
+    >>> x1 = rng.normal(loc=0, scale=2, size=35)
+    >>> x2 = rng.normal(loc=0, scale=2, size=25)
+    >>> x3 = rng.normal(loc=0, scale=1.25, size=25)
 
     First we apply `ansari` to `x1` and `x2`.  These samples are drawn
     from the same distribution, so we expect the Ansari-Bradley test
@@ -2137,20 +2283,41 @@ def ansari(x, y):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+    AnsariResult(statistic=541.0, pvalue=0.9762532927399098)
 
-    With a p-value of 0.355, we cannot conclude that there is a
+    With a p-value close to 1, we cannot conclude that there is a
     significant difference in the scales (as expected).
 
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+    AnsariResult(statistic=425.0, pvalue=0.0003087020407974518)
 
-    With a p-value of 0.00628, the test provides strong evidence that
+    The probability of observing such an extreme value of the statistic
+    under the null hypothesis of equal scales is only 0.03087%. We take this
+    as evidence against the null hypothesis in favor of the alternative:
     the scales of the distributions from which the samples were drawn
     are not equal.
+
+    We can use the `alternative` parameter to perform a one-tailed test.
+    In the above example, the scale of `x1` is greater than `x3` and so
+    the ratio of scales of `x1` and `x3` is greater than 1. This means
+    that the p-value when ``alternative='greater'`` should be near 0 and
+    hence we should be able to reject the null hypothesis:
+
+    >>> ansari(x1, x3, alternative='greater')
+    AnsariResult(statistic=425.0, pvalue=0.0001543510203987259)
+
+    As we can see, the p-value is indeed quite low. Use of
+    ``alternative='less'`` should thus yield a large p-value:
+
+    >>> ansari(x1, x3, alternative='less')
+    AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
+
     """
+    if alternative not in {'two-sided', 'greater', 'less'}:
+        raise ValueError("'alternative' must be 'two-sided',"
+                         " 'greater', or 'less'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2170,21 +2337,15 @@ def ansari(x, y):
     if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
-        astart, a1, ifault = statlib.gscale(n, m)
-        ind = AB - astart
-        total = np.sum(a1, axis=0)
-        if ind < len(a1)/2.0:
-            cind = int(ceil(ind))
-            if ind == cind:
-                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
-            else:
-                pval = 2.0 * np.sum(a1[:cind], axis=0) / total
+        if alternative == 'two-sided':
+            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
+                                    _abw_state.sf(AB, n, m))
+        elif alternative == 'greater':
+            # AB statistic is _smaller_ when ratio of scales is larger,
+            # so this is the opposite of the usual calculation
+            pval = _abw_state.cdf(AB, n, m)
         else:
-            find = int(floor(ind))
-            if ind == floor(ind):
-                pval = 2.0 * np.sum(a1[find:], axis=0) / total
-            else:
-                pval = 2.0 * np.sum(a1[find+1:], axis=0) / total
+            pval = _abw_state.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2202,8 +2363,11 @@ def ansari(x, y):
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
-    z = (AB - mnAB) / sqrt(varAB)
-    pval = distributions.norm.sf(abs(z)) * 2.0
+    # Small values of AB indicate larger dispersion for the x sample.
+    # Large values of AB indicate larger dispersion for the y sample.
+    # This is opposite to the way we define the ratio of scales. see [1]_.
+    z = (mnAB - AB) / sqrt(varAB)
+    z, pval = _normtest_finish(z, alternative)
     return AnsariResult(AB, pval)
 
 
@@ -2211,8 +2375,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 def bartlett(*args):
-    """
-    Perform Bartlett's test for equal variances.
+    """Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
@@ -2282,6 +2445,7 @@ def bartlett(*args):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2313,8 +2477,7 @@ LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
 def levene(*args, center='median', proportiontocut=0.05):
-    """
-    Perform Levene test for equal variances.
+    """Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
     are from populations with equal variances.  Levene's test is an
@@ -2385,6 +2548,7 @@ def levene(*args, center='median', proportiontocut=0.05):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -2442,8 +2606,10 @@ def levene(*args, center='median', proportiontocut=0.05):
 
 
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
-    """
-    Perform a test that the probability of success is p.
+    """Perform a test that the probability of success is p.
+
+    Note: `binom_test` is deprecated; it is recommended that `binomtest`
+    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
@@ -2549,8 +2715,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 def fligner(*args, center='median', proportiontocut=0.05):
-    """
-    Perform Fligner-Killeen test for equality of variance.
+    """Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
     are from populations with equal variances.  Fligner-Killeen's test is
@@ -2634,6 +2799,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -2678,9 +2844,8 @@ def fligner(*args, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
-def mood(x, y, axis=0):
-    """
-    Perform Mood's test for equal scale parameters.
+def mood(x, y, axis=0, alternative="two-sided"):
+    """Perform Mood's test for equal scale parameters.
 
     Mood's two-sample test for scale parameters is a non-parametric
     test for the null hypothesis that two samples are drawn from the
@@ -2695,6 +2860,18 @@ def mood(x, y, axis=0):
         different length along `axis`.
         If `axis` is None, `x` and `y` are flattened and the test is done on
         all values in the flattened arrays.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the scales of the distributions underlying `x` and `y`
+          are different.
+        * 'less': the scale of the distribution underlying `x` is less than
+          the scale of the distribution underlying `y`.
+        * 'greater': the scale of the distribution underlying `x` is greater
+          than the scale of the distribution underlying `y`.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -2725,9 +2902,9 @@ def mood(x, y, axis=0):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(1234)
-    >>> x2 = np.random.randn(2, 45, 6, 7)
-    >>> x1 = np.random.randn(2, 30, 6, 7)
+    >>> rng = np.random.default_rng()
+    >>> x2 = rng.standard_normal((2, 45, 6, 7))
+    >>> x1 = rng.standard_normal((2, 30, 6, 7))
     >>> z, p = stats.mood(x1, x2, axis=1)
     >>> p.shape
     (2, 6, 7)
@@ -2735,14 +2912,14 @@ def mood(x, y, axis=0):
     Find the number of points where the difference in scale is not significant:
 
     >>> (p > 0.1).sum()
-    74
+    78
 
     Perform the test with different scales:
 
-    >>> x1 = np.random.randn(2, 30)
-    >>> x2 = np.random.randn(2, 35) * 10.0
+    >>> x1 = rng.standard_normal((2, 30))
+    >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))
+    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)
@@ -2752,6 +2929,9 @@ def mood(x, y, axis=0):
         x = x.flatten()
         y = y.flatten()
         axis = 0
+
+    if axis < 0:
+        axis = x.ndim + axis
 
     # Determine shape of the result arrays
     res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
@@ -2785,12 +2965,7 @@ def mood(x, y, axis=0):
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     z = (M - mnM) / sqrt(varM)
-
-    # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
-    z_pos = z > 0
-    pval = np.zeros_like(z)
-    pval[z_pos] = 2 * distributions.norm.sf(z[z_pos])
-    pval[~z_pos] = 2 * distributions.norm.cdf(z[~z_pos])
+    z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
@@ -2808,8 +2983,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", mode='auto'):
-    """
-    Calculate the Wilcoxon signed-rank test.
+    """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
     related paired samples come from the same distribution. In particular,
@@ -2829,7 +3003,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         two sets of measurements.)  Must be one-dimensional.
     zero_method : {"pratt", "wilcox", "zsplit"}, optional
         The following options are available (default is "wilcox"):
-     
+
           * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
           * "wilcox": Discards all zero-differences, the default.
@@ -2866,8 +3040,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is 
-    positive against the alternative that it is negative 
+    zero. The one-sided test has the null hypothesis that the median is
+    positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)
@@ -3061,8 +3235,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
 def median_test(*args, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
-    """
-    Perform a Mood's median test.
+    """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
@@ -3299,8 +3472,7 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
 
 
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """
-    Compute the circular mean for samples in a range.
+    """Compute the circular mean for samples in a range.
 
     Parameters
     ----------
@@ -3368,8 +3540,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """
-    Compute the circular variance for samples assumed to be in a range.
+    """Compute the circular variance for samples assumed to be in a range.
 
     Parameters
     ----------

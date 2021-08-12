@@ -1,3 +1,4 @@
+import sys
 import os.path
 from os.path import join
 
@@ -92,11 +93,20 @@ def configuration(parent_package='', top_path=None):
         join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
+    config.add_data_files('__nnls.pyi')
     ext = config.add_extension('__nnls', sources=[
         join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    config.add_extension('_group_columns', sources=['_group_columns.c'],)
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.optimize._group_columns',
+            sources=["scipy/optimize/_group_columns.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
 
@@ -109,17 +119,15 @@ def configuration(parent_package='', top_path=None):
     # Cython optimize API for zeros functions
     config.add_subpackage('cython_optimize')
     config.add_data_files('cython_optimize.pxd')
-    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
-    config.add_extension(
-        'cython_optimize._zeros',
-        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 
     # HiGHS linear programming libraries and extensions
-    config.add_subpackage('_highs')
-    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
+    if 'sdist' not in sys.argv:
+        # Avoid running this during sdist creation - it makes numpy.distutils
+        # create an empty cython/src top-level directory.
+        config.add_subpackage('_highs')
 
     config.add_data_dir('tests')
 

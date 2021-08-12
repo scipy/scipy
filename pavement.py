@@ -69,10 +69,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.7.0-notes.rst'
+RELEASE = 'doc/release/1.8.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.6.0'
+LOG_START = 'v1.7.0'
 LOG_END = 'master'
 
 
@@ -81,7 +81,7 @@ LOG_END = 'master'
 #-------------------------------------------------------
 
 # Default Python version
-PYVER="3.6"
+PYVER="3.9"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
@@ -209,7 +209,7 @@ def compute_md5(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = md5(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
 
     return checksums
 
@@ -221,7 +221,7 @@ def compute_sha256(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = sha256(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
 
     return checksums
 

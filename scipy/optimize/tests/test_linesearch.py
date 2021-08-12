@@ -51,7 +51,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
         raise AssertionError("%s\n%s" % (e, err_msg)) from e
 
 
-class TestLineSearch(object):
+class TestLineSearch:
     # -- scalar functions; must have dphi(0.) < 0
     def _scalar_func_1(self, s):
         self.fcount += 1

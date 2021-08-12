@@ -176,7 +176,7 @@ cdef double[:, :] _compute_euler_from_matrix(
                 _angles[2] = -atan2(matrix_trans[1, 0] + matrix_trans[0, 1],
                                     matrix_trans[0, 0] - matrix_trans[1, 1])
         else:
-            # For instrinsic, set third angle to zero
+            # For intrinsic, set third angle to zero
             # 6a
             if not safe:
                 _angles[2] = 0
@@ -209,16 +209,16 @@ cdef double[:, :] _compute_euler_from_matrix(
             elif _angles[i] > pi:
                 _angles[i] -= 2 * pi
 
+        if extrinsic:
+            # reversal
+            _angles[0], _angles[2] = _angles[2], _angles[0]
+
         # Step 8
         if not safe:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
                           "since it is not possible to uniquely determine "
                           "all angles.")
 
-    # Reverse role of extrinsic and intrinsic rotations, but let third angle be
-    # zero for gimbal locked cases
-    if extrinsic:
-        angles = angles[:, ::-1]
     return angles
 
 @cython.boundscheck(False)
@@ -291,7 +291,7 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
-cdef class Rotation(object):
+cdef class Rotation:
     """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
@@ -333,6 +333,7 @@ cdef class Rotation(object):
     as_rotvec
     as_mrp
     as_euler
+    concatenate
     apply
     __mul__
     inv
@@ -528,6 +529,14 @@ cdef class Rotation(object):
                     raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
+
+    def __getstate__(self):
+        return np.asarray(self._quat, dtype=float), self._single
+
+    def __setstate__(self, state):
+        quat, single = state
+        self._quat = quat.copy()
+        self._single = single
 
     @property
     def single(self):
@@ -769,18 +778,22 @@ cdef class Rotation(object):
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def from_rotvec(cls, rotvec):
+    def from_rotvec(cls, rotvec, degrees=False):
         """Initialize from rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation (in
-        radians) [1]_.
+        the axis of rotation and whose norm gives the angle of rotation [1]_.
 
         Parameters
         ----------
         rotvec : array_like, shape (N, 3) or (3,)
             A single vector or a stack of vectors, where `rot_vec[i]` gives
             the ith rotation vector.
+        degrees : bool, optional
+            If True, then the given magnitudes are assumed to be in degrees.
+            Default is False.
+
+            .. versionadded:: 1.7.0
 
         Returns
         -------
@@ -804,6 +817,12 @@ cdef class Rotation(object):
         >>> r.as_rotvec().shape
         (3,)
 
+        Initialize a rotation in degrees, and view it in degrees:
+
+        >>> r = R.from_rotvec(45 * np.array([0, 1, 0]), degrees=True)
+        >>> r.as_rotvec(degrees=True)
+        array([ 0., 45.,  0.])
+
         Initialize multiple rotations in one object:
 
         >>> r = R.from_rotvec([
@@ -824,6 +843,8 @@ cdef class Rotation(object):
         """
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
+        if degrees:
+            rotvec = np.deg2rad(rotvec)
 
         if rotvec.ndim not in [1, 2] or rotvec.shape[len(rotvec.shape)-1] != 3:
             raise ValueError("Expected `rot_vec` to have shape (3,) "
@@ -1274,17 +1295,19 @@ cdef class Rotation(object):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def as_rotvec(self):
+    def as_rotvec(self, degrees=False):
         """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation (in
-        radians) [1]_.
+        the axis of rotation and whose norm gives the angle of rotation [1]_.
 
         Returns
         -------
         rotvec : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
+        degrees : boolean, optional
+            Returned magnitudes are in degrees if this flag is True, else they are
+            in radians. Default is False.
 
         References
         ----------
@@ -1301,6 +1324,15 @@ cdef class Rotation(object):
         array([0.        , 0.        , 1.57079633])
         >>> r.as_rotvec().shape
         (3,)
+
+        Represent a rotation in degrees:
+
+        >>> r = R.from_euler('YX', (-90, -90), degrees=True)
+        >>> s = r.as_rotvec(degrees=True)
+        >>> s
+        array([-69.2820323, -69.2820323, -69.2820323])
+        >>> np.linalg.norm(s)
+        120.00000000000001
 
         Represent a stack with a single rotation:
 
@@ -1320,6 +1352,7 @@ cdef class Rotation(object):
         (2, 3)
 
         """
+        
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
@@ -1344,6 +1377,9 @@ cdef class Rotation(object):
             rotvec[ind, 0] = scale * quat[0]
             rotvec[ind, 1] = scale * quat[1]
             rotvec[ind, 2] = scale * quat[2]
+
+        if degrees:
+            rotvec = np.rad2deg(rotvec)
 
         if self._single:
             return np.asarray(rotvec[0])
@@ -1536,6 +1572,30 @@ cdef class Rotation(object):
             return np.asarray(mrps[0])
         else:
             return np.asarray(mrps)
+
+    @classmethod
+    def concatenate(cls, rotations):
+        """Concatenate a sequence of `Rotation` objects.
+
+        Parameters
+        ----------
+        rotations : sequence of `Rotation` objects
+            The rotations to concatenate.
+
+        Returns
+        -------
+        concatenated : `Rotation` instance
+            The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+        """
+        if not all(isinstance(x, Rotation) for x in rotations):
+            raise TypeError("input must contain Rotation objects only")
+
+        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
+        return cls(quats, normalize=False)
 
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
@@ -2080,6 +2140,37 @@ cdef class Rotation(object):
 
         return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
 
+    def __setitem__(self, indexer, value):
+        """Set rotation(s) at given index(es) from object.
+
+        Parameters
+        ----------
+        indexer : index, slice, or index array
+            Specifies which rotation(s) to replace. A single indexer must be
+            specified, i.e. as if indexing a 1 dimensional array or list.
+
+        value : `Rotation` instance
+            The rotations to set.
+
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.8.0
+        """
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
+        quat = np.asarray(self._quat)
+        quat[indexer] = value.as_quat()
+        self._quat = quat
+
     @classmethod
     def identity(cls, num=None):
         """Get identity rotation(s).
@@ -2113,10 +2204,15 @@ cdef class Rotation(object):
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : int, RandomState instance or None, optional
-            Accepts an integer as a seed for the random generator or a
-            RandomState object. If None (default), uses global `numpy.random`
-            random state.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -2136,13 +2232,13 @@ cdef class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random(random_state=1234).as_euler('zxy', degrees=True)
-        array([-110.5976185 ,   55.32758512,   76.3289269 ])
+        >>> R.random().as_euler('zxy', degrees=True)
+        array([-110.5976185 ,   55.32758512,   76.3289269 ])  # random
 
         Sample a stack of rotations:
 
-        >>> R.random(5, random_state=1234).as_euler('zxy', degrees=True)
-        array([[-110.5976185 ,   55.32758512,   76.3289269 ],
+        >>> R.random(5).as_euler('zxy', degrees=True)
+        array([[-110.5976185 ,   55.32758512,   76.3289269 ],  # random
                [ -91.59132005,  -14.3629884 ,  -93.91933182],
                [  25.23835501,   45.02035145, -121.67867086],
                [ -51.51414184,  -15.29022692, -172.46870023],
@@ -2293,7 +2389,7 @@ cdef class Rotation(object):
             return cls.from_matrix(C), rmsd
 
 
-class Slerp(object):
+class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
     The interpolation between consecutive rotations is performed as a rotation

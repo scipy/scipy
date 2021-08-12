@@ -851,6 +851,20 @@ class TestNdimageInterpolation:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
 
+    def test_affine_transform_output_shape(self):
+        # don't require output_shape when out of a different size is given
+        data = numpy.arange(8, dtype=numpy.float64)
+        out = numpy.ones((16,))
+        oshape = out.shape
+
+        ndimage.affine_transform(data, [[1]], output=out)
+        assert_array_almost_equal(out[:8], data)
+
+        # mismatched output shape raises an error
+        with pytest.raises(RuntimeError):
+            ndimage.affine_transform(
+                data, [[1]], output=out, output_shape=(12,))
+
     def test_affine_transform_with_string_output(self):
         data = numpy.array([1])
         out = ndimage.affine_transform(data, [[1]], output='f')
@@ -922,6 +936,26 @@ class TestNdimageInterpolation:
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.shift(data, [0, 1], order=order)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    @pytest.mark.parametrize('mode', ['constant', 'grid-constant'])
+    @pytest.mark.parametrize('dtype', [numpy.float64, numpy.complex128])
+    def test_shift_with_nonzero_cval(self, order, mode, dtype):
+        data = numpy.array([[1, 1, 1, 1],
+                            [1, 1, 1, 1],
+                            [1, 1, 1, 1]], dtype=dtype)
+
+        expected = numpy.array([[0, 1, 1, 1],
+                                [0, 1, 1, 1],
+                                [0, 1, 1, 1]], dtype=dtype)
+
+        if data.dtype.kind == 'c':
+            data -= 1j * data
+            expected -= 1j * expected
+        cval = 5.0
+        expected[:, 0] = cval  # specific to shift of [0, 1] used below
+        out = ndimage.shift(data, [0, 1], order=order, mode=mode, cval=cval)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))

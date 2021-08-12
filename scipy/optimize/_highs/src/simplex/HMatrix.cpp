@@ -90,9 +90,6 @@ void HMatrix::setup(int numCol_, int numRow_, const int* Astart_,
   }
   // Initialise the density of the PRICE result
   //  row_apDensity = 0;
-#ifdef HiGHSDEV
-  assert(setup_ok(nonbasicFlag_));
-#endif
 }
 
 void HMatrix::setup_lgBs(int numCol_, int numRow_, const int* Astart_,
@@ -329,7 +326,7 @@ void HMatrix::priceByRowSparseResultRemoveCancellation(HVector& row_ap) const {
 }
 
 #ifdef HiGHSDEV
-bool HMatrix::setup_ok(const int* nonbasicFlag_) {
+bool HMatrix::debugRowMatrix(const int* nonbasicFlag_) {
   printf("Checking row-wise matrix\n");
   for (int row = 0; row < numRow; row++) {
     for (int el = ARstart[row]; el < AR_Nend[row]; el++) {
@@ -352,16 +349,17 @@ bool HMatrix::setup_ok(const int* nonbasicFlag_) {
   }
   return true;
 }
-bool HMatrix::price_er_ck(HVector& row_ap, const HVector& row_ep) const {
-  return price_er_ck_core(row_ap, row_ep);
+bool HMatrix::debugPriceResult(HVector& row_ap, const HVector& row_ep) const {
+  return debugPriceResultCore(row_ap, row_ep);
 }
 
-bool HMatrix::price_er_ck_core(HVector& row_ap, const HVector& row_ep) const {
+bool HMatrix::debugPriceResultCore(HVector& row_ap,
+                                   const HVector& row_ep) const {
   // Alias
   int* ap_index = &row_ap.index[0];
   double* ap_array = &row_ap.array[0];
 
-  //  printf("HMatrix::price_er_ck      , count = %d\n", ap_count);
+  //  printf("HMatrix::debugPriceResult      , count = %d\n", ap_count);
   HVector lc_row_ap;
   lc_row_ap.setup(numCol);
   //  int *lc_ap_index = &lc_row_ap.index[0];

@@ -29,7 +29,7 @@ def test_warnings():
         orth.eval_gegenbauer(1, 1, 0)
 
 
-class TestPolys(object):
+class TestPolys:
     """
     Check that the eval_* functions agree with the constructed polynomials
 
@@ -134,7 +134,7 @@ class TestPolys(object):
                         param_ranges=[], x_range=[-100, 100])
 
 
-class TestRecurrence(object):
+class TestRecurrence:
     """
     Check that the eval_* functions sig='ld->d' and 'dd->d' agree.
 

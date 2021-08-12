@@ -9,7 +9,7 @@ import os
 import numpy as np
 import argparse
 
-from distutils.util import newer
+from distutils.util import newer  # type: ignore
 
 
 def main():

@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 import scipy.special as sc
 
 
-class TestExp1(object):
+class TestExp1:
 
     def test_branch_cut(self):
         assert np.isnan(sc.exp1(-1))
@@ -33,7 +33,7 @@ class TestExp1(object):
         assert_allclose(a.imag, b.imag, atol=0, rtol=1e-15)
 
 
-class TestExpi(object):
+class TestExpi:
 
     @pytest.mark.parametrize('result', [
         sc.expi(complex(-1, 0)),
@@ -69,7 +69,7 @@ class TestExpi(object):
         )
 
 
-class TestExpn(object):
+class TestExpn:
 
     def test_out_of_domain(self):
         assert all(np.isnan([sc.expn(-1, 1.0), sc.expn(1, -1.0)]))

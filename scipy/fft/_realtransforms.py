@@ -20,7 +20,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result. If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -55,7 +55,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -67,7 +68,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Cosine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -78,7 +79,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are
         None, `s` is ``x.shape``; if `s` is None but `axes` is
-        not None, then `s` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `s` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -113,7 +114,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -136,7 +138,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -171,7 +173,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 
@@ -183,7 +186,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Sine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -194,7 +197,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -229,7 +232,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 

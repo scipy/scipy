@@ -49,7 +49,7 @@ __ https://github.com/pypa/setuptools
 
 __ https://github.com/pybind/pybind11
 
-5) If you want to build the documentation: Sphinx__ >= 1.2.1
+5) If you want to build the documentation: Sphinx__ >= 2.4.0 and < 3.1.0
 
 __ http://www.sphinx-doc.org/
 
