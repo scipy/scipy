@@ -1027,6 +1027,13 @@ class LatinHypercube(QMCEngine):
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
+        lhs_method = {
+            False: self._random,
+            True: self._random_oa_lhs
+        }
+
+        self.lhs_method = lhs_method[orthogonal]
+
         optimization_method: Dict[Literal["random-cd"], Callable] = {
             "random-cd": self._random_cd,
         }
@@ -1046,11 +1053,6 @@ class LatinHypercube(QMCEngine):
         else:
             self.optimization_method = None
 
-        if not orthogonal:
-            self.lhs_method = self._random
-        else:
-            self.lhs_method = self._random_oa_lhs
-
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
@@ -1065,10 +1067,12 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        if self.optimization_method is None:
-            return self.lhs_method(n)
-        else:
-            return self.optimization_method(n)
+        lhs = self.lhs_method(n)
+        if self.optimization_method is not None:
+            lhs = self.optimization_method(lhs)
+
+        self.num_generated += n
+        return lhs
 
     def _random(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
@@ -1084,7 +1088,6 @@ class LatinHypercube(QMCEngine):
         perms = perms.T
 
         samples = (perms - samples) / n
-        self.num_generated += n
         return samples
 
     def _random_oa_lhs(self, n: IntNumber = 1) -> np.ndarray:
@@ -1101,7 +1104,7 @@ class LatinHypercube(QMCEngine):
             )
         if self.d > p + 1:
             raise ValueError(
-                "d is too large. Must be <= sqrt(n) + 1"
+                "n is too small for d. Must be n > (d-1)**2"
             )
 
         oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
@@ -1135,10 +1138,9 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
-        self.num_generated += n
         return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
 
-    def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
+    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
         """Optimal LHS on CD.
 
         Create a base LHS and do random permutations of coordinates to
@@ -1150,11 +1152,11 @@ class LatinHypercube(QMCEngine):
         `_n_iters` iterations are performed; or if there is no improvement
         for `_n_nochange` consecutive iterations.
         """
+        n = len(best_sample)
+
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        best_sample = self.lhs_method(n=n)
-        # self.num_generated += n  # done when calling self.lhs_method
         best_disc = discrepancy(best_sample)
 
         if n == 1:
