@@ -4647,7 +4647,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
-               method='auto', variant='b'):
+               method='auto', variant='b', alternative='two-sided'):
     """Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -4688,12 +4688,20 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     variant: {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
 
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
+
     Returns
     -------
     correlation : float
        The tau statistic.
     pvalue : float
-       The two-sided p-value for a hypothesis test whose null hypothesis is
+       The p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
     See Also
@@ -4766,9 +4774,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
         if variant == 'b':
-            return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
+            return mstats_basic.kendalltau(x, y, method=method, use_ties=True,
+                                           alternative=alternative)
         else:
-            raise ValueError("Only variant 'b' is supported for masked arrays")
+            message = ("nan_policy='omit' is currently compatible only with "
+                       "variant='b'.")
+            raise ValueError(message)
 
     if initial_lexsort is not None:  # deprecate to drop!
         warnings.warn('"initial_lexsort" is gone!')
@@ -4832,14 +4843,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
+        pvalue = mstats_basic._kendall_p_exact(size, tot-dis, alternative)
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
         m = size * (size - 1.)
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
-        pvalue = (special.erfc(np.abs(con_minus_dis) /
-                  np.sqrt(var) / np.sqrt(2)))
+        z = con_minus_dis / np.sqrt(var)
+        _, pvalue = _normtest_finish(z, alternative)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
