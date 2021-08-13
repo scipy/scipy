@@ -494,8 +494,9 @@ class TestBSpline:
         # test for minimal possible `t` shape
         t = [1., 1., 1., 2., 3., 4., 4., 4.]
         des_matr = BSpline.design_matrix(2., t, 3).toarray()
-        assert_allclose(des_matr, [[0.25, 0.58333333, 0.16666667, 0.]],
-                                                            atol=1e-9)
+        assert_allclose(des_matr,
+                        [[0.25, 0.58333333, 0.16666667, 0.]],
+                        atol=1e-14)
 
     def test_design_matrix_asserts(self):
         np.random.seed(1234)
