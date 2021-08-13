@@ -308,9 +308,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
-            if testrnorm <= tol and test2 <= tol:
+            if max(testrnorm, test2) <= tol:
                 istop = 2
-            if testrnorm <= tol and test1 <= tol:
+            if max(testrnorm, test1) <= tol:
                 istop = 1
 
         # See if it is time to print something.
