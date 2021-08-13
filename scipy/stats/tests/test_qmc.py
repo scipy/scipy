@@ -535,18 +535,17 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
-    @pytest.mark.parametrize("orthogonal", [False, True])
+    @pytest.mark.parametrize("strength", [1, 2])
     @pytest.mark.parametrize("centered", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
-    def test_sample_stratified(self, optimization, centered,
-                               orthogonal):
+    def test_sample_stratified(self, optimization, centered, strength):
         seed = np.random.RandomState(123456)
         d, n = 6, 25
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
         engine = qmc.LatinHypercube(d=d, centered=centered,
-                                    orthogonal=orthogonal,
+                                    strength=strength,
                                     optimization=optimization,
                                     seed=seed)
         sample = engine.random(n=n)
@@ -559,7 +558,7 @@ class TestLHS(QMCEngineTests):
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
 
-        if orthogonal and optimization is None:
+        if strength == 2 and optimization is None:
             p = d - 1
             unique_elements = np.arange(p)
             desired = set(product(unique_elements, unique_elements))
@@ -590,19 +589,23 @@ class TestLHS(QMCEngineTests):
         with pytest.raises(ValueError, match=message):
             qmc.LatinHypercube(1, seed=seed, optimization="toto")
 
+        message = r"not a valid strength"
+        with pytest.raises(ValueError, match=message):
+            qmc.LatinHypercube(1, strength=3, seed=seed)
+
         message = r"n is not the square of a prime number"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=2, orthogonal=True, seed=seed)
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
             engine.random(16)
 
         message = r"n is not the square of a prime number"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=2, orthogonal=True, seed=seed)
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
             engine.random(5)  # because int(sqrt(5)) would result in 2
 
         message = r"n is too small for d"
         with pytest.raises(ValueError, match=message):
-            engine = qmc.LatinHypercube(d=5, orthogonal=True, seed=seed)
+            engine = qmc.LatinHypercube(d=5, strength=2, seed=seed)
             engine.random(9)
 
 

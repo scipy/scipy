@@ -910,11 +910,12 @@ class LatinHypercube(QMCEngine):
 
         .. versionadded:: 1.8.0
 
-    orthogonal : bool, optional
-        Orthogonal array based LHS of strength 2 [7]_, [8]_.
-        When used, only ``n=p**2`` points can be sampled, with ``p`` a prime
-        number. It also constrains ``d <= p + 1``.
-        Default is False.
+    strength : {1, 2}, optional
+        Strength of the LHS. ``strength=1`` produces a plain LHS while
+        ``strength=2`` produces an orthogonal array based LHS of strength 2
+        [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
+        with ``p`` a prime number. It also constrains ``d <= p + 1``.
+        Default is 1.
 
         .. versionadded:: 1.8.0
 
@@ -1004,35 +1005,41 @@ class LatinHypercube(QMCEngine):
     >>> qmc.discrepancy(sample)
     0.0176...  # random
 
-    Use the `orthogonal` keyword argument to produce an orthogonal array based
-    LHS. The construction imposes to use a square of a prime number.
+    Use the `strength` keyword argument to produce an orthogonal array based
+    LHS of strength 2. The construction imposes to use a square of a prime
+    number.
 
-    >>> sampler = qmc.LatinHypercube(d=2, orthogonal=True)
+    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
     >>> sample = sampler.random(n=9)
     >>> qmc.discrepancy(sample)
     0.00526...  # random
 
     Options could be combined as a same time to produce an optimized centered
     orthogonal array based LHS. After optimization, the result would not
-    be guaranteed to be orthogonal.
+    be guaranteed to be of strength 2.
 
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
-        orthogonal: bool = False,
+        strength: int = 1,
         optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        lhs_method = {
-            False: self._random,
-            True: self._random_oa_lhs
+        lhs_method_strength = {
+            1: self._random,
+            2: self._random_oa_lhs
         }
 
-        self.lhs_method = lhs_method[orthogonal]
+        try:
+            self.lhs_method = lhs_method_strength[strength]
+        except KeyError as exc:
+            raise ValueError(f"{strength!r} is not a valid"
+                             " strength. It must be one of"
+                             f" {set(lhs_method_strength)!r}") from exc
 
         optimization_method: Dict[Literal["random-cd"], Callable] = {
             "random-cd": self._random_cd,
@@ -1043,10 +1050,10 @@ class LatinHypercube(QMCEngine):
             try:
                 optimization = optimization.lower()  # type: ignore[assignment]
                 self.optimization_method = optimization_method[optimization]
-            except KeyError:
+            except KeyError as exc:
                 raise ValueError(f"{optimization!r} is not a valid"
                                  " optimization method. It must be one of"
-                                 f" {set(optimization_method)!r}")
+                                 f" {set(optimization_method)!r}") from exc
 
             self._n_nochange = 100
             self._n_iters = 10_000
@@ -1090,7 +1097,7 @@ class LatinHypercube(QMCEngine):
         samples = (perms - samples) / n
         return samples
 
-    def _random_oa_lhs(self, n: IntNumber = 1) -> np.ndarray:
+    def _random_oa_lhs(self, n: IntNumber = 4) -> np.ndarray:
         """Orthogonal array based LHS of strength 2."""
         p = np.sqrt(n).astype(int)
         n_row = p**2
@@ -1126,7 +1133,7 @@ class LatinHypercube(QMCEngine):
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, centered=self.centered,
-                                    orthogonal=False,
+                                    strength=1,
                                     seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
