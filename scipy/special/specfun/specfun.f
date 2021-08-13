@@ -1427,10 +1427,18 @@ C
         IF (M.LE.12.OR.Q.LE.3.0*M.OR.Q.GT.M*M) THEN
             CALL CV0(KD,M,Q,A)
             IF (Q.NE.0.0D0.AND.M.NE.2) THEN
-               CALL BISECTION_REFINE(KD,M,Q,A)
+               F0F1 = 1
                A_COPY=A
-               CALL REFINE(KD,M,Q,A)
-               IF (ABS(1.0 - A/A_COPY).GT.1.0D-1) A=A_COPY
+               CALL BISECTION_REFINE(KD,M,Q,A,1.0D-3,F0F1)
+               IF( F0F1.EQ.0 ) THEN
+                  A=A_COPY
+                  CALL REFINE(KD,M,Q,A)
+                  IF (ABS(1.0 - A/A_COPY).GT.1.0D-1) A=A_COPY
+               ELSE
+                  A_COPY=A
+                  CALL REFINE(KD,M,Q,A)
+                  IF (ABS(1.0 - A/A_COPY).GT.1.0D-1) A=A_COPY
+               ENDIF
             ENDIF
             IF (Q.GT.2.0D-3.AND.M.EQ.2) CALL REFINE(KD,M,Q,A)
         ELSE
@@ -1799,7 +1807,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE BISECTION_REFINE(KD,M,Q,A)
+        SUBROUTINE BISECTION_REFINE(KD,M,Q,A,HALF_WIN,F0F1)
 C
 C       =====================================================
 C       Purpose: calculate the accurate characteristic value
@@ -1813,19 +1821,23 @@ C                        characteristic equation
 C       ========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        EPS=1.0D-8
+        EPS=1.0D-14
         MJ=10+M
         CA=A
         DELTA=0.0D0
-        X0=(1 - 0.001)*A
+        X0=(1 - HALF_WIN)*A
         CALL CVF(KD,M,Q,X0,MJ,F0)
-        X1=(1 + 0.001)*A
+        X1=(1 + HALF_WIN)*A
         CALL CVF(KD,M,Q,X1,MJ,F1)
-        DO IT=1,5000
+        IF( (F0*F1).GT.0.0 ) THEN
+         F0F1 = 0
+         RETURN
+        ENDIF
+        DO IT=1,1000
            MJ=MJ+1
            X=(X0 + X1)/2.0
            CALL CVF(KD,M,Q,X,MJ,F)
-           IF (ABS((X1 - X0)/2).LT.EPS.OR.F.EQ.0.0) GO TO 15
+           IF (ABS((X1 - X0)/2.0).LT.EPS.OR.F.EQ.0.0) GO TO 15
            IF (SIGN(1.0D0, F).EQ.SIGN(1.0D0, F0)) THEN
               X0=X
               F0=F
@@ -1860,7 +1872,7 @@ C
         DELTA=0.0D0
         X0=A
         CALL CVF(KD,M,Q,X0,MJ,F0)
-        X1=(1 + 1.0D-13)*A
+        X1=(1 + 1.0D-6)*A
         CALL CVF(KD,M,Q,X1,MJ,F1)
         DO 10 IT=1,100
            MJ=MJ+1
