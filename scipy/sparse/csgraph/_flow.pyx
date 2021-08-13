@@ -713,13 +713,14 @@ def minimum_cost_flow(csgraph, demand, cost):
     ns_result = _network_simplex(csgraph.indices, tails, csgraph.data,
                                  demand, cost, n_verts,
                                  row, col, flow_data)
-    if not ns_result.is_correct:
+    flow_cost, size, flow_value, is_correct = ns_result
+    if not is_correct:
         raise ValueError("no flow satisfies all node demands")
-    flow_matrix = csr_matrix((flow_data[0:ns_result.size],
-                             (row[0:ns_result.size], col[0:ns_result.size])),
+    flow_matrix = csr_matrix((flow_data[0:size],
+                             (row[0:size], col[0:size])),
                              shape=(n_verts, n_verts))
-    return MinCostFlowResult(ns_result.flow_value, flow_matrix,
-                             ns_result.flow_cost)
+    return MinCostFlowResult(flow_value, flow_matrix,
+                             flow_cost)
 
 
 def _network_simplex_checks(
@@ -1240,7 +1241,7 @@ cdef inline void _add_entry(
     col[idx] = edge_target - 1
     flow_data[idx] = flow
 
-cdef network_simplex_result* _network_simplex(
+cdef ITYPE_t[:] _network_simplex(
         ITYPE_t[:] heads,  # IN
         ITYPE_t[:] tails,  # IN
         ITYPE_t[:] capacities,  # IN
@@ -1262,7 +1263,8 @@ cdef network_simplex_result* _network_simplex(
     cdef ITYPE_t[:] Wn, We, WnR, WeR, ancestors, subtree
     cdef local_vars *B_M_m_f
     cdef edge_result *i_p_q
-    cdef network_simplex_result *ns_result
+    # cdef network_simplex_result *ns_result
+    cdef ITYPE_t[:] ns_result
     cdef bint prev_ret_value = False
 
     cdef ITYPE_t[:] edge_sources = np.empty(n_edges + n_verts + 1, dtype=ITYPE)
@@ -1288,7 +1290,8 @@ cdef network_simplex_result* _network_simplex(
     subtree = np.empty(2*n_verts, dtype=ITYPE)
     B_M_m_f = <local_vars*>malloc(sizeof(local_vars))
     i_p_q = <edge_result*>malloc(sizeof(edge_result))
-    ns_result = <network_simplex_result*>malloc(sizeof(network_simplex_result))
+    # ns_result = <network_simplex_result*>malloc(sizeof(network_simplex_result))
+    ns_result = np.empty(4, dtype=ITYPE)
 
     with nogil:
         idx = 0
@@ -1405,13 +1408,13 @@ cdef network_simplex_result* _network_simplex(
                                                   i_p_q)
 
         free(i_p_q)
-        ns_result.is_correct = True
+        ns_result[3] = True
         for v in range(n_verts):
             if edge_flow[v + n_non_zero_edges] != 0:
-                ns_result.is_correct = False
+                ns_result[3] = False
                 break
 
-        if ns_result.is_correct:
+        if ns_result[3]:
             flow_cost = 0
             flow_value = 0
             for i in range(n_edges):
@@ -1423,9 +1426,9 @@ cdef network_simplex_result* _network_simplex(
                     _add_entry(edge_sources[i], edge_targets[i],
                                edge_flow[i], idx, row, col, flow_data)
                     idx += 1
-            ns_result.flow_cost = flow_cost
-            ns_result.size = idx
-            ns_result.flow_value = flow_value
+            ns_result[0] = flow_cost
+            ns_result[1] = idx
+            ns_result[2] = flow_value
         free(B_M_m_f)
         return ns_result
         # end: with nogil
