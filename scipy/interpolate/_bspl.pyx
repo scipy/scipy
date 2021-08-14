@@ -447,14 +447,13 @@ def _make_design_matrix(const double[::1] x,
         cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
     for i in range(n):
         ind = find_interval(t, k, x[i], k - 1, 0)
-        if ind <  k:
-            raise ValueError(f'Out of bounds w/ x = {x}.')
+        
         _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
 
         data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
         row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
         col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k
-                                                            ,min(ind + 1, nt - k - 1)
+                                                            ,ind + 1
                                                             ,dtype=int)
 
-    return csr_matrix((data, (row_ind, col_ind)), (n, nt - k - 1))       
+    return csr_matrix((np.asarray(data), (row_ind, col_ind)), (n, nt - k - 1))       
