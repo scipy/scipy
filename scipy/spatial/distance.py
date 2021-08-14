@@ -62,6 +62,7 @@ computing the distances between all pairs.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
    kulsinski        -- the Kulsinski distance.
+   kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
    sokalmichener    -- the Sokal-Michener dissimilarity.
@@ -90,6 +91,7 @@ __all__ = [
     'jaccard',
     'jensenshannon',
     'kulsinski',
+    'kulczynski1',
     'mahalanobis',
     'matching',
     'minkowski',
@@ -929,6 +931,16 @@ def kulsinski(u, v, w=None):
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
+
+
+def kulczynski1(u, v, w=None):
+    u = _validate_vector(u)
+    v = _validate_vector(v)
+    if w is not None:
+        w = _validate_weights(w)
+    (_, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
+
+    return ntt / (ntf + nft)
 
 
 def seuclidean(u, v, V):
@@ -1864,6 +1876,14 @@ _METRIC_INFOS = [
         pdist_func=PDistMetricWrapper('kulsinski'),
     ),
     MetricInfo(
+        canonical_name='kulczynski1',
+        aka={'kulczynski1'},
+        types=['bool'],
+        dist_func=kulczynski1,
+        cdist_func=CDistMetricWrapper('kulczynski1'),
+        pdist_func=PDistMetricWrapper('kulczynski1'),
+    ),
+    MetricInfo(
         canonical_name='mahalanobis',
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
@@ -1971,9 +1991,10 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+        'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+        'sqeuclidean', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2633,9 +2654,9 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-        'sqeuclidean', 'wminkowski', 'yule'.
+        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
+        'sokalsneath', 'sqeuclidean', 'wminkowski', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
