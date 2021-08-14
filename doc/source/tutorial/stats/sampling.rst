@@ -39,8 +39,8 @@ Some methods to do that are:
   return :math:`X = F^{-1}(U)`. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
   the inverse (e.g. :class:`~scipy.special.ndtri`,
-  :class:`scipy.special.stdtrit`). In general, the implementation of special
-  functions are quite slow compared to the inversion methods in UNU.RAN.
+  :class:`~scipy.special.stdtrit`). In general, the implementation of special
+  functions is quite slow compared to the inversion methods in UNU.RAN.
 * The Rejection Method: The rejection method, often called
   acceptance-rejection method, has been suggested by John von Neumann in
   1951 [1]_. It involves computing an upper bound to the PDF (also called the
@@ -216,7 +216,7 @@ by visualizing the histogram of the samples:
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
           distributions (e.g., normal inverse Gaussian `norminvgauss` and the
-          lognormal distribution). If no specific method is implemented,
+          lognormal `lognorm` distribution). If no specific method is implemented,
           `rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is

@@ -583,7 +583,7 @@ cdef class TransformedDensityRejection(Method):
             c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
 
     cpoints : int or array_like, optional
-        If an interger, it defines the number of construction points. If it
+        If an integer, it defines the number of construction points. If it
         is array-like, the elements of the array are used as construction
         points. Default is 30.
     variant : {'ps', 'gw', 'ia'}, optional
@@ -592,7 +592,7 @@ cdef class TransformedDensityRejection(Method):
 
         * GW: squeezes between construction points, see [3]_.
         * PS: squeezes proportional to hat function. (Default)
-        * IA: same as variant PS but uses a compositon method with
+        * IA: same as variant PS but uses a composition method with
           "immediate acceptance" in the region below the squeeze.
 
     use_dars : bool, optional
@@ -900,7 +900,7 @@ cdef class DiscreteAliasUrn(Method):
 
     This method is used to sample from univariate discrete distributions with
     a finite domain. It uses the probability vector of size :math:`N` or a
-    probability mass function with a finite support to generator random
+    probability mass function with a finite support to generate random
     numbers from the distribution.
 
     Parameters
@@ -925,7 +925,7 @@ cdef class DiscreteAliasUrn(Method):
 
     urn_factor : float, optional
         Size of the urn table *relative* to the size of the probability
-        vector. It must not be less than 1. Larger tables result is faster
+        vector. It must not be less than 1. Larger tables result in faster
         generation times but require a more expensive setup. Default is 1.
     numpy_rng : int, BitGenerator, Generator, RandomState, SeedSequence, optional
         A NumPy random number generator or seed for the underlying NumPy random
@@ -993,7 +993,7 @@ cdef class DiscreteAliasUrn(Method):
     0.9993602047563164
 
     As the p-value is very high, we fail to reject the null hypothesis that
-    the observed frequencies are same as the expected frequencies. Hence,
+    the observed frequencies are the same as the expected frequencies. Hence,
     we can safely assume that the variates have been generated from the given
     distribution. Note that this just gives the correctness of the algorithm
     and not the quality of the samples.

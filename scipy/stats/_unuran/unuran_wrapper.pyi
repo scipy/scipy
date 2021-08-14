@@ -21,10 +21,7 @@ class Method:
     def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
     @overload
     def rvs(self, size: int | Tuple[int, ...] = ...) -> np.ndarray: ...
-    @property
-    def seed(self) -> np.random.Generator | np.random.RandomState: ...
-    @seed.setter
-    def seed(self, seed: UNURANSeedType) -> None: ...
+    def set_numpy_rng(self, numpy_rng: UNURANSeedType) -> None: ...
 
 
 class TDRDist(Protocol):
@@ -32,6 +29,8 @@ class TDRDist(Protocol):
     def pdf(self) -> Callable[..., float]: ...
     @property
     def dpdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
 
 
 class TransformedDensityRejection(Method):
@@ -45,18 +44,14 @@ class TransformedDensityRejection(Method):
                  cpoints: int = ...,
                  variant: str = ...,
                  use_dars: bool = ...,
-                 max_sqhratio: float = ...,
+                 max_squeeze_hat_ratio: float = ...,
                  max_intervals: int = ...,
                  guide_factor: float = ...,
-                 seed: UNURANSeedType = ...) -> None: ...
-
+                 numpy_rng: UNURANSeedType = ...) -> None: ...
     @property
-    def sqhratio(self) -> float: ...
-    @property
-    def n_intervals(self) -> int: ...
+    def squeeze_hat_ratio(self) -> float: ...
     @property
     def squeeze_area(self) -> float: ...
-
     @overload
     def ppf_hat(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
     @overload
@@ -66,12 +61,13 @@ class TransformedDensityRejection(Method):
 class DAUDist(Protocol):
     @property
     def pmf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
 
 class DiscreteAliasUrn(Method):
     def __init__(self,
-                 pv: None | npt.ArrayLike = ...,
-                 dist: None | DAUDist = ...,
+                 dist: npt.ArrayLike | DAUDist,
                  params: Tuple[Any, ...] = ...,
                  domain: None | Tuple[float, float] = ...,
                  urn_factor: float = ...,
-                 seed: SeedType = ...) -> None: ...
+                 numpy_rng: SeedType = ...) -> None: ...

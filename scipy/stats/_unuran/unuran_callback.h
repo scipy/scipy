@@ -96,7 +96,7 @@ int init_unuran_callback(ccallback_t *callback, PyObject *fcn)
         return -1;
     }
 
-    callback->info_p = (void *)0;
+    callback->info_p = NULL;
 
     return 0;
 }
