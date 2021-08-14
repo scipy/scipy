@@ -209,7 +209,7 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     transactions per user. Unlike the simpler C-test, which follows a
     conditional distribution, the E-test is an unconditional test.
 
-    The E-test has been evaluated an determined to be more powerful than the
+    The E-test has been evaluated and determined to be more powerful than the
     comparable C-test [1]_. The E-test can be said to be almost exact because
     the test exceeds the nominal value by a negligible amount, whereas the
     C-test's results are smaller than the nominal value.
