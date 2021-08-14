@@ -163,15 +163,15 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
 
     .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
 
-    Let `count1` and `count1` be the observed values of :math:`X_1` and
+    Let `count1` and `count2` be the observed values of :math:`X_1` and
     :math:`X_2`, respectively. The problem of interest here is to test
 
     .. math::
        H_0: \lambda_1 = \lambda_2 + \mathtt{diff} \quad vs. \quad
        H_a: \lambda_1 \ne \lambda_2 + \mathtt{diff}
 
-    for right sided `greater` hypothesis where :math:`\mathtt{diff} \ge 0` is
-    a given number, based on (`nobs1`, `count1`, `nobs2`, `count2`). \
+    for `two-sided` hypothesis, where :math:`\mathtt{diff} \ge 0` is a given
+    number, based on (`nobs1`, `count1`, `nobs2`, `count2`).
     `two-sided` and `greater` cases are demonstrated by [1]_. The `less`
     hypothesis performed by switching the arguments on `greater` hypothesis.
 
@@ -185,15 +185,15 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
         Observed values of interest from sample 2.
     nobs2:
         Sample size from sample 2.
-    diff : int of float, optional
+    diff : int or float, optional
         The difference of mean between two samples under null hypothesis
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+          * 'two-sided': :math:`\lambda_1 \ne \lambda_2 + \mathtt{diff}`
+          * 'less': :math:`\lambda_1 \le \lambda_2 + \mathtt{diff}`
+          * 'greater': :math:`\lambda_1 \ge \lambda_2 + \mathtt{diff}`
 
     Returns
     -------
@@ -206,7 +206,7 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     Notes
     -----
     The Poisson distribution is commonly used to model many processes such as
-    transactions per user. Unlike the simpler C-test, which follows a
+    transactions per user. Unlike the simpler C-test [1]_, which follows a
     conditional distribution, the E-test is an unconditional test.
 
     The E-test has been evaluated and determined to be more powerful than the
