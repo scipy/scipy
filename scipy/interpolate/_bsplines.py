@@ -363,8 +363,8 @@ class BSpline:
         at the certain point (first row - x[0], ..., last row - x[-1]).
 
         `nt` is a lenght of the vector of knots: as far as there are
-        `nt - k - 1` basis elements, `nt` should be not less than `k + 2`
-        to have at least one basis element.
+        `nt - k - 1` basis elements, `nt` should be not less than `2 * k + 2`
+        to have at least `k + 1` basis element.
 
         Out of bounds `x` raises a ValueError.
         """
@@ -375,12 +375,13 @@ class BSpline:
             raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
                              f"got t={t}.")
         # There are `nt - k - 1` basis elemets in a BSpline built on the
-        # vector of knots with length `nt`, so to have at least one basis
-        # element we need to have at least `k + 2` elements in the vector
+        # vector of knots with length `nt`, so to have at least `k + 1` basis
+        # element we need to have at least `2 * k + 2` elements in the vector
         # of knots.
-        if len(t) <= k + 1:
+        if len(t) < 2 * k + 2:
             raise ValueError(f"Length t is not enough for k={k}.")
-        if (min(x) < t[k]) or (max(x) > t[-k]):
+        # Checks from `find_interval` function
+        if (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1]):
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
         return _bspl._make_design_matrix(x, t, k)

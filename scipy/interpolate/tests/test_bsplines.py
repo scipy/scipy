@@ -473,7 +473,7 @@ class TestBSpline:
         for k in range(2, 7):
             run_design_matrix_tests(n, k, "periodic")
 
-    def test_design_matrix_x_t_shapes(self):
+    def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
         np.random.seed(1234)
         n = 10
@@ -490,10 +490,13 @@ class TestBSpline:
                                                  k).toarray()
             assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
 
+    def test_design_matrix_t_shapes(self):
         # test for minimal possible `t` shape
-        t = [0., 1., 1., 1., 2.]
-        des_matr = BSpline.design_matrix(1., t, 3).toarray()
-        assert_allclose(des_matr, [[1.]], atol=1e-14)
+        t = [1., 1., 1., 2., 3., 4., 4., 4.]
+        des_matr = BSpline.design_matrix(2., t, 3).toarray()
+        assert_allclose(des_matr,
+                        [[0.25, 0.58333333, 0.16666667, 0.]],
+                        atol=1e-14)
 
     def test_design_matrix_asserts(self):
         np.random.seed(1234)
