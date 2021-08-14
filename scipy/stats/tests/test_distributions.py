@@ -3028,27 +3028,47 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    @pytest.mark.parametrize(
+        "sample_size", [
+            pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
+        ]
+    )
+    @pytest.mark.parametrize("parameterization", ["S0", "S1"])
+    @pytest.mark.parametrize(
+        "alpha,beta", [(1.0, 0), (1.0, -0.5), (1.5, 0), (1.9, 0.5)]
+    )
+    @pytest.mark.parametrize("gamma,delta", [(1, 0), (3, 2)])
+    def test_rvs(
+            self,
+            parameterization,
+            alpha,
+            beta,
+            gamma,
+            delta,
+            sample_size,
+    ):
+        stats.levy_stable.parameterization = parameterization
+        ls = stats.levy_stable(
+            alpha=alpha, beta=beta, scale=gamma, loc=delta
+        )
+        _, p = stats.kstest(
+            ls.rvs(size=sample_size, random_state=1234), ls.cdf
+        )
+        assert p > 0.05
+
     @pytest.mark.slow
-    def test_rvs(self):
-        for param in ["S0", "S1"]:
-            # Various arbitrary pairs. It's
-            # important to have variations of
-            # alpha, beta == 1 and !=1.
-            for alpha, beta in [
-                (1.0, 0),
-                (1.0, -0.5),
-                (1.5, 0),
-                (1.9, 0.5),
-            ]:
-                # check standardized and non-standardized
-                for gamma, delta in [(1, 0), (3, 2)]:
-                    stats.levy_stable.parameterization = param
-                    ls = stats.levy_stable(
-                        alpha=alpha, beta=beta,
-                        scale=gamma, loc=delta)
-                    _, p = stats.kstest(
-                        ls.rvs(size=1500, random_state=1234), ls.cdf)
-                    assert_equal(p > 0.05, True)
+    @pytest.mark.parametrize('beta', [0.5, 1])
+    def test_rvs_alpha1(self, beta):
+        """Additional test cases for rvs for alpha equal to 1."""
+        np.random.seed(987654321)
+        alpha = 1.0
+        loc = 0.5
+        scale = 1.5
+        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
+                                  size=5000)
+        stat, p = stats.kstest(x, 'levy_stable',
+                               args=(alpha, beta, loc, scale))
+        assert p > 0.01
 
     def test_fit(self):
         # construct data to have percentiles that match
@@ -3413,18 +3433,6 @@ class TestLevyStable:
             )
             assert_almost_equal(calc_stats, exp_stats)
 
-    @pytest.mark.slow
-    @pytest.mark.parametrize('beta', [0.5, 1])
-    def test_rvs_alpha1(self, beta):
-        np.random.seed(987654321)
-        alpha = 1.0
-        loc = 0.5
-        scale = 1.5
-        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
-                                  size=5000)
-        stat, p = stats.kstest(x, 'levy_stable',
-                               args=(alpha, beta, loc, scale))
-        assert p > 0.01
 
     @pytest.mark.parametrize('alpha', [0.25, 0.5, 0.75])
     def test_distribution_outside_support(self, alpha):
