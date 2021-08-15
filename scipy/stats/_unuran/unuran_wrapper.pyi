@@ -5,7 +5,6 @@ import numpy.typing as npt
 from scipy._lib._util import SeedType
 
 
-UNURANSeedType = Union[SeedType, np.random.SeedSequence]
 ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
 
 
@@ -21,7 +20,7 @@ class Method:
     def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
     @overload
     def rvs(self, size: int | Tuple[int, ...] = ...) -> np.ndarray: ...
-    def set_numpy_rng(self, numpy_rng: UNURANSeedType) -> None: ...
+    def set_random_state(self, random_state: SeedType) -> None: ...
 
 
 class TDRDist(Protocol):
@@ -47,7 +46,7 @@ class TransformedDensityRejection(Method):
                  max_squeeze_hat_ratio: float = ...,
                  max_intervals: int = ...,
                  guide_factor: float = ...,
-                 numpy_rng: UNURANSeedType = ...) -> None: ...
+                 random_state: SeedType = ...) -> None: ...
     @property
     def squeeze_hat_ratio(self) -> float: ...
     @property
@@ -70,4 +69,4 @@ class DiscreteAliasUrn(Method):
                  params: Tuple[Any, ...] = ...,
                  domain: None | Tuple[float, float] = ...,
                  urn_factor: float = ...,
-                 numpy_rng: SeedType = ...) -> None: ...
+                 random_state: SeedType = ...) -> None: ...

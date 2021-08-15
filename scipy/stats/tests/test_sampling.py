@@ -132,21 +132,30 @@ def test_bad_domain(domain, err, msg, method, kwargs):
 
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
-def test_numpy_rng(method, kwargs):
+def test_random_state(method, kwargs):
     Method = getattr(stats, method)
 
     # simple seed that works for any version of NumPy
     seed = 123
-    rng1 = Method(**kwargs, numpy_rng=seed)
-    rng2 = Method(**kwargs, numpy_rng=seed)
+    rng1 = Method(**kwargs, random_state=seed)
+    rng2 = Method(**kwargs, random_state=seed)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
+
+    # global seed
+    np.random.seed(123)
+    rng1 = Method(**kwargs)
+    rvs1 = rng1.rvs(100)
+    np.random.seed(None)
+    rng2 = Method(**kwargs, random_state=123)
+    rvs2 = rng2.rvs(100)
+    assert_equal(rvs1, rvs2)
 
     # RandomState seed for old numpy
     if NumpyVersion(np.__version__) < '1.19.0':
         seed1 = np.random.RandomState(123)
         seed2 = 123
-        rng1 = Method(**kwargs, numpy_rng=seed1)
-        rng2 = Method(**kwargs, numpy_rng=seed2)
+        rng1 = Method(**kwargs, random_state=seed1)
+        rng2 = Method(**kwargs, random_state=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
         rvs11 = rng1.rvs(550)
         rvs12 = rng1.rvs(50)
@@ -154,35 +163,23 @@ def test_numpy_rng(method, kwargs):
         assert_equal(rvs11, rvs2[:550])
         assert_equal(rvs12, rvs2[550:])
     else:  # Generator seed for new NumPy
-        seed1 = np.random.default_rng(123)
-        seed2 = np.random.PCG64(123)
-        rng1 = Method(**kwargs, numpy_rng=seed1)
-        rng2 = Method(**kwargs, numpy_rng=seed2)
-        assert_equal(rng1.rvs(100), rng2.rvs(100))
-
         # when a RandomState is given, it should take the bitgen_t
         # member of the class and create a Generator instance.
         seed1 = np.random.RandomState(np.random.MT19937(123))
         seed2 = np.random.Generator(np.random.MT19937(123))
-        rng1 = Method(**kwargs, numpy_rng=seed1)
-        rng2 = Method(**kwargs, numpy_rng=seed2)
+        rng1 = Method(**kwargs, random_state=seed1)
+        rng2 = Method(**kwargs, random_state=seed2)
         assert_equal(rng1.rvs(100), rng2.rvs(100))
 
-    # testing with seed sequence
-    seed = [1, 2, 3]
-    rng1 = Method(**kwargs, numpy_rng=seed)
-    rng2 = Method(**kwargs, numpy_rng=seed)
-    assert_equal(rng1.rvs(100), rng2.rvs(100))
 
-
-def test_set_numpy_rng():
-    rng1 = TransformedDensityRejection(common_cont_dist, numpy_rng=123)
+def test_set_random_state():
+    rng1 = TransformedDensityRejection(common_cont_dist, random_state=123)
     rng2 = TransformedDensityRejection(common_cont_dist)
-    rng2.set_numpy_rng(123)
+    rng2.set_random_state(123)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
-    rng = TransformedDensityRejection(common_cont_dist, numpy_rng=123)
+    rng = TransformedDensityRejection(common_cont_dist, random_state=123)
     rvs1 = rng.rvs(100)
-    rng.set_numpy_rng(123)
+    rng.set_random_state(123)
     rvs2 = rng.rvs(100)
     assert_equal(rvs1, rvs2)
 
@@ -208,7 +205,7 @@ def test_threading_behaviour():
     def func1():
         dist = Distribution('foo')
         rng = TransformedDensityRejection(dist, domain=(10, 100),
-                                          numpy_rng=12)
+                                          random_state=12)
         try:
             rng.rvs(100000)
         except ValueError as e:
@@ -217,7 +214,7 @@ def test_threading_behaviour():
     def func2():
         dist = Distribution('bar')
         rng = TransformedDensityRejection(dist, domain=(10, 100),
-                                          numpy_rng=2)
+                                          random_state=2)
         try:
             rng.rvs(100000)
         except ValueError as e:
@@ -239,7 +236,7 @@ def test_threading_behaviour():
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_pickle(method, kwargs):
     Method = getattr(stats, method)
-    rng1 = Method(**kwargs, numpy_rng=123)
+    rng1 = Method(**kwargs, random_state=123)
     obj = pickle.dumps(rng1)
     rng2 = pickle.loads(obj)
     assert_equal(rng1.rvs(100), rng2.rvs(100))
@@ -325,7 +322,7 @@ class TestTransformedDensityRejection:
         with suppress_warnings() as sup:
             # filter the warnings thrown by UNU.RAN
             sup.filter(RuntimeWarning)
-            rng = TransformedDensityRejection(dist, numpy_rng=42)
+            rng = TransformedDensityRejection(dist, random_state=42)
         rvs = rng.rvs(100000)
         mv = rvs.mean(), rvs.var()
         # test the moments only if the variance is finite
@@ -481,7 +478,7 @@ class TestDiscreteAliasUrn:
         k = np.arange(domain[0], domain[1]+1)
         pv = dist.pmf(k)
         mv_ex = dist.stats('mv')
-        rng = DiscreteAliasUrn(dist, numpy_rng=42)
+        rng = DiscreteAliasUrn(dist, random_state=42)
         rvs = rng.rvs(100000)
         # test if the first few moments match
         mv = rvs.mean(), rvs.var()
@@ -534,7 +531,7 @@ class TestDiscreteAliasUrn:
                                     [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]])
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
-        rng = DiscreteAliasUrn(pv, numpy_rng=123)
+        rng = DiscreteAliasUrn(pv, random_state=123)
         rvs = rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))

@@ -19,6 +19,7 @@ import threading
 import functools
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
+from scipy._lib._util import check_random_state
 
 
 __all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn']
@@ -59,16 +60,17 @@ IF not NPY_OLD:
         ----------
         seed : object, optional
             Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, RandomState, or SeedSequence.
+            an integer, Generator, or RandomState.
 
         Returns
         -------
         numpy_rng : object
             An instance of NumPy's Generator class.
         """
+        seed = check_random_state(seed)
         if isinstance(seed, np.random.RandomState):
             return np.random.default_rng(seed._bit_generator)
-        return np.random.default_rng(seed)
+        return seed
 ELSE:
     ctypedef double (*URNG_FUNCT)(void *) nogil
 
@@ -81,21 +83,14 @@ ELSE:
         ----------
         seed : object, optional
             Seed for the generator. If None, no seed is set. The seed can be
-            an integer, Generator, RandomState, or SeedSequence.
+            an integer, Generator, or RandomState.
 
         Returns
         -------
         numpy_rng : object
             An instance of NumPy's RandomState or Generator class.
         """
-        if seed is None or seed is np.random:
-            return np.random.mtrand._rand
-        if (hasattr(np.random, "Generator") and
-            isinstance(seed, np.random.Generator)):
-            return seed
-        elif isinstance(seed, np.random.RandomState):
-            return seed
-        return np.random.RandomState(seed)
+        return check_random_state(seed)
 
 
 @cython.final
@@ -323,7 +318,7 @@ cdef class Method:
       occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
-    * Provides a `set_numpy_rng` method to change the seed.
+    * Provides a `set_random_state` method to change the seed.
     * Implements the __dealloc__ method. The child class must not overide
       this method.
     * Implements __reduce__ method to allow pickling.
@@ -350,18 +345,18 @@ cdef class Method:
             if msg:
                 raise UNURANError(msg)
 
-    cdef inline void _set_rng(self, object numpy_rng) except *:
+    cdef inline void _set_rng(self, object random_state) except *:
         """
         Create a UNU.RAN random number generator.
 
         Parameters
         ----------
-        numpy_rng : object
+        random_state : object
             Seed for the uniform random number generator. Can be a integer,
-            NumPy BitGenerator, RandomState, or SeedSequence.
+            Generator, or RandomState.
         """
         cdef ccallback_t callback
-        self.numpy_rng = get_numpy_rng(numpy_rng)
+        self.numpy_rng = get_numpy_rng(random_state)
         self._urng_builder = _URNG(self.numpy_rng)
         self.urng = self._urng_builder.get_urng()
         if self.urng == NULL:
@@ -491,8 +486,8 @@ cdef class Method:
             raise NotImplementedError("only univariate continuous and "
                                       "discrete distributions supported")
 
-    def set_numpy_rng(self, numpy_rng):
-        self.numpy_rng = get_numpy_rng(numpy_rng)
+    def set_random_state(self, random_state):
+        self.numpy_rng = get_numpy_rng(random_state)
         _lock.acquire()
         try:
             self._messages.clear()
@@ -530,7 +525,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, numpy_rng=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -608,7 +603,7 @@ cdef class TransformedDensityRejection(Method):
         Set factor for relative size of the guide table for indexed search.
         It must be greater than or equal to 0. When set to 0, then sequential
         search is used. Default is 2.
-    numpy_rng : int, BitGenerator, Generator, RandomState, SeedSequence, optional
+    random_state : int, Generator, RandomState, optional
         A NumPy random number generator or seed for the underlying NumPy random
         number generator. Default is ``None`` in which case a random seed is used.
 
@@ -659,7 +654,7 @@ cdef class TransformedDensityRejection(Method):
     ... 
     >>> dist = MyDist()
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
-    ...                                   numpy_rng=urng)
+    ...                                   random_state=urng)
 
     Domain can be very useful to truncate the distribution but to avoid passing
     it everytime to the constructor, a default domain can be set by providing a
@@ -674,7 +669,7 @@ cdef class TransformedDensityRejection(Method):
     ...         return (-1, 1)
     ... 
     >>> dist = MyDist()
-    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
+    >>> rng = TransformedDensityRejection(dist, random_state=urng)
 
     Now, we can use the `rvs` method to generate samples from the distribution:
 
@@ -699,7 +694,7 @@ cdef class TransformedDensityRejection(Method):
 
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), c=0.,
     ...                                   cpoints=10, variant='ia',
-    ...                                   numpy_rng=urng)
+    ...                                   random_state=urng)
     >>> rvs = rng.rvs(1000)
     """
     cdef double[::1] cpoints_array
@@ -717,7 +712,7 @@ cdef class TransformedDensityRejection(Method):
                   max_squeeze_hat_ratio=0.99,
                   max_intervals=100,
                   guide_factor=2,
-                  numpy_rng=None):
+                  random_state=None):
         (domain, c, cpoints, variant) = self._validate_args(dist, domain, c, cpoints, variant)
 
         # save all the arguments for pickling support
@@ -733,7 +728,7 @@ cdef class TransformedDensityRejection(Method):
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
             'max_intervals': max_intervals,
             'guide_factor': guide_factor,
-            'numpy_rng': numpy_rng
+            'random_state': random_state
         }
 
         cdef:
@@ -786,7 +781,7 @@ cdef class TransformedDensityRejection(Method):
             self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
 
-            self._set_rng(numpy_rng)
+            self._set_rng(random_state)
         finally:
             _lock.release()
 
@@ -894,7 +889,7 @@ cdef class TransformedDensityRejection(Method):
 
 cdef class DiscreteAliasUrn(Method):
     r"""
-    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, numpy_rng=None)
+    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, random_state=None)
 
     Discrete Alias-Urn Method.
 
@@ -927,7 +922,7 @@ cdef class DiscreteAliasUrn(Method):
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result in faster
         generation times but require a more expensive setup. Default is 1.
-    numpy_rng : int, BitGenerator, Generator, RandomState, SeedSequence, optional
+    random_state : int, Generator, RandomState, optional
         A NumPy random number generator or seed for the underlying NumPy random
         number generator. Default is ``None`` in which case a random seed is used.
 
@@ -974,7 +969,7 @@ cdef class DiscreteAliasUrn(Method):
 
     >>> pv = [0.1, 0.3, 0.6]
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(pv, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(pv, random_state=urng)
 
     The RNG has been setup. Now, we can now use the `rvs` method to
     generate samples from the distribution:
@@ -1013,7 +1008,7 @@ cdef class DiscreteAliasUrn(Method):
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
     >>> domain = 0, n
-    >>> rng = DiscreteAliasUrn(dist, domain=domain, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(dist, domain=domain, random_state=urng)
 
     Now, we can sample from the distribution using the `rvs` method
     and also measure the goodness-of-fit of the samples:
@@ -1050,7 +1045,7 @@ cdef class DiscreteAliasUrn(Method):
 
     To set the ``urn_factor``, use:
 
-    >>> rng = DiscreteAliasUrn(pv, urn_factor=2, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(pv, urn_factor=2, random_state=urng)
 
     This uses a table twice the size of the probability vector to generate
     random variates from the distribution.
@@ -1062,13 +1057,13 @@ cdef class DiscreteAliasUrn(Method):
                   *,
                   domain=None,
                   urn_factor=1,
-                  numpy_rng=None):
+                  random_state=None):
         cdef double[::1] pv_view
         (pv_view, domain) = self._validate_args(dist, domain)
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
         # save all the arguments for pickling support
-        self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'numpy_rng': numpy_rng}
+        self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'random_state': random_state}
 
         cdef:
             unur_distr *distr
@@ -1096,7 +1091,7 @@ cdef class DiscreteAliasUrn(Method):
                 raise UNURANError(self._messages.get())
             self._check_errorcode(unur_dau_set_urnfactor(self.par, urn_factor))
 
-            self._set_rng(numpy_rng)
+            self._set_rng(random_state)
         finally:
             _lock.release()
 

@@ -24,7 +24,7 @@ constructing the tables is O(N).
     >>> 
     >>> pv = [0.18, 0.02, 0.8]
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(pv, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(pv, random_state=urng)
     >>> rng.rvs()
     0
 
@@ -34,7 +34,7 @@ in combination with the PV, it has the effect of relocating the
 distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
 ``domain[1]`` is ignored in this case.
 
-   >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), numpy_rng=urng)
+   >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), random_state=urng)
    >>> rng.rvs()
    12
 
@@ -52,7 +52,7 @@ method in the distribution object:
     ...         return (0, 10)
     ... 
     >>> dist = Distribution(2)
-    >>> rng = DiscreteAliasUrn(dist, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(dist, random_state=urng)
     >>> rng.rvs()
     10
 
@@ -70,7 +70,7 @@ method in the distribution object:
     ... 
     >>> dist = Distribution(2)
     >>> urng = np.random.default_rng()
-    >>> rng = DiscreteAliasUrn(dist, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(dist, random_state=urng)
     >>> rvs = rng.rvs(1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -110,7 +110,7 @@ table which can be changed by passing a ``urn_factor`` parameter.
 
     >>> # use a table twice the length of PV.
     >>> urn_factor = 2
-    >>> rng = DiscreteAliasUrn(pv, urn_factor=urn_factor, numpy_rng=urng)
+    >>> rng = DiscreteAliasUrn(pv, urn_factor=urn_factor, random_state=urng)
     >>> rng.rvs()
     2
 

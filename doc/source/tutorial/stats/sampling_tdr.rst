@@ -51,7 +51,7 @@ An example of using this method is shown below:
     >>> dist = StandardNormal()
     >>> 
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
+    >>> rng = TransformedDensityRejection(dist, random_state=urng)
     >>> rng.rvs()
     -1.526829048388144
 
@@ -101,7 +101,7 @@ to see how well the generator fits the given distribution. These are:
 The distribution can be truncated by passing a domain parameter:
 
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, domain=[0, 1], numpy_rng=urng)
+    >>> rng = TransformedDensityRejection(dist, domain=[0, 1], random_state=urng)
     >>> rng.rvs(10)
     array([0.05452512, 0.97251362, 0.49955877, 0.82789729, 0.33048885,
            0.55558548, 0.23168323, 0.13423275, 0.73176575, 0.35739799])
@@ -120,7 +120,7 @@ is used to determine the domain:
     >>> dist = StandardNormal()
     >>> 
     >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, numpy_rng=urng)
+    >>> rng = TransformedDensityRejection(dist, random_state=urng)
     >>> rng.rvs(10)
     array([-1.52682905,  2.06206883,  0.15205036,  1.11587367, -0.30775562,
            0.29879802, -0.61858268, -1.01049115,  0.78853694, -0.23060766])
@@ -132,7 +132,7 @@ To increase ``squeeze_hat_ratio``, pass ``max_squeeze_hat_ratio``:
 
     >>> dist = StandardNormal()
     >>> rng = TransformedDensityRejection(dist, max_squeeze_hat_ratio=0.999,
-    ...                                   max_intervals=1000, numpy_rng=urng)
+    ...                                   max_intervals=1000, random_state=urng)
     >>> rng.squeeze_hat_ratio
     0.999364900465214
 
@@ -156,7 +156,7 @@ distribution:
     >>> dist1 = StandardNormal()
     >>> urng1 = np.random.default_rng()
     >>> urng2 = copy(urng1)
-    >>> rng1 = TransformedDensityRejection(dist1, numpy_rng=urng1)
+    >>> rng1 = TransformedDensityRejection(dist1, random_state=urng1)
     >>> dist1.callbacks  # evaluations during setup
     139
     >>> dist1.callbacks = 0  # don't consider evaluations during setup
@@ -166,7 +166,7 @@ distribution:
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
     >>> rng2 = TransformedDensityRejection(dist2, max_squeeze_hat_ratio=0.999,
-    ...                                    max_intervals=1000, numpy_rng=urng2)
+    ...                                    max_intervals=1000, random_state=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
     >>> dist2.callbacks = 0  # don't consider evaluations during setup
