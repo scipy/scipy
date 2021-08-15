@@ -540,7 +540,9 @@ class TestLHS(QMCEngineTests):
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
     def test_sample_stratified(self, optimization, centered, strength):
         seed = np.random.RandomState(123456)
-        d, n = 6, 25
+        p = 5
+        n = p**2
+        d = 6
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
@@ -559,7 +561,6 @@ class TestLHS(QMCEngineTests):
         assert np.any(sample - expected > 0.5 / n)
 
         if strength == 2 and optimization is None:
-            p = d - 1
             unique_elements = np.arange(p)
             desired = set(product(unique_elements, unique_elements))
 

@@ -885,7 +885,7 @@ class Halton(QMCEngine):
 
 
 class LatinHypercube(QMCEngine):
-    """Latin hypercube sampling (LHS).
+    r"""Latin hypercube sampling (LHS).
 
     A Latin hypercube sample [1]_ generates :math:`n` points in
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
@@ -939,7 +939,13 @@ class LatinHypercube(QMCEngine):
     :math:`A` is called an orthogonal array of strength :math:`t` if in each
     n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
     distinct rows occur the same number of times,
-    with :math:`p` a prime number.
+    with :math:`p` a prime number. The elements of :math:`A` are in the set
+    :math:`\{0, 1, ..., p\}`, also called symbols.
+
+    To create an orthogonal array based LHS, the array is randomized by
+    randomly permuting the symbol values on each column independently. Then,
+    on each column and for a given symbol value, a plain LHS is added. The
+    resulting matrix is finally divided by :math:`p`.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
@@ -1006,15 +1012,15 @@ class LatinHypercube(QMCEngine):
     0.0176...  # random
 
     Use the `strength` keyword argument to produce an orthogonal array based
-    LHS of strength 2. The construction imposes to use a square of a prime
-    number.
+    LHS of strength 2. In this case, the number of sample points must be the
+    square of a prime number.
 
     >>> sampler = qmc.LatinHypercube(d=2, strength=2)
     >>> sample = sampler.random(n=9)
     >>> qmc.discrepancy(sample)
     0.00526...  # random
 
-    Options could be combined as a same time to produce an optimized centered
+    Options could be combined to produce an optimized centered
     orthogonal array based LHS. After optimization, the result would not
     be guaranteed to be of strength 2.
 
@@ -1037,9 +1043,9 @@ class LatinHypercube(QMCEngine):
         try:
             self.lhs_method = lhs_method_strength[strength]
         except KeyError as exc:
-            raise ValueError(f"{strength!r} is not a valid"
-                             " strength. It must be one of"
-                             f" {set(lhs_method_strength)!r}") from exc
+            message = (f"{strength!r} is not a valid strength. It must be one"
+                       f" of {set(lhs_method_strength)!r}")
+            raise ValueError(message) from exc
 
         optimization_method: Dict[Literal["random-cd"], Callable] = {
             "random-cd": self._random_cd,
@@ -1051,9 +1057,10 @@ class LatinHypercube(QMCEngine):
                 optimization = optimization.lower()  # type: ignore[assignment]
                 self.optimization_method = optimization_method[optimization]
             except KeyError as exc:
-                raise ValueError(f"{optimization!r} is not a valid"
-                                 " optimization method. It must be one of"
-                                 f" {set(optimization_method)!r}") from exc
+                message = (f"{optimization!r} is not a valid optimization"
+                           f" method. It must be one of"
+                           f" {set(optimization_method)!r}")
+                raise ValueError(message) from exc
 
             self._n_nochange = 100
             self._n_iters = 10_000
@@ -1110,9 +1117,7 @@ class LatinHypercube(QMCEngine):
                 f" values are {primes[-2:]**2}"
             )
         if self.d > p + 1:
-            raise ValueError(
-                "n is too small for d. Must be n > (d-1)**2"
-            )
+            raise ValueError("n is too small for d. Must be n > (d-1)**2")
 
         oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
 
@@ -1132,8 +1137,7 @@ class LatinHypercube(QMCEngine):
 
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
-        lhs_engine = LatinHypercube(d=1, centered=self.centered,
-                                    strength=1,
+        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
                                     seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
