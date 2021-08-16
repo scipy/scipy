@@ -229,8 +229,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 1.21.1. Don't allow them to increase.
-        assert_(self.funccalls == 58, self.funccalls) 
-        assert_(self.gradcalls == 0, self.gradcalls) 
+        assert self.funccalls == 48
+        assert self.gradcalls == 0
 
         # Ensure that the function behaves the same; this is from SciPy 1.21.1
         assert_allclose(self.trace[6:8],
