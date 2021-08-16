@@ -152,9 +152,14 @@ class TestSphericalJnYnCrossProduct:
 class TestSphericalIn:
     def test_spherical_in_exact(self):
         # https://dlmf.nist.gov/10.49.E9
+
+        def in_true(x):
+            return (1/x + 3/x**3)*sinh(x) - 3/x**2*cosh(x)
+
         x = np.array([0.12, 1.23, 12.34, 123.45])
-        assert_allclose(spherical_in(2, x),
-                        (1/x + 3/x**3)*sinh(x) - 3/x**2*cosh(x))
+        assert_allclose(spherical_in(2, x), in_true(x))
+        assert_allclose(spherical_in(2, -x), in_true(x))
+        assert_allclose(spherical_in(3, x), -spherical_in(3, -x))
 
     def test_spherical_in_recurrence_real(self):
         # https://dlmf.nist.gov/10.51.E4
@@ -175,6 +180,7 @@ class TestSphericalIn:
         n = 5
         x = np.array([-inf, inf])
         assert_allclose(spherical_in(n, x), np.array([-inf, inf]))
+        assert_allclose(spherical_in(n, -x), np.array([inf, -inf]))
 
     def test_spherical_in_inf_complex(self):
         # https://dlmf.nist.gov/10.52.E5
@@ -201,6 +207,10 @@ class TestSphericalKn:
         x = np.array([0.12, 1.23, 12.34, 123.45])
         assert_allclose(spherical_kn(2, x),
                         pi/2*exp(-x)*(1/x + 3/x**2 + 3/x**3))
+        assert_allclose(spherical_in(2, x),
+                        -(spherical_kn(2, x) + spherical_kn(2, -x))/pi)
+        assert_allclose(spherical_in(3, x),
+                        -(spherical_kn(3, -x) - spherical_kn(3, x))/pi)
 
     def test_spherical_kn_recurrence_real(self):
         # https://dlmf.nist.gov/10.51.E4
