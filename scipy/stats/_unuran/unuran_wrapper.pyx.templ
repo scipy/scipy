@@ -692,9 +692,8 @@ cdef class TransformedDensityRejection(Method):
     To use the log transformation with 10 construction points and the
     immediate acceptance variant of the method, do:
 
-    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), c=0.,
-    ...                                   cpoints=10, variant='ia',
-    ...                                   random_state=urng)
+    >>> rng = TransformedDensityRejection(dist, c=0., cpoints=10,
+    ...                                   variant='ia', random_state=urng)
     >>> rvs = rng.rvs(1000)
     """
     cdef double[::1] cpoints_array
@@ -889,7 +888,7 @@ cdef class TransformedDensityRejection(Method):
 
 cdef class DiscreteAliasUrn(Method):
     r"""
-    DiscreteAliasUrn(pv=None, dist=None, *, domain=None, urn_factor=1, random_state=None)
+    DiscreteAliasUrn(dist, *, domain=None, urn_factor=1, random_state=None)
 
     Discrete Alias-Urn Method.
 
@@ -903,7 +902,7 @@ cdef class DiscreteAliasUrn(Method):
     dist : array_like or object, optional
         Probability vector (PV) of the distribution. If PV isn't available,
         an instance of a class with a ``pmf`` method is expected. The signature
-        of the PMF is expected to be: ``def pmf(self, k: int) -> float``. i.e it
+        of the PMF is expected to be: ``def pmf(self, k: int) -> float``. i.e. it
         should accept a Python integer and return a Python float.
     domain : int, optional
         Support of the PMF. If a probability vector (``pv``) is not available, a
@@ -1004,11 +1003,12 @@ cdef class DiscreteAliasUrn(Method):
     ...     def pmf(self, x):
     ...         # note that the pmf doesn't need to be normalized.
     ...         return self.p**x * (1-self.p)**(self.n-x)
+    ...     def support(self):
+    ...         return (0, self.n)
     ... 
     >>> n, p = 10, 0.2
     >>> dist = Binomial(n, p)
-    >>> domain = 0, n
-    >>> rng = DiscreteAliasUrn(dist, domain=domain, random_state=urng)
+    >>> rng = DiscreteAliasUrn(dist, random_state=urng)
 
     Now, we can sample from the distribution using the `rvs` method
     and also measure the goodness-of-fit of the samples:
