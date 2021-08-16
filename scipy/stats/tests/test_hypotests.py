@@ -899,28 +899,30 @@ class TestSomersD:
         with pytest.raises(ValueError, match="alternative must be 'less'..."):
             stats.somersd(x1, x2, alternative="ekki-ekki")
 
-    def test_somersd_perfect_correlation(self):
+    @pytest.mark.parametrize("positive_correlation", (False, True))
+    def test_somersd_perfect_correlation(self, positive_correlation):
         # Before the addition of `alternative`, perfect correlation was
         # treated as a special case. Now it is treated like any other case, but
         # make sure there are no divide by zero warnings or associated errors
 
         x1 = np.arange(10)
-        x2 = x1
+        x2 = x1 if positive_correlation else np.flip(x1)
+        expected_statistic = 1 if positive_correlation else -1
 
         # perfect correlation -> small "two-sided" p-value (0)
         res = stats.somersd(x1, x2, alternative="two-sided")
-        assert res.statistic == 1
+        assert res.statistic == expected_statistic
         assert res.pvalue == 0
 
         # rank correlation > 0 -> large "less" p-value (1)
         res = stats.somersd(x1, x2, alternative="less")
-        assert res.statistic == 1
-        assert res.pvalue == 1
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (1 if positive_correlation else 0)
 
         # rank correlation > 0 -> small "greater" p-value (0)
         res = stats.somersd(x1, x2, alternative="greater")
-        assert res.statistic == 1
-        assert res.pvalue == 0
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (0 if positive_correlation else 1)
 
 
 class TestBarnardExact:
