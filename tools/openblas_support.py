@@ -1,5 +1,4 @@
 import glob
-import hashlib
 import os
 import platform
 import sysconfig
@@ -104,8 +103,6 @@ def download_openblas(target, plat, ilp64):
         return None
     print(f"Downloading {length} from {filename}", file=sys.stderr)
     data = response.read()
-    # Verify hash
-    key = os.path.basename(filename)
     print("Saving to file", file=sys.stderr)
     with open(target, 'wb') as fid:
         fid.write(data)
