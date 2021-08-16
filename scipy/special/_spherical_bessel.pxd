@@ -72,7 +72,7 @@ cdef inline number_t cbesk(double v, number_t z) nogil:
 
 @cython.cdivision(True)
 cdef inline double spherical_jn_real(long n, double x) nogil:
-    cdef double s0, s1, sn
+    cdef double s0, s1, sn, reflection_const = 1
     cdef int idx
 
     if npy_isnan(x):
@@ -82,21 +82,27 @@ cdef inline double spherical_jn_real(long n, double x) nogil:
         return nan
     if x == inf or x == -inf:
         return 0
+
+    if x < 0:
+        x = -x
+        if n%2 != 0:
+            reflection_const = -1
+
     if x == 0:
         if n == 0:
-            return 1
+            return reflection_const*1
         else:
             return 0
 
     if n > 0 and n >= x:
-        return sqrt(M_PI_2/x)*cbesj(n + 0.5, x)
+        return reflection_const*sqrt(M_PI_2/x)*cbesj(n + 0.5, x)
 
     s0 = sin(x)/x
     if n == 0:
-        return s0
+        return reflection_const*s0
     s1 = (s0 - cos(x))/x
     if n == 1:
-        return s1
+        return reflection_const*s1
 
     for idx in range(n - 1):
         sn = (2*idx + 3)*s1/x - s0
@@ -104,9 +110,9 @@ cdef inline double spherical_jn_real(long n, double x) nogil:
         s1 = sn
         if npy_isinf(sn):
             # Overflow occurred already: terminate recurrence.
-            return sn
+            return reflection_const*sn
 
-    return sn
+    return reflection_const*sn
 
 
 @cython.cdivision(True)
