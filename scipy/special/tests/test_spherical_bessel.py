@@ -16,12 +16,14 @@ class TestSphericalJn:
         # https://dlmf.nist.gov/10.49.E3
         # Note: exact expression is numerically stable only for small
         # n or z >> n.
+
+        def jn_true(x):
+            return (-1/x + 3/x**3)*sin(x) - 3/x**2*cos(x)
+
         x = np.array([0.12, 1.23, 12.34, 123.45, 1234.5])
-        jn_true = lambda x: (-1/x + 3/x**3)*sin(x) - 3/x**2*cos(x)
         assert_allclose(spherical_jn(2, x), jn_true(x))
         assert_allclose(spherical_jn(2, -x), jn_true(x))
         assert_allclose(spherical_jn(3, x), -spherical_jn(3, -x))
-
 
     def test_spherical_jn_recurrence_complex(self):
         # https://dlmf.nist.gov/10.51.E1
