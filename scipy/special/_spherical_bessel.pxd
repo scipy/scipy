@@ -203,25 +203,33 @@ cdef inline double complex spherical_yn_complex(long n, double complex z) nogil:
 @cython.cdivision(True)
 cdef inline double spherical_in_real(long n, double z) nogil:
 
+    cdef int reflection_const = 1
+
     if npy_isnan(z):
         return z
     if n < 0:
         sf_error.error("spherical_in", sf_error.DOMAIN, NULL)
         return nan
+
+    if z < 0:
+        z = -z
+        if n%2 != 0:
+            reflection_const = -1
+
     if z == 0:
         # https://dlmf.nist.gov/10.52.E1
         if n == 0:
-            return 1
+            return reflection_const*1
         else:
             return 0
     if npy_isinf(z):
         # https://dlmf.nist.gov/10.49.E8
         if z == -inf:
-            return (-1)**n*inf
+            return (-1)**n*inf*reflection_const
         else:
-            return inf
+            return reflection_const*inf
 
-    return sqrt(M_PI_2/z)*iv(n + 0.5, z)
+    return reflection_const*sqrt(M_PI_2/z)*iv(n + 0.5, z)
 
 
 @cython.cdivision(True)
@@ -261,6 +269,7 @@ cdef inline double spherical_kn_real(long n, double z) nogil:
     if n < 0:
         sf_error.error("spherical_kn", sf_error.DOMAIN, NULL)
         return nan
+
     if z == 0:
         return inf
     if npy_isinf(z):
@@ -270,7 +279,11 @@ cdef inline double spherical_kn_real(long n, double z) nogil:
         else:
             return -inf
 
-    return sqrt(M_PI_2/z)*cbesk(n + 0.5, z)
+    if z < 0:
+        z = -z
+        return -M_PI_2*sqrt(M_PI_2/z)*(iv(n + 0.5, z) + iv(-n - 0.5, z))
+
+    return zsqrt(M_PI_2/z)*cbesk(n + 0.5, z)
 
 
 @cython.cdivision(True)
