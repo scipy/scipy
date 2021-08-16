@@ -17,8 +17,11 @@ class TestSphericalJn:
         # Note: exact expression is numerically stable only for small
         # n or z >> n.
         x = np.array([0.12, 1.23, 12.34, 123.45, 1234.5])
-        assert_allclose(spherical_jn(2, x),
-                        (-1/x + 3/x**3)*sin(x) - 3/x**2*cos(x))
+        jn_true = lambda x: (-1/x + 3/x**3)*sin(x) - 3/x**2*cos(x)
+        assert_allclose(spherical_jn(2, x), jn_true(x))
+        assert_allclose(spherical_jn(2, -x), jn_true(x))
+        assert_allclose(spherical_jn(3, x), -spherical_jn(3, -x))
+
 
     def test_spherical_jn_recurrence_complex(self):
         # https://dlmf.nist.gov/10.51.E1
@@ -53,12 +56,14 @@ class TestSphericalJn:
         # Reference value computed using mpmath, via
         # besselj(n + mpf(1)/2, z)*sqrt(pi/(2*z))
         assert_allclose(spherical_jn(2, 3350.507), -0.00029846226538040747)
+        assert_allclose(spherical_jn(2, -3350.507), -0.00029846226538040747)
 
     def test_spherical_jn_large_arg_2(self):
         # https://github.com/scipy/scipy/issues/1641
         # Reference value computed using mpmath, via
         # besselj(n + mpf(1)/2, z)*sqrt(pi/(2*z))
         assert_allclose(spherical_jn(2, 10000), 3.0590002633029811e-05)
+        assert_allclose(spherical_jn(2, -10000), 3.0590002633029811e-05)
 
     def test_spherical_jn_at_zero(self):
         # https://dlmf.nist.gov/10.52.E1
