@@ -503,6 +503,7 @@ cdef class Method:
             seeded with `random_state`.
             If `random_state` is already a ``Generator`` or ``RandomState`` instance then
             that instance is used.
+
         """
         self.numpy_rng = get_numpy_rng(random_state)
         _lock.acquire()
@@ -632,7 +633,7 @@ cdef class TransformedDensityRejection(Method):
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
 
-    
+
     References
     ----------
     .. [1] UNU.RAN reference manual, Section 5.3.16,
@@ -959,6 +960,7 @@ cdef class DiscreteAliasUrn(Method):
         seeded with `random_state`.
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
 
     Notes
     -----
