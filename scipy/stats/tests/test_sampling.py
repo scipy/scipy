@@ -374,7 +374,8 @@ class TestTransformedDensityRejection:
     def test_bad_construction_points_array(self):
         # empty array
         construction_points = []
-        with pytest.raises(ValueError, match=r"`construction_points` must either be a "
+        with pytest.raises(ValueError, match=r"`construction_points` must "
+                                             r"either be a "
                                              r"scalar or a non-empty array."):
             TransformedDensityRejection(
                 common_cont_dist, construction_points=construction_points
@@ -401,8 +402,10 @@ class TestTransformedDensityRejection:
         construction_points = [-10, 10]
         with pytest.warns(RuntimeWarning, match=r"50 : starting point out of "
                                                 r"domain"):
-            TransformedDensityRejection(common_cont_dist, domain=(-3, 3),
-                                        construction_points=construction_points)
+            TransformedDensityRejection(
+                common_cont_dist, domain=(-3, 3),
+                construction_points=construction_points
+            )
 
     @pytest.mark.parametrize("c", [-1., np.nan, np.inf, 0.1, 1.])
     def test_bad_c(self, c):
