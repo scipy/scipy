@@ -40,7 +40,7 @@ class TransformedDensityRejection(Method):
                  params: Tuple[Any, ...] = ...,
                  domain: None | Tuple[float, float] = ...,
                  c: float = ...,
-                 cpoints: int = ...,
+                 construction_points: int = ...,
                  variant: str = ...,
                  use_dars: bool = ...,
                  max_squeeze_hat_ratio: float = ...,

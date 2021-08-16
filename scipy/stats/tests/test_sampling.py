@@ -363,38 +363,46 @@ class TestTransformedDensityRejection:
         with pytest.raises(err, match=msg):
             TransformedDensityRejection(common_cont_dist, domain=domain)
 
-    @pytest.mark.parametrize("cpoints", [-1, 0, 0.1])
-    def test_bad_cpoints_scalar(self, cpoints):
-        with pytest.raises(ValueError, match=r"`cpoints` must be a "
-                                             r"positive integer."):
-            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
+    @pytest.mark.parametrize("construction_points", [-1, 0, 0.1])
+    def test_bad_construction_points_scalar(self, construction_points):
+        with pytest.raises(ValueError, match=r"`construction_points` must be "
+                                             r"a positive integer."):
+            TransformedDensityRejection(
+                common_cont_dist, construction_points=construction_points
+            )
 
-    def test_bad_cpoints_array(self):
+    def test_bad_construction_points_array(self):
         # empty array
-        cpoints = []
-        with pytest.raises(ValueError, match=r"`cpoints` must either be a "
+        construction_points = []
+        with pytest.raises(ValueError, match=r"`construction_points` must either be a "
                                              r"scalar or a non-empty array."):
-            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
+            TransformedDensityRejection(
+                common_cont_dist, construction_points=construction_points
+            )
 
-        # cpoints not monotonically increasing
-        cpoints = [1, 1, 1, 1, 1, 1]
+        # construction_points not monotonically increasing
+        construction_points = [1, 1, 1, 1, 1, 1]
         with pytest.warns(RuntimeWarning, match=r"33 : starting points not "
                                                 r"strictly monotonically "
                                                 r"increasing"):
-            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
+            TransformedDensityRejection(
+                common_cont_dist, construction_points=construction_points
+            )
 
-        # cpoints containing nans
-        cpoints = [np.nan, np.nan, np.nan]
+        # construction_points containing nans
+        construction_points = [np.nan, np.nan, np.nan]
         with pytest.raises(UNURANError, match=r"50 : bad construction "
                                               r"points."):
-            TransformedDensityRejection(common_cont_dist, cpoints=cpoints)
+            TransformedDensityRejection(
+                common_cont_dist, construction_points=construction_points
+            )
 
-        # cpoints out of domain
-        cpoints = [-10, 10]
+        # construction_points out of domain
+        construction_points = [-10, 10]
         with pytest.warns(RuntimeWarning, match=r"50 : starting point out of "
                                                 r"domain"):
             TransformedDensityRejection(common_cont_dist, domain=(-3, 3),
-                                        cpoints=cpoints)
+                                        construction_points=construction_points)
 
     @pytest.mark.parametrize("c", [-1., np.nan, np.inf, 0.1, 1.])
     def test_bad_c(self, c):

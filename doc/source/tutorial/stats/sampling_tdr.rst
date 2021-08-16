@@ -196,11 +196,12 @@ part of the PDF and is used to avoid numerical problems.
     >>> rng = TransformedDensityRejection(dist, mode=0.)
 
 By default, the method uses 30 construction points to construct the hat.
-This can be changed by passing a ``cpoints`` parameter which can either
-be an array of construction points or an integer representing the number
-of construction points to use.
+This can be changed by passing a ``construction_points`` parameter which
+can either be an array of construction points or an integer representing
+the number of construction points to use.
 
-    >>> rng = TransformedDensityRejection(dist, cpoints=[-5, 0, 5])
+    >>> rng = TransformedDensityRejection(dist,
+    ...                                   construction_points=[-5, 0, 5])
 
 It is also possible to change the variant of the method used by passing
 a ``variant`` parameter:

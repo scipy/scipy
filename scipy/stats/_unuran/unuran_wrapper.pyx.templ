@@ -486,7 +486,22 @@ cdef class Method:
             raise NotImplementedError("only univariate continuous and "
                                       "discrete distributions supported")
 
-    def set_random_state(self, random_state):
+    def set_random_state(self, random_state=None):
+        """
+        Set the underlying uniform random number generator.
+
+        Parameters
+        ----------
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used,
+            seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
+        """
         self.numpy_rng = get_numpy_rng(random_state)
         _lock.acquire()
         try:
@@ -525,7 +540,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, cpoints=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -577,7 +592,7 @@ cdef class TransformedDensityRejection(Method):
             c = 0.: T(x) &= \log(x)\\
             c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
 
-    cpoints : int or array_like, optional
+    construction_points : int or array_like, optional
         If an integer, it defines the number of construction points. If it
         is array-like, the elements of the array are used as construction
         points. Default is 30.
@@ -603,9 +618,15 @@ cdef class TransformedDensityRejection(Method):
         Set factor for relative size of the guide table for indexed search.
         It must be greater than or equal to 0. When set to 0, then sequential
         search is used. Default is 2.
-    random_state : int, Generator, RandomState, optional
-        A NumPy random number generator or seed for the underlying NumPy random
-        number generator. Default is ``None`` in which case a random seed is used.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     
     References
@@ -692,11 +713,11 @@ cdef class TransformedDensityRejection(Method):
     To use the log transformation with 10 construction points and the
     immediate acceptance variant of the method, do:
 
-    >>> rng = TransformedDensityRejection(dist, c=0., cpoints=10,
+    >>> rng = TransformedDensityRejection(dist, c=0., construction_points=10,
     ...                                   variant='ia', random_state=urng)
     >>> rvs = rng.rvs(1000)
     """
-    cdef double[::1] cpoints_array
+    cdef double[::1] construction_points_array
 
     def __cinit__(self,
                   dist,
@@ -705,14 +726,14 @@ cdef class TransformedDensityRejection(Method):
                   *,
                   domain=None,
                   c=-0.5,
-                  cpoints=30,
+                  construction_points=30,
                   variant="ps",
                   use_dars=True,
                   max_squeeze_hat_ratio=0.99,
                   max_intervals=100,
                   guide_factor=2,
                   random_state=None):
-        (domain, c, cpoints, variant) = self._validate_args(dist, domain, c, cpoints, variant)
+        (domain, c, construction_points, variant) = self._validate_args(dist, domain, c, construction_points, variant)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -721,7 +742,7 @@ cdef class TransformedDensityRejection(Method):
             'center': center,
             'domain': domain,
             'c': c,
-            'cpoints': cpoints,
+            'construction_points': construction_points,
             'variant': variant,
             'use_dars': use_dars,
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
@@ -762,11 +783,11 @@ cdef class TransformedDensityRejection(Method):
             if self.par == NULL:
                 raise UNURANError(self._messages.get())
             self._check_errorcode(unur_tdr_set_c(self.par, c))
-            if self.cpoints_array is None:
-                self._check_errorcode(unur_tdr_set_cpoints(self.par, cpoints, NULL))
+            if self.construction_points_array is None:
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, construction_points, NULL))
             else:
-                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.cpoints_array),
-                                                           &self.cpoints_array[0]))
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.construction_points_array),
+                                                           &self.construction_points_array[0]))
 
             if variant == "ps":
                 self._check_errorcode(unur_tdr_set_variant_ps(self.par))
@@ -784,23 +805,25 @@ cdef class TransformedDensityRejection(Method):
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, dist, domain, c, cpoints, variant):
+    cdef object _validate_args(self, dist, domain, c, construction_points, variant):
         domain = _validate_domain(domain, dist)
         if c not in {-0.5, 0.}:
             raise ValueError("`c` must either be -0.5 or 0.")
         if variant not in {"ps", "gw", "ia"}:
             raise ValueError("Invalid option for the `variant`.")
-        if not np.isscalar(cpoints):
-            self.cpoints_array = np.ascontiguousarray(cpoints, dtype=np.float64)
-            if len(self.cpoints_array) == 0:
-                raise ValueError("`cpoints` must either be a scalar or a "
+        if not np.isscalar(construction_points):
+            self.construction_points_array = np.ascontiguousarray(construction_points,
+                                                                  dtype=np.float64)
+            if len(self.construction_points_array) == 0:
+                raise ValueError("`construction_points` must either be a scalar or a "
                                  "non-empty array.")
         else:
-            self.cpoints_array = None
-            if cpoints <= 0 or cpoints != int(cpoints):
-                raise ValueError("`cpoints` must be a positive integer.")
+            self.construction_points_array = None
+            if (construction_points <= 0 or
+                construction_points != int(construction_points)):
+                raise ValueError("`construction_points` must be a positive integer.")
 
-        return domain, c, cpoints, variant
+        return domain, c, construction_points, variant
 
     @property
     def squeeze_hat_ratio(self):
@@ -921,9 +944,15 @@ cdef class DiscreteAliasUrn(Method):
         Size of the urn table *relative* to the size of the probability
         vector. It must not be less than 1. Larger tables result in faster
         generation times but require a more expensive setup. Default is 1.
-    random_state : int, Generator, RandomState, optional
-        A NumPy random number generator or seed for the underlying NumPy random
-        number generator. Default is ``None`` in which case a random seed is used.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Notes
     -----
