@@ -494,6 +494,8 @@ cdef class Method:
         ----------
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+            A NumPy random number generator or seed for the underlying NumPy random
+            number generator used to generate the stream of uniform random numbers.
 
             If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
@@ -620,6 +622,8 @@ cdef class TransformedDensityRejection(Method):
         search is used. Default is 2.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
 
         If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -946,6 +950,8 @@ cdef class DiscreteAliasUrn(Method):
         generation times but require a more expensive setup. Default is 1.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
 
         If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
