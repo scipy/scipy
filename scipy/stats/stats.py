@@ -35,7 +35,7 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
-from scipy.ndimage import measurements
+from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 import scipy.special as special
@@ -5494,7 +5494,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     # find the largest connected component of significant correlations
     sig_connect = stat_mgc_map > threshold
     if np.sum(sig_connect) > 0:
-        sig_connect, _ = measurements.label(sig_connect)
+        sig_connect, _ = _measurements.label(sig_connect)
         _, label_counts = np.unique(sig_connect, return_counts=True)
 
         # skip the first element in label_counts, as it is count(zeros)
