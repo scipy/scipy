@@ -423,7 +423,7 @@ def _tau_b(A):
     return tau, p
 
 
-def _somers_d(A):
+def _somers_d(A, alternative='two-sided'):
     """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
 
@@ -440,10 +440,11 @@ def _somers_d(A):
     d = (PA - QA)/(NA2 - Sri2)
 
     S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
-    if S == 0:  # Avoid divide by zero
-        return d, 0
-    Z = (PA - QA)/(4*(S))**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
+    with np.errstate(divide='ignore'):
+        Z = (PA - QA)/(4*(S))**0.5
+
+    _, p = scipy.stats.stats._normtest_finish(Z, alternative)
 
     return d, p
 
@@ -452,7 +453,7 @@ SomersDResult = make_dataclass("SomersDResult",
                                ("statistic", "pvalue", "table"))
 
 
-def somersd(x, y=None):
+def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
@@ -486,10 +487,16 @@ def somersd(x, y=None):
     x: array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like
+    y: array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
 
     Returns
     -------
@@ -499,7 +506,7 @@ def somersd(x, y=None):
             correlation : float
                The Somers' :math:`D` statistic.
             pvalue : float
-               The two-sided p-value for a hypothesis test whose null
+               The p-value for a hypothesis test whose null
                hypothesis is an absence of association, :math:`D=0`.
                See notes for more information.
             table : 2D array
@@ -619,7 +626,7 @@ def somersd(x, y=None):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table)
+    d, p = _somers_d(table, alternative)
     return SomersDResult(d, p, table)
 
 
@@ -638,7 +645,7 @@ def _all_partitions(nx, ny):
         y = z[mask]
         yield x, y
 
-        
+
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -984,8 +991,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a 
-    statistic, and Boschloo's p-value is the probability under the null 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
     hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
