@@ -1747,7 +1747,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
         provided `axis` of the sample arrays.
-    permutation_type : {'both', 'sample', 'order'}
+    permutation_type : {'both', 'samples', 'pairings'}, optional
         The type of permutations to be performed, in accordance with the
         null hypothesis. The first two permutation types are for paired sample
         statistics, in which all samples contain the same number of
@@ -1764,8 +1764,8 @@ def permutation_test(data, statistic, *, permutation_type='both',
           appropriate for association/correlation tests with statistics such
           as Spearman's :math:`\rho`, Kendall's :math:`\tau`, and Pearson's
           :math:`r`.
-        - ``'both'`` : observations are assigned to different samples without
-          preserving pairs. Samples may contain different numbers of
+        - ``'both'`` (default) : observations are assigned to different samples
+          without preserving pairs. Samples may contain different numbers of
           observations. This permutation type is appropriate for
           independent sample hypothesis tests such as the Mann-Whitney
           :math:`U` test and the independent sample t-test.
@@ -1792,7 +1792,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
         Memory usage is O(`batch`*``n``), where ``n`` is the total size
         of all samples, regardless of the value of `vectorized`. Default is
         ``None``, in which case ``batch`` is the number of permutations.
-    alternative : {'two-sided', 'less', 'greater'}
+    alternative : {'two-sided', 'less', 'greater'}, optional
         The alternative hypothesis for which the p-value is calculated.
         For each alternative, the p-value is defined as follows.
 
@@ -1800,7 +1800,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
           greater than or equal to the observed value of the test statistic.
         - ``'less'`` : the percentage of the null distribution that is
           less than or equal to the observed value of the test statistic.
-        - ``'two-sided'`` : twice the smaller of the p-values above.
+        - ``'two-sided'`` (default) : twice the smaller of the p-values above.
 
     axis : int, default: 0
         The axis of the (broadcasted) samples over which to calculate the
@@ -1812,7 +1812,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
         Pseudorandom number generator state used to generate resamples.
 
-        If `random_state` is ``None`` (or `np.random`), the
+        If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
         If `random_state` is an int, a new ``RandomState`` instance is used,
         seeded with `random_state`.
@@ -1847,9 +1847,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     * ``n`` is the total number of observations in ``a`` and ``b``, and
     * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
 
-    the data are pooled (concatenated), randomly assigned to either sample
-    ``a`` or ``b``, and the statistic is calculated. This process is performed
-    repeatedly, `permutation` times, generating a distribution of the
+    the data are pooled (concatenated), randomly assigned to either the first
+    or second sample, and the statistic is calculated. This process is
+    performed repeatedly, `permutation` times, generating a distribution of the
     statistic under the null hypothesis. The statistic of the original
     data is compared to this distribution to determine the p-value.
 
@@ -1862,6 +1862,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     within samples, this dramatically reduces computational cost without
     affecting the shape of the null distribution (because the frequency/count
     of each value is affected by the same factor).
+
+    For ``a = [a1, a2, a3, a4]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``x = [b3, a1, a2, b2]`` and ``y = [a4, b1, a3]``.
 
     ``permutation_type='both'`` does not support one-sample statistics, but it
     can be applied to statistics with more than two samples. In this case, if
@@ -1894,6 +1897,10 @@ def permutation_test(data, statistic, *, permutation_type='both',
     ``a`` is permuted in each distinct way exactly once. Therefore, the
     `statistic` is computed for each unique pairing of samples between ``a``
     and ``b`` exactly once.
+
+    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``a_perm = [a3, a1, a2]`` while ``b`` is left
+    in its original order.
 
     ``permutation_type='pairings'`` supports ``data`` containing any number
     of samples, each of which must contain the same number of observations.
@@ -1930,6 +1937,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
     When ``permutations >= 2**n``, an exact test is performed: the observations
     are assigned to the two samples in each distinct way (while maintaining
     pairings) exactly once.
+
+    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``x = [b1, a2, b3]`` and ``y = [a1, b2, a3]``.
 
     ``permutation_type='samples'`` supports ``data`` containing any number
     of samples, each of which must contain the same number of observations.
@@ -2011,6 +2021,14 @@ def permutation_test(data, statistic, *, permutation_type='both',
     equal to the observed value under the null hypothesis is 0.0225%. This is
     again less than our chosen threshold of 5%, so again we have significant
     evidence to reject the null hypothesis in favor of the alternative.
+
+    For large samples and number of permutations, the result is comparable to
+    that of the corresponding asymptotic test, the independent sample t-test.
+
+    >>> from scipy.stats import ttest_ind
+    >>> res_asymptotic = ttest_ind(x, y, alternative='less')
+    >>> print(res_asymptotic.pvalue)
+    0.00012688101537979522
 
     The permutation distribution of the test statistic is provided for
     further investigation.
