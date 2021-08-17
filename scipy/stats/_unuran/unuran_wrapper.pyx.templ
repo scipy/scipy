@@ -454,6 +454,8 @@ cdef class Method:
 
     def rvs(self, size=None):
         """
+        rvs(size=None)
+
         Sample from the distribution.
 
         Parameters
@@ -488,22 +490,23 @@ cdef class Method:
 
     def set_random_state(self, random_state=None):
         """
+        set_random_state(random_state=None)
+
         Set the underlying uniform random number generator.
 
         Parameters
         ----------
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
             A NumPy random number generator or seed for the underlying NumPy random
             number generator used to generate the stream of uniform random numbers.
-
             If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `random_state` is an int, a new ``RandomState`` instance is used,
             seeded with `random_state`.
             If `random_state` is already a ``Generator`` or ``RandomState`` instance then
             that instance is used.
-
         """
         self.numpy_rng = get_numpy_rng(random_state)
         _lock.acquire()
@@ -623,16 +626,15 @@ cdef class TransformedDensityRejection(Method):
         search is used. Default is 2.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
         A NumPy random number generator or seed for the underlying NumPy random
         number generator used to generate the stream of uniform random numbers.
-
         If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `random_state` is an int, a new ``RandomState`` instance is used,
         seeded with `random_state`.
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
 
     References
     ----------
@@ -858,6 +860,8 @@ cdef class TransformedDensityRejection(Method):
 
     def ppf_hat(self, u):
         """
+        ppf_hat(u)
+
         Evaluate the inverse of the CDF of the hat distribution at `u`.
 
         This call does not work for variant IA (immediate acceptance).
@@ -951,16 +955,15 @@ cdef class DiscreteAliasUrn(Method):
         generation times but require a more expensive setup. Default is 1.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
         A NumPy random number generator or seed for the underlying NumPy random
         number generator used to generate the stream of uniform random numbers.
-
         If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `random_state` is an int, a new ``RandomState`` instance is used,
         seeded with `random_state`.
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
 
     Notes
     -----
