@@ -111,15 +111,3 @@ C
  1800 FORMAT(1X,80A1)
          RETURN
          END
-! C 
-! C 
-! C 
-! C 
-! C 
-!         SUBROUTINE ZTIME(I)
-!         save
-!         J=1
-!         J=7-I+J
-! CCCC    I=MRUN(J)
-!         RETURN
-!         END
