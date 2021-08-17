@@ -36,8 +36,7 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+from scipy._lib._util import (check_random_state, MapWrapper, rng_integers)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
