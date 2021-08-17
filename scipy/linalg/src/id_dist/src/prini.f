@@ -111,82 +111,15 @@ C
  1800 FORMAT(1X,80A1)
          RETURN
          END
-C 
-C 
-C 
-C 
-C 
-        SUBROUTINE ZTIME(I)
-        save
-        J=1
-        J=7-I+J
-CCCC    I=MRUN(J)
-        RETURN
-        END
-
-c 
-c 
-c 
-c 
-c 
-  
-        subroutine fileflush(iw)
-        implicit real *8 (a-h,o-z)
-c 
-        save
-        close(iw)
-        open(iw,status='old')
-        do 1400 i=1,1000000
-c 
-        read(iw,1200,end=1600)
- 1200 format(1a1)
- 1400 continue
- 1600 continue
-c 
-        return
-        end
-  
-  
-c 
-c 
-c 
-c 
-c 
-        subroutine mach_zero(zero_mach)
-        implicit real *8 (a-h,o-z)
-        save
-c
-        zero_mach=100       
-c
-        d1=1.1
-        d3=1.1
-        d=1.11
-        do 1200 i=1,1000
-c
-
-        d=d/2
-        d2=d1+d
-        call mach_zero0(d2,d3,d4)
-c
-        if(d4 .eq. 0) goto 1400
-c
- 1200 continue
- 1400 continue
-c
-        zero_mach=d
-        return
-        end
-
-c 
-c 
-c 
-c 
-c 
-        subroutine mach_zero0(a,b,c)
-        implicit real *8 (a-h,o-z)
-        save
-c
-        c=b-a
-
-        return
-        end
+! C 
+! C 
+! C 
+! C 
+! C 
+!         SUBROUTINE ZTIME(I)
+!         save
+!         J=1
+!         J=7-I+J
+! CCCC    I=MRUN(J)
+!         RETURN
+!         END
