@@ -4139,7 +4139,7 @@ class norminvgauss_gen(rv_continuous):
     .. math::
 
         g(x, \alpha, \beta, \delta, \mu) =
-        \frac{\alpha\delta K_1 \left(\alpha\sqrt{\delta^2 + (x - \mu)^2}\right)}
+        \frac{\alpha\delta K_1\left(\alpha\sqrt{\delta^2 + (x - \mu)^2}\right)}
         {\pi \sqrt{\delta^2 + (x - \mu)^2}} \,
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 

@@ -10,7 +10,7 @@ The probability density function is given by:
 	:nowrap:
 
 	\begin{eqnarray*}
-	        f(x; a, b) = \frac{a \exp\left(\sqrt{a^2 - b^2} + b x \right)}{\pi \sqrt{1 + x^2}} \, K_1\left(a * sqrt{1 + x^2}\right),
+	        f(x; a, b) = \frac{a \exp\left(\sqrt{a^2 - b^2} + b x \right)}{\pi \sqrt{1 + x^2}} \, K_1\left(a * \sqrt{1 + x^2}\right),
 	\end{eqnarray*}
 
 where :math:`x` is a real number, the parameter :math:`a` is the tail heaviness and :math:`b` is the asymmetry parameter satisfying :math:`a > 0` and :math:`|b| \leq a`. :math:`K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
