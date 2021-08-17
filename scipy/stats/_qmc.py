@@ -938,19 +938,22 @@ class LatinHypercube(QMCEngine):
 
     :math:`A` is called an orthogonal array of strength :math:`t` if in each
     n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
-    distinct rows occur the same number of times,
-    with :math:`p` a prime number. The elements of :math:`A` are in the set
-    :math:`\{0, 1, ..., p\}`, also called symbols.
-
-    To create an orthogonal array based LHS, the array is randomized by
-    randomly permuting the symbol values on each column independently. Then,
-    on each column and for a given symbol value, a plain LHS is added. The
-    resulting matrix is finally divided by :math:`p`.
+    distinct rows occur the same number of times. The elements of :math:`A`
+    are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
+    The constraint that `p` must be a prime number is to allow modular
+    arithmetic.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
     strength 2 is a useful increment over strength 1. Going to strength 3 is
     a smaller increment and scrambled QMC like Sobol', Halton are more
     performant [7]_.
+
+    To create a LHS of strength 2, the orthogonal array :math:`A` is
+    randomized by randomly permuting the symbol values on each column
+    independently. It's the set of symbols which is permuted, not the
+    independent elements. Hence all 0 can becomes 2, 1 become 2, etc.
+    Then, on each column and for a given symbol value, a plain LHS of size
+    ``(p, 1)`` is added. The resulting matrix is finally divided by :math:`p`.
 
     References
     ----------
