@@ -73,7 +73,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'alexandergovern']
+           'brunnermunzel', 'alexandergovern', 'd2']
 
 
 def _contains_nan(a, nan_policy='propagate'):
