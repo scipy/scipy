@@ -940,7 +940,7 @@ class LatinHypercube(QMCEngine):
     n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
     distinct rows occur the same number of times. The elements of :math:`A`
     are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
-    The constraint that `p` must be a prime number is to allow modular
+    The constraint that :math:`p` must be a prime number is to allow modular
     arithmetic.
 
     Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
@@ -949,11 +949,12 @@ class LatinHypercube(QMCEngine):
     performant [7]_.
 
     To create a LHS of strength 2, the orthogonal array :math:`A` is
-    randomized by randomly permuting the symbol values on each column
-    independently. It's the set of symbols which is permuted, not the
-    independent elements. Hence all 0 can becomes 2, 1 become 2, etc.
-    Then, on each column and for a given symbol value, a plain LHS of size
-    ``(p, 1)`` is added. The resulting matrix is finally divided by :math:`p`.
+    randomized by applying a random, bijective map of the set of symbols onto
+    itself. For example, in column 0, all 0s might become 2; in column 1,
+    all 0s might become 1, etc.
+    Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
+    one-dimensional LHS of size :math:`p` to the subarray where
+    :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
 
     References
     ----------
@@ -1144,7 +1145,7 @@ class LatinHypercube(QMCEngine):
                                     seed=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
-                idx = np.where(oa_sample[:, j] == k)[0]
+                idx = oa_sample[:, j] == k
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
