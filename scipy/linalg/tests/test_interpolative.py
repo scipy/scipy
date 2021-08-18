@@ -37,6 +37,8 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
+import sys
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
 @pytest.fixture()
@@ -73,6 +75,8 @@ class TestInterpolativeDecomposition:
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
     def test_real_id_fixed_precision(self, A, L, eps, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         # Test ID routines on a Hilbert matrix.
         A_or_L = A if not lin_op else L
 
@@ -84,6 +88,8 @@ class TestInterpolativeDecomposition:
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
     def test_real_id_fixed_rank(self, A, L, eps, rank, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         k = rank
         A_or_L = A if not lin_op else L
 
@@ -107,6 +113,8 @@ class TestInterpolativeDecomposition:
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
     def test_svd_fixed_precison(self, A, L, eps, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         A_or_L = A if not lin_op else L
 
         U, S, V = pymatrixid.svd(A_or_L, eps, rand=rand)
@@ -117,6 +125,8 @@ class TestInterpolativeDecomposition:
         "rand,lin_op",
         [(False, False), (True, False), (True, True)])
     def test_svd_fixed_rank(self, A, L, eps, rank, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         k = rank
         A_or_L = A if not lin_op else L
 
@@ -213,18 +223,18 @@ class TestInterpolativeDecomposition:
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
         assert_allclose(A, B.dot(P))
 
-    def test_bug_9793(self):
-        dtypes = [np.float_, np.complex_]
-        rands = [True, False]
-        epss = [1, 0.1]
-
-        for dtype, eps, rand in itertools.product(dtypes, epss, rands):
-            A = np.array([[-1, -1, -1, 0, 0, 0],
-                          [0, 0, 0, 1, 1, 1],
-                          [1, 0, 0, 1, 0, 0],
-                          [0, 1, 0, 0, 1, 0],
-                          [0, 0, 1, 0, 0, 1]],
-                         dtype=dtype, order="C")
-            B = A.copy()
-            interp_decomp(A.T, eps, rand=rand)
-            assert_(np.array_equal(A, B))
+    @pytest.mark.parametrize("dtype", [np.float_, np.complex_])
+    @pytest.mark.parametrize("rand", [True, False])
+    @pytest.mark.parametrize("eps", [1, 0.1])
+    def test_bug_9793(self, dtype, rand, eps):
+        if _IS_32BIT and dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
+        A = np.array([[-1, -1, -1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1],
+                      [1, 0, 0, 1, 0, 0],
+                      [0, 1, 0, 0, 1, 0],
+                      [0, 0, 1, 0, 0, 1]],
+                     dtype=dtype, order="C")
+        B = A.copy()
+        interp_decomp(A.T, eps, rand=rand)
+        assert_array_equal(A, B)
