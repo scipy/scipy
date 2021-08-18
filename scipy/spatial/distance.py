@@ -934,6 +934,47 @@ def kulsinski(u, v, w=None):
 
 
 def kulczynski1(u, v, w=None):
+    """
+    Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+
+    The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`,
+    is defined as
+
+    .. math::
+
+         \\frac{c_{TT}}
+              {c_{FT} + c_{TF}}
+
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
+    :math:`k < n`.
+
+    Parameters
+    ----------
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
+
+    Returns
+    -------
+    kulczynski1 : double
+        The Kulczynski 1 distance between vectors `u` and `v`.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.kulczynski1([1, 0, 0], [0, 1, 0])
+    0.0
+    >>> distance.kulczynski1([1, 0, 0], [1, 1, 0])
+    1.0
+    >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
+    -3.0
+
+    """
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
