@@ -135,7 +135,7 @@ creadtriple(int *m, int *n, int *nonz,
 void creadrhs(int m, complex *b)
 {
     FILE *fp, *fopen();
-    int i;
+    int i, f_count = 0;
     /*int j;*/
 
     if ( !(fp = fopen("b.dat", "r")) ) {
@@ -143,7 +143,7 @@ void creadrhs(int m, complex *b)
 	exit(-1);
     }
     for (i = 0; i < m; ++i)
-      fscanf(fp, "%f%f\n", &b[i].r, &b[i].i);
+      f_count = fscanf(fp, "%f%f\n", &b[i].r, &b[i].i);
 
     /*        readpair_(j, &b[i]);*/
     fclose(fp);

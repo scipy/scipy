@@ -135,7 +135,7 @@ zreadtriple(int *m, int *n, int *nonz,
 void zreadrhs(int m, doublecomplex *b)
 {
     FILE *fp, *fopen();
-    int i;
+    int i, f_count = 0;
     /*int j;*/
 
     if ( !(fp = fopen("b.dat", "r")) ) {
@@ -143,7 +143,7 @@ void zreadrhs(int m, doublecomplex *b)
 	exit(-1);
     }
     for (i = 0; i < m; ++i)
-      fscanf(fp, "%lf%lf\n", &b[i].r, &b[i].i);
+      f_count = fscanf(fp, "%lf%lf\n", &b[i].r, &b[i].i);
 
     /*        readpair_(j, &b[i]);*/
     fclose(fp);
