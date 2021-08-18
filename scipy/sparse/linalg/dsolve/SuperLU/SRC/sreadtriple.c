@@ -135,7 +135,7 @@ sreadtriple(int *m, int *n, int *nonz,
 void sreadrhs(int m, float *b)
 {
     FILE *fp, *fopen();
-    int i;
+    int i, f_count = 0;
     /*int j;*/
 
     if ( !(fp = fopen("b.dat", "r")) ) {
@@ -143,7 +143,7 @@ void sreadrhs(int m, float *b)
 	exit(-1);
     }
     for (i = 0; i < m; ++i)
-      fscanf(fp, "%f\n", &b[i]);
+      f_count = fscanf(fp, "%f\n", &b[i]);
 
     /*        readpair_(j, &b[i]);*/
     fclose(fp);
