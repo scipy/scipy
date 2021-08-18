@@ -140,6 +140,9 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
     i = 0;
     while (i < n) {
         dummy = fgets(buf, 100, fp);    /* read a line at a time */
+        if(dummy == NULL) {
+            ABORT("Unable to read from the file");
+        }
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */
@@ -162,6 +165,9 @@ static int zReadValues(FILE *fp, int n, doublecomplex *destination, int perline,
     i = pair = 0;
     while (i < n) {
 	dummy = fgets(buf, 100, fp);    /* read a line at a time */
+  if(dummy == NULL) {
+      ABORT("Unable to read from the file");
+  }
 	for (j=0; j<perline && i<n; j++) {
 	    tmp = buf[(j+1)*persize];     /* save the char at that place */
 	    buf[(j+1)*persize] = 0;       /* null terminate */
@@ -302,6 +308,9 @@ zreadrb(int *nrow, int *ncol, int *nonz,
 
     /* Line 1 */
     dummy = fgets(buf, 100, fp);
+    if(dummy == NULL) {
+        ABORT("Unable to read from the file");
+    }
     fputs(buf, stdout);
 
     /* Line 2 */
