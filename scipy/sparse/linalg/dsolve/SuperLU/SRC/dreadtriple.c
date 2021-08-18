@@ -37,7 +37,7 @@ dreadtriple(int *m, int *n, int *nonz,
     int    j, k, jsize, nnz, nz;
     double *a, *val;
     int    *asub, *xa, *row, *col;
-    int    zero_base = 0;
+    int    zero_base = 0, s_count = 0;
 
     /*  Matrix format:
      *    First line:  #rows, #cols, #non-zero
@@ -45,7 +45,7 @@ dreadtriple(int *m, int *n, int *nonz,
      *                 row, col, value
      */
 
-    scanf("%d%d", n, nonz);
+    s_count = scanf("%d%d", n, nonz);
     *m = *n;
     printf("m %d, n %d, nonz %d\n", *m, *n, *nonz);
     dallocateA(*n, *nonz, nzval, rowind, colptr); /* Allocate storage */
@@ -61,7 +61,7 @@ dreadtriple(int *m, int *n, int *nonz,
 
     /* Read into the triplet array from a file */
     for (nnz = 0, nz = 0; nnz < *nonz; ++nnz) {
-	scanf("%d%d%lf\n", &row[nz], &col[nz], &val[nz]);
+	s_count = scanf("%d%d%lf\n", &row[nz], &col[nz], &val[nz]);
 
         if ( nnz == 0 ) { /* first nonzero */
 	    if ( row[0] == 0 || col[0] == 0 ) {
