@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -71,7 +71,7 @@ creadtriple(int *m, int *n, int *nonz,
 		printf("triplet file: row/col indices are one-based.\n");
         }
 
-        if ( !zero_base ) { 
+        if ( !zero_base ) {
  	  /* Change to 0-based indexing. */
 	  --row[nz];
 	  --col[nz];
@@ -99,7 +99,7 @@ creadtriple(int *m, int *n, int *nonz,
 	jsize = xa[j];
 	xa[j] = k;
     }
-    
+
     /* Copy the triplets into the column oriented storage */
     for (nz = 0; nz < *nonz; ++nz) {
 	j = col[nz];
