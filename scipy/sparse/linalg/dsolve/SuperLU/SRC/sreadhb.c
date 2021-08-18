@@ -145,6 +145,9 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
     i = 0;
     while (i <  n) {
 	dummy = fgets(buf, 100, fp);    /* read a line at a time */
+  if(dummy == NULL) {
+      ABORT("Unable to read from the file");
+  }
 	for (j=0; j<perline && i<n; j++) {
 	    tmp = buf[(j+1)*persize];     /* save the char at that place */
 	    buf[(j+1)*persize] = 0;       /* null terminate */
@@ -165,6 +168,9 @@ int sReadValues(FILE *fp, int n, float *destination, int perline, int persize)
     i = 0;
     while (i < n) {
 	dummy = fgets(buf, 100, fp);    /* read a line at a time */
+  if(dummy == NULL) {
+      ABORT("Unable to read from the file");
+  }
 	for (j=0; j<perline && i<n; j++) {
 	    tmp = buf[(j+1)*persize];     /* save the char at that place */
 	    buf[(j+1)*persize] = 0;       /* null terminate */
@@ -293,6 +299,9 @@ sreadhb(FILE *fp, int *nrow, int *ncol, int *nonz,
 
     /* Line 1 */
     dummy = fgets(buf, 100, fp);
+    if(dummy == NULL) {
+        ABORT("Unable to read from the file");
+    }
     fputs(buf, stdout);
 #if 0
     f_count = fscanf(fp, "%72c", buf); buf[72] = 0;
