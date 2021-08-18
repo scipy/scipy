@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -21,7 +21,7 @@ at the top-level directory.
  * Purpose
  * =======
  *
- * Read a COMPLEX PRECISION matrix stored in Rutherford-Boeing format 
+ * Read a COMPLEX PRECISION matrix stored in Rutherford-Boeing format
  * as described below.
  *
  * Line 1 (A72, A8)
@@ -143,7 +143,7 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */
-            item = atoi(&buf[j*persize]); 
+            item = atoi(&buf[j*persize]);
             buf[(j+1)*persize] = tmp;     /* recover the char at that place */
             where[i++] = item - 1;
         }
@@ -158,7 +158,7 @@ static int cReadValues(FILE *fp, int n, complex *destination, int perline, int p
     register int i, j, k, s, pair;
     register float realpart;
     char tmp, buf[100];
-    
+
     i = pair = 0;
     while (i < n) {
 	fgets(buf, 100, fp);    /* read a line at a time */
@@ -242,7 +242,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
 	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
     if ( !(a_val = (complex*) SUPERLU_MALLOC( new_nnz * sizeof(complex)) ) )
 	ABORT("SUPERLU_MALLOC fails for a_val[]");
-    
+
     a_colptr[0] = 0;
     k = 0;
     for (j = 0; j < n; ++j) {
@@ -267,7 +267,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
 #endif
 	++k;
       }
-      
+
       a_colptr[j+1] = k;
     }
 
