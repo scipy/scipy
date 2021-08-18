@@ -135,11 +135,11 @@ static int cParseFloatFormat(char *buf, int *num, int *size)
 static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
 {
     register int i, j, item;
-    char tmp, buf[100];
+    char tmp, buf[100], *dummy;
 
     i = 0;
     while (i < n) {
-        fgets(buf, 100, fp);    /* read a line at a time */
+        dummy = fgets(buf, 100, fp);    /* read a line at a time */
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */
@@ -157,11 +157,11 @@ static int cReadValues(FILE *fp, int n, complex *destination, int perline, int p
 {
     register int i, j, k, s, pair;
     register float realpart;
-    char tmp, buf[100];
+    char tmp, buf[100], *dummy;
 
     i = pair = 0;
     while (i < n) {
-	fgets(buf, 100, fp);    /* read a line at a time */
+	dummy = fgets(buf, 100, fp);    /* read a line at a time */
 	for (j=0; j<perline && i<n; j++) {
 	    tmp = buf[(j+1)*persize];     /* save the char at that place */
 	    buf[(j+1)*persize] = 0;       /* null terminate */
@@ -294,14 +294,14 @@ creadrb(int *nrow, int *ncol, int *nonz,
 
     register int i, numer_lines = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
-    char buf[100], type[4];
+    char buf[100], type[4], *dummy;
     int sym;
     FILE *fp;
 
     fp = stdin;
 
     /* Line 1 */
-    fgets(buf, 100, fp);
+    dummy = fgets(buf, 100, fp);
     fputs(buf, stdout);
 
     /* Line 2 */
