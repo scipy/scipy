@@ -401,6 +401,18 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as

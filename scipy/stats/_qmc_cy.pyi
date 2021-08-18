@@ -1,5 +1,5 @@
 import numpy as np
-from scipy._lib._util import DecimalNumber
+from scipy._lib._util import DecimalNumber, IntNumber
 
 
 def _cy_wrapper_centered_discrepancy(
@@ -35,3 +35,18 @@ def _cy_wrapper_update_discrepancy(
         sample_view: np.ndarray,
         initial_disc: DecimalNumber,
 ) -> float: ...
+
+
+def _cy_van_der_corput(
+        n: IntNumber,
+        base: IntNumber,
+        start_index: IntNumber,
+) -> np.ndarray: ...
+
+
+def _cy_van_der_corput_scrambled(
+        n: IntNumber,
+        base: IntNumber,
+        start_index: IntNumber,
+        permutations: np.ndarray,
+) -> np.ndarray: ...
