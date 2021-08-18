@@ -327,6 +327,8 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Notes
     -----
     This is an interface to the Fortran library PROPACK [1]_.
+    The current default is to run with IRL mode disabled unless seeking the
+    smallest singular values/vectors (``which='SM'``).
 
     References
     ----------
