@@ -1,0 +1,35 @@
+name: Bug Report
+description: Create a report to help us improve SciPy
+title: "BUG: "
+labels: [defect]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for taking the time to file a bug report.
+  - type: markdown
+    attributes:
+        value: Please fill in the fields below, deleting the sections that don't apply to your issue.
+  - type: markdown
+    attributes:
+        value: You can view the final output by clicking the preview button above.
+  - type: textarea
+    attributes:
+      label: Reproducing Code Example
+      description: 'Paste the Reproducing code example and it will be rendered as a code block.'
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Error message
+      description: 'If any, paste the *full* error message as above (starting from line Traceback) and it will be rendered as a code block'
+      render: shell
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: SciPy/NumPy/Python version information
+      description: 'Please run the following and paste the result in a code block - `import sys, scipy, numpy; print(scipy.__version__, numpy.__version__, sys.version_info)`'
+    validations:
+      required: true
