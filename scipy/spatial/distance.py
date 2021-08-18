@@ -961,7 +961,7 @@ def kulczynski1(u, v, w=None):
 
     Returns
     -------
-    kulczynski1 : double
+    kulczynski1 : float
         The Kulczynski 1 distance between vectors `u` and `v`.
 
     Examples
@@ -969,7 +969,7 @@ def kulczynski1(u, v, w=None):
     >>> from scipy.spatial import distance
     >>> distance.kulczynski1([1, 0, 0], [0, 1, 0])
     0.0
-    >>> distance.kulczynski1([1, 0, 0], [1, 1, 0])
+    >>> distance.kulczynski1([True, False, False], [True, True, False])
     1.0
     >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
     -3.0
