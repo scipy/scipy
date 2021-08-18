@@ -685,7 +685,88 @@ cdef ITYPE_t[:] _dinic(
 
 
 def minimum_cost_flow(csgraph, demand, cost):
+    r"""
+    minimum_cost_flow(csgraph, demand, cost)
 
+    Finds a flow which minimises the total cost while
+    satisfying all vertices' demands in the given
+    directed graph.
+
+    .. versionadded:: 1.8.0
+
+    Parameters
+    ----------
+    csgraph : csr_matrix
+        The square matrix representing a directed graph whose (i, j)'th entry
+        is an integer representing the capacity of the edge between
+        vertices i and j.
+    demand : array_like
+        The array whose v'th entry is an integer representing the demand
+        of vertex v.
+    cost : array_like
+        The array whose e'th entry is an integer representing the cost
+        of per unit flow passing through edge e.
+
+    Returns
+    -------
+    res : MinCostFlowResult
+        A minimum cost flow represented by a ``MinCostFlowResult``
+        which includes the value of the flow in ``flow_value``,
+        the cost of the flow in ``flow_cost`` and the residual
+        graph in ``residual``.
+
+    Raises
+    ------
+    TypeError:
+        if the input graph is not in CSR format.
+
+    ValueError:
+        if the capacity values, vertex demands or
+        edge costs are not integers,
+        if an edge cost or vertex demand are
+        infinite in absolute value,
+        if an edge has negative capacity,
+        if sum of demands is not zero,
+        if there doesn't exist a flow,
+        which satisfies all vertex demands.
+
+    Notes
+    -----
+    This solves the minimum cost flow problem on a given directed weighted graph:
+    A flow associates to every edge a value, also called a flow, less than the
+    capacity of the edge, so that for every vertex (apart from the source and
+    the sink vertices), the difference between the total incoming flow and 
+    the total outgoing flow is equal to the demand of that vertex. The value of
+    a flow is the sum of the flow on all edges and the minimum cost flow problem
+    consists of finding a flow whose cost is minimal.
+
+    To solve the problem, we use Network Simplex [1]_.
+    The time complexity of the former :math:`O(|V|^2\,|E|\,log(|V|\,C))`.
+
+    The minimum cost flow problem is usually defined with real valued capacities,
+    edge costs and vertex demands but we require that all capacities are integral.
+    When dealing with rational capacities, or capacities belonging to
+    :math:`x\mathbb{Q}` for some fixed :math:`x \in \mathbb{R}`, it is possible
+    to reduce the problem to the integral case by scaling all capacities
+    accordingly.
+
+    Solving a minimum cost flow problem has many practical uses such as 
+    in assignment problem, covers and matching in bipartite graphs [2]_.
+
+    References
+    ----------
+
+    .. [1] Orlin, J.B. A polynomial time primal network simplex algorithm
+           for minimum cost flows. Mathematical Programming 78,
+           109–129 (1997).
+    .. [2] https://en.wikipedia.org/wiki/Network_simplex_algorithm#Applications
+
+    Examples
+    --------
+
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import maximum_flow
+    """
     demand = np.asarray(demand)
     cost = np.asarray(cost)
     if not isspmatrix_csr(csgraph):
