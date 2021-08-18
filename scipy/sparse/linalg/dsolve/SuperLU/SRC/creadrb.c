@@ -295,7 +295,7 @@ creadrb(int *nrow, int *ncol, int *nonz,
     register int i, numer_lines = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
     char buf[100], type[4], *dummy;
-    int sym;
+    int sym, f_count = 0, s_count = 0;
     FILE *fp;
 
     fp = stdin;
@@ -306,24 +306,24 @@ creadrb(int *nrow, int *ncol, int *nonz,
 
     /* Line 2 */
     for (i=0; i<4; i++) {
-        fscanf(fp, "%14c", buf); buf[14] = 0;
-        sscanf(buf, "%d", &tmp);
+        f_count = fscanf(fp, "%14c", buf); buf[14] = 0;
+        s_count = sscanf(buf, "%d", &tmp);
         if (i == 3) numer_lines = tmp;
     }
     cDumpLine(fp);
 
     /* Line 3 */
-    fscanf(fp, "%3c", type);
-    fscanf(fp, "%11c", buf); /* pad */
+    f_count = fscanf(fp, "%3c", type);
+    f_count = fscanf(fp, "%11c", buf); /* pad */
     type[3] = 0;
 #ifdef DEBUG
     printf("Matrix type %s\n", type);
 #endif
 
-    fscanf(fp, "%14c", buf); sscanf(buf, "%d", nrow);
-    fscanf(fp, "%14c", buf); sscanf(buf, "%d", ncol);
-    fscanf(fp, "%14c", buf); sscanf(buf, "%d", nonz);
-    fscanf(fp, "%14c", buf); sscanf(buf, "%d", &tmp);
+    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", nrow);
+    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", ncol);
+    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", nonz);
+    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", &tmp);
 
     if (tmp != 0)
         printf("This is not an assembled matrix!\n");
@@ -335,11 +335,11 @@ creadrb(int *nrow, int *ncol, int *nonz,
     callocateA(*ncol, *nonz, nzval, rowind, colptr);
 
     /* Line 4: format statement */
-    fscanf(fp, "%16c", buf);
+    f_count = fscanf(fp, "%16c", buf);
     cParseIntFormat(buf, &colnum, &colsize);
-    fscanf(fp, "%16c", buf);
+    f_count = fscanf(fp, "%16c", buf);
     cParseIntFormat(buf, &rownum, &rowsize);
-    fscanf(fp, "%20c", buf);
+    f_count = fscanf(fp, "%20c", buf);
     cParseFloatFormat(buf, &valnum, &valsize);
     cDumpLine(fp);
 
