@@ -13,7 +13,7 @@ import copy
 import sys
 
 
-def strip_blank_lines(l):
+def strip_blank_lines(l):  # noqa
     "Remove leading and trailing blank lines from a list of lines"
     while l and not l[0].strip():
         del l[0]
@@ -56,7 +56,7 @@ class Reader(object):
             return ''
 
     def seek_next_non_empty_line(self):
-        for l in self[self._l:]:
+        for l in self[self._l:]:  # noqa
             if l.strip():
                 break
             else:
@@ -266,7 +266,8 @@ class NumpyDocString(Mapping):
         _funcname +
         r"(?P<morefuncs>([,]\s+" + _funcnamenext + r")*)" +
         r")" +                     # end of "allfuncs"
-        r"(?P<trailing>[,\.])?" +   # Some function lists have a trailing comma (or period)  '\s*'
+        # Some function lists have a trailing comma (or period)  '\s*'
+        r"(?P<trailing>[,\.])?" +
         _description)
 
     # Empty <DESC> elements are replaced with '..'
@@ -303,8 +304,9 @@ class NumpyDocString(Mapping):
                 description = line_match.group('desc')
                 if line_match.group('trailing') and description:
                     self._error_location(
-                        'Unexpected comma or period after function list at index %d of '
-                        'line "%s"' % (line_match.end('trailing'), line),
+                        'Unexpected comma or period after function list at '
+                        'index %d of line "%s"' % (line_match.end('trailing'),
+                                                   line),
                         error=False)
             if not description and line.startswith(' '):
                 rest.append(line.strip())
@@ -394,7 +396,8 @@ class NumpyDocString(Mapping):
             if section in ('Parameters', 'Other Parameters', 'Attributes',
                            'Methods'):
                 self[section] = self._parse_param_list(content)
-            elif section in ('Returns', 'Yields', 'Raises', 'Warns', 'Receives'):
+            elif section in ('Returns', 'Yields', 'Raises', 'Warns',
+                             'Receives'):
                 self[section] = self._parse_param_list(
                     content, single_element_is_type=True)
             elif section.startswith('.. index::'):
@@ -539,12 +542,12 @@ class NumpyDocString(Mapping):
         return '\n'.join(out)
 
 
-def indent(str, indent=4):
+def indent(str, indent=4):  # noqa
     indent_str = ' '*indent
     if str is None:
         return indent_str
     lines = str.split('\n')
-    return '\n'.join(indent_str + l for l in lines)
+    return '\n'.join(indent_str + l for l in lines)  # noqa
 
 
 def dedent_lines(lines):
