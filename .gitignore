@@ -214,6 +214,7 @@ scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
+scipy/signal/bspline_util.c
 scipy/sparse/_csparsetools.c
 scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c
