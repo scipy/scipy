@@ -147,6 +147,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         Accessed only if ``irl_mode=True``.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate resamples.
 
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
@@ -187,7 +188,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
      [ 0.  1.  0.]
      [ 0.  0.  1.]]
     """
-
     # 32-bit complex PROPACK functions have Fortran LAPACK ABI
     # incompatibility issues
     if np.iscomplexobj(A) and (np.intp(0).itemsize < 8):
