@@ -439,6 +439,7 @@ def _make_design_matrix(const double[::1] x,
         ..., last row - x[-1]).
     """
     cdef:
+        cnp.npy_intp i
         cnp.npy_intp n = x.shape[0]
         cnp.npy_intp nt = t.shape[0]
         double[::1] wrk = np.empty(2*k+2, dtype=float)
