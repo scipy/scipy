@@ -65,6 +65,9 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+    options : dict, optional
+        A dictionary of solver-specific options. No solver-specific options
+        are currently supported; this parameter is reserved for future use.
 
     Returns
     -------
@@ -190,6 +193,9 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+    options : dict, optional
+        A dictionary of solver-specific options. No solver-specific options
+        are currently supported; this parameter is reserved for future use.
 
     Returns
     -------
@@ -314,6 +320,9 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+    options : dict, optional
+        A dictionary of solver-specific options. No solver-specific options
+        are currently supported; this parameter is reserved for future use.
 
     Returns
     -------
