@@ -888,8 +888,8 @@ vectorization_nanpolicy_cases = [
     ]
 
 
-def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
-                                paired=False):
+def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
+                          paired=False):
     # generate random samples to check the response of hypothesis tests to
     # samples with different (but broadcastable) shapes and various
     # nan patterns (e.g. all nans, some nans, no nans) along axis-slices
@@ -927,8 +927,22 @@ def hypotest_nan_data_generator(n_samples, n_repetitions, axis, rng,
     return data
 
 
+def _homogeneous_data_generator(n_samples, n_repetitions, axis, rng,
+                                paired=False, all_nans=True):
+    data = []
+    for i in range(n_samples):
+        n_obs = 20 if paired else 20 + i  # observations per axis-slice
+        shape = [n_repetitions] + [1]*n_samples + [n_obs]
+        shape[1 + i] = 2
+        x = np.ones(shape) * np.nan if all_nans else rng.random(shape)
+        x = np.moveaxis(x, -1, axis)
+        data.append(x)
+    return data
+
+
 def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
                     nan_policy='raise', paired=False, _no_deco=True, **kwds):
+    # Reference implementation for how `nan_policy` should work for 1d samples
 
     if nan_policy == 'raise':
         for sample in data1d:
@@ -960,9 +974,31 @@ def hypotest_1d_nan(hypotest, data1d, unpacker, *args,
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
                           "unpacker"), vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-@pytest.mark.parametrize(("axis"), (0, 1, 2))
-def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
-                                unpacker, nan_policy, axis):
+@pytest.mark.parametrize(("axis"), (1,))
+@pytest.mark.parametrize(("data_generator"), ("mixed",))
+def test_hypotest_vectorization_fast(hypotest, args, kwds, n_samples, paired,
+                                     unpacker, nan_policy, axis,
+                                     data_generator):
+    _hypotest_vectorization_test(hypotest, args, kwds, n_samples, paired,
+                                 unpacker, nan_policy, axis, data_generator)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
+                          "unpacker"), vectorization_nanpolicy_cases)
+@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
+@pytest.mark.parametrize(("axis"), range(-3, 3))
+@pytest.mark.parametrize(("data_generator"),
+                         ("all_nans", "all_finite", "mixed"))
+def test_hypotest_vectorization_full(hypotest, args, kwds, n_samples, paired,
+                                     unpacker, nan_policy, axis,
+                                     data_generator):
+    _hypotest_vectorization_test(hypotest, args, kwds, n_samples, paired,
+                                 unpacker, nan_policy, axis, data_generator)
+
+
+def _hypotest_vectorization_test(hypotest, args, kwds, n_samples, paired,
+                                 unpacker, nan_policy, axis, data_generator):
     # Tests the 1D and vectorized behavior of hypothesis tests against a
     # reference implementation (hypotest_1d_nan with np.ndenumerate)
 
@@ -976,17 +1012,29 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
         pytest.xfail("Generator `permutation` method doesn't support `axis`")
     rng = np.random.default_rng(0)
 
-
     # Generate multi-dimensional test data with all important combinations
     # of patterns of nans along `axis`
-    data = hypotest_nan_data_generator(n_samples, n_repetitions=3, axis=axis,
-                                       rng=rng, paired=paired)
+    n_repetitions = 3  # number of repetitions of each pattern
+    data_gen_kwds = {'n_samples': n_samples, 'n_repetitions': n_repetitions,
+                     'axis': axis, 'rng': rng, 'paired': paired}
+    if data_generator == 'mixed':
+        inherent_size = 6  # number of distinct types of patterns
+        data = _mixed_data_generator(**data_gen_kwds)
+    elif data_generator == 'all_nans':
+        inherent_size = 2  # hard-coded in _homogeneous_data_generator
+        data_gen_kwds['all_nans'] = True
+        data = _homogeneous_data_generator(**data_gen_kwds)
+    elif data_generator == 'all_finite':
+        inherent_size = 2  # hard-coded in _homogeneous_data_generator
+        data_gen_kwds['all_nans'] = False
+        data = _homogeneous_data_generator(**data_gen_kwds)
+
+    output_shape = [n_repetitions] + [inherent_size]*n_samples
 
     # To generate reference behavior to compare against, loop over the axis-
     # slices in data. Make indexing easier by moving `axis` to the end and
     # broadcasting all samples to the same shape.
     data_b = [np.moveaxis(sample, axis, -1) for sample in data]
-    output_shape = [3] + [6]*n_samples
     data_b = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
               for sample in data_b]
     statistics = np.zeros(output_shape)
@@ -1052,7 +1100,7 @@ def test_hypotest_vectorization(hypotest, args, kwds, n_samples, paired,
     # Perform a vectorized call to the hypothesis test.
     # If `nan_policy == 'raise'`, check that it raises the appropriate error.
     # If not, compare against the output against `statistics` and `pvalues`
-    if nan_policy == 'raise':
+    if nan_policy == 'raise' and not data_generator == "all_finite":
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
@@ -1221,6 +1269,7 @@ def _check_arrays_broadcastable(arrays, axis):
     return True
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
                           "unpacker"), vectorization_nanpolicy_cases)
 def test_hypotest_empty(hypotest, args, kwds, n_samples, paired, unpacker):
