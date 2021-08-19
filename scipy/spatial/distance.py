@@ -964,6 +964,18 @@ def kulczynski1(u, v, w=None):
     kulczynski1 : float
         The Kulczynski 1 distance between vectors `u` and `v`.
 
+    See Also
+    --------
+
+    kulsinski
+
+    Notes
+    -----
+    This measure has a minimum value of 0 and no upper limit.
+    It is un-defined when there are no non-matches.
+
+    .. versionadded:: 1.8.0
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -2248,7 +2260,12 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Sokal-Sneath distance between each pair of
         boolean vectors. (see sokalsneath function documentation)
 
-    23. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
+    23. ``Y = pdist(X, 'kulczynski1')``
+
+        Computes the Kulczynski 1 distance between each pair of
+        boolean vectors. (see kulczynski1 function documentation)
+
+    24. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
 
         Computes the weighted Minkowski distance between each pair of
         vectors. (see wminkowski function documentation)
@@ -2256,7 +2273,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
         Use 'minkowski' instead.
 
-    24. ``Y = pdist(X, f)``
+    25. ``Y = pdist(X, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
