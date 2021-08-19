@@ -547,6 +547,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, CanberraDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_hamming",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, HammingDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_chebyshev",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, ChebyshevDistance{});
@@ -588,6 +593,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
     m.def("cdist_canberra",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, CanberraDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_hamming",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, HammingDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_chebyshev",

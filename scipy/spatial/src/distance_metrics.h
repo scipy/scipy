@@ -345,3 +345,49 @@ struct CanberraDistance {
         });
     }
 };
+
+struct HammingDistance {
+    template <typename T>
+    struct Acc {
+        Acc(): nonmatches(0), total(0) {}
+        T nonmatches, total;
+    };
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
+        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.nonmatches = x != y;
+            acc.total = 1;
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return acc.nonmatches / acc.total;
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.nonmatches = a.nonmatches + b.nonmatches;
+            acc.total = a.total + b.total;
+            return acc;
+        });
+    }
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
+        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.nonmatches = w * (x != y);
+            acc.total = w;
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return acc.nonmatches / acc.total;
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.nonmatches = a.nonmatches + b.nonmatches;
+            acc.total = a.total + b.total;
+            return acc;
+        });
+    }
+};
