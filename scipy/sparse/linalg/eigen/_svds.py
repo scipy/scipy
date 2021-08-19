@@ -125,7 +125,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
-         solver='arpack', random_state=None, options=None):
+         solver='arpack', *, random_state=None, options=None):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -179,7 +179,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         If ``solver='propack'``, the option is respected regardless of the
         matrix shape.
 
-    solver : str, optional
+    solver :  {'arpack', 'propack', 'lobpcg'}, optional
             The solver used.
             :ref:`'arpack' <sparse.linalg.svds-arpack>`,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`, and

@@ -49,7 +49,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
           return ``None`` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
-    solver : str, optional
+    solver :  {'arpack', 'propack', 'lobpcg'}, optional
             This is the solver-specific documentation for ``solver='arpack'``.
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
@@ -174,7 +174,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
           return ``None`` for the left singular vectors. Otherwise, compute
           all singular vectors.
 
-    solver : str, optional
+    solver :  {'arpack', 'propack', 'lobpcg'}, optional
             This is the solver-specific documentation for ``solver='lobpcg'``.
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
@@ -298,7 +298,7 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         - ``"vh"``: compute only the right singular vectors; return ``None``
           for the left singular vectors.
 
-    solver : str, optional
+    solver :  {'arpack', 'propack', 'lobpcg'}, optional
             This is the solver-specific documentation for ``solver='propack'``.
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`
