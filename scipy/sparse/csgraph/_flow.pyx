@@ -765,7 +765,23 @@ def minimum_cost_flow(csgraph, demand, cost):
     --------
 
     >>> from scipy.sparse import csr_matrix
-    >>> from scipy.sparse.csgraph import maximum_flow
+    >>> from scipy.sparse.csgraph import minimum_cost_flow
+    >>> A = csr_matrix([[0, 4, 10, 0],
+    ...                 [0, 0, 0, 9],
+    ...                 [0, 0, 0, 5],
+    ...                 [0, 0, 0, 0]])
+    >>> demand = [-5, 0, 0, 5]
+    >>> cost = [3, 6, 1, 2]
+    >>> result = minimum_cost_flow(A, demand, cost)
+    >>> result.flow_value
+    10
+    >>> result.flow_cost
+    24
+    >>> result.residual.toarray()
+    array([[0, 4, 1, 0],
+        [0, 0, 0, 4],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0]], dtype=int32)
     """
     demand = np.asarray(demand)
     cost = np.asarray(cost)
