@@ -388,7 +388,8 @@ import sys
 
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
-_32BIT_ERROR = ValueError("interpolative decomposition on 32-bit systems with complex128 is buggy")
+_32BIT_ERROR = ValueError("interpolative decomposition on 32-bit systems "
+                          "with complex128 is buggy")
 _IS_32BIT = (sys.maxsize < 2**32)
 
 
