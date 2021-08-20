@@ -293,6 +293,12 @@ FormFullA(int n, int *nonz, doublecomplex **nzval, int **rowind, int **colptr)
     *nonz = new_nnz;
 }
 
+void check_read(int read_count){
+    if(read_count == 0) {
+        ABORT("Unable to read the input");
+    }
+}
+
 void
 zreadrb(int *nrow, int *ncol, int *nonz,
         doublecomplex **nzval, int **rowind, int **colptr)
@@ -316,23 +322,39 @@ zreadrb(int *nrow, int *ncol, int *nonz,
     /* Line 2 */
     for (i=0; i<4; i++) {
         f_count = fscanf(fp, "%14c", buf); buf[14] = 0;
+        check_read(f_count);
         s_count = sscanf(buf, "%d", &tmp);
+        check_read(s_count);
         if (i == 3) numer_lines = tmp;
     }
     zDumpLine(fp);
 
     /* Line 3 */
     f_count = fscanf(fp, "%3c", type);
+    check_read(f_count);
     f_count = fscanf(fp, "%11c", buf); /* pad */
+    check_read(f_count);
     type[3] = 0;
 #ifdef DEBUG
     printf("Matrix type %s\n", type);
 #endif
 
-    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", nrow);
-    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", ncol);
-    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", nonz);
-    f_count = fscanf(fp, "%14c", buf); s_count = sscanf(buf, "%d", &tmp);
+    f_count = fscanf(fp, "%14c", buf);
+    check_read(f_count);
+    s_count = sscanf(buf, "%d", nrow);
+    check_read(s_count);
+    f_count = fscanf(fp, "%14c", buf);
+    check_read(f_count);
+    s_count = sscanf(buf, "%d", ncol);
+    check_read(s_count);
+    f_count = fscanf(fp, "%14c", buf);
+    check_read(f_count);
+    s_count = sscanf(buf, "%d", nonz);
+    check_read(s_count);
+    f_count = fscanf(fp, "%14c", buf);
+    check_read(f_count);
+    s_count = sscanf(buf, "%d", &tmp);
+    check_read(s_count);
 
     if (tmp != 0)
         printf("This is not an assembled matrix!\n");
@@ -345,10 +367,13 @@ zreadrb(int *nrow, int *ncol, int *nonz,
 
     /* Line 4: format statement */
     f_count = fscanf(fp, "%16c", buf);
+    check_read(f_count);
     zParseIntFormat(buf, &colnum, &colsize);
     f_count = fscanf(fp, "%16c", buf);
+    check_read(f_count);
     zParseIntFormat(buf, &rownum, &rowsize);
     f_count = fscanf(fp, "%20c", buf);
+    check_read(f_count);
     zParseFloatFormat(buf, &valnum, &valsize);
     zDumpLine(fp);
 

@@ -21,6 +21,11 @@ at the top-level directory.
 
 #include "slu_sdefs.h"
 
+void check_read(int read_count){
+    if(read_count == 0) {
+        ABORT("Unable to read the input");
+    }
+}
 
 void
 sreadtriple(int *m, int *n, int *nonz,
@@ -46,6 +51,7 @@ sreadtriple(int *m, int *n, int *nonz,
      */
 
     s_count = scanf("%d%d", n, nonz);
+		check_read(s_count);
     *m = *n;
     printf("m %d, n %d, nonz %d\n", *m, *n, *nonz);
     sallocateA(*n, *nonz, nzval, rowind, colptr); /* Allocate storage */
@@ -62,7 +68,7 @@ sreadtriple(int *m, int *n, int *nonz,
     /* Read into the triplet array from a file */
     for (nnz = 0, nz = 0; nnz < *nonz; ++nnz) {
 	s_count = scanf("%d%d%f\n", &row[nz], &col[nz], &val[nz]);
-
+	check_read(s_count);
         if ( nnz == 0 ) { /* first nonzero */
 	    if ( row[0] == 0 || col[0] == 0 ) {
 		zero_base = 1;
@@ -142,8 +148,10 @@ void sreadrhs(int m, float *b)
         fprintf(stderr, "dreadrhs: file does not exist\n");
 	exit(-1);
     }
-    for (i = 0; i < m; ++i)
+    for (i = 0; i < m; ++i) {
       f_count = fscanf(fp, "%f\n", &b[i]);
+			check_read(f_count);
+		}
 
     /*        readpair_(j, &b[i]);*/
     fclose(fp);
