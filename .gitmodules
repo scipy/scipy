@@ -12,7 +12,7 @@
 	ignore = all
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
-	url = https://github.com/mckib2/PROPACK
+	url = https://github.com/scipy/PROPACK
 	shallow = true
 	active = false
 	ignore = all
