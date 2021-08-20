@@ -3,7 +3,6 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.io import mmread
     from scipy.sparse.linalg import svds
 
 
@@ -19,8 +18,9 @@ class BenchSVDS(Benchmark):
     def setup(self, k, problem, solver):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "svds_benchmark_files",
-                                problem + ".mtx")
-        self.A = mmread(datafile)
+                                "svds_benchmark_files.npz")
+        matrices = np.load(datafile, allow_pickle=True)
+        self.A = matrices[problem][()]
 
     def time_svds(self, k, problem, solver):
         # consider k = int(np.min(self.A.shape) * k)
