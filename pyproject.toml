@@ -9,11 +9,11 @@
 
 [build-system]
 requires = [
-    "wheel<0.37.0",
+    "wheel<0.38.0",
     "setuptools<58.0.0",
     "Cython>=0.29.18,<3.0",
-    "pybind11>=2.4.3,<2.7.0",
-    "pythran==0.9.11",
+    "pybind11>=2.4.3,<2.8.0",
+    "pythran>=0.9.11,<0.10.0",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -28,8 +28,9 @@ requires = [
 
     # default numpy requirements
     "numpy==1.16.5; python_version=='3.7' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.17.3; python_version=='3.8' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and platform_python_implementation != 'PyPy'",
+    "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
+    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.2; python_version=='3.10' and platform_python_implementation != 'PyPy'",
 
     # First PyPy versions for which there are numpy wheels
     "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
@@ -50,7 +51,7 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.7,<3.10"
 dependencies = [
-    "numpy>=1.16.5,<1.23.0",
+    "numpy>=1.16.5,<1.24.0",
 ]
 readme = "README.rst"
 classifiers = [
