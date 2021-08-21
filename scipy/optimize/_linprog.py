@@ -575,7 +575,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
      success: True
            x: array([10., -3.]) # may vary
     
-    You can use the ``options`` parameter to e.g. display additional convergence messages.
+    You can use the ``options`` parameter to, e.g., display additional convergence messages.
 
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], options={'disp': True})
     Primal Feasibility  Dual Feasibility    Duality Gap         Step             Path Parameter      Objective
