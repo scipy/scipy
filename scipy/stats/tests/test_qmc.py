@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from itertools import combinations, product
 
 import pytest
 import numpy as np
@@ -538,22 +539,40 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
+    @pytest.mark.parametrize("strength", [1, 2])
+    @pytest.mark.parametrize("centered", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
-    def test_sample_stratified(self, optimization):
-        d, n = 4, 20
+    def test_sample_stratified(self, optimization, centered, strength):
+        seed = np.random.RandomState(123456)
+        p = 5
+        n = p**2
+        d = 6
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=True,
-                             optimization=optimization)
+        engine = qmc.LatinHypercube(d=d, centered=centered,
+                                    strength=strength,
+                                    optimization=optimization,
+                                    seed=seed)
         sample = engine.random(n=n)
+        assert sample.shape == (n, d)
+        assert engine.num_generated == n
+
         sorted_sample = np.sort(sample, axis=0)
 
-        assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
-
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
+
+        if strength == 2 and optimization is None:
+            unique_elements = np.arange(p)
+            desired = set(product(unique_elements, unique_elements))
+
+            for i, j in combinations(range(engine.d), 2):
+                samples_2d = sample[:, [i, j]]
+                res = (samples_2d * p).astype(int)
+                res_set = set((tuple(row) for row in res))
+                assert_equal(res_set, desired)
 
     def test_discrepancy_hierarchy(self):
         seed = np.random.RandomState(123456)
@@ -568,11 +587,31 @@ class TestLHS(QMCEngineTests):
 
         assert disc_ < disc_ref
 
-    def test_warning(self):
-        with pytest.raises(ValueError, match=r"'toto' is not a valid"
-                                             r" optimization method"):
-            seed = np.random.RandomState(12345)
+    def test_raises(self):
+        seed = np.random.RandomState(12345)
+
+        message = r"'toto' is not a valid optimization method"
+        with pytest.raises(ValueError, match=message):
             qmc.LatinHypercube(1, seed=seed, optimization="toto")
+
+        message = r"not a valid strength"
+        with pytest.raises(ValueError, match=message):
+            qmc.LatinHypercube(1, strength=3, seed=seed)
+
+        message = r"n is not the square of a prime number"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine.random(16)
+
+        message = r"n is not the square of a prime number"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine.random(5)  # because int(sqrt(5)) would result in 2
+
+        message = r"n is too small for d"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=5, strength=2, seed=seed)
+            engine.random(9)
 
 
 class TestSobol(QMCEngineTests):
