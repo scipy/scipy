@@ -584,7 +584,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, np.std)
+        flatcount = np.bincount(binnumbers, None)
+        a = flatcount.nonzero()
+        for vv in builtins.range(Vdim):
+            flatsum = np.bincount(binnumbers, values[vv])
+            delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
+            std = np.sqrt(np.bincount(binnumbers, delta**2)[a] / flatcount[a])
+            result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
