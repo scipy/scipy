@@ -574,6 +574,21 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
       status: 0
      success: True
            x: array([10., -3.]) # may vary
+    
+    You can use the ``options`` parameter to e.g. display additional convergence messages.
+
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], options={'disp': True})
+    Primal Feasibility  Dual Feasibility    Duality Gap         Step             Path Parameter      Objective
+    1.0                 1.0                 1.0                 -                1.0                 -8.0
+    0.09885158404625    0.09885158404625    0.09885158404625    0.903461537018   0.09885158404625    -6.284698425658
+    0.05788429348353    0.05788429348355    0.05788429348355    0.4273037994111  0.05788429348355    -7.864724729573
+    0.04539867008243    0.04539867008244    0.04539867008244    0.2387091287399  0.04539867008244    -12.78916804766
+    0.00666151448168    0.006661514481681   0.006661514481682   0.8665142913493  0.006661514481682   -21.3520715063
+    6.299626472829e-06  6.299626472597e-06  6.299626472583e-06  1.0              6.299626472568e-06  -21.99681708159
+    3.150184161152e-10  3.150192895998e-10  3.150192773305e-10  0.9999499939736  3.150193133197e-10  -21.99999984082
+    Optimization terminated successfully.
+    Current function value: -22.000000
+    Iterations: 6
 
     """
 
