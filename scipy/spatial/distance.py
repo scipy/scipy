@@ -933,12 +933,12 @@ def kulsinski(u, v, w=None):
     return (ntf + nft - ntt + n) / (ntf + nft + n)
 
 
-def kulczynski1(u, v, w=None):
+def kulczynski1(u, v, *, w=None):
     """
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
 
-    The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`,
-    is defined as
+    The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
+    of length `n`, is defined as
 
     .. math::
 
@@ -976,6 +976,14 @@ def kulczynski1(u, v, w=None):
 
     .. versionadded:: 1.8.0
 
+    References
+    ----------
+    .. [1] Kulczynski S. Zespoly roslin w Pieninach. Bulletin
+           International de l’Acade ́mie Polonaise des Sciences
+           et des Lettres, Classe des Sciences Mathe ́ matiques
+           et Naturelles, Se ́ rie B (Sciences Naturelles). 1927;
+           Supplement II: 57–203.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -983,6 +991,8 @@ def kulczynski1(u, v, w=None):
     0.0
     >>> distance.kulczynski1([True, False, False], [True, True, False])
     1.0
+    >>> distance.kulczynski1([True, False, False], True)
+    0.5
     >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
     -3.0
 
