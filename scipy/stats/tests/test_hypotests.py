@@ -933,30 +933,11 @@ class TestSomersD:
 vectorization_nanpolicy_cases = [
     # function, args, kwds, number of samples, paired, unpacker function
     # args, kwds typically aren't needed; just showing that they work
-    (stats.fligner, tuple(), dict(), 3, False, None),  # 4 samples is slow
     (stats.kruskal, tuple(), dict(), 3, False, None),  # 4 samples is slow
-    (stats.friedmanchisquare, tuple(), dict(), 3, True, None),
-    (stats.bartlett, tuple(), dict(), 3, False, None),
-    (stats.levene, tuple(),
-     {'center': 'mean', 'proportiontocut': 0.025}, 3, False, None),
-    (stats.ks_2samp, ("less",), {"mode": 'asymp'}, 2, False, None),
     (stats.ranksums, tuple(), dict(), 2, False, None),
-    (stats.ansari, tuple(), dict(), 2, False, None),
-    (stats.brunnermunzel, ("less",),
-     {"distribution": 'normal'}, 2, False, None),
-    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2, False, None),
-    (stats.shapiro, tuple(), dict(), 1, False, None),
-    (stats.jarque_bera, tuple(), dict(), 1, False, None),
-    (stats.ks_1samp, (ndtr,),
-     {"alternative": "less", "mode": 'asymp'}, 1, False, None),
-    (stats.cramervonmises, (ndtr,), dict(), 1, False,
-     lambda res: (res.statistic, res.pvalue)),
-    (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2, False,
-     lambda res: (res.statistic, res.pvalue)),
     (stats.mannwhitneyu, tuple(), dict(), 2, False, None),
     (stats.wilcoxon, tuple(), dict(), 2, True, None),
     (stats.wilcoxon, tuple(), dict(), 1, True, None),
-    (stats.gmean, tuple(), dict(), 1, False, lambda x: (x,)),
     ]
 
 
