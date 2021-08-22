@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -29,11 +29,11 @@ at the top-level directory.
  *
  * ZGSISX computes an approximate solutions of linear equations
  * A*X=B or A'*X=B, using the ILU factorization from zgsitrf().
- * An estimation of the condition number is provided. 
+ * An estimation of the condition number is provided.
  * The routine performs the following steps:
  *
  *   1. If A is stored column-wise (A->Stype = SLU_NC):
- *  
+ *
  *	1.1. If options->Equil = YES or options->RowPerm = LargeDiag_MC64, scaling
  *	     factors are computed to equilibrate the system:
  *	     options->Trans = NOTRANS:
@@ -226,7 +226,7 @@ at the top-level directory.
  *
  *         If options->RowPerm = LargeDiag_MC64, MC64 is used to scale and permute
  *            the matrix to an I-matrix, that is A is modified as follows:
- *            P*Dr*A*Dc has entries of modulus 1 on the diagonal and 
+ *            P*Dr*A*Dc has entries of modulus 1 on the diagonal and
  *            off-diagonal entries of modulus at most 1. P is a permutation
  *            obtained from MC64.
  *            If MC64 fails, zgsequ() is used to equilibrate the system,
@@ -244,11 +244,11 @@ at the top-level directory.
  *	   is already in postorder.
  *
  *	   If A->Stype = SLU_NR, column permutation vector of size A->nrow,
- *	   which describes permutation of columns of transpose(A) 
+ *	   which describes permutation of columns of transpose(A)
  *	   (rows of A) as described above.
  *
  * perm_r  (input/output) int*
- *	   If A->Stype = SLU_NC, row permutation vector of size A->nrow, 
+ *	   If A->Stype = SLU_NC, row permutation vector of size A->nrow,
  *	   which defines the permutation matrix Pr, and is determined
  *	   by MC64 first then followed by partial pivoting.
  *         perm_r[i] = j means row i of A is in position j in Pr*A.
@@ -276,7 +276,7 @@ at the top-level directory.
  *	   = 'N': No equilibration.
  *	   = 'R': Row equilibration, i.e., A was premultiplied by diag(R).
  *	   = 'C': Column equilibration, i.e., A was postmultiplied by diag(C).
- *	   = 'B': Both row and column equilibration, i.e., A was replaced 
+ *	   = 'B': Both row and column equilibration, i.e., A was replaced
  *		  by diag(R)*A*diag(C).
  *	   If options->Fact = FACTORED, equed is an input argument,
  *	   otherwise it is an output argument.
@@ -418,7 +418,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     trans_t   trant;
     char      norm[1];
     int       i, j, info1;
-    double    amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
+    double    amax, anorm, colcnd, rowcnd, rcmax, rcmin;
     int       relax, panel_size;
     double    diag_pivot_thresh;
     double    t0;      /* temporary time */
@@ -450,15 +450,13 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     } else {
 	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
 	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
-	smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
-	bignum = 1. / smlnum;
     }
 
     /* Test the input parameters */
     if (options->Fact != DOFACT && options->Fact != SamePattern &&
 	options->Fact != SamePattern_SameRowPerm &&
 	options->Fact != FACTORED &&
-	options->Trans != NOTRANS && options->Trans != TRANS && 
+	options->Trans != NOTRANS && options->Trans != TRANS &&
 	options->Trans != CONJ &&
 	options->Equil != NO && options->Equil != YES)
 	*info = -1;
@@ -471,6 +469,9 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	*info = -6;
     else {
 	if (rowequ) {
+      float smlnum, bignum;
+      smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {
@@ -483,6 +484,9 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    else rowcnd = 1.;
 	}
 	if (colequ && *info == 0) {
+      float smlnum, bignum;
+      smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
+      bignum = 1. / smlnum;
 	    rcmin = bignum;
 	    rcmax = 0.;
 	    for (j = 0; j < A->nrow; ++j) {
@@ -497,7 +501,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	if (*info == 0) {
 	    if ( lwork < -1 ) *info = -12;
 	    else if ( B->ncol < 0 || Bstore->lda < SUPERLU_MAX(0, A->nrow) ||
-		      B->Stype != SLU_DN || B->Dtype != SLU_Z || 
+		      B->Stype != SLU_DN || B->Dtype != SLU_Z ||
 		      B->Mtype != SLU_GE )
 		*info = -13;
 	    else if ( X->ncol < 0 || Xstore->lda < SUPERLU_MAX(0, A->nrow) ||
@@ -602,11 +606,11 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
 
     if ( nofact ) {
-	
+
 	t0 = SuperLU_timer_();
 	/*
 	 * Gnet column permutation vector perm_c[], according to permc_spec:
-	 *   permc_spec = NATURAL:  natural ordering 
+	 *   permc_spec = NATURAL:  natural ordering
 	 *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
 	 *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
 	 *   permc_spec = COLAMD:   approximate minimum degree column ordering

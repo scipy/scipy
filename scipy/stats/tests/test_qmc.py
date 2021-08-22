@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from itertools import combinations, product
 
 import pytest
 import numpy as np
@@ -11,7 +12,8 @@ from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy, QMCEngine)
+                              update_discrepancy, QMCEngine,
+                              _perturb_discrepancy)  # noqa
 
 
 class TestUtils:
@@ -209,8 +211,26 @@ class TestUtils:
                                              r"broadcastable"):
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
+    def test_perm_discrepancy(self):
+        seed = np.random.RandomState(123456)
+        qmc_gen = qmc.LatinHypercube(5, seed=seed)
+        sample = qmc_gen.random(10)
+        disc = qmc.discrepancy(sample)
+
+        for i in range(100):
+            row_1 = np.random.randint(10)
+            row_2 = np.random.randint(10)
+            col = np.random.randint(5)
+
+            disc = _perturb_discrepancy(sample, row_1, row_2, col, disc)
+            sample[row_1, col], sample[row_2, col] = (
+                sample[row_2, col], sample[row_1, col])
+            disc_reference = qmc.discrepancy(sample)
+            assert_allclose(disc, disc_reference)
+
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
+
         def disc_c2(x):
             n, s = x.shape
             xij = x
@@ -316,6 +336,10 @@ class TestVDC:
         sample = van_der_corput(7, start_index=3, scramble=True,
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
+
+    def test_invalid_base_error(self):
+        with pytest.raises(ValueError, match=r"'base' must be at least 2"):
+            van_der_corput(10, base=1)
 
 
 class RandomEngine(qmc.QMCEngine):
@@ -491,14 +515,14 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.34229571, 0.89178423],
-                            [0.84229571, 0.07696942],
-                            [0.21729571, 0.41030275],
-                            [0.71729571, 0.74363609],
-                            [0.46729571, 0.18808053],
-                            [0.96729571, 0.52141386],
-                            [0.06104571, 0.8547472],
-                            [0.56104571, 0.29919164]])
+    scramble_nd = np.array([[0.40770429, 0.77219711],
+                            [0.90770429, 0.10553045],
+                            [0.15770429, 0.43886378],
+                            [0.65770429, 0.88330823],
+                            [0.28270429, 0.21664156],
+                            [0.78270429, 0.54997489],
+                            [0.03270429, 0.99441934],
+                            [0.53270429, 0.32775267]])
 
 
 class TestLHS(QMCEngineTests):
@@ -515,23 +539,79 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
-    def test_sample_stratified(self):
-        d, n = 4, 20
+    @pytest.mark.parametrize("strength", [1, 2])
+    @pytest.mark.parametrize("centered", [False, True])
+    @pytest.mark.parametrize("optimization", [None, "random-CD"])
+    def test_sample_stratified(self, optimization, centered, strength):
+        seed = np.random.RandomState(123456)
+        p = 5
+        n = p**2
+        d = 6
         expected1d = (np.arange(n) + 0.5) / n
         expected = np.broadcast_to(expected1d, (d, n)).T
 
-        engine = self.engine(d=d, scramble=False, centered=True)
+        engine = qmc.LatinHypercube(d=d, centered=centered,
+                                    strength=strength,
+                                    optimization=optimization,
+                                    seed=seed)
         sample = engine.random(n=n)
+        assert sample.shape == (n, d)
+        assert engine.num_generated == n
+
         sorted_sample = np.sort(sample, axis=0)
 
-        assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
-
-        engine = self.engine(d=d, scramble=False, centered=False)
-        sample = engine.random(n=n)
-        sorted_sample = np.sort(sample, axis=0)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
+
+        if strength == 2 and optimization is None:
+            unique_elements = np.arange(p)
+            desired = set(product(unique_elements, unique_elements))
+
+            for i, j in combinations(range(engine.d), 2):
+                samples_2d = sample[:, [i, j]]
+                res = (samples_2d * p).astype(int)
+                res_set = set((tuple(row) for row in res))
+                assert_equal(res_set, desired)
+
+    def test_discrepancy_hierarchy(self):
+        seed = np.random.RandomState(123456)
+        lhs = qmc.LatinHypercube(d=2, seed=seed)
+        sample_ref = lhs.random(n=20)
+        disc_ref = qmc.discrepancy(sample_ref)
+
+        seed = np.random.RandomState(123456)
+        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
+        sample_ = optimal_.random(n=20)
+        disc_ = qmc.discrepancy(sample_)
+
+        assert disc_ < disc_ref
+
+    def test_raises(self):
+        seed = np.random.RandomState(12345)
+
+        message = r"'toto' is not a valid optimization method"
+        with pytest.raises(ValueError, match=message):
+            qmc.LatinHypercube(1, seed=seed, optimization="toto")
+
+        message = r"not a valid strength"
+        with pytest.raises(ValueError, match=message):
+            qmc.LatinHypercube(1, strength=3, seed=seed)
+
+        message = r"n is not the square of a prime number"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine.random(16)
+
+        message = r"n is not the square of a prime number"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=2, strength=2, seed=seed)
+            engine.random(5)  # because int(sqrt(5)) would result in 2
+
+        message = r"n is too small for d"
+        with pytest.raises(ValueError, match=message):
+            engine = qmc.LatinHypercube(d=5, strength=2, seed=seed)
+            engine.random(9)
 
 
 class TestSobol(QMCEngineTests):

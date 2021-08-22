@@ -741,6 +741,19 @@ class _TestCommon:
         assert_equal(self.spmatrix((15, 0)).diagonal(), np.empty(0))
         assert_equal(self.spmatrix((0, 5)).diagonal(10), np.empty(0))
 
+    def test_trace(self):
+        # For square matrix
+        A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        B = self.spmatrix(A)
+        for k in range(-2, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
+
+        # For rectangular matrix
+        A = np.array([[1, 2, 3], [4, 5, 6]])
+        B = self.spmatrix(A)
+        for k in range(-1, 3):
+            assert_equal(A.trace(offset=k), B.trace(offset=k))
+
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
         x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])

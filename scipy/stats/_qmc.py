@@ -7,7 +7,9 @@ import numbers
 from abc import ABC, abstractmethod
 import math
 from typing import (
+    Callable,
     ClassVar,
+    Dict,
     List,
     Optional,
     overload,
@@ -24,7 +26,6 @@ if TYPE_CHECKING:
         DecimalNumber, GeneratorType, IntNumber, SeedType
     )
 
-
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
 from scipy.stats._sobol import (
@@ -36,7 +37,9 @@ from scipy.stats._qmc_cy import (
     _cy_wrapper_wrap_around_discrepancy,
     _cy_wrapper_mixture_discrepancy,
     _cy_wrapper_l2_star_discrepancy,
-    _cy_wrapper_update_discrepancy
+    _cy_wrapper_update_discrepancy,
+    _cy_van_der_corput_scrambled,
+    _cy_van_der_corput,
 )
 
 
@@ -388,6 +391,96 @@ def update_discrepancy(
     return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 
 
+def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
+                         disc: float):
+    """Centered discrepancy after an elementary perturbation of a LHS.
+
+    An elementary perturbation consists of an exchange of coordinates between
+    two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
+    this operation conserves the LHS properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample (before permutation) to compute the discrepancy from.
+    i1 : int
+        The first line of the elementary permutation.
+    i2 : int
+        The second line of the elementary permutation.
+    k : int
+        The column of the elementary permutation.
+    disc : float
+        Centered discrepancy of the design before permutation.
+
+    Returns
+    -------
+    discrepancy : float
+        Centered discrepancy of the design after permutation.
+
+    References
+    ----------
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
+
+    """
+    n = sample.shape[0]
+
+    z_ij = sample - 0.5
+
+    # Eq (19)
+    c_i1j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i1, :])
+                              + abs(z_ij) - abs(z_ij[i1, :] - z_ij)), axis=1))
+    c_i2j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i2, :])
+                              + abs(z_ij) - abs(z_ij[i2, :] - z_ij)), axis=1))
+
+    # Eq (20)
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :])
+                                 - 0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :])
+                                 - 0.5 * z_ij[i2, :] ** 2))
+
+    # Eq (22), typo in the article in the denominator i2 -> i1
+    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k])
+           - abs(z_ij[i2, k] - z_ij[:, k]))
+    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k])
+             - abs(z_ij[i1, k] - z_ij[:, k]))
+    gamma = num / denum
+
+    # Eq (23)
+    c_p_i1j = gamma * c_i1j
+    # Eq (24)
+    c_p_i2j = c_i2j / gamma
+
+    alpha = (1 + abs(z_ij[i2, k])) / (1 + abs(z_ij[i1, k]))
+    beta = (2 - abs(z_ij[i2, k])) / (2 - abs(z_ij[i1, k]))
+
+    g_i1 = np.prod(1. + abs(z_ij[i1, :]))
+    g_i2 = np.prod(1. + abs(z_ij[i2, :]))
+    h_i1 = np.prod(1. + 0.5 * abs(z_ij[i1, :]) - 0.5 * (z_ij[i1, :] ** 2))
+    h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
+
+    # Eq (25), typo in the article g is missing
+    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
+    # Eq (26), typo in the article n ** 2
+    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
+
+    # Eq (26)
+    sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
+
+    mask = np.ones(n, dtype=bool)
+    mask[[i1, i2]] = False
+    sum_ = sum(sum_[mask])
+
+    disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
+
+    return disc_ep
+
+
 def primes_from_2_to(n: int) -> np.ndarray:
     """Prime numbers from 2 to *n*.
 
@@ -503,25 +596,26 @@ def van_der_corput(
        arXiv:1706.02808, 2017.
 
     """
-    rng = check_random_state(seed)
-    sequence = np.zeros(n)
+    if base < 2:
+        raise ValueError("'base' must be at least 2")
 
-    quotient = np.arange(start_index, start_index + n)
-    b2r = 1 / base
+    if scramble:
+        rng = check_random_state(seed)
+        # In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
+        # created for each positive integer `k` such that `1 - base**-k < 1`
+        # using floating-point arithmetic. For double precision floats, the
+        # condition `1 - base**-k < 1` can also be written as `base**-k >
+        # 2**-54`, which makes it more apparent how many permutations we need
+        # to create.
+        count = math.ceil(54 / math.log2(base)) - 1
+        permutations = np.repeat(np.arange(base)[None], count, axis=0)
+        for perm in permutations:
+            rng.shuffle(perm)
 
-    while (1 - b2r) < 1:
-        remainder = quotient % base
+        return _cy_van_der_corput_scrambled(n, base, start_index, permutations)
 
-        if scramble:
-            # permutation must be the same for all points of the sequence
-            perm = rng.permutation(base)
-            remainder = perm[np.array(remainder).astype(int)]
-
-        sequence += remainder * b2r
-        b2r /= base
-        quotient = (quotient - remainder) / base
-
-    return sequence
+    else:
+        return _cy_van_der_corput(n, base, start_index)
 
 
 class QMCEngine(ABC):
@@ -794,16 +888,12 @@ class Halton(QMCEngine):
 
 
 class LatinHypercube(QMCEngine):
-    """Latin hypercube sampling (LHS).
+    r"""Latin hypercube sampling (LHS).
 
     A Latin hypercube sample [1]_ generates :math:`n` points in
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
-    LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
-    but not necessarily for optimized LHS.
 
     Parameters
     ----------
@@ -811,6 +901,27 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
+    optimization : {None, "random-cd"}, optional
+        Whether to use an optimization scheme to construct a LHS.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy [5]_. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures [6]_.
+
+        .. versionadded:: 1.8.0
+
+    strength : {1, 2}, optional
+        Strength of the LHS. ``strength=1`` produces a plain LHS while
+        ``strength=2`` produces an orthogonal array based LHS of strength 2
+        [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
+        with ``p`` a prime number. It also constrains ``d <= p + 1``.
+        Default is 1.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -818,10 +929,40 @@ class LatinHypercube(QMCEngine):
         If `seed` is already a ``Generator`` instance then that instance is
         used.
 
+    Notes
+    -----
+
+    When LHS is used for integrating a function :math:`f` over :math:`n`,
+    LHS is extremely effective on integrands that are nearly additive [2]_.
+    With a LHS of :math:`n` points, the variance of the integral is always
+    lower than plain MC on :math:`n-1` points [3]_. There is a central limit
+    theorem for LHS on the mean and variance of the integral [4]_, but not
+    necessarily for optimized LHS due to the randomization.
+
+    :math:`A` is called an orthogonal array of strength :math:`t` if in each
+    n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
+    distinct rows occur the same number of times. The elements of :math:`A`
+    are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
+    The constraint that :math:`p` must be a prime number is to allow modular
+    arithmetic.
+
+    Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
+    strength 2 is a useful increment over strength 1. Going to strength 3 is
+    a smaller increment and scrambled QMC like Sobol', Halton are more
+    performant [7]_.
+
+    To create a LHS of strength 2, the orthogonal array :math:`A` is
+    randomized by applying a random, bijective map of the set of symbols onto
+    itself. For example, in column 0, all 0s might become 2; in column 1,
+    all 0s might become 1, etc.
+    Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
+    one-dimensional LHS of size :math:`p` to the subarray where
+    :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
+
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code",
+       of Input Variables in the Analysis of Output from a Computer Code."
        Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
@@ -829,6 +970,15 @@ class LatinHypercube(QMCEngine):
        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
        24, no. 5: 2058-2080, 1996.
+    .. [5] Fang et al. "Design and modeling for computer experiments".
+       Computer Science and Data Analysis Series, 2006.
+    .. [6] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties."
+       Journal of Simulation, 2013.
+    .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
+       integration and visualization." Statistica Sinica, 1992.
+    .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
+       Journal of the American Statistical Association, 1993.
 
     Examples
     --------
@@ -847,9 +997,9 @@ class LatinHypercube(QMCEngine):
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.019558034794794565  # random
+    0.0196...  # random
 
-    Finally, samples can be scaled to bounds.
+    Samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
@@ -860,14 +1010,69 @@ class LatinHypercube(QMCEngine):
            [6.80338249, 3.08795949],
            [2.65448791, 3.83491828]])
 
+    Use the `optimization` keyword argument to produce a LHS with
+    lower discrepancy at higher computational cost.
+
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
+    >>> sample = sampler.random(n=5)
+    >>> qmc.discrepancy(sample)
+    0.0176...  # random
+
+    Use the `strength` keyword argument to produce an orthogonal array based
+    LHS of strength 2. In this case, the number of sample points must be the
+    square of a prime number.
+
+    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
+    >>> sample = sampler.random(n=9)
+    >>> qmc.discrepancy(sample)
+    0.00526...  # random
+
+    Options could be combined to produce an optimized centered
+    orthogonal array based LHS. After optimization, the result would not
+    be guaranteed to be of strength 2.
+
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        strength: int = 1,
+        optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
+
+        lhs_method_strength = {
+            1: self._random,
+            2: self._random_oa_lhs
+        }
+
+        try:
+            self.lhs_method = lhs_method_strength[strength]
+        except KeyError as exc:
+            message = (f"{strength!r} is not a valid strength. It must be one"
+                       f" of {set(lhs_method_strength)!r}")
+            raise ValueError(message) from exc
+
+        optimization_method: Dict[Literal["random-cd"], Callable] = {
+            "random-cd": self._random_cd,
+        }
+
+        self.optimization_method: Optional[Callable]
+        if optimization is not None:
+            try:
+                optimization = optimization.lower()  # type: ignore[assignment]
+                self.optimization_method = optimization_method[optimization]
+            except KeyError as exc:
+                message = (f"{optimization!r} is not a valid optimization"
+                           f" method. It must be one of"
+                           f" {set(optimization_method)!r}")
+                raise ValueError(message) from exc
+
+            self._n_nochange = 100
+            self._n_iters = 10_000
+        else:
+            self.optimization_method = None
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -883,19 +1088,123 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
+        lhs = self.lhs_method(n)
+        if self.optimization_method is not None:
+            lhs = self.optimization_method(lhs)
+
+        self.num_generated += n
+        return lhs
+
+    def _random(self, n: IntNumber = 1) -> np.ndarray:
+        """Base LHS algorithm."""
         if self.centered:
             samples: np.ndarray | float = 0.5
         else:
             samples = self.rng.uniform(size=(n, self.d))
 
-        perms = np.tile(np.arange(1, n + 1), (self.d, 1))
+        perms = np.tile(np.arange(1, n + 1),
+                        (self.d, 1))  # type: ignore[arg-type]
         for i in range(self.d):
             self.rng.shuffle(perms[i, :])
         perms = perms.T
 
         samples = (perms - samples) / n
-        self.num_generated += n
-        return samples  # type: ignore[return-value]
+        return samples
+
+    def _random_oa_lhs(self, n: IntNumber = 4) -> np.ndarray:
+        """Orthogonal array based LHS of strength 2."""
+        p = np.sqrt(n).astype(int)
+        n_row = p**2
+        n_col = p + 1
+
+        primes = primes_from_2_to(p + 1)
+        if p not in primes or n != n_row:
+            raise ValueError(
+                "n is not the square of a prime number. Close"
+                f" values are {primes[-2:]**2}"
+            )
+        if self.d > p + 1:
+            raise ValueError("n is too small for d. Must be n > (d-1)**2")
+
+        oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
+
+        # OA of strength 2
+        arrays = np.tile(np.arange(p), (2, 1))
+        oa_sample[:, :2] = np.stack(np.meshgrid(*arrays),
+                                    axis=-1).reshape(-1, 2)
+        for p_ in range(1, p):
+            oa_sample[:, 2+p_-1] = np.mod(oa_sample[:, 0]
+                                          + p_*oa_sample[:, 1], p)
+
+        # scramble the OA
+        oa_sample_ = np.empty(shape=(n_row, n_col), dtype=int)
+        for j in range(n_col):
+            perms = self.rng.permutation(p)
+            oa_sample_[:, j] = perms[oa_sample[:, j]]
+
+        # following is making a scrambled OA into an OA-LHS
+        oa_lhs_sample = np.zeros(shape=(n_row, n_col))
+        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
+                                    seed=self.rng)  # type: QMCEngine
+        for j in range(n_col):
+            for k in range(p):
+                idx = oa_sample[:, j] == k
+                lhs = lhs_engine.random(p).flatten()
+                oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
+
+                lhs_engine = lhs_engine.reset()
+
+        oa_lhs_sample /= p
+
+        return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
+
+    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
+        """Optimal LHS on CD.
+
+        Create a base LHS and do random permutations of coordinates to
+        lower the centered discrepancy.
+        Because it starts with a normal LHS, it also works with the
+        `centered` keyword argument.
+
+        Two stopping criterion are used to stop the algorithm: at most,
+        `_n_iters` iterations are performed; or if there is no improvement
+        for `_n_nochange` consecutive iterations.
+        """
+        n = len(best_sample)
+
+        if self.d == 0 or n == 0:
+            return np.empty((n, self.d))
+
+        best_disc = discrepancy(best_sample)
+
+        if n == 1:
+            return best_sample
+
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
+
+        n_nochange = 0
+        n_iters = 0
+        while n_nochange < self._n_nochange and n_iters < self._n_iters:
+            n_iters += 1
+
+            col = rng_integers(self.rng, *bounds[0])
+            row_1 = rng_integers(self.rng, *bounds[1])
+            row_2 = rng_integers(self.rng, *bounds[2])
+            disc = _perturb_discrepancy(best_sample,
+                                        row_1, row_2, col,
+                                        best_disc)
+            if disc < best_disc:
+                best_sample[row_1, col], best_sample[row_2, col] = (
+                    best_sample[row_2, col], best_sample[row_1, col])
+
+                best_disc = disc
+                n_nochange = 0
+            else:
+                n_nochange += 1
+
+        return best_sample
 
 
 class Sobol(QMCEngine):
@@ -1144,7 +1453,7 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        engine: Sobol
+        engine : Sobol
             The fast-forwarded engine.
 
         """

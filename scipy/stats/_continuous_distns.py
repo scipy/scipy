@@ -5,6 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
+from functools import wraps
 import ctypes
 
 import numpy as np
@@ -54,6 +55,7 @@ def _remove_optimizer_parameters(kwds):
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm', this decorator calls generic implementation
+    @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
         if method == 'mm':
@@ -6653,7 +6655,7 @@ class pearson3_gen(rv_continuous):
         # close to this small.
         norm2pearson_transition = 0.000016
 
-        ans, x, skew = np.broadcast_arrays([1.0], x, skew)
+        ans, x, skew = np.broadcast_arrays(1.0, x, skew)
         ans = ans.copy()
 
         # mask is True where skew is small enough to use the normal approx.

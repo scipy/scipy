@@ -64,8 +64,17 @@ def lagrange(x, w):
         \end{aligned}
 
     >>> from numpy.polynomial.polynomial import Polynomial
-    >>> Polynomial(poly).coef
-    array([ 3., -2.,  0.])
+    >>> Polynomial(poly.coef[::-1]).coef
+    array([ 0., -2.,  3.])
+
+    >>> import matplotlib.pyplot as plt
+    >>> x_new = np.arange(0, 2.1, 0.1)
+    >>> plt.scatter(x, y, label='data')
+    >>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial')
+    >>> plt.plot(x_new, 3*x_new**2 - 2*x_new + 0*x_new,
+    ...          label=r"$3 x^2 - 2 x$", linestyle='-.')
+    >>> plt.legend()
+    >>> plt.show()
 
     """
 
@@ -516,7 +525,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
+                np_types = (np.float_, np.int_)
+                cond = self.x.dtype in np_types and self.y.dtype in np_types
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
 

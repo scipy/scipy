@@ -394,7 +394,6 @@ class TestCorr:
         y = np.concatenate((y[1000:], y[:1000]))
         assert_(np.isfinite(mstats.kendalltau(x, y)[1]))
 
-
     def test_kendalltau_seasonal(self):
         # Tests the seasonal Kendall tau.
         x = [[nan, nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
@@ -406,6 +405,37 @@ class TestCorr:
         assert_almost_equal(output['global p-value (indep)'], 0.008, 3)
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
+
+    @pytest.mark.parametrize("method", ("exact", "asymptotic"))
+    @pytest.mark.parametrize("alternative", ("two-sided", "greater", "less"))
+    def test_kendalltau_mstats_vs_stats(self, method, alternative):
+        # Test that mstats.kendalltau and stats.kendalltau with
+        # nan_policy='omit' matches behavior of stats.kendalltau
+        # Accuracy of the alternatives is tested in stats/tests/test_stats.py
+
+        np.random.seed(0)
+        n = 50
+        x = np.random.rand(n)
+        y = np.random.rand(n)
+        mask = np.random.rand(n) > 0.5
+
+        x_masked = ma.array(x, mask=mask)
+        y_masked = ma.array(y, mask=mask)
+        res_masked = mstats.kendalltau(
+            x_masked, y_masked, method=method, alternative=alternative)
+
+        x_compressed = x_masked.compressed()
+        y_compressed = y_masked.compressed()
+        res_compressed = stats.kendalltau(
+            x_compressed, y_compressed, method=method, alternative=alternative)
+
+        x[mask] = np.nan
+        y[mask] = np.nan
+        res_nan = stats.kendalltau(
+            x, y, method=method, nan_policy='omit', alternative=alternative)
+
+        assert_allclose(res_masked, res_compressed)
+        assert_allclose(res_nan, res_compressed)
 
     def test_kendall_p_exact_medium(self):
         # Test for the exact method with medium samples (some n >= 171)
@@ -437,13 +467,12 @@ class TestCorr:
             res = mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
-
     def test_pointbiserial(self):
-        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-             0,0,0,0,1,-1]
-        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-             0.8,0.7,0.6,0.5,0.2,0.2,0.1,np.nan]
+        x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+             0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
+        y = [14.8, 13.8, 12.4, 10.1, 7.1, 6.1, 5.8, 4.6, 4.3, 3.5, 3.3, 3.2,
+             3.0, 2.8, 2.8, 2.5, 2.4, 2.3, 2.1, 1.7, 1.7, 1.5, 1.3, 1.3, 1.2,
+             1.2, 1.1, 0.8, 0.7, 0.6, 0.5, 0.2, 0.2, 0.1, np.nan]
         assert_almost_equal(mstats.pointbiserialr(x, y)[0], 0.36149, 5)
 
         # test for namedtuple attributes
@@ -618,7 +647,7 @@ class TestMoments:
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(mstats.moment(x, 2), ma.masked) # NaN value is ignored
+        assert_equal(mstats.moment(x, 2), ma.masked)  # NaN value is ignored
 
     def test_variation(self):
         y = mstats.variation(self.testcase)
@@ -846,17 +875,35 @@ def test_theilslopes():
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.5)
 
+    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
+                                                        method='joint')
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.0)
+
     # Test for correct masking.
     y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
     slope, intercept, lower, upper = mstats.theilslopes(y)
     assert_almost_equal(slope, 1./3)
     assert_almost_equal(intercept, 2./3)
 
+    slope, intercept, lower, upper = mstats.theilslopes(y,
+                                                        method='joint')
+    assert_almost_equal(slope, 1./3)
+    assert_almost_equal(intercept, 0.0)
+
     # Test of confidence intervals from example in Sen (1968).
     x = [1, 2, 3, 4, 10, 12, 18]
     y = [9, 15, 19, 20, 45, 55, 78]
     slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
     assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 4.0)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
+
+    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
+                                                        method='joint')
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 6.0)
     assert_almost_equal(upper, 4.38, decimal=2)
     assert_almost_equal(lower, 3.71, decimal=2)
 

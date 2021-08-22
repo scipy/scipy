@@ -5615,7 +5615,7 @@ def test_invweibull():
     def optimizer(func, x0, args=(), disp=0):
         return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
 
-    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    x = np.array([1, 1.25, 2, 2.5, 2.8, 3, 3.8, 4, 5, 8, 10, 12, 64, 99])
     c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0

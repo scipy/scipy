@@ -384,9 +384,13 @@ backend routine.
 
 import scipy.linalg._interpolative_backend as backend
 import numpy as np
+import sys
 
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
+_32BIT_ERROR = ValueError("interpolative decomposition on 32-bit systems "
+                          "with complex128 is buggy")
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
 def _is_real(A):
@@ -547,6 +551,8 @@ def interp_decomp(A, eps_or_k, rand=True):
                 if real:
                     k, idx, proj = backend.iddp_aid(eps, A)
                 else:
+                    if _IS_32BIT:
+                        raise _32BIT_ERROR
                     k, idx, proj = backend.idzp_aid(eps, A)
             else:
                 if real:
@@ -560,6 +566,8 @@ def interp_decomp(A, eps_or_k, rand=True):
                 if real:
                     idx, proj = backend.iddr_aid(A, k)
                 else:
+                    if _IS_32BIT:
+                        raise _32BIT_ERROR
                     idx, proj = backend.idzr_aid(A, k)
             else:
                 if real:
@@ -575,6 +583,8 @@ def interp_decomp(A, eps_or_k, rand=True):
             if real:
                 k, idx, proj = backend.iddp_rid(eps, m, n, matveca)
             else:
+                if _IS_32BIT:
+                    raise _32BIT_ERROR
                 k, idx, proj = backend.idzp_rid(eps, m, n, matveca)
             return k, idx - 1, proj
         else:
@@ -582,6 +592,8 @@ def interp_decomp(A, eps_or_k, rand=True):
             if real:
                 idx, proj = backend.iddr_rid(m, n, matveca, k)
             else:
+                if _IS_32BIT:
+                    raise _32BIT_ERROR
                 idx, proj = backend.idzr_rid(m, n, matveca, k)
             return idx - 1, proj
     else:
@@ -875,6 +887,8 @@ def svd(A, eps_or_k, rand=True):
                 if real:
                     U, V, S = backend.iddp_asvd(eps, A)
                 else:
+                    if _IS_32BIT:
+                        raise _32BIT_ERROR
                     U, V, S = backend.idzp_asvd(eps, A)
             else:
                 if real:
@@ -890,6 +904,8 @@ def svd(A, eps_or_k, rand=True):
                 if real:
                     U, V, S = backend.iddr_asvd(A, k)
                 else:
+                    if _IS_32BIT:
+                        raise _32BIT_ERROR
                     U, V, S = backend.idzr_asvd(A, k)
             else:
                 if real:
@@ -905,12 +921,16 @@ def svd(A, eps_or_k, rand=True):
             if real:
                 U, V, S = backend.iddp_rsvd(eps, m, n, matveca, matvec)
             else:
+                if _IS_32BIT:
+                    raise _32BIT_ERROR
                 U, V, S = backend.idzp_rsvd(eps, m, n, matveca, matvec)
         else:
             k = int(eps_or_k)
             if real:
                 U, V, S = backend.iddr_rsvd(m, n, matveca, matvec, k)
             else:
+                if _IS_32BIT:
+                    raise _32BIT_ERROR
                 U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
     else:
         raise _TYPE_ERROR

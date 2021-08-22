@@ -533,8 +533,8 @@ class TestAnsari:
             stats.ansari(x1, x2, alternative='foo')
 
     def test_alternative_exact(self):
-        x1 = [-5, 1, 5, 10, 15, 20, 25] # high scale, loc=10
-        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5] # low scale, loc=10
+        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
@@ -542,7 +542,7 @@ class TestAnsari:
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
-        assert pval_g < 0.05 # level of significance.
+        assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the the probability
         # mass under the calculated statistic.
         prob = _abw_state.pmf(statistic, len(x1), len(x2))
