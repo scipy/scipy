@@ -98,10 +98,12 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
     default_axis : int, default: 0
         The default value of the axis argument. Standard is 0 except when
         backwards compatibility demands otherwise (e.g. `None`).
-    n_samples : int, default: 1
-        The number of data samples accepted by the function. For example,
-        `gmean` accepts one sample, `ks_2samp` accepts two samples. `None`
-        means an arbitrary number of samples (e.g. `fligner`).
+    n_samples : int or callable, default: 1
+        The number of data samples accepted by the function
+        (e.g. `mannwhitneyu`), a callable that accepts a dictionary of
+        parameters passed into the function and returns the number of data
+        samples (e.g. `wilcoxon`), or `None` to indicate an arbitrary number
+        of samples (e.g. `kruskal`).
     paired : {False, True}
         Whether the function being wrapped treats the samples as paired (i.e.
         corresponding elements of each sample should be considered as different
@@ -152,7 +154,7 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
                 # Give unique names to each positional sample argument
                 # Note that *args can't be provided as a keyword argument
                 params = [f"arg{i}" for i in range(len(args))] + params[1:]
-            n_samp = n_samples or len(args)  # rename avoids UnboundLocalError
+
             d_args = dict(zip(params, args))
             intersection = set(d_args) & set(kwds)
             if intersection:
@@ -162,6 +164,12 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
 
             # Consolidate other positional and keyword args into `kwds`
             kwds.update(d_args)
+
+            # rename avoids UnboundLocalError
+            if callable(n_samples):
+                n_samp = n_samples(kwds)
+            else:
+                n_samp = n_samples or len(args)
 
             # Extract the things we need here
             samples = [np.atleast_1d(kwds.pop(param))
@@ -174,6 +182,9 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
                 axis = 0
+            elif axis != int(axis):
+                raise ValueError('`axis` must be an integer')
+            axis = int(axis)
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])

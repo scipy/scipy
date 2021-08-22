@@ -7556,6 +7556,14 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
+def _determine_n_samples(kwds):
+    cdf = kwds.get('cdf', None)
+    if callable(cdf) or isinstance(cdf, str) or cdf is None:
+        return 1
+    return 2
+
+
+@_vectorize_hypotest_factory(KstestResult, n_samples=_determine_n_samples)
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for

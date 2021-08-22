@@ -3,7 +3,7 @@ from dataclasses import make_dataclass
 from collections import namedtuple
 from scipy import special
 from scipy import stats
-
+from ._hypotests import _vectorize_hypotest_factory
 
 def _broadcast_concatenate(x, y, axis):
     '''Broadcast then concatenate arrays, leaving concatenation axis last'''
@@ -178,6 +178,7 @@ def _mwu_choose_method(n1, n2, xy, method):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
     r'''Perform the Mann-Whitney U rank test on two independent samples.

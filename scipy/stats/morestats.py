@@ -2987,6 +2987,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(WilcoxonResult, paired=True,
+    n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", mode='auto'):
     """Calculate the Wilcoxon signed-rank test.
