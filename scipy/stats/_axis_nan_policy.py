@@ -12,6 +12,66 @@ from scipy._lib._docscrape import FunctionDoc, Parameter
 import inspect
 
 
+def _broadcast_array_shapes_remove_axis(arrays, axis=None):
+    """
+    Broadcast shapes of arrays, dropping specified axes
+
+    Given a sequence of arrays `arrays` and an integer or tuple `axis`, find
+    the shape of the broadcast result after consuming/dropping `axis`.
+    In other words, return output shape of a typical hypothesis test on
+    `arrays` vectorized along `axis`.
+
+    Examples
+    --------
+    >>> a = np.zeros((5, 2, 1))
+    >>> b = np.zeros((9, 3))
+    >>> _broadcast_array_shapes((a, b), 1)
+    (5, 3)
+    """
+    # Note that here, `axis=None` means do not consume/drop any axes - _not_
+    # ravel arrays before broadcasting.
+    shapes = [arr.shape for arr in arrays]
+    return _broadcast_shapes_remove_axis(shapes, axis)
+
+
+def _broadcast_shapes_remove_axis(shapes, axis=None):
+    """
+    Broadcast shapes, dropping specified axes
+
+    Same as _broadcast_array_shapes, but given a sequence
+    of array shapes `shapes` instead of the arrays themselves.
+    """
+    n_dims = max([len(shape) for shape in shapes])
+    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
+    for row, shape in zip(new_shapes, shapes):
+        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+    if axis is not None:
+        new_shapes = np.delete(new_shapes, axis, axis=1)
+    new_shape = np.max(new_shapes, axis=0)
+    new_shape *= new_shapes.all(axis=0)
+    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    return tuple(new_shape)
+
+
+def _broadcast_concatenate(xs, axis):
+    """Concatenate arrays along an axis with broadcasting."""
+    # prepend 1s to array shapes as needed
+    ndim = max([x.ndim for x in xs])
+    xs = [x.reshape([1]*(ndim-x.ndim) + list(x.shape)) for x in xs]
+    # move the axis we're concatenating along to the end
+    xs = [np.swapaxes(x, axis, -1) for x in xs]
+    # determine final shape of all but the last axis
+    shape = _broadcast_array_shapes_remove_axis(xs, axis=-1)
+    # broadcast along all but the last axis
+    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
+    # concatenate along last axis
+    res = np.concatenate(xs, axis=-1)
+    # move the last axis back to where it was
+    res = np.swapaxes(res, axis, -1)
+    return res
+
+
 # TODO: add support for `axis` tuples
 def _remove_nans(samples, paired):
     "Remove nans from paired or unpaired samples"
@@ -37,7 +97,7 @@ def _check_empty_inputs(samples, axis):
         return None
     # otherwise, the statistic and p-value will be either empty arrays or
     # arrays with NaNs. Produce the appropriate array and return it.
-    output_shape = scipy.stats.stats._broadcast_array_shapes(samples, axis)
+    output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
     output = np.ones(output_shape) * np.nan
     return output
 
@@ -223,7 +283,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # each separate sample begins
             lengths = np.array([sample.shape[axis] for sample in samples])
             split_indices = np.cumsum(lengths)
-            x = scipy.stats.stats._broadcast_concatenate(samples, axis)
+            x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
             contains_nan, _ = (

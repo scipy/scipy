@@ -4,7 +4,7 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
-from scipy.stats.stats import _broadcast_concatenate
+from ._axis_nan_policy import _broadcast_concatenate
 
 
 def _vectorize_statistic(statistic):
