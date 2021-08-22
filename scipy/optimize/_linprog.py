@@ -574,10 +574,17 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
       status: 0
      success: True
            x: array([10., -3.]) # may vary
-    
-    You can use the ``options`` parameter, e.g., to restrict the maximum number of iterations.
 
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], options={'maxiter': 4})
+    You can use the ``options`` parameter, e.g.,
+    to restrict the maximum number of iterations.
+
+    >>> res = linprog(
+            c, 
+            A_ub=A,
+            b_ub=b,
+            bounds=[x0_bounds, x1_bounds],
+            options={'maxiter': 4}
+        )
     >>> print(res)
         con: array([], dtype=float64)
         fun: -21.35207150630408
