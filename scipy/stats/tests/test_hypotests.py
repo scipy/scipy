@@ -946,8 +946,6 @@ vectorization_nanpolicy_cases = [
     (stats.jarque_bera, tuple(), dict(), 1, False, None),
     (stats.ks_1samp, (ndtr,),
      {"alternative": "less", "mode": 'asymp'}, 1, False, None),
-    (stats.kstest, ('norm',), dict(), 1, False, None),
-    (stats.kstest, tuple(), dict(), 2, False, None),
     (stats.cramervonmises, (ndtr,), dict(), 1, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2, False,
