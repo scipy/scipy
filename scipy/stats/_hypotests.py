@@ -174,6 +174,9 @@ def _vectorize_hypotest_factory(result_object, default_axis=0,
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
                 axis = 0
+            elif axis != int(axis):
+                raise ValueError('`axis` must be an integer')
+            axis = int(axis)
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
