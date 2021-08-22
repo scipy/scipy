@@ -19,6 +19,8 @@ import warnings
 
 import numpy as np
 
+from scipy import optimize, spatial
+
 if TYPE_CHECKING:
     import numpy.typing as npt
     from typing_extensions import Literal
@@ -44,6 +46,7 @@ from scipy.stats._qmc_cy import (
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
+           'lloyd_centroidal_voronoi_tessellation',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
@@ -392,7 +395,7 @@ def update_discrepancy(
 
 
 def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
-                         disc: float):
+                         disc: float) -> float:
     """Centered discrepancy after an elementary perturbation of a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
@@ -479,6 +482,149 @@ def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
     disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
 
     return disc_ep
+
+
+def _points_contain_duplicates(sample: np.ndarray) -> bool:
+    """Check whether `sample` contains duplicates."""
+    vals, count = np.unique(sample, return_counts=True)
+    return np.any(vals[count > 1])
+
+
+def _jitter_sample(
+        sample: np.ndarray, rng: SeedType, eps: float = 1e-10
+) -> np.ndarray:
+    """Randomly jitter `sample` until they are unique.
+
+    If the samples are not unique, the number of regions in our
+    tessellation will be less than the number of input samples.
+    """
+    while _points_contain_duplicates(sample):
+        offset = rng.uniform(-eps, eps, size=(len(sample), sample.shape[1]))
+        sample = sample + offset
+    return sample
+
+
+def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
+    """Lloyd's algorithm iteration.
+
+    Based on the implementation of Stéfan van der Walt:
+
+    https://github.com/stefanv/lloyd
+
+    which is:
+
+        Copyright (c) 2021-04-21 Stéfan van der Walt
+        https://github.com/stefanv/lloyd
+        MIT License
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to iterate on.
+    decay : float
+        Number of iterations. Too many iterations tend to cluster the sample
+        as a hypersphere.
+    rng : `numpy.random.Generator`
+        Random number generator.
+
+    Returns
+    -------
+    sample : array_like (n, d)
+        The sample after an iteration of Lloyd's algorithm.
+
+    """
+    sample = _jitter_sample(sample, rng=rng)
+    centroids = np.empty_like(sample)
+
+    # Add exterior corners before tesselation. Adding points further helps
+    # mitigate the sample collapsing from a hypercube to a hypersphere
+    d = centroids.shape[1]
+    arrays = np.tile([0-100, 1+100], (d, 1))
+    hypercube_corners = np.stack(np.meshgrid(*arrays), axis=-1).reshape(-1, d)
+
+    n_hypercube_corners = len(hypercube_corners)
+    sample = np.concatenate((sample, hypercube_corners))
+
+    voronoi = spatial.Voronoi(sample)
+
+    for ii, idx in enumerate(voronoi.point_region[:-n_hypercube_corners]):
+        # the region is a series of indices into self.voronoi.vertices
+        # remove point at infinity, designated by index -1
+        region = [i for i in voronoi.regions[idx] if i != -1]
+
+        # enclose the polygon
+        region = region + [region[0]]
+
+        # get the vertices for this region
+        verts = voronoi.vertices[region]
+        verts = np.clip(verts, 0, 1)
+
+        # move sample towards centroids:
+        # Centroid in n-D is the mean for uniformly distributed nodes
+        # of a geometry.
+        centroid = np.mean(verts, axis=0)
+        centroids[ii] = sample[ii] + (centroid - sample[ii]) * decay
+
+    is_valid = np.all(np.logical_and(centroids >= 0, centroids <= 1), axis=1)
+
+    sample = sample[:-n_hypercube_corners]
+    sample[is_valid] = centroids[is_valid]
+
+    return sample
+
+
+def lloyd_centroidal_voronoi_tessellation(
+        sample: npt.ArrayLike, n_iters: IntNumber = 10, seed: SeedType = None
+) -> np.ndarray:
+    """Centroidal Voronoi Tessellation.
+
+    Perturb a sample using Lloyd's algorithm.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to iterate on.
+    n_iters : int, optional
+        Number of iterations. Too many iterations tend to cluster the sample
+        as a hypersphere. Default is 10.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
+
+    Returns
+    -------
+    sample : array_like (n, d)
+        The sample after `n_iters` of Lloyd's algorithm.
+
+    References
+    ----------
+    .. [1] Lloyd. "Least Squares Quantization in PCM".
+       IEEE Transactions on Information Theory, 1982.
+
+    """
+    rng = check_random_state(seed)
+
+    def _decay(n_iters):
+        """Exponential decay.
+
+        Fit an exponential to be 2 at 0 and 1 at `n_iters`.
+        The decay is used for relaxation.
+        """
+        res = optimize.root_scalar(lambda x: np.exp(-n_iters/x) + 1 - 1.1,
+                                   bracket=[1, n_iters])
+
+        return (np.exp(-x / res.root) + 0.9 for x in range(n_iters))
+
+    decay = _decay(n_iters)
+    for _ in range(n_iters):
+        decay_ = next(decay)
+        sample = _lloyd_centroidal_voronoi_tessellation(
+            sample=sample, decay=decay_, rng=rng
+        )
+    return sample
 
 
 def primes_from_2_to(n: int) -> np.ndarray:
