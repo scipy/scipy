@@ -47,7 +47,8 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions, _vectorize_hypotest_factory
+from ._hypotests import _all_partitions
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -7738,7 +7739,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(RanksumsResult, n_samples=2)
+@_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7819,7 +7820,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(KruskalResult, n_samples=None)
+@_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*args, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
