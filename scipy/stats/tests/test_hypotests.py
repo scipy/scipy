@@ -66,12 +66,13 @@ class TestEppsSingleton:
     def test_epps_singleton_nonfinite(self):
         # raise error if there are non-finite values
         x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        with assert_raises(ValueError, match='x must not contain nonfinite'):
-            epps_singleton_2samp(x, y, nan_policy='raise')
-
+        assert_raises(ValueError, epps_singleton_2samp, x, y)
         x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        with assert_raises(ValueError, match='The input contains nan values'):
-            epps_singleton_2samp(x, y, nan_policy='raise')
+        assert_raises(ValueError, epps_singleton_2samp, x, y)
+
+    def test_epps_singleton_1d_input(self):
+        x = np.arange(100).reshape(-1, 1)
+        assert_raises(ValueError, epps_singleton_2samp, x, x)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
@@ -138,6 +139,8 @@ class TestCvm:
         assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
+        x = np.arange(10).reshape((2, 5))
+        assert_raises(ValueError, cramervonmises, x, "norm")
         assert_raises(ValueError, cramervonmises, [1.5], "norm")
         assert_raises(ValueError, cramervonmises, (), "norm")
 
@@ -1188,33 +1191,6 @@ def _hypotest_vectorization_test(hypotest, args, kwds, n_samples, paired,
             assert_equal(res[1].dtype, pvalues.dtype)
 
 
-# previously, with 2D input:
-# ranksums produced garbage 1d output, as far as I can tell
-# ansari produced garbage 1d output, as far as I can tell
-# brunnermunzel raised a ValueError about broadcasting
-# epps_singleton_2samp raised error that sample must be 1d
-# For all these tests, we can change the default behavior for 2D input. In
-# these cases, the default value of `axis` will be 0.
-# The default of `jarque_bera` and `shapiro`, however, was to ravel the samples
-# then perform the test. This makes some sense, so we should probably maintain
-# the default behavior by making `axis=None` the default. This is a test for
-# that behavior.
-@pytest.mark.parametrize(("hypotest", "nsamp"),
-                         [(stats.jarque_bera, 1),
-                          (stats.shapiro, 1)])
-def test_hypotest_back_compat_no_axis(hypotest, nsamp):
-    m, n = 8, 9
-
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Avoid test failures due to old version of NumPy")
-
-    rng = np.random.default_rng(0)
-    x = rng.random((nsamp, m, n))
-    res = hypotest(*x)
-    res2 = hypotest([xi.ravel() for xi in x])
-    assert_equal(res, res2)
-
-
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
 def test_hypotest_positional_axis(axis):
     if NumpyVersion(np.__version__) < '1.18.0':
@@ -1223,32 +1199,14 @@ def test_hypotest_positional_axis(axis):
     shape = (8, 9, 10)
     rng = np.random.default_rng(0)
     x = rng.random(shape)
-    res1 = stats.gmean(x, axis)
-    res2 = stats.gmean(x, axis=axis)
+    y = rng.random(shape)
+    res1 = stats.mannwhitneyu(x, y, True, 'two-sided', axis)
+    res2 = stats.mannwhitneyu(x, y, True, 'two-sided', axis=axis)
     assert_equal(res1, res2)
 
-    message = "gmean() got multiple values for argument 'axis'"
+    message = "mannwhitneyu() got multiple values for argument 'axis'"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.gmean(x, axis, axis=axis)
-
-
-@pytest.mark.parametrize(("nan_policy"), ('omit', 'propagate'))
-def test_hypotest_positional_nan_policy(nan_policy):
-    if NumpyVersion(np.__version__) < '1.18.0':
-        pytest.xfail("Avoid test failures due to old version of NumPy")
-
-    shape = (2, 8, 9, 10)
-    rng = np.random.default_rng(0)
-    x = rng.random(shape)
-    x[0, 0, 0, 0] = np.nan
-    res1 = stats.brunnermunzel(*x, 'two-sided', 't', nan_policy)
-    res2 = stats.brunnermunzel(*x, nan_policy=nan_policy)
-    assert_equal(res1, res2)
-
-    message = "brunnermunzel() got multiple values for argument 'nan_policy'"
-    with pytest.raises(TypeError, match=re.escape(message)):
-        stats.brunnermunzel(*x, 'two-sided', 't', nan_policy,
-                            nan_policy=nan_policy)
+        stats.mannwhitneyu(x, y, True, 'two-sided', axis, axis=axis)
 
 
 def test_hypotest_positional_args():
@@ -1259,14 +1217,14 @@ def test_hypotest_positional_args():
     rng = np.random.default_rng(0)
     x = rng.random(shape)
     x[0, 0, 0, 0] = np.nan
-    stats.levene(*x)
+    stats.kruskal(*x)
 
-    message = "levene() got an unexpected keyword argument 'args'"
+    message = "kruskal() got an unexpected keyword argument 'args'"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.levene(args=x)
+        stats.kruskal(args=x)
 
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.levene(*x, args=x)
+        stats.kruskal(*x, args=x)
 
 
 def test_hypotest_keyword_samples():
@@ -1277,13 +1235,13 @@ def test_hypotest_keyword_samples():
     rng = np.random.default_rng(0)
     x = rng.random(shape)
     x[0, 0, 0, 0] = np.nan
-    res1 = stats.ks_2samp(*x)
-    res2 = stats.ks_2samp(data1=x[0], data2=x[1])
+    res1 = stats.mannwhitneyu(*x)
+    res2 = stats.mannwhitneyu(x=x[0], y=x[1])
     assert_equal(res1, res2)
 
-    message = "ks_2samp() got multiple values for argument"
+    message = "mannwhitneyu() got multiple values for argument"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.ks_2samp(*x, data1=x[0], data2=x[1])
+        stats.mannwhitneyu(*x, x=x[0], y=x[1])
 
 
 def test_check_empty_inputs():
@@ -1709,7 +1667,13 @@ class TestBoschlooExact:
 
 class TestCvm_2samp:
     def test_invalid_input(self):
+        x = np.arange(10).reshape((2, 5))
         y = np.arange(5)
+        msg = 'The samples must be one-dimensional'
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(x, y)
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(y, x)
         msg = 'x and y must contain at least two observations.'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp([], y)

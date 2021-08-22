@@ -180,9 +180,6 @@ def _broadcast_shapes(shapes, axis=None):
     return tuple(new_shape)
 
 
-@_vectorize_hypotest_factory(
-        lambda x, y=None: x, n_samples=1, too_small=0,
-        result_unpacker=lambda x: (x,))
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
@@ -1607,7 +1604,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(Jarque_beraResult, default_axis=None, n_samples=1)
 def jarque_bera(x):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
@@ -6921,7 +6917,6 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-@_vectorize_hypotest_factory(KstestResult, n_samples=1)
 def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7349,7 +7344,6 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@_vectorize_hypotest_factory(KstestResult, n_samples=2)
 def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7948,8 +7942,6 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(FriedmanchisquareResult, n_samples=None,
-                             paired=True)
 def friedmanchisquare(*args):
     """Compute the Friedman test for repeated measurements.
 
@@ -8019,7 +8011,6 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.

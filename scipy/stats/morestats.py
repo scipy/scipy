@@ -1686,8 +1686,6 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(ShapiroResult, default_axis=None, n_samples=1,
-                             too_small=2)
 def shapiro(x):
     """Perform the Shapiro-Wilk test for normality.
 
@@ -2214,7 +2212,6 @@ class _ABW:
 _abw_state = _ABW()
 
 
-@_vectorize_hypotest_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
@@ -2377,7 +2374,6 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(BartlettResult, n_samples=None, too_small=1)
 def bartlett(*args):
     """Perform Bartlett's test for equal variances.
 
@@ -2480,7 +2476,6 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(LeveneResult, n_samples=None)
 def levene(*args, center='median', proportiontocut=0.05):
     """Perform Levene test for equal variances.
 
@@ -2719,7 +2714,6 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(FlignerResult, n_samples=None)
 def fligner(*args, center='median', proportiontocut=0.05):
     """Perform Fligner-Killeen test for equality of variance.
 

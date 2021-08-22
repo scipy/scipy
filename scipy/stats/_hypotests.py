@@ -298,8 +298,6 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@_vectorize_hypotest_factory(Epps_Singleton_2sampResult, n_samples=2,
-                             too_small=5)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -546,9 +544,6 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-@_vectorize_hypotest_factory(
-        CramerVonMisesResult, n_samples=1, too_small=1,
-        result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -1533,9 +1528,6 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
-@_vectorize_hypotest_factory(
-        CramerVonMisesResult, n_samples=2, too_small=1,
-        result_unpacker=np.vectorize(lambda res: (res.statistic, res.pvalue)))
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
