@@ -579,7 +579,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     to restrict the maximum number of iterations.
 
     >>> res = linprog(
-            c, 
+            c,
             A_ub=A,
             b_ub=b,
             bounds=[x0_bounds, x1_bounds],
