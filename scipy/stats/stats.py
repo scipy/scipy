@@ -144,11 +144,13 @@ def _shape_with_dropped_axis(a, axis):
     """
     Given an array `a` and an integer `axis`, return the shape
     of `a` with the `axis` dimension removed.
+
     Examples
     --------
     >>> a = np.zeros((3, 5, 2))
     >>> _shape_with_dropped_axis(a, 1)
     (3, 2)
+
     """
     shp = list(a.shape)
     try:
@@ -163,6 +165,7 @@ def _broadcast_shapes(shape1, shape2):
     Given two shapes (i.e. tuples of integers), return the shape
     that would result from broadcasting two arrays with the given
     shapes.
+
     Examples
     --------
     >>> _broadcast_shapes((2, 1), (4, 1, 3))
@@ -193,6 +196,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     Given two arrays `a` and `b` and an integer `axis`, find the
     shape of the broadcast result after dropping `axis` from the
     shapes of `a` and `b`.
+
     Examples
     --------
     >>> a = np.zeros((5, 2, 1))
