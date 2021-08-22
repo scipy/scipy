@@ -885,6 +885,8 @@ vectorization_nanpolicy_cases = [
     (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.mannwhitneyu, tuple(), dict(), 2, False, None),
+    (stats.wilcoxon, tuple(), dict(), 2, True, None),
+    (stats.wilcoxon, tuple(), dict(), 1, True, None),
     (stats.gmean, tuple(), dict(), 1, False, lambda x: (x,)),
     ]
 
@@ -1090,7 +1092,8 @@ def _hypotest_vectorization_test(hypotest, args, kwds, n_samples, paired,
                             "Not enough other observations",
                             "At least one observation is required",
                             "zero-size array to reduction operation maximum",
-                            "`x` and `y` must be of nonzero size."}
+                            "`x` and `y` must be of nonzero size.",
+                            "The exact distribution of the Wilcoxon test"}
                 if any([str(e).startswith(message) for message in messages]):
                     res1d = np.nan, np.nan
                 else:
