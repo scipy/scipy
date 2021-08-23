@@ -15,7 +15,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 
 
-axis_nan_policy_cases = [  # type: ignore [var-annotated]
+axis_nan_policy_cases = [
     # function, args, kwds, number of samples, paired, unpacker function
     # args, kwds typically aren't needed; just showing that they work
     (stats.kruskal, tuple(), dict(), 3, False, None),  # 4 samples is slow
@@ -293,8 +293,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples, paired,
 
     data_raveled = [sample.ravel() for sample in data]
 
-
-    if nan_policy == 'raise' and not data_generator in {"all_finite", "empty"}:
+    if nan_policy == 'raise' and data_generator not in {"all_finite", "empty"}:
         message = 'The input contains nan values'
 
         # check for correct behavior whether or not data is 1d to begin with
