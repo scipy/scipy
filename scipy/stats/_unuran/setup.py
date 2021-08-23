@@ -105,7 +105,8 @@ def configuration(parent_package="", top_path=None):
         ("STDC_HEADERS", "1"),
         ("UNUR_ENABLE_INFO", "1"),
         ("VERSION", '"%s"' % UNURAN_VERSION),
-        ("HAVE_CONFIG_H", "1")
+        ("HAVE_CONFIG_H", "1"),
+        ("_ISOC99_SOURCE", "1"),
     ]
 
     UNURAN_DIRS = [
