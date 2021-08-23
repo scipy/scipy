@@ -339,9 +339,9 @@ cdef void one_thread_loop(func_type loop_func,
 
 
 def _cy_van_der_corput(Py_ssize_t n,
-                        long base,
-                        long start_index,
-                        unsigned int workers):
+                       long base,
+                       long start_index,
+                       unsigned int workers):
     sequence = np.zeros(n, dtype=np.double)
 
     cdef:
@@ -392,10 +392,10 @@ cdef _cy_van_der_corput_threaded_loop(Py_ssize_t istart,
 
 
 def _cy_van_der_corput_scrambled(Py_ssize_t n,
-                                  long base,
-                                  long start_index,
-                                  long[:,::1] permutations,
-                                  unsigned int workers):
+                                 long base,
+                                 long start_index,
+                                 long[:,::1] permutations,
+                                 unsigned int workers):
     sequence = np.zeros(n)
 
     cdef:

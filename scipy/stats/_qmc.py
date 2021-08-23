@@ -607,7 +607,7 @@ def van_der_corput(
             rng.shuffle(perm)
 
         return _cy_van_der_corput_scrambled(n, base, start_index,
-                                                    permutations, workers)
+                                            permutations, workers)
 
     else:
         return _cy_van_der_corput(n, base, start_index, workers)
