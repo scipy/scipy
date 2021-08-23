@@ -107,9 +107,9 @@ _name = 'axis'
 _type = "int or None, default: 0"
 _desc = (
     """If an int, the axis of the input along which to compute the statistic.
-    The statistic of each axis-slice (e.g. row) of the input will appear in a
-    corresponding element of the output.
-    If ``None``, the input will be raveled before computing the statistic."""
+The statistic of each axis-slice (e.g. row) of the input will appear in a
+corresponding element of the output.
+If ``None``, the input will be raveled before computing the statistic."""
     .split('\n'))
 _axis_parameter_doc = Parameter(_name, _type, _desc)
 _axis_parameter = inspect.Parameter(_name,
@@ -121,14 +121,14 @@ _type = "{'propagate', 'omit', 'raise'}"
 _desc = (
     """Defines how to handle input NaNs.
 
-    - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
-      which the  statistic is computed, the corresponding entry of the output
-      will be NaN.
-    - ``omit``: NaNs will be omitted when performing the calculation.
-      If insufficient data remains in the axis slice along which the
-      statistic is computed, the corresponding entry of the output will be
-      NaN.
-    - ``raise``: if a NaN is present, a ``ValueError`` will be raised."""
+- ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+  which the  statistic is computed, the corresponding entry of the output
+  will be NaN.
+- ``omit``: NaNs will be omitted when performing the calculation.
+  If insufficient data remains in the axis slice along which the
+  statistic is computed, the corresponding entry of the output will be
+  NaN.
+- ``raise``: if a NaN is present, a ``ValueError`` will be raised."""
     .split('\n'))
 _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,

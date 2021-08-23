@@ -15,13 +15,13 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 
 
-axis_nan_policy_cases = [
+axis_nan_policy_cases = [  # type: ignore [var-annotated]
     # function, args, kwds, number of samples, paired, unpacker function
     # args, kwds typically aren't needed; just showing that they work
     (stats.kruskal, tuple(), dict(), 3, False, None),  # 4 samples is slow
-    (stats.ranksums, tuple(), dict(), 2, False, None),
-    (stats.mannwhitneyu, tuple(), dict(), 2, False, None),
-    (stats.wilcoxon, tuple(), dict(), 2, True, None),
+    (stats.ranksums, ('less',), dict(), 2, False, None),
+    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, False, None),
+    (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, True, None),
     (stats.wilcoxon, tuple(), dict(), 1, True, None),
     ]
 
