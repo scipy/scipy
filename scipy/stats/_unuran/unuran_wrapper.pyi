@@ -58,7 +58,7 @@ class TransformedDensityRejection(Method):
 
 
 UError = NamedTuple('UError', [('max_error', float),
-                               ('max_absolute_error', float)])
+                               ('mean_absolute_error', float)])
 
 class PINVDist(Protocol):
     @property

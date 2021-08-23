@@ -586,7 +586,7 @@ cdef class TransformedDensityRejection(Method):
         This location provides some information about the main part of the
         PDF and is used to avoid numerical problems. Default is ``None``.
     domain : list or tuple of length 2, optional
-        The support of the distribution. Must not contain `nan` values.
+        The support of the distribution.
         Default is ``None``. When ``None``:
 
         * If a ``support`` method is provided by the distribution object
@@ -924,7 +924,7 @@ cdef class TransformedDensityRejection(Method):
         return np.asarray(out).reshape(oshape)[()]
 
 
-UError = namedtuple('UError', ['max_error', 'max_absolute_error'])
+UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 
 cdef class NumericalInversePolynomial(Method):
@@ -945,7 +945,7 @@ cdef class NumericalInversePolynomial(Method):
     be the resolution (but, of course, is bounded by the machine precision). We use the
     u-error ``|U - CDF(X)|`` to measure the error where ``X`` is the approximate
     percentile corressponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
-    the maximal tolerated u-error the u-resolution of the algorithm in the sequel.
+    the maximal tolerated u-error the u-resolution of the algorithm.
 
     Both the order of the interpolating polynomial and the u-resolution can be selected.
     Note that very small values of the u-resolution are possible but increase the cost
@@ -958,6 +958,22 @@ cdef class NumericalInversePolynomial(Method):
 
     The construction of the interpolation polynomial only works when the PDF is unimodal
     or when the PDF does not vanish between two modes.
+
+    There are some restrictions for the given distribution:
+
+    * The support of the distribution (i.e., the region where the PDF is strictly
+      positive) must be connected. In practice this means, that the region where PDF
+      is "not too small" must be connected. Unimodal densities satisfy this condition.
+      If this condition is violated then the domain of the distribution might be
+      truncated.
+    * When the PDF is integrated numerically, then the given PDF must be continuous
+      and should be smooth.
+    * The PDF must be bounded.
+    * The algorithm has problems when the distribution has heavy tails (as then the
+      inverse CDF becomes very steep at 0 or 1) and the requested u-resolution is
+      very small. E.g., the Cauchy distribution is likely to show this problem when
+      the requested u-resolution is less then 1.e-12. 
+
 
     Parameters
     ----------
@@ -979,7 +995,7 @@ cdef class NumericalInversePolynomial(Method):
         provides some information about the main part of the PDF and is used to avoid
         numerical problems. Default is ``None``.
     domain : list or tuple of length 2, optional
-        The support of the distribution. Must not contain `nan` values.
+        The support of the distribution.
         Default is ``None``. When ``None``:
 
         * If a ``support`` method is provided by the distribution object
@@ -989,7 +1005,7 @@ cdef class NumericalInversePolynomial(Method):
     order : int, optional
         Order of the interpolating polynomial. Valid orders are between 3 and 17.
         Higher orders result in fewer intervals for the approximations. Default
-        is 3.
+        is 5.
     u_resolution : float, optional
         Set maximal tolerated u-error. Values of u_resolution must at least 1.e-15 and
         1.e-5 at most. Notice that the resolution of most uniform random number sources
@@ -997,7 +1013,7 @@ cdef class NumericalInversePolynomial(Method):
         could be called exact. For most simulations slightly bigger values for the
         maximal error are enough as well. Default is 1e-10.
     max_intervals : int, optional
-        Set maximum number of intervals. max_ivs must be at least 100 and at most 1000000.
+        Set maximum number of intervals. Must be in the range [100, 1000000].
         Default is 10000.
     keep_cdf : bool, optional
         If the PDF is given, then the CDF is computed numerically from the given PDF using
@@ -1019,10 +1035,9 @@ cdef class NumericalInversePolynomial(Method):
 
     References
     ----------
-    .. [1] G. Derflinger, W. Hörmann, and J. Leydold (2008). Numerical inversion when
-           only the density function is known, Research Report Series of the Department
-           of Statistics and Mathematics 78, WU Wien, Augasse 2-6, A-1090 Wien, Austria,
-           http://epub.wu.ac.at/english/
+    .. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate
+           generation by numerical inversion when only the density is known." ACM
+           Transactions on Modeling and Computer Simulation (TOMACS) 20.4 (2010): 1-25.
     .. [2] UNU.RAN reference manual, Section 5.3.12,
            "PINV – Polynomial interpolation based INVersion of CDF",
            https://statmath.wu.ac.at/software/unuran/doc/unuran.html#PINV
@@ -1048,6 +1063,21 @@ cdef class NumericalInversePolynomial(Method):
     >>> rng.rvs()
     -1.5244996276336318
 
+    To check that the random variates closely follow the given distribution, we can
+    look at it's histogram:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(10000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
+    >>> fx = norm.pdf(x)
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Numerical Inverse Polynomial Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
     As this is an invertion method, the approximated PPF can be evaluated by calling
     the `ppf` method:
 
@@ -1070,20 +1100,7 @@ cdef class NumericalInversePolynomial(Method):
     >>> plt.title('Error between exact and approximated PPF')
     >>> plt.show()
 
-    During setup, the CDF of the distribution is computed numerically but it is
-    discarded once the setup is complete. To keep the approximated CDF, pass
-    ``keep_cdf=True`` during initialization:
-
-    >>> rng = NumericalInversePolynomial(dist, keep_cdf=True, random_state=urng)
-
-    Now, the CDF can be evaluated by calling the `cdf` method:
-
-    >>> rng.cdf(1.959963984540054)
-    0.9750000000042454
-    >>> norm.cdf(1.959963984540054)
-    0.975
-
-    It is also possible to extimate the u-error of the approximated PPF if the exact
+    It is possible to estimate the u-error of the approximated PPF if the exact
     CDF is available during setup. To do so, pass a `dist` object with exact CDF of
     the distribution during initialization:
 
@@ -1103,7 +1120,7 @@ cdef class NumericalInversePolynomial(Method):
     used. To change this, you can pass the number of samples as an argument:
 
     >>> rng.u_error(sample_size=1000000)  # uses one million samples
-    UError(max_error=8.785994154436594e-11, max_absolute_error=2.930890027826552e-11)
+    UError(max_error=8.785994154436594e-11, mean_absolute_error=2.930890027826552e-11)
 
     This returns a namedtuple which contains the maximum u-error and the maximum
     absolute u-error.
@@ -1113,7 +1130,7 @@ cdef class NumericalInversePolynomial(Method):
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, u_resolution=1.e-12, random_state=urng)
     >>> rng.u_error(sample_size=1000000)
-    UError(max_error=9.07496300328603e-13, max_absolute_error=3.5255644517257716e-13)
+    UError(max_error=9.07496300328603e-13, mean_absolute_error=3.5255644517257716e-13)
 
     Note that this comes at the cost of increased setup time.
     """
@@ -1233,7 +1250,7 @@ cdef class NumericalInversePolynomial(Method):
         """
         cdf(x)
 
-        Approximated Cumulative distribution function of the given distribution.
+        Approximated cumulative distribution function of the given distribution.
         Only available if ``keep_cdf`` was set to ``True`` when the instance was
         created.
 
@@ -1321,7 +1338,7 @@ cdef class NumericalInversePolynomial(Method):
         -------
         max_error : float
             Maximum u-error.
-        max_absolute_error : float
+        mean_absolute_error : float
             Maximum absolute u-error.
         """
         # UNU.RAN doesn't return a proper error code for this condition.

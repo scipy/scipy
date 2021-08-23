@@ -56,6 +56,9 @@ all_methods = [
 ]
 
 
+# Make sure an internal error occurs in UNU.RAN when invalid callbacks are
+# passed. Moreover, different generators throw different error messages.
+# So, in case of an `UNURANError`, we do not validate the error message.
 bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
@@ -66,22 +69,18 @@ bad_pdfs_common = [
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
-    # Currently, UNU.RAN just returns a "cannot create bounded hat!"
-    # error which is not very useful. So, instead of testing the error
-    # message, we just ensure an error is raised.
     (lambda x: np.nan, UNURANError, r"..."),
     # signature of PDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
 
+# Make sure an internal error occurs in UNU.RAN when invalid callbacks are
+# passed. Moreover, different generators throw different error messages.
+# So, in case of an `UNURANError`, we do not validate the messages.
 bad_dpdf_common = [
-    # Infinite value returned. For dPDF, UNU.RAN complains that it cannot
-    # create a bounded hat instead of an overflow error.
-    (lambda x: np.inf, UNURANError, r"51 : cannot create bounded hat"),
+    # Infinite value returned.
+    (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
-    # Currently, UNU.RAN just returns a "cannot create bounded hat!"
-    # error which is not very useful. So, instead of testing the error
-    # message, we just ensure an error is raised.
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
     (lambda x: [], TypeError, r"must be real number, not list"),
@@ -677,12 +676,14 @@ class TestNumericalInversePolynomial:
 
     very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
                        'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
-                       'gausshyper', 'beta', 'anglit']
-    # for some reason, UNU.RAN segmentation faults for the uniform and
-    # arcsine distribution!
-    fatal_fail_dists = ['uniform', 'arcsine']
+                       'gausshyper', 'anglit']
+    # for some reason, UNU.RAN segmentation faults for the uniform.
+    fatal_fail_dists = ['uniform']
+    # fails for unbounded PDFs
+    unbounded_pdf_fail_dists = ['arcsine', 'beta']
     # for these distributions, some assertions fail due to minor
-    # numerical differences.
+    # numerical differences. They can be avoided either by changing
+    # the seed or by increasing the u_resolution.
     fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
                   'gilbrat', 'lognorm', 'ncx2', 't']
 
@@ -693,6 +694,8 @@ class TestNumericalInversePolynomial:
             pytest.skip(f"PINV too slow for {distname}")
         if distname in self.fail_dists:
             pytest.skip(f"PINV fails for {distname}")
+        if distname in self.unbounded_pdf_fail_dists:
+            pytest.skip(f"PINV fails for unbounded PDFs.")
         if distname in self.fatal_fail_dists:
             pytest.xfail(f"PINV segmentation faults for {distname}")
         dist = (getattr(stats, distname)
