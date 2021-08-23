@@ -1,11 +1,12 @@
 """Quasi-Monte Carlo engines and helpers."""
 from __future__ import annotations
 
-import os
 import copy
-import numbers
-from abc import ABC, abstractmethod
 import math
+import numbers
+import os
+import warnings
+from abc import ABC, abstractmethod
 from typing import (
     Callable,
     ClassVar,
@@ -15,7 +16,6 @@ from typing import (
     overload,
     TYPE_CHECKING,
 )
-import warnings
 
 import numpy as np
 
@@ -305,17 +305,7 @@ def discrepancy(
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError("Sample is not in unit hypercube")
 
-    workers = int(workers)
-    if workers == -1:
-        workers = os.cpu_count()  # type: ignore[assignment]
-        if workers is None:
-            raise NotImplementedError(
-                "Cannot determine the number of cpus using os.cpu_count(), "
-                "cannot use -1 for the number of workers"
-            )
-    elif workers <= 0:
-        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
-                         "or > 0")
+    workers = _validate_workers(workers)
 
     methods = {
         "CD": _cy_wrapper_centered_discrepancy,
@@ -558,7 +548,8 @@ def van_der_corput(
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
-        seed: SeedType = None) -> np.ndarray:
+        seed: SeedType = None,
+        workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -584,6 +575,9 @@ def van_der_corput(
         seeded with `seed`.
         If `seed` is already a ``Generator`` instance then that instance is
         used.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -612,10 +606,11 @@ def van_der_corput(
         for perm in permutations:
             rng.shuffle(perm)
 
-        return _cy_van_der_corput_scrambled(n, base, start_index, permutations)
+        return _cy_van_der_corput_scrambled(n, base, start_index,
+                                            permutations, workers)
 
     else:
-        return _cy_van_der_corput(n, base, start_index)
+        return _cy_van_der_corput(n, base, start_index, workers)
 
 
 class QMCEngine(ABC):
@@ -862,13 +857,19 @@ class Halton(QMCEngine):
         self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
         n : int, optional
             Number of samples to generate in the parameter space. Default is 1.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Default is 1. It becomes faster
+            than one worker for `n` greater than :math:`10^3`.
 
         Returns
         -------
@@ -876,11 +877,13 @@ class Halton(QMCEngine):
             QMC sample.
 
         """
+        workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
         sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
                                  scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed))
+                                 seed=copy.deepcopy(self.seed),
+                                 workers=workers)
                   for bdim in self.base]
 
         self.num_generated += n
@@ -1713,3 +1716,33 @@ class MultinomialQMC(QMCEngine):
         super().reset()
         self.engine.reset()
         return self
+
+
+def _validate_workers(workers: IntNumber = 1) -> IntNumber:
+    """Validate `workers` based on platform and value.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
+
+    Returns
+    -------
+    Workers : int
+        Number of CPU used by the algorithm
+
+    """
+    workers = int(workers)
+    if workers == -1:
+        workers = os.cpu_count()  # type: ignore[assignment]
+        if workers is None:
+            raise NotImplementedError(
+                "Cannot determine the number of cpus using os.cpu_count(), "
+                "cannot use -1 for the number of workers"
+            )
+    elif workers <= 0:
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
+                         "or > 0")
+
+    return workers

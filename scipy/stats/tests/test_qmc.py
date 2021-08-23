@@ -322,7 +322,14 @@ class TestVDC:
     def test_van_der_corput(self):
         seed = np.random.RandomState(12345)
         sample = van_der_corput(10, seed=seed)
-        out = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625]
+        out = [0.0, 0.5, 0.25, 0.75, 0.125, 0.625,
+               0.375, 0.875, 0.0625, 0.5625]
+        assert_almost_equal(sample, out)
+
+        sample = van_der_corput(10, seed=seed, workers=4)
+        assert_almost_equal(sample, out)
+
+        sample = van_der_corput(10, seed=seed, workers=8)
         assert_almost_equal(sample, out)
 
         sample = van_der_corput(7, start_index=3, seed=seed)
@@ -333,8 +340,19 @@ class TestVDC:
         out = van_der_corput(10, scramble=True, seed=seed)
 
         seed = np.random.RandomState(123456)
-        sample = van_der_corput(7, start_index=3, scramble=True,
-                                seed=seed)
+        sample = van_der_corput(7, start_index=3, scramble=True, seed=seed)
+        assert_almost_equal(sample, out[3:])
+
+        seed = np.random.RandomState(123456)
+        sample = van_der_corput(
+            7, start_index=3, scramble=True, seed=seed, workers=4
+        )
+        assert_almost_equal(sample, out[3:])
+
+        seed = np.random.RandomState(123456)
+        sample = van_der_corput(
+            7, start_index=3, scramble=True, seed=seed, workers=8
+        )
         assert_almost_equal(sample, out[3:])
 
     def test_invalid_base_error(self):
