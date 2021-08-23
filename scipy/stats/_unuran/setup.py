@@ -128,7 +128,7 @@ def configuration(parent_package="", top_path=None):
         "unuran_wrapper",
         sources=["unuran_wrapper.c"] + sources,
         libraries=[],
-        include_dirs=UNURAN_SOURCE_DIRS
+        include_dirs=[str(dir_.resolve()) for dir_ in UNURAN_SOURCE_DIRS]
         + [
             os.path.join(
                 os.path.dirname(__file__), "..", "..", "_lib", "src"
