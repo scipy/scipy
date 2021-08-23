@@ -25,6 +25,24 @@ axis_nan_policy_cases = [
     (stats.wilcoxon, tuple(), dict(), 1, True, None),
     ]
 
+# If the message is one of those expected, put nans in
+# appropriate places of `statistics` and `pvalues`
+too_small_messages = {"The input contains nan",  # for nan_policy="raise"
+                      "Degrees of freedom <= 0 for slice",
+                      "x and y should have at least 5 elements",
+                      "Data must be at least length 3",
+                      "The sample must contain at least two",
+                      "x and y must contain at least two",
+                      "division by zero",
+                      "Mean of empty slice",
+                      "Data passed to ks_2samp must not be empty",
+                      "Not enough test observations",
+                      "Not enough other observations",
+                      "At least one observation is required",
+                      "zero-size array to reduction operation maximum",
+                      "`x` and `y` must be of nonzero size.",
+                      "The exact distribution of the Wilcoxon test"}
+
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -215,24 +233,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, paired,
                 with pytest.raises(type(e), match=re.escape(str(e))):
                     hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
 
-                # If the message is one of those expected, put nans in
-                # appropriate places of `statistics` and `pvalues`
-                messages = {"The input contains nan",  # for nan_policy="raise"
-                            "Degrees of freedom <= 0 for slice",
-                            "x and y should have at least 5 elements",
-                            "Data must be at least length 3",
-                            "The sample must contain at least two",
-                            "x and y must contain at least two",
-                            "division by zero",
-                            "Mean of empty slice",
-                            "Data passed to ks_2samp must not be empty",
-                            "Not enough test observations",
-                            "Not enough other observations",
-                            "At least one observation is required",
-                            "zero-size array to reduction operation maximum",
-                            "`x` and `y` must be of nonzero size.",
-                            "The exact distribution of the Wilcoxon test"}
-                if any([str(e).startswith(message) for message in messages]):
+                if any([str(e).startswith(message)
+                        for message in too_small_messages]):
                     res1d = np.nan, np.nan
                 else:
                     raise e
@@ -258,6 +260,84 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, paired,
         if len(res) == 2:
             assert_equal(res[1], pvalues)
             assert_equal(res[1].dtype, pvalues.dtype)
+
+
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "paired",
+                          "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
+@pytest.mark.parametrize(("data_generator"),
+                         ("all_nans", "all_finite", "mixed", "empty"))
+def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples, paired,
+                                      unpacker, nan_policy, data_generator):
+    # check for correct behavior when `axis=None`
+
+    if not unpacker:
+        def unpacker(res):
+            return res
+
+    if NumpyVersion(np.__version__) < '1.18.0':
+        pytest.xfail("Generator `permutation` method doesn't support `axis`")
+    rng = np.random.default_rng(0)
+
+    if data_generator == "empty":
+        data = [rng.random((2, 0)) for i in range(n_samples)]
+    else:
+        data = [rng.random((2, 20)) for i in range(n_samples)]
+
+    if data_generator == "mixed":
+        masks = [rng.random((2, 20)) > 0.9 for i in range(n_samples)]
+        for sample, mask in zip(data, masks):
+            sample[mask] = np.nan
+    elif data_generator == "all_nans":
+        data = [sample * np.nan for sample in data]
+
+    data_raveled = [sample.ravel() for sample in data]
+
+
+    if nan_policy == 'raise' and not data_generator in {"all_finite", "empty"}:
+        message = 'The input contains nan values'
+
+        # check for correct behavior whether or not data is 1d to begin with
+        with pytest.raises(ValueError, match=message):
+            hypotest(*data, axis=None, nan_policy=nan_policy,
+                     *args, **kwds)
+        with pytest.raises(ValueError, match=message):
+            hypotest(*data_raveled, axis=None, nan_policy=nan_policy,
+                     *args, **kwds)
+
+    else:
+        # behavior of reference implementation with 1d input, hypotest with 1d
+        # input, and hypotest with Nd input should match, whether that means
+        # that outputs are equal or they raise the same exception
+
+        ea_str, eb_str, ec_str = None, None, None
+        with np.errstate(divide='ignore', invalid='ignore'):
+            try:
+                res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
+                                       nan_policy=nan_policy, paired=paired,
+                                       _no_deco=True, **kwds)
+            except (RuntimeWarning, ValueError, ZeroDivisionError) as ea:
+                ea_str = str(ea)
+
+            try:
+                res1db = unpacker(hypotest(*data_raveled, *args,
+                                           nan_policy=nan_policy, **kwds))
+            except (RuntimeWarning, ValueError, ZeroDivisionError) as eb:
+                eb_str = str(eb)
+
+            try:
+                res1dc = unpacker(hypotest(*data, *args, axis=None,
+                                           nan_policy=nan_policy, **kwds))
+            except (RuntimeWarning, ValueError, ZeroDivisionError) as ec:
+                ec_str = str(ec)
+
+            if ea_str or eb_str or ec_str:
+                assert any([str(ea_str).startswith(message)
+                            for message in too_small_messages])
+                assert ea_str == eb_str == ec_str
+            else:
+                assert_equal(res1db, res1da)
+                assert_equal(res1dc, res1da)
 
 
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
