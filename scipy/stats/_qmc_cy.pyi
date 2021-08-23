@@ -37,7 +37,7 @@ def _cy_wrapper_update_discrepancy(
 ) -> float: ...
 
 
-def _cy_wrapper_van_der_corput(
+def _cy_van_der_corput(
         n: IntNumber,
         base: IntNumber,
         start_index: IntNumber,
@@ -45,7 +45,7 @@ def _cy_wrapper_van_der_corput(
 ) -> np.ndarray: ...
 
 
-def _cy_wrapper_van_der_corput_scrambled(
+def _cy_van_der_corput_scrambled(
         n: IntNumber,
         base: IntNumber,
         start_index: IntNumber,

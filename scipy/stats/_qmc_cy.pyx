@@ -338,23 +338,7 @@ cdef void one_thread_loop(func_type loop_func,
     threaded_sum_mutex.unlock()
 
 
-def _cy_wrapper_van_der_corput(Py_ssize_t n,
-                               long base,
-                               long start_index,
-                               unsigned int workers):
-    return _cy_van_der_corput(n, base, start_index, workers)
-
-
-def _cy_wrapper_van_der_corput_scrambled(Py_ssize_t n,
-                                         long base,
-                                         long start_index,
-                                         long[:, ::1] permutations,
-                                         unsigned int workers):
-    return _cy_van_der_corput_scrambled(n, base, start_index, permutations,
-                                        workers)
-
-
-cdef _cy_van_der_corput(Py_ssize_t n,
+def _cy_van_der_corput(Py_ssize_t n,
                         long base,
                         long start_index,
                         unsigned int workers):
@@ -407,8 +391,7 @@ cdef _cy_van_der_corput_threaded_loop(Py_ssize_t istart,
             quotient //= base
 
 
-
-cdef _cy_van_der_corput_scrambled(Py_ssize_t n,
+def _cy_van_der_corput_scrambled(Py_ssize_t n,
                                   long base,
                                   long start_index,
                                   long[:,::1] permutations,
@@ -439,7 +422,6 @@ cdef _cy_van_der_corput_scrambled(Py_ssize_t n,
         threads[tid].join()
 
     return sequence
-
 
 
 cdef _cy_van_der_corput_scrambled_loop(Py_ssize_t istart,
