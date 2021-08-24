@@ -722,9 +722,20 @@ class TestNumericalInversePolynomial:
         with pytest.raises(err, match=msg):
             NumericalInversePolynomial(StandardNormal(), domain=domain)
 
-    u = [np.linspace(0, 1, num=10000), [], [[]], [np.nan],
-         [-np.inf, np.nan, np.inf], 0,
-         [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]]
+    u = [
+        # test if quantile 0 and 1 return -inf and inf respectively and check
+        # the correctness of the PPF for equidistant points between 0 and 1.
+        np.linspace(0, 1, num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
 
     @pytest.mark.parametrize("u", u)
     def test_ppf(self, u):

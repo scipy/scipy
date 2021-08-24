@@ -1085,28 +1085,6 @@ cdef class NumericalInversePolynomial(Method):
     >>> plt.legend()
     >>> plt.show()
 
-    As this is an invertion method, the approximated PPF can be evaluated by calling
-    the `ppf` method:
-
-    >>> rng.ppf(0.975)
-    1.9599639857012559
-    >>> norm.ppf(0.975)
-    1.959963984540054
-
-    We can see how well the generator approximates the standard normal distribution by
-    plotting the error between approximated PPF and exact PPF of the distribution:
-
-    >>> import matplotlib.pyplot as plt
-    >>> u = np.linspace(0.01, 0.99, 1000)
-    >>> approxppf = rng.ppf(u)
-    >>> exactppf = norm.ppf(u)
-    >>> error = np.abs(exactppf - approxppf)
-    >>> plt.plot(u, error)
-    >>> plt.xlabel('u')
-    >>> plt.ylabel('error')
-    >>> plt.title('Error between exact and approximated PPF')
-    >>> plt.show()
-
     It is possible to estimate the u-error of the approximated PPF if the exact
     CDF is available during setup. To do so, pass a `dist` object with exact CDF of
     the distribution during initialization:
@@ -1129,7 +1107,7 @@ cdef class NumericalInversePolynomial(Method):
     >>> rng.u_error(sample_size=1000000)  # uses one million samples
     UError(max_error=8.785994154436594e-11, mean_absolute_error=2.930890027826552e-11)
 
-    This returns a namedtuple which contains the maximum u-error and the maximum
+    This returns a namedtuple which contains the maximum u-error and the mean
     absolute u-error.
 
     The u-error can be reduced by decreasing the u-resolution (maximum allowed u-error):
@@ -1140,6 +1118,28 @@ cdef class NumericalInversePolynomial(Method):
     UError(max_error=9.07496300328603e-13, mean_absolute_error=3.5255644517257716e-13)
 
     Note that this comes at the cost of increased setup time.
+
+    The approximated PPF can be evaluated by calling the `ppf` method:
+
+    >>> rng.ppf(0.975)
+    1.9599639857012559
+    >>> norm.ppf(0.975)
+    1.959963984540054
+
+    Since the PPF of the normal distribution is available as a special function, we
+    can also check the x-error, i.e. the difference between the approximated PPF and
+    exact PPF::
+
+    >>> import matplotlib.pyplot as plt
+    >>> u = np.linspace(0.01, 0.99, 1000)
+    >>> approxppf = rng.ppf(u)
+    >>> exactppf = norm.ppf(u)
+    >>> error = np.abs(exactppf - approxppf)
+    >>> plt.plot(u, error)
+    >>> plt.xlabel('u')
+    >>> plt.ylabel('error')
+    >>> plt.title('Error between exact and approximated PPF (x-error)')
+    >>> plt.show()
     """
     cdef bint keep_cdf
 
