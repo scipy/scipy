@@ -695,7 +695,7 @@ class TestNumericalInversePolynomial:
         if distname in self.fail_dists:
             pytest.skip(f"PINV fails for {distname}")
         if distname in self.unbounded_pdf_fail_dists:
-            pytest.skip(f"PINV fails for unbounded PDFs.")
+            pytest.skip("PINV fails for unbounded PDFs.")
         if distname in self.fatal_fail_dists:
             pytest.xfail(f"PINV segmentation faults for {distname}")
         dist = (getattr(stats, distname)
