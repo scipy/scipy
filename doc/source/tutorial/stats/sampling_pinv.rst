@@ -56,8 +56,8 @@ where :math:`u \in (0, 1)` is a quantile where we want to measure the error
 and :math:`F^{-1}_a` is the approximated PPF of the given distribution.
 
 The maximal u-error is the criterion for approximation errors when calculating
-the CDF numerically. The maximal tolerated u-error of an algorithm is called
-the u-resolution of the algorithm and denoted by :math:`\epsilon_{u}`:
+the CDF and PPF numerically. The maximal tolerated u-error of an algorithm is
+called the u-resolution of the algorithm and denoted by :math:`\epsilon_{u}`:
 
 .. math::
     \sup_{u \in (0,1)} | u - F\left(F^{-1}_{a}(u)\right) | \le \epsilon_{u}
@@ -78,7 +78,7 @@ Following four steps are carried out by the algorithm during setup:
   the area under them is less than or equal to :math:`0.05\epsilon_{u}`.
 * The domain is divided into subintervals to compute the CDF and PPF.
 * The CDF is computed using Gauss-Lobatto quadrature such that the integration
-  error is at most :math:`0.05I_{0}\epsilon_{u}` where :math`I_{0}` is
+  error is at most :math:`0.05I_{0}\epsilon_{u}` where :math:`I_{0}` is
   approximately the total area under the PDF.
 * The PPF is computed using Newton's interpolating formula with maximum
   interpolation error :math:`0.9\epsilon_{u}`.
@@ -106,8 +106,18 @@ The generator has been setup and we can start sampling from our distribution:
 We can look at the histogram of the random variates to check how well they fit
 our distribution:
 
+.. plot::
+
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
+    >>> from scipy.stats import NumericalInversePolynomial
+    >>> class StandardNormal:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x*x)
+    ...
+    >>> dist = StandardNormal()
+    >>> urng = np.random.default_rng()
+    >>> rng = NumericalInversePolynomial(dist, random_state=urng)
     >>> rvs = rng.rvs(100000)
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=10000)
     >>> fx = norm.pdf(x)
@@ -125,8 +135,8 @@ The maximum tolerated error (i.e. u-resolution) can be changed by passing the
     >>> rng = NumericalInversePolynomial(dist, u_resolution=1e-12,
     ...                                  random_state=urng)
 
-This leads to a more accurate approximation of the PPF and hence, the
-generated RVs follow the given distribution more closely. Although, note
+This leads to a more accurate approximation of the PPF and the
+generated RVs follow the exact distribution more closely. Although, note
 that it comes at the cost of an expensive setup.
 
 The setup time mainly depends on the number of times the PDF is evaluated.
@@ -169,11 +179,11 @@ PDF evaluations increase during setup for small values of ``u_resolution``.
 
 As we can see, the number of PDF evaluations required is very high and a
 fast PDF is critical to the algorithm. Though, this helps reduce the number
-of subintervals required which saves memory and makes sampling fast.
-`NumericalInverseHermite` which is a similar intervion method inverts the
-CDF based on Hermite interpolation and provides control over the maximum
-tolerated error via u-resolution makes use of a lot more intervals compared
-to `NumericalInversePolynomial`:
+of subintervals required to achieve the error goal which saves memory and
+makes sampling fast. `NumericalInverseHermite` is a similar inversion method
+that inverts the CDF based on Hermite interpolation and provides control
+over the maximum tolerated error via u-resolution. But it makes use of a lot
+more intervals compared to `NumericalInversePolynomial`:
 
     >>> from scipy.stats import NumericalInverseHermite
     >>> # NumericalInverseHermite accepts a `tol` parameter to set the
@@ -186,7 +196,8 @@ to `NumericalInversePolynomial`:
     252
 
 When exact CDF of a distribution is available, one can estimate the u-error
-by calling the `u_error` method:
+achieved by the algorithm by calling the
+:func:`~NumericalInversePolynomial.u_error` method:
 
     >>> from scipy.special import ndtr
     >>> class StandardNormal:
@@ -201,12 +212,12 @@ by calling the `u_error` method:
     >>> rng.u_error(sample_size=100_000)
     UError(max_error=8.785949745515609e-11, mean_absolute_error=2.9307548109436816e-11)
 
-`u_error` runs a monte carlo simulation with a given number of samples to
-estimate the u-error. In the above example, 100,000 samples are used by the
-simulation to approximate the u-error. It returns the maximum u-error
-(``max_error``) and the mean absolute u-error (``mean_absolute_error``) in
-a ``UError`` namedtuple. As we can see, ``max_error`` is below the default
-``u_resolution`` (``1e-10``).
+:func:`~NumericalInversePolynomial.u_error` runs a monte carlo simulation with
+a given number of samples to estimate the u-error. In the above example,
+100,000 samples are used by the simulation to approximate the u-error. It
+returns the maximum u-error (``max_error``) and the mean absolute u-error
+(``mean_absolute_error``) in a ``UError`` namedtuple. As we can see,
+``max_error`` is below the default ``u_resolution`` (``1e-10``).
 
 It is also possible to evaluate the PPF of the given distribution once the
 generator is initialized:
@@ -216,7 +227,7 @@ generator is initialized:
     >>> norm.ppf(0.975)
     1.959963984540054
 
-We can use this, for exampls, to check the maximum and mean absolute u-error:
+We can use this, for example, to check the maximum and mean absolute u-error:
 
     >>> u = np.linspace(0.001, 0.999, num=1_000_000)
     >>> u_errors = np.abs(u - dist.cdf(rng.ppf(u)))
@@ -234,15 +245,16 @@ discarded once the setup is complete. To keep the approximated CDF, pass
 
     >>> rng = NumericalInversePolynomial(dist, keep_cdf=True, random_state=urng)
 
-Now, the CDF can be evaluated by calling the `cdf` method:
+Now, the CDF can be evaluated by calling the
+:func:`~NumericalInversePolynomial.cdf` method:
 
     >>> rng.cdf(1.959963984540054)
     0.9750000000042454
     >>> norm.cdf(1.959963984540054)
     0.975
 
-We can use this to check that the integration error while computing the CDF
-is at most :math:`0.05I_{0}\epsilon_{u}`. Here :math:`I_0` is
+We can use this to check if the integration error while computing the CDF
+exceeds :math:`0.05I_{0}\epsilon_{u}`. Here :math:`I_0` is
 :math:`\sqrt{2\pi}` (the normalization constant for the standard normal
 distribution):
 
@@ -254,3 +266,6 @@ distribution):
     >>> max_integration_error = 0.05 * I0 * 1e-10
     >>> x_error.max() <= max_integration_error
     True
+
+Note that each CDF evaluation uses a Gauss-Lobatto quadrature which calls
+the PDF several times, hence, slowing down the method significantly.
