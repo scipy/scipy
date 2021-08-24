@@ -300,7 +300,7 @@ def higher_order_svd(
     ----------
     a : array_like
         Tensor to decompose
-    full_tensor : bool, optional
+    full_tensor : bool,  default: True
         If True (default), ``S`` is of the same shape as the input tensor `a`
         and all ``U_k`` are of the shape ``(n, n)`` with ``n`` corresponding to
         the ``k``\\ th axis of ``S``.
@@ -308,7 +308,7 @@ def higher_order_svd(
         corresponding to the size of the ``k``\\ th axis of the input `a` and
         ``m`` to the maybe reduced size of the ``k``\\ th axis of the core
         tensor.
-    check_finite : bool, optional
+    check_finite : bool, default: True
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
