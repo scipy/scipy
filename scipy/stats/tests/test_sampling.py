@@ -680,7 +680,7 @@ class TestNumericalInversePolynomial:
     # for some reason, UNU.RAN segmentation faults for the uniform.
     fatal_fail_dists = ['uniform']
     # fails for unbounded PDFs
-    unbounded_pdf_fail_dists = ['arcsine', 'beta']
+    unbounded_pdf_fail_dists = ['beta']
     # for these distributions, some assertions fail due to minor
     # numerical differences. They can be avoided either by changing
     # the seed or by increasing the u_resolution.

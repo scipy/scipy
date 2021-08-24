@@ -103,7 +103,7 @@ Following four steps are carried out by the algorithm during setup:
 * The PPF is computed using Newton's interpolating formula with maximum
   interpolation error :math:`0.9\epsilon_{u}`.
 
-To initialize the generator to sample from a stnadard normal distribution, do:
+To initialize the generator to sample from a standard normal distribution, do:
 
     >>> from scipy.stats import NumericalInversePolynomial
     >>> class StandardNormal:
