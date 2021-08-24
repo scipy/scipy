@@ -789,7 +789,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_double_evaluations(self):
         # check BFGS does not evaluate twice in a row at same point
         def f(x):
-            xp = float(x)
+            xp = x[0]
             assert xp not in seen
             seen.add(xp)
             return 10*x**2, 20*x

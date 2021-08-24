@@ -33,7 +33,7 @@ import numpy as np
 from . import _ni_support
 from . import _ni_label
 from . import _nd_image
-from . import morphology
+from . import _morphology
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
@@ -177,7 +177,7 @@ def label(input, structure=None, output=None):
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     if structure is None:
-        structure = morphology.generate_binary_structure(input.ndim, 1)
+        structure = _morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')
@@ -1370,7 +1370,7 @@ def center_of_mass(input, labels=None, index=None):
     ...               [0,1,1,0],
     ...               [0,1,1,0]))
     >>> from scipy import ndimage
-    >>> ndimage.measurements.center_of_mass(a)
+    >>> ndimage.center_of_mass(a)
     (2.0, 1.5)
 
     Calculation of multiple objects in an image
@@ -1381,7 +1381,7 @@ def center_of_mass(input, labels=None, index=None):
     ...               [0,0,1,1],
     ...               [0,0,1,1]))
     >>> lbl = ndimage.label(b)[0]
-    >>> ndimage.measurements.center_of_mass(b, lbl, [1,2])
+    >>> ndimage.center_of_mass(b, lbl, [1,2])
     [(0.33333333333333331, 1.3333333333333333), (3.5, 2.5)]
 
     Negative masses are also accepted, which can occur for example when
@@ -1391,14 +1391,14 @@ def center_of_mass(input, labels=None, index=None):
     ...               [0,-1,-1,0],
     ...               [0,1,-1,0],
     ...               [0,1,1,0]))
-    >>> ndimage.measurements.center_of_mass(c)
+    >>> ndimage.center_of_mass(c)
     (-4.0, 1.0)
 
     If there are division by zero issues, the function does not raise an
     error but rather issues a RuntimeWarning before returning inf and/or NaN.
 
     >>> d = np.array([-1, 1])
-    >>> ndimage.measurements.center_of_mass(d)
+    >>> ndimage.center_of_mass(d)
     (inf,)
     """
     normalizer = sum(input, labels, index)
@@ -1450,18 +1450,18 @@ def histogram(input, min, max, bins, labels=None, index=None):
     ...               [ 0.    ,  0.    ,  0.7181,  0.2787],
     ...               [ 0.    ,  0.    ,  0.6573,  0.3094]])
     >>> from scipy import ndimage
-    >>> ndimage.measurements.histogram(a, 0, 1, 10)
+    >>> ndimage.histogram(a, 0, 1, 10)
     array([13,  0,  2,  1,  0,  1,  1,  2,  0,  0])
 
     With labels and no indices, non-zero elements are counted:
 
     >>> lbl, nlbl = ndimage.label(a)
-    >>> ndimage.measurements.histogram(a, 0, 1, 10, lbl)
+    >>> ndimage.histogram(a, 0, 1, 10, lbl)
     array([0, 0, 2, 1, 0, 1, 1, 2, 0, 0])
 
     Indices can be used to count only certain objects:
 
-    >>> ndimage.measurements.histogram(a, 0, 1, 10, lbl, 2)
+    >>> ndimage.histogram(a, 0, 1, 10, lbl, 2)
     array([0, 0, 1, 1, 0, 0, 1, 1, 0, 0])
 
     """
@@ -1510,7 +1510,7 @@ def watershed_ift(input, markers, structure=None, output=None):
         raise TypeError('only 8 and 16 unsigned inputs are supported')
 
     if structure is None:
-        structure = morphology.generate_binary_structure(input.ndim, 1)
+        structure = _morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')

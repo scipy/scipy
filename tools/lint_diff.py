@@ -52,12 +52,18 @@ def find_branch_point(branch):
         'Failed to find a common ancestor in the last 1000 commits')
 
 
-def find_diff(sha):
+def find_diff(sha, files=None):
     """Find the diff since the given sha."""
+    if files:
+        for file_or_dir in files:
+            msg = f"{file_or_dir} doesn't exist. Please provide a valid path."
+            assert os.path.exists(file_or_dir), msg
+    else:
+        files = ['*.py']
     res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha, '--', '*.py'],
+        ['git', 'diff', '--unified=0', sha, '--'] + files,
         stdout=subprocess.PIPE,
-        encoding='utf-8',
+        encoding='utf-8'
     )
     res.check_returncode()
     return res.stdout
@@ -78,13 +84,17 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("--branch", type=str, default='master',
                         help="The branch to diff against")
+    parser.add_argument("--files", type=str, nargs='+', default=None,
+                        help="The files or directories to diff against")
     args = parser.parse_args()
 
     branch_point = find_branch_point(args.branch)
-    diff = find_diff(branch_point)
+    diff = find_diff(branch_point, args.files)
     rc, errors = run_flake8(diff)
     if errors:
         print(errors)
+    else:
+        print("No lint errors found.")
     sys.exit(rc)
 
 
