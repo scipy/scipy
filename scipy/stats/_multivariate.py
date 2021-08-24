@@ -3879,7 +3879,7 @@ class multivariate_t_gen(multi_rv_generic):
     .. math::
 
         f(x) = \frac{\Gamma(\nu + p)/2}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
-               \exp\left[1 + \frac{1}{\nu} (\mathbf{x} - \boldsymbol{\mu})^{\top}
+               \left[1 + \frac{1}{\nu} (\mathbf{x} - \boldsymbol{\mu})^{\top}
                \boldsymbol{\Sigma}^{-1}
                (\mathbf{x} - \boldsymbol{\mu}) \right]^{-(\nu + p)/2},
 
