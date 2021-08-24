@@ -7,9 +7,10 @@ import os
 import re
 import sys
 import numpy as np
+from numpy.testing import assert_allclose
 
 
-__all__ = ['PytestTester', 'check_free_memory']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc']
 
 
 class FPUModeChangeWarning(RuntimeWarning):
@@ -72,14 +73,31 @@ class PytestTester:
         return (code == 0)
 
 
-class PythranFunc:
+class _TestPythranFunc:
     '''
     Inherit from this class to generate a bunch of relevant test cases
     '''
-    def __init__(self):
-        self.ALL_INTEGER = [np.int32, np.int64]
+    def setup_method(self):
+        self.ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64]
         self.ALL_FLOAT = [np.float32, np.float64]
         self.ALL_COMPLEX = [np.complex64, np.complex128]
+        self.dtypes = []
+        self.arguments = []
+        self.index = []
+        self.expected = None
+    
+    def test_all_dtypes(self):
+        for dtype in self.dtypes:
+            tmp = self.arguments.copy()
+            for idx in self.index:
+                tmp[idx] = tmp[idx].astype(dtype)
+            self.pythranfunc(*tmp)
+    
+    def test_views(self):
+        tmp = self.arguments.copy()
+        for idx in self.index:
+            tmp[idx] = tmp[idx][::-1][::-1]
+        self.pythranfunc(*tmp)
 
 
 def _pytest_has_xdist():
