@@ -160,11 +160,6 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
     return 0;
 }
 
-void check_read(int read_count){
-    if(read_count == 0) {
-        ABORT("Unable to read the input");
-    }
-}
 
 /*! \brief Read complex numbers as pairs of (real, imaginary) */
 int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
