@@ -410,6 +410,7 @@ extern void    StatFree(SuperLUStat_t *);
 extern void    print_panel_seg(int, int, int, int, int *, int *);
 extern int     print_int_vec(char *,int, int *);
 extern int     slu_PrintInt10(char *, int, int *);
+extern void    check_read(int);
 
 #ifdef __cplusplus
   }

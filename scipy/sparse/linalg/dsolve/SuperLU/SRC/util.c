@@ -499,3 +499,9 @@ int slu_PrintInt10(char *name, int len, int *x)
     printf("\n");
     return 0;
 }
+
+void check_read(int read_count)
+{
+    if(read_count == 0)
+        ABORT("Unable to read the input");
+}

@@ -297,11 +297,6 @@ FormFullA(int n, int *nonz, doublecomplex **nzval, int **rowind, int **colptr)
     *nonz = new_nnz;
 }
 
-void check_read(int read_count){
-    if(read_count == 0) {
-        ABORT("Unable to read the input");
-    }
-}
 
 void
 zreadhb(FILE *fp, int *nrow, int *ncol, int *nonz,

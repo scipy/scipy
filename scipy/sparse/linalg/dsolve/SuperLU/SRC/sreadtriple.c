@@ -21,11 +21,6 @@ at the top-level directory.
 
 #include "slu_sdefs.h"
 
-void check_read(int read_count){
-    if(read_count == 0) {
-        ABORT("Unable to read the input");
-    }
-}
 
 void
 sreadtriple(int *m, int *n, int *nonz,
