@@ -1220,7 +1220,7 @@ cdef class NumericalInversePolynomial(Method):
         return (domain, order, u_resolution, max_intervals)
 
     @property
-    def n_intervals(self):
+    def intervals(self):
         """Get the number of intervals used in the computation."""
         return unur_pinv_get_n_intervals(self.rng)
 
