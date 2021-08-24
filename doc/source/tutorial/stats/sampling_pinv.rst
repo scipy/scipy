@@ -62,14 +62,34 @@ called the u-resolution of the algorithm and denoted by :math:`\epsilon_{u}`:
 .. math::
     \sup_{u \in (0,1)} | u - F\left(F^{-1}_{a}(u)\right) | \le \epsilon_{u}
 
-There are two drawbacks of using u-resolution:
-
-* Does not work for distributions with high and narrow peaks
-* the CDF approximation error is high in the tails of the distribution
+The main advantage of the u-error is that it can be easily computed if the CDF
+is available. We refer to [1]_ for a more detailed discussion.
 
 Also, the method only works for bounded distributions. In case of infinite
 tails, the ends of the tails are cut off such that the area under them is
 less than or equal to :math:`0.05\epsilon_{u}`.
+
+There are some restrictions for the given distribution:
+
+* The support of the distribution (i.e., the region where the PDF is strictly
+  positive) must be connected. In practice this means, that the region where
+  PDF is "not too small" must be connected. Unimodal densities satisfy this
+  condition. If this condition is violated then the domain of the distribution
+  might be truncated.
+* When the PDF is integrated numerically, then the given PDF must be
+  continuous and should be smooth.
+* The PDF must be bounded.
+* The algorithm has problems when the distribution has heavy tails (as then
+  the inverse CDF becomes very steep at 0 or 1) and the requested u-resolution
+  is very small. E.g., the Cauchy distribution is likely to show this problem
+  when the requested u-resolution is less then 1.e-12.
+
+.. warning::
+    This method does not work for densities with constant parts (e.g.
+    `uniform` distribution) and segmentation faults if such a density is
+    passed to the constructor. It is recommended to use the
+    `composition method <https://statmath.wu.ac.at/software/unuran/doc/unuran.html#Composition>`__
+    to sample from such distributions.
 
 Following four steps are carried out by the algorithm during setup:
 
@@ -118,7 +138,7 @@ our distribution:
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInversePolynomial(dist, random_state=urng)
-    >>> rvs = rng.rvs(100000)
+    >>> rvs = rng.rvs(10000)
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=10000)
     >>> fx = norm.pdf(x)
     >>> plt.plot(x, fx, "r-", label="pdf")
@@ -192,7 +212,7 @@ more intervals compared to `NumericalInversePolynomial`:
     >>> rng_hermite.intervals
     3340
     >>> rng_poly = NumericalInversePolynomial(norm(), u_resolution=1e-12)
-    >>> rng_poly.n_intervals
+    >>> rng_poly.intervals
     252
 
 When exact CDF of a distribution is available, one can estimate the u-error
@@ -267,5 +287,14 @@ distribution):
     >>> x_error.max() <= max_integration_error
     True
 
-Note that each CDF evaluation uses a Gauss-Lobatto quadrature which calls
-the PDF several times, hence, slowing down the method significantly.
+A CDF table computed during setup is used to evaluate the CDF and only some
+further fine-tuning is required. This reduces the calls to the PDF but as the
+fine-tuning step uses the simple Gauss-Lobatto quadrature, the PDF is called
+several times, slowing down the computation.
+
+References
+----------
+
+.. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate
+       generation by numerical inversion when only the density is known." ACM
+       Transactions on Modeling and Computer Simulation (TOMACS) 20.4 (2010): 1-25.
