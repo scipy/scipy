@@ -15,6 +15,13 @@ from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
 
+from .util_backend_test import _BackendWithConverter
+from scipy.ndimage._backend import set_global_backend
+
+
+# Run the test suite with ndimage uarray backend
+set_global_backend(_BackendWithConverter, coerce=True, try_last=False)
+
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())

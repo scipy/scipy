@@ -10,6 +10,14 @@ import scipy.ndimage as ndimage
 
 from . import types
 
+from .util_backend_test import _BackendWithConverter
+from scipy.ndimage._backend import set_global_backend
+
+
+# Run the test suite with ndimage uarray backend
+set_global_backend(_BackendWithConverter, coerce=True, try_last=False)
+
+
 eps = 1e-12
 
 ndimage_to_numpy_mode = {

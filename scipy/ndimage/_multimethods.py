@@ -28,8 +28,30 @@ __all__ = ['affine_transform', 'binary_closing', 'binary_dilation',
            'white_tophat', 'zoom']
 
 
-_mark_non_coercible = functools.partial(Dispatchable, dispatch_type=np.ndarray,
+class _ndimage_output:
+    """
+    Special case outputs to handle multiple types in __ua_convert__.
+    Eg: output='f', output='float32', output=np.float32
+        are all acceptable in addition to arrays.
+    """
+    pass
+
+
+class _ndimage_index:
+    """
+    Special case index argument in measurement methods to
+    handle both int and array types in __ua_convert__.
+    """
+    pass
+
+
+_mark_non_coercible = functools.partial(Dispatchable,
+                                        dispatch_type=_ndimage_output,
                                         coercible=False)
+_mark_index = functools.partial(Dispatchable,
+                                dispatch_type=_ndimage_index,
+                                coercible=False)
+
 _create_ndimage = functools.partial(create_multimethod,
                                     domain="numpy.scipy.ndimage")
 
@@ -691,14 +713,37 @@ def find_objects(input, max_label=0):
     return (input,)
 
 
+def _labeled_comprehension_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer for ``labeled_comprehension``.
+    """
+    def self_method(input, labels, index, func, out_dtype, *args,
+                    **kwargs):
+        return (dispatchables[0], dispatchables[1], dispatchables[2], func,
+                dispatchables[3]) + args, kwargs
+    return self_method(*args, **kwargs)
+
+
+@_create_ndimage(_labeled_comprehension_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def labeled_comprehension(input, labels, index, func, out_dtype,
+                          default, pass_positions=False):
+    return input, labels, _mark_index(index), Dispatchable(out_dtype, np.dtype)
+
+
 def _input_labels_index_replacer(args, kwargs, dispatchables):
     """
     uarray argument replacer for signatures involving required
     ``input`` with ``labels`` and ``index`` kwargs.
     """
     def self_method(input, labels=None, index=None, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1],
-                dispatchables[2]) + args, kwargs
+        if isinstance(index, int):
+            return (dispatchables[0], dispatchables[1],
+                    dispatchables[2]) + args, kwargs
+        else:
+            return (dispatchables[0], dispatchables[1],
+                    dispatchables[2]) + args, kwargs
 
     return self_method(*args, **kwargs)
 
@@ -706,16 +751,8 @@ def _input_labels_index_replacer(args, kwargs, dispatchables):
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
-def labeled_comprehension(input, labels, index, func, out_dtype,
-                          default, pass_positions=False):
-    return input, labels, index
-
-
-@_create_ndimage(_input_labels_index_replacer)
-@all_of_type(np.ndarray)
-@_get_docs
 def sum_labels(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 # alias for sum_labels; kept for backward compatibility
@@ -728,70 +765,70 @@ def sum(input, labels=None, index=None):
 @all_of_type(np.ndarray)
 @_get_docs
 def mean(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def variance(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def standard_deviation(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def minimum(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def maximum(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def median(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def minimum_position(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def maximum_position(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def extrema(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 @_create_ndimage(_input_labels_index_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def center_of_mass(input, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 def _histogram_arg_replacer(args, kwargs, dispatchables):
@@ -810,7 +847,7 @@ def _histogram_arg_replacer(args, kwargs, dispatchables):
 @all_of_type(np.ndarray)
 @_get_docs
 def histogram(input, min, max, bins, labels=None, index=None):
-    return input, labels, index
+    return input, labels, _mark_index(index)
 
 
 def _watershed_ift_arg_replacer(args, kwargs, dispatchables):
