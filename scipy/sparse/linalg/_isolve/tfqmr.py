@@ -145,7 +145,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         d = u + (theta**2 / alpha) * eta * d  # [1]-(5.5)
         # [1]-(5.2)
         theta = np.linalg.norm(w) / tau
-        c = np.sqrt(1. / (1 + theta**2))
+        c = 1. / np.hypot(1, abs(theta))
         tau *= theta * c
         # Calculate step and direction [1]-(5.4)
         eta = (c**2) * alpha
@@ -155,11 +155,11 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         if callback is not None:
             callback(x)
 
-        # Convergence criteron
-        if tau * np.sqrt(iter+1) < atol:
+        # Convergence criterion
+        if tau * np.sqrt(iter+2.) < atol:
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
-                      "iterations {}".format(iter+1))
+                      f"iterations {(iter+1+even)//2}")
             return (postprocess(x), 0)
 
         if (not even):
@@ -177,5 +177,5 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
-              "iterations {}".format(iter+1))
-    return (postprocess(x), maxiter)
+              f"iterations {(maxiter+even)//2}")
+    return (postprocess(x), (maxiter+even)//2)
