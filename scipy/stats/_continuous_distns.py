@@ -4133,15 +4133,28 @@ class norminvgauss_gen(rv_continuous):
     `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
     to generate random variates.
 
+    Another common parametrization of the distribution (see Equation 2.1 in
+    [2]_) is given by the following expression of the pdf:
+
+    .. math::
+
+        g(x, \alpha, \beta, \delta, \mu) =
+        \frac{\alpha\delta K_1\left(\alpha\sqrt{\delta^2 + (x - \mu)^2}\right)}
+        {\pi \sqrt{\delta^2 + (x - \mu)^2}} \,
+        e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
+
+    In SciPy, this corresponds to
+    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+
     References
     ----------
-    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
-    pp. 151-157, 1978.
+    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+           Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+           pp. 151-157, 1978.
 
-    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
-    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
-    pp. 1-13, 1997.
+    .. [2] O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and
+           Stochastic Volatility Modelling", Scandinavian Journal of
+           Statistics, Vol. 24, pp. 1-13, 1997.
 
     %(example)s
 
