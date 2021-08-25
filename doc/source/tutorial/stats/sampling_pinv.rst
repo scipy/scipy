@@ -45,9 +45,8 @@ of the maximal acceptable error. It uses a combination of an adaptive and a
 simple Gauss-Lobatto quadrature to obtain the CDF and Newton's interpolation
 to obtain the PPF. The method is not exact, as it only produces random
 variates of the approximated distribution. Nevertheless, the maximal tolerated
-approximation error can be set close to the machine precision and its relative
-error is not much larger than :math:`10^{-15}`. The concept of u-error is used
-to measure and control the error. It is defined as:
+approximation error can be set close to the machine precision. The concept of
+u-error is used to measure and control the error. It is defined as:
 
 .. math::
     \epsilon_{u}(u) = | u - F\left(F^{-1}_{a}(u)\right) |
