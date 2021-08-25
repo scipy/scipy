@@ -1821,8 +1821,8 @@ _METRIC_INFOS = [
         aka={'dice'},
         types=['bool'],
         dist_func=dice,
-        cdist_func=CDistMetricWrapper('dice'),
-        pdist_func=PDistMetricWrapper('dice'),
+        cdist_func=_distance_pybind.cdist_dice,
+        pdist_func=_distance_pybind.pdist_dice,
     ),
     MetricInfo(
         canonical_name='euclidean',
