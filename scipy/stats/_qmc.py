@@ -484,6 +484,18 @@ def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
     return disc_ep
 
 
+def _decay(n_iters: IntNumber):
+    """Exponential decay.
+
+    Fit an exponential to be 2 at 0 and 1 at `n_iters`.
+    The decay is used for relaxation.
+    """
+    res = optimize.root_scalar(lambda x: np.exp(-n_iters/x) + 1 - 1.1,
+                               bracket=[1, n_iters])
+
+    return (np.exp(-x / res.root) + 0.9 for x in range(n_iters))
+
+
 def _points_contain_duplicates(sample: np.ndarray) -> bool:
     """Check whether `sample` contains duplicates."""
     vals, count = np.unique(sample, return_counts=True)
@@ -565,9 +577,10 @@ def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
         centroid = np.mean(verts, axis=0)
         centroids[ii] = sample[ii] + (centroid - sample[ii]) * decay
 
-    is_valid = np.all(np.logical_and(centroids >= 0, centroids <= 1), axis=1)
-
     sample = sample[:-n_hypercube_corners]
+
+    # only update sample to centroid within the region
+    is_valid = np.all(np.logical_and(centroids >= 0, centroids <= 1), axis=1)
     sample[is_valid] = centroids[is_valid]
 
     return sample
@@ -599,24 +612,65 @@ def lloyd_centroidal_voronoi_tessellation(
     sample : array_like (n, d)
         The sample after `n_iters` of Lloyd's algorithm.
 
+    Notes
+    -----
+    Lloyd's algorithm is an iterative process which purpose is to improve
+    the dispersion of a sample. For a given sample: (i) compute a Voronoi
+    Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
+    samples toward the centroid of their respective cell.
+
+    The process converges to equally spaced points. It implies that measures
+    like the discrepancy could suffer from too many iterations. On the other
+    hand, L1 and L2 distances should improve. This is especially true with
+    QMC methods which tend to favor the discrepancy over other criteria.
+
+    This implementation adds samples at the corners of the hypercube to
+    mitigate the sample collapsing from a hypercube to a hypersphere.
+
+    .. warning::
+
+       The Voronoi Tessellation step is expensive and quickly becomes
+       intractable with dimensions as low as 10 even for a sample of size
+       as low as 1000.
+
     References
     ----------
     .. [1] Lloyd. "Least Squares Quantization in PCM".
        IEEE Transactions on Information Theory, 1982.
 
+    Examples
+    --------
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.Halton(d=2, scramble=False)
+    >>> sample = sampler.random(n=5)
+    >>> sample
+    array([[0.        , 0.        ],
+           [0.5       , 0.33333333],
+           [0.25      , 0.66666667],
+           [0.75      , 0.11111111],
+           [0.125     , 0.44444444]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.0889...
+
+    Now process the sample using Lloyd's algorithm.
+
+    >>> sample = lloyd_centroidal_voronoi_tessellation(sample)
+    >>> sample
+    array([[0.90056185, 0.48763115],  # random
+           [0.23868639, 0.54297088],
+           [0.58609148, 0.18020182],
+           [0.61423007, 0.86436856],
+           [0.67033763, 0.50223744]])
+
+    >>> qmc.discrepancy(sample)
+    0.048...  # random
+
     """
+    sample = np.asarray(sample)
     rng = check_random_state(seed)
-
-    def _decay(n_iters):
-        """Exponential decay.
-
-        Fit an exponential to be 2 at 0 and 1 at `n_iters`.
-        The decay is used for relaxation.
-        """
-        res = optimize.root_scalar(lambda x: np.exp(-n_iters/x) + 1 - 1.1,
-                                   bracket=[1, n_iters])
-
-        return (np.exp(-x / res.root) + 0.9 for x in range(n_iters))
 
     decay = _decay(n_iters)
     for _ in range(n_iters):

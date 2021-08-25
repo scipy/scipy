@@ -8,12 +8,17 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
+from scipy.spatial.distance import cdist
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy, QMCEngine,
                               _perturb_discrepancy)  # noqa
+
+
+# This can be removed once numpy 1.16 is dropped
+SEED = np.random.RandomState(12345)
 
 
 class TestUtils:
@@ -316,6 +321,27 @@ class TestUtils:
         primes = primes_from_2_to(50)
         out = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
         assert_allclose(primes, out)
+
+    def test_lloyd(self):
+        def l1_norm(sample):
+            l1 = cdist(sample, sample, 'cityblock')
+            return np.min(l1[l1.nonzero()])
+
+        # mindist
+        def l2_norm(sample):
+            l2 = cdist(sample, sample)
+            return np.min(l2[l2.nonzero()])
+
+        sample = qmc.Halton(d=2, scramble=False, seed=SEED).random(64)
+        sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
+                sample, n_iters=10, seed=SEED
+        )
+
+        # lower is better for the discrepancy
+        assert qmc.discrepancy(sample) < qmc.discrepancy(sample_lloyd)
+        # higher is better for the distance measures
+        assert l1_norm(sample) < l1_norm(sample_lloyd)
+        assert l2_norm(sample) < l2_norm(sample_lloyd)
 
 
 class TestVDC:
