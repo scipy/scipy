@@ -58,7 +58,7 @@ def _diff_dual_poly(j, k, y, d, t):
     comb = list(combinations(range(j + 1, j + k + 1), d))
     res = 0
     for i in range(len(comb) * len(comb[0])):
-        res += np.prod([(y - t[j + p]) for p in range(1, k + 1)\
+        res += np.prod([(y - t[j + p]) for p in range(1, k + 1)
                         if (j + p) not in comb[i//d]])
     return res
 
@@ -744,9 +744,9 @@ class BSpline:
         The knot vector ``t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]``
         In this case
 
-	    .. math::
+        .. math::
 
-	        c_j = \frac{0!}{k!} c_{3, i} k! = c_{3, i} = 1,~j = 0, ..., 6
+            c_j = \frac{0!}{k!} c_{3, i} k! = c_{3, i} = 1,~j = 0, ..., 6
 
         References
         ----------
@@ -757,8 +757,8 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-             raise NotImplementedError("Only CubicSpline objects are accepted"
-                                        "for now. Got %s instead." % type(pp))
+            raise NotImplementedError("Only CubicSpline objects are accepted"
+                                      "for now. Got %s instead." % type(pp))
         x = pp.x
         coef = pp.c
         k = pp.c.shape[0] - 1
