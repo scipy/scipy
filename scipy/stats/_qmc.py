@@ -495,7 +495,7 @@ def _jitter_sample(
     vals, count = np.unique(sample, return_counts=True)
     if np.any(vals[count > 1]):
         offset = rng.uniform(-eps, eps, size=(len(sample), sample.shape[1]))
-        sample = sample + offset
+        sample = sample * (1 + offset)
     return sample
 
 
@@ -529,7 +529,7 @@ def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
 
     """
     sample = _jitter_sample(sample, rng=rng)
-    centroids = np.empty_like(sample)
+    new_sample = np.empty_like(sample)
 
     voronoi = spatial.Voronoi(sample)
 
@@ -548,11 +548,11 @@ def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
         # Centroid in n-D is the mean for uniformly distributed nodes
         # of a geometry.
         centroid = np.mean(verts, axis=0)
-        centroids[ii] = sample[ii] + (centroid - sample[ii]) * decay
+        new_sample[ii] = sample[ii] + (centroid - sample[ii]) * decay
 
     # only update sample to centroid within the region
-    is_valid = np.all(np.logical_and(centroids >= 0, centroids <= 1), axis=1)
-    sample[is_valid] = centroids[is_valid]
+    is_valid = np.all(np.logical_and(new_sample >= 0, new_sample <= 1), axis=1)
+    sample[is_valid] = new_sample[is_valid]
 
     return sample
 
@@ -565,12 +565,13 @@ def lloyd_centroidal_voronoi_tessellation(
 ) -> np.ndarray:
     """Centroidal Voronoi Tessellation.
 
-    Perturb a sample using Lloyd's algorithm.
+    Perturb a sample of points in :math:`[0, 1]^d` using Lloyd's algorithm.
 
     Parameters
     ----------
     sample : array_like (n, d)
-        The sample to iterate on.
+        The sample to iterate on. With ``n`` the number of sample and ``d``
+        the dimension.
     n_iters : int, optional
         Number of iterations. Too many iterations tend to cluster the sample
         as a hypersphere. Default is 10.
