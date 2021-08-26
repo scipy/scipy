@@ -58,7 +58,8 @@ def _diff_dual_poly(j, k, y, d, t):
     comb = list(combinations(range(j + 1, j + k + 1), d))
     res = 0
     for i in range(len(comb) * len(comb[0])):
-        res += np.prod([(y - t[j + p]) for p in range(1, k + 1) if (j + p) not in comb[i//d]])
+        res += np.prod([(y - t[j + p]) for p in range(1, k + 1)\
+                        if (j + p) not in comb[i//d]])
     return res
 
 
@@ -689,29 +690,37 @@ class BSpline:
         Parameters
         ----------
         pp : CubicSpline
-            A piecewise polynomial in the power basis, as created by CubicSpline
+            A piecewise polynomial in the power basis, as created
+            by ``CubicSpline``
         bc_type : string, optional
-            Boundary condition type as in CubicSpline:
-            one of the ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``
-            ``bc_type`` is needed for composition a knot vector.
+            Boundary condition type as in ``CubicSpline``: one of the
+            ``not-a-knot``, ``natural``, ``clamped``, or ``periodic``.
+            Necessary for construction an instance of ``BSpline`` class.
+            Default is ``not-a-knot``.
 
         Returns
         -------
         b : BSpline object
-            A new instance representing the initial polynomial in the B-spline basis.
+            A new instance representing the initial polynomial
+            in the B-spline basis.
 
         Notes
         -----
-        The algorithm follows from differentiation the Marsden’s identity [1]:
-        each of coefficients of spline interpolation function in B-spline basis is
-        computed as follows:
+        Accepts only ``CubicSpline`` instances for now.
+
+        The algorithm follows from differentiation
+        the Marsden’s identity [1]: each of coefficients of spline
+        interpolation function in the B-spline basis is computed as follows:
 
         .. math::
 
-            c_j = \sum_{m=0}^{k} \frac{(k-m)!}{k!} c_{m,i} (-1)^{k-m} D^m p_{j,k}(x_i)
+            c_j = \sum_{m=0}^{k} \frac{(k-m)!}{k!}
+                       c_{m,i} (-1)^{k-m} D^m p_{j,k}(x_i)
 
         :math: `c_{m, i}` - a coefficient of CubicSpline,
-        :math: `D^m p_{j, k}(x_i)` - an m-th defivative of a dual polynomial in ``x_i``.
+        :math: `D^m p_{j, k}(x_i)` - an m-th defivative of a dual polynomial
+        in ``x_i``.
+
         ``k`` always equals 3 for now.
 
         First ``n - 2`` coefficients are computed in ``x_i = x_j``, e.g.
@@ -723,18 +732,21 @@ class BSpline:
         Last ``nod + 2`` coefficients are computed ``in x[-2]``,
         ``nod`` - number of derivatives at the ends.
 
-        Examples
-        --------
-        Consider x = [0, 1, 2, 3, 4], y = [1, 1, 1, 1, 1] and bc_type = ``natural``
-        The coefficients of Cubic Spline in the power basis:
+        For example, consider ``x = [0, 1, 2, 3, 4]``,
+        ``y = [1, 1, 1, 1, 1]`` and bc_type = ``natural``
+        The coefficients of CubicSpline in the power basis:
 
         [[0, 0, 0, 0, 0],
          [0, 0, 0, 0, 0],
          [0, 0, 0, 0, 0],
          [1, 1, 1, 1, 1]]
 
-        The knot vector t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]
-        In this case c[j] = 0!/k!*c_{3, i}*k! = c_{3, i} = 1 for j = 0, ..., 6
+        The knot vector ``t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]``
+        In this case
+
+	    .. math::
+
+	        c_j = \frac{0!}{k!} c_{3, i} k! = c_{3, i} = 1,~j = 0, ..., 6
 
         References
         ----------
@@ -743,17 +755,19 @@ class BSpline:
         .. [1] Tom Lyche and Knut Mørken, Spline Methods, 2005, Section 3.1.2
 
         """
-        if not isinstance(pp, _cubic.CubicSpline):
-             raise NotImplementedError("Only CubicSpline objects are accepted for now.")
+        from ._cubic import CubicSpline
+        if not isinstance(pp, CubicSpline):
+             raise NotImplementedError("Only CubicSpline objects are accepted"
+                                        "for now. Got %s instead." % type(pp))
         x = pp.x
         coef = pp.c
         k = pp.c.shape[0] - 1
         n = x.shape[0]
 
         if bc_type == 'not-a-knot':
-            t = np.r_[(x[0], )*(k + 1), x[2: -2], (x[-1], )*(k + 1)]
+            t = _not_a_knot(x, k)
         elif bc_type == 'natural' or bc_type == 'clamped':
-            t = np.r_[(x[0], )*k, x, (x[-1], )*k]
+            t = _augknt(x, k)
         elif bc_type == 'periodic':
             t = _periodic_knots(x, k)
         else:
@@ -763,9 +777,13 @@ class BSpline:
         c = np.zeros(n + nod, dtype=pp.c.dtype)
         for m in range(k + 1):
             for i in range(n - 2):
-                c[i] += poch(k + 1, -m) * coef[m, i] * np.power(-1, k - m) * _diff_dual_poly(i, k, x[i], m, t)
+                c[i] += poch(k + 1, -m) * coef[m, i]\
+                        * np.power(-1, k - m)\
+                        * _diff_dual_poly(i, k, x[i], m, t)
             for j in range(n - 2, n + nod):
-                c[j] += poch(k + 1, -m) * coef[m, n - 2] * np.power(-1, k - m) * _diff_dual_poly(j, k, x[n - 2], m, t)
+                c[j] += poch(k + 1, -m) * coef[m, n - 2]\
+                        * np.power(-1, k - m)\
+                        * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
 
 
