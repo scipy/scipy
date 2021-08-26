@@ -1845,8 +1845,8 @@ _METRIC_INFOS = [
         aka={'jaccard', 'jacc', 'ja', 'j'},
         types=['double', 'bool'],
         dist_func=jaccard,
-        cdist_func=CDistMetricWrapper('jaccard'),
-        pdist_func=PDistMetricWrapper('jaccard'),
+        cdist_func=_distance_pybind.cdist_jaccard,
+        pdist_func=_distance_pybind.pdist_jaccard,
     ),
     MetricInfo(
         canonical_name='jensenshannon',

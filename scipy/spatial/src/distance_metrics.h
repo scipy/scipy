@@ -437,3 +437,49 @@ struct DiceDistance {
         });
     }
 };
+
+struct JaccardDistance {
+    template <typename T>
+    struct Acc {
+        Acc(): num(0), denom(0) {}
+        T num, denom;
+    };
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
+        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.num = (x != y) & ((x != 0) | (y != 0));
+            acc.denom = (x != 0) | (y != 0);
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return (acc.denom != 0) * (acc.num / (1 * (acc.denom == 0) + acc.denom));
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.num = a.num + b.num;
+            acc.denom = a.denom + b.denom;
+            return acc;
+        });
+    }
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
+        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.num = w * ((x != y) & ((x != 0) | (y != 0)));
+            acc.denom = w * ((x != 0) | (y != 0));
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return (acc.denom != 0) * (acc.num / (1 * (acc.denom == 0) + acc.denom));
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.num = a.num + b.num;
+            acc.denom = a.denom + b.denom;
+            return acc;
+        });
+    }
+};
