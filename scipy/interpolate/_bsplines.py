@@ -709,7 +709,7 @@ class BSpline:
         Accepts only ``CubicSpline`` instances for now.
 
         The algorithm follows from differentiation
-        the Marsden’s identity [1]: each of coefficients of spline
+        the Marsden's identity [1]: each of coefficients of spline
         interpolation function in the B-spline basis is computed as follows:
 
         .. math::
@@ -752,7 +752,7 @@ class BSpline:
         ----------
         .. versionadded:: 1.8.0
 
-        .. [1] Tom Lyche and Knut Mørken, Spline Methods, 2005, Section 3.1.2
+        .. [1] Tom Lyche and Knut Morken, Spline Methods, 2005, Section 3.1.2
 
         """
         from ._cubic import CubicSpline
