@@ -1892,8 +1892,8 @@ _METRIC_INFOS = [
         aka={'russellrao'},
         types=['bool'],
         dist_func=russellrao,
-        cdist_func=CDistMetricWrapper('russellrao'),
-        pdist_func=PDistMetricWrapper('russellrao'),
+        cdist_func=_distance_pybind.cdist_russellrao,
+        pdist_func=_distance_pybind.pdist_russellrao,
     ),
     MetricInfo(
         canonical_name='seuclidean',

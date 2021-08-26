@@ -579,3 +579,49 @@ struct KulsinskiDistance {
         });
     }
 };
+
+struct RussellRaoDistance {
+    template <typename T>
+    struct Acc {
+        Acc(): ntt(0), n(0) {}
+        T ntt, n;
+    };
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
+        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.ntt = (x != 0) & (y != 0);
+            acc.n = 1;
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return (acc.n - acc.ntt) / acc.n;
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.ntt = a.ntt + b.ntt;
+            acc.n = a.n + b.n;
+            return acc;
+        });
+    }
+
+    template <typename T>
+    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
+        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.ntt = w * ((x != 0) & (y != 0));
+            acc.n = w;
+            return acc;
+        },
+        [](const Acc<T>& acc) INLINE_LAMBDA {
+            return (acc.n - acc.ntt) / acc.n;
+        },
+        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
+            Acc<T> acc;
+            acc.ntt = a.ntt + b.ntt;
+            acc.n = a.n + b.n;
+            return acc;
+        });
+    }
+};
