@@ -332,16 +332,25 @@ class TestUtils:
             l2 = cdist(sample, sample)
             return np.min(l2[l2.nonzero()])
 
-        sample = qmc.Halton(d=2, scramble=False, seed=SEED).random(64)
-        sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
-                sample, n_iters=10, seed=SEED
-        )
+        # quite sensible seed as it can go up before going further down
+        rng = np.random.RandomState(1809831)
+        sample = rng.uniform(0, 1, size=(128, 2))
+        base_l1 = l1_norm(sample)
+        base_l2 = l2_norm(sample)
 
-        # lower is better for the discrepancy
-        assert qmc.discrepancy(sample) < qmc.discrepancy(sample_lloyd)
-        # higher is better for the distance measures
-        assert l1_norm(sample) < l1_norm(sample_lloyd)
-        assert l2_norm(sample) < l2_norm(sample_lloyd)
+        for _ in range(4):
+            sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
+                    sample, n_iters=1, seed=SEED
+            )
+            curr_l1 = l1_norm(sample_lloyd)
+            curr_l2 = l2_norm(sample_lloyd)
+
+            # higher is better for the distance measures
+            assert base_l1 < curr_l1
+            assert base_l2 < curr_l2
+
+            base_l1 = curr_l1
+            base_l2 = curr_l2
 
 
 class TestVDC:

@@ -19,7 +19,7 @@ import warnings
 
 import numpy as np
 
-from scipy import optimize, spatial
+from scipy import spatial
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -484,24 +484,6 @@ def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
     return disc_ep
 
 
-def _decay(n_iters: IntNumber):
-    """Exponential decay.
-
-    Fit an exponential to be 2 at 0 and 1 at `n_iters`.
-    The decay is used for relaxation.
-    """
-    res = optimize.root_scalar(lambda x: np.exp(-n_iters/x) + 1 - 1.1,
-                               bracket=[1, n_iters])
-
-    return (np.exp(-x / res.root) + 0.9 for x in range(n_iters))
-
-
-def _points_contain_duplicates(sample: np.ndarray) -> bool:
-    """Check whether `sample` contains duplicates."""
-    vals, count = np.unique(sample, return_counts=True)
-    return np.any(vals[count > 1])
-
-
 def _jitter_sample(
         sample: np.ndarray, rng: SeedType, eps: float = 1e-10
 ) -> np.ndarray:
@@ -510,7 +492,8 @@ def _jitter_sample(
     If the samples are not unique, the number of regions in our
     tessellation will be less than the number of input samples.
     """
-    while _points_contain_duplicates(sample):
+    vals, count = np.unique(sample, return_counts=True)
+    if np.any(vals[count > 1]):
         offset = rng.uniform(-eps, eps, size=(len(sample), sample.shape[1]))
         sample = sample + offset
     return sample
@@ -548,36 +531,24 @@ def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
     sample = _jitter_sample(sample, rng=rng)
     centroids = np.empty_like(sample)
 
-    # Add exterior corners before tesselation. Adding points further helps
-    # mitigate the sample collapsing from a hypercube to a hypersphere
-    d = centroids.shape[1]
-    arrays = np.tile([0-100, 1+100], (d, 1))
-    hypercube_corners = np.stack(np.meshgrid(*arrays), axis=-1).reshape(-1, d)
-
-    n_hypercube_corners = len(hypercube_corners)
-    sample = np.concatenate((sample, hypercube_corners))
-
     voronoi = spatial.Voronoi(sample)
 
-    for ii, idx in enumerate(voronoi.point_region[:-n_hypercube_corners]):
+    for ii, idx in enumerate(voronoi.point_region):
         # the region is a series of indices into self.voronoi.vertices
         # remove point at infinity, designated by index -1
         region = [i for i in voronoi.regions[idx] if i != -1]
 
-        # enclose the polygon
-        region = region + [region[0]]
-
         # get the vertices for this region
         verts = voronoi.vertices[region]
-        verts = np.clip(verts, 0, 1)
+
+        # clipping would be wrong, we need to intersect
+        # verts = np.clip(verts, 0, 1)
 
         # move sample towards centroids:
         # Centroid in n-D is the mean for uniformly distributed nodes
         # of a geometry.
         centroid = np.mean(verts, axis=0)
         centroids[ii] = sample[ii] + (centroid - sample[ii]) * decay
-
-    sample = sample[:-n_hypercube_corners]
 
     # only update sample to centroid within the region
     is_valid = np.all(np.logical_and(centroids >= 0, centroids <= 1), axis=1)
@@ -657,7 +628,7 @@ def lloyd_centroidal_voronoi_tessellation(
 
     Now process the sample using Lloyd's algorithm.
 
-    >>> sample = lloyd_centroidal_voronoi_tessellation(sample)
+    >>> sample = qmc.lloyd_centroidal_voronoi_tessellation(sample)
     >>> sample
     array([[0.90056185, 0.48763115],  # random
            [0.23868639, 0.54297088],
@@ -672,7 +643,12 @@ def lloyd_centroidal_voronoi_tessellation(
     sample = np.asarray(sample)
     rng = check_random_state(seed)
 
-    decay = _decay(n_iters)
+    # Fit an exponential to be 2 at 0 and 1 at `n_iters`.
+    # The decay is used for relaxation.
+    # analytical solution for y=exp(-n_iters/x) - 0.1
+    root = -n_iters / np.log(0.1)
+    decay = (np.exp(-x / root) + 0.9 for x in range(n_iters))
+
     for _ in range(n_iters):
         decay_ = next(decay)
         sample = _lloyd_centroidal_voronoi_tessellation(
