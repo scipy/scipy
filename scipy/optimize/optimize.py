@@ -2630,7 +2630,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     elif not success and disp:
         if nit >= maxiter:
             print("\nMaximum number of iterations exceeded")
-        if np.isnan(x) or np.isnan(fval):
+        if np.isnan(xmin) or np.isnan(fval):
             print("\n{}".format(_status_message['nan']))
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
