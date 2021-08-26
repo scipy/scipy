@@ -1941,8 +1941,8 @@ _METRIC_INFOS = [
         aka={'yule'},
         types=['bool'],
         dist_func=yule,
-        cdist_func=CDistMetricWrapper('yule'),
-        pdist_func=PDistMetricWrapper('yule'),
+        cdist_func=_distance_pybind.cdist_yule,
+        pdist_func=_distance_pybind.pdist_yule,
     ),
 ]
 
