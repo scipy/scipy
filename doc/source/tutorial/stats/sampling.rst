@@ -105,6 +105,8 @@ where
 * pmf: probability mass function
 
 
+For more details on the generators implemented in UNU.RAN, please refer to [2]_ and [3]_.
+
 Basic concepts of the Interface
 -------------------------------
 
@@ -289,3 +291,9 @@ References
 
 .. [1] Von Neumann, John. "13. various techniques used in connection with
        random digits." Appl. Math Ser 12.36-38 (1951): 3.
+
+.. [2] UNU.RAN User Manual, https://statmath.wu.ac.at/unuran/doc/unuran.html
+
+.. [3] Leydold, Josef, Wolfgang Hörmann, and Halis Sak. "An R Interface to
+       the UNU.RAN Library for Universal Random Variate Generators.",
+       https://cran.r-project.org/web/packages/Runuran/vignettes/Runuran.pdf
