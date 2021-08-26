@@ -577,6 +577,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, RussellRaoDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_sokalmichener",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, SokalmichenerDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_chebyshev",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, ChebyshevDistance{});
@@ -648,6 +653,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
     m.def("cdist_russellrao",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, RussellRaoDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_sokalmichener",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, SokalmichenerDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_chebyshev",

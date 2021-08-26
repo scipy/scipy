@@ -1908,8 +1908,8 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=CDistMetricWrapper('sokalmichener'),
-        pdist_func=PDistMetricWrapper('sokalmichener'),
+        cdist_func=_distance_pybind.cdist_sokalmichener,
+        pdist_func=_distance_pybind.pdist_sokalmichener,
     ),
     MetricInfo(
         canonical_name='sokalsneath',
