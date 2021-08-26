@@ -1860,8 +1860,8 @@ _METRIC_INFOS = [
         aka={'kulsinski'},
         types=['bool'],
         dist_func=kulsinski,
-        cdist_func=CDistMetricWrapper('kulsinski'),
-        pdist_func=PDistMetricWrapper('kulsinski'),
+        cdist_func=_distance_pybind.cdist_kulsinski,
+        pdist_func=_distance_pybind.pdist_kulsinski,
     ),
     MetricInfo(
         canonical_name='mahalanobis',
