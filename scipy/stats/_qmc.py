@@ -558,7 +558,10 @@ def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
 
 
 def lloyd_centroidal_voronoi_tessellation(
-        sample: npt.ArrayLike, n_iters: IntNumber = 10, seed: SeedType = None
+        sample: npt.ArrayLike,
+        *,
+        n_iters: IntNumber = 10,
+        seed: SeedType = None
 ) -> np.ndarray:
     """Centroidal Voronoi Tessellation.
 
@@ -608,33 +611,26 @@ def lloyd_centroidal_voronoi_tessellation(
 
     Examples
     --------
+    >>> from scipy.spatial.distance import cdist
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(d=2, scramble=False)
-    >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.        , 0.        ],
-           [0.5       , 0.33333333],
-           [0.25      , 0.66666667],
-           [0.75      , 0.11111111],
-           [0.125     , 0.44444444]])
+    >>> rng = np.random.default_rng()
+    >>> sample = rng.random((128, 2))
 
-    Compute the quality of the sample using the discrepancy criterion.
+    Compute the quality of the sample using the L2 criterion.
 
-    >>> qmc.discrepancy(sample)
-    0.0889...
+    >>> def l2_norm(sample):
+    ...    l2 = cdist(sample, sample)
+    ...    return np.min(l2[l2.nonzero()])
 
-    Now process the sample using Lloyd's algorithm.
+    >>> l2_norm(sample)
+    0.00547...  # random
+
+    Now process the sample using Lloyd's algorithm and check the improvement
+    on the L2. The value should increase.
 
     >>> sample = qmc.lloyd_centroidal_voronoi_tessellation(sample)
-    >>> sample
-    array([[0.90056185, 0.48763115],  # random
-           [0.23868639, 0.54297088],
-           [0.58609148, 0.18020182],
-           [0.61423007, 0.86436856],
-           [0.67033763, 0.50223744]])
-
-    >>> qmc.discrepancy(sample)
-    0.048...  # random
+    >>> l2_norm(sample)
+    0.0273...  # random
 
     """
     sample = np.asarray(sample)
