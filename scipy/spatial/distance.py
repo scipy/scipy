@@ -1916,8 +1916,8 @@ _METRIC_INFOS = [
         aka={'sokalsneath'},
         types=['bool'],
         dist_func=sokalsneath,
-        cdist_func=CDistMetricWrapper('sokalsneath'),
-        pdist_func=PDistMetricWrapper('sokalsneath'),
+        cdist_func=_distance_pybind.cdist_sokalsneath,
+        pdist_func=_distance_pybind.pdist_sokalsneath,
     ),
     MetricInfo(
         canonical_name='sqeuclidean',
