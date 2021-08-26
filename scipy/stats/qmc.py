@@ -35,6 +35,7 @@ Helpers
    discrepancy
    update_discrepancy
    scale
+   lloyd_centroidal_voronoi_tessellation
 
 
 Introduction to Quasi-Monte Carlo

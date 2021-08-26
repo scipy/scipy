@@ -352,6 +352,15 @@ class TestUtils:
             base_l1 = curr_l1
             base_l2 = curr_l2
 
+    def test_lloyd_errors(self):
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            sample = [0, 1, 0.5]
+            qmc.lloyd_centroidal_voronoi_tessellation(sample, seed=SEED)
+
+        with pytest.raises(ValueError, match=r"Sample is out of bounds"):
+            sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
+            qmc.lloyd_centroidal_voronoi_tessellation(sample, seed=SEED)
+
 
 class TestVDC:
     def test_van_der_corput(self):

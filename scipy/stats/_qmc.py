@@ -595,9 +595,6 @@ def lloyd_centroidal_voronoi_tessellation(
     hand, L1 and L2 distances should improve. This is especially true with
     QMC methods which tend to favor the discrepancy over other criteria.
 
-    This implementation adds samples at the corners of the hypercube to
-    mitigate the sample collapsing from a hypercube to a hypersphere.
-
     .. warning::
 
        The Voronoi Tessellation step is expensive and quickly becomes
@@ -642,6 +639,13 @@ def lloyd_centroidal_voronoi_tessellation(
     """
     sample = np.asarray(sample)
     rng = check_random_state(seed)
+
+    if not sample.ndim == 2:
+        raise ValueError('Sample is not a 2D array')
+
+    # Checking that sample is within the bounds
+    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        raise ValueError('Sample is out of bounds')
 
     # Fit an exponential to be 2 at 0 and 1 at `n_iters`.
     # The decay is used for relaxation.
