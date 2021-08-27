@@ -31,7 +31,6 @@ class PytestTester:
         import pytest
 
         module = sys.modules[self.module_name]
-        module_path = os.path.abspath(module.__path__[0])
 
         pytest_args = ['--showlocals', '--tb=short']
 
@@ -45,7 +44,7 @@ class PytestTester:
             pytest_args += ["-" + "v"*(int(verbose)-1)]
 
         if coverage:
-            pytest_args += ["--cov=" + module_path]
+            pytest_args += ["--cov"]
 
         if label == "fast":
             pytest_args += ["-m", "not slow"]
