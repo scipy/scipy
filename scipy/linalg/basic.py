@@ -481,7 +481,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
     Solve equation ``a x = b``. ``a`` is an Hermitian positive-definite banded
-    matrix, stored in `ab` using ordered form.
+    matrix, stored in `ab` using diagonal ordered form.
     Uses Thomas' Algorithm, which is more efficient than standard LU
     factorization, but should not be used for nonpositve matrices.
 
