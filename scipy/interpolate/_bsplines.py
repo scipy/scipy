@@ -739,10 +739,8 @@ class BSpline:
 
         The coefficients of CubicSpline in the power basis:
 
-        $[[0, 0, 0, 0, 0],\\$
-        $[0, 0, 0, 0, 0],\\$
-        $[0, 0, 0, 0, 0],\\$
-        $[1, 1, 1, 1, 1]]$
+        :math:`[[0, 0, 0, 0, 0], [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0], [1, 1, 1, 1, 1]]`
 
         The knot vector: :math:`t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]`
 
