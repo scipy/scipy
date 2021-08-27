@@ -11,6 +11,7 @@ from typing import (
     ClassVar,
     Dict,
     List,
+    Union,
     Optional,
     overload,
     TYPE_CHECKING,
@@ -175,7 +176,7 @@ def scale(
 
     if not reverse:
         # Checking that sample is within the hypercube
-        if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
             raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
@@ -378,7 +379,7 @@ def update_discrepancy(
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
         raise ValueError('Sample is not in unit hypercube')
 
     # Checking that x_new is within the hypercube and 1D
@@ -485,7 +486,9 @@ def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
 
 
 def _jitter_sample(
-        sample: np.ndarray, rng: SeedType, eps: float = 1e-10
+        sample: np.ndarray,
+        rng: Union[np.random.Generator, np.random.RandomState],
+        eps: float = 1e-10
 ) -> np.ndarray:
     """Randomly jitter `sample` until they are unique.
 
@@ -499,7 +502,11 @@ def _jitter_sample(
     return sample
 
 
-def _lloyd_centroidal_voronoi_tessellation(sample, decay, rng):
+def _lloyd_centroidal_voronoi_tessellation(
+        sample: np.ndarray,
+        decay: float,
+        rng: Union[np.random.Generator, np.random.RandomState]
+) -> np.ndarray:
     """Lloyd's algorithm iteration.
 
     Based on the implementation of Stéfan van der Walt:
