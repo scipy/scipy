@@ -4205,17 +4205,19 @@ class Test_ttest_ind_permutations():
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
 
-    def test_batch_generator(self):
-        got = list(_batch_generator(range(0), 5))
-        expected = []
-        assert got == expected
+    @pytest.mark.parametrize("batch", (-1, 0))
+    def test_batch_generator_iv(self, batch):
+        with assert_raises(ValueError, match="`batch` must be positive."):
+            list(_batch_generator([1, 2, 3], batch))
 
-        got = list(_batch_generator(range(10), 5))
-        expected = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
-        assert got == expected
+    batch_generator_cases = [(range(0), 3, []),
+                             (range(6), 3, [[0, 1, 2], [3, 4, 5]]),
+                             (range(8), 3, [[0, 1, 2], [3, 4, 5], [6, 7]])]
 
-        got = list(_batch_generator(range(12), 5))
-        expected = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11]]
+    @pytest.mark.parametrize("iterable, batch, expected",
+                             batch_generator_cases)
+    def test_batch_generator(self, iterable, batch, expected):
+        got = list(_batch_generator(iterable, batch))
         assert got == expected
 
 
