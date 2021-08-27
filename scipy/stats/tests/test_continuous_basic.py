@@ -636,7 +636,8 @@ def check_vecentropy(distfn, args):
 
 
 def check_loc_scale(distfn, arg, m, v, msg):
-    # Made `loc` and `scale` arrays to catch bugs like gh-13580
+    # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
+    # `loc` and `scale` arrays improperly broadcast with shapes. 
     loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
     npt.assert_allclose(m*scale + loc, mt)
