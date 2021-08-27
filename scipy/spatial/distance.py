@@ -979,10 +979,10 @@ def kulczynski1(u, v, *, w=None):
     References
     ----------
     .. [1] Kulczynski S. Zespoly roslin w Pieninach. Bulletin
-           International de ĺAcademié Polonaise des Sciences
+           International de lAcademie Polonaise des Sciences
            et des Lettres, Classe des Sciences Mathe matiques
-           et Naturelles, Sé rie B (Sciences Naturelles). 1927;
-           Supplement II: 57–203.
+           et Naturelles, Se rie B (Sciences Naturelles). 1927;
+           Supplement II: 57-203.
 
     Examples
     --------
