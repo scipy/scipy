@@ -706,6 +706,8 @@ class BSpline:
 
         Notes
         -----
+        .. versionadded:: 1.8.0
+
         Accepts only ``CubicSpline`` instances for now.
 
         The algorithm follows from differentiation
@@ -717,31 +719,33 @@ class BSpline:
             c_j = \sum_{m=0}^{k} \frac{(k-m)!}{k!}
                        c_{m,i} (-1)^{k-m} D^m p_{j,k}(x_i)
 
-        :math: `c_{m, i}` - a coefficient of CubicSpline,
-        :math: `D^m p_{j, k}(x_i)` - an m-th defivative of a dual polynomial
-        in ``x_i``.
+        :math:`c_{m, i}` - a coefficient of CubicSpline,
+        :math:`D^m p_{j, k}(x_i)` - an m-th defivative of a dual polynomial
+        in :math:`x_i`.
 
         ``k`` always equals 3 for now.
 
-        First ``n - 2`` coefficients are computed in ``x_i = x_j``, e.g.
+        First ``n - 2`` coefficients are computed in :math:`x_i = x_j`, e.g.
 
         .. math::
 
             c_1 = \sum_{m=0}^{k} \frac{(k-1)!}{k!} c_{m,1} D^m p_{j,3}(x_1)
 
-        Last ``nod + 2`` coefficients are computed ``in x[-2]``,
+        Last ``nod + 2`` coefficients are computed in ``x[-2]``,
         ``nod`` - number of derivatives at the ends.
 
-        For example, consider ``x = [0, 1, 2, 3, 4]``,
-        ``y = [1, 1, 1, 1, 1]`` and bc_type = ``natural``
+        For example, consider :math:`x = [0, 1, 2, 3, 4]`,
+        :math:`y = [1, 1, 1, 1, 1]` and bc_type = ``natural``
+
         The coefficients of CubicSpline in the power basis:
 
-        [[0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [1, 1, 1, 1, 1]]
+        $[[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[1, 1, 1, 1, 1]]$
 
-        The knot vector ``t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]``
+        The knot vector: :math:`t = [0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 4]`
+
         In this case
 
         .. math::
@@ -750,8 +754,6 @@ class BSpline:
 
         References
         ----------
-        .. versionadded:: 1.8.0
-
         .. [1] Tom Lyche and Knut Morken, Spline Methods, 2005, Section 3.1.2
 
         """

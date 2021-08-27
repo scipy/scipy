@@ -551,12 +551,12 @@ class TestBSpline:
     def test_from_power_basis_exmp(self):
         '''
         For x = [0, 1, 2, 3, 4] and y = [1, 1, 1, 1, 1]
-        The coefficients of Cubic Spline in the power basis:
+        the coefficients of Cubic Spline in the power basis:
 
-        [[0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0],
-         [1, 1, 1, 1, 1]]
+        $[[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[1, 1, 1, 1, 1]]$
 
         It could be shown explicitly that coefficients of the interpolating
         function in B-spline basis are c = [1, 1, 1, 1, 1, 1, 1]
