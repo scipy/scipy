@@ -109,7 +109,7 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance',
-                   'studentized_range'])
+                   'truncnorm', 'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -132,9 +132,6 @@ def cases_test_cont_basic():
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
     # this test skips slow distributions
-
-    if distname == 'truncnorm':
-        pytest.xfail(reason=distname)
 
     try:
         distfn = getattr(stats, distname)
@@ -245,6 +242,7 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
+    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -254,25 +252,28 @@ def cases_test_moments():
             msg = ("studentized_range is far too slow for this test and it is "
                    "redundant with test_distributions::TestStudentizedRange::"
                    "test_moment_against_mp")
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason=msg))
             continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
+        cond3 = distname not in fail_loc_scale
 
-        yield distname, arg, cond1, cond2, False
+        yield distname, arg, cond1, cond2, cond3, False
 
-        if not cond1 or not cond2:
+        if not cond1 or not cond2 or not cond3:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,is_xfailing',
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
+                         'loc_scale_ok,is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
+                 is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -296,7 +297,9 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
 
-        check_loc_scale(distfn, arg, m, v, distname)
+        if loc_scale_ok:
+            check_loc_scale(distfn, arg, m, v, distname)
+
         check_moment(distfn, arg, m, v, distname)
 
 
@@ -633,7 +636,9 @@ def check_vecentropy(distfn, args):
 
 
 def check_loc_scale(distfn, arg, m, v, msg):
-    loc, scale = 10.0, 10.0
+    # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
+    # `loc` and `scale` arrays improperly broadcast with shapes.
+    loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)

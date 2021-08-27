@@ -8237,31 +8237,37 @@ class truncnorm_gen(rv_continuous):
                           np.nan)
 
     def _stats(self, a, b, moments='mv'):
-        pA, pB = self._pdf(np.array([a, b]), a, b)
-        m1 = pA - pB
-        mu = m1
-        # use _lazywhere to avoid nan (See detailed comment in _munp)
-        probs = [pA, -pB]
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
-                          fillvalue=0)
-        m2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
-                          fillvalue=0)
-        # mu2 = m2 - mu**2, but not as numerically stable as:
-        # mu2 = (a-mu)*pA - (b-mu)*pB + 1
-        mu2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
-                          fillvalue=0)
-        m3 = 2*m1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
-                          fillvalue=0)
-        m4 = 3*m2 + np.sum(vals)
+        pA, pB = self.pdf(np.array([a, b]), a, b)
 
-        mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
-        g1 = mu3 / np.power(mu2, 1.5)
-        mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
-        g2 = mu4 / mu2**2 - 3
-        return mu, mu2, g1, g2
+        def _truncnorm_stats_scalar(a, b, pA, pB, moments):
+            m1 = pA - pB
+            mu = m1
+            # use _lazywhere to avoid nan (See detailed comment in _munp)
+            probs = [pA, -pB]
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
+                              fillvalue=0)
+            m2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
+                              fillvalue=0)
+            # mu2 = m2 - mu**2, but not as numerically stable as:
+            # mu2 = (a-mu)*pA - (b-mu)*pB + 1
+            mu2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
+                              fillvalue=0)
+            m3 = 2*m1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
+                              fillvalue=0)
+            m4 = 3*m2 + np.sum(vals)
+
+            mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
+            g1 = mu3 / np.power(mu2, 1.5)
+            mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
+            g2 = mu4 / mu2**2 - 3
+            return mu, mu2, g1, g2
+
+        _truncnorm_stats = np.vectorize(_truncnorm_stats_scalar,
+                                        excluded=('moments',))
+        return _truncnorm_stats(a, b, pA, pB, moments)
 
     def _rvs(self, a, b, size=None, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create
