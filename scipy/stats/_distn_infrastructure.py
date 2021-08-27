@@ -1310,10 +1310,10 @@ class rv_generic:
             idx = [i for i in range(4) if mom[i] is not None]
             if any(idx):
                 arrs = argsreduce(loc != 0, *arrs)
-                j=0
+                j = 0
                 for i in idx:
                     mom[i] = arrs[j]
-                    j+=1
+                    j += 1
             mu, mu2, g1, g2 = mom
             args = argsreduce(loc != 0, *shapes, loc, scale, val)
             *shapes, loc, scale, val = args
