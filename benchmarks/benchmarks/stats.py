@@ -478,19 +478,20 @@ class BenchQMCDiscrepancy(Benchmark):
 
 
 class BenchQMCHalton(Benchmark):
-    param_names = ['d', 'scramble', 'n']
+    param_names = ['d', 'scramble', 'n', 'workers']
     params = [
         [1, 10],
         [True, False],
-        [10, 1_000, 100_000]
+        [10, 1_000, 100_000],
+        [1, 4]
     ]
 
-    def setup(self, d, scramble, n):
+    def setup(self, d, scramble, n, workers):
         self.rng = np.random.default_rng(1234)
 
-    def time_halton(self, d, scramble, n):
+    def time_halton(self, d, scramble, n, workers):
         seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
-        seq.random(n)
+        seq.random(n, workers=workers)
 
 
 class NumericalInverseHermite(Benchmark):

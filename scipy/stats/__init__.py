@@ -377,6 +377,8 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
    NumericalInverseHermite
+   TransformedDensityRejection
+   DiscreteAliasUrn
 
 Circular statistical functions
 ------------------------------
@@ -424,8 +426,8 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
-Warnings used in :mod:`scipy.stats`
------------------------------------
+Warnings / Errors used in :mod:`scipy.stats`
+--------------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -435,6 +437,7 @@ Warnings used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
+   UNURANError
 
 """
 
@@ -453,6 +456,7 @@ from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from ._unuran import *  # noqa
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 

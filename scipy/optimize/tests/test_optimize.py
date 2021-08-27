@@ -1581,6 +1581,12 @@ class TestOptimizeScalar:
         optimize.minimize_scalar(self.fun, args=1.5)
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_disp(self, method):
+        # test that all minimize_scalar methods accept a disp option.
+        for disp in [0, 1, 2, 3]:
+            optimize.minimize_scalar(self.fun, options={"disp": disp})
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)

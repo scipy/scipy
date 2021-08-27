@@ -18,10 +18,10 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.8.dev
+# the version of OpenBLAS used is currently 0.3.15
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.9
+    openblas_version: 0.3.17
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -62,7 +62,7 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -201,16 +201,16 @@ stages:
             python3.7 get-pip.py && \
             pip3 --version && \
             pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
-            apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
+            apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
             target=\$(python3.7 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 setup.py install && \
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.7 setup.py install && \
             python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -300,9 +300,8 @@ stages:
         clang-cl.exe --version
       displayName: 'clang-cl version'
     - powershell: |
-        # wheels appear to use mingw64 version 6.3.0, but 6.4.0
-        # is the closest match available from choco package manager
-        choco install -y mingw --forcex86 --force --version=6.4.0
+        # wheels must use same version
+        choco install -y mingw --forcex86 --force --version=7.3.0
       displayName: 'Install 32-bit mingw for 32-bit builds'
       condition: and(succeeded(), eq(variables['BITS'], 32))
     - script: >-

@@ -665,21 +665,40 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         return SpearmanrResult(rs, prob)
 
 
-def _kendall_p_exact(n, c):
-    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+def _kendall_p_exact(n, c, alternative='two-sided'):
+
+    # Use the fact that distribution is symmetric: always calculate a CDF in
+    # the left tail.
+    # This will be the one-sided p-value if `c` is on the side of
+    # the null distribution predicted by the alternative hypothesis.
+    # The two-sided p-value will be twice this value.
+    # If `c` is on the other side of the null distribution, we'll need to
+    # take the complement and add back the probability mass at `c`.
+    in_right_tail = (c >= (n*(n-1))//2 - c)
+    alternative_greater = (alternative == 'greater')
+    c = int(min(c, (n*(n-1))//2 - c))
+
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods"
+    # (4th Edition), Charles Griffin & Co., 1970.
     if n <= 0:
         raise ValueError(f'n ({n}) must be positive')
     elif c < 0 or 4*c > n*(n-1):
         raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
     elif n == 1:
         prob = 1.0
+        p_mass_at_c = 1
     elif n == 2:
         prob = 1.0
+        p_mass_at_c = 0.5
     elif c == 0:
         prob = 2.0/math.factorial(n) if n < 171 else 0.0
+        p_mass_at_c = prob/2
     elif c == 1:
         prob = 2.0/math.factorial(n-1) if n < 172 else 0.0
-    elif 4*c == n*(n-1):
+        p_mass_at_c = (n-1)/math.factorial(n)
+    elif 4*c == n*(n-1) and alternative == 'two-sided':
+        # I'm sure there's a simple formula for p_mass_at_c in this
+        # case, but I don't know it. Use generic formula for one-sided p-value.
         prob = 1.0
     elif n < 171:
         new = np.zeros(c+1)
@@ -689,6 +708,7 @@ def _kendall_p_exact(n, c):
             if j <= c:
                 new[j:] -= new[:c+1-j]
         prob = 2.0*np.sum(new)/math.factorial(n)
+        p_mass_at_c = new[-1]/math.factorial(n)
     else:
         new = np.zeros(c+1)
         new[0:2] = 1.0
@@ -697,14 +717,26 @@ def _kendall_p_exact(n, c):
             if j <= c:
                 new[j:] -= new[:c+1-j]
         prob = np.sum(new)
+        p_mass_at_c = new[-1]/2
 
-    return np.clip(prob, 0, 1)
+    if alternative != 'two-sided':
+        # if the alternative hypothesis and alternative agree,
+        # one-sided p-value is half the two-sided p-value
+        if in_right_tail == alternative_greater:
+            prob /= 2
+        else:
+            prob = 1 - prob/2 + p_mass_at_c
+
+    prob = np.clip(prob, 0, 1)
+
+    return prob
 
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
+def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
+               alternative='two-sided'):
     """
     Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
@@ -727,13 +759,20 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         time may grow and the result may lose some precision.
         'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
 
     Returns
     -------
     correlation : float
-        Kendall tau
+        The Kendall tau statistic
     pvalue : float
-        Approximate 2-side p-value.
+        The p-value
 
     References
     ----------
@@ -783,7 +822,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        prob = _kendall_p_exact(n, int(min(C, (n*(n-1))//2-C)))
+        prob = _kendall_p_exact(n, C, alternative)
 
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
@@ -807,7 +846,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         var_s /= 18.
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
-        prob = special.erfc(abs(z)/np.sqrt(2))
+        _, prob = scipy.stats.stats._normtest_finish(z, alternative)
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")

@@ -1,11 +1,12 @@
 """Quasi-Monte Carlo engines and helpers."""
 from __future__ import annotations
 
-import os
 import copy
-import numbers
-from abc import ABC, abstractmethod
 import math
+import numbers
+import os
+import warnings
+from abc import ABC, abstractmethod
 from typing import (
     Callable,
     ClassVar,
@@ -15,7 +16,6 @@ from typing import (
     overload,
     TYPE_CHECKING,
 )
-import warnings
 
 import numpy as np
 
@@ -305,17 +305,7 @@ def discrepancy(
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError("Sample is not in unit hypercube")
 
-    workers = int(workers)
-    if workers == -1:
-        workers = os.cpu_count()  # type: ignore[assignment]
-        if workers is None:
-            raise NotImplementedError(
-                "Cannot determine the number of cpus using os.cpu_count(), "
-                "cannot use -1 for the number of workers"
-            )
-    elif workers <= 0:
-        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
-                         "or > 0")
+    workers = _validate_workers(workers)
 
     methods = {
         "CD": _cy_wrapper_centered_discrepancy,
@@ -558,7 +548,8 @@ def van_der_corput(
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
-        seed: SeedType = None) -> np.ndarray:
+        seed: SeedType = None,
+        workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -584,6 +575,9 @@ def van_der_corput(
         seeded with `seed`.
         If `seed` is already a ``Generator`` instance then that instance is
         used.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -612,10 +606,11 @@ def van_der_corput(
         for perm in permutations:
             rng.shuffle(perm)
 
-        return _cy_van_der_corput_scrambled(n, base, start_index, permutations)
+        return _cy_van_der_corput_scrambled(n, base, start_index,
+                                            permutations, workers)
 
     else:
-        return _cy_van_der_corput(n, base, start_index)
+        return _cy_van_der_corput(n, base, start_index, workers)
 
 
 class QMCEngine(ABC):
@@ -862,13 +857,19 @@ class Halton(QMCEngine):
         self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
         n : int, optional
             Number of samples to generate in the parameter space. Default is 1.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Default is 1. It becomes faster
+            than one worker for `n` greater than :math:`10^3`.
 
         Returns
         -------
@@ -876,11 +877,13 @@ class Halton(QMCEngine):
             QMC sample.
 
         """
+        workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
         sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
                                  scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed))
+                                 seed=copy.deepcopy(self.seed),
+                                 workers=workers)
                   for bdim in self.base]
 
         self.num_generated += n
@@ -888,16 +891,12 @@ class Halton(QMCEngine):
 
 
 class LatinHypercube(QMCEngine):
-    """Latin hypercube sampling (LHS).
+    r"""Latin hypercube sampling (LHS).
 
     A Latin hypercube sample [1]_ generates :math:`n` points in
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
-    LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
-    but not necessarily for optimized LHS.
 
     Parameters
     ----------
@@ -917,12 +916,51 @@ class LatinHypercube(QMCEngine):
 
         .. versionadded:: 1.8.0
 
+    strength : {1, 2}, optional
+        Strength of the LHS. ``strength=1`` produces a plain LHS while
+        ``strength=2`` produces an orthogonal array based LHS of strength 2
+        [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
+        with ``p`` a prime number. It also constrains ``d <= p + 1``.
+        Default is 1.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``Generator`` instance then that instance is
         used.
+
+    Notes
+    -----
+
+    When LHS is used for integrating a function :math:`f` over :math:`n`,
+    LHS is extremely effective on integrands that are nearly additive [2]_.
+    With a LHS of :math:`n` points, the variance of the integral is always
+    lower than plain MC on :math:`n-1` points [3]_. There is a central limit
+    theorem for LHS on the mean and variance of the integral [4]_, but not
+    necessarily for optimized LHS due to the randomization.
+
+    :math:`A` is called an orthogonal array of strength :math:`t` if in each
+    n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
+    distinct rows occur the same number of times. The elements of :math:`A`
+    are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
+    The constraint that :math:`p` must be a prime number is to allow modular
+    arithmetic.
+
+    Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
+    strength 2 is a useful increment over strength 1. Going to strength 3 is
+    a smaller increment and scrambled QMC like Sobol', Halton are more
+    performant [7]_.
+
+    To create a LHS of strength 2, the orthogonal array :math:`A` is
+    randomized by applying a random, bijective map of the set of symbols onto
+    itself. For example, in column 0, all 0s might become 2; in column 1,
+    all 0s might become 1, etc.
+    Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
+    one-dimensional LHS of size :math:`p` to the subarray where
+    :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
 
     References
     ----------
@@ -940,6 +978,10 @@ class LatinHypercube(QMCEngine):
     .. [6] Damblin et al., "Numerical studies of space filling designs:
        optimization of Latin Hypercube Samples and subprojection properties."
        Journal of Simulation, 2013.
+    .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
+       integration and visualization." Statistica Sinica, 1992.
+    .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
+       Journal of the American Statistical Association, 1993.
 
     Examples
     --------
@@ -979,32 +1021,61 @@ class LatinHypercube(QMCEngine):
     >>> qmc.discrepancy(sample)
     0.0176...  # random
 
+    Use the `strength` keyword argument to produce an orthogonal array based
+    LHS of strength 2. In this case, the number of sample points must be the
+    square of a prime number.
+
+    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
+    >>> sample = sampler.random(n=9)
+    >>> qmc.discrepancy(sample)
+    0.00526...  # random
+
+    Options could be combined to produce an optimized centered
+    orthogonal array based LHS. After optimization, the result would not
+    be guaranteed to be of strength 2.
+
     """
 
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
+        strength: int = 1,
         optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        lhs_methods: Dict[Optional[Literal["random-cd"]], Callable] = {
-            None: self._random,
-            "random-cd": self._random_cd,
+        lhs_method_strength = {
+            1: self._random,
+            2: self._random_oa_lhs
         }
 
         try:
-            if optimization is not None:
-                optimization = optimization.lower()  # type: ignore[assignment]
-            self.lhs_method = lhs_methods[optimization]
-        except KeyError:
-            raise ValueError(f"{optimization!r} is not a valid optimization"
-                             " method. It must be one of"
-                             f" {set(lhs_methods)!r}")
+            self.lhs_method = lhs_method_strength[strength]
+        except KeyError as exc:
+            message = (f"{strength!r} is not a valid strength. It must be one"
+                       f" of {set(lhs_method_strength)!r}")
+            raise ValueError(message) from exc
 
-        self._n_nochange = 100
-        self._n_iters = 10_000
+        optimization_method: Dict[Literal["random-cd"], Callable] = {
+            "random-cd": self._random_cd,
+        }
+
+        self.optimization_method: Optional[Callable]
+        if optimization is not None:
+            try:
+                optimization = optimization.lower()  # type: ignore[assignment]
+                self.optimization_method = optimization_method[optimization]
+            except KeyError as exc:
+                message = (f"{optimization!r} is not a valid optimization"
+                           f" method. It must be one of"
+                           f" {set(optimization_method)!r}")
+                raise ValueError(message) from exc
+
+            self._n_nochange = 100
+            self._n_iters = 10_000
+        else:
+            self.optimization_method = None
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -1020,7 +1091,12 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        return self.lhs_method(n)
+        lhs = self.lhs_method(n)
+        if self.optimization_method is not None:
+            lhs = self.optimization_method(lhs)
+
+        self.num_generated += n
+        return lhs
 
     def _random(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
@@ -1036,10 +1112,56 @@ class LatinHypercube(QMCEngine):
         perms = perms.T
 
         samples = (perms - samples) / n
-        self.num_generated += n
         return samples
 
-    def _random_cd(self, n: IntNumber = 1) -> np.ndarray:
+    def _random_oa_lhs(self, n: IntNumber = 4) -> np.ndarray:
+        """Orthogonal array based LHS of strength 2."""
+        p = np.sqrt(n).astype(int)
+        n_row = p**2
+        n_col = p + 1
+
+        primes = primes_from_2_to(p + 1)
+        if p not in primes or n != n_row:
+            raise ValueError(
+                "n is not the square of a prime number. Close"
+                f" values are {primes[-2:]**2}"
+            )
+        if self.d > p + 1:
+            raise ValueError("n is too small for d. Must be n > (d-1)**2")
+
+        oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
+
+        # OA of strength 2
+        arrays = np.tile(np.arange(p), (2, 1))
+        oa_sample[:, :2] = np.stack(np.meshgrid(*arrays),
+                                    axis=-1).reshape(-1, 2)
+        for p_ in range(1, p):
+            oa_sample[:, 2+p_-1] = np.mod(oa_sample[:, 0]
+                                          + p_*oa_sample[:, 1], p)
+
+        # scramble the OA
+        oa_sample_ = np.empty(shape=(n_row, n_col), dtype=int)
+        for j in range(n_col):
+            perms = self.rng.permutation(p)
+            oa_sample_[:, j] = perms[oa_sample[:, j]]
+
+        # following is making a scrambled OA into an OA-LHS
+        oa_lhs_sample = np.zeros(shape=(n_row, n_col))
+        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
+                                    seed=self.rng)  # type: QMCEngine
+        for j in range(n_col):
+            for k in range(p):
+                idx = oa_sample[:, j] == k
+                lhs = lhs_engine.random(p).flatten()
+                oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
+
+                lhs_engine = lhs_engine.reset()
+
+        oa_lhs_sample /= p
+
+        return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
+
+    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
         """Optimal LHS on CD.
 
         Create a base LHS and do random permutations of coordinates to
@@ -1051,10 +1173,11 @@ class LatinHypercube(QMCEngine):
         `_n_iters` iterations are performed; or if there is no improvement
         for `_n_nochange` consecutive iterations.
         """
+        n = len(best_sample)
+
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        best_sample = self._random(n=n)
         best_disc = discrepancy(best_sample)
 
         if n == 1:
@@ -1084,7 +1207,6 @@ class LatinHypercube(QMCEngine):
             else:
                 n_nochange += 1
 
-        self.num_generated += n
         return best_sample
 
 
@@ -1334,7 +1456,7 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        engine: Sobol
+        engine : Sobol
             The fast-forwarded engine.
 
         """
@@ -1594,3 +1716,33 @@ class MultinomialQMC(QMCEngine):
         super().reset()
         self.engine.reset()
         return self
+
+
+def _validate_workers(workers: IntNumber = 1) -> IntNumber:
+    """Validate `workers` based on platform and value.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
+
+    Returns
+    -------
+    Workers : int
+        Number of CPU used by the algorithm
+
+    """
+    workers = int(workers)
+    if workers == -1:
+        workers = os.cpu_count()  # type: ignore[assignment]
+        if workers is None:
+            raise NotImplementedError(
+                "Cannot determine the number of cpus using os.cpu_count(), "
+                "cannot use -1 for the number of workers"
+            )
+    elif workers <= 0:
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
+                         "or > 0")
+
+    return workers
