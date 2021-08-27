@@ -938,16 +938,16 @@ def kulczynski1(u, v, *, w=None):
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
-    of length `n`, is defined as
+    of length ``n``, is defined as
 
     .. math::
 
-         \\frac{c_{TT}}
-              {c_{FT} + c_{TF}}
+         \\frac{c_{11}}
+              {c_{01} + c_{10}}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
+    :math:`k \\in {0, 1, ..., n-1}`.
 
     Parameters
     ----------
@@ -979,9 +979,9 @@ def kulczynski1(u, v, *, w=None):
     References
     ----------
     .. [1] Kulczynski S. Zespoly roslin w Pieninach. Bulletin
-           International de l’Acade ́mie Polonaise des Sciences
-           et des Lettres, Classe des Sciences Mathe ́ matiques
-           et Naturelles, Se ́ rie B (Sciences Naturelles). 1927;
+           International de ĺAcademié Polonaise des Sciences
+           et des Lettres, Classe des Sciences Mathe matiques
+           et Naturelles, Sé rie B (Sciences Naturelles). 1927;
            Supplement II: 57–203.
 
     Examples
