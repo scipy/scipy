@@ -789,7 +789,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_double_evaluations(self):
         # check BFGS does not evaluate twice in a row at same point
         def f(x):
-            xp = float(x)
+            xp = x[0]
             assert xp not in seen
             seen.add(xp)
             return 10*x**2, 20*x
@@ -1579,6 +1579,12 @@ class TestOptimizeScalar:
     def test_minimize_scalar_coerce_args_param(self):
         # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_disp(self, method):
+        # test that all minimize_scalar methods accept a disp option.
+        for disp in [0, 1, 2, 3]:
+            optimize.minimize_scalar(self.fun, options={"disp": disp})
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):

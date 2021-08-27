@@ -18,7 +18,7 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
-from scipy.ndimage.filters import correlate1d
+from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (

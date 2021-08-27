@@ -525,7 +525,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
+                np_types = (np.float_, np.int_)
+                cond = self.x.dtype in np_types and self.y.dtype in np_types
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
 

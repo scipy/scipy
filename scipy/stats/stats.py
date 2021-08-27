@@ -35,7 +35,7 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
-from scipy.ndimage import measurements
+from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 import scipy.special as special
@@ -48,6 +48,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
+from ._axis_nan_policy import (_axis_nan_policy_factory,
+                               _broadcast_concatenate)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -4647,7 +4649,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
-               method='auto', variant='b'):
+               method='auto', variant='b', alternative='two-sided'):
     """Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
@@ -4688,12 +4690,20 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     variant: {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
 
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
+
     Returns
     -------
     correlation : float
        The tau statistic.
     pvalue : float
-       The two-sided p-value for a hypothesis test whose null hypothesis is
+       The p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
     See Also
@@ -4766,9 +4776,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
         if variant == 'b':
-            return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
+            return mstats_basic.kendalltau(x, y, method=method, use_ties=True,
+                                           alternative=alternative)
         else:
-            raise ValueError("Only variant 'b' is supported for masked arrays")
+            message = ("nan_policy='omit' is currently compatible only with "
+                       "variant='b'.")
+            raise ValueError(message)
 
     if initial_lexsort is not None:  # deprecate to drop!
         warnings.warn('"initial_lexsort" is gone!')
@@ -4832,14 +4845,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
+        pvalue = mstats_basic._kendall_p_exact(size, tot-dis, alternative)
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
         m = size * (size - 1.)
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
-        pvalue = (special.erfc(np.abs(con_minus_dis) /
-                  np.sqrt(var) / np.sqrt(2)))
+        z = con_minus_dis / np.sqrt(var)
+        _, pvalue = _normtest_finish(z, alternative)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
@@ -5483,7 +5496,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     # find the largest connected component of significant correlations
     sig_connect = stat_mgc_map > threshold
     if np.sum(sig_connect) > 0:
-        sig_connect, _ = measurements.label(sig_connect)
+        sig_connect, _ = _measurements.label(sig_connect)
         _, label_counts = np.unique(sig_connect, return_counts=True)
 
         # skip the first element in label_counts, as it is count(zeros)
@@ -6247,21 +6260,6 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _broadcast_concatenate(xs, axis):
-    """Concatenate arrays along an axis with broadcasting."""
-    # move the axis we're concatenating along to the end
-    xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last axis
-    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
-    # broadcast along all but the last axis
-    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
-    # concatenate along last axis
-    res = np.concatenate(xs, axis=-1)
-    # move the last axis back to where it was
-    res = np.swapaxes(res, axis, -1)
-    return res
-
-
 def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
     """All partitions of data into sets of given lengths, ignoring order"""
 
@@ -6574,18 +6572,21 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     lambda_ : float or str, optional
         The power in the Cressie-Read power divergence statistic.  The default
         is 1.  For convenience, `lambda_` may be assigned one of the following
-        strings, in which case the corresponding numerical value is used::
+        strings, in which case the corresponding numerical value is used:
 
-            String              Value   Description
-            "pearson"             1     Pearson's chi-squared statistic.
-                                        In this case, the function is
-                                        equivalent to `stats.chisquare`.
-            "log-likelihood"      0     Log-likelihood ratio. Also known as
-                                        the G-test [3]_.
-            "freeman-tukey"      -1/2   Freeman-Tukey statistic.
-            "mod-log-likelihood" -1     Modified log-likelihood ratio.
-            "neyman"             -2     Neyman's statistic.
-            "cressie-read"        2/3   The power recommended in [5]_.
+        * ``"pearson"`` (value 1)
+            Pearson's chi-squared statistic. In this case, the function is
+            equivalent to `chisquare`.
+        * ``"log-likelihood"`` (value 0)
+            Log-likelihood ratio. Also known as the G-test [3]_.
+        * ``"freeman-tukey"`` (value -1/2)
+            Freeman-Tukey statistic.
+        * ``"mod-log-likelihood"`` (value -1)
+            Modified log-likelihood ratio.
+        * ``"neyman"`` (value -2)
+            Neyman's statistic.
+        * ``"cressie-read"`` (value 2/3)
+            The power recommended in [5]_.
 
     Returns
     -------
@@ -7753,6 +7754,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7833,6 +7835,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*args, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
