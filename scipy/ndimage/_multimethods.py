@@ -2,6 +2,7 @@ import functools
 import numpy as np
 from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.ndimage import _api
+from scipy.ndimage._backend import ndimage_index, ndimage_output
 
 
 __all__ = ['affine_transform', 'binary_closing', 'binary_dilation',
@@ -28,28 +29,11 @@ __all__ = ['affine_transform', 'binary_closing', 'binary_dilation',
            'white_tophat', 'zoom']
 
 
-class _ndimage_output:
-    """
-    Special case outputs to handle multiple types in __ua_convert__.
-    Eg: output='f', output='float32', output=np.float32
-        are all acceptable in addition to arrays.
-    """
-    pass
-
-
-class _ndimage_index:
-    """
-    Special case index argument in measurement methods to
-    handle both int and array types in __ua_convert__.
-    """
-    pass
-
-
 _mark_non_coercible = functools.partial(Dispatchable,
-                                        dispatch_type=_ndimage_output,
+                                        dispatch_type=ndimage_output,
                                         coercible=False)
 _mark_index = functools.partial(Dispatchable,
-                                dispatch_type=_ndimage_index,
+                                dispatch_type=ndimage_index,
                                 coercible=False)
 
 _create_ndimage = functools.partial(create_multimethod,

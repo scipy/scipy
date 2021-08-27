@@ -1,9 +1,27 @@
 import scipy._lib.uarray as ua
 from scipy.ndimage import _api
+import numpy as np
 
 
 __all__ = ['register_backend', 'set_backend',
            'set_global_backend', 'skip_backend']
+
+
+class ndimage_output:
+    """
+    Special case outputs to handle multiple types in __ua_convert__.
+    Eg: output='f', output='float32', output=np.float32
+        are all acceptable in addition to arrays.
+    """
+    pass
+
+
+class ndimage_index:
+    """
+    Special case index argument in measurement methods to
+    handle both int and array types in __ua_convert__.
+    """
+    pass
 
 
 class _ScipyImageBackend:
@@ -27,6 +45,40 @@ class _ScipyImageBackend:
         if fn is None:
             return NotImplemented
         return fn(*args, **kwargs)
+
+    @ua.wrap_single_convertor
+    def __ua_convert__(value, dispatch_type, coerce):
+        if value is None:
+            return None
+
+        if dispatch_type is np.ndarray:
+            if not coerce and not isinstance(value, np.ndarray):
+                return NotImplemented
+
+            return np.asarray(value)
+
+        if dispatch_type is np.dtype:
+            try:
+                return np.dtype(str(value))
+            except TypeError:
+                return np.dtype(value)
+
+        if dispatch_type is ndimage_output:
+            if isinstance(value, np.ndarray):
+                return np.asarray(value)
+            else:
+                try:
+                    return np.dtype(str(value))
+                except TypeError:
+                    return np.dtype(value)
+
+        if dispatch_type is ndimage_index:
+            if isinstance(value, np.ndarray):
+                return np.asarray(value)
+            else:
+                return value
+
+        return value
 
 
 _named_backends = {
@@ -214,4 +266,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy', try_last=True)
+set_global_backend('scipy', try_last=True, coerce=True)
