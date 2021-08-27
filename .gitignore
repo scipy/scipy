@@ -93,10 +93,6 @@ pip-wheel-metadata
 .cache/*
 .pytest_cache/*
 
-# hypothesis cache #
-####################
-.hypothesis/*
-
 # mypy cache #
 ##############
 .mypy_cache/*

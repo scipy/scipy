@@ -36,7 +36,7 @@ jobs:
         run: |      
           python3.7-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.7-dbg -m pip install --upgrade pip setuptools wheel
-          python3.7-dbg -m pip install --upgrade numpy cython pytest hypothesis pytest-xdist pybind11
+          python3.7-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
           python3.7-dbg -m pip install --upgrade mpmath gmpy2 pythran
           python3.7-dbg -m pip uninstall -y nose
           cd ..
@@ -81,7 +81,7 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user setuptools wheel cython pytest hypothesis pybind11 pytest-xdist
+        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python3.10 -m pip install -r mypy_requirements.txt
 
