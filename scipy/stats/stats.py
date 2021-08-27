@@ -48,6 +48,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
+from ._axis_nan_policy import (_axis_nan_policy_factory,
+                               _broadcast_concatenate)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -6258,21 +6260,6 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _broadcast_concatenate(xs, axis):
-    """Concatenate arrays along an axis with broadcasting."""
-    # move the axis we're concatenating along to the end
-    xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last axis
-    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
-    # broadcast along all but the last axis
-    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
-    # concatenate along last axis
-    res = np.concatenate(xs, axis=-1)
-    # move the last axis back to where it was
-    res = np.swapaxes(res, axis, -1)
-    return res
-
-
 def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
     """All partitions of data into sets of given lengths, ignoring order"""
 
@@ -7767,6 +7754,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7847,6 +7835,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*args, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
