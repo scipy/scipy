@@ -401,7 +401,7 @@ struct DiceDistance {
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        transform_reduce_2d_<8>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+        transform_reduce_2d_<2>(out, x, y, [](T x, T y) INLINE_LAMBDA {
             Acc<T> acc;
             acc.nonmatches = (x != y);
             acc.tt_matches = (x != 0) & (y != 0);
@@ -726,23 +726,22 @@ struct YuleDistance {
     template <typename T>
     struct Acc {
         Acc(): ntt(0), nft(0), nff(0), ntf(0) {}
-        T ntt, nft, nff, ntf;
+        intptr_t ntt, nft, nff, ntf;
     };
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
+        transform_reduce_2d_<2>(out, x, y, [](T x, T y) INLINE_LAMBDA {
             Acc<T> acc;
-            bool x_b = x != 0, y_b = y != 0;
-            acc.ntt = x_b & y_b;
-            acc.ntf = x_b & (!y_b);
-            acc.nft = (!x_b) & y_b;
-            acc.nff = (!x_b) & (!y_b);
+            acc.ntt = (x != 0) & (y != 0);
+            acc.ntf = (x != 0) & (y == 0);
+            acc.nft = (x == 0) & (y != 0);
+            acc.nff = (x == 0) & (y == 0);
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            T half_R = acc.ntf * acc.nft;
-            return (2 * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
+            intptr_t half_R = acc.ntf * acc.nft;
+            return (2. * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -756,18 +755,17 @@ struct YuleDistance {
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
+        transform_reduce_2d_<2>(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
             Acc<T> acc;
-            bool x_b = x != 0, y_b = y != 0;
-            acc.ntt = w * (x_b & y_b);
-            acc.ntf = w * (x_b & (!y_b));
-            acc.nft = w * ((!x_b) & y_b);
-            acc.nff = w * ((!x_b) & (!y_b));
+            acc.ntt = w * ((x != 0) & (y != 0));
+            acc.ntf = w * ((x != 0) & (!(y != 0)));
+            acc.nft = w * ((!(x != 0)) & (y != 0));
+            acc.nff = w * ((!(x != 0)) & (!(y != 0)));
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            T half_R = acc.ntf * acc.nft;
-            return (2 * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
+            intptr_t half_R = acc.ntf * acc.nft;
+            return (2. * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
