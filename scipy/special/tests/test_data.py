@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
-from numpy.testing import suppress_warnings
+from numpy.testing import assert_allclose, suppress_warnings
 import pytest
 
 from scipy.special import (
@@ -574,3 +574,11 @@ def _test_factory(test, dtype=np.double):
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
         with np.errstate(all='ignore'):
             test.check(dtype=dtype)
+
+def test_gh_14526():
+    # Regression test for gh-14526
+    n = 4
+    qs = np.linspace(800, 1200, 100)
+    y_true = -2*qs + 2*(2*n + 1)*np.sqrt(qs) - ((2*n + 1)**2 + 1)/8
+    y_out = mathieu_a(n, qs)
+    assert_allclose(y_out, y_true, rtol=2e-3)
