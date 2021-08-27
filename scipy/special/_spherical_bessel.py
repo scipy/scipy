@@ -62,18 +62,13 @@ def spherical_jn(n, z, derivative=False):
     >>> type(spherical_jn(0, 3+5j))
     <class 'numpy.complex128'>
 
-    They satisfy the following relation for the derivative:
-
-    .. math::
-        j_n'(z) = -j_{n+1}(z) + \frac{n}{z} j_n(z)
-
-    This can be verified, for example, for :math:`n=3` in the interval
-    :math:`[1, 2]`:
+    We can verify the relation for the derivative from the Notes
+    for :math:`n=3` in the interval :math:`[1, 2]`:
 
     >>> from scipy.special import spherical_jn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_jn(3, x, True),
-    ...             3/x * spherical_jn(3, x) - spherical_jn(4, x))
+    ...             spherical_jn(2, x) - 4/x * spherical_jn(3, x))
     True
 
     The first few :math:`j_n` with real argument:
@@ -155,18 +150,13 @@ def spherical_yn(n, z, derivative=False):
     >>> type(spherical_yn(0, 3+5j))
     <class 'numpy.complex128'>
 
-    They satisfy the following relation for the derivative:
-
-    .. math::
-        y_n'(z) = -y_{n+1}(z) + \frac{n}{z} y_n(z)
-
-    This can be verified, for example, for :math:`n=3` in the interval
-    :math:`[1, 2]`:
+    We can verify the relation for the derivative from the Notes
+    for :math:`n=3` in the interval :math:`[1, 2]`:
 
     >>> from scipy.special import spherical_yn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_yn(3, x, True),
-    ...             3/x * spherical_yn(3, x) - spherical_yn(4, x))
+    ...             spherical_yn(2, x) - 4/x * spherical_yn(3, x))
     True
 
     The first few :math:`y_n` with real argument:
@@ -247,18 +237,13 @@ def spherical_in(n, z, derivative=False):
     >>> type(spherical_in(0, 3+5j))
     <class 'numpy.complex128'>
 
-    They satisfy the following relation for the derivative:
-
-    .. math::
-        i_n'(z) = i_{n+1}(z) + \frac{n}{z} i_n(z)
-
-    This can be verified, for example, for :math:`n=3` in the interval
-    :math:`[1, 2]`:
+    We can verify the relation for the derivative from the Notes
+    for :math:`n=3` in the interval :math:`[1, 2]`:
 
     >>> from scipy.special import spherical_in
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_in(3, x, True),
-    ...             3/x * spherical_in(3, x) + spherical_in(4, x))
+    ...             spherical_in(2, x) - 4/x * spherical_in(3, x))
     True
 
     The first few :math:`i_n` with real argument:
@@ -340,18 +325,13 @@ def spherical_kn(n, z, derivative=False):
     >>> type(spherical_kn(0, 3+5j))
     <class 'numpy.complex128'>
 
-    They satisfy the following relation for the derivative:
-
-    .. math::
-        k_n'(z) = -k_{n+1}(z) + \frac{n}{z} k_n(z)
-
-    This can be verified, for example, for :math:`n=3` in the interval
-    :math:`[1, 2]`:
+    We can verify the relation for the derivative from the Notes
+    for :math:`n=3` in the interval :math:`[1, 2]`:
 
     >>> from scipy.special import spherical_kn
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_kn(3, x, True),
-    ...             3/x * spherical_kn(3, x) - spherical_kn(4, x))
+    ...             - 4/x * spherical_kn(3, x) - spherical_kn(2, x))
     True
 
     The first few :math:`k_n` with real argument:
