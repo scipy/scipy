@@ -1321,7 +1321,8 @@ class rv_generic:
             res2 = zeros(loc.shape, dtype='d')
             fac = scale / loc
             for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, shapes)
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp,
+                                          shapes)
                 res2 += comb(n, k, exact=True)*fac**k * valk
             res2 += fac**n * val
             res2 *= loc**n
