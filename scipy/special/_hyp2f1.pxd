@@ -121,19 +121,23 @@ cdef inline double complex hyp2f1_complex(
     # the series at a or b of smaller magnitude. This is to ensure proper
     # handling of situations like a < c < b <= 0, a, b, c all non-positive
     # integers, where terminating at a would lead to a term of the form 0 / 0.
-    if a_neg_int and b_neg_int:
-        max_degree = <int> fabs(a) - 1 if a > b else <int> fabs(b) - 1
-        return hyp2f1_series(
-            a, b, c, z, max_degree, False, 0
-        )
-    elif a_neg_int:
-        return hyp2f1_series(
-            a, b, c, z, <int> fabs(a) - 1, False, 0
-        )
-    elif b_neg_int:
-        return hyp2f1_series(
-            a, b, c, z, <int> fabs(b) - 1, False, 0
-        )
+    if a_neg_int or b_neg_int:
+        if a_neg_int and b_neg_int:
+            max_degree = fabs(a) - 1 if a > b else fabs(b) - 1
+        elif a_neg_int:
+            max_degree = fabs(a) - 1
+        else:
+            max_degree = fabs(b) - 1
+        # If number of terms is excessively large, we return nan without
+        # attempting to compute.
+        if max_degree < 1500:
+            # This cast is OK because we've ensured max_degree isn't too large.
+            return hyp2f1_series(
+                a, b, c, z, <int> max_degree, False, 0
+            )
+        else:
+            sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
+            return zpack(NPY_NAN, NPY_NAN)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
