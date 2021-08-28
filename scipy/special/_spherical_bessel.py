@@ -267,8 +267,7 @@ def spherical_in(n, z, derivative=False):
 
 
 def spherical_kn(n, z, derivative=False):
-    r"""Modified spherical Bessel function of the second kind or its
-    derivative.
+    r"""Modified spherical Bessel function of the second kind or its derivative.
 
     Defined as [1]_,
 
