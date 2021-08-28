@@ -284,6 +284,20 @@ kulsinski_distance_char(const char *u, const char *v, const npy_intp n)
 }
 
 static NPY_INLINE double
+kulczynski1_distance_char(const char *u, const char *v, const npy_intp n)
+{
+    npy_intp i;
+    npy_intp ntt = 0, ndiff = 0;
+
+    for (i = 0; i < n; ++i) {
+        const npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
+    }
+    return ((double)ntt) / ((double)ndiff);
+}
+
+static NPY_INLINE double
 sokalsneath_distance_char(const char *u, const char *v, const npy_intp n)
 {
     npy_intp i;
@@ -476,6 +490,7 @@ DEFINE_CDIST(sqeuclidean, double)
 DEFINE_CDIST(dice, char)
 DEFINE_CDIST(jaccard, char)
 DEFINE_CDIST(kulsinski, char)
+DEFINE_CDIST(kulczynski1, char)
 DEFINE_CDIST(rogerstanimoto, char)
 DEFINE_CDIST(russellrao, char)
 DEFINE_CDIST(sokalmichener, char)
@@ -512,6 +527,7 @@ DEFINE_PDIST(sqeuclidean, double)
 DEFINE_PDIST(dice, char)
 DEFINE_PDIST(jaccard, char)
 DEFINE_PDIST(kulsinski, char)
+DEFINE_PDIST(kulczynski1, char)
 DEFINE_PDIST(rogerstanimoto, char)
 DEFINE_PDIST(russellrao, char)
 DEFINE_PDIST(sokalmichener, char)
