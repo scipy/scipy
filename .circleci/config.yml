@@ -5,14 +5,14 @@ _defaults: &defaults
   docker:
     # CircleCI maintains a library of pre-built images
     # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: circleci/python:3.7.0
+    - image: cimg/python:3.8
   working_directory: ~/repo
 
 _debian: &debian
   name: install Debian dependencies
   command: |
     sudo apt-get update
-    sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+    sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-plain-generic latexmk texlive-xetex fonts-freefont-otf
 
 jobs:
 # Build SciPy from source
@@ -115,7 +115,7 @@ jobs:
             . venv/bin/activate
             pip install --upgrade pip
             pip install pyfftw cffi pytest
-            export PYTHONPATH=$PWD/build/testenv/lib/python3.7/site-packages
+            export PYTHONPATH=$PWD/build/testenv/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
