@@ -373,6 +373,16 @@ class TestHyp2f1:
                     rtol=5e-12,
                 ),
             ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-10000,
+                    b=2.2,
+                    c=93459345.3,
+                    z=(2+2j),
+                    expected=(0.9995292071559088-0.00047047067522659253j),
+                    rtol=1e-12,
+                ),
+            ),
         ]
     )
     def test_a_b_negative_int(self, hyp2f1_test_case):
