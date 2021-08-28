@@ -99,6 +99,9 @@ cdef inline double complex hyp2f1_complex(
     ):
         return NPY_INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
+    # Todo: Actually check for overflow instead of using a fixed tolerance for
+    # all parameter combinations like in the Fortran original. This will have to
+    # wait until all points in the neighborhood of z = 1 are handled in Cython.
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
