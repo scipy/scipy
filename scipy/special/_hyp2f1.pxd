@@ -46,6 +46,10 @@ from ._complexstuff cimport (
 )
 
 
+cdef extern from "limits.h":
+    cdef int INT_MAX
+
+
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
     double NPY_INFINITY
@@ -128,10 +132,9 @@ cdef inline double complex hyp2f1_complex(
             max_degree = fabs(a) - 1
         else:
             max_degree = fabs(b) - 1
-        # If number of terms is excessively large, we return nan without
-        # attempting to compute.
-        if max_degree < 15000:
-            # This cast is OK because we've ensured max_degree isn't too large.
+        if max_degree <= INT_MAX:
+            # This cast is OK because we've ensured max_degree will fit into
+            # an int.
             return hyp2f1_series(
                 a, b, c, z, <int> max_degree, False, 0
             )
