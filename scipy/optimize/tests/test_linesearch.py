@@ -258,7 +258,7 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
 
-        assert_(c > 3)  # check that the iterator really works...
+        assert c > 3  # check that the iterator really works...
 
     def test_line_search_wolfe2_dfo(self):
         c = 0
@@ -283,7 +283,7 @@ class TestLineSearch:
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
-        assert_(c > 3)  # check that the iterator really works...
+        assert c > 3  # check that the iterator really works...
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
