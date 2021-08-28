@@ -138,7 +138,8 @@ _nan_policy_parameter = inspect.Parameter(_name,
 
 def _axis_nan_policy_factory(result_object, default_axis=0,
                              n_samples=1, paired=False,
-                             result_unpacker=None, too_small=0):
+                             result_unpacker=None, too_small=0,
+                             n_outputs=2):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -172,6 +173,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
         of the result.
+    n_outputs : int, default: 2
+        The number of outputs produced by the function given 1d sample(s). For
+        example, hypothesis tests that return a namedtuple or result object
+        with attributes `statistic` and `pvalue` use the default n_outputs=2;
+        summary statistics with scalar output use `n_outputs=1`.
     """
 
     if result_unpacker is None:
@@ -254,7 +260,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 # currently the hypothesis tests this is applied to do not
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
-                    return result_object(np.nan, np.nan)
+                    res = np.ones(n_outputs) * np.nan
+                    return result_object(*res)
 
                 # Addresses nan_policy == "omit"
                 if any(contains_nans) and nan_policy == 'omit':
@@ -275,9 +282,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                statistic = empty_output
-                pvalue = empty_output.copy()
-                return result_object(statistic, pvalue)
+                return result_object(*([empty_output]*n_outputs))
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
@@ -298,14 +303,16 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
                     if is_too_small(samples):
-                        return result_object(np.nan, np.nan)
+                        res = np.ones(n_outputs) * np.nan
+                        return result_object(*res)
                     return hypotest_fun_in(*samples, **kwds)
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        return result_object(np.nan, np.nan)
+                        res = np.ones(n_outputs) * np.nan
+                        return result_object(*res)
                     samples = np.split(x, split_indices)[:n_samp]
                     return hypotest_fun_in(*samples, **kwds)
 
