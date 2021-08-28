@@ -12,7 +12,7 @@ To run it in its simplest form::
 import itertools
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
-                           assert_, assert_almost_equal,
+                           assert_almost_equal,
                            assert_no_warnings, assert_warns,
                            assert_array_less, suppress_warnings)
 import pytest
@@ -54,10 +54,10 @@ def test_check_grad():
 
     # Check if the epsilon parameter is being considered.
     r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
-    assert_(r > 1e-7)
+    assert r > 1e-7
     r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1,
                                 direction='random', seed=1234) - 0)
-    assert_(r > 1e-7)
+    assert r > 1e-7
 
     def x_sinx(x):
         return (x*np.sin(x)).sum()
@@ -148,8 +148,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 9, self.funccalls)
-        assert_(self.gradcalls == 7, self.gradcalls)
+        assert self.funccalls == 9, self.funccalls
+        assert self.gradcalls == 7, self.gradcalls
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[2:4],
@@ -165,7 +165,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         # minimum, the function ends up in the flat region of exp.)
         for x0 in np.linspace(-0.75, 3, 71):
             sol = optimize.minimize(f, [x0], method='CG')
-            assert_(sol.success)
+            assert sol.success
             assert_allclose(sol.x, [0.5], rtol=1e-5)
 
     def test_bfgs(self):
@@ -193,8 +193,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 10, self.funccalls)
-        assert_(self.gradcalls == 8, self.gradcalls)
+        assert self.funccalls == 10, self.funccalls
+        assert self.gradcalls == 8, self.gradcalls
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[6:8],
@@ -214,7 +214,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                       args=(), options=opts)['x']
             else:
                 x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
-            assert_(not np.isfinite(func(x)))
+            assert not np.isfinite(func(x))
 
     def test_powell(self):
         # Powell (direction set) optimization routine
@@ -247,8 +247,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         # machines, and when using e.g., MKL, data alignment
         # etc., affect the rounding error.
         #
-        assert_(self.funccalls <= 116 + 20, self.funccalls)
-        assert_(self.gradcalls == 0, self.gradcalls)
+        assert self.funccalls <= 116 + 20, self.funccalls
+        assert self.gradcalls == 0, self.gradcalls
 
     @pytest.mark.xfail(reason="This part of test_powell fails on some "
                        "platforms, but the solution returned by powell is "
@@ -336,8 +336,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 167, self.funccalls)
-        assert_(self.gradcalls == 0, self.gradcalls)
+        assert self.funccalls == 167, self.funccalls
+        assert self.gradcalls == 0, self.gradcalls
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[76:78],
@@ -376,8 +376,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.17.0. Don't allow them to increase.
-        assert_(self.funccalls == 100, self.funccalls)
-        assert_(self.gradcalls == 0, self.gradcalls)
+        assert self.funccalls == 100, self.funccalls
+        assert self.gradcalls == 0, self.gradcalls
 
         # Ensure that the function behaves the same; this is from SciPy 0.15.0
         assert_allclose(self.trace[50:52],
@@ -422,7 +422,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         result = optimize.minimize(self.func, self.startparams,
                                    method='Newton-CG', jac=self.grad,
                                    args=(), options=opts)
-        assert_(result.status == 1)
+        assert result.status == 1
 
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
@@ -445,11 +445,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 22, self.gradcalls)  # 0.13.0
-        # assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
-        # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
-        # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+        assert self.funccalls == 7, self.funccalls
+        assert self.gradcalls <= 22, self.gradcalls  # 0.13.0
+        # assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
+        # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
+        # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
@@ -480,10 +480,10 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
-        assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
-        # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
-        # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+        assert self.funccalls <= 7, self.funccalls  # gh10673
+        assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
+        # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
+        # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
@@ -514,10 +514,10 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
-        assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
-        # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
-        # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+        assert self.funccalls <= 7, self.funccalls  # gh10673
+        assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
+        # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
+        # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
@@ -734,7 +734,7 @@ class TestOptimizeSimple(CheckOptimize):
         x0 = [np.nan]
         with np.errstate(over='ignore', invalid='ignore'):
             x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
-            assert_(np.isnan(func(x)))
+            assert np.isnan(func(x))
 
     def test_bfgs_nan_return(self):
         # Test corner cases where fun returns NaN. See gh-4793.
@@ -744,8 +744,8 @@ class TestOptimizeSimple(CheckOptimize):
         with np.errstate(invalid='ignore'):
             result = optimize.minimize(func, 0)
 
-        assert_(np.isnan(result['fun']))
-        assert_(result['success'] is False)
+        assert np.isnan(result['fun'])
+        assert result['success'] is False
 
         # Second case: NaN from second call.
         func = lambda x: 0 if x == 0 else np.nan
@@ -753,8 +753,8 @@ class TestOptimizeSimple(CheckOptimize):
         with np.errstate(invalid='ignore'):
             result = optimize.minimize(func, 0, jac=fprime)
 
-        assert_(np.isnan(result['fun']))
-        assert_(result['success'] is False)
+        assert np.isnan(result['fun'])
+        assert result['success'] is False
 
     def test_bfgs_numerical_jacobian(self):
         # BFGS with numerical Jacobian and a vector epsilon parameter.
@@ -810,8 +810,8 @@ class TestOptimizeSimple(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls == 5, self.gradcalls)
+        assert self.funccalls == 7, self.funccalls
+        assert self.gradcalls == 5, self.gradcalls
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         # test fixed in gh10673
@@ -866,7 +866,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_almost_equal(res.x, c.x)
         assert_almost_equal(res.fun, c.fun)
         assert_equal(res.status, 1)
-        assert_(res.success is False)
+        assert res.success is False
         assert_equal(res.message,
                      'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
 
@@ -911,7 +911,7 @@ class TestOptimizeSimple(CheckOptimize):
             if v0 is None:
                 v0 = v
             else:
-                assert_(v < v0)
+                assert v < v0
 
             assert_allclose(v, self.func(self.solution), rtol=tol)
 
@@ -920,7 +920,7 @@ class TestOptimizeSimple(CheckOptimize):
         sol = optimize.minimize(optimize.rosen, np.array([-1.2, 1.0]),
                                 method='L-BFGS-B', jac=optimize.rosen_der,
                                 options={'disp': False, 'maxls': 1})
-        assert_(not sol.success)
+        assert not sol.success
 
     def test_minimize_l_bfgs_b_maxfun_interruption(self):
         # gh-6162
@@ -1023,8 +1023,7 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
-            assert_(func(sol1.x) < func(sol2.x),
-                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+            assert func(sol1.x) < func(sol2.x), "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x))
 
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
@@ -1086,10 +1085,9 @@ class TestOptimizeSimple(CheckOptimize):
 
         # Check returned arrays coincide with their copies
         # and have no memory overlap
-        assert_(len(results) > 2)
-        assert_(all(np.all(x == y) for x, y in results))
-        assert_(not any(np.may_share_memory(x[0], y[0])
-                        for x, y in itertools.combinations(results, 2)))
+        assert len(results) > 2
+        assert all(np.all(x == y) for x, y in results)
+        assert not any(np.may_share_memory(x[0], y[0]) for x, y in itertools.combinations(results, 2))
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
@@ -1117,7 +1115,7 @@ class TestOptimizeSimple(CheckOptimize):
 
         if method == 'slsqp':
             pytest.xfail("SLSQP returns slightly worse")
-        assert_(func(sol.x) <= f0)
+        assert func(sol.x) <= f0
 
     def test_slsqp_respect_bounds(self):
         # Regression test for gh-3108
@@ -1205,7 +1203,7 @@ class TestOptimizeSimple(CheckOptimize):
                                   constraints=[{'type': 'ineq', 'fun': cons}],
                                   bounds=[(1, 10)])
         for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
-            assert_(sol.success)
+            assert sol.success
         assert_allclose(sol_0.x, 0, atol=1e-7)
         assert_allclose(sol_1.x, 2, atol=1e-7)
         assert_allclose(sol_2.x, 5, atol=1e-7)
@@ -1260,9 +1258,9 @@ class TestOptimizeSimple(CheckOptimize):
                                                  first_step_size,
                                                  res)
 
-            assert_(res.success, err_msg)
+            assert res.success, err_msg
             assert_allclose(res.x, [1.0], err_msg=err_msg)
-            assert_(res.nit <= 3, err_msg)
+            assert res.nit <= 3, err_msg
 
             if scale > 1e-10:
                 if method in ('CG', 'BFGS'):
@@ -1270,8 +1268,7 @@ class TestOptimizeSimple(CheckOptimize):
                 else:
                     # Newton-CG and L-BFGS-B use different logic for the first
                     # step, but are both scaling invariant with step sizes ~ 1
-                    assert_(first_step_size[0] > 0.5 and
-                            first_step_size[0] < 3, err_msg)
+                    assert first_step_size[0] > 0.5 and first_step_size[0] < 3, err_msg
             else:
                 # step size has upper bound of ||grad||, so line
                 # search makes many small steps
@@ -1371,21 +1368,21 @@ class TestLBFGSBBounds:
         x, f, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
                                          fprime=self.jac,
                                          bounds=self.bounds)
-        assert_(d['warnflag'] == 0, d['task'])
+        assert d['warnflag'] == 0, d['task']
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_l_bfgs_b_funjac(self):
         # L-BFGS-B with fun and jac combined and extra arguments
         x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
                                          bounds=self.bounds)
-        assert_(d['warnflag'] == 0, d['task'])
+        assert d['warnflag'] == 0, d['task']
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_minimize_l_bfgs_b_bounds(self):
         # Minimize with method='L-BFGS-B' with bounds
         res = optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
                                 jac=self.jac, bounds=self.bounds)
-        assert_(res['success'], res['message'])
+        assert res['success'], res['message']
         assert_allclose(res.x, self.solution, atol=1e-6)
 
     @pytest.mark.parametrize('bounds', [
@@ -1410,7 +1407,7 @@ class TestLBFGSBBounds:
                                     method='L-BFGS-B',
                                     jac=jac, bounds=self.bounds,
                                     options={'finite_diff_rel_step': None})
-            assert_(res['success'], res['message'])
+            assert res['success'], res['message']
             assert_allclose(res.x, self.solution, atol=1e-6)
 
 
@@ -1487,11 +1484,11 @@ class TestOptimizeScalar:
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, method='Brent')
-        assert_(x.success)
+        assert x.success
 
         x = optimize.minimize_scalar(self.fun, method='Brent',
                                      options=dict(maxiter=3))
-        assert_(not x.success)
+        assert not x.success
 
         x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                      args=(1.5, ), method='Brent').x
@@ -1627,7 +1624,7 @@ class TestNewtonCg:
                                 hess=optimize.rosen_hess,
                                 tol=1e-5,
                                 method='Newton-CG')
-        assert_(sol.success, sol.message)
+        assert sol.success, sol.message
         assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
 
     def test_himmelblau(self):
@@ -1638,7 +1635,7 @@ class TestNewtonCg:
                                 hess=himmelblau_hess,
                                 method='Newton-CG',
                                 tol=1e-6)
-        assert_(sol.success, sol.message)
+        assert sol.success, sol.message
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
@@ -1955,7 +1952,7 @@ class TestOptimizeResultAttributes:
                     continue
 
                 assert hasattr(res, attribute)
-                assert_(attribute in dir(res))
+                assert attribute in dir(res)
 
             # gh13001, OptimizeResult.message should be a str
             assert isinstance(res.message, str)
@@ -2021,8 +2018,8 @@ class TestBrute:
         # test that for a 1-D problem the test function is passed an array,
         # not a scalar.
         def f(x):
-            assert_(len(x.shape) == 1)
-            assert_(x.shape[0] == 1)
+            assert len(x.shape) == 1
+            assert x.shape[0] == 1
             return x ** 2
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
@@ -2099,45 +2096,44 @@ class TestIterationLimits:
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxfev": mfev})
-                assert_(self.funcalls == res["nfev"])
+                assert self.funcalls == res["nfev"]
                 if res["success"]:
-                    assert_(res["nfev"] < mfev)
+                    assert res["nfev"] < mfev
                 else:
-                    assert_(res["nfev"] >= mfev)
+                    assert res["nfev"] >= mfev
             for mit in [50, 500, 5000]:
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxiter": mit})
                 if res["success"]:
-                    assert_(res["nit"] <= mit)
+                    assert res["nit"] <= mit
                 else:
-                    assert_(res["nit"] >= mit)
+                    assert res["nit"] >= mit
             for mfev, mit in [[50, 50], [5000, 5000], [5000, np.inf]]:
                 self.funcalls = 0
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxiter": mit,
                                                  "maxfev": mfev})
-                assert_(self.funcalls == res["nfev"])
+                assert self.funcalls == res["nfev"]
                 if res["success"]:
-                    assert_(res["nfev"] < mfev and res["nit"] <= mit)
+                    assert res["nfev"] < mfev and res["nit"] <= mit
                 else:
-                    assert_(res["nfev"] >= mfev or res["nit"] >= mit)
+                    assert res["nfev"] >= mfev or res["nit"] >= mit
             for mfev, mit in [[np.inf, None], [None, np.inf]]:
                 self.funcalls = 0
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxiter": mit,
                                                  "maxfev": mfev})
-                assert_(self.funcalls == res["nfev"])
+                assert self.funcalls == res["nfev"]
                 if res["success"]:
                     if mfev is None:
-                        assert_(res["nfev"] < default_iters*2)
+                        assert res["nfev"] < default_iters*2
                     else:
-                        assert_(res["nit"] <= default_iters*2)
+                        assert res["nit"] <= default_iters*2
                 else:
-                    assert_(res["nfev"] >= default_iters*2 or
-                        res["nit"] >= default_iters*2)
+                    assert res["nfev"] >= default_iters*2 or res["nit"] >= default_iters*2
 
 
 def test_result_x_shape_when_len_x_is_one():
