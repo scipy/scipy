@@ -90,6 +90,7 @@ DEFINE_WRAP_CDIST(sqeuclidean, double)
 DEFINE_WRAP_CDIST(dice, char)
 DEFINE_WRAP_CDIST(jaccard, char)
 DEFINE_WRAP_CDIST(kulsinski, char)
+DEFINE_WRAP_CDIST(kulczynski1, char)
 DEFINE_WRAP_CDIST(rogerstanimoto, char)
 DEFINE_WRAP_CDIST(russellrao, char)
 DEFINE_WRAP_CDIST(sokalmichener, char)
@@ -419,6 +420,7 @@ DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
 DEFINE_WRAP_PDIST(kulsinski, char)
+DEFINE_WRAP_PDIST(kulczynski1, char)
 DEFINE_WRAP_PDIST(jaccard, char)
 DEFINE_WRAP_PDIST(rogerstanimoto, char)
 DEFINE_WRAP_PDIST(russellrao, char)
@@ -787,6 +789,9 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_kulsinski_bool_wrap",
    cdist_kulsinski_char_wrap,
    METH_VARARGS},
+   {"cdist_kulczynski1_bool_wrap",
+   cdist_kulczynski1_char_wrap,
+   METH_VARARGS},
   {"cdist_mahalanobis_double_wrap",
    (PyCFunction) cdist_mahalanobis_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -861,6 +866,9 @@ static PyMethodDef _distanceWrapMethods[] = {
    METH_VARARGS},
   {"pdist_kulsinski_bool_wrap",
    pdist_kulsinski_char_wrap,
+   METH_VARARGS},
+   {"pdist_kulczynski1_bool_wrap",
+   pdist_kulczynski1_char_wrap,
    METH_VARARGS},
   {"pdist_mahalanobis_double_wrap",
    (PyCFunction) pdist_mahalanobis_double_wrap,

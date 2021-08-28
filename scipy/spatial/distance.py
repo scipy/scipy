@@ -62,6 +62,7 @@ computing the distances between all pairs.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
    kulsinski        -- the Kulsinski distance.
+   kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
    sokalmichener    -- the Sokal-Michener dissimilarity.
@@ -90,6 +91,7 @@ __all__ = [
     'jaccard',
     'jensenshannon',
     'kulsinski',
+    'kulczynski1',
     'mahalanobis',
     'matching',
     'minkowski',
@@ -929,6 +931,79 @@ def kulsinski(u, v, w=None):
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
+
+
+def kulczynski1(u, v, *, w=None):
+    """
+    Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+
+    The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
+    of length ``n``, is defined as
+
+    .. math::
+
+         \\frac{c_{11}}
+              {c_{01} + c_{10}}
+
+    where :math:`c_{ij}` is the number of occurrences of
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
+    :math:`k \\in {0, 1, ..., n-1}`.
+
+    Parameters
+    ----------
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
+
+    Returns
+    -------
+    kulczynski1 : float
+        The Kulczynski 1 distance between vectors `u` and `v`.
+
+    See Also
+    --------
+
+    kulsinski
+
+    Notes
+    -----
+    This measure has a minimum value of 0 and no upper limit.
+    It is un-defined when there are no non-matches.
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] Kulczynski S. et al. Bulletin
+           International de l'Academie Polonaise des Sciences
+           et des Lettres, Classe des Sciences Mathematiques
+           et Naturelles, Serie B (Sciences Naturelles). 1927;
+           Supplement II: 57-203.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.kulczynski1([1, 0, 0], [0, 1, 0])
+    0.0
+    >>> distance.kulczynski1([True, False, False], [True, True, False])
+    1.0
+    >>> distance.kulczynski1([True, False, False], True)
+    0.5
+    >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
+    -3.0
+
+    """
+    u = _validate_vector(u)
+    v = _validate_vector(v)
+    if w is not None:
+        w = _validate_weights(w)
+    (_, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
+
+    return ntt / (ntf + nft)
 
 
 def seuclidean(u, v, V):
@@ -1864,6 +1939,14 @@ _METRIC_INFOS = [
         pdist_func=PDistMetricWrapper('kulsinski'),
     ),
     MetricInfo(
+        canonical_name='kulczynski1',
+        aka={'kulczynski1'},
+        types=['bool'],
+        dist_func=kulczynski1,
+        cdist_func=CDistMetricWrapper('kulczynski1'),
+        pdist_func=PDistMetricWrapper('kulczynski1'),
+    ),
+    MetricInfo(
         canonical_name='mahalanobis',
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
@@ -1971,9 +2054,10 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+        'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
+        'sqeuclidean', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2186,7 +2270,12 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Sokal-Sneath distance between each pair of
         boolean vectors. (see sokalsneath function documentation)
 
-    23. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
+    23. ``Y = pdist(X, 'kulczynski1')``
+
+        Computes the Kulczynski 1 distance between each pair of
+        boolean vectors. (see kulczynski1 function documentation)
+
+    24. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
 
         Computes the weighted Minkowski distance between each pair of
         vectors. (see wminkowski function documentation)
@@ -2194,7 +2283,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
         Use 'minkowski' instead.
 
-    24. ``Y = pdist(X, f)``
+    25. ``Y = pdist(X, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
@@ -2633,9 +2722,9 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
-        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
-        'sqeuclidean', 'wminkowski', 'yule'.
+        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
+        'sokalsneath', 'sqeuclidean', 'wminkowski', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
