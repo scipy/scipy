@@ -4,17 +4,14 @@ An extension of scipy.stats.stats to support masked arrays
 """
 # Original author (2007): Pierre GF Gerard-Marchant
 
-# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-# TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-# TODO : reimplement ksonesamp
-
 
 __all__ = ['argstoarray',
            'count_tied_groups',
            'describe',
            'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
-           'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
+           'ks_twosamp', 'ks_2samp', 'kurtosis', 'kurtosistest',
+           'ks_1samp', 'kstest',
            'linregress',
            'mannwhitneyu', 'meppf','mode','moment','mquantiles','msign',
            'normaltest',
@@ -37,6 +34,7 @@ import numpy as np
 from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
+import math
 
 import itertools
 import warnings
@@ -44,13 +42,15 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
+import scipy.stats.stats
+
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
+        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
-
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
@@ -83,35 +83,6 @@ def _chk_size(a, b):
         raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na, nb))
     return (a, b, na)
-
-
-def _contains_nan(a, nan_policy='propagate'):
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-    try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
-            contains_nan = np.isnan(np.sum(a))
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.nan in set(a.ravel())
-        except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly checked for nan "
-                          "values. nan values will be ignored.", RuntimeWarning)
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
 
 
 def argstoarray(*args):
@@ -384,40 +355,162 @@ def msign(x):
     return ma.filled(np.sign(x), 0)
 
 
-def pearsonr(x,y):
-    """
-    Calculates a Pearson correlation coefficient and the p-value for testing
-    non-correlation.
+def pearsonr(x, y):
+    r"""
+    Pearson correlation coefficient and p-value for testing non-correlation.
 
-    The Pearson correlation coefficient measures the linear relationship
-    between two datasets. Strictly speaking, Pearson's correlation requires
-    that each dataset be normally distributed. Like other correlation
+    The Pearson correlation coefficient [1]_ measures the linear relationship
+    between two datasets.  The calculation of the p-value relies on the
+    assumption that each dataset is normally distributed.  (See Kowalski [3]_
+    for a discussion of the effects of non-normality of the input on the
+    distribution of the correlation coefficient.)  Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
-    correlation. Correlations of -1 or +1 imply an exact linear
-    relationship. Positive correlations imply that as `x` increases, so does
-    `y`. Negative correlations imply that as `x` increases, `y` decreases.
-
-    The p-value roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets. The p-values are not entirely
-    reliable but are probably reasonable for datasets larger than 500 or so.
+    correlation. Correlations of -1 or +1 imply an exact linear relationship.
 
     Parameters
     ----------
-    x : 1-D array_like
-        Input
-    y : 1-D array_like
-        Input
+    x : (N,) array_like
+        Input array.
+    y : (N,) array_like
+        Input array.
 
     Returns
     -------
-    pearsonr : float
-        Pearson's correlation coefficient, 2-tailed p-value.
+    r : float
+        Pearson's correlation coefficient.
+    p-value : float
+        Two-tailed p-value.
+
+    Warns
+    -----
+    PearsonRConstantInputWarning
+        Raised if an input is a constant array.  The correlation coefficient
+        is not defined in this case, so ``np.nan`` is returned.
+
+    PearsonRNearConstantInputWarning
+        Raised if an input is "nearly" constant.  The array ``x`` is considered
+        nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
+        Numerical errors in the calculation ``x - mean(x)`` in this case might
+        result in an inaccurate calculation of r.
+
+    See Also
+    --------
+    spearmanr : Spearman rank-order correlation coefficient.
+    kendalltau : Kendall's tau, a correlation measure for ordinal data.
+
+    Notes
+    -----
+    The correlation coefficient is calculated as follows:
+
+    .. math::
+
+        r = \frac{\sum (x - m_x) (y - m_y)}
+                 {\sqrt{\sum (x - m_x)^2 \sum (y - m_y)^2}}
+
+    where :math:`m_x` is the mean of the vector x and :math:`m_y` is
+    the mean of the vector y.
+
+    Under the assumption that x and y are drawn from
+    independent normal distributions (so the population correlation coefficient
+    is 0), the probability density function of the sample correlation
+    coefficient r is ([1]_, [2]_):
+
+    .. math::
+
+        f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
+
+    where n is the number of samples, and B is the beta function.  This
+    is sometimes referred to as the exact distribution of r.  This is
+    the distribution that is used in `pearsonr` to compute the p-value.
+    The distribution is a beta distribution on the interval [-1, 1],
+    with equal shape parameters a = b = n/2 - 1.  In terms of SciPy's
+    implementation of the beta distribution, the distribution of r is::
+
+        dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
+
+    The p-value returned by `pearsonr` is a two-sided p-value. The p-value
+    roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets. More precisely, for a
+    given sample with correlation coefficient r, the p-value is
+    the probability that abs(r') of a random sample x' and y' drawn from
+    the population with zero correlation would be greater than or equal
+    to abs(r). In terms of the object ``dist`` shown above, the p-value
+    for a given r and length n can be computed as::
+
+        p = 2*dist.cdf(-abs(r))
+
+    When n is 2, the above continuous distribution is not well-defined.
+    One can interpret the limit of the beta distribution as the shape
+    parameters a and b approach a = b = 0 as a discrete distribution with
+    equal probability masses at r = 1 and r = -1.  More directly, one
+    can observe that, given the data x = [x1, x2] and y = [y1, y2], and
+    assuming x1 != x2 and y1 != y2, the only possible values for r are 1
+    and -1.  Because abs(r') for any sample x' and y' with length 2 will
+    be 1, the two-sided p-value for a sample of length 2 is always 1.
 
     References
     ----------
-    http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+    .. [1] "Pearson correlation coefficient", Wikipedia,
+           https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+    .. [2] Student, "Probable error of a correlation coefficient",
+           Biometrika, Volume 6, Issue 2-3, 1 September 1908, pp. 302-310.
+    .. [3] C. J. Kowalski, "On the Effects of Non-Normality on the Distribution
+           of the Sample Product-Moment Correlation Coefficient"
+           Journal of the Royal Statistical Society. Series C (Applied
+           Statistics), Vol. 21, No. 1 (1972), pp. 1-12.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> from scipy.stats import mstats
+    >>> mstats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    (-0.7426106572325057, 0.1505558088534455)
+
+    There is a linear dependence between x and y if y = a + b*x + e, where
+    a,b are constants and e is a random error term, assumed to be independent
+    of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
+    e follow a normal distribution with mean zero and standard deviation s>0.
+
+    >>> s = 0.5
+    >>> x = stats.norm.rvs(size=500)
+    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> y = x + e
+    >>> mstats.pearsonr(x, y)
+    (0.9029601878969703, 8.428978827629898e-185) # may vary
+
+    This should be close to the exact value given by
+
+    >>> 1/np.sqrt(1 + s**2)
+    0.8944271909999159
+
+    For s=0.5, we observe a high level of correlation. In general, a large
+    variance of the noise reduces the correlation, while the correlation
+    approaches one as the variance of the error goes to zero.
+
+    It is important to keep in mind that no correlation does not imply
+    independence unless (x, y) is jointly normal. Correlation can even be zero
+    when there is a very simple dependence structure: if X follows a
+    standard normal distribution, let y = abs(x). Note that the correlation
+    between x and y is zero. Indeed, since the expectation of x is zero,
+    cov(x, y) = E[x*y]. By definition, this equals E[x*abs(x)] which is zero
+    by symmetry. The following lines of code illustrate this observation:
+
+    >>> y = np.abs(x)
+    >>> mstats.pearsonr(x, y)
+    (-0.016172891856853524, 0.7182823678751942) # may vary
+
+    A non-zero correlation coefficient can be misleading. For example, if X has
+    a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
+    A simple calculation shows that corr(x, y) = sqrt(2/Pi) = 0.797...,
+    implying a high level of correlation:
+
+    >>> y = np.where(x < 0, x, 0)
+    >>> mstats.pearsonr(x, y)
+    (0.8537091583771509, 3.183461621422181e-143) # may vary
+
+    This is unintuitive since there is no dependence of x and y if x is larger
+    than zero which happens in about half of the cases if we sample x and y.
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.ravel(), y.ravel())
@@ -428,30 +521,15 @@ def pearsonr(x,y):
     if df < 0:
         return (masked, masked)
 
-    (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)
-
-    r_num = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
-    r = r_num / r_den
-    # Presumably, if r > 1, then it is only some small artifact of floating
-    # point arithmetic.
-    r = min(r, 1.0)
-    r = max(r, -1.0)
-
-    if r is masked or abs(r) == 1.0:
-        prob = 0.
-    else:
-        t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        prob = _betai(0.5*df, 0.5, df/(df + t_squared))
-
-    return r, prob
+    return scipy.stats.stats.pearsonr(ma.masked_array(x, mask=m).compressed(),
+                                      ma.masked_array(y, mask=m).compressed())
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
+              alternative='two-sided'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -492,6 +570,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -531,6 +618,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
 
+        # If either column is entirely NaN or Inf
+        if not np.any(x.data):
+            return SpearmanrResult(np.nan, np.nan)
+
         m = ma.getmask(x)
         n_obs = x.shape[0]
         dof = n_obs - 2 - int(m.sum(axis=0)[0])
@@ -547,7 +638,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        prob = 2 * distributions.t.sf(np.abs(t), dof)
+        t, prob = scipy.stats.stats._ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
@@ -574,10 +665,78 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         return SpearmanrResult(rs, prob)
 
 
+def _kendall_p_exact(n, c, alternative='two-sided'):
+
+    # Use the fact that distribution is symmetric: always calculate a CDF in
+    # the left tail.
+    # This will be the one-sided p-value if `c` is on the side of
+    # the null distribution predicted by the alternative hypothesis.
+    # The two-sided p-value will be twice this value.
+    # If `c` is on the other side of the null distribution, we'll need to
+    # take the complement and add back the probability mass at `c`.
+    in_right_tail = (c >= (n*(n-1))//2 - c)
+    alternative_greater = (alternative == 'greater')
+    c = int(min(c, (n*(n-1))//2 - c))
+
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods"
+    # (4th Edition), Charles Griffin & Co., 1970.
+    if n <= 0:
+        raise ValueError(f'n ({n}) must be positive')
+    elif c < 0 or 4*c > n*(n-1):
+        raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
+    elif n == 1:
+        prob = 1.0
+        p_mass_at_c = 1
+    elif n == 2:
+        prob = 1.0
+        p_mass_at_c = 0.5
+    elif c == 0:
+        prob = 2.0/math.factorial(n) if n < 171 else 0.0
+        p_mass_at_c = prob/2
+    elif c == 1:
+        prob = 2.0/math.factorial(n-1) if n < 172 else 0.0
+        p_mass_at_c = (n-1)/math.factorial(n)
+    elif 4*c == n*(n-1) and alternative == 'two-sided':
+        # I'm sure there's a simple formula for p_mass_at_c in this
+        # case, but I don't know it. Use generic formula for one-sided p-value.
+        prob = 1.0
+    elif n < 171:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3,n+1):
+            new = np.cumsum(new)
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = 2.0*np.sum(new)/math.factorial(n)
+        p_mass_at_c = new[-1]/math.factorial(n)
+    else:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3, n+1):
+            new = np.cumsum(new)/j
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = np.sum(new)
+        p_mass_at_c = new[-1]/2
+
+    if alternative != 'two-sided':
+        # if the alternative hypothesis and alternative agree,
+        # one-sided p-value is half the two-sided p-value
+        if in_right_tail == alternative_greater:
+            prob /= 2
+        else:
+            prob = 1 - prob/2 + p_mass_at_c
+
+    prob = np.clip(prob, 0, 1)
+
+    return prob
+
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
+def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
+               alternative='two-sided'):
     """
     Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
@@ -596,15 +755,24 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
+        are present. As the sample size increases, the 'exact' computation
+        time may grow and the result may lose some precision.
+        'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
 
     Returns
     -------
     correlation : float
-        Kendall tau
+        The Kendall tau statistic
     pvalue : float
-        Approximate 2-side p-value.
+        The p-value
 
     References
     ----------
@@ -654,34 +822,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = int(min(C, (n*(n-1))/2-C))
-        if n <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > n*(n-1):
-            raise ValueError
-        elif n == 1:
-            prob = 1.0
-        elif n == 2:
-            prob = 1.0
-        elif c == 0:
-            prob = 2.0/np.math.factorial(n)
-        elif c == 1:
-            prob = 2.0/np.math.factorial(n-1)
-        elif 2*c == (n*(n-1))//2:
-            prob = 1.0
-        else:
-            old = [0.0]*(c+1)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                for k in range(1,min(j,c+1)):
-                    new[k] += new[k-1]
-                for k in range(j,c+1):
-                    new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/np.math.factorial(n)
+        prob = _kendall_p_exact(n, C, alternative)
+
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
@@ -704,9 +846,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         var_s /= 18.
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
-        prob = special.erfc(abs(z)/np.sqrt(2))
+        _, prob = scipy.stats.stats._normtest_finish(z, alternative)
     else:
-        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+        raise ValueError("Unknown method "+str(method)+" specified, please "
+                         "use auto, exact or asymptotic.")
 
     return KendalltauResult(tau, prob)
 
@@ -830,13 +973,8 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'stderr'))
-
-
 def linregress(x, y=None):
-    """
+    r"""
     Linear regression calculation
 
     Note that the non-masked version is used, and that this docstring is
@@ -850,9 +988,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError("If only `x` is given as input, "
+                             "it has to be of shape (2, N) or (N, 2), "
+                             f"provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
@@ -865,18 +1003,20 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
-                                                                   y.data[~m])
+            result = stats_linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            return None, None, None, None, None
+            result = stats_LinregressResult(slope=None, intercept=None,
+                                            rvalue=None, pvalue=None,
+                                            stderr=None,
+                                            intercept_stderr=None)
     else:
-        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
+        result = stats_linregress(x.data, y.data)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return result
 
 
-def theilslopes(y, x=None, alpha=0.95):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -893,6 +1033,17 @@ def theilslopes(y, x=None, alpha=0.95):
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+            * 'joint': Uses np.median(y - medslope * x) as intercept.
+            * 'separate': Uses np.median(y) - medslope * np.median(x)
+                          as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -929,7 +1080,7 @@ def theilslopes(y, x=None, alpha=0.95):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
-    return stats_theilslopes(y, x, alpha=alpha)
+    return stats_theilslopes(y, x, alpha=alpha, method=method)
 
 
 def siegelslopes(y, x=None, method="hierarchical"):
@@ -1000,7 +1151,7 @@ def sen_seasonal_slopes(x):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0):
+def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     """
     Calculates the T-test for the mean of ONE group of scores.
 
@@ -1014,13 +1165,25 @@ def ttest_1samp(a, popmean, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the mean of the underlying distribution of the sample
+          is different than the given population mean (`popmean`)
+        * 'less': the mean of the underlying distribution of the sample is
+          less than the given population mean (`popmean`)
+        * 'greater': the mean of the underlying distribution of the sample is
+          greater than the given population mean (`popmean`)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         t-statistic
     pvalue : float or array
-        two-tailed p-value
+        The p-value
 
     Notes
     -----
@@ -1039,8 +1202,8 @@ def ttest_1samp(a, popmean, axis=0):
     svar = ((n - 1.0) * v) / df
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
-    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
     return Ttest_1sampResult(t, prob)
 
 
@@ -1050,7 +1213,7 @@ ttest_onesamp = ttest_1samp
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -1069,13 +1232,27 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         variance.
 
         .. versionadded:: 0.17.0
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -1109,15 +1286,15 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
-    return Ttest_indResult(t, probs.squeeze())
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_indResult(t, prob)
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
-def ttest_rel(a, b, axis=0):
+def ttest_rel(a, b, axis=0, alternative='two-sided'):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -1128,6 +1305,20 @@ def ttest_rel(a, b, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the means of the distributions underlying the samples
+          are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+          is less than the mean of the distribution underlying the second
+          sample.
+        * 'greater': the mean of the distribution underlying the first
+          sample is greater than the mean of the distribution underlying
+          the second sample.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -1157,9 +1348,8 @@ def ttest_rel(a, b, axis=0):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
-
-    return Ttest_relResult(t, probs)
+    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    return Ttest_relResult(t, prob)
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
@@ -1184,9 +1374,9 @@ def mannwhitneyu(x,y, use_continuity=True):
     Returns
     -------
     statistic : float
-        The Mann-Whitney statistics
+        The minimum of the Mann-Whitney statistics
     pvalue : float
-        Approximate p-value assuming a normal distribution.
+        Approximate two-sided p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
@@ -1280,20 +1470,30 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_twosamp(data1, data2, alternative="two-sided"):
+def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     """
-    Computes the Kolmogorov-Smirnov test on two samples.
+    Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
-    Missing values are discarded.
+    Missing values in `x` are discarded.
 
     Parameters
     ----------
-    data1 : array_like
-        First data set
-    data2 : array_like
-        Second data set
+    x : array_like
+        a 1-D array of observations of random variables.
+    cdf : str or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If a callable, that callable is used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -1303,34 +1503,73 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         Corresponding p-value.
 
     """
-    (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
-    (n1, n2) = (data1.count(), data2.count())
-    n = (n1*n2/float(n1+n2))
-    mix = ma.concatenate((data1.compressed(), data2.compressed()))
-    mixsort = mix.argsort(kind='mergesort')
-    csum = np.where(mixsort < n1, 1./n1, -1./n2).cumsum()
-    # Check for ties
-    if len(np.unique(mix)) < (n1+n2):
-        csum = csum[np.r_[np.diff(mix[mixsort]).nonzero()[0],-1]]
-
-    alternative = str(alternative).lower()[0]
-    if alternative == 't':
-        d = ma.abs(csum).max()
-        prob = special.kolmogorov(np.sqrt(n)*d)
-    elif alternative == 'l':
-        d = -csum.min()
-        prob = np.exp(-2*n*d**2)
-    elif alternative == 'g':
-        d = csum.max()
-        prob = np.exp(-2*n*d**2)
-    else:
-        raise ValueError("Invalid value for the alternative hypothesis: "
-                         "should be in 'two-sided', 'less' or 'greater'")
-
-    return (d, prob)
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_1samp(
+        x, cdf, args=args, alternative=alternative, mode=mode)
 
 
-ks_2samp = ks_twosamp
+def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+    """
+    Computes the Kolmogorov-Smirnov test on two samples.
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    data1 : array_like
+        First data set
+    data2 : array_like
+        Second data set
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
+
+    Returns
+    -------
+    d : float
+        Value of the Kolmogorov Smirnov test
+    p : float
+        Corresponding p-value.
+
+    """
+    # Ideally this would be accomplished by
+    # ks_2samp = scipy.stats.stats.ks_2samp
+    # but the circular dependencies between mstats_basic and stats prevent that.
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative,
+                                      mode=mode)
+
+
+ks_twosamp = ks_2samp
+
+
+def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+    """
+
+    Parameters
+    ----------
+    data1 : array_like
+    data2 : str, callable or array_like
+    args : tuple, sequence, optional
+        Distribution parameters, used if `data1` or `data2` are strings.
+    alternative : str, as documented in stats.kstest
+    mode : str, as documented in stats.kstest
+
+    Returns
+    -------
+    tuple of (K-S statistic, probability)
+
+    """
+    return scipy.stats.stats.kstest(data1, data2, args,
+                                    alternative=alternative, mode=mode)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -1734,7 +1973,8 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
-            raise ValueError("Array 'a' must be at most two dimensional, but got a.ndim = %d" % a.ndim)
+            raise ValueError("Array 'a' must be at most two dimensional, "
+                             "but got a.ndim = %d" % a.ndim)
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 
@@ -2107,7 +2347,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan, nan_policy = scipy.stats.stats._contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2164,16 +2404,43 @@ def moment(a, moment=1, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    if moment == 1:
-        # By definition the first moment about the mean is 0.
+    if a.size == 0:
+        moment_shape = list(a.shape)
+        del moment_shape[axis]
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+        # empty array, return nan(s) with shape matching `moment`
+        out_shape = (moment_shape if np.isscalar(moment)
+                    else [len(moment)] + moment_shape)
+        if len(out_shape) == 0:
+            return dtype(np.nan)
+        else:
+            return ma.array(np.full(out_shape, np.nan, dtype=dtype))
+
+    # for array_like moment input, return a value for each.
+    if not np.isscalar(moment):
+        mean = a.mean(axis, keepdims=True)
+        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        return ma.array(mmnt)
+    else:
+        return _moment(a, moment, axis)
+
+# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
+def _moment(a, moment, axis, *, mean=None):
+    if np.abs(moment - np.round(moment)) > 0:
+        raise ValueError("All moment parameters must be integers")
+
+    if moment == 0 or moment == 1:
+        # By definition the zeroth moment about the mean is 1, and the first
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float)
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+        if len(shape) == 0:
+            return dtype(1.0 if moment == 0 else 0.0)
         else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(0.0)
+            return (ma.ones(shape, dtype=dtype) if moment == 0
+                    else ma.zeros(shape, dtype=dtype))
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -2186,7 +2453,8 @@ def moment(a, moment=1, axis=0):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - ma.expand_dims(a.mean(axis), axis)
+        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        a_zero_mean = a - mean
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -2200,10 +2468,18 @@ def moment(a, moment=1, axis=0):
         return s.mean(axis)
 
 
-def variation(a, axis=0):
+def variation(a, axis=0, ddof=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Compute the coefficient of variation.
+
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
+
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
@@ -2212,16 +2488,18 @@ def variation(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-    
+
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
-    
+
     Examples
     --------
     >>> from scipy.stats.mstats import variation
@@ -2234,12 +2512,12 @@ def variation(a, axis=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    `stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
-    return a.std(axis)/a.mean(axis)
+    return a.std(axis, ddof=ddof)/a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
@@ -2268,14 +2546,16 @@ def skew(a, axis=0, bias=True):
 
     """
     a, axis = _chk_asarray(a,axis)
-    n = a.count(axis)
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m3 = _moment(a, 3, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+        vals = ma.where(zero, 0, m3 / m2**1.5)
 
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
+        n = a.count(axis)
+        can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -2322,14 +2602,16 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m4 = _moment(a, 4, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(zero, 0, m4 / m2**2.0)
 
-    if not bias:
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
         n = a.count(axis)
-        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
+        can_correct = ~zero & (n > 3)
         if can_correct.any():
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
@@ -2401,7 +2683,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
-    mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
+    mm = (ma.minimum.reduce(a, axis=axis), ma.maximum.reduce(a, axis=axis))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
@@ -2443,24 +2725,36 @@ def stde_median(data, axis=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-def skewtest(a, axis=0):
+def skewtest(a, axis=0, alternative='two-sided'):
     """
     Tests whether the skew is different from the normal distribution.
 
     Parameters
     ----------
-    a : array
+    a : array_like
         The data to be tested
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the skewness of the distribution underlying the sample
+          is different from that of the normal distribution (i.e. 0)
+        * 'less': the skewness of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the skewness of the distribution underlying the sample
+          is greater than that of the normal distribution
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        a 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        A p-value for the hypothesis test
 
     Notes
     -----
@@ -2486,30 +2780,42 @@ def skewtest(a, axis=0):
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
 
-    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return SkewtestResult(*scipy.stats.stats._normtest_finish(Z, alternative))
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-def kurtosistest(a, axis=0):
+def kurtosistest(a, axis=0, alternative='two-sided'):
     """
     Tests whether a dataset has normal kurtosis
 
     Parameters
     ----------
-    a : array
+    a : array_like
         array of the sample data
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the kurtosis of the distribution underlying the sample
+          is different from that of the normal distribution
+        * 'less': the kurtosis of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the kurtosis of the distribution underlying the sample
+          is greater than that of the normal distribution
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        The 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        The p-value for the hypothesis test
 
     Notes
     -----
@@ -2546,7 +2852,9 @@ def kurtosistest(a, axis=0):
                         -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
-    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return KurtosistestResult(
+        *scipy.stats.stats._normtest_finish(Z, alternative)
+    )
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -2983,7 +3291,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     For more details on `brunnermunzel`, see `stats.brunnermunzel`.
 
     """

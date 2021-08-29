@@ -25,7 +25,7 @@ from numpy import pi
 from scipy.special._mptestutils import mpf2float
 
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 

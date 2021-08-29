@@ -195,16 +195,15 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
-    ...
-    >>> np.random.seed(0)
+    >>> rng = np.random.default_rng()
     ...
     >>> m = 20000
     >>> n = 10000
     ...
-    >>> A = rand(m, n, density=1e-4)
-    >>> b = np.random.randn(m)
+    >>> A = rand(m, n, density=1e-4, random_state=rng)
+    >>> b = rng.standard_normal(m)
     ...
-    >>> lb = np.random.randn(n)
+    >>> lb = rng.standard_normal(n)
     >>> ub = lb + 1
     ...
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
@@ -225,7 +224,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if issparse(A):
         A = csr_matrix(A)
     elif not isinstance(A, LinearOperator):
-        A = np.atleast_2d(A)
+        A = np.atleast_2d(np.asarray(A))
 
     if method == 'bvls':
         if lsq_solver == 'lsmr':
@@ -278,7 +277,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
 
     if in_bounds(x_lsq, lb, ub):
-        r = A.dot(x_lsq) - b
+        r = A @ x_lsq - b
         cost = 0.5 * np.dot(r, r)
         termination_status = 3
         termination_message = TERMINATION_MESSAGES[termination_status]

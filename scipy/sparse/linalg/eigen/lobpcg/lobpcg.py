@@ -7,11 +7,11 @@ References
        Toward the Optimal Preconditioned Eigensolver: Locally Optimal
        Block Preconditioned Conjugate Gradient Method.
        SIAM Journal on Scientific Computing 23, no. 2,
-       pp. 517-541. http://dx.doi.org/10.1137/S1064827500366124
+       pp. 517-541. :doi:`10.1137/S1064827500366124`
 
 .. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov (2007),
        Block Locally Optimal Preconditioned Eigenvalue Xolvers (BLOPEX)
-       in hypre and PETSc.  https://arxiv.org/abs/0705.2626
+       in hypre and PETSc.  :arxiv:`0705.2626`
 
 .. [3] A. V. Knyazev's C and MATLAB implementations:
        https://github.com/lobpcg/blopex
@@ -21,14 +21,14 @@ import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve, cholesky,
                           LinAlgError)
 from scipy.sparse.linalg import aslinearoperator
-from scipy.sparse.sputils import bmat
+from numpy import block as bmat
 
 __all__ = ['lobpcg']
 
 
 def _report_nonhermitian(M, name):
     """
-    Report if `M` is not a hermitian matrix given its type.
+    Report if `M` is not a Hermitian matrix given its type.
     """
     from scipy.linalg import norm
 
@@ -197,8 +197,7 @@ def lobpcg(A, X,
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
     ratio ``n / m`` should be large. It you call LOBPCG with ``m=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
-    for extremely large ``n / m``, see e.g., reference [28] in
-    https://arxiv.org/abs/0705.2626
+    for extremely large ``n / m`` [4]_.
 
     The convergence speed depends basically on two factors:
 
@@ -218,14 +217,20 @@ def lobpcg(A, X,
            Toward the Optimal Preconditioned Eigensolver: Locally Optimal
            Block Preconditioned Conjugate Gradient Method.
            SIAM Journal on Scientific Computing 23, no. 2,
-           pp. 517-541. http://dx.doi.org/10.1137/S1064827500366124
+           pp. 517-541. :doi:`10.1137/S1064827500366124`
 
     .. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov
            (2007), Block Locally Optimal Preconditioned Eigenvalue Xolvers
-           (BLOPEX) in hypre and PETSc. https://arxiv.org/abs/0705.2626
+           (BLOPEX) in hypre and PETSc. :arxiv:`0705.2626`
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
            https://bitbucket.org/joseroman/blopex
+
+    .. [4] S. Yamada, T. Imamura, T. Kano, and M. Machida (2006),
+           High-performance computing for exact numerical approaches to
+           quantum many-body problems on the earth simulator. In Proceedings
+           of the 2006 ACM/IEEE Conference on Supercomputing.
+           :doi:`10.1145/1188455.1188504`
 
     Examples
     --------
@@ -254,7 +259,8 @@ def lobpcg(A, X,
     Initial guess for eigenvectors, should have linearly independent
     columns. Column dimension = number of requested eigenvalues.
 
-    >>> X = np.random.rand(n, 3)
+    >>> rng = np.random.default_rng()
+    >>> X = rng.random((n, 3))
 
     Preconditioner in the inverse of A in this example:
 
@@ -369,8 +375,8 @@ def lobpcg(A, X,
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
-        except LinAlgError:
-            raise ValueError('cannot handle linearly dependent constraints')
+        except LinAlgError as e:
+            raise ValueError('cannot handle linearly dependent constraints') from e
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
@@ -593,8 +599,8 @@ def lobpcg(A, X,
             try:
                 _lambda, eigBlockVector = eigh(gramA, gramB,
                                                check_finite=False)
-            except LinAlgError:
-                raise ValueError('eigh has failed in lobpcg iterations')
+            except LinAlgError as e:
+                raise ValueError('eigh has failed in lobpcg iterations') from e
 
         ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:

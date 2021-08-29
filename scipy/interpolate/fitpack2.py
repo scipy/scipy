@@ -68,7 +68,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
-class UnivariateSpline(object):
+class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
@@ -83,23 +83,23 @@ class UnivariateSpline(object):
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
-        Weights for spline fitting.  Must be positive.  If None (default),
-        weights are all equal.
+        Weights for spline fitting.  Must be positive.  If `w` is None,
+        weights are all equal. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
-        None (default), ``bbox=[x[0], x[-1]]``.
+        `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is `k` = 3, a cubic spline.
+        ``k = 3`` is a cubic spline. Default is 3.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If None (default), ``s = len(w)`` which should be a good value if
+        If `s` is None, ``s = len(w)`` which should be a good value if
         ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
-        If 0, spline will interpolate through all data points.
+        If 0, spline will interpolate through all data points. Default is None.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -109,7 +109,7 @@ class UnivariateSpline(object):
         * if ext=2 or 'raise', raise a ValueError
         * if ext=3 of 'const', return the boundary value.
 
-        The default value is 0.
+        Default is 0.
 
     check_finite : bool, optional
         Whether to check that the input arrays contain only finite numbers.
@@ -120,12 +120,38 @@ class UnivariateSpline(object):
 
     See Also
     --------
-    InterpolatedUnivariateSpline : Subclass with smoothing forced to 0
-    LSQUnivariateSpline : Subclass in which knots are user-selected instead of
-        being set by smoothing condition
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
-    BivariateSpline : A similar class for two-dimensional spline interpolation
+    BivariateSpline :
+        a base class for bivariate splines.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh
+    InterpolatedUnivariateSpline :
+        a interpolating univariate spline for a given set of data points.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -149,8 +175,9 @@ class UnivariateSpline(object):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
     >>> plt.plot(x, y, 'ro', ms=5)
 
     Use the default value for the smoothing parameter:
@@ -211,8 +238,8 @@ class UnivariateSpline(object):
 
         try:
             ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
+        except KeyError as e:
+            raise ValueError("Unknown extrapolation mode %s." % ext) from e
 
         return x, y, w, bbox, ext
 
@@ -330,8 +357,8 @@ class UnivariateSpline(object):
         else:
             try:
                 ext = _extrap_modes[ext]
-            except KeyError:
-                raise ValueError("Unknown extrapolation mode %s." % ext)
+            except KeyError as e:
+                raise ValueError("Unknown extrapolation mode %s." % ext) from e
         return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
@@ -585,12 +612,25 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     See Also
     --------
-    UnivariateSpline : Superclass -- allows knots to be selected by a
-        smoothing condition
-    LSQUnivariateSpline : spline for which knots are user-selected
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
-    BivariateSpline : A similar class for two-dimensional spline interpolation
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    LSQUnivariateSpline :
+        a spline for which knots are user-selected
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -600,8 +640,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
     >>> spl = InterpolatedUnivariateSpline(x, y)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> xs = np.linspace(-3, 3, 1000)
@@ -695,12 +736,21 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     See Also
     --------
-    UnivariateSpline : Superclass -- knots are specified by setting a
-        smoothing condition
-    InterpolatedUnivariateSpline : spline passing through all points
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
-    BivariateSpline : A similar class for two-dimensional spline interpolation
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    InterpolatedUnivariateSpline :
+        a interpolating univariate spline for a given set of data points.
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -714,8 +764,9 @@ class LSQUnivariateSpline(UnivariateSpline):
     --------
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
 
     Fit a smoothing spline with a pre-defined internal knots:
 
@@ -774,18 +825,21 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 # ############### Bivariate spline ####################
 
-class _BivariateSplineBase(object):
+class _BivariateSplineBase:
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
 
     See Also
     --------
-    bisplrep, bisplev : an older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
     BivariateSpline :
-        implementation of bivariate spline interpolation on a plane grid
+        a base class for bivariate splines.
     SphereBivariateSpline :
-        implementation of bivariate spline interpolation on a spherical grid
+        a bivariate spline on a spherical grid
     """
 
     def get_residual(self):
@@ -848,6 +902,11 @@ class _BivariateSplineBase(object):
         if grid:
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
+
+            if (x.size >= 2) and (not np.all(np.diff(x) >= 0.0)):
+                raise ValueError("x must be strictly increasing when `grid` is True")
+            if (y.size >= 2) and (not np.all(np.diff(y) >= 0.0)):
+                raise ValueError("y must be strictly increasing when `grid` is True")
 
             if dx or dy:
                 z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
@@ -934,25 +993,29 @@ class BivariateSpline(_BivariateSplineBase):
 
     This class is meant to be subclassed, not instantiated directly.
     To construct these splines, call either `SmoothBivariateSpline` or
-    `LSQBivariateSpline`.
+    `LSQBivariateSpline` or `RectBivariateSpline`.
 
     See Also
     --------
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        to create a bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
-        to create a bivariate spline using weighted least-squares fitting
+        a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
-        to create a bivariate spline over a rectangular mesh on a sphere
+        a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        to create a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
-        to create a bivariate spline in spherical coordinates using
-        weighted least-squares fitting
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
     """
 
     @classmethod
@@ -1057,10 +1120,25 @@ class SmoothBivariateSpline(BivariateSpline):
 
     See Also
     --------
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1127,10 +1205,25 @@ class LSQBivariateSpline(BivariateSpline):
 
     See Also
     --------
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothBivariateSpline : create a smoothing BivariateSpline
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1148,17 +1241,24 @@ class LSQBivariateSpline(BivariateSpline):
 
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
-        tx1 = zeros((nx,), float)
-        ty1 = zeros((ny,), float)
+        # The Fortran subroutine "surfit" (called as dfitpack.surfit_lsq)
+        # requires that the knot arrays passed as input should be "real
+        # array(s) of dimension nmax" where "nmax" refers to the greater of nx
+        # and ny. We pad the tx1/ty1 arrays here so that this is satisfied, and
+        # slice them to the desired sizes upon return.
+        nmax = max(nx, ny)
+        tx1 = zeros((nmax,), float)
+        ty1 = zeros((nmax,), float)
         tx1[kx+1:nx-kx-1] = tx
         ty1[ky+1:ny-ky-1] = ty
 
         xb, xe, yb, ye = bbox
-        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
-                                                   xb, xe, yb, ye,
+        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, nx, tx1, ny, ty1,
+                                                   w, xb, xe, yb, ye,
                                                    kx, ky, eps, lwrk2=1)
         if ier > 10:
-            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
+            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z,
+                                                       nx, tx1, ny, ty1, w,
                                                        xb, xe, yb, ye,
                                                        kx, ky, eps, lwrk2=ier)
         if ier in [0, -1, -2]:  # normal return
@@ -1171,7 +1271,7 @@ class LSQBivariateSpline(BivariateSpline):
                 message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tx1, ty1, c
+        self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky
 
 
@@ -1190,20 +1290,35 @@ class RectBivariateSpline(BivariateSpline):
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
-        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+        ``bbox=[min(x), max(x), min(y), max(y)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
-        Default is ``s=0``, which is for interpolation.
+        ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
+        function. Default is ``s=0``, which is for interpolation.
 
     See Also
     --------
-    SmoothBivariateSpline : a smoothing bivariate spline for scattered data
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     """
 
@@ -1272,12 +1387,16 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline :
-        to create a BivariateSpline through the given points
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
     LSQUnivariateSpline :
-        to create a BivariateSpline using weighted least-squares fitting
+        a univariate spline using weighted least-squares fitting
     """
 
     def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
@@ -1316,8 +1435,6 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         if theta.size > 0 and (theta.min() < 0. or theta.max() > np.pi):
             raise ValueError("requested theta out of bounds.")
-        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
-            raise ValueError("requested phi out of bounds.")
 
         return _BivariateSplineBase.__call__(self, theta, phi,
                                              dx=dtheta, dy=dphi, grid=grid)
@@ -1368,6 +1485,28 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
         interval ``(0, 1)``, the default is 1e-16.
+
+    See Also
+    --------
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1424,13 +1563,17 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
 
+        theta, phi, r = np.asarray(theta), np.asarray(phi), np.asarray(r)
+
         # input validation
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
         if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
             raise ValueError('phi should be between [0, 2pi]')
-        if w is not None and not (w >= 0.0).all():
-            raise ValueError('w should be positive')
+        if w is not None:
+            w = np.asarray(w)
+            if not (w >= 0.0).all():
+                raise ValueError('w should be positive')
         if not s >= 0.0:
             raise ValueError('s should be positive')
         if not 0.0 < eps < 1.0:
@@ -1449,13 +1592,24 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
 
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
+
 
 class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
 
-    Determines a smooth bicubic spline according to a given
+    Determines a smoothing bicubic spline according to a given
     set of knots in the `theta` and `phi` directions.
 
     .. versionadded:: 0.11.0
@@ -1477,6 +1631,27 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         linear system of equations. `eps` should have a value within the
         open interval ``(0, 1)``, the default is 1e-16.
 
+    See Also
+    --------
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
+
     Notes
     -----
     For more information, see the FITPACK_ site about this function.
@@ -1488,8 +1663,11 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid (the input data does not
     have to be on a grid):
 
-    >>> theta = np.linspace(0., np.pi, 7)
-    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> import matplotlib.pyplot as plt
+
+    >>> theta = np.linspace(0, np.pi, num=7)
+    >>> phi = np.linspace(0, 2*np.pi, num=9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
     >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
     >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
@@ -1508,7 +1686,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     >>> knotst[-1] -= .0001
     >>> knotsp[0] += .0001
     >>> knotsp[-1] -= .0001
-    >>> from scipy.interpolate import LSQSphereBivariateSpline
     >>> lut = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
     ...                                data.T.ravel(), knotst, knotsp)
 
@@ -1521,10 +1698,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fine_lats = np.linspace(0., np.pi, 70)
     >>> fine_lons = np.linspace(0., 2*np.pi, 90)
-
     >>> data_lsq = lut(fine_lats, fine_lons)
 
-    >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(131)
     >>> ax1.imshow(data, interpolation='nearest')
@@ -1538,6 +1713,9 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
 
+        theta, phi, r = np.asarray(theta), np.asarray(phi), np.asarray(r)
+        tt, tp = np.asarray(tt), np.asarray(tp)
+
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
         if not ((0.0 <= phi).all() and (phi <= 2*np.pi).all()):
@@ -1546,8 +1724,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError('tt should be between (0, pi)')
         if not ((0.0 < tp).all() and (tp < 2*np.pi).all()):
             raise ValueError('tp should be between (0, 2pi)')
-        if w is not None and not (w >= 0.0).all():
-            raise ValueError('w should be positive')
+        if w is not None:
+            w = np.asarray(w)
+            if not (w >= 0.0).all():
+                raise ValueError('w should be positive')
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
@@ -1559,17 +1739,24 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
         tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
                                                      w=w, eps=eps)
-        if ier < -2:
-            deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
-            message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message, stacklevel=2)
-        elif ier not in [0, -1, -2]:
+        if ier > 0:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
 
         self.fp = fp
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
+
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
 
 
 _spfit_messages = _surfit_messages.copy()
@@ -1613,8 +1800,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     ----------
     u : array_like
         1-D array of colatitude coordinates in strictly ascending order.
-        Coordinates must be given in radians and lie within the interval
-        ``[0, pi]``.
+        Coordinates must be given in radians and lie within the open interval
+        ``(0, pi)``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
@@ -1644,8 +1831,25 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     See Also
     --------
-    RectBivariateSpline : bivariate spline approximation over a rectangular
-        mesh
+    BivariateSpline :
+        a base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    SmoothSphereBivariateSpline :
+        a smoothing bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
+    RectBivariateSpline :
+        a bivariate spline over a rectangular mesh.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1763,9 +1967,10 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider[1], ider[3] = pole_flat
 
         u, v = np.ravel(u), np.ravel(v)
+        r = np.asarray(r)
 
-        if not ((0.0 <= u).all() and (u <= np.pi).all()):
-            raise ValueError('u should be between [0, pi]')
+        if not (0.0 < u[0] and u[-1] < np.pi):
+            raise ValueError('u should be between (0, pi)')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')
         if not v[-1] <= v[0] + 2*np.pi:
@@ -1807,3 +2012,12 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = (3, 3)
+        self.v0 = v[0]
+
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)

@@ -8,6 +8,10 @@
 
 
 python module _fblas
+    usercode '''
+#define F_INT int
+'''
+
     interface
 
        include 'fblas_l1.pyf.src'

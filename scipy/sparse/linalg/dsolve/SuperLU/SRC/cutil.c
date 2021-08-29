@@ -474,7 +474,7 @@ cPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 
-
+int
 print_complex_vec(char *what, int n, complex *vec)
 {
     int i;
@@ -482,4 +482,3 @@ print_complex_vec(char *what, int n, complex *vec)
     for (i = 0; i < n; ++i) printf("%d\t%f%f\n", i, vec[i].r, vec[i].i);
     return 0;
 }
-

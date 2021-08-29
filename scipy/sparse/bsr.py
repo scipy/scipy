@@ -11,8 +11,8 @@ import numpy as np
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats, spmatrix
-from .sputils import (isshape, getdtype, to_native, upcast, get_index_dtype,
-                      check_shape)
+from .sputils import (isshape, getdtype, getdata, to_native, upcast,
+                      get_index_dtype, check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,
@@ -154,7 +154,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             elif len(arg1) == 2:
                 # (data,(row,col)) format
                 from .coo import coo_matrix
-                self._set_self(coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize))
+                self._set_self(
+                    coo_matrix(arg1, dtype=dtype, shape=shape).tobsr(
+                        blocksize=blocksize
+                    )
+                )
 
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
@@ -167,20 +171,30 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     maxval = max(shape)
                 if blocksize is not None:
                     maxval = max(maxval, max(blocksize))
-                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval, check_contents=True)
-
+                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval,
+                                            check_contents=True)
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
-                self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
+                self.data = getdata(data, copy=copy, dtype=dtype)
+                if self.data.ndim != 3:
+                    raise ValueError(
+                        'BSR data must be 3-dimensional, got shape=%s' % (
+                            self.data.shape,))
+                if blocksize is not None:
+                    if not isshape(blocksize):
+                        raise ValueError('invalid blocksize=%s' % (blocksize,))
+                    if tuple(blocksize) != self.data.shape[1:]:
+                        raise ValueError('mismatching blocksize=%s vs %s' % (
+                            blocksize, self.data.shape[1:]))
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')
         else:
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
-            except Exception:
+            except Exception as e:
                 raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format)
+                        " %s_matrix constructor" % self.format) from e
             from .coo import coo_matrix
             arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self._set_self(arg1)
@@ -193,8 +207,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 try:
                     M = len(self.indptr) - 1
                     N = self.indices.max() + 1
-                except Exception:
-                    raise ValueError('unable to infer matrix dimensions')
+                except Exception as e:
+                    raise ValueError('unable to infer matrix dimensions') from e
                 else:
                     R,C = self.blocksize
                     self._shape = check_shape((M*R,N*C))

@@ -154,7 +154,7 @@ def _select_by_peak_distance(np.intp_t[::1] peaks not None,
                 keep[k] = 0
                 k += 1
 
-    return keep.base.view(dtype=np.bool)  # Return as boolean array
+    return keep.base.view(dtype=np.bool_)  # Return as boolean array
 
 
 class PeakPropertyWarning(RuntimeWarning):

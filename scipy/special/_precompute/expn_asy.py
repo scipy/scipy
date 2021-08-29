@@ -8,16 +8,11 @@ Sources
 
 """
 import os
-from numpy.testing import suppress_warnings
 
 try:
-    # Can remove when sympy #11255 is resolved; see
-    # https://github.com/sympy/sympy/issues/11255
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "inspect.getargspec.. is deprecated")
-        import sympy  # type: ignore[import]
-        from sympy import Poly
-        x = sympy.symbols('x')
+    import sympy  # type: ignore[import]
+    from sympy import Poly
+    x = sympy.symbols('x')
 except ImportError:
     pass
 

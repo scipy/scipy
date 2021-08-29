@@ -176,8 +176,8 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 def test_shortest_path_min_only_random(n):
     np.random.seed(1234)
     data = scipy.sparse.rand(n, n, density=0.5, format='lil',
-                             random_state=42, dtype=np.float)
-    data.setdiag(np.zeros(n, dtype=np.bool))
+                             random_state=42, dtype=np.float64)
+    data.setdiag(np.zeros(n, dtype=np.bool_))
     # choose some random vertices
     v = np.arange(n)
     np.random.shuffle(v)

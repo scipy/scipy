@@ -273,7 +273,7 @@ def lambda2nu(lambda_):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda_
+    return c / _np.asanyarray(lambda_)
 
 
 def nu2lambda(nu):

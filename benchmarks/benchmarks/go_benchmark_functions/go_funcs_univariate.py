@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 from numpy import cos, exp, log, pi, sin, sqrt
 
-try:
-    from scipy.misc import factorial
-except ImportError:
-    pass
-from .go_benchmark import Benchmark
+from .go_benchmark import Benchmark, safe_import
+
+with safe_import():
+    try:
+        from scipy.special import factorial  # new
+    except ImportError:
+        from scipy.misc import factorial  # old
+
 
 #-----------------------------------------------------------------------
 #                 UNIVARIATE SINGLE-OBJECTIVE PROBLEMS

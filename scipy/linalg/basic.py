@@ -16,7 +16,7 @@ from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance']
+           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
 
 
 # Linear equations
@@ -127,7 +127,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1-D array.
 
-    The generic, symmetric, hermitian and positive definite solutions are
+    The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
     """
@@ -169,6 +169,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
         raise ValueError('{} is not a recognized matrix structure'
                          ''.format(assume_a))
+
+    # for a real matrix, describe it as "symmetric", not "hermitian"
+    # (lapack doesn't know what to do with real hermitian matrices)
+    if assume_a == 'her' and not np.iscomplexobj(a1):
+        assume_a = 'sym'
 
     # Deprecate keyword "debug"
     if debug is not None:
@@ -335,7 +340,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
+        raise ValueError('shapes of a {} and b {} are incompatible'
+                         .format(a1.shape, b1.shape))
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
         print('solve:overwrite_b=', overwrite_b)
@@ -664,35 +670,19 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
-    if isinstance(c_or_cr, tuple):
-        c, r = c_or_cr
-        c = _asarray_validated(c, check_finite=check_finite).ravel()
-        r = _asarray_validated(r, check_finite=check_finite).ravel()
-    else:
-        c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
-        r = c.conjugate()
 
-    # Form a 1-D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
+    r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
+        c_or_cr, b, check_finite, keep_b_shape=True)
+
+    # Form a 1-D array of values to be used in the matrix, containing a
+    # reversed copy of r[1:], followed by c.
     vals = np.concatenate((r[-1:0:-1], c))
     if b is None:
         raise ValueError('illegal value, `b` is a required argument')
 
-    b = _asarray_validated(b)
-    if vals.shape[0] != (2*b.shape[0] - 1):
-        raise ValueError('incompatible dimensions')
-    if np.iscomplexobj(vals) or np.iscomplexobj(b):
-        vals = np.asarray(vals, dtype=np.complex128, order='c')
-        b = np.asarray(b, dtype=np.complex128)
-    else:
-        vals = np.asarray(vals, dtype=np.double, order='c')
-        b = np.asarray(b, dtype=np.double)
-
     if b.ndim == 1:
         x, _ = levinson(vals, np.ascontiguousarray(b))
     else:
-        b_shape = b.shape
-        b = b.reshape(b.shape[0], -1)
         x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
                              for i in range(b.shape[1])])
         x = x.reshape(*b_shape)
@@ -862,7 +852,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
     b = np.atleast_1d(b)
     nb = _get_axis_len("b", b, baxis)
     if nc != nb:
-        raise ValueError('Incompatible c and b axis lengths')
+        raise ValueError('Shapes of c {} and b {} are incompatible'
+                         .format(c.shape, b.shape))
 
     fc = np.fft.fft(np.rollaxis(c, caxis, c.ndim), axis=-1)
     abs_fc = np.abs(fc)
@@ -1247,78 +1238,120 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
+def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
+         cond=None, rcond=None):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
-    Calculate a generalized inverse of a matrix using a least-squares
-    solver.
+    Calculate a generalized inverse of a matrix using its
+    singular-value decomposition ``U @ S @ V`` in the economy mode and picking
+    up only the columns/rows that are associated with significant singular
+    values.
+
+    If ``s`` is the maximum singular value of ``a``, then the
+    significance cut-off value is determined by ``atol + rtol * s``. Any
+    singular value below this value is assumed insignificant.
 
     Parameters
     ----------
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
-    cond, rcond : float, optional
-        Cutoff factor for 'small' singular values. In `lstsq`,
-        singular values less than ``cond*largest_singular_value`` will be
-        considered as zero. If both are omitted, the default value
-        ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
-        corresponding machine precision value of the datatype of ``a``.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
 
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just `eps` without the
-            factor ``max(M, N)``.
+        .. versionadded:: 1.7.0
+
+    rtol: float, optional
+        Relative threshold term, default value is ``max(M, N) * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``a``.
+
+        .. versionadded:: 1.7.0
 
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    cond, rcond : float, optional
+        In older versions, these values were meant to be used as ``atol`` with
+        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
+        the code was not correct. Thus using these are strongly discouraged and
+        the tolerances above are recommended instead. In fact, if provided,
+        atol, rtol takes precedence over these keywords.
+
+        .. versionchanged:: 1.7.0
+            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
+            will be removed in future versions of SciPy.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
     B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix. Returned if return_rank == True
+        The effective rank of the matrix. Returned if `return_rank` is True.
 
     Raises
     ------
     LinAlgError
-        If computation does not converge.
+        If SVD computation does not converge.
 
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.standard_normal((9, 6))
     >>> B = linalg.pinv(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
+    >>> np.allclose(a, a @ B @ a)
     True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
+    >>> np.allclose(B, B @ a @ B)
     True
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    b = np.identity(a.shape[0], dtype=a.dtype)
+    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
+    t = u.dtype.char.lower()
+    maxS = np.max(s)
 
-    if rcond is not None:
-        cond = rcond
+    if rcond or cond:
+        warn('Use of the "cond" and "rcond" keywords are deprecated and '
+             'will be removed in future versions of SciPy. Use "atol" and '
+             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
-    if cond is None:
-        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
+    # backwards compatible only atol and rtol are both missing
+    if (rcond or cond) and (atol is None) and (rtol is None):
+        atol = rcond or cond
+        rtol = 0.
 
-    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
+    atol = 0. if atol is None else atol
+    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+
+    if (atol < 0.) or (rtol < 0.):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    rank = np.sum(s > val)
+
+    u = u[:, :rank]
+    u /= s[:rank]
+    B = (u @ vh[:rank]).conj().T
 
     if return_rank:
-        return x, rank
+        return B, rank
     else:
-        return x
+        return B
 
 
 def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+
+    `scipy.linalg.pinv2` is deprecated since SciPy 1.7.0, use
+    `scipy.linalg.pinv` instead for better tolerance control.
 
     Calculate a generalized inverse of a matrix using its
     singular-value decomposition and including all 'large' singular
@@ -1357,60 +1390,40 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     LinAlgError
         If SVD computation does not converge.
 
-    Examples
-    --------
-    >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6)
-    >>> B = linalg.pinv2(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
-    True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
-    True
-
     """
-    a = _asarray_validated(a, check_finite=check_finite)
-    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
-
+    # SciPy 1.7.0 2021-04-10
+    warn('scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use '
+         'scipy.linalg.pinv instead', DeprecationWarning, stacklevel=2)
     if rcond is not None:
         cond = rcond
-    if cond in [None, -1]:
-        t = u.dtype.char.lower()
-        cond = np.max(s) * max(a.shape) * np.finfo(t).eps
 
-    rank = np.sum(s > cond)
-
-    u = u[:, :rank]
-    u /= s[:rank]
-    B = np.transpose(np.conjugate(np.dot(u, vh[:rank])))
-
-    if return_rank:
-        return B, rank
-    else:
-        return B
+    return pinv(a=a, atol=cond, rtol=None, return_rank=return_rank,
+                check_finite=check_finite)
 
 
-def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
-          check_finite=True):
+def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
+          check_finite=True, cond=None, rcond=None):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
-    Calculate a generalized inverse of a Hermitian or real symmetric matrix
-    using its eigenvalue decomposition and including all eigenvalues with
-    'large' absolute value.
+    Calculate a generalized inverse of a copmlex Hermitian/real symmetric
+    matrix using its eigenvalue decomposition and including all eigenvalues
+    with 'large' absolute value.
 
     Parameters
     ----------
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
-    cond, rcond : float or None
-        Cutoff for 'small' singular values; singular values smaller than this
-        value are considered as zero. If both are omitted, the default
-        ``max(M,N)*largest_eigenvalue*eps`` is used where ``eps`` is the
-        machine precision value of the datatype of ``a``.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
 
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
+        .. versionadded:: 1.7.0
+
+    rtol: float, optional
+        Relative threshold term, default value is ``N * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``a``.
+
+        .. versionadded:: 1.7.0
 
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
@@ -1421,6 +1434,20 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    cond, rcond : float, optional
+        In older versions, these values were meant to be used as ``atol`` with
+        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
+        the code was not correct. Thus using these are strongly discouraged and
+        the tolerances above are recommended instead.  In fact, if provided,
+        atol, rtol takes precedence over these keywords.
+
+        .. versionchanged:: 1.7.0
+            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
+            will be removed in future versions of SciPy.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
@@ -1432,35 +1459,49 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     Raises
     ------
     LinAlgError
-        If eigenvalue does not converge
+        If eigenvalue algorithm does not converge.
 
     Examples
     --------
     >>> from scipy.linalg import pinvh
-    >>> a = np.random.randn(9, 6)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.standard_normal((9, 6))
     >>> a = np.dot(a, a.T)
     >>> B = pinvh(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
+    >>> np.allclose(a, a @ B @ a)
     True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
+    >>> np.allclose(B, B @ a @ B)
     True
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = decomp.eigh(a, lower=lower, check_finite=False)
+    t = u.dtype.char.lower()
+    maxS = np.max(np.abs(s))
 
-    if rcond is not None:
-        cond = rcond
-    if cond in [None, -1]:
-        t = u.dtype.char.lower()
-        cond = np.max(np.abs(s)) * max(a.shape) * np.finfo(t).eps
+    if rcond or cond:
+        warn('Use of the "cond" and "rcond" keywords are deprecated and '
+             'will be removed in future versions of SciPy. Use "atol" and '
+             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
-    # For Hermitian matrices, singular values equal abs(eigenvalues)
-    above_cutoff = (abs(s) > cond)
+    # backwards compatible only atol and rtol are both missing
+    if (rcond or cond) and (atol is None) and (rtol is None):
+        atol = rcond or cond
+        rtol = 0.
+
+    atol = 0. if atol is None else atol
+    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+
+    if (atol < 0.) or (rtol < 0.):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    above_cutoff = (abs(s) > val)
+
     psigma_diag = 1.0 / s[above_cutoff]
     u = u[:, above_cutoff]
 
-    B = np.dot(u * psigma_diag, np.conjugate(u).T)
+    B = (u * psigma_diag) @ u.conj().T
 
     if return_rank:
         return B, len(psigma_diag)
@@ -1559,11 +1600,10 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     ----------
     .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
        Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
-       Vol.13(4), 1969, DOI:10.1007/BF02165404
+       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
 
     .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
-       eigenvector computation", 2014, Available online:
-       https://arxiv.org/abs/1401.5766
+       eigenvector computation", 2014, :arxiv:`1401.5766`
 
     .. [3] :  D.S. Watkins. A case where balancing is harmful.
        Electron. Trans. Numer. Anal, Vol.23, 2006.
@@ -1615,3 +1655,229 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     iperm[perm] = np.arange(n)
 
     return B, np.diag(scaling)[iperm, :]
+
+
+def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
+                                    enforce_square=True):
+    """Validate arguments and format inputs for toeplitz functions
+
+    Parameters
+    ----------
+    c_or_cr : array_like or tuple of (array_like, array_like)
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
+        actual shape of ``c``, it will be converted to a 1-D array. If not
+        supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
+        real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
+        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
+        of ``r``, it will be converted to a 1-D array.
+    b : (M,) or (M, K) array_like
+        Right-hand side in ``T x = b``.
+    check_finite : bool
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (result entirely NaNs) if the inputs do contain infinities or NaNs.
+    keep_b_shape: bool
+        Whether to convert a (M,) dimensional b into a (M, 1) dimensional
+        matrix.
+    enforce_square: bool, optional
+        If True (default), this verifies that the Toeplitz matrix is square.
+
+    Returns
+    -------
+    r : array
+        1d array corresponding to the first row of the Toeplitz matrix.
+    c: array
+        1d array corresponding to the first column of the Toeplitz matrix.
+    b: array
+        (M,), (M, 1) or (M, K) dimensional array, post validation,
+        corresponding to ``b``.
+    dtype: numpy datatype
+        ``dtype`` stores the datatype of ``r``, ``c`` and ``b``. If any of
+        ``r``, ``c`` or ``b`` are complex, ``dtype`` is ``np.complex128``,
+        otherwise, it is ``np.float``.
+    b_shape: tuple
+        Shape of ``b`` after passing it through ``_asarray_validated``.
+
+    """
+
+    if isinstance(c_or_cr, tuple):
+        c, r = c_or_cr
+        c = _asarray_validated(c, check_finite=check_finite).ravel()
+        r = _asarray_validated(r, check_finite=check_finite).ravel()
+    else:
+        c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
+        r = c.conjugate()
+
+    if b is None:
+        raise ValueError('`b` must be an array, not None.')
+
+    b = _asarray_validated(b, check_finite=check_finite)
+    b_shape = b.shape
+
+    is_not_square = r.shape[0] != c.shape[0]
+    if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
+        raise ValueError('Incompatible dimensions.')
+
+    is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
+    dtype = np.complex128 if is_cmplx else np.double
+    r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
+
+    if b.ndim == 1 and not keep_b_shape:
+        b = b.reshape(-1, 1)
+    elif b.ndim != 1:
+        b = b.reshape(b.shape[0], -1)
+
+    return r, c, b, dtype, b_shape
+
+
+def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
+    """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+
+    This function returns the matrix multiplication between a Toeplitz
+    matrix and a dense matrix.
+
+    The Toeplitz matrix has constant diagonals, with c as its first column
+    and r as its first row. If r is not given, ``r == conjugate(c)`` is
+    assumed.
+
+    Parameters
+    ----------
+    c_or_cr : array_like or tuple of (array_like, array_like)
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
+        actual shape of ``c``, it will be converted to a 1-D array. If not
+        supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
+        real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
+        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
+        of ``r``, it will be converted to a 1-D array.
+    x : (M,) or (M, K) array_like
+        Matrix with which to multiply.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (result entirely NaNs) if the inputs do contain infinities or NaNs.
+    workers : int, optional
+        To pass to scipy.fft.fft and ifft. Maximum number of workers to use
+        for parallel computation. If negative, the value wraps around from
+        ``os.cpu_count()``. See scipy.fft.fft for more details.
+
+    Returns
+    -------
+    T @ x : (M,) or (M, K) ndarray
+        The result of the matrix multiplication ``T @ x``. Shape of return
+        matches shape of `x`.
+
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+    solve_toeplitz : Solve a Toeplitz system using Levinson Recursion
+
+    Notes
+    -----
+    The Toeplitz matrix is embedded in a circulant matrix and the FFT is used
+    to efficiently calculate the matrix-matrix product.
+
+    Because the computation is based on the FFT, integer inputs will
+    result in floating point outputs.  This is unlike NumPy's `matmul`,
+    which preserves the data type of the input.
+
+    This is partly based on the implementation that can be found in [1]_,
+    licensed under the MIT license. More information about the method can be
+    found in reference [2]_. References [3]_ and [4]_ have more reference
+    implementations in Python.
+
+    .. versionadded:: 1.6.0
+
+    References
+    ----------
+    .. [1] Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
+       Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
+       Gaussian Process Inference with GPU Acceleration" with contributions
+       from Max Balandat and Ruihan Wu. Available online:
+       https://github.com/cornellius-gp/gpytorch
+
+    .. [2] J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
+       Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
+       Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
+       Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available at:
+       http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
+
+    .. [3] R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
+       package for audio room simulations and array processing algorithms,
+       Proc. IEEE ICASSP, Calgary, CA, 2018.
+       https://github.com/LCAV/pyroomacoustics/blob/pypi-release/
+       pyroomacoustics/adaptive/util.py
+
+    .. [4] Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
+       Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
+       the Seismological Society of America., January, 2017. Vol. 107(1),
+       pp. 276-291.
+
+    Examples
+    --------
+    Multiply the Toeplitz matrix T with matrix x::
+
+            [ 1 -1 -2 -3]       [1 10]
+        T = [ 3  1 -1 -2]   x = [2 11]
+            [ 6  3  1 -1]       [2 11]
+            [10  6  3  1]       [5 19]
+
+    To specify the Toeplitz matrix, only the first column and the first
+    row are needed.
+
+    >>> c = np.array([1, 3, 6, 10])    # First column of T
+    >>> r = np.array([1, -1, -2, -3])  # First row of T
+    >>> x = np.array([[1, 10], [2, 11], [2, 11], [5, 19]])
+
+    >>> from scipy.linalg import toeplitz, matmul_toeplitz
+    >>> matmul_toeplitz((c, r), x)
+    array([[-20., -80.],
+           [ -7.,  -8.],
+           [  9.,  85.],
+           [ 33., 218.]])
+
+    Check the result by creating the full Toeplitz matrix and
+    multiplying it by ``x``.
+
+    >>> toeplitz(c, r) @ x
+    array([[-20, -80],
+           [ -7,  -8],
+           [  9,  85],
+           [ 33, 218]])
+
+    The full matrix is never formed explicitly, so this routine
+    is suitable for very large Toeplitz matrices.
+
+    >>> n = 1000000
+    >>> matmul_toeplitz([1] + [0]*(n-1), np.ones(n))
+    array([1., 1., 1., ..., 1., 1., 1.])
+
+    """
+
+    from ..fft import fft, ifft, rfft, irfft
+
+    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops(
+        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False)
+    n, m = x.shape
+
+    T_nrows = len(c)
+    T_ncols = len(r)
+    p = T_nrows + T_ncols - 1  # equivalent to len(embedded_col)
+
+    embedded_col = np.concatenate((c, r[-1:0:-1]))
+
+    if np.iscomplexobj(embedded_col) or np.iscomplexobj(x):
+        fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
+        fft_x = fft(x, n=p, axis=0, workers=workers)
+
+        mat_times_x = ifft(fft_mat*fft_x, axis=0,
+                           workers=workers)[:T_nrows, :]
+    else:
+        # Real inputs; using rfft is faster
+        fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
+        fft_x = rfft(x, n=p, axis=0, workers=workers)
+
+        mat_times_x = irfft(fft_mat*fft_x, axis=0,
+                            workers=workers, n=p)[:T_nrows, :]
+
+    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
+    return mat_times_x.reshape(*return_shape)

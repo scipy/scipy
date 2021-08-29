@@ -2,10 +2,11 @@ from tempfile import mkdtemp, mktemp
 import os
 import io
 import shutil
+import textwrap
 
 import numpy as np
 from numpy import array, transpose, pi
-from numpy.testing import (assert_equal,
+from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_equal, assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
@@ -17,7 +18,7 @@ parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
 
-class TestMMIOArray(object):
+class TestMMIOArray:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -113,6 +114,32 @@ class TestMMIOArray(object):
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
+    def test_bad_number_of_array_header_fields(self):
+        s = """\
+            %%MatrixMarket matrix array real general
+              3  3 999
+            1.0
+            2.0
+            3.0
+            4.0
+            5.0
+            6.0
+            7.0
+            8.0
+            9.0
+            """
+        text = textwrap.dedent(s).encode('ascii')
+        with pytest.raises(ValueError, match='not of length 2'):
+            scipy.io.mmread(io.BytesIO(text))
+
+    def test_gh13634_non_skew_symmetric_int(self):
+        self.check_exact(array([[1, 2], [-2, 99]], dtype=np.int32),
+                         (2, 2, 4, 'array', 'integer', 'general'))
+
+    def test_gh13634_non_skew_symmetric_float(self):
+        self.check(array([[1, 2], [-2, 99.]], dtype=np.float32),
+                   (2, 2, 4, 'array', 'real', 'general'))
+
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
@@ -199,12 +226,12 @@ class TestMMIOSparseCSR(TestMMIOArray):
                          (2, 2, 3, 'coordinate', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
-                         (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
+        self.check_exact(scipy.sparse.csr_matrix([[0, 2], [-2, 0]]),
+                         (2, 2, 1, 'coordinate', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
-        self.check(scipy.sparse.csr_matrix(array([[1, 2], [-2.0, 4]], 'f')),
-                   (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
+        self.check(scipy.sparse.csr_matrix(array([[0, 2], [-2.0, 0]], 'f')),
+                   (2, 2, 1, 'coordinate', 'real', 'skew-symmetric'))
 
     def test_simple_hermitian_complex(self):
         self.check(scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]),
@@ -232,6 +259,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
         assert_array_almost_equal(p, b.todense())
+
+    def test_gh13634_non_skew_symmetric_int(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
+        self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
+
+    def test_gh13634_non_skew_symmetric_float(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99.]], dtype=np.float32)
+        self.check(a, (2, 2, 4, 'coordinate', 'real', 'general'))
 
 
 _32bit_integer_dense_example = '''\
@@ -299,7 +334,8 @@ _over64bit_integer_sparse_example = '''\
 2  2  19223372036854775808
 '''
 
-class TestMMIOReadLargeIntegers(object):
+
+class TestMMIOReadLargeIntegers:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -497,7 +533,7 @@ _empty_lines_example = '''\
 '''
 
 
-class TestMMIOCoordinate(object):
+class TestMMIOCoordinate:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -695,8 +731,24 @@ class TestMMIOCoordinate(object):
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_array_almost_equal(A.data,
-                    [float('%%.%dg' % precision % value)])
+                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
+
+    def test_bad_number_of_coordinate_header_fields(self):
+        s = """\
+            %%MatrixMarket matrix coordinate real general
+              5  5  8 999
+                1     1   1.000e+00
+                2     2   1.050e+01
+                3     3   1.500e-02
+                1     4   6.000e+00
+                4     2   2.505e+02
+                4     4  -2.800e+02
+                4     5   3.332e+01
+                5     5   1.200e+01
+            """
+        text = textwrap.dedent(s).encode('ascii')
+        with pytest.raises(ValueError, match='not of length 3'):
+            scipy.io.mmread(io.BytesIO(text))
 
 
 def test_gh11389():

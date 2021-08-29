@@ -1,13 +1,31 @@
+from contextlib import contextmanager
 import functools
 import operator
 import sys
 import warnings
 import numbers
 from collections import namedtuple
-from multiprocessing import Pool
 import inspect
+import math
+from typing import (
+    Optional,
+    Union,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import numpy as np
+
+IntNumber = Union[int, np.integer]
+DecimalNumber = Union[float, np.floating, np.integer]
+
+# Since Generator was introduced in numpy 1.17, the following condition is needed for
+# backward compatibility
+if TYPE_CHECKING:
+    SeedType = Optional[Union[IntNumber, np.random.Generator,
+                              np.random.RandomState]]
+    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
+                                                         np.random.RandomState])
 
 try:
     from numpy.random import Generator as Generator
@@ -16,26 +34,16 @@ except ImportError:
         pass
 
 
-def _valarray(shape, value=np.nan, typecode=None):
-    """Return an array of all values.
-    """
-
-    out = np.ones(shape, dtype=bool) * value
-    if typecode is not None:
-        out = out.astype(typecode)
-    if not isinstance(out, np.ndarray):
-        out = np.asarray(out)
-    return out
-
-
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
     This one only evaluates f(arr1[cond], arr2[cond], ...).
-    For example,
+
+    Examples
+    --------
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
-        return a*b
+    ...     return a*b
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
 
@@ -43,6 +51,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     broadcasted together.
 
     """
+    cond = np.asarray(cond)
     if fillvalue is None:
         if f2 is None:
             raise ValueError("One of (fillvalue, f2) must be given.")
@@ -52,10 +61,11 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         if f2 is not None:
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
-    arrays = np.broadcast_arrays(*arrays)
+    args = np.broadcast_arrays(cond, *arrays)
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
     np.place(out, cond, f(*temp))
     if f2 is not None:
         temp = tuple(np.extract(~cond, arr) for arr in arrays)
@@ -93,7 +103,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     """
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=default, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
     for index in range(len(condlist)):
         func, cond = choicelist[index], condlist[index]
         if np.all(cond is False):
@@ -140,7 +150,28 @@ def _prune_array(array):
     return array
 
 
-class DeprecatedImport(object):
+def prod(iterable):
+    """
+    Product of a sequence of numbers.
+
+    Faster than np.prod for short lists like array shapes, and does
+    not overflow if using Python integers.
+    """
+    product = 1
+    for x in iterable:
+        product *= x
+    return product
+
+
+def float_factorial(n: int) -> float:
+    """Compute the factorial and return as a float
+
+    Returns infinity when result is too large for a double
+    """
+    return float(math.factorial(n)) if n < 171 else np.inf
+
+
+class DeprecatedImport:
     """
     Deprecated import with redirection and warning.
 
@@ -175,15 +206,27 @@ class DeprecatedImport(object):
 
 
 # copy-pasted from scikit-learn utils/validation.py
+# change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
 def check_random_state(seed):
-    """Turn seed into a np.random.RandomState instance
+    """Turn `seed` into a `np.random.RandomState` instance.
 
-    If seed is None (or np.random), return the RandomState singleton used
-    by np.random.
-    If seed is an int, return a new RandomState instance seeded with seed.
-    If seed is already a RandomState instance, return it.
-    If seed is a new-style np.random.Generator, return it.
-    Otherwise, raise ValueError.
+    Parameters
+    ----------
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Returns
+    -------
+    seed : {`numpy.random.Generator`, `numpy.random.RandomState`}
+        Random number generator.
+
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
@@ -257,6 +300,34 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
+def _validate_int(k, name, minimum=None):
+    """
+    Validate a scalar integer.
+
+    This functon can be used to validate an argument to a function
+    that expects the value to be an integer.  It uses `operator.index`
+    to validate the value (so, for example, k=2.0 results in a
+    TypeError).
+
+    Parameters
+    ----------
+    k : int
+        The value to be validated.
+    name : str
+        The name of the parameter.
+    minimum : int, optional
+        An optional lower bound.
+    """
+    try:
+        k = operator.index(k)
+    except TypeError:
+        raise TypeError(f'{name} must be an integer.') from None
+    if minimum is not None and k < minimum:
+        raise ValueError(f'{name} must be an integer not less '
+                         f'than {minimum}') from None
+    return k
+
+
 # Add a replacement for inspect.getfullargspec()/
 # The version below is borrowed from Django,
 # https://github.com/django/django/pull/4846.
@@ -273,6 +344,7 @@ def _asarray_validated(a, check_finite=True,
 FullArgSpec = namedtuple('FullArgSpec',
                          ['args', 'varargs', 'varkw', 'defaults',
                           'kwonlyargs', 'kwonlydefaults', 'annotations'])
+
 
 def getfullargspec_no_self(func):
     """inspect.getfullargspec replacement using inspect.signature.
@@ -314,7 +386,7 @@ def getfullargspec_no_self(func):
     defaults = tuple(
         p.default for p in sig.parameters.values()
         if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-           p.default is not p.empty)
+            p.default is not p.empty)
     ) or None
     kwonlyargs = [
         p.name for p in sig.parameters.values()
@@ -329,7 +401,19 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
-class MapWrapper(object):
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
+class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
     `multiprocessing.Pool.map`.
@@ -354,6 +438,7 @@ class MapWrapper(object):
             self.pool = pool
             self._mapfunc = self.pool
         else:
+            from multiprocessing import Pool
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
@@ -369,14 +454,11 @@ class MapWrapper(object):
                 self._own_pool = True
             else:
                 raise RuntimeError("Number of workers specified must be -1,"
-                                   " an int >= 1, or an object with a 'map' method")
+                                   " an int >= 1, or an object with a 'map' "
+                                   "method")
 
     def __enter__(self):
         return self
-
-    def __del__(self):
-        self.close()
-        self.terminate()
 
     def terminate(self):
         if self._own_pool:
@@ -399,10 +481,10 @@ class MapWrapper(object):
         # only accept one iterable because that's all Pool.map accepts
         try:
             return self._mapfunc(func, iterable)
-        except TypeError:
+        except TypeError as e:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
-                            " form f(func, iterable)")
+                            " form f(func, iterable)") from e
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
@@ -419,27 +501,27 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
 
     Parameters
     ----------
-    gen: {None, np.random.RandomState, np.random.Generator}
+    gen : {None, np.random.RandomState, np.random.Generator}
         Random number generator. If None, then the np.random.RandomState
         singleton is used.
-    low: int or array-like of ints
+    low : int or array-like of ints
         Lowest (signed) integers to be drawn from the distribution (unless
         high=None, in which case this parameter is 0 and this value is used
         for high).
-    high: int or array-like of ints
+    high : int or array-like of ints
         If provided, one above the largest (signed) integer to be drawn from
         the distribution (see above for behavior if high=None). If array-like,
         must contain integer values.
-    size: None
+    size : array-like of ints, optional
         Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
         samples are drawn. Default is None, in which case a single value is
         returned.
-    dtype: {str, dtype}, optional
+    dtype : {str, dtype}, optional
         Desired dtype of the result. All dtypes are determined by their name,
         i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
         The default value is np.int_.
-    endpoint: bool, optional
+    endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
 
@@ -467,3 +549,14 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
 
         # exclusive
         return gen.randint(low, high=high, size=size, dtype=dtype)
+
+
+@contextmanager
+def _fixed_default_rng(seed=1638083107694713882823079058616272161):
+    """Context with a fixed np.random.default_rng seed."""
+    orig_fun = np.random.default_rng
+    np.random.default_rng = lambda seed=seed: orig_fun(seed)
+    try:
+        yield
+    finally:
+        np.random.default_rng = orig_fun

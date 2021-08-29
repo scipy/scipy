@@ -1,7 +1,6 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 import re
 import datetime
-from collections import OrderedDict
 
 import numpy as np
 
@@ -39,7 +38,7 @@ r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
 r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
-r_nominal = re.compile('{(.+)}')
+r_nominal = re.compile(r'{(.+)}')
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
@@ -63,7 +62,7 @@ class ParseArffError(ArffError):
 # ----------
 # Attributes
 # ----------
-class Attribute(object):
+class Attribute:
 
     type_name = None
 
@@ -333,7 +332,7 @@ class DateAttribute(Attribute):
                 "datetime64[%s]" % self.datetime_unit)
 
     def __str__(self):
-        return super(DateAttribute, self).__str__() + ',' + self.date_format
+        return super().__str__() + ',' + self.date_format
 
 
 class RelationalAttribute(Attribute):
@@ -380,7 +379,7 @@ class RelationalAttribute(Attribute):
                         [(a.name, a.dtype) for a in self.attributes])
 
     def __str__(self):
-        return (super(RelationalAttribute, self).__str__() + '\n\t' +
+        return (super().__str__() + '\n\t' +
                 '\n\t'.join(str(a) for a in self.attributes))
 
 
@@ -475,7 +474,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-
+    
+    # Remove potential trailing whitespace
+    line = line.strip()
+    
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -573,8 +575,8 @@ def tokenize_single_comma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -588,8 +590,8 @@ def tokenize_single_wcomma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -648,7 +650,7 @@ def read_header(ofile):
     return relation, attributes
 
 
-class MetaData(object):
+class MetaData:
     """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
@@ -679,9 +681,7 @@ class MetaData(object):
     """
     def __init__(self, rel, attr):
         self.name = rel
-
-        # We need the dictionary to be ordered
-        self._attributes = OrderedDict((a.name, a) for a in attr)
+        self._attributes = {a.name: a for a in attr}
 
     def __repr__(self):
         msg = ""
@@ -811,7 +811,7 @@ def _loadarff(ofile):
         rel, attr = read_header(ofile)
     except ValueError as e:
         msg = "Error while parsing header, error was: " + str(e)
-        raise ParseArffError(msg)
+        raise ParseArffError(msg) from e
 
     # Check whether we have a string attribute (not supported yet)
     hasstr = False

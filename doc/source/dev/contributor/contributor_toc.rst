@@ -12,14 +12,19 @@ This guide is designed to help you quickly find the information you need about S
 - :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally with Sphinx, and view documentation built during continuous integration checks
 - :ref:`toc-benchmarking` - how to benchmark code with airspeed velocity
 - :ref:`toc-cython` - how to add fast, compiled code to SciPy
+- :ref:`continuous-integration` - how does our continuous integration system works and how to debug your PR
 
 .. _dev-env:
 
 Development environment
 -----------------------
+- :ref:`quickerstart-conda` contains just the commands you need to get started on Mac and Linux
+- :ref:`quickstart-pip` presents an overview of setting up the development environment using pip on Linux
 - :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
 - :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option
+- :ref:`build-windows` presents a step-by-step process for building SciPy on Windows
+- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
+- :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
 - :ref:`building` may have some helpful hints if you need to deviate from the guides above
 - :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 

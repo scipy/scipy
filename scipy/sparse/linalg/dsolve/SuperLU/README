@@ -128,10 +128,14 @@ are described below.
 
      or with more options, e.g.,
         cmake .. \
-	      -DCMAKE_INSTALL_INCLUDEDIR=/my/custom/path 	 
+	      -DCMAKE_INSTALL_PREFIX=../build
+	      -DCMAKE_INSTALL_INCLUDEDIR=/my/custom/path
 
    To actually build, type:
    	make
+
+   To install the library, type:
+        make install
 
    To run the installation test, type:
    	make test (or: ctest)
@@ -141,9 +145,6 @@ are described below.
        	    build/TESTING/d_test.out   # double precision, real
        	    build/TESTING/c_test.out   # single precision, complex
        	    build/TESTING/z_test.out   # double precision, complex
-
-   To install the library, type:
-        make install
 
 
 --------------------

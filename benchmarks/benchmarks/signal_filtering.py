@@ -2,12 +2,12 @@ import numpy as np
 import timeit
 from concurrent.futures import ThreadPoolExecutor, wait
 
-try:
-    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.signal import (lfilter, firwin, decimate, butter, sosfilt,
+                              medfilt2d)
+
 
 class Decimate(Benchmark):
     param_names = ['q', 'ftype', 'zero_phase']
@@ -62,12 +62,12 @@ class ParallelSosfilt(Benchmark):
         self.chunks = np.array_split(self.data, threads)
 
     def time_sosfilt(self, n_samples, threads):
-        pool = ThreadPoolExecutor(max_workers=threads)
-        futures = []
-        for i in range(threads):
-            futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            futures = []
+            for i in range(threads):
+                futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
 
-        wait(futures)
+            wait(futures)
 
 
 class Sosfilt(Benchmark):
@@ -83,3 +83,22 @@ class Sosfilt(Benchmark):
 
     def time_sosfilt_basic(self, n_samples, order):
         sosfilt(self.sos, self.y)
+
+
+class MedFilt2D(Benchmark):
+    param_names = ['threads']
+    params = [[1, 2, 4]]
+
+    def setup(self, threads):
+        rng = np.random.default_rng(8176)
+        self.chunks = np.array_split(rng.standard_normal((250, 349)), threads)
+
+    def _medfilt2d(self, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            wait({pool.submit(medfilt2d, chunk, 5) for chunk in self.chunks})
+
+    def time_medfilt2d(self, threads):
+        self._medfilt2d(threads)
+
+    def peakmem_medfilt2d(self, threads):
+        self._medfilt2d(threads)

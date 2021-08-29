@@ -10,7 +10,7 @@ from scipy.special import gamma
 import scipy.special.orthogonal as orth
 
 
-class TestCheby(object):
+class TestCheby:
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -70,7 +70,7 @@ class TestCheby(object):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(object):
+class TestGegenbauer:
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -94,7 +94,7 @@ class TestGegenbauer(object):
                                                0,15*sc.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(object):
+class TestHermite:
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -133,7 +133,7 @@ class TestHermite(object):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(object):
+class _test_sh_legendre:
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -158,7 +158,7 @@ class _test_sh_legendre(object):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(object):
+class _test_sh_chebyt:
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -183,7 +183,7 @@ class _test_sh_chebyt(object):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(object):
+class _test_sh_chebyu:
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -208,7 +208,7 @@ class _test_sh_chebyu(object):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(object):
+class _test_sh_jacobi:
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
@@ -237,7 +237,7 @@ class _test_sh_jacobi(object):
         assert_array_almost_equal(G5.c,ge5.c,13)
 
 
-class TestCall(object):
+class TestCall:
     def test_call(self):
         poly = []
         for n in range(5):
@@ -267,7 +267,7 @@ class TestCall(object):
                                     err_msg=pstr)
 
 
-class TestGenlaguerre(object):
+class TestGenlaguerre:
     def test_regression(self):
         assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
         assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)

@@ -18,6 +18,9 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
+import scipy.sparse
+
+from scipy._lib._testutils import check_free_memory
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -38,7 +41,20 @@ def toarray(a):
         return a
 
 
-class TestFactorized(object):
+def setup_bug_8278():
+    N = 2 ** 6
+    h = 1/N
+    Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                              shape=(N-1, N-1))/(h**2)
+    eyeN = scipy.sparse.eye(N - 1)
+    A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+         + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+         + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
+    b = np.random.rand((N-1)**3)
+    return A, b
+
+
+class TestFactorized:
     def setup_method(self):
         n = 5
         d = arange(n) + 1
@@ -161,10 +177,20 @@ class TestFactorized(object):
 
         assert_equal(A.has_sorted_indices, 0)
         assert_array_almost_equal(factorized(A)(b), expected)
-        assert_equal(A.has_sorted_indices, 1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        A = A.tocsc()
+        f = factorized(A)
+        x = f(b)
+        assert_array_almost_equal(A @ x, b)
 
 
-class TestLinsolve(object):
+class TestLinsolve:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
@@ -185,10 +211,12 @@ class TestLinsolve(object):
         b = np.arange(20)
 
         try:
-            # should either raise a runtimeerror or return value
-            # appropriate for singular input
-            x = spsolve(A, b)
-            assert_(not np.isfinite(x).any())
+            # should either raise a runtime error or return value
+            # appropriate for singular input (which yields the warning)
+            with suppress_warnings() as sup:
+                sup.filter(MatrixRankWarning, "Matrix is exactly singular")
+                x = spsolve(A, b)
+            assert not np.isfinite(x).any()
         except RuntimeError:
             pass
 
@@ -398,8 +426,17 @@ class TestLinsolve(object):
         x = spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        x = spsolve(A, b)
+        assert_array_almost_equal(A @ x, b)
 
-class TestSplu(object):
+
+class TestSplu:
     def setup_method(self):
         use_solver(useUmfpack=False)
         n = 40
@@ -681,7 +718,7 @@ class TestSplu(object):
         assert_equal(len(oks), 20)
 
 
-class TestSpsolveTriangular(object):
+class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 

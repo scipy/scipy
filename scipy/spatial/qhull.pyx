@@ -19,7 +19,6 @@ from . cimport setlist
 from libc cimport stdlib
 from scipy._lib.messagestream cimport MessageStream
 
-from numpy.compat import asbytes
 import os
 import sys
 import tempfile
@@ -704,7 +703,7 @@ cdef class _Qhull:
             point_ndim += 1
 
         numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        points = np.empty((numpoints, point_ndim))
 
         with nogil:
             point = self._qh.first_point
@@ -1100,7 +1099,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
-    T = np.zeros((ndim, ndim), dtype=np.double)
+    T = np.empty((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
     # Maximum inverse condition number to allow: we want at least three
@@ -1539,7 +1538,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
 # Delaunay triangulation interface, for Python
 #------------------------------------------------------------------------------
 
-class _QhullUser(object):
+class _QhullUser:
     """
     Takes care of basic dealings with the Qhull objects
     """
@@ -1834,7 +1833,7 @@ class Delaunay(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
@@ -2180,16 +2179,17 @@ def tsearch(tri, xi):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
+    >>> rng = np.random.default_rng()
 
     The Delaunay triangulation of a set of random points:
 
-    >>> pts = np.random.rand(20, 2)
+    >>> pts = rng.random((20, 2))
     >>> tri = Delaunay(pts)
     >>> _ = delaunay_plot_2d(tri)
 
     Find the simplices containing a given set of points:
 
-    >>> loc = np.random.uniform(0.2, 0.8, (5, 2))
+    >>> loc = rng.uniform(0.2, 0.8, (5, 2))
     >>> s = tsearch(tri, loc)
     >>> plt.triplot(pts[:, 0], pts[:, 1], tri.simplices[s], 'b-', mask=s==-1)
     >>> plt.scatter(loc[:, 0], loc[:, 1], c='r', marker='x')
@@ -2323,11 +2323,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Area of the convex hull.
+        Surface area of the convex hull when input dimension > 2.
+        When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull.
+        Volume of the convex hull when input dimension > 2.
+        When input `points` are 2-dimensional, this is the area of the convex hull.
 
         .. versionadded:: 0.17.0
 
@@ -2350,7 +2352,8 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
-    >>> points = np.random.rand(30, 2)   # 30 random points in 2-D
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
 
     Plot it:
@@ -2377,15 +2380,15 @@ class ConvexHull(_QhullUser):
     ...                        [0.4, 0.2],
     ...                        [0.3, 0.6]])
 
-    Call ConvexHull with the QG option. QG4 means 
+    Call ConvexHull with the QG option. QG4 means
     compute the portions of the hull not including
-    point 4, indicating the facets that are visible 
+    point 4, indicating the facets that are visible
     from point 4.
 
     >>> hull = ConvexHull(points=generators,
     ...                   qhull_options='QG4')
 
-    The "good" array indicates which facets are 
+    The "good" array indicates which facets are
     visible from point 4.
 
     >>> print(hull.simplices)
@@ -2425,7 +2428,7 @@ class ConvexHull(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b"Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"i", points, qhull_options, required_options=b"Qt",
@@ -2495,7 +2498,7 @@ class Voronoi(_QhullUser):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndim)
-        Coordinates of points to construct a convex hull from
+        Coordinates of points to construct a Voronoi diagram from
     furthest_site : bool, optional
         Whether to compute a furthest-site Voronoi diagram. Default: False
     incremental : bool, optional
@@ -2604,7 +2607,7 @@ class Voronoi(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
@@ -2722,7 +2725,7 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax = fig.add_subplot(1, 1, 1, aspect='equal')
     >>> xlim, ylim = (-1, 3), (-1, 3)
     >>> ax.set_xlim(xlim)
     >>> ax.set_ylim(ylim)
@@ -2801,7 +2804,7 @@ class HalfspaceIntersection(_QhullUser):
             if halfspaces.shape[1] >= 6:
                 qhull_options += b"Qx"
         else:
-            qhull_options = asbytes(qhull_options)
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         mode_option = "H"

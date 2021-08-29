@@ -283,8 +283,8 @@ def _arg_peaks_as_expected(value):
         # Safely convert to C-contiguous array of type np.intp
         value = value.astype(np.intp, order='C', casting='safe',
                              subok=False, copy=False)
-    except TypeError:
-        raise TypeError("cannot safely cast `peaks` to dtype('intp')")
+    except TypeError as e:
+        raise TypeError("cannot safely cast `peaks` to dtype('intp')") from e
     if value.ndim != 1:
         raise ValueError('`peaks` must be a 1-D array')
     return value
@@ -1039,7 +1039,8 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     Examples
     --------
-    >>> data = np.random.rand(5,5)
+    >>> rng = np.random.default_rng()
+    >>> data = rng.random((5,5))
     >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
 
     Notes
@@ -1168,7 +1169,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     # Filter based on SNR
     row_one = cwt[0, :]
-    noises = np.zeros_like(row_one)
+    noises = np.empty_like(row_one)
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)
@@ -1201,8 +1202,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ----------
     vector : ndarray
         1-D array in which to find the peaks.
-    widths : sequence
-        1-D array of widths to use for calculating the CWT matrix. In general,
+    widths : float or sequence
+        Single width or 1-D array-like of widths to use for calculating
+        the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take two parameters and return a 1-D array to convolve
@@ -1279,7 +1281,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
-    widths = np.asarray(widths)
+    widths = np.array(widths, copy=False, ndmin=1)
 
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])

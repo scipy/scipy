@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.special import factorial
-
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, float_factorial
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
@@ -13,7 +12,7 @@ def _isscalar(x):
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
 
 
-class _Interpolator1D(object):
+class _Interpolator1D:
     """
     Common features in univariate interpolation
 
@@ -68,6 +67,11 @@ class _Interpolator1D(object):
         y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Input values `x` must be convertible to `float` values like `int`
+        or `float`.
 
         """
         x, x_shape = self._prepare_x(x)
@@ -270,8 +274,9 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     For another example, given xi, yi, and a derivative ypi for each
     point, appropriate arrays can be constructed as:
 
+    >>> rng = np.random.default_rng()
     >>> xi = np.linspace(0, 1, 5)
-    >>> yi, ypi = np.random.rand(2, 5)
+    >>> yi, ypi = rng.random((2, 5))
     >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
     >>> KroghInterpolator(xi_k, yi_k)
 
@@ -299,7 +304,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
             while s <= k and xi[k-s] == xi[k]:
                 s += 1
             s -= 1
-            Vk[0] = self.yi[k]/float(factorial(s))
+            Vk[0] = self.yi[k]/float_factorial(s)
             for i in range(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
@@ -344,7 +349,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
             for i in range(1, n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1] + pi[i]
                 cn[k] = cn[k] + pi[i, :, np.newaxis]*cn[k+i]
-            cn[k] *= factorial(k)
+            cn[k] *= float_factorial(k)
 
         cn[n, :, :] = 0
         return cn[:der]
@@ -534,12 +539,24 @@ class BarycentricInterpolator(_Interpolator1D):
         self.set_yi(yi)
         self.n = len(self.xi)
 
+        # See page 510 of Berrut and Trefethen 2004 for an explanation of the
+        # capacity scaling and the suggestion of using a random permutation of
+        # the input factors.
+        # At the moment, the permutation is not performed for xi that are
+        # appended later through the add_xi interface. It's not clear to me how
+        # to implement that and it seems that most situations that require
+        # these numerical stability improvements will be able to provide all
+        # the points to the constructor.
+        self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
+        permute = np.random.permutation(self.n)
+        inv_permute = np.zeros(self.n, dtype=np.int32)
+        inv_permute[permute] = np.arange(self.n)
+
         self.wi = np.zeros(self.n)
-        self.wi[0] = 1
-        for j in range(1, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
-        self.wi **= -1
+        for i in range(self.n):
+            dist = self._inv_capacity * (self.xi[i] - self.xi[permute])
+            dist[inv_permute[i]] = 1.0
+            self.wi[i] = 1.0 / np.prod(dist)
 
     def set_yi(self, yi, axis=None):
         """
@@ -581,8 +598,9 @@ class BarycentricInterpolator(_Interpolator1D):
             The y coordinates of the points the polynomial should pass through.
             Should have shape ``(xi.size, R)``; if R > 1 then the polynomial is
             vector-valued.
-            If `yi` is not given, the y values will be supplied later. `yi` should
-            be given if and only if the interpolator has y values specified.
+            If `yi` is not given, the y values will be supplied later. `yi`
+            should be given if and only if the interpolator has y values
+            specified.
 
         """
         if yi is not None:
@@ -601,8 +619,10 @@ class BarycentricInterpolator(_Interpolator1D):
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
         for j in range(old_n, self.n):
-            self.wi[:j] *= (self.xi[j]-self.xi[:j])
-            self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
+            self.wi[:j] *= self._inv_capacity * (self.xi[j]-self.xi[:j])
+            self.wi[j] = np.multiply.reduce(
+                self._inv_capacity * (self.xi[:j]-self.xi[j])
+            )
         self.wi **= -1
 
     def __call__(self, x):

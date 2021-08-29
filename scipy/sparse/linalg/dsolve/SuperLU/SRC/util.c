@@ -67,7 +67,7 @@ void ilu_set_default_options(superlu_options_t *options)
 
     /* further options for incomplete factorization */
     options->DiagPivotThresh = 0.1;
-    options->RowPerm = LargeDiag;
+    options->RowPerm = LargeDiag_MC64;
     options->ILU_DropRule = DROP_BASIC | DROP_AREA;
     options->ILU_DropTol = 1e-4;
     options->ILU_FillFactor = 10.0;
@@ -344,12 +344,12 @@ StatPrint(SuperLUStat_t *stat)
 
     utime = stat->utime;
     ops   = stat->ops;
-    printf("Factor time  = %8.2f\n", utime[FACT]);
+    printf("Factor time  = %8.5f\n", utime[FACT]);
     if ( utime[FACT] != 0.0 )
       printf("Factor flops = %e\tMflops = %8.2f\n", ops[FACT],
 	     ops[FACT]*1e-6/utime[FACT]);
 
-    printf("Solve time   = %8.2f\n", utime[SOLVE]);
+    printf("Solve time   = %8.4f\n", utime[SOLVE]);
     if ( utime[SOLVE] != 0.0 )
       printf("Solve flops = %e\tMflops = %8.2f\n", ops[SOLVE],
 	     ops[SOLVE]*1e-6/utime[SOLVE]);

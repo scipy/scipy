@@ -16,7 +16,7 @@ import tokenize
 from numpy.testing import assert_
 import scipy
 
-class TestFFTPackImport(object):
+class TestFFTPackImport:
     def test_fftpack_import(self):
         base = Path(scipy.__file__).parent
         regexp = r"\s*from.+\.fftpack import .*\n"

@@ -76,7 +76,7 @@ References
 
 # SciPy imports.
 import numpy as np
-from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
+from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
@@ -317,6 +317,44 @@ def jacobi(n, alpha, beta, monic=False):
     :math:`P_n^{(\alpha, \beta)}` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x)^\alpha(1 + x)^\beta`.
 
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The Jacobi polynomials satisfy the recurrence relation:
+
+    .. math::
+        P_n^{(\alpha, \beta-1)}(x) - P_n^{(\alpha-1, \beta)}(x)
+          = P_{n-1}^{(\alpha, \beta)}(x)
+
+    This can be verified, for example, for :math:`\alpha = \beta = 2`
+    and :math:`n = 1` over the interval :math:`[-1, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(jacobi(0, 2, 2)(x), jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
+    True
+
+    Plot of the Jacobi polynomaial :math:`P_5^{(\alpha, -0.5)}` for
+    different values of :math:`\alpha`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Jacobi polynomials $P_5^{(\alpha, -0.5)}$')
+    >>> for alpha in np.arange(0, 4, 1):
+    ...     ax.plot(x, jacobi(5, alpha, -0.5)(x), label=rf'$\alpha={alpha}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -437,7 +475,7 @@ def sh_jacobi(n, p, q, monic=False):
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
     n1 = n
-    x, w, mu0 = roots_sh_jacobi(n1, p, q, mu=True)
+    x, w = roots_sh_jacobi(n1, p, q)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
     hn /= (2 * n + p) * (_gam(2 * n + p)**2)
     # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
@@ -565,7 +603,7 @@ def genlaguerre(n, alpha, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_genlaguerre(n1, alpha, mu=True)
+    x, w = roots_genlaguerre(n1, alpha)
     wfunc = lambda x: exp(-x) * x**alpha
     if n == 0:
         x, w = [], []
@@ -656,7 +694,7 @@ def laguerre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_laguerre(n1, mu=True)
+    x, w = roots_laguerre(n1)
     if n == 0:
         x, w = [], []
     hn = 1.0
@@ -1143,6 +1181,25 @@ def hermite(n, monic=False):
     The polynomials :math:`H_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2}`.
 
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+
+    >>> p_monic = special.hermite(3, monic=True)
+    >>> p_monic
+    poly1d([ 1. ,  0. , -1.5,  0. ])
+    >>> p_monic(1)
+    -0.49999999999999983
+    >>> x = np.linspace(-3, 3, 400)
+    >>> y = p_monic(x)
+    >>> plt.plot(x, y)
+    >>> plt.title("Monic Hermite polynomial of degree 3")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel("H_3(x)")
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1151,7 +1208,7 @@ def hermite(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermite(n1, mu=True)
+    x, w = roots_hermite(n1)
     wfunc = lambda x: exp(-x * x)
     if n == 0:
         x, w = [], []
@@ -1276,7 +1333,7 @@ def hermitenorm(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermitenorm(n1, mu=True)
+    x, w = roots_hermitenorm(n1)
     wfunc = lambda x: exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
@@ -1371,6 +1428,8 @@ def gegenbauer(n, alpha, monic=False):
     ----------
     n : int
         Degree of the polynomial.
+    alpha : float
+        Parameter, must be greater than -0.5.
     monic : bool, optional
         If `True`, scale the leading coefficient to be 1. Default is
         `False`.
@@ -1385,6 +1444,35 @@ def gegenbauer(n, alpha, monic=False):
     The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
     :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
     1/2)}`.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+
+    We can initialize a variable ``p`` as a Gegenbauer polynomial using the
+    `gegenbauer` function and evaluate at a point ``x = 1``.
+
+    >>> p = special.gegenbauer(3, 0.5, monic=False)
+    >>> p
+    poly1d([ 2.5,  0. , -1.5,  0. ])
+    >>> p(1)
+    1.0
+
+    To evaluate ``p`` at various points ``x`` in the interval ``(-3, 3)``,
+    simply pass an array ``x`` to ``p`` as follows:
+
+    >>> x = np.linspace(-3, 3, 400)
+    >>> y = p(x)
+
+    We can then visualize ``x, y`` using `matplotlib.pyplot`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y)
+    >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel("G_3(x)")
+    >>> plt.show()
 
     """
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
@@ -1484,6 +1572,64 @@ def chebyt(n, monic=False):
     See Also
     --------
     chebyu : Chebyshev polynomial of the second kind.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Chebyshev polynomials of the first kind of order :math:`n` can
+    be obtained as the determinant of specific :math:`n \times n`
+    matrices. As an example we can check how the points obtained from
+    the determinant of the following :math:`3 \times 3` matrix
+    lay exacty on :math:`T_3`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.linalg import det
+    >>> from scipy.special import chebyt
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Chebyshev polynomial $T_3$')
+    >>> ax.plot(x, chebyt(3)(x), label=rf'$T_3$')
+    >>> for p in np.arange(-1.0, 1.0, 0.1):
+    ...     ax.plot(p,
+    ...             det(np.array([[p, 1, 0], [1, 2*p, 1], [0, 1, 2*p]])),
+    ...             'rx')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    They are also related to the Jacobi Polynomials
+    :math:`P_n^{(-0.5, -0.5)}` through the relation:
+
+    .. math::
+        P_n^{(-0.5, -0.5)}(x) = \frac{1}{4^n} \binom{2n}{n} T_n(x)
+
+    Let's verify it for :math:`n = 3`:
+
+    >>> from scipy.special import binom
+    >>> from scipy.special import chebyt
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(jacobi(3, -0.5, -0.5)(x), 1/64 * binom(6, 3) * chebyt(3)(x))
+    True
+
+    We can plot the Chebyshev polynomials :math:`T_n` for some values
+    of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import chebyt
+    >>> x = np.arange(-1.5, 1.5, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-4.0, 4.0)
+    >>> ax.set_title(r'Chebyshev polynomials $T_n$')
+    >>> for n in np.arange(2,5):
+    ...     ax.plot(x, chebyt(n)(x), label=rf'$T_n={n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     if n < 0:
@@ -1589,6 +1735,63 @@ def chebyu(n, monic=False):
     --------
     chebyt : Chebyshev polynomial of the first kind.
 
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Chebyshev polynomials of the second kind of order :math:`n` can
+    be obtained as the determinant of specific :math:`n \times n`
+    matrices. As an example we can check how the points obtained from
+    the determinant of the following :math:`3 \times 3` matrix
+    lay exacty on :math:`U_3`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.linalg import det
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Chebyshev polynomial $U_3$')
+    >>> ax.plot(x, chebyu(3)(x), label=rf'$U_3$')
+    >>> for p in np.arange(-1.0, 1.0, 0.1):
+    ...     ax.plot(p,
+    ...             det(np.array([[2*p, 1, 0], [1, 2*p, 1], [0, 1, 2*p]])),
+    ...             'rx')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    They satisfy the recurrence relation:
+
+    .. math::
+        U_{2n-1}(x) = 2 T_n(x)U_{n-1}(x)
+
+    where the :math:`T_n` are the Chebyshev polynomial of the first kind.
+    Let's verify it for :math:`n = 2`:
+
+    >>> from scipy.special import chebyt
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(chebyu(3)(x), 2 * chebyt(2)(x) * chebyu(1)(x))
+    True
+
+    We can plot the Chebyshev polynomials :math:`U_n` for some values
+    of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-1.5, 1.5)
+    >>> ax.set_title(r'Chebyshev polynomials $U_n$')
+    >>> for n in np.arange(1,5):
+    ...     ax.plot(x, chebyu(n)(x), label=rf'$U_n={n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     base = jacobi(n, 0.5, 0.5, monic=monic)
     if monic:
@@ -1690,7 +1893,7 @@ def chebyc(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebyc(n1, mu=True)
+    x, w = roots_chebyc(n1)
     if n == 0:
         x, w = [], []
     hn = 4 * pi * ((n == 0) + 1)
@@ -1796,7 +1999,7 @@ def chebys(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebys(n1, mu=True)
+    x, w = roots_chebys(n1)
     if n == 0:
         x, w = [], []
     hn = pi
@@ -2074,7 +2277,7 @@ def legendre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_legendre(n1, mu=True)
+    x, w = roots_legendre(n1)
     if n == 0:
         x, w = [], []
     hn = 2.0 / (2 * n + 1)
@@ -2164,7 +2367,7 @@ def sh_legendre(n, monic=False):
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
                            lambda x: eval_sh_legendre(n, x))
-    x, w, mu0 = roots_sh_legendre(n, mu=True)
+    x, w = roots_sh_legendre(n)
     hn = 1.0 / (2 * n + 1.0)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2
     p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,

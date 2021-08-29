@@ -5,7 +5,9 @@ def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
     from scipy._build_utils.system_info import get_info, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from scipy._build_utils import get_g77_abi_wrappers, gfortran_legacy_flag_hook
+    from scipy._build_utils import (get_g77_abi_wrappers, gfortran_legacy_flag_hook,
+                                    blas_ilp64_pre_build_hook, get_f2py_int64_options,
+                                    uses_blas64)
 
     config = Configuration('linalg', parent_package, top_path)
 
@@ -16,15 +18,28 @@ def configuration(parent_package='', top_path=None):
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
 
+    if uses_blas64():
+        lapack_ilp64_opt = get_info('lapack_ilp64_opt', 2)
+
     # fblas:
     sources = ['fblas.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
+    depends = ['fblas_l?.pyf.src']
 
     config.add_extension('_fblas',
                          sources=sources,
-                         depends=['fblas_l?.pyf.src'],
+                         depends=depends,
                          extra_info=lapack_opt
                          )
+
+    if uses_blas64():
+        sources = ['fblas_64.pyf.src'] + sources[1:]
+        ext = config.add_extension('_fblas_64',
+                                   sources=sources,
+                                   depends=depends,
+                                   f2py_options=get_f2py_int64_options(),
+                                   extra_info=lapack_ilp64_opt)
+        ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
 
     # flapack:
     sources = ['flapack.pyf.src']
@@ -32,19 +47,29 @@ def configuration(parent_package='', top_path=None):
     dep_pfx = join('src', 'lapack_deprecations')
     deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
     sources += deprecated_lapack_routines
+    depends = ['flapack_gen.pyf.src',
+               'flapack_gen_banded.pyf.src',
+               'flapack_gen_tri.pyf.src',
+               'flapack_pos_def.pyf.src',
+               'flapack_pos_def_tri.pyf.src',
+               'flapack_sym_herm.pyf.src',
+               'flapack_other.pyf.src',
+               'flapack_user.pyf.src']
 
     config.add_extension('_flapack',
                          sources=sources,
-                         depends=['flapack_gen.pyf.src',
-                                  'flapack_gen_banded.pyf.src',
-                                  'flapack_gen_tri.pyf.src',
-                                  'flapack_pos_def.pyf.src',
-                                  'flapack_pos_def_tri.pyf.src',
-                                  'flapack_sym_herm.pyf.src',
-                                  'flapack_other.pyf.src',
-                                  'flapack_user.pyf.src'],
+                         depends=depends,
                          extra_info=lapack_opt
                          )
+
+    if uses_blas64():
+        sources = ['flapack_64.pyf.src'] + sources[1:]
+        ext = config.add_extension('_flapack_64',
+                                   sources=sources,
+                                   depends=depends,
+                                   f2py_options=get_f2py_int64_options(),
+                                   extra_info=lapack_ilp64_opt)
+        ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
 
     if atlas_version is not None:
         # cblas:
@@ -78,6 +103,11 @@ def configuration(parent_package='', top_path=None):
     # _solve_toeplitz:
     config.add_extension('_solve_toeplitz',
                          sources=[('_solve_toeplitz.c')],
+                         include_dirs=[get_numpy_include_dirs()])
+
+    # _matfuncs_sqrtm_triu:
+    config.add_extension('_matfuncs_sqrtm_triu',
+                         sources=[('_matfuncs_sqrtm_triu.c')],
                          include_dirs=[get_numpy_include_dirs()])
 
     config.add_data_dir('tests')

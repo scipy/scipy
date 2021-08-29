@@ -56,7 +56,7 @@ UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
 GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
-				print(git_version()[:10])")
+				print(git_version()[0][:10])")
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
@@ -101,7 +101,7 @@ upload:
 	# SSH must be correctly configured for this to work.
 	# Assumes that ``make dist`` was already run
 	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
-	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org mkdir -p $(UPLOAD_DIR)
 	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
 	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
 	    -zf $(UPLOAD_DIR)/dist.tar.gz

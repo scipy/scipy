@@ -38,7 +38,7 @@ from ._stats import gaussian_kernel_estimate
 __all__ = ['gaussian_kde']
 
 
-class gaussian_kde(object):
+class gaussian_kde:
     """Representation of a kernel-density estimate using Gaussian kernels.
 
     Kernel density estimation is a way to estimate the probability density
@@ -76,8 +76,9 @@ class gaussian_kde(object):
 
         .. versionadded:: 1.2.0
     factor : float
-        The bandwidth factor, obtained from `kde.covariance_factor`, with which
-        the covariance matrix is multiplied.
+        The bandwidth factor, obtained from `kde.covariance_factor`. The square
+        of `kde.factor` multiplies the covariance matrix of the data in the kde
+        estimation.
     covariance : ndarray
         The covariance matrix of `dataset`, scaled by the calculated bandwidth
         (`kde.factor`).
@@ -427,8 +428,7 @@ class gaussian_kde(object):
         return result
 
     def resample(self, size=None, seed=None):
-        """
-        Randomly sample a dataset from the estimated pdf.
+        """Randomly sample a dataset from the estimated pdf.
 
         Parameters
         ----------
@@ -436,16 +436,15 @@ class gaussian_kde(object):
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
-        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-            This parameter defines the object to use for drawing random
-            variates.
-            If `seed` is `None` the `~np.random.RandomState` singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used, seeded
-            with seed.
-            If `seed` is already a ``RandomState`` or ``Generator`` instance,
-            then that object is used.
-            Default is None.
-            Specify `seed` for reproducible drawing of random variates.
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
 
         Returns
         -------
@@ -569,7 +568,8 @@ class gaussian_kde(object):
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance))
+        L = linalg.cholesky(self.covariance*2*pi)
+        self.log_det = 2*np.log(np.diag(L)).sum()
 
     def pdf(self, x):
         """
@@ -587,7 +587,6 @@ class gaussian_kde(object):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
         """
-
         points = atleast_2d(x)
 
         d, m = points.shape
@@ -603,22 +602,22 @@ class gaussian_kde(object):
 
         if m >= self.n:
             # there are more points than data, so loop over data
-            energy = zeros((self.n, m), dtype=float)
+            energy = np.empty((self.n, m), dtype=float)
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy[i] = sum(diff*tdiff, axis=0) / 2.0
-            result = logsumexp(-energy.T,
-                               b=self.weights / self._norm_factor, axis=1)
+                energy[i] = sum(diff*tdiff, axis=0)
+            log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy.T
+            result = logsumexp(0.5 * log_to_sum, axis=1)
         else:
             # loop over points
-            result = zeros((m,), dtype=float)
+            result = np.empty((m,), dtype=float)
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights /
-                                      self._norm_factor)
+                energy = sum(diff * tdiff, axis=0)
+                log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy
+                result[i] = logsumexp(0.5 * log_to_sum)
 
         return result
 

@@ -42,10 +42,15 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last axis is
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode. Default is None, meaning no normalization on the
-        forward transforms and scaling by ``1/n`` on the `ifft`.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode. Default is "backward", meaning no normalization on
+        the forward transforms and scaling by ``1/n`` on the `ifft`.
+        "forward" instead applies the ``1/n`` factor on the forward tranform.
         For ``norm="ortho"``, both directions are scaled by ``1/sqrt(n)``.
+
+        .. versionadded:: 1.6.0
+           ``norm={"forward", "backward"}`` options were added
+
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See the notes below for more details.
@@ -53,7 +58,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``. See below for more
         details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -194,8 +199,8 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse DFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -203,7 +208,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -249,9 +254,10 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Create and plot a band-limited signal with random phases:
 
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> t = np.arange(400)
     >>> n = np.zeros((400,), dtype=complex)
-    >>> n[40:60] = np.exp(1j*np.random.uniform(0, 2*np.pi, (20,)))
+    >>> n[40:60] = np.exp(1j*rng.uniform(0, 2*np.pi, (20,)))
     >>> s = scipy.fft.ifft(n)
     >>> plt.plot(t, s.real, 'b-', t, s.imag, 'r--')
     [<matplotlib.lines.Line2D object at ...>, <matplotlib.lines.Line2D object at ...>]
@@ -275,7 +281,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
     Parameters
     ----------
-    a : array_like
+    x : array_like
         Input array
     n : int, optional
         Number of points along transformation axis in the input to use.
@@ -285,8 +291,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last axis is
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -294,7 +300,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -388,8 +394,8 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -397,7 +403,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -479,8 +485,8 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -488,7 +494,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -509,7 +515,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     IndexError
         If `axis` is larger than the last axis of `a`.
 
-    See also
+    See Also
     --------
     rfft : Compute the 1-D FFT for real input.
     ihfft : The inverse of `hfft`.
@@ -559,8 +565,8 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -568,7 +574,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -581,7 +587,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         indicated by `axis`, or the last one if `axis` is not specified.
         The length of the transformed axis is ``n//2 + 1``.
 
-    See also
+    See Also
     --------
     hfft, irfft
 
@@ -631,8 +637,8 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -640,7 +646,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -697,9 +703,10 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [ 0.+0.j,  0.+0.j,  0.+0.j]]])
 
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> [X, Y] = np.meshgrid(2 * np.pi * np.arange(200) / 12,
     ...                      2 * np.pi * np.arange(200) / 34)
-    >>> S = np.sin(X) + np.cos(Y) + np.random.uniform(0, 1, X.shape)
+    >>> S = np.sin(X) + np.cos(Y) + rng.uniform(0, 1, X.shape)
     >>> FS = scipy.fft.fftn(S)
     >>> plt.imshow(np.log(np.abs(scipy.fft.fftshift(FS))**2))
     <matplotlib.image.AxesImage object at 0x...>
@@ -742,8 +749,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the IFFT.  If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -751,7 +758,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -800,8 +807,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Create and plot an image with band-limited frequency content:
 
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> n = np.zeros((200,200), dtype=complex)
-    >>> n[60:80, 20:40] = np.exp(1j*np.random.uniform(0, 2*np.pi, (20, 20)))
+    >>> n[60:80, 20:40] = np.exp(1j*rng.uniform(0, 2*np.pi, (20, 20)))
     >>> im = scipy.fft.ifftn(n).real
     >>> plt.imshow(im)
     <matplotlib.image.AxesImage object at 0x...>
@@ -837,8 +845,8 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last two axes are
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -846,7 +854,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -942,8 +950,8 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last two
         axes are used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -951,7 +959,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1032,8 +1040,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1041,7 +1049,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1117,8 +1125,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Shape of the FFT.
     axes : sequence of ints, optional
         Axes over which to compute the FFT.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1126,7 +1134,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1187,8 +1195,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1196,7 +1204,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1274,8 +1282,8 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     axes : sequence of ints, optional
         The axes over which to compute the inverse fft.
         Default is the last two axes.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1283,7 +1291,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1340,8 +1348,8 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1349,7 +1357,7 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1436,8 +1444,8 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Shape of the real output.
     axes : sequence of ints, optional
         Axes over which to compute the FFT.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -1445,7 +1453,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1497,8 +1505,8 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1506,7 +1514,7 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 
@@ -1579,8 +1587,8 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     axes : sequence of ints, optional
         The axes over which to compute the inverse fft.
         Default is the last two axes.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1588,7 +1596,7 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
-    plan: object, optional
+    plan : object, optional
         This argument is reserved for passing in a precomputed plan provided
         by downstream FFT vendors. It is currently not used in SciPy.
 

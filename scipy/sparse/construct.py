@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
-
+import numbers
 from functools import partial
 import numpy as np
 
@@ -175,12 +175,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
-        except ValueError:
+        except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
                     "Diagonal length (index %d: %d at offset %d) does not "
                     "agree with matrix size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n))
+                    j, len(diagonal), offset, m, n)) from e
             raise
 
     return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
@@ -316,7 +316,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
@@ -330,7 +330,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         # expand entries of a into blocks
         row = A.row.repeat(B.nnz)
@@ -667,16 +667,33 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 0, 7]])
 
     """
-    nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
+    row = []
+    col = []
+    data = []
+    r_idx = 0
+    c_idx = 0
+    for a in mats:
+        if isinstance(a, (list, numbers.Number)):
+            a = coo_matrix(a)
+        nrows, ncols = a.shape
         if issparse(a):
-            row[ia] = a
+            a = a.tocoo()
+            row.append(a.row + r_idx)
+            col.append(a.col + c_idx)
+            data.append(a.data)
         else:
-            row[ia] = coo_matrix(a)
-        rows.append(row)
-    return bmat(rows, format=format, dtype=dtype)
+            a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
+            row.append(a_row + r_idx)
+            col.append(a_col + c_idx)
+            data.append(a.ravel())
+        r_idx += nrows
+        c_idx += ncols
+    row = np.concatenate(row)
+    col = np.concatenate(col)
+    data = np.concatenate(data)
+    return coo_matrix((data, (row, col)),
+                      shape=(r_idx, c_idx),
+                      dtype=dtype).asformat(format)
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
@@ -695,9 +712,16 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used. This random state will be used
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
     data_rvs : callable, optional
@@ -721,15 +745,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
-
-    >>> class CustomRandomState(np.random.RandomState):
-    ...     def randint(self, k):
-    ...         i = np.random.randint(k)
-    ...         return i - i % 2
-    >>> np.random.seed(12345)
-    >>> rs = CustomRandomState()
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -739,12 +758,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.randn(*size)
-    >>> X = CustomDistribution(seed=2906)
+    ...         return random_state.standard_normal(size)
+    >>> X = CustomDistribution(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A
-    array([[ 0.        ,  0.        ,  0.        ,  0.        ],
+    array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
 
@@ -767,7 +786,7 @@ greater than %d - this is not supported on this machine
         raise ValueError(msg % np.iinfo(tp).max)
 
     # Number of non zero values
-    k = int(density * m * n)
+    k = int(round(density * m * n))
 
     random_state = check_random_state(random_state)
 
@@ -810,9 +829,15 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int, np.random.Generator}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------

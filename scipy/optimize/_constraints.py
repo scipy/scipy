@@ -8,7 +8,14 @@ from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
-class NonlinearConstraint(object):
+
+def _arr_to_scalar(x):
+    # If x is a numpy array, return x.item().  This will
+    # fail if the array has more than one element.
+    return x.item() if isinstance(x, np.ndarray) else x
+
+
+class NonlinearConstraint:
     """Nonlinear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -109,7 +116,7 @@ class NonlinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class LinearConstraint(object):
+class LinearConstraint:
     """Linear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -147,7 +154,7 @@ class LinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class Bounds(object):
+class Bounds:
     """Bounds constraint on the variables.
 
     The constraint has the general inequality form::
@@ -159,7 +166,7 @@ class Bounds(object):
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
@@ -173,18 +180,20 @@ class Bounds(object):
         Default is False. Has no effect for equality constraints.
     """
     def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = lb
-        self.ub = ub
+        self.lb = np.asarray(lb)
+        self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
+        start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            end = f", keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            end = ")"
+        return start + end
 
 
-class PreparedConstraint(object):
+class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and
@@ -298,8 +307,8 @@ def new_bounds_to_old(lb, ub, n):
     if ub.ndim == 0:
         ub = np.resize(ub, n)
 
-    lb = [x if x > -np.inf else None for x in lb]
-    ub = [x if x < np.inf else None for x in ub]
+    lb = [float(x) if x > -np.inf else None for x in lb]
+    ub = [float(x) if x < np.inf else None for x in ub]
 
     return list(zip(lb, ub))
 
@@ -314,8 +323,14 @@ def old_bound_to_new(bounds):
     -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([x if x is not None else -np.inf for x in lb])
-    ub = np.array([x if x is not None else np.inf for x in ub])
+
+    # Convert occurrences of None to -inf or inf, and replace occurrences of
+    # any numpy array x with x.item(). Then wrap the results in numpy arrays.
+    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf
+                   for x in lb])
+    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf
+                   for x in ub])
+
     return lb, ub
 
 
@@ -430,12 +445,14 @@ def old_constraint_to_new(ic, con):
     # check type
     try:
         ctype = con['type'].lower()
-    except KeyError:
-        raise KeyError('Constraint %d has no type defined.' % ic)
-    except TypeError:
-        raise TypeError('Constraints must be a sequence of dictionaries.')
-    except AttributeError:
-        raise TypeError("Constraint's type must be a string.")
+    except KeyError as e:
+        raise KeyError('Constraint %d has no type defined.' % ic) from e
+    except TypeError as e:
+        raise TypeError(
+            'Constraints must be a sequence of dictionaries.'
+        ) from e
+    except AttributeError as e:
+        raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
             raise ValueError("Unknown constraint type '%s'." % con['type'])

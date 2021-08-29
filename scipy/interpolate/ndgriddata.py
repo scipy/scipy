@@ -18,10 +18,9 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 
 
 class NearestNDInterpolator(NDInterpolatorBase):
-    """
-    NearestNDInterpolator(x, y)
+    """NearestNDInterpolator(x, y).
 
-    Nearest-neighbor interpolation in N dimensions.
+    Nearest-neighbor interpolation in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -51,6 +50,37 @@ class NearestNDInterpolator(NDInterpolatorBase):
     -----
     Uses ``scipy.spatial.cKDTree``
 
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import NearestNDInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = NearestNDInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+
     """
 
     def __init__(self, x, y, rescale=False, tree_options=None):
@@ -68,8 +98,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array-like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
@@ -154,7 +186,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     but we only know its values at 1000 data points:
 
-    >>> points = np.random.rand(1000, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((1000, 2))
     >>> values = func(points[:,0], points[:,1])
 
     This can be done with `griddata` -- below we try out all of the
@@ -185,6 +218,15 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.title('Cubic')
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
+
+    See also
+    --------
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     """
 

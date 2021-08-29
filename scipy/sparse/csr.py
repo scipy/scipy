@@ -231,7 +231,7 @@ class csr_matrix(_cs_matrix):
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_matrix
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """
@@ -310,7 +310,7 @@ class csr_matrix(_cs_matrix):
             row_data = row_data[::-1]
             row_indices = abs(row_indices[::-1])
 
-        shape = (1, int(np.ceil(float(stop - start) / stride)))
+        shape = (1, max(0, int(np.ceil(float(stop - start) / stride))))
         return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
                           dtype=self.dtype, copy=False)
 

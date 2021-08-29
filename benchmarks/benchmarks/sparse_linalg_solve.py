@@ -4,23 +4,15 @@ Check the speed of the conjugate gradient solver.
 import numpy as np
 from numpy.testing import assert_equal
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import linalg, sparse
     from scipy.sparse.linalg import cg, minres, gmres, spsolve
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.sparse.linalg import lgmres
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.sparse.linalg import gcrotmk
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def _create_sparse_poisson1d(n):
@@ -82,8 +74,8 @@ class Lgmres(Benchmark):
     param_names = ['n', 'm']
 
     def setup(self, n, m):
-        np.random.seed(1234)
-        self.A = sparse.eye(n, n) + sparse.rand(n, n, density=0.01)
+        rng = np.random.default_rng(1234)
+        self.A = sparse.eye(n, n) + sparse.rand(n, n, density=0.01, random_state=rng)
         self.b = np.ones(n)
 
     def time_inner(self, n, m):

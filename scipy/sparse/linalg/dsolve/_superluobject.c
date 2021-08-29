@@ -213,7 +213,7 @@ PyGetSetDef SuperLU_getset[] = {
     {"perm_c", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
     {"U", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
     {"L", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
-    NULL
+    {NULL}
 };
 
 
@@ -890,7 +890,6 @@ static int rowperm_cvt(PyObject * input, rowperm_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOROWPERM);
-    ENUM_CHECK(LargeDiag);
     ENUM_CHECK(MY_PERMR);
     ENUM_CHECK_FINISH("invalid value for 'RowPerm' parameter");
 }

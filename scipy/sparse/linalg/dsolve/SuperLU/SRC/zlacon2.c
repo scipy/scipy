@@ -106,6 +106,11 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
     extern double dmach(char *);
     extern int izmax1_slu(int *, doublecomplex *, int *);
     extern double dzsum1_slu(int *, doublecomplex *, int *);
+#ifdef _CRAY
+    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
+#else
+    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+#endif
 
     safmin = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
     if ( *kase == 0 ) {

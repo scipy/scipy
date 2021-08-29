@@ -67,7 +67,7 @@ def put(*a):
         sys.stderr.write("".join(map(str, a)) + "\n")
 
 
-class TestSmokeTests(object):
+class TestSmokeTests:
     """
     Smoke tests (with a few asserts) for fitpack routines -- mostly
     check that they are runnable
@@ -260,7 +260,7 @@ class TestSmokeTests(object):
         self.check_5()
 
 
-class TestSplev(object):
+class TestSplev:
     def test_1d_shape(self):
         x = [1,2,3,4,5]
         y = [4,5,6,7,8]
@@ -298,7 +298,7 @@ class TestSplev(object):
         assert_raises(ValueError, splev, [0, 4], tck, ext=2)
 
 
-class TestSplder(object):
+class TestSplder:
     def setup_method(self):
         # non-uniform grid, just to make it sure
         x = np.linspace(0, 1, 100)**3
@@ -382,7 +382,7 @@ class TestSplder(object):
             assert_equal(k, spl3[2])
 
 
-class TestBisplrep(object):
+class TestBisplrep:
     def test_overflow(self):
         from numpy.lib.stride_tricks import as_strided
         if dfitpack_int.itemsize == 8:
@@ -457,6 +457,19 @@ def test_splev_der_k():
     x = [t[0] - 1., t[-1] + 1.]
     tck2 = splder((t, c, k), k)
     assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+
+
+def test_splprep_segfault():
+    # regression test for gh-3847: splprep segfaults if knots are specified
+    # for task=-1
+    t = np.arange(0, 1.1, 0.1)
+    x = np.sin(2*np.pi*t)
+    y = np.cos(2*np.pi*t)
+    tck, u = interpolate.splprep([x, y], s=0)
+    unew = np.arange(0, 1.01, 0.01)
+
+    uknots = tck[0]  # using the knots from the previous fitting
+    tck, u = interpolate.splprep([x, y], task=-1, t=uknots)  # here is the crash
 
 
 def test_bisplev_integer_overflow():

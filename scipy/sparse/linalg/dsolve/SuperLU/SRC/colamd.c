@@ -81,7 +81,7 @@ at the top-level directory.
 
 	    https://web.archive.org/web/20141010162709/http://www.cise.ufl.edu/research/sparse/colamd/
 
-	This is the https://web.archive.org/web/20040113022019/http://www.cise.ufl.edu:80/research/sparse/colamd/colamd.c
+	This is the https://web.archive.org/web/20040113022019/http://www.cise.ufl.edu/research/sparse/colamd/colamd.c
 	file.  It requires the colamd.h file.  It is required by the colamdmex.c
 	and symamdmex.c files, for the MATLAB interface to colamd and symamd.
 
@@ -349,7 +349,7 @@ at the top-level directory.
 
 	Example:
 	
-	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c (dead link)
+	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c
 	    for a complete example.
 
 	    To order the columns of a 5-by-4 matrix with 11 nonzero entries in

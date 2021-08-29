@@ -95,7 +95,7 @@ def _sample_sphere(n, dim, seed=None):
     return points
 
 
-class TestSphericalVoronoi(object):
+class TestSphericalVoronoi:
 
     def setup_method(self):
         self.points = np.array([
@@ -108,27 +108,6 @@ class TestSphericalVoronoi(object):
             [0.73181537, -0.22025898, -0.6449281],
             [0.79979205, 0.54555747, 0.25039913]]
         )
-
-        # Issue #9386
-        self.hemisphere_points = np.array([
-            [0.88610999, -0.42383021, 0.18755541],
-            [0.51980039, -0.72622668, 0.4498915],
-            [0.56540011, -0.81629197, -0.11827989],
-            [0.69659682, -0.69972598, 0.15854467]])
-
-        # Issue #8859
-        phi = np.linspace(0, 2 * np.pi, 10, endpoint=False)    # azimuth angle
-        theta = np.linspace(0.001, np.pi * 0.4, 5)    # polar angle
-        theta = theta[np.newaxis, :].T
-
-        phiv, thetav = np.meshgrid(phi, theta)
-        phiv = np.reshape(phiv, (50, 1))
-        thetav = np.reshape(thetav, (50, 1))
-
-        x = np.cos(phiv) * np.sin(thetav)
-        y = np.sin(phiv) * np.sin(thetav)
-        z = np.cos(thetav)
-        self.hemisphere_points2 = np.concatenate([x, y, z], axis=1)
 
     def test_constructor(self):
         center = np.array([1, 2, 3])
@@ -148,6 +127,11 @@ class TestSphericalVoronoi(object):
         assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
         assert_equal(s4.radius, radius)
+
+        # Test a non-sequence/-ndarray based array-like
+        s5 = SphericalVoronoi(memoryview(self.points))  # type: ignore[arg-type]
+        assert_array_equal(s5.center, np.array([0, 0, 0]))
+        assert_equal(s5.radius, 1)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)
@@ -239,25 +223,30 @@ class TestSphericalVoronoi(object):
         with assert_raises(ValueError):
             SphericalVoronoi(self.points, center=[0.1, 0, 0])
 
-    def test_single_hemisphere_handling(self):
-        # Test solution of Issues #9386, #8859
-
-        for points in [self.hemisphere_points, self.hemisphere_points2]:
-            sv = SphericalVoronoi(points)
-            triangles = sv.points[sv._simplices]
-            dots = np.einsum('ij,ij->i', sv.vertices, triangles[:, 0])
-            circumradii = np.arccos(np.clip(dots, -1, 1))
-            assert np.max(circumradii) > np.pi / 2
+    @pytest.mark.parametrize("dim", range(2, 6))
+    @pytest.mark.parametrize("shift", [False, True])
+    def test_single_hemisphere_handling(self, dim, shift):
+        n = 10
+        points = _sample_sphere(n, dim, seed=0)
+        points[:, 0] = np.abs(points[:, 0])
+        center = (np.arange(dim) + 1) * shift
+        sv = SphericalVoronoi(points + center, center=center)
+        dots = np.einsum('ij,ij->i', sv.vertices - center,
+                                     sv.points[sv._simplices[:, 0]] - center)
+        circumradii = np.arccos(np.clip(dots, -1, 1))
+        assert np.max(circumradii) > np.pi / 2
 
     @pytest.mark.parametrize("n", [1, 2, 10])
-    @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
-    def test_rank_deficient(self, n, center):
-        thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
-        points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
+    @pytest.mark.parametrize("dim", range(2, 6))
+    @pytest.mark.parametrize("shift", [False, True])
+    def test_rank_deficient(self, n, dim, shift):
+        center = (np.arange(dim) + 1) * shift
+        points = _sample_sphere(n, dim - 1, seed=0)
+        points = np.hstack([points, np.zeros((n, 1))])
         with pytest.raises(ValueError, match="Rank of input points"):
             SphericalVoronoi(points + center, center=center)
 
-    @pytest.mark.parametrize("dim", range(2, 7))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_higher_dimensions(self, dim):
         n = 100
         points = _sample_sphere(n, dim, seed=0)
@@ -278,7 +267,7 @@ class TestSphericalVoronoi(object):
         actual_euler = sum([(-1)**i * e for i, e in enumerate(cell_counts)])
         assert expected_euler == actual_euler
 
-    @pytest.mark.parametrize("dim", range(2, 7))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_cross_polytope_regions(self, dim):
         # The hypercube is the dual of the cross-polytope, so the voronoi
         # vertices of the cross-polytope lie on the points of the hypercube.
@@ -290,21 +279,21 @@ class TestSphericalVoronoi(object):
 
         # generate points of the hypercube
         expected = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        expected = expected.astype(np.float) / np.sqrt(dim)
+        expected = expected.astype(np.float64) / np.sqrt(dim)
 
         # test that Voronoi vertices are correctly placed
         dist = distance.cdist(sv.vertices, expected)
         res = linear_sum_assignment(dist)
         assert dist[res].sum() < TOL
 
-    @pytest.mark.parametrize("dim", range(2, 4))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_hypercube_regions(self, dim):
         # The cross-polytope is the dual of the hypercube, so the voronoi
         # vertices of the hypercube lie on the points of the cross-polytope.
 
         # generate points of the hypercube
         points = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        points = points.astype(np.float) / np.sqrt(dim)
+        points = points.astype(np.float64) / np.sqrt(dim)
         sv = SphericalVoronoi(points)
 
         # generate points of the cross-polytope
@@ -363,3 +352,13 @@ class TestSphericalVoronoi(object):
         assert sv.points.dtype is np.dtype(np.float64)
         assert sv.center.dtype is np.dtype(np.float64)
         assert isinstance(sv.radius, float)
+
+    def test_region_types(self):
+        # Tests that region integer type does not change
+        # See Issue #13412
+        sv = SphericalVoronoi(self.points)
+        dtype = type(sv.regions[0][0])
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype

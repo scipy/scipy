@@ -31,6 +31,7 @@ Basics
    solve_circulant - Solve a circulant system
    solve_triangular - Solve a triangular matrix
    solve_toeplitz - Solve a toeplitz matrix
+   matmul_toeplitz - Multiply a Toeplitz matrix with an array.
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem

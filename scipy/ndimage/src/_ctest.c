@@ -1,16 +1,5 @@
 #include <Python.h>
 #include <numpy/npy_common.h>
-#include <numpy/npy_3kcompat.h>
-
-#ifdef OLDAPI
-#define MOD _ctest_oldapi
-#define MODSTR "_ctest_oldapi"
-#define PYINIT PyInit__ctest_oldapi
-#else
-#define MOD _ctest
-#define MODSTR "_ctest"
-#define PYINIT PyInit__ctest
-#endif
 
 
 static void
@@ -52,17 +41,12 @@ py_filter1d(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "n", callback_data)) goto error;
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter1d, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_filter1d, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -112,17 +96,12 @@ py_filter2d(PyObject *obj, PyObject *args)
 	if (PyErr_Occurred()) goto error;
     }
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter2d, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_filter2d, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -156,17 +135,12 @@ py_transform(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "d", callback_data)) goto error;
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_transform, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_transform, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -183,9 +157,9 @@ static PyMethodDef _CTestMethods[] = {
 
 
 /* Initialize the module */
-static struct PyModuleDef MOD = {
+static struct PyModuleDef _ctest = {
     PyModuleDef_HEAD_INIT,
-    MODSTR,
+    "_ctest",
     NULL,
     -1,
     _CTestMethods,
@@ -196,8 +170,7 @@ static struct PyModuleDef MOD = {
 };
 
 
-PyMODINIT_FUNC
-PYINIT(void)
+PyObject *PyInit__ctest(void)
 {
-    return PyModule_Create(&MOD);
+    return PyModule_Create(&_ctest);
 }

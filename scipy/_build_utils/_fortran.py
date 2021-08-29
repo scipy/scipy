@@ -312,9 +312,11 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
 
         try:
             flags = fcompiler_flags[compiler.compiler_type]
-        except KeyError:
-            raise RuntimeError("Compiler {!r} is not supported in this "
-                               "configuration.".format(compiler.compiler_type))
+        except KeyError as e:
+            raise RuntimeError(
+                "Compiler {!r} is not supported in this "
+                "configuration.".format(compiler.compiler_type)
+            ) from e
 
         args.extend(flag for flag in flags if flag not in args)
 

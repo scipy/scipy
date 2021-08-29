@@ -26,7 +26,7 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(object):
+class TestConstructUtils:
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -274,9 +274,11 @@ class TestConstructUtils(object):
 
         for a in cases:
             for b in cases:
-                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = np.kron(a,b)
-                assert_array_equal(result,expected)
+                expected = np.kron(a, b)
+                for fmt in sparse_formats:
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    assert_equal(result.format, fmt)
+                    assert_array_equal(result.todense(), expected)
 
     def test_kron_large(self):
         n = 2**16
@@ -378,6 +380,7 @@ class TestConstructUtils(object):
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
@@ -422,6 +425,21 @@ class TestConstructUtils(object):
         # just on scalar
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
+
+    def test_block_diag_sparse_matrices(self):
+        """ block_diag with sparse matrices """
+
+        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
+                               coo_matrix(([[4, 5]]), shape=(1, 2))]
+        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
+        assert_equal(block_sparse_cols_matrices.todense(),
+                     matrix([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
+
+        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
+                               coo_matrix(([[4], [5]]), shape=(2, 1))]
+        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
+        assert_equal(block_sparse_row_matrices.todense(),
+                     matrix([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
@@ -490,4 +508,10 @@ class TestConstructUtils(object):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
+
+    def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
+        # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
+        # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
+        sparse_matrix = construct.random(10, 10, density=0.1265)
+        assert_equal(sparse_matrix.count_nonzero(),13)
 
