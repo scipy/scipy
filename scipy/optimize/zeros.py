@@ -98,16 +98,23 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
 
-    Find a zero of the function `func` given a nearby starting point `x0`.
+    Find a zero of the scalar-valued function `func` given a nearby scalar
+    starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used. If the second order
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence with more than one item, then `newton` returns an
-    array, and `func` must be vectorized and return a sequence or array of the
-    same shape as its first argument. If `fprime` or `fprime2` is given, then
-    its return must also have the same shape.
+    If `x0` is a sequence with more than one item, `newton` returns an array:
+    the zeros of the function from each (scalar) starting point in `x0`.
+    In this case, `func` must be vectorized to return a sequence or array of
+    the same shape as its first argument. If `fprime` (`fprime2`) is given,
+    then its return must also have the same shape: each element is the first
+    (second) derivative of `func` with respect to its only variable evaluated
+    at each element of its first argument.
+
+    `newton` is for finding roots of a scalar-valued functions of a single
+    variable. For problems involving several variables, see `root`.
 
     Parameters
     ----------
@@ -172,8 +179,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     See Also
     --------
-    brentq, brenth, ridder, bisect
-    fsolve : find zeros in N dimensions.
+    root_scalar : interface to root solvers for scalar functions
+    root : interface to root solvers for multi-input, multi-output functions
 
     Notes
     -----
