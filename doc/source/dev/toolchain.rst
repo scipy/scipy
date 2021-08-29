@@ -46,7 +46,7 @@ Python Versions
 ^^^^^^^^^^^^^^^
 
 SciPy is compatible with several versions of Python.  When dropping support for
-older Python versions, SciPy takes guidance from NEP 29 [10]_.  Python 2.7
+older Python versions, SciPy takes guidance from :ref:`NEP 29 <NEP29>`. Python 2.7
 support was dropped for SciPy releases numbered 1.3 and above but is still
 available in release 1.2.x, which is a long-term support release [1]_, [2]_.
 
@@ -99,15 +99,15 @@ Official Builds
 Currently, SciPy wheels are being built as follows:
 
 ================  ========================  ===========================  ==============================
- Platform          Azure Base Image [14]_    Compilers                    Comment
+ Platform          Azure Base Image [13]_    Compilers                    Comment
 ================  ========================  ===========================  ==============================
 Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``azure-pipelines.yml``
-Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
-OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [15]_
+Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [14]_
+OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [14]_
 Windows            ``VS2017-Win2016``        Visual Studio 2017 (15.9)    See ``azure-pipelines.yml``
 ================  ========================  ===========================  ==============================
 
-Note that the OSX wheels additionally vendor gfortran 4.8, see [15]_.
+Note that the OSX wheels additionally vendor gfortran 4.8, see [14]_.
 
 
 C Compilers
@@ -119,10 +119,10 @@ there was a long-standing restriction that Windows builds of SciPy had to use
 the same version of the Microsoft Visual C++ compiler as were used for CPython
 itself, for reasons of ABI-compatibility [6]_, [7]_, [8]_, [9]_.
 
-With the introduction of the "Universal C Runtime" [16]_ since the release of
+With the introduction of the "Universal C Runtime" [15]_ since the release of
 Visual Studio 2015, this restriction has been lifted. For more context, see the
 explanations by Steve Dower (member of the CPython-on-Windows core developers)
-on this topic [17]_.
+on this topic [16]_.
 
 The use of MS Visual Studio 9.0 (which doesn't have support C99)
 to build Python 2.7 has meant that C code in SciPy has had to conform
@@ -132,16 +132,16 @@ longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
 may have to be added by the user if C99 features are used in SciPy code.
 
 In terms of C language standards, it's relevant to note that C11 has optional
-features [12]_ (e.g. atomics, threading), some of which (VLAs & complex types)
+features [11]_ (e.g. atomics, threading), some of which (VLAs & complex types)
 were mandatory in the C99 standard. C17 (occasionally called C18) can be
 considered a bug fix for C11, so generally, C11 may be skipped entirely.
 
 SciPy has been restricted in the use of more advanced language features by the
 available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
-C11/C17 is supported [11]_ (though without the C11 optional features).
+C11/C17 is supported [10]_ (though without the C11 optional features).
 
-Therefore, using C features beyond C90 is contingent upon updating the windows
+Therefore, using C features beyond C90 is contingent upon updating the Windows
 toolchain for SciPy, as well as checking compiler support for the desired feature
 across all minimally supported compiler versions. In short:
 
@@ -235,7 +235,7 @@ Cython     >= 0.29.18  1.5.0
 OpenMP support
 ^^^^^^^^^^^^^^
 
-For various reasons [13]_, SciPy cannot be distributed with built-in OpenMP support.
+For various reasons [12]_, SciPy cannot be distributed with built-in OpenMP support.
 When using the optional Pythran support, OpenMP-enabled parallel code can be
 generated when building from source.
 
@@ -283,7 +283,7 @@ Testing and benchmarking require recent versions of:
  Tool                      Version    URL
 =========================  ========  ====================================
 pytest                     Recent     https://docs.pytest.org/en/latest/
-asv (airspeed velocity)    Recent     https://asv.readthedocs.io/
+asv (airspeed velocity)    Recent     :doc:`https://asv.readthedocs.io/ <asv:index>`
 =========================  ========  ====================================
 
 
@@ -343,11 +343,10 @@ References
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://wiki.python.org/moin/WindowsCompilers
-.. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
-.. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
-.. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
-.. [13] https://github.com/scipy/scipy/issues/10239
-.. [14] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
-.. [15] https://github.com/MacPython/scipy-wheels
-.. [16] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
-.. [17] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4
+.. [10] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
+.. [11] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
+.. [12] https://github.com/scipy/scipy/issues/10239
+.. [13] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
+.. [14] https://github.com/MacPython/scipy-wheels
+.. [15] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
+.. [16] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4

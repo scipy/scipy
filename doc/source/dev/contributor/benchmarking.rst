@@ -12,7 +12,7 @@ benchmark test results online, writing a benchmark test, and running it
 locally. For a video run-through of writing a test and running it
 locally, see* \ `Benchmarking SciPy`_\ *.*
 
-As written in the `airspeed velocity (asv) documentation`_:
+As written in the :doc:`airspeed velocity (asv) documentation <asv:index>`:
 
  Airspeed velocity (asv) is a tool for benchmarking Python packages over their
  lifetime. Runtime, memory consumption, and even custom-computed values
@@ -162,16 +162,13 @@ review the results by navigating to http://127.0.0.1:8080 (local
 machine, port 8080).
 
 For much more information about the ``asv`` commands,
-see the airspeed velocity `Commands`_ documentation. (Tip:
+see the airspeed velocity :doc:`asv:commands` documentation. (Tip:
 check out the ``asv find`` command and the ``--quick``,
 ``--skip-existing-commits``, and ``--profile`` options for ``asv run``.)
 
 .. _git revisions documentation: https://git-scm.com/docs/gitrevisions#_specifying_ranges
-.. _Commands: https://asv.readthedocs.io/en/stable/commands.html#commands
 .. _airspeed velocity: https://github.com/airspeed-velocity/asv
-.. _Using airspeed velocity: https://asv.readthedocs.io/en/stable/using.html#running-benchmarks
 .. _Benchmarking SciPy: https://youtu.be/edLQ8KRpupQ
-.. _airspeed velocity (asv) documentation: https://asv.readthedocs.io/en/stable/
 .. _airspeed velocity of an unladen scipy: https://pv.github.io/scipy-bench/
 .. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/master/benchmarks/README.rst
 .. _Klee-Minty hypercube problem: https://en.wikipedia.org/wiki/Klee%E2%80%93Minty_cube
