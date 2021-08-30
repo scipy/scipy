@@ -3785,8 +3785,8 @@ def main():
     print("\nMinimizing the Rosenbrock function of order 3\n")
     print(" Algorithm \t\t\t       Seconds")
     print("===========\t\t\t      =========")
-    for k in range(len(algor)):
-        print(algor[k], "\t -- ", times[k])
+    for alg, tme in zip(algor, times):
+        print(alg, "\t -- ", tme)
 
 
 if __name__ == "__main__":

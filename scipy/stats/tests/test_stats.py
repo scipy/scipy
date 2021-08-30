@@ -1563,18 +1563,18 @@ def test_weightedtau_vs_quadratic():
     # Trivial quadratic implementation, all parameters mandatory
     def wkq(x, y, rank, weigher, add):
         tot = conc = disc = u = v = 0
-        for i in range(len(x)):
-            for j in range(len(x)):
-                w = weigher(rank[i]) + weigher(rank[j]) if add else weigher(rank[i]) * weigher(rank[j])
-                tot += w
-                if x[i] == x[j]:
-                    u += w
-                if y[i] == y[j]:
-                    v += w
-                if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
-                    conc += w
-                elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
-                    disc += w
+        for (i, j) in product(range(len(x)), range(len(x))):
+            w = weigher(rank[i]) + weigher(rank[j]) if add \
+                else weigher(rank[i]) * weigher(rank[j])
+            tot += w
+            if x[i] == x[j]:
+                u += w
+            if y[i] == y[j]:
+                v += w
+            if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
+                conc += w
+            elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
+                disc += w
         return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
 
     np.random.seed(42)

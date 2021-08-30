@@ -104,8 +104,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
-    for index in range(len(condlist)):
-        func, cond = choicelist[index], condlist[index]
+    for func, cond in zip(choicelist, condlist):
         if np.all(cond is False):
             continue
         cond, _ = np.broadcast_arrays(cond, arrays[0])

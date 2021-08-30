@@ -8011,8 +8011,8 @@ def friedmanchisquare(*args):
 
     # Handle ties
     ties = 0
-    for i in range(len(data)):
-        replist, repnum = find_repeats(array(data[i]))
+    for d in data:
+        replist, repnum = find_repeats(array(d))
         for t in repnum:
             ties += t * (t*t - 1)
     c = 1 - ties / (k*(k*k - 1)*n)
