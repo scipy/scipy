@@ -306,7 +306,7 @@ def discrepancy(
     if not sample.ndim == 2:
         raise ValueError("Sample is not a 2D array")
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
         raise ValueError("Sample is not in unit hypercube")
 
     workers = int(workers)
@@ -485,27 +485,15 @@ def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
     return disc_ep
 
 
-def _jitter_sample(
-        sample: np.ndarray,
-        rng: Union[np.random.Generator, np.random.RandomState],
-        eps: float = 1e-10
-) -> np.ndarray:
-    """Randomly jitter `sample` until they are unique.
-
-    If the samples are not unique, the number of regions in our
-    tessellation will be less than the number of input samples.
-    """
-    vals, count = np.unique(sample, return_counts=True)
-    if np.any(vals[count > 1]):
-        offset = rng.uniform(-eps, eps, size=(len(sample), sample.shape[1]))
-        sample = sample * (1 + offset)
-    return sample
+def _l1_norm(sample: np.ndarray) -> float:
+    l1 = spatial.distance.cdist(sample, sample, 'cityblock')
+    return np.min(l1[l1.nonzero()])
 
 
 def _lloyd_centroidal_voronoi_tessellation(
         sample: np.ndarray,
         decay: float,
-        rng: Union[np.random.Generator, np.random.RandomState]
+        qhull_options: str,
 ) -> np.ndarray:
     """Lloyd's algorithm iteration.
 
@@ -524,10 +512,13 @@ def _lloyd_centroidal_voronoi_tessellation(
     sample : array_like (n, d)
         The sample to iterate on.
     decay : float
-        Number of iterations. Too many iterations tend to cluster the sample
-        as a hypersphere.
-    rng : `numpy.random.Generator`
-        Random number generator.
+        Relaxation decay. A positive value would move the samples toward
+        their centroid, and negative value would move them away.
+        1 would move the samples to their centroid.
+    qhull_options : str
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
+        "Qbb Qc Qz Qj" otherwise.)
 
     Returns
     -------
@@ -535,10 +526,9 @@ def _lloyd_centroidal_voronoi_tessellation(
         The sample after an iteration of Lloyd's algorithm.
 
     """
-    sample = _jitter_sample(sample, rng=rng)
     new_sample = np.empty_like(sample)
 
-    voronoi = spatial.Voronoi(sample)
+    voronoi = spatial.Voronoi(sample, qhull_options=qhull_options)
 
     for ii, idx in enumerate(voronoi.point_region):
         # the region is a series of indices into self.voronoi.vertices
@@ -567,36 +557,46 @@ def _lloyd_centroidal_voronoi_tessellation(
 def lloyd_centroidal_voronoi_tessellation(
         sample: npt.ArrayLike,
         *,
-        n_iters: IntNumber = 10,
-        seed: SeedType = None
+        tol: DecimalNumber = 1e-5,
+        maxiter: IntNumber = 10,
+        decay: Optional[Union[DecimalNumber, npt.ArrayLike]] = None,
+        qhull_options: Optional[str] = None,
 ) -> np.ndarray:
-    """Centroidal Voronoi Tessellation.
+    """Approximate Centroidal Voronoi Tessellation.
 
-    Perturb a sample of points in :math:`[0, 1]^d` using Lloyd's algorithm.
+    Perturb a sample of points in :math:`[0, 1]^d` using Lloyd-Max algorithm.
 
     Parameters
     ----------
     sample : array_like (n, d)
         The sample to iterate on. With ``n`` the number of sample and ``d``
         the dimension.
-    n_iters : int, optional
-        Number of iterations. Too many iterations tend to cluster the sample
-        as a hypersphere. Default is 10.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+    tol : float, optional
+        Tolerance for termination. If the min of the L1-norm over the sample
+        changes less than `tol`, it stops the algorithm. Default is 1e-5.
+    maxiter : int, optional
+        Maximum number of iterations. It will stop the algorithm even if
+        `tol` is above the threshold.
+        Too many iterations tend to cluster the sample as a hypersphere.
+        Default is 10.
+    decay : {float, array_like (maxiter)}, optional
+        Relaxation decay. A positive value would move the samples toward
+        their centroid, and negative value would move them away.
+        1 would move the samples to their centroid. Default is a varying
+        exponential decay starting at 2 and ending at 1 after `maxiter`.
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
+        "Qbb Qc Qz Qj" otherwise.)
 
     Returns
     -------
     sample : array_like (n, d)
-        The sample after `n_iters` of Lloyd's algorithm.
+        The sample after being processed by Lloyd-Max algorithm.
 
     Notes
     -----
-    Lloyd's algorithm is an iterative process which purpose is to improve
+    Lloyd-Max algorithm is an iterative process with the purpose of improving
     the dispersion of a sample. For a given sample: (i) compute a Voronoi
     Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
     samples toward the centroid of their respective cell.
@@ -616,6 +616,8 @@ def lloyd_centroidal_voronoi_tessellation(
     ----------
     .. [1] Lloyd. "Least Squares Quantization in PCM".
        IEEE Transactions on Information Theory, 1982.
+    .. [2] Max J. "Quantizing for minimum distortion".
+       IEEE Transactions on Information Theory, 1960.
 
     Examples
     --------
@@ -624,44 +626,64 @@ def lloyd_centroidal_voronoi_tessellation(
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
 
-    Compute the quality of the sample using the L2 criterion.
+    Compute the quality of the sample using the L1 criterion.
 
-    >>> def l2_norm(sample):
-    ...    l2 = cdist(sample, sample)
-    ...    return np.min(l2[l2.nonzero()])
+    >>> def l1_norm(sample):
+    ...    l1 = cdist(sample, sample, 'cityblock')
+    ...    return np.min(l1[l1.nonzero()])
 
-    >>> l2_norm(sample)
-    0.00547...  # random
+    >>> l1_norm(sample)
+    0.00161...  # random
 
     Now process the sample using Lloyd's algorithm and check the improvement
-    on the L2. The value should increase.
+    on the L1. The value should increase.
 
     >>> sample = qmc.lloyd_centroidal_voronoi_tessellation(sample)
-    >>> l2_norm(sample)
-    0.0273...  # random
+    >>> l1_norm(sample)
+    0.0278...  # random
 
     """
     sample = np.asarray(sample)
-    rng = check_random_state(seed)
 
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
     # Checking that sample is within the bounds
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
         raise ValueError('Sample is out of bounds')
 
-    # Fit an exponential to be 2 at 0 and 1 at `n_iters`.
-    # The decay is used for relaxation.
-    # analytical solution for y=exp(-n_iters/x) - 0.1
-    root = -n_iters / np.log(0.1)
-    decay = (np.exp(-x / root) + 0.9 for x in range(n_iters))
+    if qhull_options is None:
+        qhull_options = 'Qbb Qc Qz QJ'
 
-    for _ in range(n_iters):
-        decay_ = next(decay)
+        if sample.shape[1] >= 5:
+            qhull_options += ' Qx'
+
+    if decay is None:
+        # Fit an exponential to be 2 at 0 and 1 at `maxiter`.
+        # The decay is used for relaxation.
+        # analytical solution for y=exp(-maxiter/x) - 0.1
+        root = -maxiter / np.log(0.1)
+        decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
+    else:
+        try:
+            decay = np.broadcast_to(decay, maxiter)
+        except ValueError as exc:
+            msg = ('decay is not a list of float'
+                   ' of length maxiter')
+            raise ValueError(msg) from exc
+
+    for i in range(maxiter):
+        l1_old = _l1_norm(sample=sample)
         sample = _lloyd_centroidal_voronoi_tessellation(
-            sample=sample, decay=decay_, rng=rng
+                sample=sample, decay=decay[i],
+                qhull_options=qhull_options,
         )
+
+        l1_new = _l1_norm(sample=sample)
+
+        if abs(l1_new - l1_old) < tol:
+            break
+
     return sample
 
 

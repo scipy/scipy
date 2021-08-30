@@ -340,7 +340,7 @@ class TestUtils:
 
         for _ in range(4):
             sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
-                    sample, n_iters=1, seed=SEED
+                    sample, maxiter=1,
             )
             curr_l1 = l1_norm(sample_lloyd)
             curr_l2 = l2_norm(sample_lloyd)
@@ -352,14 +352,35 @@ class TestUtils:
             base_l1 = curr_l1
             base_l2 = curr_l2
 
+    def test_lloyd_decay(self):
+        rng = np.random.default_rng()
+        sample = rng.random((20, 2))
+
+        maxiter = 5
+        decay_const = qmc.lloyd_centroidal_voronoi_tessellation(
+                sample, decay=[1], maxiter=maxiter
+        )
+        decay_list = qmc.lloyd_centroidal_voronoi_tessellation(
+                sample, decay=[1, 1, 1, 1, 1], maxiter=maxiter
+        )
+        assert_allclose(decay_const, decay_list)
+
     def test_lloyd_errors(self):
         with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
             sample = [0, 1, 0.5]
-            qmc.lloyd_centroidal_voronoi_tessellation(sample, seed=SEED)
+            qmc.lloyd_centroidal_voronoi_tessellation(sample)
 
         with pytest.raises(ValueError, match=r"Sample is out of bounds"):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
-            qmc.lloyd_centroidal_voronoi_tessellation(sample, seed=SEED)
+            qmc.lloyd_centroidal_voronoi_tessellation(sample)
+
+        with pytest.raises(ValueError, match=r"decay is not a list"):
+            sample = [[0, 0], [1, 1]]
+            decay = [1, 2, 3]
+            maxiter = 2
+            qmc.lloyd_centroidal_voronoi_tessellation(
+                    sample, decay=decay, maxiter=maxiter
+            )
 
 
 class TestVDC:
