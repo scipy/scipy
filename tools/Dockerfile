@@ -17,8 +17,8 @@
 #
 # docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 #
-# The available Python executables are python3.7 and python3.8 (along with
-# pip3.7 and pip3.8.
+# The available Python executables are python3.8 (along with
+# pip3.8.
 # The image does not come bundled with cython/numpy/pytest/pybind11, those need to
 # be installed with pip before trying to build/run scipy.
 #
@@ -32,14 +32,7 @@
 # ubuntu focal has python 3.8 as default
 FROM ubuntu:focal
 
-# add deadsnakes ppa to install python 3.7
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa
-
 RUN apt-get update && apt-get install -y \
-	python3.7 \
-	python3.7-dev \
 	python3-pip \
 	build-essential \
 	vim \
@@ -55,5 +48,5 @@ RUN apt-get update && apt-get install -y \
 	git
 
 
-# setup pips, pip3.7 and pip3.8
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && python3.8 get-pip.py && rm get-pip.py
+# setup pips and pip3.8
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.8 get-pip.py && rm get-pip.py

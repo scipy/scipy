@@ -18,7 +18,7 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
-from scipy.ndimage.filters import correlate1d
+from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
@@ -1071,7 +1071,6 @@ class TestMedFilt:
 
         with pytest.raises(ValueError, match="order_filterND"):
             signal.medfilt2d(in_typed)
-
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
