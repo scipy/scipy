@@ -36,7 +36,7 @@ def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func):
         func = np.max
     else:
         raise Exception('Exception: {stat_func} is not supported')
-    
+
     for vv in builtins.range(Vdim):
         bin_map = _create_binned_data(bin_numbers, unique_bin_numbers,
                                       values, vv)
