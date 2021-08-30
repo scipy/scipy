@@ -36,7 +36,7 @@ stages:
   jobs:
     - job: Skip
       pool:
-        vmImage: 'ubuntu-18.04'
+        vmImage: 'ubuntu-20.04'
       variables:
         DECODE_PERCENTS: 'false'
         RET: 'true'
@@ -76,7 +76,7 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
+        versionSpec: '3.8'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -117,11 +117,11 @@ stages:
         use_wheel: true
   - job: source_distribution
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
+        versionSpec: '3.8'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -148,18 +148,18 @@ stages:
       displayName: 'Install GCC 4.8'
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7'
+        versionSpec: '3.8'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.16.5"
+        numpy_spec: "numpy==1.17.3"
         use_wheel: true
   - job: Lint
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -183,10 +183,10 @@ stages:
         tools/unicode-check.py
       displayName: 'Run Lint Checks'
       failOnStderr: true
-  - job: Linux_Python_37_32bit_full
+  - job: Linux_Python_38_32bit_full
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - script: |
         git submodule update --init
@@ -196,28 +196,28 @@ stages:
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
             apt-get -y update && \
-            apt-get -y install curl python3.7-dev python3.7 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+            apt-get -y install curl python3.8-dev python3.8 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-            python3.7 get-pip.py && \
+            python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
+            pip3 install setuptools wheel numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
-            target=\$(python3.7 ../scipy/tools/openblas_support.py) && \
+            target=\$(python3.8 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.7 setup.py install && \
-            python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
+            python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
       inputs:
         testResultsFiles: '**/test-*.xml'
         failTaskOnFailedTests: true
-        testRunTitle: 'Publish test results for Python 3.7-32 bit full Linux'
+        testRunTitle: 'Publish test results for Python 3.8-32 bit full Linux'
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: Cobertura
@@ -234,14 +234,14 @@ stages:
     strategy:
       maxParallel: 4
       matrix:
-          Python37-32bit-fast:
-            PYTHON_VERSION: '3.7'
+          Python38-32bit-fast:
+            PYTHON_VERSION: '3.8'
             PYTHON_ARCH: 'x86'
             TEST_MODE: fast
             BITS: 32
             SCIPY_USE_PYTHRAN: 1
-          Python37-64bit-full:
-            PYTHON_VERSION: '3.7'
+          Python38-64bit-full:
+            PYTHON_VERSION: '3.8'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             BITS: 64
