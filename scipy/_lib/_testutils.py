@@ -7,7 +7,7 @@ import os
 import re
 import sys
 import numpy as np
-from numpy.testing import assert_allclose
+import inspect
 
 
 __all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc']
@@ -77,27 +77,67 @@ class _TestPythranFunc:
     '''
     Inherit from this class to generate a bunch of relevant test cases
     '''
+    ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64]
+    ALL_FLOAT = [np.float32, np.float64]
+    ALL_COMPLEX = [np.complex64, np.complex128]
+
     def setup_method(self):
-        self.ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64]
-        self.ALL_FLOAT = [np.float32, np.float64]
-        self.ALL_COMPLEX = [np.complex64, np.complex128]
         self.dtypes = []
         self.arguments = []
         self.index = []
         self.expected = None
-    
+        self.func = None
+
+    def get_optional_args(self, func):
+        # get optional arguments with its default value,
+        # get the index of the first optional argument
+        signature = inspect.signature(func)
+        optional_args = {}
+        first_optional_arg_idx = None
+        for i, (k, v) in enumerate(signature.parameters.items()):
+            if v.default is not inspect.Parameter.empty:
+                optional_args[k] = v.default
+                if first_optional_arg_idx is None:
+                    first_optional_arg_idx = i
+        return optional_args, first_optional_arg_idx
+
     def test_all_dtypes(self):
         for dtype in self.dtypes:
-            tmp = self.arguments.copy()
+            # keep a copy of self.arguments to avoid in-place modify
+            test_array = self.arguments.copy()
             for idx in self.index:
-                tmp[idx] = tmp[idx].astype(dtype)
-            self.pythranfunc(*tmp)
-    
+                test_array[idx] = test_array[idx].astype(dtype)
+            self.pythranfunc(*test_array)
+
     def test_views(self):
-        tmp = self.arguments.copy()
+        # keep a copy of self.arguments to avoid in-place modify
+        test_array = self.arguments.copy()
         for idx in self.index:
-            tmp[idx] = tmp[idx][::-1][::-1]
-        self.pythranfunc(*tmp)
+            # make sure the viewed array stored the same value as before
+            test_array[idx] = test_array[idx][::-1][::-1]
+        self.pythranfunc(*test_array)
+
+    def test_strided(self):
+        # keep a copy of self.arguments to avoid in-place modify
+        test_array = self.arguments.copy()
+        for idx in self.index:
+            # make sure the strided array stored the same value as before
+            test_array[idx] = np.repeat(test_array[idx], 2, axis=0)[::2]
+        self.pythranfunc(*test_array)
+
+    def test_keywords(self):
+        optional_args, optional_arg0_idx = self.get_optional_args(self.func)
+        # if the tested function don't have optional arguments
+        if optional_arg0_idx is None:
+            return True
+        default_args_keys = optional_args.keys()
+        all_args = inspect.getfullargspec(self.func).args
+        # assign predefined self.arguments values to some optional arguments,
+        # to make sure the function's input value is always the same
+        for idx in self.index:
+            if all_args[idx] in default_args_keys:
+                optional_args[all_args[idx]] = self.arguments[idx]
+        self.pythranfunc(*self.arguments[:optional_arg0_idx], **optional_args)
 
 
 def _pytest_has_xdist():

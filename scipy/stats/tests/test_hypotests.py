@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 
 import numpy as np
-from numpy.lib.index_tricks import nd_grid
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
@@ -617,14 +616,14 @@ class TestMannWhitneyU:
 
 class TestSomersD(_TestPythranFunc):
     def setup_method(self):
-        # self.dtypes = self.ALL_INTEGER + self.ALL_FLOAT
-        self.dtypes = [np.int8, np.int16, np.int32, np.int64, np.float32, np.float64]
+        self.dtypes = self.ALL_INTEGER + self.ALL_FLOAT
         self.arguments = [np.arange(10), np.arange(10)]
         self.index = [0, 1]
         self.expected = stats.somersd(*self.arguments)
+        self.func = stats.somersd
 
-    def pythranfunc(self, *args):
-        res = stats.somersd(*args)
+    def pythranfunc(self, *args, **kwargs):
+        res = stats.somersd(*args, **kwargs)
         assert_allclose(res.statistic, self.expected.statistic, atol=1e-15)
         assert_allclose(res.pvalue, self.expected.pvalue, atol=1e-15)
 
