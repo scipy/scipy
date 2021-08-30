@@ -231,14 +231,9 @@ def check_random_state(seed):
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
+    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
-    try:
-        # Generator is only available in numpy >= 1.17
-        if isinstance(seed, np.random.Generator):
-            return seed
-    except AttributeError:
-        pass
+
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 

@@ -79,20 +79,12 @@ def check_random_state(seed=None):
 
     """
     if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
-        if not hasattr(np.random, 'Generator'):
-            # This can be removed once numpy 1.16 is dropped
-            msg = ("NumPy 1.16 doesn't have Generator, use either "
-                   "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`")
-            raise ValueError(msg)
         return np.random.default_rng(seed)
-    elif isinstance(seed, np.random.RandomState):
-        return seed
-    elif isinstance(seed, np.random.Generator):
-        # The two checks can be merged once numpy 1.16 is dropped
+    elif isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
     else:
-        raise ValueError('%r cannot be used to seed a numpy.random.Generator'
-                         ' instance' % seed)
+        raise ValueError(f'{seed!r} cannot be used to seed a'
+                         ' numpy.random.Generator instance')
 
 
 def scale(

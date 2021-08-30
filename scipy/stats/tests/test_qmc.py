@@ -335,7 +335,7 @@ class TestVDC:
         assert_almost_equal(sample, out[3:])
 
     def test_van_der_corput_scramble(self):
-        seed = 79808743243
+        seed = 338213789010180879520345496831675783177
         out = van_der_corput(10, scramble=True, seed=seed)
 
         sample = van_der_corput(7, start_index=3, scramble=True, seed=seed)
@@ -367,7 +367,7 @@ class RandomEngine(qmc.QMCEngine):
 
 
 def test_subclassing_QMCEngine():
-    engine = RandomEngine(2, seed=54354234)
+    engine = RandomEngine(2, seed=175180605424926556207367152557812293274)
 
     sample_1 = engine.random(n=5)
     sample_2 = engine.random(n=7)
@@ -404,7 +404,7 @@ class QMCEngineTests:
     ids = ["Scrambled", "Unscrambled"]
 
     def engine(self, scramble: bool, **kwargs) -> QMCEngine:
-        seed = np.random.RandomState(123456)
+        seed = np.random.default_rng(170382760648021597650530316304495310428)
         if self.can_scramble:
             return self.qmce(scramble=scramble, seed=seed, **kwargs)
         else:
@@ -525,14 +525,14 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.40770429, 0.77219711],
-                            [0.90770429, 0.10553045],
-                            [0.15770429, 0.43886378],
-                            [0.65770429, 0.88330823],
-                            [0.28270429, 0.21664156],
-                            [0.78270429, 0.54997489],
-                            [0.03270429, 0.99441934],
-                            [0.53270429, 0.32775267]])
+    scramble_nd = np.array([[0.50246036, 0.09937553],
+                            [0.00246036, 0.43270887],
+                            [0.75246036, 0.7660422],
+                            [0.25246036, 0.32159776],
+                            [0.62746036, 0.65493109],
+                            [0.12746036, 0.98826442],
+                            [0.87746036, 0.21048664],
+                            [0.37746036, 0.54381998]])
 
 
 class TestLHS(QMCEngineTests):
@@ -553,7 +553,7 @@ class TestLHS(QMCEngineTests):
     @pytest.mark.parametrize("centered", [False, True])
     @pytest.mark.parametrize("optimization", [None, "random-CD"])
     def test_sample_stratified(self, optimization, centered, strength):
-        seed = np.random.RandomState(123456)
+        seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
         n = p**2
         d = 6
@@ -635,14 +635,14 @@ class TestSobol(QMCEngineTests):
                               [0.125, 0.625]])
 
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.50860737, 0.29320504],
-                            [0.07116939, 0.89594537],
-                            [0.49354145, 0.11524881],
-                            [0.93097717, 0.70244044],
-                            [0.87266153, 0.23887917],
-                            [0.31021884, 0.57600391],
-                            [0.13687253, 0.42054182],
-                            [0.69931293, 0.77336788]])
+    scramble_nd = np.array([[0.25331921, 0.41371179],
+                            [0.8654213, 0.9821167],
+                            [0.70097554, 0.03664616],
+                            [0.18027647, 0.60895735],
+                            [0.10521339, 0.21897069],
+                            [0.53019685, 0.66619033],
+                            [0.91122276, 0.34580743],
+                            [0.45337471, 0.78912079]])
 
     def test_warning(self):
         with pytest.warns(UserWarning, match=r"The balance properties of "
@@ -701,18 +701,18 @@ class TestMultinomialQMC:
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=np.random.RandomState)
+            qmc.MultinomialQMC(p, engine=np.random.default_rng())
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 35, 22])
+        expected = np.array([13, 24, 6, 35, 22])
         engine = qmc.MultinomialQMC(p, seed=seed)
         assert_array_equal(engine.random(100), expected)
 
     def test_MultinomialDistribution(self):
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(77797854505813727292048130876699859000)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         engine = qmc.MultinomialQMC(p, seed=seed)
         draws = engine.random(8192)
@@ -730,16 +730,16 @@ class TestMultinomialQMC:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_other_engine(self):
         # same as test_MultinomialBasicDraw with different engine
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 35, 22])
+        expected = np.array([12, 25, 5, 36, 22])
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
         engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
         assert_array_equal(engine.random(100), expected)
 
     def test_reset(self):
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(15286971436105697578659603487027011470)
         engine = qmc.MultinomialQMC(p, seed=seed)
         samples = engine.random(2)
         engine.reset()
@@ -805,54 +805,45 @@ class TestNormalQMC:
 
     def test_NormalQMCSeeded(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(2), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[-0.943472, 0.405116], [-0.63099602, -1.32950772]]
-        )
+        samples_expected = np.array([[0.446961, -1.243236],
+                                     [-0.230754, 0.21354]])
         assert_array_almost_equal(samples, samples_expected)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(3), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [-0.943472, 0.405116, 0.268828],
-                [1.83169884, -1.40473647, 0.24334828],
-            ]
-        )
+        samples_expected = np.array([[0.446961, -1.243236, 0.324827],
+                                     [-0.997875, 0.399134, 1.032234]])
         assert_array_almost_equal(samples, samples_expected)
 
     def test_NormalQMCSeededInvTransform(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(288527772707286126646493545351112463929)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(2), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[0.228309, -0.162516], [-0.41622922, 0.46622792]]
-        )
+        samples_expected = np.array([[-0.804472, 0.384649],
+                                     [0.396424, -0.117676]])
         assert_array_almost_equal(samples, samples_expected)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(288527772707286126646493545351112463929)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(3), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [0.228309, -0.162516, 0.167352],
-                [-1.40525266, 1.37652443, -0.8519666],
-            ]
-        )
+        samples_expected = np.array([[-0.804472, 0.384649, 1.583568],
+                                     [0.165333, -2.266828, -1.655572]])
         assert_array_almost_equal(samples, samples_expected)
 
     def test_NormalQMCShapiro(self):
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2))
+        rng = np.random.default_rng(13242)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=rng)
         samples = engine.random(n=256)
         assert all(np.abs(samples.mean(axis=0)) < 1e-2)
         assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
@@ -865,8 +856,9 @@ class TestNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
     def test_NormalQMCShapiroInvTransform(self):
+        rng = np.random.default_rng(3234455)
         engine = qmc.MultivariateNormalQMC(
-            mean=np.zeros(2), inv_transform=True)
+            mean=np.zeros(2), inv_transform=True, seed=rng)
         samples = engine.random(n=256)
         assert all(np.abs(samples.mean(axis=0)) < 1e-2)
         assert all(np.abs(samples.std(axis=0) - 1) < 1e-2)
@@ -889,7 +881,7 @@ class TestMultivariateNormalQMC:
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState)
+            qmc.MultivariateNormalQMC([0, 0], engine=np.random.default_rng())
 
         message = r"Covariance matrix not PSD."
         with pytest.raises(ValueError, match=message):
@@ -962,69 +954,55 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCSeeded(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(2, 2)
-        A = a @ a.transpose() + np.diag(np.random.rand(2))
+        rng = np.random.default_rng(180182791534511062935571481899241825000)
+        a = rng.standard_normal((2, 2))
+        A = a @ a.transpose() + np.diag(rng.random(2))
         engine = qmc.MultivariateNormalQMC(np.array([0, 0]), A,
-                                           inv_transform=False, seed=seed)
+                                           inv_transform=False, seed=rng)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[-1.010703, -0.324223], [-0.67595995, -2.27437872]]
-        )
+        samples_expected = np.array([[0.479575, 0.934723],
+                                     [1.712571, 0.172699]])
         assert_array_almost_equal(samples, samples_expected)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(3, 3)
-        A = a @ a.transpose() + np.diag(np.random.rand(3))
+        rng = np.random.default_rng(180182791534511062935571481899241825000)
+        a = rng.standard_normal((3, 3))
+        A = a @ a.transpose() + np.diag(rng.random(3))
         engine = qmc.MultivariateNormalQMC(np.array([0, 0, 0]), A,
-                                           inv_transform=False, seed=seed)
+                                           inv_transform=False, seed=rng)
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [-1.056834, 2.493251, 0.114556],
-                [2.05178452, -6.35744194, 0.67944512],
-            ]
-        )
+        samples_expected = np.array([[2.463393, 2.252826, -0.886809],
+                                     [1.252468, 0.029449, -1.126328]])
         assert_array_almost_equal(samples, samples_expected)
 
     def test_MultivariateNormalQMCSeededInvTransform(self):
         # test even dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(2, 2)
-        A = a @ a.transpose() + np.diag(np.random.rand(2))
+        rng = np.random.default_rng(224125808928297329711992996940871155974)
+        a = rng.standard_normal((2, 2))
+        A = a @ a.transpose() + np.diag(rng.random(2))
         engine = qmc.MultivariateNormalQMC(
-            np.array([0, 0]), A, seed=seed, inv_transform=True
+            np.array([0, 0]), A, seed=rng, inv_transform=True
         )
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [[0.244578, -0.004441], [-0.44588916, 0.22657776]]
-        )
+        samples_expected = np.array([[-3.095968, -0.566545],
+                                     [0.603154, 0.222434]])
         assert_array_almost_equal(samples, samples_expected)
 
         # test odd dimension
-        seed = np.random.RandomState(12345)
-        np.random.seed(54321)
-        a = np.random.randn(3, 3)
-        A = a @ a.transpose() + np.diag(np.random.rand(3))
+        rng = np.random.default_rng(224125808928297329711992996940871155974)
+        a = rng.standard_normal((3, 3))
+        A = a @ a.transpose() + np.diag(rng.random(3))
         engine = qmc.MultivariateNormalQMC(
-            np.array([0, 0, 0]), A, seed=seed, inv_transform=True
+            np.array([0, 0, 0]), A, seed=rng, inv_transform=True
         )
         samples = engine.random(n=2)
-        samples_expected = np.array(
-            [
-                [0.255741, -0.761559, 0.234236],
-                [-1.5740992, 5.61057598, -1.28218525],
-            ]
-        )
+        samples_expected = np.array([[1.427248, -0.338187, -1.560687],
+                                     [-0.357026, 1.662937, -0.29769]])
         assert_array_almost_equal(samples, samples_expected)
 
     def test_MultivariateNormalQMCShapiro(self):
         # test the standard case
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(188960007281846377164494575845971645056)
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed
         )
@@ -1040,7 +1018,6 @@ class TestMultivariateNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
-        seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0], cov=[[1.5, 0.5], [0.5, 1.5]], seed=seed
         )
@@ -1057,7 +1034,7 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCShapiroInvTransform(self):
         # test the standard case
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(200089821034563288698994840831440331329)
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=seed, inv_transform=True
         )
@@ -1073,7 +1050,6 @@ class TestMultivariateNormalQMC:
         assert np.abs(cov[0, 1]) < 1e-2
 
         # test the correlated, non-zero mean case
-        seed = np.random.RandomState(12345)
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0],
             cov=[[1.5, 0.5], [0.5, 1.5]],
@@ -1093,7 +1069,7 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
-        seed = np.random.RandomState(12345)
+        seed = np.random.default_rng(163206374175814483578698216542904486209)
         engine = qmc.MultivariateNormalQMC(
             mean=[0.0, 0.0, 0.0],
             cov=[[1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 2.0]],
