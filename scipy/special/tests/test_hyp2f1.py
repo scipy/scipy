@@ -93,7 +93,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340")
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -104,7 +103,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -125,7 +123,6 @@ class TestHyp2f1:
                     expected=np.inf + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -136,7 +133,6 @@ class TestHyp2f1:
                     expected=np.nan + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -147,7 +143,6 @@ class TestHyp2f1:
                     expected=(1.0495404166666666+0.05708208333333334j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -158,7 +153,6 @@ class TestHyp2f1:
                     expected=(1.092966013125+0.13455014673750001j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -169,7 +163,6 @@ class TestHyp2f1:
                     expected=(-0.07712512000000005+0.12752814080000005j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -180,7 +173,6 @@ class TestHyp2f1:
                     expected=(1.6400000000000001+0.6400000000000001j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
         ]
     )
@@ -338,7 +330,7 @@ class TestHyp2f1:
                     c=4.0013768449590685,
                     z=(0.9473684210526314-0.10526315789473695j),
                     expected=(-0.0003054674127221263-9.261359291755414e-05j),
-                    rtol=9e-11,
+                    rtol=1e-10,
                 ),
             ),
             pytest.param(
@@ -348,7 +340,7 @@ class TestHyp2f1:
                     c=-3.9316537064827854,
                     z=(1.1578947368421053-0.3157894736842106j),
                     expected=(-0.0020809502580892937-0.0041877333232365095j),
-                    rtol=2e-13,
+                    rtol=5e-12,
                 ),
             ),
             pytest.param(
@@ -379,6 +371,16 @@ class TestHyp2f1:
                     z=(0.9473684210526314-0.10526315789473695j),
                     expected=(-0.000519013062087489-0.0005855883076830948j),
                     rtol=5e-12,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-10000,
+                    b=2.2,
+                    c=93459345.3,
+                    z=(2+2j),
+                    expected=(0.9995292071559088-0.00047047067522659253j),
+                    rtol=1e-12,
                 ),
             ),
         ]

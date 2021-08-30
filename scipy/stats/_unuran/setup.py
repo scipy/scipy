@@ -105,7 +105,8 @@ def configuration(parent_package="", top_path=None):
         ("STDC_HEADERS", "1"),
         ("UNUR_ENABLE_INFO", "1"),
         ("VERSION", '"%s"' % UNURAN_VERSION),
-        ("HAVE_CONFIG_H", "1")
+        ("HAVE_CONFIG_H", "1"),
+        ("_ISOC99_SOURCE", "1"),
     ]
 
     UNURAN_DIRS = [
@@ -127,7 +128,7 @@ def configuration(parent_package="", top_path=None):
         "unuran_wrapper",
         sources=["unuran_wrapper.c"] + sources,
         libraries=[],
-        include_dirs=UNURAN_SOURCE_DIRS
+        include_dirs=[str(dir_.resolve()) for dir_ in UNURAN_SOURCE_DIRS]
         + [
             os.path.join(
                 os.path.dirname(__file__), "..", "..", "_lib", "src"

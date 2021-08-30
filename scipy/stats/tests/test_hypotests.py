@@ -181,8 +181,6 @@ class TestMannWhitneyU:
             mannwhitneyu([], y)
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
             mannwhitneyu(x, [])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu([np.nan, 2], y)
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -508,10 +506,11 @@ class TestMannWhitneyU:
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res2.pvalue)
 
-        # NaNs should raise an error. No nan_policy for now.
+        # NaNs should propagate by default.
         y[4] = np.nan
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(x, y)
+        res3 = mannwhitneyu(x, y)
+        assert_equal(res3.statistic, np.nan)
+        assert_equal(res3.pvalue, np.nan)
 
     cases_11355 = [([1, 2, 3, 4],
                     [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
@@ -583,11 +582,12 @@ class TestMannWhitneyU:
             mannwhitneyu([], [])
 
     def test_gh_4067(self):
-        # Test for correct behavior with all NaN input
+        # Test for correct behavior with all NaN input - default is propagate
         a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(a, b)
+        res = mannwhitneyu(a, b)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     # All cases checked against R wilcox.test, e.g.
     # options(digits=16)
@@ -1204,6 +1204,7 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
 
 class TestCvm_2samp:
     def test_invalid_input(self):
