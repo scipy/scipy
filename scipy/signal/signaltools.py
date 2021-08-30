@@ -1467,11 +1467,10 @@ def order_filter(a, domain, rank):
 
     """
     domain = np.asarray(domain)
-    size = domain.shape
-    for k in range(len(size)):
-        if (size[k] % 2) != 1:
+    for dimsize in domain.shape:
+        if (dimsize % 2) != 1:
             raise ValueError("Each dimension of domain argument "
-                             " should have an odd number of elements.")
+                             "should have an odd number of elements.")
     return sigtools._order_filterND(a, domain, rank)
 
 
