@@ -101,7 +101,7 @@ def _backend_from_arg(backend):
     return backend
 
 
-def set_global_backend(backend, coerce=False, only=False, try_last=False):
+def set_global_backend(backend, coerce=True, only=False, try_last=True):
     """Sets the global ndimage backend
 
     This utility method replaces the default backend for permanent use. It
@@ -192,7 +192,7 @@ def register_backend(backend):
     ua.register_backend(backend)
 
 
-def set_backend(backend, coerce=False, only=False):
+def set_backend(backend, coerce=True, only=False):
     """
     Context manager to set the backend within a fixed scope.
 
@@ -266,4 +266,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy', try_last=True, coerce=True)
+set_global_backend('scipy')

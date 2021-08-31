@@ -10,7 +10,6 @@ import scipy.ndimage as ndimage
 
 from . import types
 
-
 eps = 1e-12
 
 ndimage_to_numpy_mode = {
