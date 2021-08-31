@@ -176,8 +176,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
     n_outputs : int, default: 2
         The number of outputs produced by the function given 1d sample(s). For
         example, hypothesis tests that return a namedtuple or result object
-        with attributes ``statistic`` and ``pvalue`` use the default ``n_outputs=2``;
-        summary statistics with scalar output use ``n_outputs=1``.
+        with attributes ``statistic`` and ``pvalue`` use the default
+        ``n_outputs=2``; summary statistics with scalar output use
+        ``n_outputs=1``.
     """
 
     if result_unpacker is None:
