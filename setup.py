@@ -360,7 +360,7 @@ def generate_cython():
                                    pip.__version__))
             else:
                 raise RuntimeError("Running cythonize failed!")
-        except ImportError:
+        except (ImportError, ModuleNotFoundError):
             raise RuntimeError("Running cythonize failed!")
 
 
