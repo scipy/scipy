@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import numpy as np
 from typing import (
-    Union,
     Optional,
     TYPE_CHECKING,
 )
@@ -94,7 +93,7 @@ def lloyd_centroidal_voronoi_tessellation(
         *,
         tol: DecimalNumber = 1e-5,
         maxiter: IntNumber = 10,
-        decay: Optional[Union[DecimalNumber, npt.ArrayLike]] = None,
+        decay: Optional[npt.ArrayLike] = None,
         qhull_options: Optional[str] = None,
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
@@ -201,7 +200,7 @@ def lloyd_centroidal_voronoi_tessellation(
         decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
     else:
         try:
-            decay = np.broadcast_to(decay, maxiter)
+            decay = np.broadcast_to(decay, maxiter)  # type: ignore[arg-type]
         except ValueError as exc:
             msg = ('decay is not a list of float'
                    ' of length maxiter')

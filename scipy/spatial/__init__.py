@@ -31,7 +31,7 @@ Delaunay triangulation, convex hulls, and Voronoi diagrams
    ConvexHull  -- compute a convex hull for input points
    Voronoi     -- compute a Voronoi diagram hull from input points
    SphericalVoronoi -- compute a Voronoi diagram from input points on the surface of a sphere
-   lloyd_centroidal_voronoi_tessellation  -- perturb points using Lloyd-Max algorithm
+   lloyd_centroidal_voronoi_tessellation
    HalfspaceIntersection -- compute the intersection points of input halfspaces
 
 Plotting helpers
@@ -105,7 +105,7 @@ from ._geometric_slerp import geometric_slerp
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from . import distance, transform
-from ._lloyd_algorithm import *
+from ._lloyd_algorithm import lloyd_centroidal_voronoi_tessellation
 
 __all__ += ['distance', 'transform', 'lloyd_centroidal_voronoi_tessellation']
 
