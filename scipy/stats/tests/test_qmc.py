@@ -8,17 +8,12 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
-from scipy.spatial.distance import cdist
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy, QMCEngine,
                               _perturb_discrepancy)  # noqa
-
-
-# This can be removed once numpy 1.16 is dropped
-SEED = np.random.RandomState(12345)
 
 
 class TestUtils:
@@ -321,66 +316,6 @@ class TestUtils:
         primes = primes_from_2_to(50)
         out = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
         assert_allclose(primes, out)
-
-    def test_lloyd(self):
-        def l1_norm(sample):
-            l1 = cdist(sample, sample, 'cityblock')
-            return np.min(l1[l1.nonzero()])
-
-        # mindist
-        def l2_norm(sample):
-            l2 = cdist(sample, sample)
-            return np.min(l2[l2.nonzero()])
-
-        # quite sensible seed as it can go up before going further down
-        rng = np.random.RandomState(1809831)
-        sample = rng.uniform(0, 1, size=(128, 2))
-        base_l1 = l1_norm(sample)
-        base_l2 = l2_norm(sample)
-
-        for _ in range(4):
-            sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
-                    sample, maxiter=1,
-            )
-            curr_l1 = l1_norm(sample_lloyd)
-            curr_l2 = l2_norm(sample_lloyd)
-
-            # higher is better for the distance measures
-            assert base_l1 < curr_l1
-            assert base_l2 < curr_l2
-
-            base_l1 = curr_l1
-            base_l2 = curr_l2
-
-    def test_lloyd_decay(self):
-        rng = np.random.default_rng()
-        sample = rng.random((20, 2))
-
-        maxiter = 5
-        decay_const = qmc.lloyd_centroidal_voronoi_tessellation(
-                sample, decay=[1], maxiter=maxiter
-        )
-        decay_list = qmc.lloyd_centroidal_voronoi_tessellation(
-                sample, decay=[1, 1, 1, 1, 1], maxiter=maxiter
-        )
-        assert_allclose(decay_const, decay_list)
-
-    def test_lloyd_errors(self):
-        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
-            sample = [0, 1, 0.5]
-            qmc.lloyd_centroidal_voronoi_tessellation(sample)
-
-        with pytest.raises(ValueError, match=r"Sample is out of bounds"):
-            sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
-            qmc.lloyd_centroidal_voronoi_tessellation(sample)
-
-        with pytest.raises(ValueError, match=r"decay is not a list"):
-            sample = [[0, 0], [1, 1]]
-            decay = [1, 2, 3]
-            maxiter = 2
-            qmc.lloyd_centroidal_voronoi_tessellation(
-                    sample, decay=decay, maxiter=maxiter
-            )
 
 
 class TestVDC:
