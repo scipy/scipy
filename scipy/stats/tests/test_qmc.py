@@ -16,9 +16,6 @@ from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               _perturb_discrepancy)  # noqa
 
 
-generic_rng = np.random.default_rng()
-
-
 class TestUtils:
     def test_scale(self):
         # 1d scalar
@@ -51,9 +48,10 @@ class TestUtils:
         assert_allclose(scaled_space, out)
 
     def test_scale_random(self):
-        sample = generic_rng.random((30, 10))
-        a = -generic_rng.random(10) * 10
-        b = generic_rng.random(10) * 10
+        rng = np.random.default_rng(317589836511269190194010915937762468165)
+        sample = rng.random((30, 10))
+        a = -rng.random(10) * 10
+        b = rng.random(10) * 10
         scaled = qmc.scale(sample, a, b, reverse=False)
         unscaled = qmc.scale(scaled, a, b, reverse=True)
         assert_allclose(unscaled, sample)
@@ -218,10 +216,12 @@ class TestUtils:
         sample = qmc_gen.random(10)
         disc = qmc.discrepancy(sample)
 
+        rng = np.random.default_rng(46449423132557934943847369749645759997)
+
         for i in range(100):
-            row_1 = generic_rng.integers(10)
-            row_2 = generic_rng.integers(10)
-            col = generic_rng.integers(5)
+            row_1 = rng.integers(10)
+            row_2 = rng.integers(10)
+            col = rng.integers(5)
 
             disc = _perturb_discrepancy(sample, row_1, row_2, col, disc)
             sample[row_1, col], sample[row_2, col] = (
@@ -284,7 +284,8 @@ class TestUtils:
                 ]) / n ** 2
             )
 
-        sample = generic_rng.random((30, 10))
+        rng = np.random.default_rng(117065081482921065782761407107747179201)
+        sample = rng.random((30, 10))
 
         disc_curr = qmc.discrepancy(sample, method='CD')
         disc_alt = disc_c2(sample)
