@@ -176,8 +176,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
     n_outputs : int, default: 2
         The number of outputs produced by the function given 1d sample(s). For
         example, hypothesis tests that return a namedtuple or result object
-        with attributes `statistic` and `pvalue` use the default n_outputs=2;
-        summary statistics with scalar output use `n_outputs=1`.
+        with attributes ``statistic`` and ``pvalue`` use the default ``n_outputs=2``;
+        summary statistics with scalar output use ``n_outputs=1``.
     """
 
     if result_unpacker is None:
@@ -260,7 +260,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 # currently the hypothesis tests this is applied to do not
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
-                    res = np.ones(n_outputs) * np.nan
+                    res = np.full(n_outputs, np.nan)
                     return result_object(*res)
 
                 # Addresses nan_policy == "omit"
@@ -303,7 +303,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
                     if is_too_small(samples):
-                        res = np.ones(n_outputs) * np.nan
+                        res = np.full(n_outputs, np.nan)
                         return result_object(*res)
                     return hypotest_fun_in(*samples, **kwds)
 
@@ -311,7 +311,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.ones(n_outputs) * np.nan
+                        res = np.full(n_outputs, np.nan)
                         return result_object(*res)
                     samples = np.split(x, split_indices)[:n_samp]
                     return hypotest_fun_in(*samples, **kwds)

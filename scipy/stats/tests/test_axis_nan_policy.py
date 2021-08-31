@@ -117,7 +117,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
         # involved) so override that behavior here.
         for sample in data1d:
             if np.any(np.isnan(sample)):
-                return np.ones(n_outputs) * np.nan
+                return np.full(n_outputs, np.nan)
 
     elif nan_policy == 'omit':
         # manually omit nans (or pairs in which at least one element is nan)
@@ -238,7 +238,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 
                 if any([str(e).startswith(message)
                         for message in too_small_messages]):
-                    res1d = np.ones(n_outputs) * np.nan
+                    res1d = np.full(n_outputs, np.nan)
                 else:
                     raise e
         statistics[i] = res1d[0]
