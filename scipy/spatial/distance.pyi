@@ -43,7 +43,7 @@ _MetricKind = Literal[
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
-    'kulsinski',
+    'kulsinski', 'kulczynski1',
     'mahalanobis', 'mahal', 'mah',
     'rogerstanimoto',
     'russellrao',
@@ -150,6 +150,10 @@ def jensenshannon(
 ) -> np.float64: ...
 
 def kulsinski(
+    u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
+) -> np.float64: ...
+
+def kulczynski1(
     u: ArrayLike, v: ArrayLike, w: Optional[ArrayLike] = ...
 ) -> np.float64: ...
 

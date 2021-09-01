@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 7):
-    raise RuntimeError("Python version >= 3.7 required.")
+if sys.version_info[:2] < (3, 8):
+    raise RuntimeError("Python version >= 3.8 required.")
 
 import builtins
 
@@ -41,7 +41,6 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Topic :: Software Development :: Libraries
@@ -361,7 +360,7 @@ def generate_cython():
                                    pip.__version__))
             else:
                 raise RuntimeError("Running cythonize failed!")
-        except ImportError:
+        except (ImportError, ModuleNotFoundError):
             raise RuntimeError("Running cythonize failed!")
 
 
@@ -549,9 +548,9 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.16.5'
+    np_minversion = '1.17.3'
     np_maxversion = '9.9.99'
-    python_minversion = '3.7'
+    python_minversion = '3.8'
     python_maxversion = '3.10'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
@@ -584,6 +583,7 @@ def setup_package():
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         install_requires=[req_np],
         python_requires=req_py,
+        zip_safe=False,
     )
 
     if "--force" in sys.argv:

@@ -148,6 +148,7 @@ for key in (
         r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'contextfunction' is renamed to 'pass_context'",  # Jinja
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -180,6 +181,7 @@ html_logo = '_static/scipyshiny_small.png'
 html_theme_options = {
   "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
+  "navbar_start": ["navbar-logo", "version"],
 }
 
 if 'versionwarning' in tags:
@@ -190,9 +192,14 @@ if 'versionwarning' in tags:
            'script.src = "/doc/_static/versionwarning.js";\n'
            'document.head.appendChild(script);');
     html_context = {
-        'VERSIONCHECK_JS': src
+        'VERSIONCHECK_JS': src,
+        'versionwarning': True
     }
     html_js_files = ['versioncheck.js']
+else:
+    html_context = {
+        'versionwarning': False
+    }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']

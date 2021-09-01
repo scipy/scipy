@@ -35,7 +35,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper
+from scipy._lib._util import MapWrapper, check_random_state, rng_integers
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -935,7 +935,8 @@ def approx_fprime(xk, f, epsilon, *args):
                              args=args, f0=f0)
 
 
-def check_grad(func, grad, x0, *args, **kwargs):
+def check_grad(func, grad, x0, *args, epsilon=_epsilon, 
+                direction='all', seed=None):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -953,6 +954,24 @@ def check_grad(func, grad, x0, *args, **kwargs):
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
         ``sqrt(np.finfo(float).eps)``, which is approximately 1.49e-08.
+    direction : str, optional
+        If set to ``'random'``, then gradients along a random vector 
+        are used to check `grad` against forward difference approximation 
+        using `func`. By default it is ``'all'``, in which case, all
+        the one hot direction vectors are considered to check `grad`.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Specify `seed` for reproducing the return value from this function. 
+        The random numbers generated with this seed affect the random vector
+        along which gradients are computed to check ``grad``. Note that `seed`
+        is only used when `direction` argument is set to `'random'`.
 
     Returns
     -------
@@ -974,14 +993,36 @@ def check_grad(func, grad, x0, *args, **kwargs):
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
+    >>> rng = np.random.default_rng()
+    >>> check_grad(func, grad, [1.5, -1.5], 
+    ...             direction='random', seed=rng)
+    2.9802322387695312e-08
 
     """
-    step = kwargs.pop('epsilon', _epsilon)
-    if kwargs:
-        raise ValueError("Unknown keyword arguments: %r" %
-                         (list(kwargs.keys()),))
-    return sqrt(sum((grad(x0, *args) -
-                     approx_fprime(x0, func, step, *args))**2))
+    step = epsilon
+    x0 = np.asarray(x0)
+    
+    def g(w, func, x0, v, *args):
+        return func(x0 + w*v, *args)
+
+    if direction == 'random':
+        random_state = check_random_state(seed)
+        v = random_state.normal(0, 1, size=(x0.shape))
+        _args = (func, x0, v) + args
+        _func = g
+        vars = np.zeros((1,))
+        analytical_grad = np.dot(grad(x0, *args), v)
+    elif direction == 'all':
+        _args = args
+        _func = func
+        vars = x0
+        analytical_grad = grad(x0, *args)
+    else:
+        raise ValueError("{} is not a valid string for "
+                         "``direction`` argument".format(direction))
+
+    return sqrt(sum((analytical_grad -
+                     approx_fprime(vars, _func, step, *_args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
@@ -2120,7 +2161,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 class Brent:
     #need to rethink design of __init__
     def __init__(self, func, args=(), tol=1.48e-8, maxiter=500,
-                 full_output=0):
+                 full_output=0, disp=0):
         self.func = func
         self.args = args
         self.tol = tol
@@ -2131,6 +2172,7 @@ class Brent:
         self.fval = None
         self.iter = 0
         self.funcalls = 0
+        self.disp = disp
 
     # need to rethink design of set_bracket (new options, etc.)
     def set_bracket(self, brack=None):
@@ -2187,6 +2229,12 @@ class Brent:
         deltax = 0.0
         funcalls += 1
         iter = 0
+
+        if self.disp > 2:
+            print(" ")
+            print(f"{'Func-count':^12} {'x':^12} {'f(x)': ^12}")
+            print(f"{funcalls:^12g} {x:^12.6g} {fx:^12.6g}")
+
         while (iter < self.maxiter):
             tol1 = self.tol * np.abs(x) + _mintol
             tol2 = 2.0 * tol1
@@ -2265,6 +2313,9 @@ class Brent:
                 fw = fx
                 fx = fu
 
+            if self.disp > 2:
+                print(f"{funcalls:^12g} {x:^12.6g} {fx:^12.6g}")
+
             iter += 1
         #################################
         #END CORE ALGORITHM
@@ -2301,7 +2352,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         `bracket`). Providing the pair (xa,xb) does not always mean
         the obtained solution will satisfy xa<=x<=xb.
     tol : float, optional
-        Stop if between iteration change is less than `tol`.
+        Relative error in solution `xopt` acceptable for convergence.
     full_output : bool, optional
         If True, return all output args (xmin, fval, iter,
         funcalls).
@@ -2361,8 +2412,8 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         return res['x']
 
 
-def _minimize_scalar_brent(func, brack=None, args=(),
-                           xtol=1.48e-8, maxiter=500,
+def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
+                           maxiter=500, disp=0,
                            **unknown_options):
     """
     Options
@@ -2371,7 +2422,12 @@ def _minimize_scalar_brent(func, brack=None, args=(),
         Maximum number of iterations to perform.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
-
+    disp: int, optional
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
     Notes
     -----
     Uses inverse parabolic interpolation when possible to speed up
@@ -2384,12 +2440,23 @@ def _minimize_scalar_brent(func, brack=None, args=(),
         raise ValueError('tolerance should be >= 0, got %r' % tol)
 
     brent = Brent(func=func, args=args, tol=tol,
-                  full_output=True, maxiter=maxiter)
+                  full_output=True, maxiter=maxiter, disp=disp)
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
 
     success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
+
+    # for 'disp' purposes
+    if success and disp > 1:
+        print("\nOptimization terminated successfully;\n"
+              "The returned value satisfies the termination criteria\n"
+              "(using xtol = ", xtol, ")")
+    elif not success and disp:
+        if nit >= maxiter:
+            print("\nMaximum number of iterations exceeded")
+        if np.isnan(x) or np.isnan(fval):
+            print("\n{}".format(_status_message['nan']))
 
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
                           success=success)
@@ -2463,15 +2530,21 @@ def golden(func, args=(), brack=None, tol=_epsilon,
 
 
 def _minimize_scalar_golden(func, brack=None, args=(),
-                            xtol=_epsilon, maxiter=5000, **unknown_options):
+                            xtol=_epsilon, maxiter=5000, disp=0,
+                            **unknown_options):
     """
     Options
     -------
-    maxiter : int
-        Maximum number of iterations to perform.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
-
+    maxiter : int
+        Maximum number of iterations to perform.
+    disp: int, optional
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
     """
     _check_unknown_options(unknown_options)
     tol = xtol
@@ -2509,6 +2582,11 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     f2 = func(*((x2,) + args))
     funcalls += 2
     nit = 0
+
+    if disp > 2:
+        print(" ")
+        print(f"{'Func-count':^12} {'x':^12} {'f(x)': ^12}")
+
     for i in range(maxiter):
         if np.abs(x3 - x0) <= tol * (np.abs(x1) + np.abs(x2)):
             break
@@ -2525,7 +2603,16 @@ def _minimize_scalar_golden(func, brack=None, args=(),
             f2 = f1
             f1 = func(*((x1,) + args))
         funcalls += 1
+        if disp > 2:
+            if (f1 < f2):
+                xmin, fval = x1, f1
+            else:
+                xmin, fval = x2, f2
+            print(f"{funcalls:^12g} {xmin:^12.6g} {fval:^12.6g}")
+
         nit += 1
+    # end of iteration loop
+
     if (f1 < f2):
         xmin = x1
         fval = f1
@@ -2534,6 +2621,17 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         fval = f2
 
     success = nit < maxiter and not (np.isnan(fval) or np.isnan(xmin))
+
+    # for 'disp' purposes
+    if success and disp > 1:
+        print("\nOptimization terminated successfully;\n"
+              "The returned value satisfies the termination criteria\n"
+              "(using xtol = ", xtol, ")")
+    elif not success and disp:
+        if nit >= maxiter:
+            print("\nMaximum number of iterations exceeded")
+        if np.isnan(xmin) or np.isnan(fval):
+            print("\n{}".format(_status_message['nan']))
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
                           success=success)
@@ -3687,8 +3785,8 @@ def main():
     print("\nMinimizing the Rosenbrock function of order 3\n")
     print(" Algorithm \t\t\t       Seconds")
     print("===========\t\t\t      =========")
-    for k in range(len(algor)):
-        print(algor[k], "\t -- ", times[k])
+    for alg, tme in zip(algor, times):
+        print(alg, "\t -- ", tme)
 
 
 if __name__ == "__main__":

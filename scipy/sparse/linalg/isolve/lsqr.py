@@ -93,7 +93,7 @@ def _sym_ortho(a, b):
     return c, s, r
 
 
-def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
+def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
          iter_lim=None, show=False, calc_var=False, x0=None):
     """Find the least-squares solution to a large, sparse, linear system
     of equations.
@@ -125,12 +125,25 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     b : array_like, shape (m,)
         Right-hand side vector ``b``.
     damp : float
-        Damping coefficient.
+        Damping coefficient. Default is 0.
     atol, btol : float, optional
-        Stopping tolerances. If both are 1.0e-9 (say), the final
-        residual norm should be accurate to about 9 digits.  (The
-        final x will usually have fewer correct digits, depending on
-        cond(A) and the size of damp.)
+        Stopping tolerances. `lsqr` continues iterations until a
+        certain backward error estimate is smaller than some quantity
+        depending on atol and btol.  Let ``r = b - Ax`` be the
+        residual vector for the current approximate solution ``x``.
+        If ``Ax = b`` seems to be consistent, `lsqr` terminates
+        when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
+        Otherwise, `lsqr` terminates when ``norm(A^H r) <=
+        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (default),
+        the final ``norm(r)`` should be accurate to about 6
+        digits. (The final ``x`` will usually have fewer correct digits,
+        depending on ``cond(A)`` and the size of LAMBDA.)  If `atol`
+        or `btol` is None, a default value of 1.0e-6 will be used.
+        Ideally, they should be estimates of the relative error in the
+        entries of ``A`` and ``b`` respectively.  For example, if the entries
+        of ``A`` have 7 correct digits, set ``atol = 1e-7``. This prevents
+        the algorithm from doing unnecessary work beyond the
+        uncertainty of the input data.
     conlim : float, optional
         Another stopping tolerance.  lsqr terminates if an estimate of
         ``cond(A)`` exceeds `conlim`.  For compatible systems ``Ax =
@@ -138,15 +151,15 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         least-squares problems, conlim should be less than 1.0e+8.
         Maximum precision can be obtained by setting ``atol = btol =
         conlim = zero``, but the number of iterations may then be
-        excessive.
+        excessive. Default is 1e8.
     iter_lim : int, optional
         Explicit limitation on number of iterations (for safety).
     show : bool, optional
-        Display an iteration log.
+        Display an iteration log. Default is False.
     calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
     x0 : array_like, shape (n,), optional
-        Initial guess of x, if None zeros are used.
+        Initial guess of x, if None zeros are used. Default is None.
 
         .. versionadded:: 1.0.0
 

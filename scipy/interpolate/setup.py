@@ -6,7 +6,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils import (get_f2py_int64_options,
                                     ilp64_pre_build_hook,
-                                    uses_blas64)
+                                    uses_blas64, numpy_nodepr_api)
 
     if uses_blas64():
         # TODO: Note that fitpack does not use BLAS/LAPACK.
@@ -41,7 +41,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
-                         define_macros=define_macros,
+                         define_macros=define_macros + numpy_nodepr_api['define_macros'],
                          depends=(['src/__fitpack.h']
                                   + fitpack_src)
                          )
