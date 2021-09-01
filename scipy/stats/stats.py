@@ -6260,21 +6260,6 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _broadcast_concatenate(xs, axis):
-    """Concatenate arrays along an axis with broadcasting."""
-    # move the axis we're concatenating along to the end
-    xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last axis
-    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
-    # broadcast along all but the last axis
-    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
-    # concatenate along last axis
-    res = np.concatenate(xs, axis=-1)
-    # move the last axis back to where it was
-    res = np.swapaxes(res, axis, -1)
-    return res
-
-
 def _batch_generator(iterable, batch):
     """A generator that yields batches of elements from an iterable"""
     iterator = iter(iterable)
