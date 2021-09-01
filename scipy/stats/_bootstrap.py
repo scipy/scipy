@@ -14,7 +14,7 @@ def _vectorize_statistic(statistic):
     def stat_nd(*data, axis=0):
         lengths = [sample.shape[axis] for sample in data]
         split_indices = np.cumsum(lengths)[:-1]
-        z = statsstats._broadcast_concatenate(data, axis)
+        z = _broadcast_concatenate(data, axis)
 
         def stat_1d(z):
             data = np.split(z, split_indices)
