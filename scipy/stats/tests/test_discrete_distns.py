@@ -6,9 +6,34 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 from scipy.special import binom as special_binom
-import pytest
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression CDF[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(3, 10, 4, 5,
+                           0.9761904761904762, 1e-15),
+                          (107, 10000, 3000, 215,
+                           0.9999999997226765, 1e-15),
+                          (10, 10000, 3000, 215,
+                           2.681682217692179e-21, 5e-11)])
+def test_hypergeom_cdf(k, M, n, N, expected, rtol):
+    p = hypergeom.cdf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression SurvivalFunction[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(25, 10000, 3000, 215,
+                           0.9999999999052958, 1e-15),
+                          (125, 10000, 3000, 215,
+                           1.4416781705752128e-18, 5e-11)])
+def test_hypergeom_sf(k, M, n, N, expected, rtol):
+    p = hypergeom.sf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
 
 
 def test_hypergeom_logpmf():

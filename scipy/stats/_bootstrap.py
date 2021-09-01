@@ -4,7 +4,7 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
-from scipy.stats.stats import _broadcast_concatenate
+from ._axis_nan_policy import _broadcast_concatenate
 
 
 def _vectorize_statistic(statistic):
@@ -293,7 +293,7 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     .. [2] Nathaniel E. Helwig, "Bootstrap Confidence Intervals",
        http://users.stat.umn.edu/~helwig/notes/bootci-Notes.pdf
     .. [3] Bootstrapping (statistics), Wikipedia,
-       https://en.wikipedia.org/wiki/Bootstrapping_(statistics)
+       https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29
 
     Examples
     --------

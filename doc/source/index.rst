@@ -81,7 +81,7 @@ science, and engineering.
 
     Saw a typo in the documentation? Want to improve
     existing functionalities? The contributing guidelines will guide
-    you through the process of improving pandas.
+    you through the process of improving SciPy.
 
     +++
 

@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 7):
-    raise RuntimeError("Python version >= 3.7 required.")
+if sys.version_info[:2] < (3, 8):
+    raise RuntimeError("Python version >= 3.8 required.")
 
 import builtins
 
@@ -41,7 +41,6 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Topic :: Software Development :: Libraries
@@ -89,7 +88,7 @@ def git_version():
         # commit history. This gives the commit count since the previous branch
         # point from the current branch (assuming a full `git clone`, it may be
         # less if `--depth` was used - commonly the default in CI):
-        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 1)
+        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 2)
         out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
                                 '--count'])
         COMMIT_COUNT = out.strip().decode('ascii')
@@ -361,7 +360,7 @@ def generate_cython():
                                    pip.__version__))
             else:
                 raise RuntimeError("Running cythonize failed!")
-        except ImportError:
+        except (ImportError, ModuleNotFoundError):
             raise RuntimeError("Running cythonize failed!")
 
 
@@ -496,13 +495,15 @@ def check_setuppy_command():
     run_build = parse_setuppy_commands()
     if run_build:
         try:
+            pkgname = 'numpy'
             import numpy
+            pkgname = 'pybind11'
             import pybind11
         except ImportError as exc:  # We do not have our build deps installed
             print(textwrap.dedent(
                     """Error: '%s' must be installed before running the build.
                     """
-                    % (exc.name,)))
+                    % (pkgname,)))
             sys.exit(1)
 
     return run_build
@@ -547,9 +548,9 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.16.5'
+    np_minversion = '1.17.3'
     np_maxversion = '9.9.99'
-    python_minversion = '3.7'
+    python_minversion = '3.8'
     python_maxversion = '3.10'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
@@ -582,6 +583,7 @@ def setup_package():
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         install_requires=[req_np],
         python_requires=req_py,
+        zip_safe=False,
     )
 
     if "--force" in sys.argv:
@@ -606,9 +608,10 @@ def setup_package():
         cmdclass['build_ext'] = get_build_ext_override()
         cmdclass['build_clib'] = get_build_clib_override()
 
-        cwd = os.path.abspath(os.path.dirname(__file__))
-        if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
-            # Generate Cython sources, unless building from source release
+        if not 'sdist' in sys.argv:
+            # Generate Cython sources, unless we're creating an sdist
+            # Cython is a build dependency, and shipping generated .c files
+            # can cause problems (see gh-14199)
             generate_cython()
 
         metadata['configuration'] = configuration

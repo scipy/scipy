@@ -1270,9 +1270,17 @@ class rv_generic:
             scale parameter (default=1)
 
         """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
+        shapes, loc, scale = self._parse_args(*args, **kwds)
+        args = np.broadcast_arrays(*(*shapes, loc, scale))
+        *shapes, loc, scale = args
+
+        i0 = np.logical_and(self._argcheck(*shapes), scale > 0)
+        i1 = np.logical_and(i0, loc == 0)
+        i2 = np.logical_and(i0, loc != 0)
+
+        args = argsreduce(i0, *shapes, loc, scale)
+        *shapes, loc, scale = args
+
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
@@ -1283,21 +1291,46 @@ class rv_generic:
                 mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args, **mdict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+            mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
+        val = np.empty(loc.shape)  # val needs to be indexed by loc
+        val[...] = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, shapes)
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
+        result = zeros(i0.shape)
+        place(result, ~i0, self.badvalue)
+
+        if i1.any():
+            res1 = scale[loc == 0]**n * val[loc == 0]
+            place(result, i1, res1)
+
+        if i2.any():
+            mom = [mu, mu2, g1, g2]
+            arrs = [i for i in mom if i is not None]
+            idx = [i for i in range(4) if mom[i] is not None]
+            if any(idx):
+                arrs = argsreduce(loc != 0, *arrs)
+                j = 0
+                for i in idx:
+                    mom[i] = arrs[j]
+                    j += 1
+            mu, mu2, g1, g2 = mom
+            args = argsreduce(loc != 0, *shapes, loc, scale, val)
+            *shapes, loc, scale, val = args
+
+            res2 = zeros(loc.shape, dtype='d')
+            fac = scale / loc
             for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n, k, exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp,
+                                          shapes)
+                res2 += comb(n, k, exact=True)*fac**k * valk
+            res2 += fac**n * val
+            res2 *= loc**n
+            place(result, i2, res2)
+
+        if result.ndim == 0:
+            return result.item()
+        return result
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -3414,13 +3447,16 @@ class rv_discrete(rv_generic):
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
+        cond3 = (q == 0) & cond0
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
         output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _b)
-        place(output, cond2, _a-1)
+        lower_bound = _a - 1 + loc
+        upper_bound = _b + loc
+        place(output, cond2*(cond == cond), lower_bound)
+        place(output, cond3*(cond == cond), upper_bound)
 
         # call place only if at least 1 valid argument
         if np.any(cond):

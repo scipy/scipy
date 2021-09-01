@@ -26,7 +26,7 @@ def lagrange_inversion(a):
 
     """
     n = len(a)
-    f = sum(a[i]*x**i for i in range(len(a)))
+    f = sum(a[i]*x**i for i in range(n))
     h = (x/f).series(x, 0, n).removeO()
     hpower = [h**0]
     for k in range(n):
@@ -34,5 +34,5 @@ def lagrange_inversion(a):
     b = [mp.mpf(0)]
     for k in range(1, n):
         b.append(hpower[k].coeff(x, k - 1)/k)
-    b = map(lambda x: mp.mpf(x), b)
+    b = [mp.mpf(x) for x in b]
     return b

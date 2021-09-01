@@ -9,6 +9,7 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
@@ -395,51 +396,6 @@ def _get_wilcoxon_distr(n):
     return np.array(cnt, dtype=int)
 
 
-def _Aij(A, i, j):
-    """Sum of upper-left and lower right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
-
-
-def _Dij(A, i, j):
-    """Sum of lower-left and upper-right blocks of contingency table."""
-    # See [2] bottom of page 309
-    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
-
-
-def _P(A):
-    """Twice the number of concordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Aij(A, i, j)
-    return count
-
-
-def _Q(A):
-    """Twice the number of discordant pairs, excluding ties."""
-    # See [2] bottom of page 309
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*_Dij(A, i, j)
-    return count
-
-
-def _a_ij_Aij_Dij2(A):
-    """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See [2] section 4: Modified ASEs to test the null hypothesis...
-    m, n = A.shape
-    count = 0
-    for i in range(m):
-        for j in range(n):
-            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
-    return count
-
-
 def _tau_b(A):
     """Calculate Kendall's tau-b and p-value from contingency table."""
     # See [2] 2.2 and 4.2
@@ -467,7 +423,7 @@ def _tau_b(A):
     return tau, p
 
 
-def _somers_d(A):
+def _somers_d(A, alternative='two-sided'):
     """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
 
@@ -484,10 +440,11 @@ def _somers_d(A):
     d = (PA - QA)/(NA2 - Sri2)
 
     S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
-    if S == 0:  # Avoid divide by zero
-        return d, 0
-    Z = (PA - QA)/(4*(S))**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
+    with np.errstate(divide='ignore'):
+        Z = (PA - QA)/(4*(S))**0.5
+
+    _, p = scipy.stats.stats._normtest_finish(Z, alternative)
 
     return d, p
 
@@ -496,7 +453,7 @@ SomersDResult = make_dataclass("SomersDResult",
                                ("statistic", "pvalue", "table"))
 
 
-def somersd(x, y=None):
+def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
@@ -530,10 +487,16 @@ def somersd(x, y=None):
     x: array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like
+    y: array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
 
     Returns
     -------
@@ -543,7 +506,7 @@ def somersd(x, y=None):
             correlation : float
                The Somers' :math:`D` statistic.
             pvalue : float
-               The two-sided p-value for a hypothesis test whose null
+               The p-value for a hypothesis test whose null
                hypothesis is an absence of association, :math:`D=0`.
                See notes for more information.
             table : 2D array
@@ -663,7 +626,7 @@ def somersd(x, y=None):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table)
+    d, p = _somers_d(table, alternative)
     return SomersDResult(d, p, table)
 
 
@@ -1019,13 +982,13 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
     Boschloo exact test, we can assert three different null hypotheses :
 
-    - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
 
-    - :math:`H_0 : p_1 \leq p_2` versus :math:`H_1 : p_1 > p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 > p_2`,
       with `alternative` = "greater"
 
-    - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
+    - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
     Boschloo's exact test uses the p-value of Fisher's exact test as a
@@ -1143,7 +1106,11 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         raise ValueError(msg)
 
     fisher_stat = pvalues[table[0, 0], table[0, 1]]
-    index_arr = pvalues <= fisher_stat
+
+    # fisher_stat * (1+1e-13) guards us from small numerical error. It is
+    # equivalent to np.isclose with relative tol of 1e-13 and absolute tol of 0
+    # For more throughout explanations, see gh-14178
+    index_arr = pvalues <= fisher_stat * (1+1e-13)
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)

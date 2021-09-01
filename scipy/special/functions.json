@@ -696,8 +696,8 @@
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
-        "specfun_wrappers.h": {
-            "chyp2f1_wrap": "dddD->D"
+        "_hyp2f1.pxd": {
+            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
