@@ -190,7 +190,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             if self.init_scale == "auto":
                 scale = self._auto_scale(delta_x, delta_grad)
             else:
-                scale = float(self.init_scale)
+                scale = self.init_scale
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
                 self.B *= scale
@@ -253,7 +253,7 @@ class BFGS(FullHessianUpdateStrategy):
         unaffected by the exception strategy. By default is equal to
         1e-8 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damp_update'``.
-    init_scale : {float, 'auto'}
+    init_scale : {float, np.array, 'auto'}
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
@@ -384,7 +384,7 @@ class SR1(FullHessianUpdateStrategy):
         defines the minimum denominator magnitude allowed
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
-    init_scale : {float, 'auto'}, optional
+    init_scale : {float, np.array, 'auto'}, optional
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
