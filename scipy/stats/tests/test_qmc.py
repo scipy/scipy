@@ -212,11 +212,10 @@ class TestUtils:
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
     def test_perm_discrepancy(self):
-        qmc_gen = qmc.LatinHypercube(5)
+        rng = np.random.default_rng(46449423132557934943847369749645759997)
+        qmc_gen = qmc.LatinHypercube(5, seed=rng)
         sample = qmc_gen.random(10)
         disc = qmc.discrepancy(sample)
-
-        rng = np.random.default_rng(46449423132557934943847369749645759997)
 
         for i in range(100):
             row_1 = rng.integers(10)
