@@ -179,11 +179,12 @@ def register_backend(backend):
     ...     __ua_domain__ = "numpy.scipy.ndimage"
     ...     def __ua_function__(self, func, args, kwargs):
     ...          return NotImplemented
-    >>> set_global_backend(NoopBackend())  # Set the invalid backend as global
+    >>> # Set the invalid backend as global and try first
+    >>> set_global_backend(NoopBackend(), try_last=False, coerce=False)
     >>> register_backend("scipy")  # Register a new backend
     >>> # The registered backend is called because
     >>> # the global backend returns `NotImplemented`
-    >>> correlate(np.arange(10), [1, 2.5])
+    >>> correlate(np.arange(10), np.array([1, 2.5]))
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> set_global_backend("scipy")  # Restore global backend to default
 
