@@ -15,7 +15,7 @@
  */
 
 
-#include <Python.h>
+#include <numpy/npy_common.h>
 
 #include <stdio.h>
 #include <math.h>
