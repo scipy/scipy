@@ -9,10 +9,12 @@ body:
       value: Thank you for taking the time to file a bug report.
   - type: markdown
     attributes:
-        value: Please fill in the fields below, deleting the sections that don't apply to your issue.
-  - type: markdown
+        value: Before continuing, please check the issue tracker for existing issues and the [development documentation](https://scipy.github.io/devdocs/index.html). Your issue could be already fixed on the development version. If you have an installation problem, make sure that you are following the [latest installation recommendations](https://scipy.github.io/devdocs/dev/contributor/contributor_toc.html#development-environment).
+  - type: textarea
     attributes:
-        value: You can view the final output by clicking the preview button above.
+      label: Describe your issue.
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Reproducing Code Example
