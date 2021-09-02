@@ -232,12 +232,6 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert self.funccalls <= 58
         assert self.gradcalls == 0
 
-        # Ensure that the function behaves the same; this is from SciPy 1.21.1
-        assert_allclose(self.trace[6:8],
-                        [[-1.490116e-08, -1.e-01,  1e-01],
-                         [0, -1e-01,  1e-01]],
-                        atol=1e-14, rtol=1e-7)
-
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
