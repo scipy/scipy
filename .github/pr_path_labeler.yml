@@ -1,26 +1,31 @@
 # Labeler triggered by .github/workflows/labels.yml
 
 github:
-- any: [".github/**/*", "!.github/workflows"]
+- any: [".github/**/*", "!.github/workflows/**/*"]
 
 CI:
-- any: ["**/*.yml", "**/*.yaml"]
+- any: ["**/*.yml"]
+- any: ["**/*.yaml"]
 
-gitpod: **/*gitpod*
+gitpod:
+- any: [".gitpod.yml"]
+- any: ["tools/docker_dev/gitpod.Dockerfile"]
 
 Documentation:
-- any: ["**/*.rst", "**/*.md"]
+- any: ["**/*.rst"]
+- any: ["**/*.md"]
 
 Benchmarks: benchmarks/**/*
 
 C/C++:
-- any: ["**/*.c", "**/*.cpp", "**/*.cxx", "**/*.h"]
+- any: ["**/*.c"]
+- any: ["**/*.cpp"]
+- any: ["**/*.cxx"]
+- any: ["**/*.h"]
 
-Cython:
-- **/*.pyx
+Cython: "**/*.pyx"
 
-Fortran:
-- **/*.f
+Fortran: "**/*.f"
 
 scipy.cluster: scipy/cluster/**/*
 scipy.constants: scipy/constants/**/*
