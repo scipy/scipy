@@ -75,69 +75,74 @@ class PytestTester:
 
 class _TestPythranFunc:
     '''
-    Inherit from this class to generate a bunch of relevant test cases
+    These are situations that can be tested in our pythran tests:
+    - A function with multiple array arguments and then
+      other positional and keyword arguments.
+    - A function with array-like keywords (e.g. `def somefunc(x0, x1=None)`.
+    Note: list/tuple input is not yet tested!
+
+    `self.arguments`: A dictionary which key is the index of the argument,
+                      value is tuple(array value, all supported dtypes)
+    `self.partialfunc`: A function used to freeze some non-array argument
+                        that of no interests in the original function
     '''
-    ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64]
+    ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64, np.intc, np.intp]
     ALL_FLOAT = [np.float32, np.float64]
     ALL_COMPLEX = [np.complex64, np.complex128]
 
     def setup_method(self):
-        self.dtypes = []
-        self.arguments = []
-        self.index = []
+        self.arguments = {}
+        self.partialfunc = None
         self.expected = None
-        self.func = None
 
     def get_optional_args(self, func):
         # get optional arguments with its default value,
-        # get the index of the first optional argument
+        # used for testing keywords
         signature = inspect.signature(func)
         optional_args = {}
-        first_optional_arg_idx = None
-        for i, (k, v) in enumerate(signature.parameters.items()):
+        for k, v in signature.parameters.items():
             if v.default is not inspect.Parameter.empty:
                 optional_args[k] = v.default
-                if first_optional_arg_idx is None:
-                    first_optional_arg_idx = i
-        return optional_args, first_optional_arg_idx
+        return optional_args
+
+    def get_max_dtype_list_length(self):
+        # get the the max supported dtypes list length in all arguments
+        max_len = 0
+        for arg_idx in self.arguments:
+            cur_len = len(self.arguments[arg_idx][1])
+            if cur_len > max_len:
+                max_len = cur_len
+        return max_len
+
+    def get_dtype(self, dtype_list, dtype_idx):
+        # get the dtype from dtype_list via index
+        # if the index is out of range, then return the last dtype
+        if dtype_idx > len(dtype_list)-1:
+            return dtype_list[-1]
+        else:
+            return dtype_list[dtype_idx]
 
     def test_all_dtypes(self):
-        for dtype in self.dtypes:
-            # keep a copy of self.arguments to avoid in-place modify
-            test_array = self.arguments.copy()
-            for idx in self.index:
-                test_array[idx] = test_array[idx].astype(dtype)
-            self.pythranfunc(*test_array)
+        for type_idx in range(self.get_max_dtype_list_length()):
+            args_array = []
+            for arg_idx in self.arguments:
+                new_dtype = self.get_dtype(self.arguments[arg_idx][1],
+                                           type_idx)
+                args_array.append(self.arguments[arg_idx][0].astype(new_dtype))
+            self.pythranfunc(*args_array)
 
     def test_views(self):
-        # keep a copy of self.arguments to avoid in-place modify
-        test_array = self.arguments.copy()
-        for idx in self.index:
-            # make sure the viewed array stored the same value as before
-            test_array[idx] = test_array[idx][::-1][::-1]
-        self.pythranfunc(*test_array)
+        args_array = []
+        for arg_idx in self.arguments:
+            args_array.append(self.arguments[arg_idx][0][::-1][::-1])
+        self.pythranfunc(*args_array)
 
     def test_strided(self):
-        # keep a copy of self.arguments to avoid in-place modify
-        test_array = self.arguments.copy()
-        for idx in self.index:
-            # make sure the strided array stored the same value as before
-            test_array[idx] = np.repeat(test_array[idx], 2, axis=0)[::2]
-        self.pythranfunc(*test_array)
-
-    def test_keywords(self):
-        optional_args, optional_arg0_idx = self.get_optional_args(self.func)
-        # if the tested function don't have optional arguments
-        if optional_arg0_idx is None:
-            return True
-        default_args_keys = optional_args.keys()
-        all_args = inspect.getfullargspec(self.func).args
-        # assign predefined self.arguments values to some optional arguments,
-        # to make sure the function's input value is always the same
-        for idx in self.index:
-            if all_args[idx] in default_args_keys:
-                optional_args[all_args[idx]] = self.arguments[idx]
-        self.pythranfunc(*self.arguments[:optional_arg0_idx], **optional_args)
+        args_array = []
+        for arg_idx in self.arguments:
+            args_array.append(np.repeat(self.arguments[arg_idx][0],
+                                        2, axis=0)[::2])
+        self.pythranfunc(*args_array)
 
 
 def _pytest_has_xdist():
