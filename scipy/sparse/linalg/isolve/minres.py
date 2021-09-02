@@ -137,6 +137,11 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     elif beta1 == 0:
         return (postprocess(x), 0)
 
+    bnorm = norm(b)
+    if bnorm == 0:
+        x = b
+        return (postprocess(x), 0)
+
     beta1 = sqrt(beta1)
 
     if check:

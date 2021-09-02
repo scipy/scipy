@@ -369,6 +369,9 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     # These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
     u = b
     bnorm = np.linalg.norm(b)
+    if bnorm == 0:
+        x = b
+        return (postprocess(x), 0)
     if x0 is None:
         x = np.zeros(n)
         beta = bnorm.copy()

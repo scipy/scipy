@@ -292,6 +292,9 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
+    if b_norm == 0:
+        x = b
+        return (postprocess(x), 0)
 
     if discard_C:
         CU[:] = [(None, u) for c, u in CU]
