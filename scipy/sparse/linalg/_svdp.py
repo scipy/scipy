@@ -173,20 +173,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         the error bounds on the singular values sigma, returned only if
         ``full_output=True``.
 
-    Examples
-    --------
-    >>> from scipy.sparse.linalg import svd
-    >>> A = np.random.random((10, 20))
-    >>> u, sigma, vt = svd(A, 3, solver='propack')
-    >>> np.set_printoptions(precision=3, suppress=True)
-    >>> print(abs(np.dot(u.T, u)))
-    [[ 1.  0.  0.]
-     [ 0.  1.  0.]
-     [ 0.  0.  1.]]
-    >>> print(abs(np.dot(vt, vt.T)))
-    [[ 1.  0.  0.]
-     [ 0.  1.  0.]
-     [ 0.  0.  1.]]
     """
     # 32-bit complex PROPACK functions have Fortran LAPACK ABI
     # incompatibility issues
