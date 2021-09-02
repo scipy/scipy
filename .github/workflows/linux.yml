@@ -37,7 +37,7 @@ jobs:
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip 'setuptools<58.5' wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2==2.1.0rc1 pythran
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2==2.1.0rc1 pythran threadpoolctl
           python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy

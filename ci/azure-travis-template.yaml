@@ -68,6 +68,7 @@ steps:
     pip install ${{parameters.other_spec}}
     cython
     gmpy2==2.1.0rc1
+    threadpoolctl
     mpmath
     pythran
     pybind11
