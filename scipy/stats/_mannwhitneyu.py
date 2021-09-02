@@ -186,7 +186,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
     that the distribution underlying sample `x` is the same as the
     distribution underlying sample `y`. It is often used as a test of
-    of difference in location between distributions.
+    difference in location between distributions.
 
     Parameters
     ----------
