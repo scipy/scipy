@@ -32,8 +32,9 @@ def entropy(pk: np.typing.ArrayLike,
     Parameters
     ----------
     pk : array_like
-        Defines the (discrete) distribution. ``pk[i]`` is the (possibly
-        unnormalized) probability of event ``i``.
+        Defines the (discrete) distribution. Along each axis-slice of ``pk``,
+        element ``i`` is the  (possibly unnormalized) probability of event
+        ``i``.
     qk : array_like, optional
         Sequence against which the relative entropy is computed. Should be in
         the same format as `pk`.
