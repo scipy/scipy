@@ -436,7 +436,7 @@ class HBFile:
         if hb_info is None:
             self._hb_info = HBInfo.from_file(file)
         else:
-            #raise IOError("file %s is not writable, and hb_info "
+            #raise OSError("file %s is not writable, and hb_info "
             #              "was given." % file)
             self._hb_info = hb_info
 

@@ -211,10 +211,12 @@ class TestLinsolve:
         b = np.arange(20)
 
         try:
-            # should either raise a runtimeerror or return value
-            # appropriate for singular input
-            x = spsolve(A, b)
-            assert_(not np.isfinite(x).any())
+            # should either raise a runtime error or return value
+            # appropriate for singular input (which yields the warning)
+            with suppress_warnings() as sup:
+                sup.filter(MatrixRankWarning, "Matrix is exactly singular")
+                x = spsolve(A, b)
+            assert not np.isfinite(x).any()
         except RuntimeError:
             pass
 

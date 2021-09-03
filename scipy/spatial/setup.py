@@ -70,7 +70,6 @@ def configuration(parent_package='', top_path=None):
                        'distance_base.h',
                        'distance.h',
                        'ordered_pair.h',
-                       'partial_sort.h',
                        'rectangle.h']
 
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
@@ -89,7 +88,8 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[
                              get_numpy_include_dirs(),
                              join(dirname(dirname(__file__)), '_lib')],
-                         extra_info=get_misc_info("npymath"))
+                         extra_info=get_misc_info("npymath"),
+                         **numpy_nodepr_api)
 
     distance_pybind_includes = [
         pybind11.get_include(True),

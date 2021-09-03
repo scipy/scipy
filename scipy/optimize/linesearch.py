@@ -64,16 +64,7 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
 
     """
     if gfk is None:
-        gfk = fprime(xk)
-
-    if isinstance(fprime, tuple):
-        eps = fprime[1]
-        fprime = fprime[0]
-        newargs = (f, eps) + args
-        gradient = False
-    else:
-        newargs = args
-        gradient = True
+        gfk = fprime(xk, *args)
 
     gval = [gfk]
     gc = [0]
@@ -84,11 +75,8 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         return f(xk + s*pk, *args)
 
     def derphi(s):
-        gval[0] = fprime(xk + s*pk, *newargs)
-        if gradient:
-            gc[0] += 1
-        else:
-            fc[0] += len(xk) + 1
+        gval[0] = fprime(xk + s*pk, *args)
+        gc[0] += 1
         return np.dot(gval[0], pk)
 
     derphi0 = np.dot(gfk, pk)
@@ -286,23 +274,13 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         fc[0] += 1
         return f(xk + alpha * pk, *args)
 
-    if isinstance(myfprime, tuple):
-        def derphi(alpha):
-            fc[0] += len(xk) + 1
-            eps = myfprime[1]
-            fprime = myfprime[0]
-            newargs = (f, eps) + args
-            gval[0] = fprime(xk + alpha * pk, *newargs)  # store for later use
-            gval_alpha[0] = alpha
-            return np.dot(gval[0], pk)
-    else:
-        fprime = myfprime
+    fprime = myfprime
 
-        def derphi(alpha):
-            gc[0] += 1
-            gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
-            gval_alpha[0] = alpha
-            return np.dot(gval[0], pk)
+    def derphi(alpha):
+        gc[0] += 1
+        gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
+        gval_alpha[0] = alpha
+        return np.dot(gval[0], pk)
 
     if gfk is None:
         gfk = fprime(xk, *args)

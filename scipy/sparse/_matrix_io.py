@@ -88,7 +88,7 @@ def load_npz(file):
 
     Raises
     ------
-    IOError
+    OSError
         If the input file does not exist or cannot be read.
 
     See Also
