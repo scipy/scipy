@@ -35,6 +35,7 @@ References
 
 cimport cython
 from numpy cimport npy_cdouble
+from libc.stdint cimport uint64_t, UINT64_MAX
 from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
 
 from . cimport sf_error
@@ -48,10 +49,6 @@ from ._complexstuff cimport (
     zpack,
     zpow,
 )
-
-
-cdef extern from "limits.h":
-    cdef int INT_MAX
 
 
 cdef extern from "numpy/npy_math.h":
@@ -80,8 +77,8 @@ cdef inline double complex hyp2f1_complex(
         double a, double b, double c, double complex z
 ) nogil:
     cdef:
-        int num_terms
         double modulus_z
+        double max_degree
         double complex result
         bint a_neg_int, b_neg_int, c_non_pos_int
         bint c_minus_a_neg_int, c_minus_b_neg_int
@@ -160,11 +157,11 @@ cdef inline double complex hyp2f1_complex(
             max_degree = fabs(a) - 1
         else:
             max_degree = fabs(b) - 1
-        if max_degree <= INT_MAX:
+        if max_degree <= UINT64_MAX:
             # This cast is OK because we've ensured max_degree will fit into
             # an int.
             return hyp2f1_series(
-                a, b, c, z, <int> max_degree, False, 0
+                a, b, c, z, <uint64_t> max_degree, False, 0
             )
         else:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
@@ -173,12 +170,18 @@ cdef inline double complex hyp2f1_complex(
     # a polynomial through an Euler hypergeometric transformation.
     # (DLMF 15.8.1)
     if c_minus_a_neg_int or c_minus_b_neg_int:
-        num_terms = (
-            <int> fabs(c - b) if c_minus_b_neg_int else <int> fabs(c - a)
+        max_degree = (
+            fabs(c - b) if c_minus_b_neg_int else fabs(c - a)
         )
-        result = zpow(1 - z, c - a - b)
-        result *= hyp2f1_series(c - a, c - b, c, z, num_terms, False, 0)
-        return result
+        if max_degree <= UINT64_MAX:
+            result = zpow(1 - z, c - a - b)
+            result *= hyp2f1_series(
+                c - a, c - b, c, z, <uint64_t> max_degree, False, 0
+            )
+            return result
+        else:
+            sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
+            return zpack(NPY_NAN, NPY_NAN)
     # |z| < 0, real(z) >= 0. Use defining Taylor series.
     # --------------------------------------------------------------------------
     if modulus_z < 0.9 and z.real >= 0:
@@ -207,7 +210,7 @@ cdef inline double complex hyp2f1_series(
         double b,
         double c,
         double complex z,
-        int max_degree,
+        uint64_t max_degree,
         bint early_stop,
         double rtol,
 ) nogil:
