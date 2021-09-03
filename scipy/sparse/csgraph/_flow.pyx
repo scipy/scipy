@@ -757,7 +757,7 @@ def minimum_cost_flow(csgraph, demand, cost):
 
     .. [1] Orlin, J.B. A polynomial time primal network simplex algorithm
            for minimum cost flows. Mathematical Programming 78,
-           109–129 (1997).
+           109-129 (1997).
     .. [2] https://en.wikipedia.org/wiki/Network_simplex_algorithm#Applications
 
     Examples
@@ -1071,9 +1071,9 @@ cdef void _find_cycle(
                               parent_edge,
                               WnR, WeR)
     for idx in range(We_len//2):
-        We[idx],  We[We_len - idx - 1] = We[We_len - idx - 1], We[idx]
+        We[idx], We[We_len - idx - 1] = We[We_len - idx - 1], We[idx]
     for idx in range(Wn_len//2):
-        Wn[idx],  Wn[Wn_len - idx - 1] = Wn[Wn_len - idx - 1], Wn[idx]
+        Wn[idx], Wn[Wn_len - idx - 1] = Wn[Wn_len - idx - 1], Wn[idx]
     if ((We_len == 1 and We[0] != i) or We_len != 1):
         We[We_len] = i
         We_len += 1
