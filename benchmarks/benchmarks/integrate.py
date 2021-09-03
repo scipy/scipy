@@ -111,4 +111,5 @@ class Quad(Benchmark):
         quad(self.f_ctypes, 0, np.pi)
 
     def time_quad_cffi(self):
-        quad(self.f_cffi, 0, np.pi)
+        if cffi is not None:
+            quad(self.f_cffi, 0, np.pi)
