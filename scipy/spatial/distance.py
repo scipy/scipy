@@ -279,12 +279,9 @@ def _validate_pdist_input(X, m, n, metric_info, **kwargs):
 def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     V = kwargs.pop('V', None)
     if V is None:
-        print(X)
         if isinstance(X, tuple):
             X = np.vstack(X)
-        print(X, X.shape)
         V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
-        print(V)
     else:
         V = np.asarray(V, order='c')
         if len(V.shape) != 1:
