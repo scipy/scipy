@@ -1,7 +1,7 @@
 # Makefile for Sphinx documentation
 
 # If `python3` doesn't point to the Python you want to use (with Sphinx installed),
-# then you can use, e.g., `make html PYTHON=python3.7` to specify a Python executable
+# then you can use, e.g., `make html PYTHON=python3.9` to specify a Python executable
 PYTHON = python3
 
 # You can set these variables from the command line.
@@ -56,7 +56,7 @@ UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
 GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
-				print(git_version()[:10])")
+				print(git_version()[0][:10])")
 
 version-check:
 ifeq "$(GITVER)" "Unknown"

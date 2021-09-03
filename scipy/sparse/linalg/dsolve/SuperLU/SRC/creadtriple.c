@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
+Lawrence Berkeley National Laboratory (subject to receipt of any required
+approvals from U.S. Dept. of Energy)
 
-All rights reserved. 
+All rights reserved.
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -37,7 +37,7 @@ creadtriple(int *m, int *n, int *nonz,
     int    j, k, jsize, nnz, nz;
     complex *a, *val;
     int    *asub, *xa, *row, *col;
-    int    zero_base = 0;
+    int    zero_base = 0, s_count = 0;
 
     /*  Matrix format:
      *    First line:  #rows, #cols, #non-zero
@@ -45,7 +45,8 @@ creadtriple(int *m, int *n, int *nonz,
      *                 row, col, value
      */
 
-    scanf("%d%d", n, nonz);
+    s_count = scanf("%d%d", n, nonz);
+		check_read(s_count);
     *m = *n;
     printf("m %d, n %d, nonz %d\n", *m, *n, *nonz);
     callocateA(*n, *nonz, nzval, rowind, colptr); /* Allocate storage */
@@ -61,8 +62,8 @@ creadtriple(int *m, int *n, int *nonz,
 
     /* Read into the triplet array from a file */
     for (nnz = 0, nz = 0; nnz < *nonz; ++nnz) {
-	scanf("%d%d%f%f\n", &row[nz], &col[nz], &val[nz].r, &val[nz].i);
-
+	s_count = scanf("%d%d%f%f\n", &row[nz], &col[nz], &val[nz].r, &val[nz].i);
+	check_read(s_count);
         if ( nnz == 0 ) { /* first nonzero */
 	    if ( row[0] == 0 || col[0] == 0 ) {
 		zero_base = 1;
@@ -71,7 +72,7 @@ creadtriple(int *m, int *n, int *nonz,
 		printf("triplet file: row/col indices are one-based.\n");
         }
 
-        if ( !zero_base ) { 
+        if ( !zero_base ) {
  	  /* Change to 0-based indexing. */
 	  --row[nz];
 	  --col[nz];
@@ -99,7 +100,7 @@ creadtriple(int *m, int *n, int *nonz,
 	jsize = xa[j];
 	xa[j] = k;
     }
-    
+
     /* Copy the triplets into the column oriented storage */
     for (nz = 0; nz < *nonz; ++nz) {
 	j = col[nz];
@@ -135,15 +136,17 @@ creadtriple(int *m, int *n, int *nonz,
 void creadrhs(int m, complex *b)
 {
     FILE *fp, *fopen();
-    int i;
+    int i, f_count = 0;
     /*int j;*/
 
     if ( !(fp = fopen("b.dat", "r")) ) {
         fprintf(stderr, "dreadrhs: file does not exist\n");
 	exit(-1);
     }
-    for (i = 0; i < m; ++i)
-      fscanf(fp, "%f%f\n", &b[i].r, &b[i].i);
+    for (i = 0; i < m; ++i) {
+      f_count = fscanf(fp, "%f%f\n", &b[i].r, &b[i].i);
+			check_read(f_count);
+		}
 
     /*        readpair_(j, &b[i]);*/
     fclose(fp);

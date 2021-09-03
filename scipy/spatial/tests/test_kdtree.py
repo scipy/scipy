@@ -873,7 +873,7 @@ def test_kdtree_build_modes(kdtree_type):
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
     try:
-        import cPickle as pickle
+        import cPickle as pickle  # type: ignore[import]
     except ImportError:
         import pickle
     np.random.seed(0)
@@ -1247,23 +1247,24 @@ def test_kdtree_duplicated_inputs(kdtree_type):
     # check kdtree with duplicated inputs
     n = 1024
     for m in range(1, 8):
-        data = np.concatenate([
-            np.full((n // 2, m), 1),
-            np.full((n // 2, m), 2)], axis=0)
+        data = np.ones((n, m))
+        data[n//2:] = 2
 
-        # it shall not divide more than 3 nodes.
-        # root left (1), and right (2)
-        kdtree = kdtree_type(data, leafsize=1)
-        assert_equal(kdtree.size, 3)
+        for balanced, compact in itertools.product((False, True), repeat=2):
+            kdtree = kdtree_type(data, balanced_tree=balanced,
+                                 compact_nodes=compact, leafsize=1)
+            assert kdtree.size == 3
 
-        kdtree = kdtree_type(data)
-        assert_equal(kdtree.size, 3)
+            tree = (kdtree.tree if kdtree_type is cKDTree else
+                    kdtree.tree._node)
 
-        # if compact_nodes are disabled, the number
-        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
-        # and the root
-        kdtree = kdtree_type(data, compact_nodes=False, leafsize=1)
-        assert_equal(kdtree.size, n + m * 2 - 1)
+            assert_equal(
+                np.sort(tree.lesser.indices),
+                np.arange(0, n // 2))
+            assert_equal(
+                np.sort(tree.greater.indices),
+                np.arange(n // 2, n))
+
 
 def test_kdtree_noncumulative_nondecreasing(kdtree_type):
     # check kdtree with duplicated inputs
@@ -1386,7 +1387,7 @@ def test_kdtree_empty_input(kdtree_type, balanced_tree, compact_nodes):
     assert M.shape == (0, 0)
 
 @KDTreeTest
-class _Test_sorted_query_ball_point(object):
+class _Test_sorted_query_ball_point:
     def setup_method(self):
         np.random.seed(1234)
         self.x = np.random.randn(100, 1)
@@ -1479,3 +1480,27 @@ def test_kdtree_attributes():
     assert_array_equal(t.maxes, np.amax(points, axis=0))
     assert_array_equal(t.mins, np.amin(points, axis=0))
     assert t.data is points
+
+
+@pytest.mark.parametrize("kdtree_class", [KDTree, cKDTree])
+def test_kdtree_count_neighbors_weighted(kdtree_class):
+    np.random.seed(1234)
+    r = np.arange(0.05, 1, 0.05)
+
+    A = np.random.random(21).reshape((7,3))
+    B = np.random.random(45).reshape((15,3))
+
+    wA = np.random.random(7)
+    wB = np.random.random(15)
+
+    kdA = kdtree_class(A)
+    kdB = kdtree_class(B)
+
+    nAB = kdA.count_neighbors(kdB, r, cumulative=False, weights=(wA,wB))
+
+    # Compare against brute-force
+    weights = wA[None, :] * wB[:, None]
+    dist = np.linalg.norm(A[None, :, :] - B[:, None, :], axis=-1)
+    expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
+              for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
+    assert_allclose(nAB, expect)

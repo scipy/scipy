@@ -22,7 +22,7 @@ TERMINATION_MESSAGES = {
 }
 
 
-class HessianLinearOperator(object):
+class HessianLinearOperator:
     """Build LinearOperator from hessp"""
     def __init__(self, hessp, n):
         self.hessp = hessp
@@ -35,7 +35,7 @@ class HessianLinearOperator(object):
         return LinearOperator((self.n, self.n), matvec=matvec)
 
 
-class LagrangianHessian(object):
+class LagrangianHessian:
     """The Hessian of the Lagrangian as LinearOperator.
 
     The Lagrangian is computed as the objective function plus all the

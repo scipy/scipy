@@ -7,8 +7,30 @@ Statistical functions (:mod:`scipy.stats`)
 
 .. currentmodule:: scipy.stats
 
-This module contains a large number of probability distributions as
-well as a growing library of statistical functions.
+This module contains a large number of probability distributions,
+summary and frequency statistics, correlation functions and statistical
+tests, masked statistics, kernel density estimation, quasi-Monte Carlo
+functionality, and more.
+
+Statistics is a very large area, and there are topics that are out of scope
+for SciPy and are covered by other packages. Some of the most important ones
+are:
+
+- `statsmodels <https://www.statsmodels.org/stable/index.html>`__:
+  regression, linear models, time series analysis, extensions to topics
+  also covered by ``scipy.stats``.
+- `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
+  functionality, interfaces to other statistical languages.
+- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+  modeling, probabilistic machine learning.
+- `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
+  model selection.
+- `Seaborn <https://seaborn.pydata.org/>`__: statistical data visualization.
+- `rpy2 <https://rpy2.github.io/>`__: Python to R bridge.
+
+
+Probability distributions
+=========================
 
 Each univariate distribution is an instance of a subclass of `rv_continuous`
 (`rv_discrete` for discrete distributions):
@@ -21,7 +43,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
    rv_histogram
 
 Continuous distributions
-========================
+------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -61,6 +83,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
@@ -82,6 +105,7 @@ Continuous distributions
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
+   laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
    levy_l
    levy_stable
@@ -110,7 +134,9 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
+   studentized_range    -- Studentized Range
    t                 -- Student's T
    trapezoid         -- Trapezoidal
    triang            -- Triangular
@@ -126,7 +152,7 @@ Continuous distributions
    wrapcauchy        -- Wrapped Cauchy
 
 Multivariate distributions
-==========================
+--------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -145,31 +171,33 @@ Multivariate distributions
    multivariate_hypergeom -- Multivariate hypergeometric distribution
 
 Discrete distributions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
 
-   bernoulli         -- Bernoulli
-   betabinom         -- Beta-Binomial
-   binom             -- Binomial
-   boltzmann         -- Boltzmann (Truncated Discrete Exponential)
-   dlaplace          -- Discrete Laplacian
-   geom              -- Geometric
-   hypergeom         -- Hypergeometric
-   logser            -- Logarithmic (Log-Series, Series)
-   nbinom            -- Negative Binomial
-   nhypergeom        -- Negative Hypergeometric
-   planck            -- Planck (Discrete Exponential)
-   poisson           -- Poisson
-   randint           -- Discrete Uniform
-   skellam           -- Skellam
-   zipf              -- Zipf
-   yulesimon         -- Yule-Simon
+   bernoulli                -- Bernoulli
+   betabinom                -- Beta-Binomial
+   binom                    -- Binomial
+   boltzmann                -- Boltzmann (Truncated Discrete Exponential)
+   dlaplace                 -- Discrete Laplacian
+   geom                     -- Geometric
+   hypergeom                -- Hypergeometric
+   logser                   -- Logarithmic (Log-Series, Series)
+   nbinom                   -- Negative Binomial
+   nchypergeom_fisher       -- Fisher's Noncentral Hypergeometric
+   nchypergeom_wallenius    -- Wallenius's Noncentral Hypergeometric
+   nhypergeom               -- Negative Hypergeometric
+   planck                   -- Planck (Discrete Exponential)
+   poisson                  -- Poisson
+   randint                  -- Discrete Uniform
+   skellam                  -- Skellam
+   yulesimon                -- Yule-Simon
+   zipf                     -- Zipf (Zeta)
+   zipfian                  -- Zipfian
 
-An overview of statistical functions is given below.
-Several of these functions have a similar version in
-`scipy.stats.mstats` which work for masked arrays.
+An overview of statistical functions is given below.  Many of these functions
+have a similar version in `scipy.stats.mstats` which work for masked arrays.
 
 Summary statistics
 ==================
@@ -201,8 +229,10 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   differential_entropy
    median_absolute_deviation
    median_abs_deviation
+   bootstrap
 
 Frequency statistics
 ====================
@@ -230,11 +260,13 @@ Correlation functions
    :toctree: generated/
 
    f_oneway
+   alexandergovern
    pearsonr
    spearmanr
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    siegelslopes
    theilslopes
@@ -252,6 +284,7 @@ Statistical tests
    ttest_rel
    chisquare
    cramervonmises
+   cramervonmises_2samp
    power_divergence
    kstest
    ks_1samp
@@ -267,6 +300,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   page_trend_test
 
 .. autosummary::
    :toctree: generated/
@@ -278,6 +312,7 @@ Statistical tests
    anderson
    anderson_ksamp
    binom_test
+   binomtest
    fligner
    median_test
    mood
@@ -285,8 +320,29 @@ Statistical tests
    kurtosistest
    normaltest
 
+
+Quasi-Monte Carlo
+=================
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.qmc
+
+
+Masked statistics functions
+===========================
+
+.. toctree::
+
+   stats.mstats
+
+
+Other statistical functionality
+===============================
+
 Transformations
-===============
+---------------
 
 .. autosummary::
    :toctree: generated/
@@ -305,7 +361,7 @@ Transformations
    zscore
 
 Statistical distances
-=====================
+---------------------
 
 .. autosummary::
    :toctree: generated/
@@ -313,16 +369,19 @@ Statistical distances
    wasserstein_distance
    energy_distance
 
-Random variate generation
-=========================
+Random variate generation / CDF Inversion
+=========================================
 
 .. autosummary::
    :toctree: generated/
 
    rvs_ratio_uniforms
+   NumericalInverseHermite
+   TransformedDensityRejection
+   DiscreteAliasUrn
 
 Circular statistical functions
-==============================
+------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -332,18 +391,23 @@ Circular statistical functions
    circstd
 
 Contingency table functions
-===========================
+---------------------------
 
 .. autosummary::
    :toctree: generated/
 
    chi2_contingency
+   contingency.crosstab
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
+   contingency.association
    fisher_exact
+   barnard_exact
+   boschloo_exact
 
 Plot-tests
-==========
+----------
 
 .. autosummary::
    :toctree: generated/
@@ -354,25 +418,16 @@ Plot-tests
    boxcox_normplot
    yeojohnson_normplot
 
-
-Masked statistics functions
-===========================
-
-.. toctree::
-
-   stats.mstats
-
-
 Univariate and multivariate kernel density estimation
-=====================================================
+-----------------------------------------------------
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
 
-Warnings used in :mod:`scipy.stats`
-===================================
+Warnings / Errors used in :mod:`scipy.stats`
+--------------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -382,19 +437,28 @@ Warnings used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
-
-For many more stat related functions install the software R and the
-interface package rpy.
+   UNURANError
 
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
-from .contingency import chi2_contingency
+from . import qmc
 from ._multivariate import *
+from . import contingency
+from .contingency import chi2_contingency
+from ._bootstrap import bootstrap
+from ._entropy import *
+from ._hypotests import *
+from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from ._unuran import *  # noqa
+from ._page_trend_test import page_trend_test
+from ._mannwhitneyu import mannwhitneyu
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

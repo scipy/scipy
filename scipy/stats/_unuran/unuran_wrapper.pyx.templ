@@ -1,0 +1,1163 @@
+# cython: language_level=3
+
+
+# Expression below is replaced by ``DEF NPY_OLD = True`` for NumPy < 1.19
+# and ``DEF NPY_OLD = False`` for NumPy >= 1.19.
+DEF NPY_OLD = isNPY_OLD
+
+
+cimport cython
+from cpython.object cimport PyObject
+cimport numpy as np
+IF not NPY_OLD:
+    from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
+    from numpy.random cimport bitgen_t
+from scipy._lib.ccallback cimport ccallback_t
+from scipy._lib.messagestream cimport MessageStream
+from .unuran cimport *
+import threading
+import functools
+import numpy as np
+from scipy.stats._distn_infrastructure import argsreduce
+from scipy._lib._util import check_random_state
+
+
+__all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn']
+
+
+cdef extern from "Python.h":
+    PyObject *PyErr_Occurred()
+
+
+# Internal API for handling Python callbacks.
+# TODO: Maybe, support ``LowLevelCallable``s in the future?
+cdef extern from "unuran_callback.h":
+    int init_unuran_callback(ccallback_t *callback, fcn) except -1
+    int release_unuran_callback(ccallback_t *callback) except -1
+
+    double pdf_thunk(double x, const unur_distr *distr) nogil
+    double dpdf_thunk(double x, const unur_distr *distr) nogil
+    double cont_cdf_thunk(double x, const unur_distr *distr) nogil
+    double pmf_thunk(int x, const unur_distr *distr) nogil
+    double discr_cdf_thunk(int x, const unur_distr *distr) nogil
+
+    void error_handler(const char *objid, const char *file,
+                       int line, const char *errortype,
+                       int unur_errno, const char *reason) nogil
+
+
+class UNURANError(RuntimeError):
+    """Raised when an error occurs in the UNU.RAN library."""
+    pass
+
+
+IF not NPY_OLD:
+    cdef object get_numpy_rng(object seed = None):
+        """
+        Create a NumPy Generator object from a given seed.
+
+        Parameters
+        ----------
+        seed : object, optional
+            Seed for the generator. If None, no seed is set. The seed can be
+            an integer, Generator, or RandomState.
+
+        Returns
+        -------
+        numpy_rng : object
+            An instance of NumPy's Generator class.
+        """
+        seed = check_random_state(seed)
+        if isinstance(seed, np.random.RandomState):
+            return np.random.default_rng(seed._bit_generator)
+        return seed
+ELSE:
+    ctypedef double (*URNG_FUNCT)(void *) nogil
+
+    cdef object get_numpy_rng(object seed = None):
+        """
+        Create a NumPy RandomState object from a given seed. If the seed is
+        is an instance of `np.random.Generator`, it is returned as-is.
+
+        Parameters
+        ----------
+        seed : object, optional
+            Seed for the generator. If None, no seed is set. The seed can be
+            an integer, Generator, or RandomState.
+
+        Returns
+        -------
+        numpy_rng : object
+            An instance of NumPy's RandomState or Generator class.
+        """
+        return check_random_state(seed)
+
+
+@cython.final
+cdef class _URNG:
+    """
+    Build a UNU.RAN's uniform random number generator from a NumPy random
+    number generator.
+
+    Parameters
+    ----------
+    numpy_rng : object
+        An instance of NumPy's Generator or RandomState class. i.e. a NumPy
+        random number generator.
+    """
+    cdef object numpy_rng
+
+    def __init__(self, numpy_rng):
+        self.numpy_rng = numpy_rng
+
+    IF NPY_OLD:
+        cdef double _next_double(self) nogil:
+            with gil:
+                return self.numpy_rng.uniform()
+
+    cdef unur_urng * get_urng(self) except *:
+        """
+        Get a ``unur_urng`` object from given ``numpy_rng``.
+
+        Returns
+        -------
+        unuran_urng : unur_urng *
+            A UNU.RAN uniform random number generator.
+        """
+        cdef unur_urng *unuran_urng
+        IF NPY_OLD:
+            unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_double,
+                                        <void *>self)
+            return unuran_urng
+        ELSE:
+            cdef:
+                bitgen_t *numpy_urng
+                const char *capsule_name = "BitGenerator"
+
+            capsule = self.numpy_rng.bit_generator.capsule
+
+            if not PyCapsule_IsValid(capsule, capsule_name):
+                raise ValueError("Invalid pointer to anon_func_state.")
+
+            numpy_urng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+            unuran_urng = unur_urng_new(numpy_urng.next_double,
+                                        <void *>(numpy_urng.state))
+
+            return unuran_urng
+
+
+# Module level lock. This is used to provide thread-safe error reporting.
+# UNU.RAN has a thread-unsafe global FILE streams where errors are logged.
+# To make it thread-safe, one can aquire a lock before calling
+# `unur_set_stream` and release once the stream is not needed anymore.
+cdef object _lock = threading.Lock()
+
+cdef:
+    unur_urng *default_urng
+    object default_numpy_rng
+    _URNG _urng_builder
+
+
+cdef object _setup_unuran():
+    """
+    Sets the default UNU.RAN uniform random number generator and error
+    handler.
+    """
+    global default_urng
+    global default_numpy_rng
+    global _urng_builder
+
+    default_numpy_rng = get_numpy_rng()
+
+    cdef MessageStream _messages = MessageStream()
+
+    _lock.acquire()
+    try:
+        unur_set_stream(_messages.handle)
+        # try to set a default URNG.
+        try:
+            _urng_builder = _URNG(default_numpy_rng)
+            default_urng = _urng_builder.get_urng()
+            if default_urng == NULL:
+                raise UNURANError(_messages.get())
+        except Exception as e:
+            msg = "Failed to initialize the default URNG."
+            raise RuntimeError(msg) from e
+    finally:
+        _lock.release()
+
+    unur_set_default_urng(default_urng)
+    unur_set_error_handler(error_handler)
+
+
+_setup_unuran()
+
+
+cdef dict _unpack_dist(object dist, str dist_type, list meths,
+                       list optional_meths = None):
+    """
+    Get the required methods/attributes from a Python class or object.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a Python class or an object with required methods.
+    dist_type : str
+        Type of the distribution. "cont" for continuous distribution
+        and "discr" for discrete distribution.
+    meths : list
+        A list of methods to get from `dist`.
+    optional_meths : list, optional
+        A list of optional methods to be returned if found. No error
+        is raised if some of the methods in this list are not found.
+
+    Returns
+    -------
+    callbacks : dict
+        A dictionary of callbacks (methods found).
+
+    Raises
+    ------
+    ValueError
+        A ValueError is raised in case some methods in the `meths` list
+        are not found.
+    """
+    cdef dict callbacks = {}
+    for meth in meths:
+        if hasattr(dist, meth):
+            callbacks[meth] = getattr(dist, meth)
+        else:
+            msg = f"`{meth}` required but not found."
+            raise ValueError(msg)
+    if optional_meths is not None:
+        for meth in optional_meths:
+            if hasattr(dist, meth):
+                callbacks[meth] = getattr(dist, meth)
+    return callbacks
+
+
+cdef void _pack_distr(unur_distr *distr, dict callbacks) except *:
+    """
+    Set the methods of a continuous or discrete distribution object
+    using a dictionary of callbacks.
+
+    Parameters
+    ----------
+    distr : unur_distr *
+        A continuous or discrete distribution object.
+    callbacks : dict
+        A dictionary of callbacks.
+    """
+    if unur_distr_is_cont(distr):
+        if "pdf" in callbacks:
+            unur_distr_cont_set_pdf(distr, pdf_thunk)
+        if "dpdf" in callbacks:
+            unur_distr_cont_set_dpdf(distr, dpdf_thunk)
+        if "cdf" in callbacks:
+            unur_distr_cont_set_cdf(distr, cont_cdf_thunk)
+    else:
+        if "pmf" in callbacks:
+            unur_distr_discr_set_pmf(distr, pmf_thunk)
+        if "cdf" in callbacks:
+            unur_distr_discr_set_cdf(distr, discr_cdf_thunk)
+
+
+def _validate_domain(domain, dist):
+    if domain is None and hasattr(dist, 'support'):
+        # if the distribution has a support method, use it
+        # to get the domain.
+        domain = dist.support()
+    if domain is not None:
+        # UNU.RAN doesn't recognize nans in the probability vector
+        # and throws an "unknown error". Hence, check for nans ourselves
+        if np.isnan(domain).any():
+            raise ValueError("`domain` must contain only non-nan values.")
+        # Length of the domain must be exactly 2.
+        if len(domain) != 2:
+            raise ValueError("`domain` must be a length 2 tuple.")
+        # Throw an error here if it can't be converted into a tuple.
+        domain = tuple(domain)
+    return domain
+
+
+cdef double[::1] _validate_pv(pv) except *:
+    cdef double[::1] pv_view = None
+    if pv is not None:
+        # Make sure the PV is a contiguous array of doubles.
+        pv = pv_view = np.ascontiguousarray(pv, dtype=np.float64)
+        # Empty arrays not allowed.
+        if pv.size == 0:
+            raise ValueError("probability vector must contain at least "
+                             "one element.")
+        # NaNs and infs not recognized by UNU.RAN so throw an error here
+        # only.
+        if not np.isfinite(pv).all():
+            raise ValueError("probability vector must contain only "
+                             "finite / non-nan values.")
+        # This special case is not handled by UNU.RAN and it just throws
+        # an "unknown error".
+        if (pv == 0).all():
+            raise ValueError("probability vector must contain at least "
+                             "one non-zero value.")
+    # return a contiguous memory view of the PV
+    return pv_view
+
+
+cdef class Method:
+    """
+    A base class for all the wrapped generators.
+
+    There are 6 basic functions of this base class:
+
+    * It provides a `_set_rng` method to initialize and set a `unur_gen`
+      object. It should be called during the setup stage in the `__cinit__`
+      method. As it uses MessageStream, the call must be protected under
+      the module-level lock.
+    * `_check_errorcode` must be called after calling a UNU.RAN function
+      that returns a error code. It raises an error if an error has
+      occurred in UNU.RAN.
+    * It implements the `rvs` public method for sampling. No child class
+      should override this method.
+    * Provides a `set_random_state` method to change the seed.
+    * Implements the __dealloc__ method. The child class must not overide
+      this method.
+    * Implements __reduce__ method to allow pickling.
+
+    """
+    cdef unur_distr *distr
+    cdef unur_par *par
+    cdef unur_gen *rng
+    cdef unur_urng *urng
+    cdef object numpy_rng
+    cdef _URNG _urng_builder
+    cdef object callbacks
+    cdef object _callback_wrapper
+    cdef MessageStream _messages
+    # save all the arguments to enable pickling
+    cdef object _kwargs
+
+    cdef inline void _check_errorcode(self, int errorcode) except *:
+        # check for non-zero errorcode
+        if errorcode != UNUR_SUCCESS:
+            msg = self._messages.get()
+            # the message must be non-empty whenever an error occurs in UNU.RAN.
+            # if the message is empty, means a warning was raised.
+            if msg:
+                raise UNURANError(msg)
+
+    cdef inline void _set_rng(self, object random_state) except *:
+        """
+        Create a UNU.RAN random number generator.
+
+        Parameters
+        ----------
+        random_state : object
+            Seed for the uniform random number generator. Can be a integer,
+            Generator, or RandomState.
+        """
+        cdef ccallback_t callback
+        self.numpy_rng = get_numpy_rng(random_state)
+        self._urng_builder = _URNG(self.numpy_rng)
+        self.urng = self._urng_builder.get_urng()
+        if self.urng == NULL:
+            raise UNURANError(self._messages.get())
+        self._check_errorcode(unur_set_urng(self.par, self.urng))
+        try:
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
+            self.rng = unur_init(self.par)
+            # set self.par = NULL because a call to `unur_init` destroys
+            # the parameter object. See "Creating a generator object" in
+            # http://statmath.wu.ac.at/software/unuran/doc/unuran.html#Concepts
+            self.par = NULL
+            if self.rng == NULL:
+                if PyErr_Occurred():
+                    return
+                raise UNURANError(self._messages.get())
+            unur_distr_free(self.distr)
+            self.distr = NULL
+        finally:
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _rvs_cont(self, double[::1] out) except *:
+        """
+        Sample random variates from a continuous distribution.
+
+        Parameters
+        ----------
+        out : double[::1]
+            A memory view of size ``size`` to store the result.
+        """
+        cdef:
+            ccallback_t callback
+            unur_gen *rng = self.rng
+            size_t i
+            size_t size = len(out)
+
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
+            for i in range(size):
+                out[i] = unur_sample_cont(rng)
+                if PyErr_Occurred():
+                    return
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+        finally:
+            _lock.release()
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _rvs_discr(self, int[::1] out) except *:
+        """
+        Sample random variates from a discrete distribution.
+
+        Parameters
+        ----------
+        out : int[::1]
+            A memory view of size ``size`` to store the result.
+        """
+        cdef:
+            ccallback_t callback
+            unur_gen *rng = self.rng
+            size_t i
+            size_t size = len(out)
+
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+
+            if self._callback_wrapper is not None:
+                init_unuran_callback(&callback, self._callback_wrapper)
+            for i in range(size):
+                out[i] = unur_sample_discr(rng)
+                if PyErr_Occurred():
+                    return
+            msg = self._messages.get()
+            if msg:
+                raise UNURANError(msg)
+        finally:
+            _lock.release()
+            if self._callback_wrapper is not None:
+                release_unuran_callback(&callback)
+
+    def rvs(self, size=None):
+        """
+        rvs(size=None)
+
+        Sample from the distribution.
+
+        Parameters
+        ----------
+        size : int or tuple, optional
+            The shape of samples. Default is ``None`` in which case a scalar
+            sample is returned.
+
+        Returns
+        -------
+        rvs : array_like
+            A NumPy array of random variates.
+        """
+        cdef double[::1] out_cont
+        cdef int[::1] out_discr
+        N = 1 if size is None else np.prod(size)
+        if unur_distr_is_cont(unur_get_distr(self.rng)):
+            out_cont = np.empty(N, dtype=np.float64)
+            self._rvs_cont(out_cont)
+            if size is None:
+                return out_cont[0]
+            return np.asarray(out_cont).reshape(size)
+        elif unur_distr_is_discr(unur_get_distr(self.rng)):
+            out_discr = np.empty(N, dtype=np.int32)
+            self._rvs_discr(out_discr)
+            if size is None:
+                return out_discr[0]
+            return np.asarray(out_discr).reshape(size)
+        else:
+            raise NotImplementedError("only univariate continuous and "
+                                      "discrete distributions supported")
+
+    def set_random_state(self, random_state=None):
+        """
+        set_random_state(random_state=None)
+
+        Set the underlying uniform random number generator.
+
+        Parameters
+        ----------
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            A NumPy random number generator or seed for the underlying NumPy random
+            number generator used to generate the stream of uniform random numbers.
+            If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used,
+            seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
+        """
+        self.numpy_rng = get_numpy_rng(random_state)
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            unur_urng_free(self.urng)
+            self._urng_builder = _URNG(self.numpy_rng)
+            self.urng = self._urng_builder.get_urng()
+            if self.urng == NULL:
+                raise UNURANError(self._messages.get())
+            unur_chg_urng(self.rng, self.urng)
+        finally:
+            _lock.release()
+
+    @cython.final
+    def __dealloc__(self):
+        if self.distr != NULL:
+            unur_distr_free(self.distr)
+            self.distr = NULL
+        if self.par != NULL:
+            unur_par_free(self.par)
+            self.par = NULL
+        if self.rng != NULL:
+            unur_free(self.rng)
+            self.rng = NULL
+        if self.urng != NULL:
+            unur_urng_free(self.urng)
+            self.urng = NULL
+
+    # Pickling support
+    @cython.final
+    def __reduce__(self):
+        klass = functools.partial(self.__class__, **self._kwargs)
+        return (klass, ())
+
+
+cdef class TransformedDensityRejection(Method):
+    r"""
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
+
+    Transformed Density Rejection (TDR) Method.
+
+    TDR is an acceptance/rejection method that uses the concavity of a
+    transformed density to construct hat function and squeezes automatically.
+    Most universal algorithms are very slow compared to algorithms that are
+    specialized to that distribution. Algorithms that are fast have a slow
+    setup and require large tables. The aim of this universal method is to
+    provide an algorithm that is not too slow and needs only a short setup.
+    This method can be applied to univariate and unimodal continuous
+    distributions with T-concave density function. See [1]_ and [2]_ for
+    more details.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a class with ``pdf`` and ``dpdf`` methods.
+
+        * ``pdf``: PDF of the distribution. The signature of the PDF is
+          expected to be: ``def pdf(self, x: float) -> float``. i.e.
+          the PDF should accept a Python float and the parameters and
+          return a Python float. It doesn't need to integrate to 1 i.e.
+          the PDF doesn't need to be normalized.
+        * ``dpdf``: Derivative of the PDF w.r.t x (i.e. the variate). Must
+          have the same signature as the PDF.
+
+    mode : float, optional
+        (Exact) Mode of the distribution. Default is ``None``.
+    center : float, optional
+        Approximate location of the mode or the mean of the distribution.
+        This location provides some information about the main part of the
+        PDF and is used to avoid numerical problems. Default is ``None``.
+    domain : list or tuple of length 2, optional
+        The support of the distribution. Must not contain `nan` values.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
+    c : {-0.5, 0.}, optional
+        Set parameter ``c`` for the transformation function ``T``. The
+        default is -0.5. The transformation of the PDF must be concave in
+        order to construct the hat function. Such a PDF is called T-concave.
+        Currently the following transformations are supported:
+
+        .. math::
+
+            c = 0.: T(x) &= \log(x)\\
+            c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
+
+    construction_points : int or array_like, optional
+        If an integer, it defines the number of construction points. If it
+        is array-like, the elements of the array are used as construction
+        points. Default is 30.
+    variant : {'ps', 'gw', 'ia'}, optional
+        The variant to use. The default is 'ps'.
+        Three variants of this method are available:
+
+        * GW: squeezes between construction points, see [3]_.
+        * PS: squeezes proportional to hat function. (Default)
+        * IA: same as variant PS but uses a composition method with
+          "immediate acceptance" in the region below the squeeze.
+
+    use_dars : bool, optional
+        If True, "derandomized adaptive rejection sampling" (DARS) is used
+        in setup. See [1]_ for the details of the DARS algorithm. Default
+        is True.
+    max_squeeze_hat_ratio : float, optional
+        Set upper bound for the ratio (area below squeeze) / (area below hat).
+        It must be a number between 0 and 1. Default is 0.99.
+    max_intervals : int, optional
+        Set maximum number of intervals. Default is 100.
+    guide_factor : float, optional
+        Set factor for relative size of the guide table for indexed search.
+        It must be greater than or equal to 0. When set to 0, then sequential
+        search is used. Default is 2.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    References
+    ----------
+    .. [1] UNU.RAN reference manual, Section 5.3.16,
+           "TDR - Transformed Density Rejection",
+           http://statmath.wu.ac.at/software/unuran/doc/unuran.html#TDR
+    .. [2] Hörmann, Wolfgang. "A rejection technique for sampling from
+           T-concave distributions." ACM Transactions on Mathematical
+           Software (TOMS) 21.2 (1995): 182-193
+    .. [3] W.R. Gilks and P. Wild (1992). Adaptive rejection sampling for
+           Gibbs sampling, Applied Statistics 41, pp. 337-348.
+
+    Examples
+    --------
+    >>> from scipy.stats import TransformedDensityRejection
+
+    Suppose we have a density:
+
+    .. math::
+
+        f(x) = \begin{cases}
+                1 - x^2,  &  -1 \leq x \leq 1 \\
+                0,        &  \text{otherwise}
+               \end{cases}
+
+    The derivative of this density function is:
+
+    .. math::
+
+        \frac{df(x)}{dx} = \begin{cases}
+                            -2x,  &  -1 \leq x \leq 1 \\
+                            0,    &  \text{otherwise}
+                           \end{cases}
+
+    Notice that the PDF doesn't integrate to 1. As this is a rejection based
+    method, we need not have a normalized PDF. To initialize the generator,
+    we can use:
+
+    >>> urng = np.random.default_rng()
+    >>> class MyDist:
+    ...     def pdf(self, x):
+    ...         return 1-x*x
+    ...     def dpdf(self, x):
+    ...         return -2*x
+    ... 
+    >>> dist = MyDist()
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1),
+    ...                                   random_state=urng)
+
+    Domain can be very useful to truncate the distribution but to avoid passing
+    it everytime to the constructor, a default domain can be set by providing a
+    `support` method in the distribution object (`dist`):
+
+    >>> class MyDist:
+    ...     def pdf(self, x):
+    ...         return 1-x*x
+    ...     def dpdf(self, x):
+    ...         return -2*x
+    ...     def support(self):
+    ...         return (-1, 1)
+    ... 
+    >>> dist = MyDist()
+    >>> rng = TransformedDensityRejection(dist, random_state=urng)
+
+    Now, we can use the `rvs` method to generate samples from the distribution:
+
+    >>> rvs = rng.rvs(1000)
+
+    We can check that the samples are from the given distribution by visualizing
+    its histogram:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-1, 1, 1000)
+    >>> fx = 3/4 * dist.pdf(x)  # 3/4 is the normalizing constant
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Transformed Density Rejection Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
+    To use the log transformation with 10 construction points and the
+    immediate acceptance variant of the method, do:
+
+    >>> rng = TransformedDensityRejection(dist, c=0., construction_points=10,
+    ...                                   variant='ia', random_state=urng)
+    >>> rvs = rng.rvs(1000)
+    """
+    cdef double[::1] construction_points_array
+
+    def __cinit__(self,
+                  dist,
+                  mode=None,
+                  center=None,
+                  *,
+                  domain=None,
+                  c=-0.5,
+                  construction_points=30,
+                  variant="ps",
+                  use_dars=True,
+                  max_squeeze_hat_ratio=0.99,
+                  max_intervals=100,
+                  guide_factor=2,
+                  random_state=None):
+        (domain, c, construction_points, variant) = self._validate_args(dist, domain, c, construction_points, variant)
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'mode': mode,
+            'center': center,
+            'domain': domain,
+            'c': c,
+            'construction_points': construction_points,
+            'variant': variant,
+            'use_dars': use_dars,
+            'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
+            'max_intervals': max_intervals,
+            'guide_factor': guide_factor,
+            'random_state': random_state
+        }
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
+        self._callback_wrapper = _callback_wrapper
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+            if center is not None:
+                self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
+            self.par = unur_tdr_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+            self._check_errorcode(unur_tdr_set_c(self.par, c))
+            if self.construction_points_array is None:
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, construction_points, NULL))
+            else:
+                self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.construction_points_array),
+                                                           &self.construction_points_array[0]))
+
+            if variant == "ps":
+                self._check_errorcode(unur_tdr_set_variant_ps(self.par))
+            elif variant == "ia":
+                self._check_errorcode(unur_tdr_set_variant_ia(self.par))
+            elif variant == "gw":
+                self._check_errorcode(unur_tdr_set_variant_gw(self.par))
+
+            self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
+            self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_squeeze_hat_ratio))
+            self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
+            self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain, c, construction_points, variant):
+        domain = _validate_domain(domain, dist)
+        if c not in {-0.5, 0.}:
+            raise ValueError("`c` must either be -0.5 or 0.")
+        if variant not in {"ps", "gw", "ia"}:
+            raise ValueError("Invalid option for the `variant`.")
+        if not np.isscalar(construction_points):
+            self.construction_points_array = np.ascontiguousarray(construction_points,
+                                                                  dtype=np.float64)
+            if len(self.construction_points_array) == 0:
+                raise ValueError("`construction_points` must either be a scalar or a "
+                                 "non-empty array.")
+        else:
+            self.construction_points_array = None
+            if (construction_points <= 0 or
+                construction_points != int(construction_points)):
+                raise ValueError("`construction_points` must be a positive integer.")
+
+        return domain, c, construction_points, variant
+
+    @property
+    def squeeze_hat_ratio(self):
+        """
+        Get the current ratio (area below squeeze) / (area below hat) for the
+        generator.
+        """
+        return unur_tdr_get_sqhratio(self.rng)
+
+    @property
+    def hat_area(self):
+        """Get the area below the hat for the generator."""
+        return unur_tdr_get_hatarea(self.rng)
+
+    @property
+    def squeeze_area(self):
+        """Get the area below the squeeze for the generator."""
+        return unur_tdr_get_squeezearea(self.rng)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _ppf_hat(self, const double *u, double *out, size_t N) except *:
+        cdef:
+            size_t i
+        for i in range(N):
+            out[i] = unur_tdr_eval_invcdfhat(self.rng, u[i], NULL, NULL, NULL)
+
+    def ppf_hat(self, u):
+        """
+        ppf_hat(u)
+
+        Evaluate the inverse of the CDF of the hat distribution at `u`.
+
+        This call does not work for variant IA (immediate acceptance).
+        In this case the hat CDF is evaluated as if variant PS is used.
+
+        Parameters
+        ----------
+        u : array_like
+            An array of percentiles
+
+        Returns
+        -------
+        ppf_hat : array_like
+            Array of quantiles corresponding to the given percentiles.
+
+        Examples
+        --------
+        >>> from scipy.stats import TransformedDensityRejection
+        >>> from scipy.stats import norm
+        >>> from math import exp
+        >>> 
+        >>> class MyDist:
+        ...     def pdf(self, x):
+        ...         return exp(-0.5 * x**2)
+        ...     def dpdf(self, x):
+        ...         return -x * exp(-0.5 * x**2)
+        ... 
+        >>> dist = MyDist()
+        >>> rng = TransformedDensityRejection(dist)
+        >>> 
+        >>> rng.ppf_hat(0.5)
+        -0.00018050266342393984
+        >>> norm.ppf(0.5)
+        0.0
+        >>> u = np.linspace(0, 1, num=1000)
+        >>> ppf_hat = rng.ppf_hat(u)
+        """
+        u = np.asarray(u, dtype='d')
+        oshape = u.shape
+        u = u.ravel()
+        # UNU.RAN fills in ends of the support when u < 0 or u > 1 while
+        # SciPy fills in nans. Prefer SciPy behaviour.
+        cond0 = 0 <= u
+        cond1 = u <= 1
+        cond2 = cond0 & cond1
+        goodu = argsreduce(cond2, u)[0]
+        out = np.empty_like(u)
+        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef double[::1] goodout = np.empty_like(u_view)
+        if cond2.any():
+            self._ppf_hat(&u_view[0], &goodout[0], len(goodu))
+        np.place(out, cond2, goodout)
+        np.place(out, ~cond2, np.nan)
+        return np.asarray(out).reshape(oshape)[()]
+
+
+cdef class DiscreteAliasUrn(Method):
+    r"""
+    DiscreteAliasUrn(dist, *, domain=None, urn_factor=1, random_state=None)
+
+    Discrete Alias-Urn Method.
+
+    This method is used to sample from univariate discrete distributions with
+    a finite domain. It uses the probability vector of size :math:`N` or a
+    probability mass function with a finite support to generate random
+    numbers from the distribution.
+
+    Parameters
+    ----------
+    dist : array_like or object, optional
+        Probability vector (PV) of the distribution. If PV isn't available,
+        an instance of a class with a ``pmf`` method is expected. The signature
+        of the PMF is expected to be: ``def pmf(self, k: int) -> float``. i.e. it
+        should accept a Python integer and return a Python float.
+    domain : int, optional
+        Support of the PMF. If a probability vector (``pv``) is not available, a
+        finite domain must be given. i.e. the PMF must have a finite support.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise, the support is assumed to be ``(0, len(pv))``. When this
+          parameter is passed in combination with a probability vector, ``domain[0]``
+          is used to relocate the distribution from ``(0, len(pv))`` to
+          ``(domain[0], domain[0]+len(pv))`` and ``domain[1]`` is ignored. See Notes
+          and tutorial for a more detailed explanation.
+
+    urn_factor : float, optional
+        Size of the urn table *relative* to the size of the probability
+        vector. It must not be less than 1. Larger tables result in faster
+        generation times but require a more expensive setup. Default is 1.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Notes
+    -----
+    This method works when either a finite probability vector is available or
+    the PMF of the distribution is available. In case a PMF is only available,
+    the *finite* support (domain) of the PMF must also be given. It is
+    recommended to first obtain the probability vector by evaluating the PMF
+    at each point in the support and then using it instead.
+
+    If a probability vector is given, it must be a 1-dimensional array of
+    non-negative floats without any ``inf`` or ``nan`` values. Also, there
+    must be at least one non-zero entry otherwise an exception is raised.
+
+    By default, the probability vector is indexed starting at 0. However, this
+    can be changed by passing a ``domain`` parameter. When ``domain`` is given
+    in combination with the PV, it has the effect of relocating the
+    distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
+    ``domain[1]`` is ignored in this case.
+
+    The parameter ``urn_factor`` can be increased for faster generation at the
+    cost of increased setup time. This method uses a table for random
+    variate generation. ``urn_factor`` controls the size of this table
+    relative to the size of the probability vector (or width of the support,
+    in case a PV is not available). As this table is computed during setup
+    time, increasing this parameter linearly increases the time required to
+    setup. It is recommended to keep this parameter under 2.
+
+    References
+    ----------
+    .. [1] UNU.RAN reference manual, Section 5.8.2,
+           "DAU - (Discrete) Alias-Urn method",
+           http://statmath.wu.ac.at/software/unuran/doc/unuran.html#DAU
+    .. [2] A.J. Walker (1977). An efficient method for generating discrete
+           random variables with general distributions, ACM Trans. Math.
+           Software 3, pp. 253-256.
+
+    Examples
+    --------
+    >>> from scipy.stats import DiscreteAliasUrn
+
+    To create a random number generator using a probability vector, use:
+
+    >>> pv = [0.1, 0.3, 0.6]
+    >>> urng = np.random.default_rng()
+    >>> rng = DiscreteAliasUrn(pv, random_state=urng)
+
+    The RNG has been setup. Now, we can now use the `rvs` method to
+    generate samples from the distribution:
+
+    >>> rvs = rng.rvs(size=1000)
+
+    To verify that the random variates follow the given distribution, we can
+    use the chi-squared test (as a measure of goodness-of-fit):
+
+    >>> from scipy.stats import chisquare
+    >>> _, freqs = np.unique(rvs, return_counts=True)
+    >>> freqs = freqs / np.sum(freqs)
+    >>> freqs
+    array([0.092, 0.292, 0.616])
+    >>> chisquare(freqs, pv).pvalue
+    0.9993602047563164
+
+    As the p-value is very high, we fail to reject the null hypothesis that
+    the observed frequencies are the same as the expected frequencies. Hence,
+    we can safely assume that the variates have been generated from the given
+    distribution. Note that this just gives the correctness of the algorithm
+    and not the quality of the samples.
+
+    If a PV is not available, an instance of a class with a PMF method and a
+    finite domain can also be passed.
+
+    >>> urng = np.random.default_rng()
+    >>> class Binomial:
+    ...     def __init__(self, n, p):
+    ...         self.n = n
+    ...         self.p = p
+    ...     def pmf(self, x):
+    ...         # note that the pmf doesn't need to be normalized.
+    ...         return self.p**x * (1-self.p)**(self.n-x)
+    ...     def support(self):
+    ...         return (0, self.n)
+    ... 
+    >>> n, p = 10, 0.2
+    >>> dist = Binomial(n, p)
+    >>> rng = DiscreteAliasUrn(dist, random_state=urng)
+
+    Now, we can sample from the distribution using the `rvs` method
+    and also measure the goodness-of-fit of the samples:
+
+    >>> rvs = rng.rvs(1000)
+    >>> _, freqs = np.unique(rvs, return_counts=True)
+    >>> freqs = freqs / np.sum(freqs)
+    >>> obs_freqs = np.zeros(11)  # some frequencies may be zero.
+    >>> obs_freqs[:freqs.size] = freqs
+    >>> pv = [dist.pmf(i) for i in range(0, 11)]
+    >>> pv = np.asarray(pv) / np.sum(pv)
+    >>> chisquare(obs_freqs, pv).pvalue
+    0.9999999999999999
+
+    To check that the samples have been drawn from the correct distribution,
+    we can visualize the histogram of the samples:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(1000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> x = np.arange(0, n+1)
+    >>> fx = dist.pmf(x)
+    >>> fx = fx / fx.sum()
+    >>> ax.plot(x, fx, 'bo', label='true distribution')
+    >>> ax.vlines(x, 0, fx, lw=2)
+    >>> ax.hist(rvs, bins=np.r_[x, n+1]-0.5, density=True, alpha=0.5,
+    ...         color='r', label='samples')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PMF(x)')
+    >>> ax.set_title('Discrete Alias Urn Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
+    To set the ``urn_factor``, use:
+
+    >>> rng = DiscreteAliasUrn(pv, urn_factor=2, random_state=urng)
+
+    This uses a table twice the size of the probability vector to generate
+    random variates from the distribution.
+    """
+    cdef double[::1] pv_view
+
+    def __cinit__(self,
+                  dist,
+                  *,
+                  domain=None,
+                  urn_factor=1,
+                  random_state=None):
+        cdef double[::1] pv_view
+        (pv_view, domain) = self._validate_args(dist, domain)
+        # increment ref count of pv_view to make sure it doesn't get garbage collected.
+        self.pv_view = pv_view
+        # save all the arguments for pickling support
+        self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'random_state': random_state}
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_discr_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+
+            n_pv = len(pv_view)
+            self._check_errorcode(unur_distr_discr_set_pv(self.distr, &pv_view[0], n_pv))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_discr_set_domain(self.distr, domain[0],
+                                                                  domain[1]))
+
+            self.par = unur_dau_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+            self._check_errorcode(unur_dau_set_urnfactor(self.par, urn_factor))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain):
+        cdef double[::1] pv_view
+
+        domain = _validate_domain(domain, dist)
+        if domain is not None:
+            if not np.isfinite(domain).all():
+                raise ValueError("`domain` must be finite.")
+        else:
+            if hasattr(dist, 'pmf'):
+                raise ValueError("`domain` must be provided when the "
+                                 "probability vector is not available.")
+        if hasattr(dist, 'pmf'):
+            # we assume the PMF accepts and return floats. So, we need
+            # to vectorize it to call with an array of points in the domain.
+            pmf = np.vectorize(dist.pmf)
+            k = np.arange(domain[0], domain[1]+1)
+            pv = pmf(k)
+            try:
+                pv_view = _validate_pv(pv)
+            except ValueError as err:
+                msg = "PMF returned invalid values: " + err.args[0]
+                raise ValueError(msg) from None
+        else:
+            pv_view = _validate_pv(dist)
+
+        return pv_view, domain

@@ -102,7 +102,7 @@ _lsoda_int_dtype = _lsoda.types.intvar.dtype
 # ------------------------------------------------------------------------------
 
 
-class ode(object):
+class ode:
     """
     A generic interface class to numeric integrators.
 
@@ -774,7 +774,7 @@ class IntegratorConcurrencyError(RuntimeError):
         RuntimeError.__init__(self, msg)
 
 
-class IntegratorBase(object):
+class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
@@ -1212,10 +1212,8 @@ class dop853(dopri5):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
-        super(self.__class__, self).__init__(rtol, atol, nsteps, max_step,
-                                             first_step, safety, ifactor,
-                                             dfactor, beta, method,
-                                             verbosity)
+        super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
+                         ifactor, dfactor, beta, method, verbosity)
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)

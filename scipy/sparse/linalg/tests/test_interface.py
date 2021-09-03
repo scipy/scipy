@@ -15,7 +15,7 @@ from scipy.sparse.linalg import interface
 from scipy.sparse.sputils import matrix
 
 
-class TestLinearOperator(object):
+class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
@@ -186,7 +186,7 @@ class TestLinearOperator(object):
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(object):
+class TestAsLinearOperator:
     def setup_method(self):
         self.cases = []
 
@@ -373,7 +373,7 @@ def test_inheritance():
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
-            super(Identity, self).__init__(dtype=None, shape=(n, n))
+            super().__init__(dtype=None, shape=(n, n))
 
         def _matvec(self, x):
             return x
@@ -384,7 +384,7 @@ def test_inheritance():
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
-            super(MatmatOnly, self).__init__(A.dtype, A.shape)
+            super().__init__(A.dtype, A.shape)
             self.A = A
 
         def _matmat(self, x):

@@ -9,6 +9,9 @@ __all__ = ['root']
 
 import numpy as np
 
+ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
+                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
+                'df-sane']
 
 from warnings import warn
 

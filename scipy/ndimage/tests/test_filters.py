@@ -11,7 +11,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import ndimage
-from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
+from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
 
@@ -20,7 +20,8 @@ def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
 
 
-def _complex_correlate(array, kernel, real_dtype, convolve=False):
+def _complex_correlate(array, kernel, real_dtype, convolve=False,
+                       mode="reflect", cval=0, ):
     """Utility to perform a reference complex-valued convolutions.
 
     When convolve==False, correlation is performed instead
@@ -36,40 +37,54 @@ def _complex_correlate(array, kernel, real_dtype, convolve=False):
     if not convolve:
         kernel = kernel.conj()
     if complex_array and complex_kernel:
+        # use: real(cval) for array.real component
+        #      imag(cval) for array.imag component
         output = (
-            func(array.real, kernel.real, output=real_dtype) -
-            func(array.imag, kernel.imag, output=real_dtype) +
-            1j * func(array.imag, kernel.real, output=real_dtype) +
-            1j * func(array.real, kernel.imag, output=real_dtype)
+            func(array.real, kernel.real, output=real_dtype,
+                 mode=mode, cval=numpy.real(cval)) -
+            func(array.imag, kernel.imag, output=real_dtype,
+                 mode=mode, cval=numpy.imag(cval)) +
+            1j * func(array.imag, kernel.real, output=real_dtype,
+                      mode=mode, cval=numpy.imag(cval)) +
+            1j * func(array.real, kernel.imag, output=real_dtype,
+                      mode=mode, cval=numpy.real(cval))
         )
     elif complex_array:
         output = (
-            func(array.real, kernel, output=real_dtype) +
-            1j * func(array.imag, kernel, output=real_dtype)
+            func(array.real, kernel, output=real_dtype, mode=mode,
+                 cval=numpy.real(cval)) +
+            1j * func(array.imag, kernel, output=real_dtype, mode=mode,
+                      cval=numpy.imag(cval))
         )
     elif complex_kernel:
+        # real array so cval is real too
         output = (
-            func(array, kernel.real, output=real_dtype) +
-            1j * func(array, kernel.imag, output=real_dtype)
+            func(array, kernel.real, output=real_dtype, mode=mode, cval=cval) +
+            1j * func(array, kernel.imag, output=real_dtype, mode=mode,
+                      cval=cval)
         )
     return output
 
 
 class TestNdimageFilters:
 
-    def _validate_complex(self, array, kernel, type2):
+    def _validate_complex(self, array, kernel, type2, mode='reflect', cval=0):
         # utility for validating complex-valued correlations
         real_dtype = numpy.asarray([], dtype=type2).real.dtype
         expected = _complex_correlate(
-            array, kernel, real_dtype, convolve=False
+            array, kernel, real_dtype, convolve=False, mode=mode, cval=cval
         )
 
         if array.ndim == 1:
-            correlate = functools.partial(ndimage.correlate1d, axis=-1)
-            convolve = functools.partial(ndimage.convolve1d, axis=-1)
+            correlate = functools.partial(ndimage.correlate1d, axis=-1,
+                                          mode=mode, cval=cval)
+            convolve = functools.partial(ndimage.convolve1d, axis=-1,
+                                         mode=mode, cval=cval)
         else:
-            correlate = ndimage.correlate
-            convolve = ndimage.convolve
+            correlate = functools.partial(ndimage.correlate, mode=mode,
+                                          cval=cval)
+            convolve = functools.partial(ndimage.convolve, mode=mode,
+                                          cval=cval)
 
         # test correlate output dtype
         output = correlate(array, kernel, output=type2)
@@ -84,7 +99,7 @@ class TestNdimageFilters:
         # test convolve output dtype
         output = convolve(array, kernel, output=type2)
         expected = _complex_correlate(
-            array, kernel, real_dtype, convolve=True
+            array, kernel, real_dtype, convolve=True, mode=mode, cval=cval,
         )
         assert_array_almost_equal(expected, output)
         assert_equal(output.dtype.type, type2)
@@ -502,11 +517,51 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
+    def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
+                                           dtype_output, mode):
+        # test use of non-zero cval with complex inputs
+        # also verifies that mode 'grid-constant' does not segfault
+        kernel = numpy.array([[1, 0],
+                              [0, 1 + 1j]], dtype_kernel)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_input)
+        self._validate_complex(array, kernel, dtype_output, mode=mode,
+                               cval=5.0)
+
+    @pytest.mark.parametrize('dtype_kernel', complex_types)
+    @pytest.mark.parametrize('dtype_input', types)
+    def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
+                                                   dtype_kernel):
+        # cannot give complex cval with a real image
+        kernel = numpy.array([[1, 0],
+                              [0, 1 + 1j]], dtype_kernel)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_input)
+        for func in [ndimage.convolve, ndimage.correlate, ndimage.convolve1d,
+                     ndimage.correlate1d]:
+            with pytest.raises(ValueError):
+                func(array, kernel, mode='constant', cval=5.0 + 1.0j,
+                     output=numpy.complex64)
+
+    @pytest.mark.parametrize('dtype_kernel', complex_types)
+    @pytest.mark.parametrize('dtype_input', types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
                                         dtype_output):
         kernel = numpy.array([1, 1 + 1j], dtype_kernel)
         array = numpy.array([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
+
+    @pytest.mark.parametrize('dtype_kernel', complex_types)
+    @pytest.mark.parametrize('dtype_input', types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
+    def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
+                                             dtype_output):
+        kernel = numpy.array([1, 1 + 1j], dtype_kernel)
+        array = numpy.array([1, 2, 3, 4, 5, 6], dtype_input)
+        self._validate_complex(array, kernel, dtype_output, mode='constant',
+                               cval=5.0)
 
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
@@ -528,6 +583,16 @@ class TestNdimageFilters:
         array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
 
+    @pytest.mark.parametrize('dtype_kernel', types)
+    @pytest.mark.parametrize('dtype_input', complex_types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
+    def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
+                                            dtype_output):
+        kernel = numpy.array([1, 0, 1], dtype_kernel)
+        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
+        self._validate_complex(array, kernel, dtype_output, mode='constant',
+                               cval=5 - 3j)
+
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output):
@@ -539,10 +604,30 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    def test_correlate_complex_input_and_kernel_cval(self, dtype,
+                                                     dtype_output):
+        kernel = numpy.array([[1, 0],
+                              [0, 1 + 1j]], dtype)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype)
+        self._validate_complex(array, kernel, dtype_output, mode='constant',
+                               cval=5.0 + 2.0j)
+
+    @pytest.mark.parametrize('dtype', complex_types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output):
         kernel = numpy.array([1, 1 + 1j], dtype)
         array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
         self._validate_complex(array, kernel, dtype_output)
+
+    @pytest.mark.parametrize('dtype', complex_types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
+    def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
+                                                       dtype_output):
+        kernel = numpy.array([1, 1 + 1j], dtype)
+        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
+        self._validate_complex(array, kernel, dtype_output, mode='constant',
+                               cval=5.0 + 2.0j)
 
     def test_gauss01(self):
         input = numpy.array([[1, 2, 3],
@@ -1460,7 +1545,7 @@ def test_gh_5430():
     x = numpy.random.normal(size=(256, 256))
     perlin = numpy.zeros_like(x)
     for i in 2**numpy.arange(6):
-        perlin += ndimage.filters.gaussian_filter(x, i, mode="wrap") * i**2
+        perlin += ndimage.gaussian_filter(x, i, mode="wrap") * i**2
     # This also fixes gh-4106, show that the OPs example now runs.
     x = numpy.int64(21)
     ndimage._ni_support._normalize_sequence(x, 0)
@@ -1736,7 +1821,7 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(object):
+class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]})
@@ -1852,7 +1937,7 @@ def test_rank_filter_noninteger_rank():
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
     arr = numpy.random.random((10, 20, 30))
-    assert_raises(TypeError, rank_filter, arr, 0.5,
+    assert_raises(TypeError, ndimage.rank_filter, arr, 0.5,
                   footprint=numpy.ones((1, 1, 10), dtype=bool))
 
 
@@ -1863,14 +1948,14 @@ def test_size_footprint_both_set():
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
         arr = numpy.random.random((10, 20, 30))
-        rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
+        ndimage.rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
                     dtype=bool))
 
 
 def test_byte_order_median():
     """Regression test for #413: median_filter does not handle bytes orders."""
     a = numpy.arange(9, dtype='<f4').reshape(3, 3)
-    ref = ndimage.filters.median_filter(a, (3, 3))
+    ref = ndimage.median_filter(a, (3, 3))
     b = numpy.arange(9, dtype='>f4').reshape(3, 3)
-    t = ndimage.filters.median_filter(b, (3, 3))
+    t = ndimage.median_filter(b, (3, 3))
     assert_array_almost_equal(ref, t)

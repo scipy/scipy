@@ -431,8 +431,7 @@ class LbfgsInvHessProduct(LinearOperator):
             raise ValueError('sk and yk must have matching shape, (n_corrs, n)')
         n_corrs, n = sk.shape
 
-        super(LbfgsInvHessProduct, self).__init__(
-            dtype=np.float64, shape=(n, n))
+        super().__init__(dtype=np.float64, shape=(n, n))
 
         self.sk = sk
         self.yk = yk

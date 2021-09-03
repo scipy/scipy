@@ -127,8 +127,9 @@ def binned_statistic(x, values, statistic='mean',
     as a function of wind speed, and then determine how fast our boat is for
     certain wind speeds:
 
-    >>> windspeed = 8 * np.random.rand(500)
-    >>> boatspeed = .3 * windspeed**.5 + .2 * np.random.rand(500)
+    >>> rng = np.random.default_rng()
+    >>> windspeed = 8 * rng.random(500)
+    >>> boatspeed = .3 * windspeed**.5 + .2 * rng.random(500)
     >>> bin_means, bin_edges, binnumber = stats.binned_statistic(windspeed,
     ...                 boatspeed, statistic='median', bins=[1,2,3,4,5,6,7])
     >>> plt.figure()
@@ -639,13 +640,15 @@ def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
                            is_callable=False):
     unique_bin_numbers = np.unique(bin_numbers)
     for vv in builtins.range(Vdim):
-        bin_map = _create_binned_data(bin_numbers, unique_bin_numbers, values, vv)
+        bin_map = _create_binned_data(bin_numbers, unique_bin_numbers,
+                                      values, vv)
         for i in unique_bin_numbers:
             # if the stat_func is callable, all results should be updated
             # if the stat_func is np.std, calc std only when binned data is 2
             # or more for speed up.
-            if is_callable or not (stat_func is np.std and len(bin_map[i]) < 2):
-                result[vv, i] = stat_func(bin_map[i])
+            if is_callable or not (stat_func is np.std and
+                                   len(bin_map[i]) < 2):
+                result[vv, i] = stat_func(np.array(bin_map[i]))
 
 
 def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
@@ -694,13 +697,18 @@ def _bin_edges(sample, bins=None, range=None):
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
+    # Preserve sample floating point precision in bin edges
+    edges_dtype = (sample.dtype if np.issubdtype(sample.dtype, np.floating)
+                   else float)
+
     # Create edge arrays
     for i in builtins.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
-            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
+            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1,
+                                   dtype=edges_dtype)
         else:
-            edges[i] = np.asarray(bins[i], float)
+            edges[i] = np.asarray(bins[i], edges_dtype)
             nbin[i] = len(edges[i]) + 1  # +1 for outlier bins
         dedges[i] = np.diff(edges[i])
 

@@ -290,9 +290,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        Should take at least one (possibly length N vector) argument and
-        returns M floating point numbers. It must not return NaNs or
-        fitting might fail.
+        Should take at least one (possibly length ``N`` vector) argument and
+        returns ``M`` floating point numbers. It must not return NaNs or
+        fitting might fail. ``M`` must be greater than or equal to ``N``.
     x0 : ndarray
         The starting estimate for the minimization.
     args : tuple, optional
@@ -411,7 +411,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+        raise TypeError(f"Improper input: func input vector length N={n} must"
+                        f" not exceed func output vector length M={m}")
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
@@ -673,8 +674,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> xdata = np.linspace(0, 4, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
-    >>> np.random.seed(1729)
-    >>> y_noise = 0.2 * np.random.normal(size=xdata.size)
+    >>> rng = np.random.default_rng()
+    >>> y_noise = 0.2 * rng.normal(size=xdata.size)
     >>> ydata = y + y_noise
     >>> plt.plot(xdata, ydata, 'b-', label='data')
 
@@ -682,7 +683,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
     >>> popt
-    array([ 2.55423706,  1.35190947,  0.47450618])
+    array([2.56274217, 1.37268521, 0.47427475])
     >>> plt.plot(xdata, func(xdata, *popt), 'r-',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -691,7 +692,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
     >>> popt
-    array([ 2.43708906,  1.        ,  0.35015434])
+    array([2.43736712, 1.        , 0.34463856])
     >>> plt.plot(xdata, func(xdata, *popt), 'g--',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -779,6 +780,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
+        # if ydata.size == 1, this might be used for broadcast.
+        if ydata.size != 1 and n > ydata.size:
+            raise TypeError(f"The number of func parameters={n} must not"
+                            f" exceed the number of data points={ydata.size}")
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)

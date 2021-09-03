@@ -1,9 +1,15 @@
-[submodule "doc/scipy-sphinx-theme"]
-	path = doc/scipy-sphinx-theme
-	url = https://github.com/scipy/scipy-sphinx-theme.git
 [submodule "doc/sphinxext"]
 	path = doc/sphinxext
 	url = https://github.com/numpy/numpydoc.git
 [submodule "doc/source/_static/scipy-mathjax"]
 	path = doc/source/_static/scipy-mathjax
 	url = https://github.com/scipy/scipy-mathjax.git
+[submodule "scipy/_lib/boost"]
+	path = scipy/_lib/boost
+	url = https://github.com/scipy/boost-headers-only
+	shallow = true
+	active = false
+	ignore = all
+[submodule "scipy/_lib/unuran"]
+	path = scipy/_lib/unuran
+	url = https://github.com/scipy/unuran.git

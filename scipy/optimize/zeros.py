@@ -30,7 +30,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
-class RootResults(object):
+class RootResults:
     """Represents the root finding result.
 
     Attributes
@@ -98,16 +98,23 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
 
-    Find a zero of the function `func` given a nearby starting point `x0`.
+    Find a zero of the scalar-valued function `func` given a nearby scalar
+    starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used. If the second order
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence with more than one item, then `newton` returns an
-    array, and `func` must be vectorized and return a sequence or array of the
-    same shape as its first argument. If `fprime` or `fprime2` is given, then
-    its return must also have the same shape.
+    If `x0` is a sequence with more than one item, `newton` returns an array:
+    the zeros of the function from each (scalar) starting point in `x0`.
+    In this case, `func` must be vectorized to return a sequence or array of
+    the same shape as its first argument. If `fprime` (`fprime2`) is given,
+    then its return must also have the same shape: each element is the first
+    (second) derivative of `func` with respect to its only variable evaluated
+    at each element of its first argument.
+
+    `newton` is for finding roots of a scalar-valued functions of a single
+    variable. For problems involving several variables, see `root`.
 
     Parameters
     ----------
@@ -172,8 +179,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     See Also
     --------
-    brentq, brenth, ridder, bisect
-    fsolve : find zeros in N dimensions.
+    root_scalar : interface to root solvers for scalar functions
+    root : interface to root solvers for multi-input, multi-output functions
 
     Notes
     -----
@@ -236,10 +243,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     >>> f = lambda x, a: x**3 - a
     >>> fder = lambda x, a: 3 * x**2
-    >>> np.random.seed(4321)
-    >>> x = np.random.randn(100)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.standard_normal(100)
     >>> a = np.arange(-50, 50)
-    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
+    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ), maxiter=200)
 
     The above is the equivalent of solving for each value in ``(x, a)``
     separately in a for-loop, just faster:
@@ -888,13 +895,6 @@ def brenth(f, a, b, args=(),
 #  See [1]
 
 
-def _within_tolerance(x, y, rtol, atol):
-    diff = np.abs(x - y)
-    z = np.abs(y)
-    result = (diff <= (atol + rtol * z))
-    return result
-
-
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
     notclosefvals = (
@@ -1033,7 +1033,7 @@ def _newton_quadratic(ab, fab, d, fd, k):
     return r
 
 
-class TOMS748Solver(object):
+class TOMS748Solver:
     """Solve f(x, *args) == 0 using Algorithm748 of Alefeld, Potro & Shi.
     """
     _MU = 0.5
@@ -1121,7 +1121,7 @@ class TOMS748Solver(object):
     def get_status(self):
         """Determine the current status."""
         a, b = self.ab[:2]
-        if _within_tolerance(a, b, self.rtol, self.xtol):
+        if np.isclose(a, b, rtol=self.rtol, atol=self.xtol):
             return _ECONVERGED, sum(self.ab) / 2.0
         if self.iterations >= self.maxiter:
             return _ECONVERR, sum(self.ab) / 2.0

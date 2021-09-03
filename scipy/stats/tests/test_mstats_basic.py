@@ -18,9 +18,9 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
+from scipy.stats import mstats_basic
 
-
-class TestMquantiles(object):
+class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867
         data = np.array([[6., 7., 1.],
@@ -53,7 +53,7 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     assert_equal(x.dtype, dtype)
 
 
-class TestGeoMean(object):
+class TestGeoMean:
     def test_1d(self):
         a = [1, 2, 3, 4]
         desired = np.power(1*2*3*4, 1./4.)
@@ -112,7 +112,7 @@ class TestGeoMean(object):
         check_equal_gmean(np.ma.array(a), desired)
 
 
-class TestHarMean(object):
+class TestHarMean:
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired = 3. / (1./1 + 1./2 + 1./3)
@@ -147,7 +147,7 @@ class TestHarMean(object):
         check_equal_hmean(np.ma.array(a), desired)
 
 
-class TestRanking(object):
+class TestRanking:
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
@@ -169,7 +169,7 @@ class TestRanking(object):
                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
-class TestCorr(object):
+class TestCorr:
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -200,6 +200,16 @@ class TestCorr(object):
         r, p = mstats.pearsonr(x2, y2)
         assert_almost_equal(r, np.sqrt(3)/2)
         assert_almost_equal(p, 1.0/3)
+
+    def test_pearsonr_misaligned_mask(self):
+        mx = np.ma.masked_array([1, 2, 3, 4, 5, 6], mask=[0, 1, 0, 0, 0, 0])
+        my = np.ma.masked_array([9, 8, 7, 6, 5, 9], mask=[0, 0, 1, 0, 0, 0])
+        x = np.array([1, 4, 5, 6])
+        y = np.array([9, 6, 5, 9])
+        mr, mp = mstats.pearsonr(mx, my)
+        r, p = stats.pearsonr(x, y)
+        assert_equal(mr, r)
+        assert_equal(mp, p)
 
     def test_spearmanr(self):
         # Tests some computations of Spearman's rho
@@ -238,6 +248,51 @@ class TestCorr(object):
         res = mstats.spearmanr(x, y)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
+
+    def test_spearmanr_alternative(self):
+        # check against R
+        # options(digits=16)
+        # cor.test(c(2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+        #            1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7),
+        #          c(22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+        #            0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4),
+        #          alternative='two.sided', method='spearman')
+        x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+             1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
+        y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+             0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
+
+        r_exp = 0.6887298747763864  # from cor.test
+
+        r, p = mstats.spearmanr(x, y)
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.004519192910756)
+
+        r, p = mstats.spearmanr(x, y, alternative='greater')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.002259596455378)
+
+        r, p = mstats.spearmanr(x, y, alternative='less')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.9977404035446)
+
+        # intuitive test (with obvious positive correlation)
+        n = 100
+        x = np.linspace(0, 5, n)
+        y = 0.1*x + np.random.rand(n)  # y is positively correlated w/ x
+
+        stat1, p1 = mstats.spearmanr(x, y)
+
+        stat2, p2 = mstats.spearmanr(x, y, alternative="greater")
+        assert_allclose(p2, p1 / 2)  # positive correlation -> small p
+
+        stat3, p3 = mstats.spearmanr(x, y, alternative="less")
+        assert_allclose(p3, 1 - p1 / 2)  # positive correlation -> large p
+
+        assert stat1 == stat2 == stat3
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            mstats.spearmanr(x, y, alternative="ekki-ekki")
 
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
@@ -322,6 +377,15 @@ class TestCorr(object):
                             25, 80, 80, 80, 80, 80, 80, 0, 10, 45, np.nan, 0])
         result = mstats.kendalltau(x, y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
+
+        # test for namedtuple attributes
+        attributes = ('correlation', 'pvalue')
+        check_named_results(result, attributes, ma=True)
+
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
+    @pytest.mark.slow
+    def test_kendalltau_large(self):
         # make sure internal variable use correct precision with
         # larger arrays
         x = np.arange(2000, dtype=float)
@@ -329,11 +393,6 @@ class TestCorr(object):
         y = np.arange(2000, dtype=float)
         y = np.concatenate((y[1000:], y[:1000]))
         assert_(np.isfinite(mstats.kendalltau(x, y)[1]))
-
-        # test for namedtuple attributes
-        res = mstats.kendalltau(x, y)
-        attributes = ('correlation', 'pvalue')
-        check_named_results(res, attributes, ma=True)
 
     def test_kendalltau_seasonal(self):
         # Tests the seasonal Kendall tau.
@@ -347,12 +406,73 @@ class TestCorr(object):
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
 
+    @pytest.mark.parametrize("method", ("exact", "asymptotic"))
+    @pytest.mark.parametrize("alternative", ("two-sided", "greater", "less"))
+    def test_kendalltau_mstats_vs_stats(self, method, alternative):
+        # Test that mstats.kendalltau and stats.kendalltau with
+        # nan_policy='omit' matches behavior of stats.kendalltau
+        # Accuracy of the alternatives is tested in stats/tests/test_stats.py
+
+        np.random.seed(0)
+        n = 50
+        x = np.random.rand(n)
+        y = np.random.rand(n)
+        mask = np.random.rand(n) > 0.5
+
+        x_masked = ma.array(x, mask=mask)
+        y_masked = ma.array(y, mask=mask)
+        res_masked = mstats.kendalltau(
+            x_masked, y_masked, method=method, alternative=alternative)
+
+        x_compressed = x_masked.compressed()
+        y_compressed = y_masked.compressed()
+        res_compressed = stats.kendalltau(
+            x_compressed, y_compressed, method=method, alternative=alternative)
+
+        x[mask] = np.nan
+        y[mask] = np.nan
+        res_nan = stats.kendalltau(
+            x, y, method=method, nan_policy='omit', alternative=alternative)
+
+        assert_allclose(res_masked, res_compressed)
+        assert_allclose(res_nan, res_compressed)
+
+    def test_kendall_p_exact_medium(self):
+        # Test for the exact method with medium samples (some n >= 171)
+        # expected values generated using SymPy
+        expectations = {(100, 2393): 0.62822615287956040664,
+                        (101, 2436): 0.60439525773513602669,
+                        (170, 0): 2.755801935583541e-307,
+                        (171, 0): 0.0,
+                        (171, 1): 2.755801935583541e-307,
+                        (172, 1): 0.0,
+                        (200, 9797): 0.74753983745929675209,
+                        (201, 9656): 0.40959218958120363618}
+        for nc, expected in expectations.items():
+            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            assert_almost_equal(res, expected)
+
+    @pytest.mark.slow
+    def test_kendall_p_exact_large(self):
+        # Test for the exact method with large samples (n >= 171)
+        # expected values generated using SymPy
+        expectations = {(400, 38965): 0.48444283672113314099,
+                        (401, 39516): 0.66363159823474837662,
+                        (800, 156772): 0.42265448483120932055,
+                        (801, 157849): 0.53437553412194416236,
+                        (1600, 637472): 0.84200727400323538419,
+                        (1601, 630304): 0.34465255088058593946}
+
+        for nc, expected in expectations.items():
+            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            assert_almost_equal(res, expected)
+
     def test_pointbiserial(self):
-        x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
-             0,0,0,0,1,-1]
-        y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
-             2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
-             0.8,0.7,0.6,0.5,0.2,0.2,0.1,np.nan]
+        x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+             0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
+        y = [14.8, 13.8, 12.4, 10.1, 7.1, 6.1, 5.8, 4.6, 4.3, 3.5, 3.3, 3.2,
+             3.0, 2.8, 2.8, 2.5, 2.4, 2.3, 2.1, 1.7, 1.7, 1.5, 1.3, 1.3, 1.2,
+             1.2, 1.1, 0.8, 0.7, 0.6, 0.5, 0.2, 0.2, 0.1, np.nan]
         assert_almost_equal(mstats.pointbiserialr(x, y)[0], 0.36149, 5)
 
         # test for namedtuple attributes
@@ -361,7 +481,7 @@ class TestCorr(object):
         check_named_results(res, attributes, ma=True)
 
 
-class TestTrimming(object):
+class TestTrimming:
 
     def test_trim(self):
         a = ma.arange(10)
@@ -460,7 +580,7 @@ class TestTrimming(object):
         assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
-class TestMoments(object):
+class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
@@ -483,6 +603,15 @@ class TestMoments(object):
            [True, True, True, True, True],
            [False, False, True, False, False]], dtype=bool))
 
+    def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
+        expect = np.asarray(expect)
+        if shape is not None:
+            expect = np.broadcast_to(expect, shape)
+        assert_array_equal(actual, expect)
+        if dtype is None:
+            dtype = expect.dtype
+        assert actual.dtype == dtype
+
     def test_moment(self):
         y = mstats.moment(self.testcase,1)
         assert_almost_equal(y,0.0,10)
@@ -493,9 +622,43 @@ class TestMoments(object):
         y = mstats.moment(self.testcase,4)
         assert_almost_equal(y,2.5625)
 
+        # check array_like input for moment
+        y = mstats.moment(self.testcase, [1, 2, 3, 4])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # check moment input consists only of integers
+        y = mstats.moment(self.testcase, 0.0)
+        assert_allclose(y, 1.0)
+        assert_raises(ValueError, mstats.moment, self.testcase, 1.2)
+        y = mstats.moment(self.testcase, [1.0, 2, 3, 4.0])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # test empty input
+        y = mstats.moment([])
+        self._assert_equal(y, np.nan, dtype=np.float64)
+        y = mstats.moment(np.array([], dtype=np.float32))
+        self._assert_equal(y, np.nan, dtype=np.float32)
+        y = mstats.moment(np.zeros((1, 0)), axis=0)
+        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+        y = mstats.moment([[]], axis=1)
+        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+        y = mstats.moment([[]], moment=[0, 1], axis=0)
+        self._assert_equal(y, [], shape=(2, 0))
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(mstats.moment(x, 2), ma.masked)  # NaN value is ignored
+
     def test_variation(self):
         y = mstats.variation(self.testcase)
         assert_almost_equal(y,0.44721359549996, 10)
+
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = np.array([1, 2, 3, 4, 5])
+        y = mstats.variation(a, ddof=1)
+        assert_almost_equal(y, 0.5270462766947299)
 
     def test_skewness(self):
         y = mstats.skew(self.testmathworks)
@@ -584,7 +747,7 @@ class TestMoments(object):
         assert_equal(im, cp)
 
 
-class TestPercentile(object):
+class TestPercentile:
     def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
@@ -605,7 +768,7 @@ class TestPercentile(object):
         assert_equal(mstats.scoreatpercentile(x, 50), [1, 1, 1])
 
 
-class TestVariability(object):
+class TestVariability:
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -637,7 +800,7 @@ class TestVariability(object):
         assert_almost_equal(desired, y, decimal=12)
 
 
-class TestMisc(object):
+class TestMisc:
 
     def test_obrientransform(self):
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -712,17 +875,35 @@ def test_theilslopes():
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.5)
 
+    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
+                                                        method='joint')
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.0)
+
     # Test for correct masking.
     y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
     slope, intercept, lower, upper = mstats.theilslopes(y)
     assert_almost_equal(slope, 1./3)
     assert_almost_equal(intercept, 2./3)
 
+    slope, intercept, lower, upper = mstats.theilslopes(y,
+                                                        method='joint')
+    assert_almost_equal(slope, 1./3)
+    assert_almost_equal(intercept, 0.0)
+
     # Test of confidence intervals from example in Sen (1968).
     x = [1, 2, 3, 4, 10, 12, 18]
     y = [9, 15, 19, 20, 45, 55, 78]
     slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
     assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 4.0)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
+
+    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
+                                                        method='joint')
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 6.0)
     assert_almost_equal(upper, 4.38, decimal=2)
     assert_almost_equal(lower, 3.71, decimal=2)
 
@@ -825,6 +1006,37 @@ class TestNormalitytests():
         x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
         assert_equal(mstats.kurtosistest(x)[1] < 0.01, True)
 
+    @pytest.mark.parametrize("test", ["skewtest", "kurtosistest"])
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, test, alternative):
+        x = stats.norm.rvs(loc=10, scale=2.5, size=30, random_state=123)
+
+        stats_test = getattr(stats, test)
+        mstats_test = getattr(mstats, test)
+
+        z_ex, p_ex = stats_test(x, alternative=alternative)
+        z, p = mstats_test(x, alternative=alternative)
+        assert_allclose(z, z_ex, atol=1e-12)
+        assert_allclose(p, p_ex, atol=1e-12)
+
+        # test with masked arrays
+        x[1:5] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        z_ex, p_ex = stats_test(x.compressed(), alternative=alternative)
+        z, p = mstats_test(x, alternative=alternative)
+        assert_allclose(z, z_ex, atol=1e-12)
+        assert_allclose(p, p_ex, atol=1e-12)
+
+    def test_bad_alternative(self):
+        x = stats.norm.rvs(size=20, random_state=123)
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+
+        with pytest.raises(ValueError, match=msg):
+            mstats.skewtest(x, alternative='error')
+
+        with pytest.raises(ValueError, match=msg):
+            mstats.kurtosistest(x, alternative='error')
+
 
 class TestFOneway():
     def test_result_attributes(self):
@@ -836,42 +1048,52 @@ class TestFOneway():
 
 
 class TestMannwhitneyu():
+    # data from gh-1428
+    x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1., 2.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1.])
+
+    y = np.array([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
+                  2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1.,
+                  1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2.,
+                  2., 1., 1., 2., 1., 1., 2., 1., 2., 1., 1., 1., 1., 2.,
+                  2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                  2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+                  1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
+                  1., 1., 1., 1.])
+
     def test_result_attributes(self):
-        x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1., 2.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1.])
-
-        y = np.array([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
-                      2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1.,
-                      1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2.,
-                      2., 1., 1., 2., 1., 1., 2., 1., 2., 1., 1., 1., 1., 2.,
-                      2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
-                      1., 1., 1., 1.])
-
-        res = mstats.mannwhitneyu(x, y)
+        res = mstats.mannwhitneyu(self.x, self.y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
+
+    def test_against_stats(self):
+        # gh-4641 reported that stats.mannwhitneyu returned half the p-value
+        # of mstats.mannwhitneyu. Default alternative of stats.mannwhitneyu
+        # is now two-sided, so they match.
+        res1 = mstats.mannwhitneyu(self.x, self.y)
+        res2 = stats.mannwhitneyu(self.x, self.y)
+        assert res1.statistic == res2.statistic
+        assert_allclose(res1.pvalue, res2.pvalue)
 
 
 class TestKruskal():
@@ -949,6 +1171,32 @@ class TestTtest_rel():
             assert_array_equal(t, np.array([np.nan, np.nan]))
             assert_array_equal(p, np.array([np.nan, np.nan]))
 
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
+
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=5, size=25, random_state=42)
+        y = stats.norm.rvs(loc=8, scale=2, size=25, random_state=42)
+
+        t_ex, p_ex = stats.ttest_rel(x, y, alternative=alternative)
+        t, p = mstats.ttest_rel(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        y[1:10] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        y = np.ma.masked_array(y, mask=np.isnan(y))
+        t, p = mstats.ttest_rel(x, y, alternative=alternative)
+        t_ex, p_ex = stats.ttest_rel(x.compressed(), y.compressed(),
+                                     alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -1017,6 +1265,32 @@ class TestTtest_ind():
         assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
                                             equal_var=False), (np.nan, np.nan))
 
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
+
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
+        y = stats.norm.rvs(loc=8, scale=2, size=100, random_state=123)
+
+        t_ex, p_ex = stats.ttest_ind(x, y, alternative=alternative)
+        t, p = mstats.ttest_ind(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        y[80:90] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        y = np.ma.masked_array(y, mask=np.isnan(y))
+        t_ex, p_ex = stats.ttest_ind(x.compressed(), y.compressed(),
+                                     alternative=alternative)
+        t, p = mstats.ttest_ind(x, y, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
 
 class TestTtest_1samp():
     def test_vs_nonmasked(self):
@@ -1032,9 +1306,10 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         assert_allclose(res1, res2)
+
         res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
         res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2)
+        assert_allclose(res1, res2, atol=1e-15)
 
         # Check default is axis=0
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
@@ -1073,8 +1348,55 @@ class TestTtest_1samp():
             assert_(np.isnan(t))
             assert_array_equal(p, (np.nan, np.nan))
 
+    def test_bad_alternative(self):
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        with pytest.raises(ValueError, match=msg):
+            mstats.ttest_1samp([1, 2, 3], 4, alternative='foo')
 
-class TestCompareWithStats(object):
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
+        x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
+
+        t_ex, p_ex = stats.ttest_1samp(x, 9, alternative=alternative)
+        t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+        # test with masked arrays
+        x[1:10] = np.nan
+        x = np.ma.masked_array(x, mask=np.isnan(x))
+        t_ex, p_ex = stats.ttest_1samp(x.compressed(), 9,
+                                       alternative=alternative)
+        t, p = mstats.ttest_1samp(x, 9, alternative=alternative)
+        assert_allclose(t, t_ex, rtol=1e-14)
+        assert_allclose(p, p_ex, rtol=1e-14)
+
+
+class TestDescribe:
+    """
+    Tests for mstats.describe.
+
+    Note that there are also tests for `mstats.describe` in the
+    class TestCompareWithStats.
+    """
+    def test_basic_with_axis(self):
+        # This is a basic test that is also a regression test for gh-7303.
+        a = np.ma.masked_array([[0, 1, 2, 3, 4, 9],
+                                [5, 5, 0, 9, 3, 3]],
+                               mask=[[0, 0, 0, 0, 0, 1],
+                                     [0, 0, 1, 1, 0, 0]])
+        result = mstats.describe(a, axis=1)
+        assert_equal(result.nobs, [5, 4])
+        amin, amax = result.minmax
+        assert_equal(amin, [0, 3])
+        assert_equal(amax, [4, 5])
+        assert_equal(result.mean, [2.0, 4.0])
+        assert_equal(result.variance, [2.0, 1.0])
+        assert_equal(result.skewness, [0.0, 0.0])
+        assert_allclose(result.kurtosis, [-1.3, -2.0])
+
+
+class TestCompareWithStats:
     """
     Class to compare mstats results with stats results.
 
@@ -1495,7 +1817,7 @@ class TestCompareWithStats(object):
         assert_equal(result, result2)
 
 
-class TestBrunnerMunzel(object):
+class TestBrunnerMunzel:
     # Data from (Lumley, 1996)
     X = np.ma.masked_invalid([1, 2, 1, 1, 1, np.nan, 1, 1,
                               1, 1, 1, 2, 4, 1, 1, np.nan])

@@ -12,8 +12,11 @@ from . import zeros as optzeros
 
 __all__ = ['root_scalar']
 
+ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
+                       'newton', 'secant', 'halley']
 
-class MemoizeDer(object):
+
+class MemoizeDer:
     """Decorator that caches the value and derivative(s) of function each
     time it is called.
 

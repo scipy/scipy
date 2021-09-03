@@ -1,4 +1,14 @@
 {
+    "_cosine_cdf": {
+        "_cosine.h": {
+            "cosine_cdf": "d->d"
+        }
+    },
+    "_cosine_invcdf": {
+        "_cosine.h": {
+            "cosine_invcdf": "d->d"
+        }
+    },
     "_cospi": {
 	"cephes.h": {
 	    "cospi": "d->d"
@@ -525,7 +535,7 @@
         }
     },
     "expit": {
-        "_logit.h": {
+        "_logit.h++": {
             "expit": "d->d",
             "expitf": "f->f",
             "expitl": "g->g"
@@ -686,8 +696,8 @@
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
-        "specfun_wrappers.h": {
-            "chyp2f1_wrap": "dddD->D"
+        "_hyp2f1.pxd": {
+            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
@@ -919,7 +929,7 @@
         }
     },
     "logit": {
-        "_logit.h": {
+        "_logit.h++": {
             "logit": "d->d",
             "logitf": "f->f",
             "logitl": "g->g"
@@ -1405,8 +1415,18 @@
         }
     },
     "_riemann_zeta": {
-	"cephes.h": {
-	    "riemann_zeta": "d->d"
+        "cephes.h": {
+            "riemann_zeta": "d->d"
+        }
+    },
+    "wright_bessel": {
+        "_wright_bessel.pxd": {
+            "wright_bessel_scalar": "ddd->d"
+        }
+    },
+    "ndtri_exp": {
+	"_ndtri_exp.pxd": {
+	    "ndtri_exp": "d->d"
 	}
     }
 }
