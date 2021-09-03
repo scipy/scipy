@@ -47,12 +47,6 @@ from os.path import dirname, join
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
 
-# WindowsError is not defined on unix systems
-try:
-    WindowsError
-except NameError:
-    WindowsError = None
-
 #
 # Rules
 #
