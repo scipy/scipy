@@ -33,7 +33,7 @@ cdef class MessageStream:
         self.handle = stdio.fopen(self._filename, "wb+")
         if self.handle == NULL:
             stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
+            raise OSError(f"Failed to open file {self._filename}")
         self._removed = 0
 
         # Use a posix-style deleted file, if possible
@@ -65,7 +65,7 @@ cdef class MessageStream:
                 stdio.rewind(self.handle)
                 nread = stdio.fread(buf, 1, pos, self.handle)
                 if nread != <size_t>pos:
-                    raise IOError("failed to read messages from buffer")
+                    raise OSError("failed to read messages from buffer")
 
                 obj = PyBytes_FromStringAndSize(buf, nread)
             finally:
