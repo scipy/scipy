@@ -92,7 +92,7 @@ def test_read_tag():
     r = _make_readerlike(str_io)
     c_reader = m5u.VarReader5(r)
     # This works for StringIO but _not_ cStringIO
-    assert_raises(IOError, c_reader.read_tag)
+    assert_raises(OSError, c_reader.read_tag)
     # bad SDE
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
     tag['byte_count'] = 5

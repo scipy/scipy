@@ -51,7 +51,7 @@ r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 # ------------------------
 
 
-class ArffError(IOError):
+class ArffError(OSError):
     pass
 
 
