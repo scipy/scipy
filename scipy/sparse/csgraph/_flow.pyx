@@ -34,13 +34,12 @@ class MaximumFlowResult:
 
 class MinCostFlowResult:
 
-    def __init__(self, flow_value, residual, flow_cost):
-        self.flow_value = flow_value
+    def __init__(self, residual, flow_cost):
         self.residual = residual
         self.flow_cost = flow_cost
 
     def __repr__(self):
-        return 'MinCostFlowResult with value of %d' % self.flow_value
+        return 'MinCostFlowResult with a cost of %d' % self.flow_cost
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -815,8 +814,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     flow_matrix = csr_matrix((flow_data[0:ns_result.size],
                              (row[0:ns_result.size], col[0:ns_result.size])),
                              shape=(n_verts, n_verts))
-    return MinCostFlowResult(ns_result.flow_value, flow_matrix,
-                             ns_result.flow_cost)
+    return MinCostFlowResult(flow_matrix, ns_result.flow_cost)
 
 
 def _network_simplex_checks(
@@ -910,7 +908,6 @@ ctypedef struct local_vars:
 cdef class network_simplex_result:
     cdef readonly ITYPE_t flow_cost
     cdef readonly ITYPE_t size
-    cdef readonly ITYPE_t flow_value
     cdef readonly bint is_correct
 
 ctypedef struct edge_result:
@@ -1510,10 +1507,8 @@ cdef network_simplex_result _network_simplex(
 
         if ns_result.is_correct:
             flow_cost = 0
-            flow_value = 0
             for i in range(n_edges):
                 flow_cost += edge_weights[i]*edge_flow[i]
-                flow_value += edge_flow[i]
             idx = 0
             for i in range(n_edges):
                 if edge_flow[i] != 0 and edge_capacities[i] != 0:
@@ -1522,6 +1517,5 @@ cdef network_simplex_result _network_simplex(
                     idx += 1
             ns_result.flow_cost = flow_cost
             ns_result.size = idx
-            ns_result.flow_value = flow_value
         # end: with nogil
     return ns_result

@@ -231,7 +231,7 @@ def test_minimum_cost_flow(n_nodes, seed, expected_result):
 
     res = minimum_cost_flow(A.tocsr(), demand, cost)
 
-    assert(res.flow_value == expected_result[0])
+    assert(res.residual.sum() == expected_result[0])
     assert(res.flow_cost == expected_result[1])
 
 
