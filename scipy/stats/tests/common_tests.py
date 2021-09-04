@@ -352,6 +352,7 @@ def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
         distfn.moment(**kwd_shapes)
 
     # First positional argument, no kwd n, and no kwd order
+    # Same as kwd order, no first positional argument n, and no kwd n
     n_shapes = len(shapes)
     if n_shapes:
         message = f"_parse_args() missing {n_shapes} required positional"
@@ -361,6 +362,17 @@ def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
         expected = distfn.mean(**kwd_shapes)
         mean = distfn.moment(1, **kwd_shapes)
         assert_allclose(mean, expected)
+
+    # kwd n, no first positional argument, no kwd order
+    if 'n' not in shapes:  # note that 'n' is not in `kwd_shapes`
+        expected = distfn.mean(**kwd_shapes)
+        with np.testing.assert_warns(DeprecationWarning):
+            mean = distfn.moment(n=1, **kwd_shapes)
+        assert_allclose(mean, expected)
+    else:
+        message = r"moment() missing 1 required positional argument"
+        with assert_raises(TypeError, match=re.escape(message)):
+            distfn.moment(n=1)
 
     # testing all combinations of positional and keyword arguments for
     # `n`/`order` argument of moment and `n` as distribution shape
@@ -447,6 +459,7 @@ def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
         distfn.interval(**kwd_shapes)
 
     # First positional argument, no kwd alpha, and no kwd confidence
+    # Same as kwd confidence, no first pos. argument alpha, and no kwd alpha
     n_shapes = len(shapes)
     if n_shapes:
         message = f"_parse_args() missing {n_shapes} required positional"
@@ -456,6 +469,17 @@ def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
         expected = my_interval(*arg)
         interval = distfn.interval(0.5, **kwd_shapes)
         assert_allclose(interval, expected)
+
+    # kwd alpha, no first positional argument, no kwd confidence
+    if 'alpha' not in shapes:  # note that 'alpha' is not in `kwd_shapes`
+        expected = my_interval(*arg)
+        with np.testing.assert_warns(DeprecationWarning):
+            interval = distfn.interval(alpha=0.5, **kwd_shapes)
+        assert_allclose(interval, expected)
+    else:
+        message = r"interval() missing 1 required positional argument"
+        with assert_raises(TypeError, match=re.escape(message)):
+            distfn.interval(alpha=0.5)
 
     # testing all combinations of positional and keyword arguments for
     # `alpha`/`confidence` argument of interval and `alpha` as distribution
