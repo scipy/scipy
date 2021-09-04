@@ -45,9 +45,9 @@ from pkg_resources import parse_version
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString
-from scipy.stats._distr_params import distcont, distdiscrete
-from scipy import stats
+from numpydoc.docscrape import NumpyDocString  # noqa
+from scipy.stats._distr_params import distcont, distdiscrete  # noqa
+from scipy import stats  # noqa
 
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):

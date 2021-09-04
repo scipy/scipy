@@ -412,7 +412,8 @@ def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
 
         # Case 6a
         if distname in {'hypergeom', 'nhypergeom',
-                        'nchypergeom_fisher', 'nchypergeom_wallenius'}:
+                        'nchypergeom_fisher', 'nchypergeom_wallenius',
+                        'zipfian'}:
             message = r"_parse_args() got multiple values"
             with assert_raises(TypeError, match=re.escape(message)):
                 distfn.moment(1, n, **kwd_shapes)
@@ -519,14 +520,8 @@ def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
         assert_allclose(interval4a, expected)
 
         # Case 6a
-        if distname in {'hypergeom', 'nhypergeom',
-                        'nchypergeom_fisher', 'nchypergeom_wallenius'}:
-            message = r"_parse_args() got multiple values"
-            with assert_raises(TypeError, match=re.escape(message)):
-                distfn.interval(0.5, alpha, **kwd_shapes)
-        else:
-            interval6a = distfn.interval(0.5, alpha, **kwd_shapes)
-            assert_allclose(interval6a, expected)
+        interval6a = distfn.interval(0.5, alpha, **kwd_shapes)
+        assert_allclose(interval6a, expected)
 
     else:
         message = r"interval() got multiple values for"
