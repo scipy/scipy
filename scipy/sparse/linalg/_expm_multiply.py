@@ -1,5 +1,4 @@
-"""Compute the action of the matrix exponential.
-"""
+"""Compute the action of the matrix exponential."""
 
 import numpy as np
 
@@ -54,7 +53,8 @@ def traceest(A, m3, seed=None):
     A : LinearOperator
         Linear operator whose trace will be estimated. Has to be square.
     m3 : int
-        Number of matrix-vector products divided by 3 used to estimate the trace.
+        Number of matrix-vector products divided by 3 used to estimate the
+        trace.
     seed : optional
         Seed for `numpy.random.default_rng`.
         Can be provided to obtain deterministic results.
@@ -104,7 +104,8 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None, traceA=None):
+def expm_multiply(A, B, start=None, stop=None, num=None,
+                  endpoint=None, traceA=None):
     """
     Compute the action of the matrix exponential of A on B.
 
@@ -193,7 +194,8 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None, traceA=N
     if all(arg is None for arg in (start, stop, num, endpoint)):
         X = _expm_multiply_simple(A, B, traceA=traceA)
     else:
-        X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint, traceA=traceA)
+        X, status = _expm_multiply_interval(A, B, start, stop, num,
+                                            endpoint, traceA=traceA)
     return X
 
 
@@ -572,8 +574,9 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     return A_1_norm <= a * b
 
 
-def _expm_multiply_interval(A, B, start=None, stop=None,
-        num=None, endpoint=None, traceA=None, balance=False, status_only=False):
+def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
+                            endpoint=None, traceA=None, balance=False,
+                            status_only=False):
     """
     Compute the action of the matrix exponential at multiple time points.
 

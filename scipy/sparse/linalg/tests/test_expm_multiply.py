@@ -1,5 +1,5 @@
-"""Test functions for the sparse.linalg._expm_multiply module
-"""
+"""Test functions for the sparse.linalg._expm_multiply module."""
+from itertools import product
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_, assert_equal,
@@ -68,7 +68,8 @@ class TestExpmActionSimple:
             assert_allclose(observed, expected)
             observed = expm_multiply(aslinearoperator(A), B)
             assert_allclose(observed, expected)
-            observed = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A))
+            traceA = np.trace(A)
+            observed = expm_multiply(aslinearoperator(A), B, traceA=traceA)
             assert_allclose(observed, expected)
 
     def test_matrix_vector_multiply(self):
@@ -89,16 +90,15 @@ class TestExpmActionSimple:
         n = 40
         k = 3
         nsamples = 10
-        for i in range(nsamples):
-            for t in (0.2, 1.0, 1.5):
-                with np.errstate(invalid='ignore'):
-                    A = scipy.linalg.inv(np.random.randn(n, n))
-                    B = np.random.randn(n, k)
-                    observed = _expm_multiply_simple(A, B, t=t)
-                    expected = np.dot(scipy.linalg.expm(t*A), B)
-                    assert_allclose(observed, expected)
-                    observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
-                    assert_allclose(observed, expected)
+        for i, t in product(range(nsamples), [0.2, 1.0, 1.5]):
+            with np.errstate(invalid='ignore'):
+                A = scipy.linalg.inv(np.random.randn(n, n))
+                B = np.random.randn(n, k)
+                observed = _expm_multiply_simple(A, B, t=t)
+                expected = np.dot(scipy.linalg.expm(t*A), B)
+                assert_allclose(observed, expected)
+                observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+                assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)
@@ -175,48 +175,31 @@ class TestExpmActionInterval:
 
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
-        start = 0.1
-        stop = 3.2
-        endpoint = True
-        for num in (14, 13, 2):
-            for n in (1, 2, 5, 20, 40):
-                A = scipy.linalg.inv(np.random.randn(n, n))
-                v = np.random.randn(n)
-                X = expm_multiply(A, v,
-                        start=start, stop=stop, num=num, endpoint=endpoint)
-                samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
-                for solution, t in zip(X, samples):
-                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
-                X = expm_multiply(aslinearoperator(A), v,
-                        start=start, stop=stop, num=num, endpoint=endpoint)
-                samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
-                for solution, t in zip(X, samples):
-                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
+        interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
+        for num, n in product([14, 13, 2], [1, 2, 5, 20, 40]):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            v = np.random.randn(n)
+            samples = np.linspace(num=num, **interval)
+            X = expm_multiply(A, v, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
+            X = expm_multiply(aslinearoperator(A), v, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
 
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
-        start = 0.1
-        stop = 3.2
-        endpoint = True
-        for num in (14, 13, 2):
-            for n in (1, 2, 5, 20, 40):
-                for k in (1, 2):
-                    A = scipy.linalg.inv(np.random.randn(n, n))
-                    B = np.random.randn(n, k)
-                    X = expm_multiply(A, B,
-                            start=start, stop=stop, num=num, endpoint=endpoint)
-                    samples = np.linspace(start=start, stop=stop,
-                            num=num, endpoint=endpoint)
-                    for solution, t in zip(X, samples):
-                        assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
-                    X = expm_multiply(aslinearoperator(A), B,
-                            start=start, stop=stop, num=num, endpoint=endpoint)
-                    samples = np.linspace(start=start, stop=stop,
-                            num=num, endpoint=endpoint)
-                    for solution, t in zip(X, samples):
-                        assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+        interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
+        for num, n, k in product([14, 13, 2], [1, 2, 5, 20, 40], [1, 2]):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            B = np.random.randn(n, k)
+            samples = np.linspace(num=num, **interval)
+            X = expm_multiply(A, B, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+            X = expm_multiply(aslinearoperator(A), B, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
