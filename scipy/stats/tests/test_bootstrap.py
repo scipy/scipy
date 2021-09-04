@@ -168,7 +168,7 @@ def test_bootstrap_against_theory(method):
     data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
     alpha = 0.95
     dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
-    expected_interval = dist.interval(alpha=alpha)
+    expected_interval = dist.interval(confidence=alpha)
     expected_se = dist.std()
 
     res = bootstrap((data,), np.mean, n_resamples=5000,

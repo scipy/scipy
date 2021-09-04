@@ -495,8 +495,8 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, n):
-        return self.dist.moment(n, *self.args, **self.kwds)
+    def moment(self, order):
+        return self.dist.moment(order, *self.args, **self.kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
@@ -507,8 +507,8 @@ class rv_frozen:
     def logpmf(self, k):
         return self.dist.logpmf(k, *self.args, **self.kwds)
 
-    def interval(self, alpha):
-        return self.dist.interval(alpha, *self.args, **self.kwds)
+    def interval(self, confidence):
+        return self.dist.interval(confidence, *self.args, **self.kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
@@ -1254,12 +1254,12 @@ class rv_generic:
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output
 
-    def moment(self, n, *args, **kwds):
+    def moment(self, order, *args, **kwds):
         """n-th order non-central moment of distribution.
 
         Parameters
         ----------
-        n : int, n >= 1
+        order : int, n >= 1
             Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
@@ -1270,6 +1270,15 @@ class rv_generic:
             scale parameter (default=1)
 
         """
+        # 1.8.0 - function was originally written with parameter `n`, but this
+        # was also the name of many distribution shape parameters
+        message = ("Use of keyword argument `n` is deprecated. Use first "
+                   "positional argument or keyword argument `order` instead.")
+        if kwds.get("n", None) is not None:
+            order = kwds["n"]
+            raise DeprecationWarning(message)
+        n = order
+
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
         *shapes, loc, scale = args
@@ -1431,12 +1440,12 @@ class rv_generic:
         res = sqrt(self.stats(*args, **kwds))
         return res
 
-    def interval(self, alpha, *args, **kwds):
+    def interval(self, confidence, *args, **kwds):
         """Confidence interval with equal areas around the median.
 
         Parameters
         ----------
-        alpha : array_like of float
+        confidence : array_like of float
             Probability that an rv will be drawn from the returned range.
             Each value should be in the range [0, 1].
         arg1, arg2, ... : array_like
@@ -1454,6 +1463,16 @@ class rv_generic:
             possible values.
 
         """
+        # 1.8.0 - function was originally written with parameter `alpha`, but
+        # this was also the name of the shape parameter of some distributions
+        message = ("Use of keyword argument `alpha` is deprecated. Use first "
+                   "positional argument or keyword argument `confidence` "
+                   "instead.")
+        if kwds.get("alpha", None) is not None:
+            confidence = kwds["alpha"]
+            raise DeprecationWarning(message)
+        alpha = confidence
+
         alpha = asarray(alpha)
         if np.any((alpha > 1) | (alpha < 0)):
             raise ValueError("alpha must be between 0 and 1 inclusive")
