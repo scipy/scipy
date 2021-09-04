@@ -1272,16 +1272,29 @@ class rv_generic:
         """
         # 1.8.0 - function was originally written with parameter `n`, but this
         # was also the name of many distribution shape parameters
-        message = ("Use of keyword argument `n` is deprecated. Use first "
-                   "positional argument or keyword argument `order` instead.")
-        if kwds.get("n", None) is not None:
-            order = kwds.pop("n")
-            warnings.warn(message, DeprecationWarning)
-        else:
-            message = ("moment() missing 1 required positional argument: "
-                       "`order`")
-            if order is None:
+        # This block can be eliminated after the usual deprecation cycle
+        has_shape_n = (self.shapes is not None
+                       and "n" in (self.shapes.split(", ")))
+        got_order = order is not None
+        got_keyword_n = kwds.get("n", None) is not None
+
+        if not got_order and ((not got_keyword_n)
+                              or (got_keyword_n and has_shape_n)):
+             message = ("moment() missing 1 required positional argument: "
+                        "`order`")
+             raise TypeError(message)
+
+        if got_keyword_n and not has_shape_n:
+            if got_order:
+                # this will change to "moment got unexpected argument n"
+                message = "moment() got multiple values for first argument"
                 raise TypeError(message)
+            else:
+                message = ("Use of keyword argument `n` for method "
+                           "`moment` is deprecated. Use first positional "
+                           "argument or keyword argument `order` instead.")
+                order = kwds.pop("n")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
 
         shapes, loc, scale = self._parse_args(*args, **kwds)
@@ -1468,19 +1481,32 @@ class rv_generic:
             possible values.
 
         """
-        # 1.8.0 - function was originally written with parameter `alpha`, but
-        # this was also the name of the shape parameter of some distributions
-        message = ("Use of keyword argument `alpha` is deprecated. Use first "
-                   "positional argument or keyword argument `confidence` "
-                   "instead.")
-        if kwds.get("alpha", None) is not None:
-            confidence = kwds.pop("alpha")
-            warnings.warn(message, DeprecationWarning)
-        else:
-            message = ("interval() missing 1 required positional argument: "
-                       "`confidence`")
-            if confidence is None:
+        # 1.8.0 - function was originally written with parameter `alpha`,
+        # but this was also the name of some distribution shape parameters
+        # This block can be eliminated after the usual deprecation cycle
+        has_shape_alpha = (self.shapes is not None
+                           and "alpha" in (self.shapes.split(", ")))
+        got_confidence = confidence is not None
+        got_keyword_alpha = kwds.get("alpha", None) is not None
+
+        if not got_confidence and ((not got_keyword_alpha)
+                                   or (got_keyword_alpha and has_shape_alpha)):
+             message = ("interval() missing 1 required positional argument: "
+                        "`confidence`")
+             raise TypeError(message)
+
+        if got_keyword_alpha and not has_shape_alpha:
+            if got_confidence:
+                # this will change to "interval got unexpected argument alpha"
+                message = "interval() got multiple values for first argument"
                 raise TypeError(message)
+            else:
+                message = ("Use of keyword argument `alpha` for method "
+                           "`interval` is deprecated. Use first positional "
+                           "argument or keyword argument `confidence` "
+                           "instead.")
+                confidence = kwds.pop("alpha")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
 
         alpha = asarray(alpha)
