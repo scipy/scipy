@@ -1,4 +1,5 @@
 import pickle
+import re
 
 import numpy as np
 import numpy.testing as npt
@@ -308,7 +309,7 @@ def check_pickling(distfn, args):
         pickled_fit_function = pickle.dumps(fit_function)
         unpickled_fit_function = pickle.loads(pickled_fit_function)
         assert fit_function.__name__ == unpickled_fit_function.__name__ == "fit"
-    
+
     # restore the random_state
     distfn.random_state = rndm
 
@@ -335,3 +336,27 @@ def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
         np.random.seed(123)
         expected = rvs(*allargs)
         assert_allclose(sample, expected, rtol=1e-13)
+
+
+def check_deprecation_warning_gh5982(distfn, arg, distname):
+    with np.testing.assert_warns(DeprecationWarning):
+        distfn.moment(n=1, **dict(zip(distfn.shapes, arg or [])))
+
+    if arg:
+        message = r"_parse_args() missing 1 required positional argument:"
+    else:
+        message = r"moment() missing 1 required positional argument:"
+
+    with assert_raises(TypeError, match=re.escape(message)):
+        distfn.moment(*arg)
+
+    with np.testing.assert_warns(DeprecationWarning):
+        distfn.interval(alpha=0.5, **dict(zip(distfn.shapes, arg or [])))
+
+    if arg:
+        message = r"_parse_args() missing 1 required positional argument:"
+    else:
+        message = r"interval() missing 1 required positional argument:"
+
+    with assert_raises(TypeError, match=re.escape(message)):
+        distfn.interval(*arg)

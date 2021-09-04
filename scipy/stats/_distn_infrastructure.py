@@ -495,7 +495,7 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, order):
+    def moment(self, order=None):
         return self.dist.moment(order, *self.args, **self.kwds)
 
     def entropy(self):
@@ -507,7 +507,7 @@ class rv_frozen:
     def logpmf(self, k):
         return self.dist.logpmf(k, *self.args, **self.kwds)
 
-    def interval(self, confidence):
+    def interval(self, confidence=None):
         return self.dist.interval(confidence, *self.args, **self.kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
@@ -1254,7 +1254,7 @@ class rv_generic:
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output
 
-    def moment(self, order, *args, **kwds):
+    def moment(self, order=None, *args, **kwds):
         """n-th order non-central moment of distribution.
 
         Parameters
@@ -1275,8 +1275,13 @@ class rv_generic:
         message = ("Use of keyword argument `n` is deprecated. Use first "
                    "positional argument or keyword argument `order` instead.")
         if kwds.get("n", None) is not None:
-            order = kwds["n"]
-            raise DeprecationWarning(message)
+            order = kwds.pop("n")
+            warnings.warn(message, DeprecationWarning)
+        else:
+            message = ("moment() missing 1 required positional argument: "
+                       "`order`")
+            if order is None:
+                raise TypeError(message)
         n = order
 
         shapes, loc, scale = self._parse_args(*args, **kwds)
@@ -1440,7 +1445,7 @@ class rv_generic:
         res = sqrt(self.stats(*args, **kwds))
         return res
 
-    def interval(self, confidence, *args, **kwds):
+    def interval(self, confidence=None, *args, **kwds):
         """Confidence interval with equal areas around the median.
 
         Parameters
@@ -1469,8 +1474,13 @@ class rv_generic:
                    "positional argument or keyword argument `confidence` "
                    "instead.")
         if kwds.get("alpha", None) is not None:
-            confidence = kwds["alpha"]
-            raise DeprecationWarning(message)
+            confidence = kwds.pop("alpha")
+            warnings.warn(message, DeprecationWarning)
+        else:
+            message = ("interval() missing 1 required positional argument: "
+                       "`confidence`")
+            if confidence is None:
+                raise TypeError(message)
         alpha = confidence
 
         alpha = asarray(alpha)

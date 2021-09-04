@@ -14,7 +14,8 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast, check_freezing)
+                           check_pickling, check_rvs_broadcast, check_freezing,
+                           check_deprecation_warning_gh5982)
 from scipy.stats._distr_params import distcont
 
 """
@@ -154,6 +155,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_cdf_logcdf(distfn, arg, distname)
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
+    check_deprecation_warning_gh5982(distfn, arg, distname)
 
     alpha = 0.01
     if distname == 'rv_histogram_instance':
