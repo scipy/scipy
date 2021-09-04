@@ -63,7 +63,7 @@ def test_symmetric_graph_laplacian():
         'np.eye(19)',
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4))',
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray()',
-        'np.asarray(sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray())',
+        'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).todense()',
         'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
     )
     for mat_str in symmetric_mats:

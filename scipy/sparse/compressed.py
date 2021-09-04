@@ -229,7 +229,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, operator.eq)
         # Dense other.
         elif isdense(other):
-            return self.toarray() == other
+            return self.todense() == other
         # Pydata sparse other.
         elif is_pydata_spmatrix(other):
             return NotImplemented
@@ -267,7 +267,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, operator.ne)
         # Dense other.
         elif isdense(other):
-            return self.toarray() != other
+            return self.todense() != other
         # Pydata sparse other.
         elif is_pydata_spmatrix(other):
             return NotImplemented
@@ -297,7 +297,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, op)
         # Dense other.
         elif isdense(other):
-            return op(self.toarray(), other)
+            return op(self.todense(), other)
         # Sparse other.
         elif isspmatrix(other):
             # TODO sparse broadcasting
@@ -563,7 +563,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                      dtype=new_data.dtype, shape=self.shape)
                 return mat
         elif isdense(other):
-            return npop(self.toarray(), other)
+            return npop(self.todense(), other)
         elif isspmatrix(other):
             return self._binopt(other, op_name)
         else:

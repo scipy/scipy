@@ -267,7 +267,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             csc = self.tocsc()
             new = csc + other
         elif isdense(other):
-            new = self.toarray() + other
+            new = self.todense() + other
         else:
             return NotImplemented
         return new
@@ -291,7 +291,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             csc = self.tocsc()
             new = csc + other
         elif isdense(other):
-            new = other + self.toarray()
+            new = other + self.todense()
         else:
             return NotImplemented
         return new

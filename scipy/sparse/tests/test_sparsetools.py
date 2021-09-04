@@ -57,7 +57,7 @@ def test_regression_std_vector_dtypes():
         a = csr_matrix(ad, dtype=dtype)
 
         # getcol is one function using std::vector typemaps, and should not fail
-        assert_equal(a.getcol(0).toarray(), ad[:, [0]])
+        assert_equal(a.getcol(0).toarray(), ad[:, :1])
 
 
 @pytest.mark.slow
