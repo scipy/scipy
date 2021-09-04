@@ -1280,9 +1280,9 @@ class rv_generic:
 
         if not got_order and ((not got_keyword_n)
                               or (got_keyword_n and has_shape_n)):
-             message = ("moment() missing 1 required positional argument: "
-                        "`order`")
-             raise TypeError(message)
+            message = ("moment() missing 1 required positional argument: "
+                       "`order`")
+            raise TypeError(message)
 
         if got_keyword_n and not has_shape_n:
             if got_order:
@@ -1491,9 +1491,9 @@ class rv_generic:
 
         if not got_confidence and ((not got_keyword_alpha)
                                    or (got_keyword_alpha and has_shape_alpha)):
-             message = ("interval() missing 1 required positional argument: "
-                        "`confidence`")
-             raise TypeError(message)
+            message = ("interval() missing 1 required positional argument: "
+                       "`confidence`")
+            raise TypeError(message)
 
         if got_keyword_alpha and not has_shape_alpha:
             if got_confidence:
