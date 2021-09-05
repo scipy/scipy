@@ -22,8 +22,8 @@
  *
  */
 
-#include "trlib.h"
 #include "trlib_private.h"
+#include "trlib.h"
 
 #include "_c99compat.h"
 
