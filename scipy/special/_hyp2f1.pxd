@@ -117,7 +117,6 @@ cdef inline double complex hyp2f1_complex(
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    # Fallback to Fortran original. To be translated to Cython later.
     if z == 1.0 and c - a - b > 0:
         result = Gamma(c) * Gamma(c - a - b)
         result /= Gamma(c - a) * Gamma(c - b)
