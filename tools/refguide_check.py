@@ -882,16 +882,17 @@ def check_dist_keyword_names():
                 mod_results.append(result)
                 continue
 
-            param_names = set(param.name for param in params)
+            param_names1 = set(param.name for param in params)
+            param_names2 = set(inspect.signature(method).parameters)
+            param_names = param_names1.union(param_names2)
 
             # # Disabling this check in this PR;
             # # these discrepancies are a separate issue.
-            # param_names2 = set(inspect.signature(method).parameters)
-            # no_doc_params = {'args', 'kwds', 'kwargs'}
-            # un_doc_params = param_names2 - param_names - no_doc_params
+            # no_doc_params = {'args', 'kwds', 'kwargs'}  # no need to document
+            # undoc_params = param_names2 - param_names1 - no_doc_params
             # if un_doc_params:
             #     result = (f'stats.{distname}.{methodname}', False,
-            #               f'Parameter(s) {un_doc_params} are not documented.')
+            #               f'Parameter(s) {undoc_params} are not documented.')
             #     mod_results.append(result)
             #     continue
 
