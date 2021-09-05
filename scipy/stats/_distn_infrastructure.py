@@ -1255,11 +1255,11 @@ class rv_generic:
         return output
 
     def moment(self, order=None, *args, **kwds):
-        """n-th order non-central moment of distribution.
+        """non-central moment of distribution of specified order.
 
         Parameters
         ----------
-        order : int, n >= 1
+        order : int, order >= 1
             Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
