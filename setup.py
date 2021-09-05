@@ -228,28 +228,19 @@ def get_build_ext_override():
     """
     from numpy.distutils.command.build_ext import build_ext as npy_build_ext
     if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
-        # PythranBuildExt does *not* derive from npy_build_ext
-        # Win the monkey patching race here and patch base class
-        # before it's loaded by Pythran. This should be removed
-        # once Pythran has proper support for base class selection.
-        assert 'pythran' not in sys.modules
-        import distutils.command.build_ext
-        distutils_build_ext = distutils.command.build_ext.build_ext
-        distutils.command.build_ext.build_ext = npy_build_ext
         try:
             import pythran
-            from pythran.dist import PythranBuildExt as BaseBuildExt
+            from pythran.dist import PythranBuildExt
+            BaseBuildExt = PythranBuildExt[npy_build_ext]
             # Version check - a too old Pythran will give problems
-            if LooseVersion(pythran.__version__) < LooseVersion('0.9.11'):
+            if LooseVersion(pythran.__version__) < LooseVersion('0.9.12'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.9.11 is needed, {} detected. Please "
+                                   "0.9.12 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
                                    "SCIPY_USE_PYTHRAN=0`.".format(
                                    pythran.__version__))
         except ImportError:
             BaseBuildExt = npy_build_ext
-        finally:
-            distutils.command.build_ext.build_ext = distutils_build_ext
     else:
         BaseBuildExt = npy_build_ext
 
