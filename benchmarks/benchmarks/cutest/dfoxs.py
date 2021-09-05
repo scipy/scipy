@@ -83,7 +83,7 @@ def dfoxs(n,nprob,factor):
     elif nprob == 22:  # Heart8ls.
         x = np.asarray([-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5])
     else:
-       print(f'unrecognized function number {nprob}')
-       return None
+        print(f'unrecognized function number {nprob}')
+        return None
 
     return factor * x

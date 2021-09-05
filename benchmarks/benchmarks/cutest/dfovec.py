@@ -7,7 +7,7 @@ def dfovec(m, n, x, nprob):
     c14 = 1.4e1
     c29 = 2.9e1
     c45 = 4.5e1
-    v  = [4.0e0,2.0e0,1.0e0,5.0e-1,2.5e-1,1.67e-1,1.25e-1,1.0e-1,8.33e-2,7.14e-2,6.25e-2]
+    v = [4.0e0,2.0e0,1.0e0,5.0e-1,2.5e-1,1.67e-1,1.25e-1,1.0e-1,8.33e-2,7.14e-2,6.25e-2]
     y1 = [1.4e-1,1.8e-1,2.2e-1,2.5e-1,2.9e-1,3.2e-1,3.5e-1,3.9e-1,3.7e-1,5.8e-1,7.3e-1,9.6e-1,1.34e0,2.1e0,4.39e0]
     y2 = [1.957e-1,1.947e-1,1.735e-1,1.6e-1,8.44e-2,6.27e-2,4.56e-2,3.42e-2,3.23e-2,2.35e-2,2.46e-2]
     y3 = [3.478e4,2.861e4,2.365e4,1.963e4,1.637e4,1.372e4,1.154e4,9.744e3,8.261e3,7.03e3,6.005e3,5.147e3,4.427e3,3.82e3,3.307e3,2.872e3]
@@ -159,7 +159,7 @@ def dfovec(m, n, x, nprob):
         # n = 2, m = n
         fvec[1] = x[0] - 1.0
         for i in range(1, n):
-        	fvec[i] = 10*(x[i] - x[i-1]**3)
+            fvec[i] = 10*(x[i] - x[i-1]**3)
     elif nprob == 21:  # Mancino
         # n = 2, m = n
         for i in range(n):
@@ -167,7 +167,7 @@ def dfovec(m, n, x, nprob):
             for j in range(n):
                 v2 = np.sqrt(x[i]**2 + (i+1)/(j+1))
                 ss = ss + v2*((np.sin(np.log(v2)))**5 + (np.cos(np.log(v2)))**5)
-            fvec[i]=1400 * x[i] + (i-49)**3 + ss
+            fvec[i] = 1400 * x[i] + (i-49)**3 + ss
     elif nprob == 22:  # Heart8ls
         # m = n = 8
         fvec[0] = x[0] + x[1] + 0.69
@@ -179,6 +179,6 @@ def dfovec(m, n, x, nprob):
         fvec[6] = x[0]*x[4]*(x[4]**2 - 3.0*x[6]**2) + x[2]*x[6]*(x[6]**2 - 3.0*x[4]**2) + x[1]*x[5]*(x[5]**2 - 3.0*x[7]**2) + x[3]*x[7]*(x[7]**2 - 3.0*x[5]**2) + 12.6
         fvec[7] = x[2]*x[4]*(x[4]**2 - 3.0*x[6]**2) - x[0]*x[6]*(x[6]**2 - 3.0*x[4]**2) + x[3]*x[5]*(x[5]**2 - 3.0*x[7]**2) - x[1]*x[7]*(x[7]**2 - 3.0*x[6]**2) - 9.48
     else:
-       print(f'unrecognized function number {nprob}')
-       return None
+        print(f'unrecognized function number {nprob}')
+        return None
     return fvec

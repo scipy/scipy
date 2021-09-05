@@ -3,11 +3,11 @@ import numpy as np
 from .dfovec import dfovec
 
 def norm(x, type=2):
-    if type==1:
+    if type == 1:
         return np.sum(np.abs(x))
-    elif type==2:
+    elif type == 2:
         return np.sqrt(x**2)
-    else: # type==np.inf:
+    else:  # type==np.inf:
         return max(np.abs(x))
 
 def calfun(x, m, nprob, probtype='smooth', noise_level=1e-3):
@@ -16,7 +16,7 @@ def calfun(x, m, nprob, probtype='smooth', noise_level=1e-3):
     # Restrict domain for some nondiff problems
     xc = x
     if probtype == 'nondiff':
-        if nprob==8 or nprob==9 or nprob==13 or nprob==16 or nprob==17 or nprob==18:
+        if nprob == 8 or nprob == 9 or nprob == 13 or nprob == 16 or nprob == 17 or nprob == 18:
             xc = max(x,0)
 
     # Generate the vector
