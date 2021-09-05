@@ -14,9 +14,6 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
-
-#include <numpy/npy_common.h>
-
 #include <stdio.h>
 #include <math.h>
 
