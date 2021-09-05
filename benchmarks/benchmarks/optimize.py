@@ -267,7 +267,7 @@ class _BenchOptimizers(Benchmark):
 class BenchDFO(Benchmark):
     """
     Benchmark the optimizers with the CUTEST DFO benchmark of Moré and Wild.
-    The original benchmark suite is available at 
+    The original benchmark suite is available at
     https://www.mcs.anl.gov/~more/dfo/.
     """
     params = [
