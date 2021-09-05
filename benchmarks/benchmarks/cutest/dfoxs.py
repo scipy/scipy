@@ -80,7 +80,8 @@ def dfoxs(n, nprob, factor):
             ss = 0
             for j in range(n):
                 frac = (i+1) / (j+1)
-                ss = ss + np.sqrt(frac) * ((np.sin(np.log(np.sqrt(frac))))**5
+                ss = ss + np.sqrt(frac) * \
+                    ((np.sin(np.log(np.sqrt(frac))))**5
                      + (np.cos(np.log(np.sqrt(frac))))**5)
             x[i] = -8.710996e-4 * ((i-49)**3 + ss)
     elif nprob == 22:  # Heart8ls.
