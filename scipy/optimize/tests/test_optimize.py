@@ -217,16 +217,16 @@ class CheckOptimizeParameterized(CheckOptimize):
                     res['x'], res['fun'], res['jac'], res['hess_inv'],
                     res['nfev'], res['njev'], res['status'])
         else:
-            retval = optimize.fmin_bfgs(self.func, self.startparams, fprime=None,
-                                        args=(), maxiter=self.maxiter,
-                                        full_output=True, disp=self.disp,
-                                        retall=False)
+            retval = optimize.fmin_bfgs(self.func, self.startparams,
+                                        fprime=None, args=(),
+                                        maxiter=self.maxiter, full_output=True,
+                                        disp=self.disp, retall=False)
             (params, fopt, gopt, Hopt,
              func_calls, grad_calls, warnflag) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
-        
+
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 1.21.1. Don't allow them to increase.
         assert self.funccalls <= 58

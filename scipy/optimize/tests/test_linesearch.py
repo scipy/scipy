@@ -269,12 +269,13 @@ class TestLineSearch:
             self.fcount = 0
             with suppress_warnings() as sup:
                 sup.filter(LineSearchWarning,
-                           "The line search algorithm could not find a solution")
+                           "The line search algorithm did not find a solution")
                 sup.filter(LineSearchWarning,
                            "The line search algorithm did not converge")
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
                                                                g0, f0, old_f,
-                                                               amax=smax, dfo=True)
+                                                               amax=smax,
+                                                               dfo=True)
             assert_equal(self.fcount, fc+gc)
             assert_fp_equal(ofv, f(x))
             assert_fp_equal(fv, f(x + s*p))

@@ -1,7 +1,9 @@
-# This is a python implementation of dfoxs.m, provided at http://www.mcs.anl.gov/~more/dfo/
+# This is a python implementation of dfoxs.m, 
+# provided at http://www.mcs.anl.gov/~more/dfo/
 import numpy as np
 
-def dfoxs(n,nprob,factor):
+
+def dfoxs(n, nprob, factor):
     x = np.zeros(n)
 
     if nprob == 1 or nprob == 2 or nprob == 3:  # Linear functions.
@@ -19,7 +21,7 @@ def dfoxs(n,nprob,factor):
     elif nprob == 7:  # Freudenstein and Roth function.
         x[0] = 0.5
         x[1] = -2
-    elif nprob == 8:  # Bard function. 
+    elif nprob == 8:  # Bard function.
         x[0] = 1
         x[1] = 1
         x[2] = 1
@@ -78,7 +80,8 @@ def dfoxs(n,nprob,factor):
             ss = 0
             for j in range(n):
                 frac = (i+1) / (j+1)
-                ss = ss + np.sqrt(frac) * ((np.sin(np.log(np.sqrt(frac))))**5 + (np.cos(np.log(np.sqrt(frac))))**5)
+                ss = ss + np.sqrt(frac) * ((np.sin(np.log(np.sqrt(frac))))**5 \
+                    + (np.cos(np.log(np.sqrt(frac))))**5)
             x[i] = -8.710996e-4 * ((i-49)**3 + ss)
     elif nprob == 22:  # Heart8ls.
         x = np.asarray([-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5])
