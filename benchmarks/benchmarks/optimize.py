@@ -289,6 +289,7 @@ class BenchDFO(Benchmark):
         m = int(params[2])
         s = params[3]
         factor = 10**s
+
         def func(x):
             return calfun(x, m, nprob)
         x0 = dfoxs(n, nprob, factor)
