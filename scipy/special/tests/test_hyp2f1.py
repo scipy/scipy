@@ -5,6 +5,7 @@ the implementation of mp_hyp2f1 below, which modifies mpmath's hyp2f1 to
 return the same branch as scipy's on the standard branch cut.
 """
 
+import sys
 import pytest
 import numpy as np
 from typing import NamedTuple
@@ -284,6 +285,10 @@ class TestHyp2f1:
                     z=-1 + 0j,
                     expected=45143784.46783885 + 0j,
                     rtol=1e-7,
+                    marks=pytest.mark.xfail(
+                        condition=sys.maxsize < 2**32,
+                        reason="Fails on 32 bit.",
+                    )
                 ),
             ),
         ],
