@@ -1280,8 +1280,8 @@ class rv_generic:
 
         if not got_order and ((not got_keyword_n)
                               or (got_keyword_n and has_shape_n)):
-            message = ("moment() missing 1 required positional argument: "
-                       "`order`")
+            message = ("moment() missing 1 required "
+                       "positional argument: `order`")
             raise TypeError(message)
 
         if got_keyword_n and not has_shape_n:

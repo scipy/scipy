@@ -859,31 +859,44 @@ def init_matplotlib():
 
 
 def check_dist_keyword_names():
-
+    # Look for collisions between names of distribution shape parameters and
+    # keywords of distribution methods. See gh-5982.
     distnames = set(distdata[0] for distdata in distcont + distdiscrete)
     mod_results = []
     for distname in distnames:
         dist = getattr(stats, distname)
+        if not dist.shapes:  # no collision if there are no shape parameters
+            continue
+        shape_names = dist.shapes.split(', ')
+
         method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
         method_names = [method[0] for method in method_members
                         if not method[0].startswith('_')]
         for methodname in method_names:
-            dist = getattr(stats, distname)
             method = getattr(dist, methodname)
             try:
                 params = NumpyDocString(method.__doc__)['Parameters']
             except TypeError:
-                result = (f'stats.{distname}.{methodname}',
-                          False,
-                          "Method parameters are not documented.")
+                result = (f'stats.{distname}.{methodname}', False,
+                          "Method parameters are not documented properly.")
                 mod_results.append(result)
                 continue
+
             param_names = set(param.name for param in params)
 
-            if not dist.shapes:
-                continue
-            shape_names = dist.shapes.split(', ')
+            # # Disabling this check in this PR;
+            # # these discrepancies are a separate issue.
+            # param_names2 = set(inspect.signature(method).parameters)
+            # no_doc_params = {'args', 'kwds', 'kwargs'}
+            # un_doc_params = param_names2 - param_names - no_doc_params
+            # if un_doc_params:
+            #     result = (f'stats.{distname}.{methodname}', False,
+            #               f'Parameter(s) {un_doc_params} are not documented.')
+            #     mod_results.append(result)
+            #     continue
+
             intersection = param_names.intersection(shape_names)
+
             if intersection:
                 message = ("Distribution/method keyword collision: "
                            f"{intersection} ")
