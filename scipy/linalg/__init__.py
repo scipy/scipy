@@ -45,6 +45,7 @@ Basics
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
    subspace_angles - Compute the subspace angles between two matrices
+   get_array_bandwidth - Return the lower and upper bandwidth of an array
    LinAlgError
    LinAlgWarning
 
@@ -193,6 +194,7 @@ Low-level routines
 """  # noqa: E501
 
 from .misc import *
+from ._cythonized_array_utils import *
 from .basic import *
 from .decomp import *
 from .decomp_lu import *
