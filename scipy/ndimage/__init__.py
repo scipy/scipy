@@ -118,6 +118,10 @@ Morphology
 
 Backend control
 ===============
+
+Library maintainers and developers should also check the handling of
+:ref:`uarray`.
+
 .. autosummary::
    :toctree: generated/
 
