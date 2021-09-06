@@ -239,7 +239,7 @@ cdef inline double complex hyp2f1_series(
     double complex
     """
     cdef:
-        int k
+        uint64_t k
         double complex term = 1 + 0j
         double complex previous = 0 + 0j
         double complex result = 1 + 0j
