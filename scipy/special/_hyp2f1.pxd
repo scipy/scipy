@@ -224,7 +224,7 @@ cdef inline double complex hyp2f1_series(
     b : double
     c : double
     z : double complex
-    max_degree : int
+    max_degree : uint64_t
         Maximum degree of terms before truncating.
     early_stop : bint
     rtol : double
