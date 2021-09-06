@@ -22,7 +22,6 @@ requires = [
 
     # numpy 1.19 was the first minor release to provide aarch64 wheels, but
     # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.7' and platform_machine=='aarch64'",
     "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64'",
     # aarch64 for py39 is covered by default requirement below
 
@@ -31,12 +30,8 @@ requires = [
     "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
 
     # default numpy requirements
-    "numpy==1.16.5; python_version=='3.7' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-
-    # First PyPy versions for which there are numpy wheels
-    "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
 
     # For Python versions which aren't yet officially supported,
     # we specify an unpinned NumPy which allows source distributions
@@ -56,9 +51,9 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
-    "numpy>=1.16.5",
+    "numpy>=1.17.3",
 ]
 readme = "README.rst"
 classifiers = [
@@ -69,7 +64,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Topic :: Software Development :: Libraries",
