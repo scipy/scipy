@@ -211,12 +211,6 @@ class SVDSCommonTests:
         with pytest.raises(ValueError, match=message):
             svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver)
 
-    @pytest.mark.parametrize("random_state", ('ekki', 3.14159, []))
-    def test_svds_input_validation_random_state(self, random_state):
-        message = "cannot be used to seed a"
-        with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), random_state=random_state, solver=self.solver)
-
     # --- Test Parameters ---
 
     @pytest.mark.parametrize("k", [3, 5])
