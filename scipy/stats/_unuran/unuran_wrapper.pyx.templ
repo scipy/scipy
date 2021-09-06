@@ -17,12 +17,14 @@ from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
 import threading
 import functools
+from collections import namedtuple
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 from scipy._lib._util import check_random_state
 
 
-__all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn']
+__all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn',
+           'NumericalInversePolynomial']
 
 
 cdef extern from "Python.h":
@@ -44,6 +46,10 @@ cdef extern from "unuran_callback.h":
     void error_handler(const char *objid, const char *file,
                        int line, const char *errortype,
                        int unur_errno, const char *reason) nogil
+
+# https://stackoverflow.com/questions/5697479/how-can-a-defined-c-value-be-exposed-to-python-in-a-cython-module
+cdef extern from "unuran.h":
+    cdef double UNUR_INFINITY
 
 
 class UNURANError(RuntimeError):
@@ -580,7 +586,7 @@ cdef class TransformedDensityRejection(Method):
         This location provides some information about the main part of the
         PDF and is used to avoid numerical problems. Default is ``None``.
     domain : list or tuple of length 2, optional
-        The support of the distribution. Must not contain `nan` values.
+        The support of the distribution.
         Default is ``None``. When ``None``:
 
         * If a ``support`` method is provided by the distribution object
@@ -916,6 +922,452 @@ cdef class TransformedDensityRejection(Method):
         np.place(out, cond2, goodout)
         np.place(out, ~cond2, np.nan)
         return np.asarray(out).reshape(oshape)[()]
+
+
+UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
+
+
+cdef class NumericalInversePolynomial(Method):
+    """
+    NumericalInversePolynomial(dist, mode=None, center=None, *, domain=None, order=5, u_resolution=1e-10, max_intervals=10000, keep_cdf=False, random_state=None)
+
+    Polynomial interpolation based INVersion of CDF (PINV).
+
+    PINV is a variant of numerical inversion, where the inverse CDF is approximated
+    using Newton's interpolating formula. The interval ``[0,1]`` is split into several
+    subintervals. In each of these, the inverse CDF is constructed at nodes ``(CDF(x),x)``
+    for some points ``x`` in this subinterval. If the PDF is given, then the CDF is
+    computed numerically from the given PDF using adaptive Gauss-Lobatto integration with
+    5 points. Subintervals are split until the requested accuracy goal is reached.
+
+    The method is not exact, as it only produces random variates of the approximated
+    distribution. Nevertheless, the maximal tolerated approximation error can be set to
+    be the resolution (but, of course, is bounded by the machine precision). We use the
+    u-error ``|U - CDF(X)|`` to measure the error where ``X`` is the approximate
+    percentile corressponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
+    the maximal tolerated u-error the u-resolution of the algorithm.
+
+    Both the order of the interpolating polynomial and the u-resolution can be selected.
+    Note that very small values of the u-resolution are possible but increase the cost
+    for the setup step.
+
+    The interpolating polynomials have to be computed in a setup step. However, it only
+    works for distributions with bounded domain; for distributions with unbounded domain
+    the tails are cut off such that the probability for the tail regions is small compared
+    to the given u-resolution.
+
+    The construction of the interpolation polynomial only works when the PDF is unimodal
+    or when the PDF does not vanish between two modes.
+
+    There are some restrictions for the given distribution:
+
+    * The support of the distribution (i.e., the region where the PDF is strictly
+      positive) must be connected. In practice this means, that the region where PDF
+      is "not too small" must be connected. Unimodal densities satisfy this condition.
+      If this condition is violated then the domain of the distribution might be
+      truncated.
+    * When the PDF is integrated numerically, then the given PDF must be continuous
+      and should be smooth.
+    * The PDF must be bounded.
+    * The algorithm has problems when the distribution has heavy tails (as then the
+      inverse CDF becomes very steep at 0 or 1) and the requested u-resolution is
+      very small. E.g., the Cauchy distribution is likely to show this problem when
+      the requested u-resolution is less then 1.e-12. 
+
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a class with a ``pdf`` and optionally a ``cdf`` method.
+
+        * ``pdf``: PDF of the distribution. The signature of the PDF is expected to be:
+          ``def pdf(self, x: float) -> float``. i.e. the PDF should accept a Python
+          float and return a Python float. It doesn't need to integrate to 1 i.e. the
+          PDF doesn't need to be normalized.
+        * ``cdf``: CDF of the distribution. This method is optional. If provided, it
+          enables the calculation of "u-error". See `u_error`. Must have the same
+          signature as the PDF.
+
+    mode : float, optional
+        (Exact) Mode of the distribution. Default is ``None``.
+    center : float, optional
+        Approximate location of the mode or the mean of the distribution. This location
+        provides some information about the main part of the PDF and is used to avoid
+        numerical problems. Default is ``None``.
+    domain : list or tuple of length 2, optional
+        The support of the distribution.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
+    order : int, optional
+        Order of the interpolating polynomial. Valid orders are between 3 and 17.
+        Higher orders result in fewer intervals for the approximations. Default
+        is 5.
+    u_resolution : float, optional
+        Set maximal tolerated u-error. Values of u_resolution must at least 1.e-15 and
+        1.e-5 at most. Notice that the resolution of most uniform random number sources
+        is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion algorithm that
+        could be called exact. For most simulations slightly bigger values for the
+        maximal error are enough as well. Default is 1e-10.
+    max_intervals : int, optional
+        Set maximum number of intervals. Must be in the range [100, 1000000].
+        Default is 10000.
+    keep_cdf : bool, optional
+        If the PDF is given, then the CDF is computed numerically from the given PDF using
+        adaptive Gauss-Lobatto integration. Thus a table of CDF points is stored to keep
+        the number of evaluations of the PDF minimal. Usually this table is discarded when
+        the setup is completed. If ``keep_cdf`` is TRUE, then this table is kept and the
+        approximated CDF can be evaluated by calling the `cdf` method. Default is ``False``.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Notes
+    -----
+    This method does not work for densities with constant parts (e.g. `uniform`
+    distribution) and segmentation faults if such a density is passed to the
+    constructor. It is recommended to use the composition method to sample from
+    such distributions.
+
+    References
+    ----------
+    .. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate
+           generation by numerical inversion when only the density is known." ACM
+           Transactions on Modeling and Computer Simulation (TOMACS) 20.4 (2010): 1-25.
+    .. [2] UNU.RAN reference manual, Section 5.3.12,
+           "PINV – Polynomial interpolation based INVersion of CDF",
+           https://statmath.wu.ac.at/software/unuran/doc/unuran.html#PINV
+
+    Examples
+    --------
+    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats import norm
+
+    To create a generator to sample from the standard normal distribution, do:
+
+    >>> class StandardNormal:
+    ...    def pdf(self, x):
+    ...        return np.exp(-0.5 * x*x)
+    ... 
+    >>> dist = StandardNormal()
+    >>> urng = np.random.default_rng()
+    >>> rng = NumericalInversePolynomial(dist, random_state=urng)
+
+    Once a generator is created, samples can be drawn from the distribution by calling
+    the `rvs` method:
+
+    >>> rng.rvs()
+    -1.5244996276336318
+
+    To check that the random variates closely follow the given distribution, we can
+    look at it's histogram:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(10000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
+    >>> fx = norm.pdf(x)
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Numerical Inverse Polynomial Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
+    It is possible to estimate the u-error of the approximated PPF if the exact
+    CDF is available during setup. To do so, pass a `dist` object with exact CDF of
+    the distribution during initialization:
+
+    >>> from scipy.special import ndtr
+    >>> class StandardNormal:
+    ...    def pdf(self, x):
+    ...        return np.exp(-0.5 * x*x)
+    ...    def cdf(self, x):
+    ...        return ndtr(x)
+    ... 
+    >>> dist = StandardNormal()
+    >>> urng = np.random.default_rng()
+    >>> rng = NumericalInversePolynomial(dist, random_state=urng)
+
+    Now, the u-error can be estimated by calling the `u_error` method. It runs a
+    Monte-Carlo simulation to estimate the u-error. By default, 100000 samples are
+    used. To change this, you can pass the number of samples as an argument:
+
+    >>> rng.u_error(sample_size=1000000)  # uses one million samples
+    UError(max_error=8.785994154436594e-11, mean_absolute_error=2.930890027826552e-11)
+
+    This returns a namedtuple which contains the maximum u-error and the mean
+    absolute u-error.
+
+    The u-error can be reduced by decreasing the u-resolution (maximum allowed u-error):
+
+    >>> urng = np.random.default_rng()
+    >>> rng = NumericalInversePolynomial(dist, u_resolution=1.e-12, random_state=urng)
+    >>> rng.u_error(sample_size=1000000)
+    UError(max_error=9.07496300328603e-13, mean_absolute_error=3.5255644517257716e-13)
+
+    Note that this comes at the cost of increased setup time.
+
+    The approximated PPF can be evaluated by calling the `ppf` method:
+
+    >>> rng.ppf(0.975)
+    1.9599639857012559
+    >>> norm.ppf(0.975)
+    1.959963984540054
+
+    Since the PPF of the normal distribution is available as a special function, we
+    can also check the x-error, i.e. the difference between the approximated PPF and
+    exact PPF::
+
+    >>> import matplotlib.pyplot as plt
+    >>> u = np.linspace(0.01, 0.99, 1000)
+    >>> approxppf = rng.ppf(u)
+    >>> exactppf = norm.ppf(u)
+    >>> error = np.abs(exactppf - approxppf)
+    >>> plt.plot(u, error)
+    >>> plt.xlabel('u')
+    >>> plt.ylabel('error')
+    >>> plt.title('Error between exact and approximated PPF (x-error)')
+    >>> plt.show()
+    """
+    cdef bint keep_cdf
+
+    def __cinit__(self,
+                  dist,
+                  mode=None,
+                  center=None,
+                  *,
+                  domain=None,
+                  order=5,
+                  u_resolution=1e-10,
+                  max_intervals=10000,
+                  keep_cdf=False,
+                  random_state=None):
+        (domain, order, u_resolution, max_intervals) = self._validate_args(
+            dist, domain, order, u_resolution, max_intervals
+        )
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'center': center,
+            'domain': domain,
+            'order': order,
+            'u_resolution': u_resolution,
+            'max_intervals': max_intervals,
+            'keep_cdf': keep_cdf,
+            'random_state': random_state
+        }
+        self.keep_cdf = keep_cdf
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"], optional_meths=["cdf"])
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
+        self._callback_wrapper = _callback_wrapper
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+            if center is not None:
+                self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
+            self.par = unur_pinv_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+
+            self._check_errorcode(unur_pinv_set_order(self.par, order))
+            self._check_errorcode(unur_pinv_set_u_resolution(self.par, u_resolution))
+            self._check_errorcode(unur_pinv_set_max_intervals(self.par, max_intervals))
+            self._check_errorcode(unur_pinv_set_keepcdf(self.par, keep_cdf))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain, order, u_resolution, max_intervals):
+        domain = _validate_domain(domain, dist)
+        # UNU.RAN raises warning and sets a default value. Prefer an error instead.
+        if not (3 <= order <= 17 and int(order) == order):
+            raise ValueError("`order` must be an integer in the range [3, 17].")
+        # UNU.RAN seg faults when u_resolution is not finite. And throws a warning if
+        # it is not in the range [1.e-15, 1.e-5]. Prefer an error instead.
+        if not (1e-15 <= u_resolution <= 1e-5):
+            raise ValueError("`u_resolution` must be between 1e-15 and 1e-5.")
+        # UNU.RAN raises warning and sets a default value. Prefer an error instead.
+        if not (100 <= max_intervals <= 1000000 and int(max_intervals) == max_intervals):
+            raise ValueError("`max_intervals` must be an integer in the range [100, 1000000].")
+        return (domain, order, u_resolution, max_intervals)
+
+    @property
+    def intervals(self):
+        """Get the number of intervals used in the computation."""
+        return unur_pinv_get_n_intervals(self.rng)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _cdf(self, const double *x, double *out, size_t N) except *:
+        cdef:
+            size_t i
+            ccallback_t callback
+
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            init_unuran_callback(&callback, self._callback_wrapper)
+            for i in range(N):
+                out[i] = unur_pinv_eval_approxcdf(self.rng, x[i])
+                if PyErr_Occurred():
+                    return
+                if out[i] == UNUR_INFINITY or out[i] == -UNUR_INFINITY:
+                    raise UNURANError(self._messages.get())
+        finally:
+            _lock.release()
+            release_unuran_callback(&callback)
+
+    def cdf(self, x):
+        """
+        cdf(x)
+
+        Approximated cumulative distribution function of the given distribution.
+        Only available if ``keep_cdf`` was set to ``True`` when the instance was
+        created.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+
+        Returns
+        -------
+        cdf : array_like
+            Approximated cumulative distribution function evaluated at `x`.
+        """
+        if not self.keep_cdf:
+            raise ValueError("CDF is not available. Initialize the generator "
+                             "again with `keep_cdf=True` to enable "
+                             "evaluation of (approximate) CDF.")
+        x = np.asarray(x, dtype='d')
+        oshape = x.shape
+        x = x.ravel()
+        cdef double[::1] x_view = np.ascontiguousarray(x)
+        cdef double[::1] out = np.empty_like(x)
+        if x.size == 0:
+            return np.asarray(out).reshape(oshape)
+        self._cdf(&x_view[0], &out[0], len(x_view))
+        return np.asarray(out).reshape(oshape)[()]
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+        cdef:
+            size_t i
+        for i in range(N):
+            out[i] = unur_pinv_eval_approxinvcdf(self.rng, u[i])
+
+    def ppf(self, u):
+        """
+        ppf(u)
+
+        Approximated PPF of the given distribution.
+
+        Parameters
+        ----------
+        u : array_like
+            Qunatiles.
+
+        Returns
+        -------
+        ppf : array_like
+            Percentiles corresponding to given quantiles `u`.
+        """
+        u = np.asarray(u, dtype='d')
+        oshape = u.shape
+        u = u.ravel()
+        # UNU.RAN fills in ends of the support when u < 0 or u > 1 while
+        # SciPy fills in nans. Prefer SciPy behaviour.
+        cond0 = 0 <= u
+        cond1 = u <= 1
+        cond2 = cond0 & cond1
+        goodu = argsreduce(cond2, u)[0]
+        out = np.empty_like(u)
+        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef double[::1] goodout = np.empty_like(u_view)
+        if cond2.any():
+            self._ppf(&u_view[0], &goodout[0], len(goodu))
+        np.place(out, cond2, goodout)
+        np.place(out, ~cond2, np.nan)
+        return np.asarray(out).reshape(oshape)[()]
+
+    def u_error(self, sample_size=100000):
+        """
+        u_error(sample_size=100000)
+
+        Estimate the u-error of the approximation using Monte Carlo simulation.
+        This is only available if the generator was initialized with a `dist`
+        object containing the implementation of the exact CDF under `cdf` method.
+
+        Parameters
+        ----------
+        sample_size : int, optional
+            Number of samples to use for the estimation. It must be greater than
+            or equal to 1000.
+
+        Returns
+        -------
+        max_error : float
+            Maximum u-error.
+        mean_absolute_error : float
+            Maximum absolute u-error.
+        """
+        # UNU.RAN doesn't return a proper error code for this condition.
+        if sample_size < 1000:
+            raise ValueError("`sample_size` must be greater than or equal to 1000.")
+        if 'cdf' not in self.callbacks:
+            raise ValueError("Exact CDF required but not found. Reinitialize the generator "
+                             " with a `dist` object that contains a `cdf` method to enable "
+                             " the estimation of u-error.")
+        cdef double max_error, mae
+        cdef ccallback_t callback
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            init_unuran_callback(&callback, self._callback_wrapper)
+            self._check_errorcode(unur_pinv_estimate_error(self.rng, sample_size,
+                                                           &max_error, &mae))
+        finally:
+            _lock.release()
+            release_unuran_callback(&callback)
+        return UError(max_error, mae)
 
 
 cdef class DiscreteAliasUrn(Method):
