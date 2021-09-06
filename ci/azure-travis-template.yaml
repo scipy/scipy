@@ -70,6 +70,7 @@ steps:
     gmpy2
     mpmath
     pythran
+    cffi
     pybind11
     pytest
     pytest-xdist

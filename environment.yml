@@ -36,3 +36,4 @@ dependencies:
   # Some optional test dependencies
   - mpmath
   - gmpy2
+  - cffi
