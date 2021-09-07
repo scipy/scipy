@@ -1257,6 +1257,11 @@ class rv_generic:
     def moment(self, order=None, *args, **kwds):
         """non-central moment of distribution of specified order.
 
+        .. deprecated:: 1.8.0
+           Parameter `n` will be removed in SciPy 1.10.0, it is replaced by
+           parameter `order` because the latter works even when distributions
+           have shape parameters `n`.
+
         Parameters
         ----------
         order : int, order >= 1
@@ -1272,30 +1277,88 @@ class rv_generic:
         """
         # 1.8.0 - function was originally written with parameter `n`, but this
         # was also the name of many distribution shape parameters
-        # This block can be eliminated after the usual deprecation cycle
+        # This block can be eliminated in 1.10.0
+        # The logic to provide a DeprecationWarning only when `n` is passed
+        # as a keyword, accept the new keyword `order`, and otherwise be
+        # backward-compatible deserves explanation. We need to look out for
+        # the following:
+        # * Does the distribution have a shape named `n`?
+        # * Is `order` provided? It doesn't matter whether it is provided as a
+        #   positional or keyword argument; it will be used as the order of the
+        #   moment rather than a distribution shape parameter because:
+        #   - The first positional argument of `moment` has always been the
+        #     order of the moment.
+        #   - The keyword `order` is new, so it's unambiguous that it refers to
+        #     the order of the moment.
+        # * Is `n` provided as a keyword argument? It _does_ matter whether it
+        #   is provided as a positional or keyword argument.
+        #   - The first positional argument of `moment` has always been the
+        #     order of moment, but
+        #   - if `n` is provided as a keyword argument, its meaning depends
+        #     on whether the distribution accepts `n` as a shape parameter.
         has_shape_n = (self.shapes is not None
                        and "n" in (self.shapes.split(", ")))
         got_order = order is not None
         got_keyword_n = kwds.get("n", None) is not None
 
-        if not got_order and ((not got_keyword_n)
-                              or (got_keyword_n and has_shape_n)):
+        # These lead to the following cases.
+        # Case A: If the distribution _does_ accept `n` as a shape
+        # 1. If both `order` and `n` are provided, this is now OK:
+        #    it is unambiguous that `order` is the order of the moment and `n`
+        #    is the shape parameter. Previously, this would have caused an
+        #    error because `n` was provided both as a keyword argument and
+        #    as the first positional argument. I don't think it is credible for
+        #    users to rely on this error in their code, though, so I don't see
+        #    this as a backward compatibility break.
+        # 2. If only `n` is provided (as a keyword argument), this would have
+        #    been an error in the past because `n` would have been treated as
+        #    the order of the moment while the shape parameter would be
+        #    missing. It is still the same type of error, but for a different
+        #    reason: now, `n` is treated as the shape parameter while the
+        #    order of the moment is missing.
+        # 3. If only `order` is provided, no special treament is needed.
+        #    Clearly this value is intended to be the order of the moment,
+        #    and the rest of the function will determine whether `n` is
+        #    available as a shape parameter in `args`.
+        # 4. If neither `n` nor `order` is provided, this would have been an
+        #    error (order of the moment is not provided) and it is still an
+        #    error for the same reason.
+
+        # Case B: the distribution does _not_ accept `n` as a shape
+        # 1. If both `order` and `n` are provided, this was an error, and it
+        #    still is an error: two values for same parameter.
+        # 2. If only `n` is provided (as a keyword argument), this was OK and
+        #    is still OK, but there shold now be a `DeprecationWarning`. The
+        #    value of `n` should be removed from `kwds` and stored in `order`.
+        # 3. If only `order` is provided, there was no problem before providing
+        #    only the first argument of `moment`, and there is no problem with
+        #    that now.
+        # 4. If neither `n` nor `order` is provided, this would have been an
+        #    error (order of the moment is not provided), and it is still an
+        #    error for the same reason.
+        if not got_order and ((not got_keyword_n)  # A4 and B4
+                              or (got_keyword_n and has_shape_n)):  # A2
             message = ("moment() missing 1 required "
                        "positional argument: `order`")
             raise TypeError(message)
 
         if got_keyword_n and not has_shape_n:
-            if got_order:
+            if got_order:  # B1
                 # this will change to "moment got unexpected argument n"
                 message = "moment() got multiple values for first argument"
                 raise TypeError(message)
-            else:
+            else:  # B2
                 message = ("Use of keyword argument `n` for method "
                            "`moment` is deprecated. Use first positional "
                            "argument or keyword argument `order` instead.")
                 order = kwds.pop("n")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
+        # No special treatment of A1, A3, or B3 is needed because the order
+        # of the moment is now in variable `n` and the shape parameter, if
+        # needed, will be fished out of `args` or `kwds` by _parse_args
+        # A3 might still cause an error if the shape parameter called `n`
+        # is not found in `args`.
 
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
@@ -1461,6 +1524,11 @@ class rv_generic:
     def interval(self, confidence=None, *args, **kwds):
         """Confidence interval with equal areas around the median.
 
+        .. deprecated:: 1.8.0
+           Parameter `alpha` will be removed in SciPy 1.10.0, it is replaced by
+           parameter `confidence` because the latter works even when
+           distributions have shape parameters `alpha`.
+
         Parameters
         ----------
         confidence : array_like of float
@@ -1483,7 +1551,8 @@ class rv_generic:
         """
         # 1.8.0 - function was originally written with parameter `alpha`,
         # but this was also the name of some distribution shape parameters
-        # This block can be eliminated after the usual deprecation cycle
+        # See description of logic in `moment` method.
+        # This block can be eliminated in 1.10.0
         has_shape_alpha = (self.shapes is not None
                            and "alpha" in (self.shapes.split(", ")))
         got_confidence = confidence is not None
