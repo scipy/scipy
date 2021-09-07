@@ -15,9 +15,10 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ----------
     A : sparse matrix or LinearOperator
         Matrix to decompose.
-    k : int, default: 6
+    k : int, optional
         Number of singular values and singular vectors to compute.
         Must satisfy ``1 <= k <= min(M, N) - 1``.
+        Default is 6.
     ncv : int, optional
         The number of Lanczos vectors generated.
         The default is ``min(n, max(2*k + 1, 20))``.
@@ -123,6 +124,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular vectors are also orthogonal.
+
     >>> (np.allclose(u3.T @ u3, np.eye(5)) and
     ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
