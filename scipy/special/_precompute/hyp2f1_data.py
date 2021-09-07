@@ -111,8 +111,26 @@ def get_result(a, b, c, z, group):
         abs(expected - observed),
     )
 
+def get_result_no_mp(a, b, c, z, group):
+    """Get results for given parameter and value combination."""
+    expected, observed = None, hyp2f1(a, b, c, z)
+    relative_error = None
+    return (
+        a,
+        b,
+        c,
+        z,
+        abs(z),
+        get_region(z),
+        group,
+        expected,
+        observed,
+        relative_error,
+        None,
+    )
 
-def get_results(params, Z, n_jobs=1):
+
+def get_results(params, Z, n_jobs=1, compute_mp=True):
     """Batch compute results for multiple parameter and argument values.
 
     Parameters
@@ -136,7 +154,10 @@ def get_results(params, Z, n_jobs=1):
     )
 
     with Pool(n_jobs) as pool:
-        rows = pool.starmap(get_result, input_)
+        rows = pool.starmap(
+            get_result if compute_mp else get_result_no_mp,
+            input_
+        )
     return rows
 
 
@@ -183,7 +204,14 @@ def make_hyp2f1_test_cases(rows):
     return result
 
 
-def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
+def main(
+        outpath,
+        n_jobs=1,
+        grid_size=20,
+        regions=None,
+        parameter_groups=None,
+        compute_mp=True,
+):
     outpath = os.path.realpath(os.path.expanduser(outpath))
 
     random_state = np.random.RandomState(1234)
@@ -319,7 +347,7 @@ def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
 
     # Evaluate scipy and mpmath's hyp2f1 for all parameter combinations
     # above against all arguments in the grid Z
-    rows = get_results(params, Z, n_jobs=n_jobs)
+    rows = get_results(params, Z, n_jobs=n_jobs, compute_mp=compute_mp)
 
     with open(outpath, "w", newline="") as f:
         writer = csv.writer(f, delimiter="\t")
@@ -385,11 +413,20 @@ if __name__ == "__main__":
         " the Docstring for this module for more info on regions. Calculate"
         " for all regions by default."
     )
+    parser.add_argument(
+        "--no_mp",
+        action='store_true',
+        help="If this flag is set, do not compute results with mpmath. Saves"
+        " time if results have already been computed elsewhere. Fills in"
+        " \"expected\" column with None values."
+    )         
     args = parser.parse_args()
+    compute_mp = not args.no_mp
     main(
         args.outpath,
         n_jobs=args.n_jobs,
         grid_size=args.grid_size,
         parameter_groups=args.parameter_groups,
-        regions=args.regions
+        regions=args.regions,
+        compute_mp=compute_mp,
     )
