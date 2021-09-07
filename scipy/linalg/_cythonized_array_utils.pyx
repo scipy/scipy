@@ -17,7 +17,7 @@ ctypedef fused np_numeric_t:
     cnp.complex64_t
     cnp.complex128_t
 
-__all__ = ['get_array_bandwidth', 'issymmetric', 'ishermitian']
+__all__ = ['get_array_bandwidth', 'issymmetric']
 
 
 # %% -------------- get_array_bandwidth
@@ -90,12 +90,14 @@ def get_array_bandwidth(a):
 
     return l, u
 
+
 @cython.initializedcheck(False)
 def get_array_bandwidth_c(np_numeric_t[:, ::1]A):
     cdef int l, u
     with nogil:
         l, u = band_check_internal_c(A)
     return l, u
+
 
 @cython.initializedcheck(False)
 def get_array_bandwidth_noncontig(np_numeric_t[:, :]A):
@@ -109,40 +111,134 @@ def get_array_bandwidth_noncontig(np_numeric_t[:, :]A):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
-    cdef Py_ssize_t n = A.shape[0], lower_band = 0, upper_band = 0, r, c
+    cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
+    cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
 
     for r in xrange(n):
         # Only bother if outside the existing band:
-        for c in xrange(r-lower_band):
+        for c in xrange(min(r-lower_band, m - 1)):
             if A[r, c] != zero:
                 lower_band = r - c
                 break
 
-        for c in xrange(n - 1, r + upper_band, -1):
+        for c in xrange(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
 
     return lower_band, upper_band
+
 
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
-    cdef Py_ssize_t n = A.shape[0], lower_band = 0, upper_band = 0, r, c
+    cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
+    cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
 
     for r in xrange(n):
         # Only bother if outside the existing band:
-        for c in xrange(r-lower_band):
+        for c in xrange(min(r-lower_band, m - 1)):
             if A[r, c] != zero:
                 lower_band = r - c
                 break
 
-        for c in xrange(n - 1, r + upper_band, -1):
+        for c in xrange(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
 
     return lower_band, upper_band
+
+
+# %% ========================================== issymmetric, ishermitian
+
+@cython.embedsignature(True)
+def issymmetric(a):
+    """Check if a square 2D array is symmetric
+
+    Parameters
+    ----------
+    a: ndarray
+        Input array of size (N, N)
+
+    Returns
+    -------
+    sym: bool
+        Returns True if the array symmetric.
+
+    Notes
+    -----
+    For square empty arrays the result is returned True by convention. Complex
+    valued arrays are tested for symmetricity and not for being Hermitian (see
+    examples)
+
+    Examples
+    --------
+    >>> from scipy.linalg import issymmetric
+    >>> A = np.arange(9).reshape(3, 3)
+    >>> A = A + A.T
+    >>> issymmetric(A)
+    True
+    >>> Ac = np.array([[1. + 1.j, 3.j], [3.j, 2.]])
+    >>> issymmetric(Ac)  # not Hermitian but symmetric
+    True
+
+    """
+    if a.ndim != 2:
+        raise ValueError('Input array must be a 2D NumPy array.')
+    if not np.equal(*a.shape):
+        raise ValueError('Input array must be square.')
+    if a.size == 0:
+        return True
+
+    if a.flags['C_CONTIGUOUS']:
+        s = is_sym_her_real_c(a)
+    elif a.flags['F_CONTIGUOUS']:
+        s = is_sym_her_real_c(a.T)
+    else:
+        s = is_sym_her_real_noncontig(a)
+
+    return s
+
+@cython.initializedcheck(False)
+def is_sym_her_real_c(np_numeric_t[:, ::1]A):
+    cdef bint s
+    with nogil:
+        s = is_sym_her_real_c_internal(A)
+    return s
+
+@cython.initializedcheck(False)
+def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
+    cdef bint s
+    with nogil:
+        s = is_sym_her_real_noncontig_internal(A)
+    return s
+
+@cython.initializedcheck(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
+    cdef Py_ssize_t n = A.shape[0], r, c
+    cdef bint symmetric = True
+
+    for r in xrange(n):
+        for c in xrange(n):
+            if A[r, c] != A[c, r]:
+                return False
+    return True
+
+@cython.initializedcheck(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
+    cdef Py_ssize_t n = A.shape[0], r, c
+    cdef bint symmetric = True
+
+    for r in xrange(n):
+        for c in xrange(n):
+            if A[r, c] != A[c, r]:
+                return False
+    return True
