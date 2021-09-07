@@ -35,19 +35,20 @@ References
 
 cimport cython
 from numpy cimport npy_cdouble
-from libc.math cimport fabs, trunc
+from libc.stdint cimport uint64_t, UINT64_MAX
+from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
 
 from . cimport sf_error
+from ._cephes cimport Gamma, gammasgn, lgam
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
     zabs,
+    zisinf,
+    zisnan,
     zpack,
+    zpow,
 )
-
-
-cdef extern from "limits.h":
-    cdef int INT_MAX
 
 
 cdef extern from "numpy/npy_math.h":
@@ -67,19 +68,26 @@ cdef extern from 'specfun_wrappers.h':
 # Small value from the Fortran original.
 DEF EPS = 1e-15
 
+DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
+DEF LOG_PI_2 = 0.5723649429247001  # log(M_PI) / 2
+
 
 @cython.cdivision(True)
 cdef inline double complex hyp2f1_complex(
         double a, double b, double c, double complex z
 ) nogil:
     cdef:
-        int num_terms
         double modulus_z
+        double max_degree
+        double complex result
         bint a_neg_int, b_neg_int, c_non_pos_int
+        bint c_minus_a_neg_int, c_minus_b_neg_int
     modulus_z = zabs(z)
     a_neg_int = a == trunc(a) and a < 0
     b_neg_int = b == trunc(b) and b < 0
     c_non_pos_int = c == trunc(c) and c <= 0
+    c_minus_a_neg_int = c - a == trunc(c - a) and c - a < 0
+    c_minus_b_neg_int = c - b == trunc(c - b) and c - b < 0
     # Special Cases
     # -------------------------------------------------------------------------
     # Takes constant value 1 when a = 0 or b = 0, even if c is a non-positive
@@ -109,17 +117,33 @@ cdef inline double complex hyp2f1_complex(
     if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    # Fallback to Fortran original. To be translated to Cython later.
     if z == 1.0 and c - a - b > 0:
-        return double_complex_from_npy_cdouble(
-            chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
-        )
+        result = Gamma(c) * Gamma(c - a - b)
+        result /= Gamma(c - a) * Gamma(c - b)
+        # Try again with logs if there has been an overflow.
+        if zisnan(result) or zisinf(result) or result == 0.0:
+            result = exp(
+                lgam(c) - lgam(c - a) +
+                lgam(c - a - b) - lgam(c - b)
+            )
+            result *= gammasgn(c) * gammasgn(c - a - b)
+            result *= gammasgn(c - a) * gammasgn(c - b)
+        return result
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
-    # Fall back to Fortran original. To be translated to Cython later.
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
-        return double_complex_from_npy_cdouble(
-            chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
-        )
+        # The computation below has been simplified through
+        # Legendre duplication for the Gamma function (DLMF 5.5.5).
+        result = SQRT_PI * pow(2, -a) * Gamma(c)
+        result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
+        # Try again with logs if there has been an overflow.
+        if zisnan(result) or zisinf(result) or result == 0.0:
+            result = exp(
+                LOG_PI_2 + lgam(c) - a * M_LN2 +
+                -lgam(1 + 0.5*a - b) - lgam(0.5 + 0.5*a)
+            )
+            result *= gammasgn(c) * gammasgn(1 + 0.5*a - b)
+            result *= gammasgn(0.5 + 0.5*a)
+        return result
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
@@ -132,15 +156,46 @@ cdef inline double complex hyp2f1_complex(
             max_degree = fabs(a) - 1
         else:
             max_degree = fabs(b) - 1
-        if max_degree <= INT_MAX:
+        if max_degree <= UINT64_MAX:
             # This cast is OK because we've ensured max_degree will fit into
             # an int.
             return hyp2f1_series(
-                a, b, c, z, <int> max_degree, False, 0
+                a, b, c, z, <uint64_t> max_degree, False, 0
             )
         else:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
             return zpack(NPY_NAN, NPY_NAN)
+    # If one of c - a or c - b is a negative integer, reduces to evaluating
+    # a polynomial through an Euler hypergeometric transformation.
+    # (DLMF 15.8.1)
+    if c_minus_a_neg_int or c_minus_b_neg_int:
+        max_degree = (
+            fabs(c - b) if c_minus_b_neg_int else fabs(c - a)
+        )
+        if max_degree <= UINT64_MAX:
+            result = zpow(1 - z, c - a - b)
+            result *= hyp2f1_series(
+                c - a, c - b, c, z, <uint64_t> max_degree, False, 0
+            )
+            return result
+        else:
+            sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
+            return zpack(NPY_NAN, NPY_NAN)
+    # |z| < 0, real(z) >= 0. Use defining Taylor series.
+    # --------------------------------------------------------------------------
+    if modulus_z < 0.9 and z.real >= 0:
+        # Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce
+        # size of a and b if possible. We follow the original Fortran
+        # implementation although there is very likely a better heuristic to
+        # determine when this transformation should be applied. As it stands,
+        # it hurts precision in some cases.
+        if c - a < a and c - b < b:
+            result = zpow(1 - z, c - a - b)
+            # Maximum number of terms 1500 comes from Fortran original.
+            result *= hyp2f1_series(c - a, c - b, c, z, 1500, True, EPS)
+            return result
+        # Maximum number of terms 1500 comes from Fortran original.
+        return hyp2f1_series(a, b, c, z, 1500, True, EPS)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
@@ -154,7 +209,7 @@ cdef inline double complex hyp2f1_series(
         double b,
         double c,
         double complex z,
-        int max_degree,
+        uint64_t max_degree,
         bint early_stop,
         double rtol,
 ) nogil:
@@ -169,7 +224,7 @@ cdef inline double complex hyp2f1_series(
     b : double
     c : double
     z : double complex
-    max_degree : int
+    max_degree : uint64_t
         Maximum degree of terms before truncating.
     early_stop : bint
     rtol : double
@@ -184,7 +239,7 @@ cdef inline double complex hyp2f1_series(
     double complex
     """
     cdef:
-        int k
+        uint64_t k
         double complex term = 1 + 0j
         double complex previous = 0 + 0j
         double complex result = 1 + 0j
