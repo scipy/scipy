@@ -865,9 +865,6 @@ def check_dist_keyword_names():
     mod_results = []
     for distname in distnames:
         dist = getattr(stats, distname)
-        if not dist.shapes:  # no collision if there are no shape parameters
-            continue
-        shape_names = dist.shapes.split(', ')
 
         method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
         method_names = [method[0] for method in method_members
@@ -881,6 +878,10 @@ def check_dist_keyword_names():
                           "Method parameters are not documented properly.")
                 mod_results.append(result)
                 continue
+
+            if not dist.shapes:  # can't have collision if there are no shapes
+                continue
+            shape_names = dist.shapes.split(', ')
 
             param_names1 = set(param.name for param in params)
             param_names2 = set(inspect.signature(method).parameters)
