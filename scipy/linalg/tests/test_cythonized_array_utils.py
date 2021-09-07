@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import get_array_bandwidth, issymmetric
+from scipy.linalg import get_array_bandwidth, issymmetric, ishermitian
 import pytest
 from pytest import raises
 
@@ -49,17 +49,19 @@ def test_get_array_bandwidth_rect_inputs(T):
     assert get_array_bandwidth(R) == (k, k)
 
 
-def test_issymetric_dtypes():
+def test_issymetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:
         A = np.zeros([n, n], dtype=t)
         if t in 'eUVOMm':
-            raises(TypeError, get_array_bandwidth, A)
+            raises(TypeError, issymmetric, A)
+            raises(TypeError, ishermitian, A)
         else:
             assert issymmetric(A)
+            assert ishermitian(A)
 
 
-def test_get_array_bandwidth_invalid_input():
+def test_issymmetric_ishermitian_invalid_input():
     A = np.array([1, 2, 3])
     raises(ValueError, issymmetric, A)
     A = np.array([[[1, 2, 3], [4, 5, 6]]])
@@ -75,3 +77,12 @@ def test_issymetric_complex_decimals():
     A /= np.pi
     A = A + A.T
     assert issymmetric(A)
+
+
+def test_ishermitian_complex_decimals():
+    A = np.arange(1, 10).astype(complex).reshape(3, 3)
+    A += np.arange(-4, 5).astype(complex).reshape(3, 3)*1j
+    # make entries decimal
+    A /= np.pi
+    A = A + A.T.conj()
+    assert ishermitian(A)
