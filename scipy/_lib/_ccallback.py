@@ -1,3 +1,5 @@
+from numpy.testing import suppress_warnings
+
 from . import _ccallback_c
 
 import ctypes
@@ -16,7 +18,10 @@ def _import_cffi():
         return
 
     try:
-        import cffi
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "parsing methods must have")
+            import cffi
+
         ffi = cffi.FFI()
         CData = ffi.CData
     except ImportError:

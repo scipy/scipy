@@ -1,4 +1,4 @@
-from numpy.testing import assert_equal, assert_
+from numpy.testing import assert_equal, assert_, suppress_warnings
 from pytest import raises as assert_raises
 
 import time
@@ -10,7 +10,10 @@ from scipy._lib import _test_ccallback
 from scipy._lib._ccallback import LowLevelCallable
 
 try:
-    import cffi
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "parsing methods must have")
+        import cffi
+
     HAVE_CFFI = True
 except ImportError:
     HAVE_CFFI = False
