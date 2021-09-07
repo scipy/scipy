@@ -337,10 +337,11 @@ def jacobi(n, alpha, beta, monic=False):
     >>> import numpy as np
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
-    >>> np.allclose(jacobi(0, 2, 2)(x), jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
+    >>> np.allclose(jacobi(0, 2, 2)(x),
+    ...             jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
     True
 
-    Plot of the Jacobi polynomaial :math:`P_5^{(\alpha, -0.5)}` for
+    Plot of the Jacobi polynomial :math:`P_5^{(\alpha, -0.5)}` for
     different values of :math:`\alpha`:
 
     >>> import matplotlib.pyplot as plt
@@ -592,6 +593,45 @@ def genlaguerre(n, alpha, monic=False):
     See Also
     --------
     laguerre : Laguerre polynomial.
+    hyp1f1 : confluent hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The generalized Laguerre polynomials are closely related to the confluent
+    hypergeometric function :math:`{}_1F_1`:
+
+        .. math::
+            L_n^{(\alpha)} = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
+
+    This can be verified, for example,  for :math:`n = \alpha = 3` over the
+    interval :math:`[-1, 1]`:
+
+    >>> from scipy.special import binom
+    >>> from scipy.special import genlaguerre
+    >>> from scipy.special import hyp1f1
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(genlaguerre(3, 3)(x), binom(6, 3) * hyp1f1(-3, 4, x))
+    True
+
+    This is the plot of the generalized Laguerre polynomials
+    :math:`L_3^{(\alpha)}` for some values of :math:`\alpha`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import genlaguerre
+    >>> x = np.arange(-4.0, 12.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-5.0, 10.0)
+    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{\alpha}$')
+    >>> for alpha in np.arange(0, 5):
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf'$L_3^{(alpha)}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     if alpha <= -1:
@@ -685,6 +725,55 @@ def laguerre(n, monic=False):
     -----
     The polynomials :math:`L_n` are orthogonal over :math:`[0,
     \infty)` with weight function :math:`e^{-x}`.
+
+    See Also
+    --------
+    genlaguerre : Generalized (associated) Laguerre polynomial.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The Laguerre polynomials :math:`L_n` are the special case
+    :math:`\alpha = 0` of the generalized Laguerre polynomials
+    :math:`L_n^{(\alpha)}`.
+    Let's verify it on the interval :math:`[-1, 1]`:
+
+    >>> from scipy.special import genlaguerre
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(genlaguerre(3, 0)(x), laguerre(3)(x))
+    True
+
+    The polynomials :math:`L_n` also satisfy the recurrence relation:
+
+    .. math::
+        (n + 1)L_{n+1}(x) = (2n +1 -x)L_n(x) - nL_{n-1}(x)
+
+    This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
+
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(0.0, 1.0, 0.01)
+    >>> np.allclose(4 * laguerre(4)(x),
+    ...             (7 - x) * laguerre(3)(x) - 3 * laguerre(2)(x))
+    True
+
+    This is the plot of the first few Laguerre polynomials :math:`L_n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(-1.0, 5.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-5.0, 5.0)
+    >>> ax.set_title(r'Laguerre polynomials $L_n$')
+    >>> for n in np.arange(0, 5):
+    ...     ax.plot(x, laguerre(n)(x), label=rf'$L_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     if n < 0:
@@ -1614,7 +1703,8 @@ def chebyt(n, monic=False):
     >>> from scipy.special import chebyt
     >>> from scipy.special import jacobi
     >>> x = np.arange(-1.0, 1.0, 0.01)
-    >>> np.allclose(jacobi(3, -0.5, -0.5)(x), 1/64 * binom(6, 3) * chebyt(3)(x))
+    >>> np.allclose(jacobi(3, -0.5, -0.5)(x),
+    ...             1/64 * binom(6, 3) * chebyt(3)(x))
     True
 
     We can plot the Chebyshev polynomials :math:`T_n` for some values
