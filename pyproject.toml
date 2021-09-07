@@ -13,7 +13,7 @@ requires = [
     "setuptools",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
-    "pythran>=0.9.11",
+    "pythran>=0.9.12",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then

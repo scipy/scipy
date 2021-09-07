@@ -3,6 +3,8 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import stats
+with safe_import():
+    from scipy import special
 
 
 # Beta distribution with a = 2, b = 3
@@ -32,13 +34,13 @@ class contdist1:
 # Standard Normal Distribution
 class contdist2:
     def pdf(self, x):
-        return stats.norm._pdf(x)
+        return np.exp(-0.5 * x*x)
 
     def dpdf(self, x):
-        return -x * stats.norm._pdf(x)
+        return -x * np.exp(-0.5 * x*x)
 
     def cdf(self, x):
-        return stats.norm._cdf(x)
+        return special.ndtr(x)
 
     def __repr__(self):
         return 'norm(0, 1)'
@@ -71,7 +73,55 @@ class contdist3:
         return f'sqrtlinshft({self.shift})'
 
 
-allcontdists = [contdist1(), contdist2(), contdist3(), contdist3(10000.)]
+# Sin 2 distribution
+#          /  0.05 + 0.45*(1 +sin(2 Pi x))  if |x| <= 1
+#  f(x) = <
+#          \  0        otherwise
+# Taken from UNU.RAN test suite (from file t_pinv.c)
+class contdist4:
+    def pdf(self, x):
+        return 0.05 + 0.45 * (1 + np.sin(2*np.pi*x))
+
+    def dpdf(self, x):
+        return 0.2 * 0.45 * (2*np.pi) * np.cos(2*np.pi*x)
+
+    def cdf(self, x):
+        return (0.05*(x + 1) +
+                0.9*(1. + 2.*np.pi*(1 + x) - np.cos(2.*np.pi*x)) /
+                (4.*np.pi))
+
+    def support(self):
+        return -1, 1
+
+    def __repr__(self):
+        return 'sin2'
+
+
+# Sin 10 distribution
+#          /  0.05 + 0.45*(1 +sin(2 Pi x))  if |x| <= 5
+#  f(x) = <
+#          \  0        otherwise
+# Taken from UNU.RAN test suite (from file t_pinv.c)
+class contdist5:
+    def pdf(self, x):
+        return 0.2 * (0.05 + 0.45 * (1 + np.sin(2*np.pi*x)))
+
+    def dpdf(self, x):
+        return 0.2 * 0.45 * (2*np.pi) * np.cos(2*np.pi*x)
+
+    def cdf(self, x):
+        return x/10. + 0.5 + 0.09/(2*np.pi) * (np.cos(10*np.pi) -
+                                               np.cos(2*np.pi*x))
+
+    def support(self):
+        return -5, 5
+
+    def __repr__(self):
+        return 'sin10'
+
+
+allcontdists = [contdist1(), contdist2(), contdist3(), contdist3(10000.),
+                contdist4(), contdist5()]
 
 
 class TransformedDensityRejection(Benchmark):
@@ -85,19 +135,49 @@ class TransformedDensityRejection(Benchmark):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             try:
-                self.rng = stats.TransformedDensityRejection(dist, c=c,
-                                                             seed=self.urng)
-            except RuntimeError:
+                self.rng = stats.TransformedDensityRejection(
+                    dist, c=c, random_state=self.urng
+                )
+            except stats.UNURANError:
                 # contdist3 is not T-concave for c=0. So, skip such test-cases
                 raise NotImplementedError(f"{dist} not T-concave for c={c}")
 
     def time_tdr_setup(self, dist, c):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
-            stats.TransformedDensityRejection(dist, c=c,
-                                              seed=self.urng)
+            stats.TransformedDensityRejection(
+                dist, c=c, random_state=self.urng
+            )
 
     def time_tdr_rvs(self, dist, c):
+        self.rng.rvs(100000)
+
+
+class NumericalInversePolynomial(Benchmark):
+
+    param_names = ['dist']
+
+    params = [allcontdists]
+
+    def setup(self, dist):
+        self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            try:
+                self.rng = stats.NumericalInversePolynomial(
+                    dist, random_state=self.urng
+                )
+            except stats.UNURANError:
+                raise NotImplementedError(f"setup failed for {dist}")
+
+    def time_pinv_setup(self, dist):
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            stats.NumericalInversePolynomial(
+                dist, random_state=self.urng
+            )
+
+    def time_pinv_rvs(self, dist):
         self.rng.rvs(100000)
 
 
@@ -120,10 +200,10 @@ class DiscreteAliasUrn(Benchmark):
         self.urng = np.random.default_rng(0x2fc9eb71cd5120352fa31b7a048aa867)
         x = np.arange(domain[0], domain[1] + 1)
         self.pv = dist.pmf(x, *params)
-        self.rng = stats.DiscreteAliasUrn(self.pv, seed=self.urng)
+        self.rng = stats.DiscreteAliasUrn(self.pv, random_state=self.urng)
 
     def time_dau_setup(self, distribution):
-        stats.DiscreteAliasUrn(self.pv, seed=self.urng)
+        stats.DiscreteAliasUrn(self.pv, random_state=self.urng)
 
     def time_dau_rvs(self, distribution):
         self.rng.rvs(100000)

@@ -377,6 +377,7 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
    NumericalInverseHermite
+   NumericalInversePolynomial
    TransformedDensityRejection
    DiscreteAliasUrn
 
