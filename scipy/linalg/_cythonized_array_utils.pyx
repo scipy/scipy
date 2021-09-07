@@ -14,13 +14,19 @@ ctypedef fused np_numeric_t:
     cnp.uint64_t
     cnp.float32_t
     cnp.float64_t
+    cnp.longdouble_t
     cnp.complex64_t
     cnp.complex128_t
 
-__all__ = ['get_array_bandwidth', 'issymmetric']
+ctypedef fused np_complex_numeric_t:
+    cnp.complex64_t
+    cnp.complex128_t
 
 
-# %% -------------- get_array_bandwidth
+__all__ = ['get_array_bandwidth', 'issymmetric', 'ishermitian']
+
+# %% ========================================== get_array_bandwidth
+
 
 @cython.embedsignature(True)
 def get_array_bandwidth(a):
@@ -175,6 +181,9 @@ def issymmetric(a):
     valued arrays are tested for symmetricity and not for being Hermitian (see
     examples)
 
+    The diagonal of the array is not scanned. Thus if there are infs, NaNs or
+    similar problematic entries on the diagonal, they will be ignored.
+
     Examples
     --------
     >>> from scipy.linalg import issymmetric
@@ -203,12 +212,14 @@ def issymmetric(a):
 
     return s
 
+
 @cython.initializedcheck(False)
 def is_sym_her_real_c(np_numeric_t[:, ::1]A):
     cdef bint s
     with nogil:
         s = is_sym_her_real_c_internal(A)
     return s
+
 
 @cython.initializedcheck(False)
 def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
@@ -217,28 +228,127 @@ def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
         s = is_sym_her_real_noncontig_internal(A)
     return s
 
+
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
-    cdef bint symmetric = True
 
     for r in xrange(n):
-        for c in xrange(n):
+        for c in xrange(r):
             if A[r, c] != A[c, r]:
                 return False
     return True
+
 
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
-    cdef bint symmetric = True
 
     for r in xrange(n):
-        for c in xrange(n):
+        for c in xrange(r):
             if A[r, c] != A[c, r]:
+                return False
+    return True
+
+
+@cython.embedsignature(True)
+def ishermitian(a):
+    """Check if a square 2D array is Hermitian.
+
+    Parameters
+    ----------
+    a: ndarray
+        Input array of size (N, N)
+
+    Returns
+    -------
+    her: bool
+        Returns True if the array Hermitian.
+
+    Notes
+    -----
+    For square empty arrays the result is returned True by convention.
+
+    Examples
+    --------
+    >>> from scipy.linalg import ishermitian
+    >>> A = np.arange(9).reshape(3, 3)
+    >>> A = A + A.T
+    >>> ishermitian(A)
+    True
+    >>> A = np.array([[1., 2. + 3.j], [2. - 3.j, 4.]])
+    >>> ishermitian(A)
+    True
+    >>> Ac = np.array([[1. + 1.j, 3.j], [3.j, 2.]])
+    >>> ishermitian(Ac)  # not Hermitian but symmetric
+    False
+
+    """
+    if a.ndim != 2:
+        raise ValueError('Input array must be a 2D NumPy array.')
+    if not np.equal(*a.shape):
+        raise ValueError('Input array must be square.')
+    if a.size == 0:
+        return True
+
+    if np.iscomplexobj(a):
+        # complex entries on the diagonal
+        if a.flags['C_CONTIGUOUS']:
+            s = is_sym_her_complex_c(a)
+        elif a.flags['F_CONTIGUOUS']:
+            s = is_sym_her_complex_c(a.T)
+        else:
+            s = is_sym_her_complex_noncontig(a)
+
+    else:  # real branch; delegate to issymmetric
+        if a.flags['C_CONTIGUOUS']:
+            s = is_sym_her_real_c(a)
+        elif a.flags['F_CONTIGUOUS']:
+            s = is_sym_her_real_c(a.T)
+        else:
+            s = is_sym_her_real_noncontig(a)
+
+    return s
+
+
+@cython.initializedcheck(False)
+def is_sym_her_complex_c(np_complex_numeric_t[:, ::1]A):
+    cdef bint s
+    with nogil:
+        s = is_sym_her_complex_c_internal(A)
+    return s
+
+@cython.initializedcheck(False)
+def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
+    cdef bint s
+    with nogil:
+        s = is_sym_her_complex_noncontig_internal(A)
+    return s
+
+@cython.initializedcheck(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) nogil:
+    cdef Py_ssize_t n = A.shape[0], r, c
+
+    for r in xrange(n):
+        for c in xrange(r+1):
+            if A[r, c] != A[c, r].conjugate():
+                return False
+    return True
+
+@cython.initializedcheck(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) nogil:
+    cdef Py_ssize_t n = A.shape[0], r, c
+
+    for r in xrange(n):
+        for c in xrange(r+1):
+            if A[r, c] != A[c, r].conjugate():
                 return False
     return True
