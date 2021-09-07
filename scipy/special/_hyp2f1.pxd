@@ -200,7 +200,14 @@ cdef inline double complex hyp2f1_complex(
         # Maximum number of terms 1500 comes from Fortran original.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
     if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
-        if c - a < a and c - b < b:
+        # This condition for applying Euler Transformation (DLMF 15.8.1)
+        # was determined empirically to work better for this case than that
+        # used in the original Fortran implementation for |z| < 0.9,
+        # real(z) >= 0.
+        if (
+                c - a <= a and c - b < b or
+                c - a < a and c - b <= b
+        ):
             result = zpow(1 - z, c - a - b)
             result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
             return result
