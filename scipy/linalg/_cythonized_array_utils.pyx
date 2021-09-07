@@ -64,10 +64,10 @@ def get_array_bandwidth(a):
     Raises
     ------
     TypeError
-        If the dtype of the array is not supported, in particular, NumPy half
-        precision floats.
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
     ValueError
-        If the input array is not a 2D NumPy array
+        If the input array is not a 2D NumPy array.
 
     Examples
     --------
@@ -163,7 +163,7 @@ cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
 
 @cython.embedsignature(True)
 def issymmetric(a):
-    """Check if a square 2D array is symmetric
+    """Check if a square 2D array is symmetric.
 
     Parameters
     ----------
@@ -183,6 +183,18 @@ def issymmetric(a):
 
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored.
+
+    See Also
+    --------
+    ishermitian : Check if a square 2D array is Hermitian
+
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+    ValueError
+        If the input array is not a square 2D NumPy array.
 
     Examples
     --------
@@ -272,6 +284,18 @@ def ishermitian(a):
     Notes
     -----
     For square empty arrays the result is returned True by convention.
+
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, NumPy
+        float16, float128 and complex256 dtypes.
+    ValueError
+        If the input array is not a 2D NumPy array.
+
+    See Also
+    --------
+    issymmetric : Check if a square 2D array is symmetric
 
     Examples
     --------
