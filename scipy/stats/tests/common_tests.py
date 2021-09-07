@@ -339,206 +339,114 @@ def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
 
 
 def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
     shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
     kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
     n = kwd_shapes.pop('n', None)
 
-    # --- Testing moment method ---
-    # No positional arguments, no kwd n, and no kwd order
-    message = r"moment() missing 1 required positional argument"
-    with assert_raises(TypeError, match=re.escape(message)):
-        distfn.moment()
-    with assert_raises(TypeError, match=re.escape(message)):
-        distfn.moment(**kwd_shapes)
-
-    # First positional argument, no kwd n, and no kwd order
-    # Same as kwd order, no first positional argument n, and no kwd n
-    n_shapes = len(shapes)
-    if n_shapes:
-        message = f"_parse_args() missing {n_shapes} required positional"
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.moment(1)
-    if 'n' not in shapes:  # note that 'n' is not in `kwd_shapes`
-        expected = distfn.mean(**kwd_shapes)
-        mean = distfn.moment(1, **kwd_shapes)
-        assert_allclose(mean, expected)
-
-    # kwd n, no first positional argument, no kwd order
-    if 'n' not in shapes:  # note that 'n' is not in `kwd_shapes`
-        expected = distfn.mean(**kwd_shapes)
-        with np.testing.assert_warns(DeprecationWarning):
-            mean = distfn.moment(n=1, **kwd_shapes)
-        assert_allclose(mean, expected)
-    else:
-        message = r"moment() missing 1 required positional argument"
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.moment(n=1)
-
-    # testing all combinations of positional and keyword arguments for
-    # `n`/`order` argument of moment and `n` as distribution shape
-
-    # There are 6 distinct cases with subcases depending on whether `n` is a
-    # shape parameter
-    # 1. n as moment kwd, n as shape kwd - always a syntax error
-    # 2. n as moment kwd, n as shape pos - always a syntax error
-    # 3. order as moment kwd, n as shape kwd
-    #    a. n is a shape - should work fine
-    #    b. n is not a shape - multiple values for first argument
-    # 4. order as moment kwd, n as shape pos - always a syntax error
-    # 5. first argument moment pos, n as shape kwd
-    #    a. n is a shape - should work fine
-    #    b. n is not a shape - multiple values for first argument
-    # 6. first argument moment pos, n as shape pos
-    #    a. n is a shape - should work fine
-    #    b. n is not a shape -
-
-    # Case 1 - syntax error during collection - keyword argument repeated...
-    # distfn.moment(n=1, n=n, **kwd_shapes)
-    # Case 2 - syntax error during collection - positional argument follows...
-    # distfn.moment(n=1, n, **kwd_shapes)
-    # Case 4 - syntax error during collection - positional argument follows...
-    # distfn.moment(order=1, n, **kwd_shapes)
+    message1 = "moment() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'n'"
+    message3 = "moment() got multiple values for first argument"
 
     if 'n' in shapes:
         expected = distfn.mean(n=n, **kwd_shapes)
 
-        # Case 3a
-        mean3a = distfn.moment(1, n=n, **kwd_shapes)
-        assert_allclose(mean3a, expected)
+        # A1
+        res = distfn.moment(1, n=n, **kwd_shapes)
+        assert_allclose(res, expected)
 
-        # Case 4a
-        mean4a = distfn.moment(order=1, n=n, **kwd_shapes)
-        assert_allclose(mean4a, expected)
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(n=n, **kwd_shapes)
 
-        # Case 6a
-        if distname in {'hypergeom', 'nhypergeom',
-                        'nchypergeom_fisher', 'nchypergeom_wallenius',
-                        'zipfian'}:
-            message = r"_parse_args() got multiple values"
-            with assert_raises(TypeError, match=re.escape(message)):
-                distfn.moment(1, n, **kwd_shapes)
-        else:
-            mean6a = distfn.moment(1, n, **kwd_shapes)
-            assert_allclose(mean6a, expected)
+        # A3
+        # if `n` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.moment(1, **kwd_shapes)
+        # if `n` is provided as a positional argument
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
 
     else:
-        message = r"moment() got multiple values for"
-        # Case 3a
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.moment(1, n=1, **kwd_shapes)
+        expected = distfn.mean(**kwd_shapes)
 
-        # Case 4a
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.moment(1, order=1, **kwd_shapes)  # Case 4a
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.moment(1, n=1, **kwd_shapes)
 
-        # Case 6a
-        if kwd_shapes:
-            message = r"_parse_args() got multiple values"
-            with assert_raises(TypeError, match=re.escape(message)):
-                distfn.moment(1, 2, **kwd_shapes)
-        else:
-            expected = distfn.moment(1, loc=2, **kwd_shapes)
-            mean6b = distfn.moment(1, 2, **kwd_shapes)
-            assert_allclose(mean6b, expected)
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.moment(n=1, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
 
 
 def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
     shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
     kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
     alpha = kwd_shapes.pop('alpha', None)
 
-    def my_interval(*args):
-        return (distfn.ppf(0.25, *args),
-                distfn.ppf(0.75, *args))
+    def my_interval(*args, **kwds):
+        return (distfn.ppf(0.25, *args, **kwds),
+                distfn.ppf(0.75, *args, **kwds))
 
-    # --- Testing interval method ---
-    # No positional arguments, no kwd alpha, and no kwd confidence
-    message = r"interval() missing 1 required positional argument"
-    with assert_raises(TypeError, match=re.escape(message)):
-        distfn.interval()
-    with assert_raises(TypeError, match=re.escape(message)):
-        distfn.interval(**kwd_shapes)
-
-    # First positional argument, no kwd alpha, and no kwd confidence
-    # Same as kwd confidence, no first pos. argument alpha, and no kwd alpha
-    n_shapes = len(shapes)
-    if n_shapes:
-        message = f"_parse_args() missing {n_shapes} required positional"
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.interval(1)
-    if 'alpha' not in shapes:  # note that 'alpha' is not in `kwd_shapes`
-        expected = my_interval(*arg)
-        interval = distfn.interval(0.5, **kwd_shapes)
-        assert_allclose(interval, expected)
-
-    # kwd alpha, no first positional argument, no kwd confidence
-    if 'alpha' not in shapes:  # note that 'alpha' is not in `kwd_shapes`
-        expected = my_interval(*arg)
-        with np.testing.assert_warns(DeprecationWarning):
-            interval = distfn.interval(alpha=0.5, **kwd_shapes)
-        assert_allclose(interval, expected)
-    else:
-        message = r"interval() missing 1 required positional argument"
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.interval(alpha=0.5)
-
-    # testing all combinations of positional and keyword arguments for
-    # `alpha`/`confidence` argument of interval and `alpha` as distribution
-    # shape
-
-    # There are 6 distinct cases with subcases depending on whether `alpha` is
-    # a shape parameter
-    # 1. alpha as interval kwd, alpha as shape kwd - always a syntax error
-    # 2. alpha as interval kwd, alpha as shape pos - always a syntax error
-    # 3. confidence as interval kwd, alpha as shape kwd
-    #    a. alpha is a shape - should work fine
-    #    b. alpha is not a shape - multiple values for first argument
-    # 4. confidence as interval kwd, alpha as shape pos - always a syntax error
-    # 5. first argument interval pos, alpha as shape kwd
-    #    a. alpha is a shape - should work fine
-    #    b. alpha is not a shape - multiple values for first argument
-    # 6. first argument interval pos, alpha as shape pos
-    #    a. alpha is a shape - should work fine
-    #    b. alpha is not a shape -
-
-    # Case 1 - syntax error during collection - keyword argument repeated...
-    # distfn.interval(alpha=1, alpha=alpha, **kwd_shapes)
-    # Case 2 - syntax error during collection - positional argument follows...
-    # distfn.interval(alpha=1, alpha, **kwd_shapes)
-    # Case 4 - syntax error during collection - positional argument follows...
-    # distfn.interval(confidence=1, alpha, **kwd_shapes)
+    message1 = "interval() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'alpha'"
+    message3 = "interval() got multiple values for first argument"
 
     if 'alpha' in shapes:
-        expected = my_interval(*arg)
+        expected = my_interval(alpha=alpha, **kwd_shapes)
 
-        # Case 3a
-        interval3a = distfn.interval(0.5, alpha=alpha, **kwd_shapes)
-        assert_allclose(interval3a, expected)
+        # A1
+        res = distfn.interval(0.5, alpha=alpha, **kwd_shapes)
+        assert_allclose(res, expected)
 
-        # Case 4a
-        interval4a = distfn.interval(confidence=0.5, alpha=alpha, **kwd_shapes)
-        assert_allclose(interval4a, expected)
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(alpha=alpha, **kwd_shapes)
 
-        # Case 6a
-        interval6a = distfn.interval(0.5, alpha, **kwd_shapes)
-        assert_allclose(interval6a, expected)
+        # A3
+        # if `alpha` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.interval(0.5, **kwd_shapes)
+        # if `alpha` is provided as a positional argument
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)
 
     else:
-        message = r"interval() got multiple values for"
-        # Case 3a
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.interval(0.5, alpha=1, **kwd_shapes)
+        expected = my_interval(**kwd_shapes)
 
-        # Case 4a
-        with assert_raises(TypeError, match=re.escape(message)):
-            distfn.interval(0.5, confidence=1, **kwd_shapes)  # Case 4a
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.interval(0.5, alpha=1, **kwd_shapes)
 
-        # Case 6a
-        if kwd_shapes:
-            message = r"_parse_args() got multiple values"
-            with assert_raises(TypeError, match=re.escape(message)):
-                distfn.interval(0.5, 2, **kwd_shapes)
-        else:
-            expected = distfn.interval(0.5, loc=2, **kwd_shapes)
-            interval6b = distfn.interval(0.5, 2, **kwd_shapes)
-            assert_allclose(interval6b, expected)
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.interval(alpha=0.5, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)
