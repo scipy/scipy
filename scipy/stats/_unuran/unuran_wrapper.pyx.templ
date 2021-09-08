@@ -15,10 +15,12 @@ IF not NPY_OLD:
 from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
 from .unuran cimport *
+import warnings
 import threading
 import functools
 from collections import namedtuple
 import numpy as np
+import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 from scipy._lib._util import check_random_state
 
@@ -57,6 +59,8 @@ class UNURANError(RuntimeError):
     pass
 
 
+ctypedef double (*URNG_FUNCT)(void *) nogil
+
 IF not NPY_OLD:
     cdef object get_numpy_rng(object seed = None):
         """
@@ -78,8 +82,6 @@ IF not NPY_OLD:
             return np.random.default_rng(seed._bit_generator)
         return seed
 ELSE:
-    ctypedef double (*URNG_FUNCT)(void *) nogil
-
     cdef object get_numpy_rng(object seed = None):
         """
         Create a NumPy RandomState object from a given seed. If the seed is
@@ -112,6 +114,8 @@ cdef class _URNG:
         random number generator.
     """
     cdef object numpy_rng
+    cdef double[::1] qrvs_array
+    cdef size_t i
 
     def __init__(self, numpy_rng):
         self.numpy_rng = numpy_rng
@@ -120,6 +124,12 @@ cdef class _URNG:
         cdef double _next_double(self) nogil:
             with gil:
                 return self.numpy_rng.uniform()
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef double _next_qdouble(self) nogil:
+        self.i += 1
+        return self.qrvs_array[self.i-1]
 
     cdef unur_urng * get_urng(self) except *:
         """
@@ -151,12 +161,20 @@ cdef class _URNG:
 
             return unuran_urng
 
+    cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
+        cdef unur_urng *unuran_urng
+        self.i = 0
+        self.qrvs_array = np.ascontiguousarray(qmc_engine.random(size).ravel())
+        unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_qdouble,
+                                    <void *>self)
+        return unuran_urng
+
 
 # Module level lock. This is used to provide thread-safe error reporting.
 # UNU.RAN has a thread-unsafe global FILE streams where errors are logged.
 # To make it thread-safe, one can aquire a lock before calling
 # `unur_set_stream` and release once the stream is not needed anymore.
-cdef object _lock = threading.Lock()
+cdef object _lock = threading.RLock()
 
 cdef:
     unur_urng *default_urng
@@ -458,9 +476,9 @@ cdef class Method:
             if self._callback_wrapper is not None:
                 release_unuran_callback(&callback)
 
-    def rvs(self, size=None):
+    def rvs(self, size=None, random_state=None):
         """
-        rvs(size=None)
+        rvs(size=None, random_state=None)
 
         Sample from the distribution.
 
@@ -469,6 +487,17 @@ cdef class Method:
         size : int or tuple, optional
             The shape of samples. Default is ``None`` in which case a scalar
             sample is returned.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            A NumPy random number generator or seed for the underlying NumPy random
+            number generator used to generate the stream of uniform random numbers.
+            If `random_state` is None (or `np.random`), `random_state` provided during
+            initialization is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used,
+            seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
 
         Returns
         -------
@@ -478,6 +507,8 @@ cdef class Method:
         cdef double[::1] out_cont
         cdef int[::1] out_discr
         N = 1 if size is None else np.prod(size)
+        if random_state is not None:
+            self.set_random_state(random_state)
         if unur_distr_is_cont(unur_get_distr(self.rng)):
             out_cont = np.empty(N, dtype=np.float64)
             self._rvs_cont(out_cont)
@@ -1368,6 +1399,460 @@ cdef class NumericalInversePolynomial(Method):
             _lock.release()
             release_unuran_callback(&callback)
         return UError(max_error, mae)
+
+
+cdef class NumericalInverseHermite(Method):
+    """
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, tol=None, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+
+    A Hermite spline fast numerical inverse of a probability distribution.
+
+    The initializer of `NumericalInverseHermite` accepts `dist`, an object
+    representing a continuous distribution, and provides an object with methods
+    that approximate `dist.ppf` and `dist.rvs`. For most distributions,
+    these methods are faster than those of `dist` itself.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a class with a ``cdf`` and optionally a ``pdf`` and ``dpdf`` method.
+
+        * ``cdf``: CDF of the distribution. The signature of the CDF is expected to be:
+          ``def cdf(self, x: float) -> float``. i.e. the CDF should accept a Python
+          float and return a Python float.
+        * ``pdf``: PDF of the distribution. This method is optional when ``order=1``.
+          Must have the same signature as the PDF.
+        * ``dpdf``: Derivative of the PDF w.r.t the variate (i.e. ``x``). This method is
+          optional with ``order=1`` or ``order=3``. Must have the same signature as the CDF.
+
+    domain : list or tuple of length 2, optional
+        The support of the distribution.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
+    order : int, optional
+        Set order of Hermite interpolation. Valid orders are 1, 3, and 5.
+        Valid orders are 1, 3, and 5. Notice that order greater than 1 requires the density
+        of the distribution, and order greater than 3 even requires the derivative of the
+        density. Using order 1 results for most distributions in a huge number of intervals
+        and is therefore not recommended. If the maximal error in u-direction is very small
+        (say smaller than 1.e-10), order 5 is recommended as it leads to considerably fewer
+        design points, as long there are no poles or heavy tails.
+    u_resolution : float, optional
+        Set maximal tolerated u-error. Notice that the resolution of most uniform random
+        number sources is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion
+        algorithm that could be called exact. For most simulations slightly bigger values
+        for the maximal error are enough as well. Default is 1e-12.
+    construction_points : array_like, optional
+        Set starting construction points (nodes) for Hermite interpolation. As the possible
+        maximal error is only estimated in the setup it may be necessary to set some
+        special design points for computing the Hermite interpolation to guarantee that the
+        maximal u-error can not be bigger than desired.
+    max_intervals : int, optional
+        Maximum number of intervals in the Hermite spline used to
+        approximate the percent point function. The default is 100000.
+    guide_factor : float, optional
+        Set factor for relative size of the guide table for indexed search.
+        It must be greater than or equal to 0. When set to 0, then sequential
+        search is used. Default is 2.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Notes
+    -----
+    `NumericalInverseHermite` approximates the inverse of a continuous
+    statistical distribution's CDF with a Hermite spline. Order of the
+    hermite spline can be specified by passing the ``order`` parameter.
+
+    As described in [1]_, it begins by evaluating the distribution's PDF and
+    CDF at a mesh of quantiles ``x`` within the distribution's support.
+    It uses the results to fit a Hermite spline ``H`` such that
+    ``H(p) == x``, where ``p`` is the array of percentiles corresponding
+    with the quantiles ``x``. Therefore, the spline approximates the inverse
+    of the distribution's CDF to machine precision at the percentiles ``p``,
+    but typically, the spline will not be as accurate at the midpoints between
+    the percentile points::
+
+        p_mid = (p[:-1] + p[1:])/2
+
+    so the mesh of quantiles is refined as needed to reduce the maximum
+    "u-error"::
+
+        u_error = np.max(np.abs(dist.cdf(H(p_mid)) - p_mid))
+
+    below the specified tolerance `u_resolution`. Refinement stops when the required
+    tolerance is achieved or when the number of mesh intervals after the next
+    refinement could exceed the maximum allowed number `max_intervals`.
+
+    References
+    ----------
+    .. [1] Hörmann, Wolfgang, and Josef Leydold. "Continuous random variate
+           generation by fast numerical inversion." ACM Transactions on
+           Modeling and Computer Simulation (TOMACS) 13.4 (2003): 347-362.
+
+    Examples
+    --------
+    For some distributions, ``dist.ppf`` and ``dist.rvs`` are quite slow.
+    For instance, consider `scipy.stats.genexpon`. We freeze the distribution
+    by passing all shape parameters into its initializer and time the resulting
+    object's ``ppf`` and ``rvs`` functions.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> from timeit import timeit
+    >>> time_once = lambda f: f"{timeit(f, number=1)*1000:.6} ms"
+    >>> dist = stats.genexpon(9, 16, 3)  # freeze the distribution
+    >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
+    >>> time_once(lambda: dist.ppf(p))
+    '455.806 ms'  # may vary
+
+    >>> time_once(lambda: dist.rvs(size=100))
+    '468.808 ms'  # may vary
+
+    The `NumericalInverseHermite` has a method that approximates ``dist.ppf``.
+
+    >>> from scipy.stats import NumericalInverseHermite
+    >>> fni = NumericalInverseHermite(dist)
+    >>> np.allclose(fni.ppf(p), dist.ppf(p))
+    True
+
+    After generating the fast numerical inverse, subsequent calls to its
+    methods are much faster.
+
+    >>> time_once(lambda: fni.ppf(p))
+    '0.350707 ms'  # may vary
+
+    The fast numerical inverse can also be used to generate random variates
+    using inverse transform sampling.
+
+    >>> time_once(lambda: fni.rvs(size=100))
+    '0.192309 ms'  # may vary
+
+    Depending on the implementation of the distribution's random sampling
+    method, the random variates generated may be nearly identical, given
+    the same random state.
+
+    >>> # `seed` ensures identical random streams are used by each `rvs` method
+    >>> seed = 500072020
+    >>> rvs1 = dist.rvs(size=100, random_state=np.random.default_rng(seed))
+    >>> rvs2 = fni.rvs(size=100, random_state=np.random.default_rng(seed))
+    >>> np.allclose(rvs1, rvs2)
+    True
+
+    To use `NumericalInverseHermite` with a custom distribution, users may
+    subclass  `scipy.stats.rv_continuous` and initialize a frozen instance or
+    create an object with equivalent ``pdf`` and ``cdf`` methods.
+    For instance, the following object represents the standard normal
+    distribution. For simplicity, we use `scipy.special.ndtr` to compute the
+    ``cdf``.
+
+    >>> from scipy.special import ndtr
+    >>>
+    >>> class MyNormal:
+    ...     def pdf(self, x):
+    ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
+    ...     def cdf(self, x):
+    ...        return ndtr(x)
+    ...
+    >>> dist1 = MyNormal()
+    >>> fni1 = NumericalInverseHermite(dist1)
+    >>>
+    >>> dist2 = stats.norm()
+    >>> fni2 = NumericalInverseHermite(dist2)
+    >>>
+    >>> print(fni1.rvs(random_state=seed), fni2.rvs(random_state=seed))
+    -1.960381092173072 -1.960381092173072
+
+    """
+    cdef double[::1] construction_points_array
+
+    def __cinit__(self,
+                  dist,
+                  *,
+                  domain=None,
+                  order=3,
+                  u_resolution=1e-12,
+                  tol=None,
+                  construction_points=None,
+                  max_intervals=100000,
+                  guide_factor=1,
+                  random_state=None):
+        domain, order, u_resolution = self._validate_args(dist, domain, order, max_intervals,
+                                                          u_resolution, tol, construction_points)
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'domain': domain,
+            'order': order,
+            'u_resolution': u_resolution,
+            'tol': tol,
+            'max_intervals': max_intervals,
+            'guide_factor': guide_factor,
+            'construction_points': construction_points,
+            'random_state': random_state
+        }
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
+        self._callback_wrapper = _callback_wrapper
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
+            self.par = unur_hinv_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+
+            self._check_errorcode(unur_hinv_set_order(self.par, order))
+            self._check_errorcode(unur_hinv_set_u_resolution(self.par, u_resolution))
+            self._check_errorcode(unur_hinv_set_max_intervals(self.par, max_intervals))
+            self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
+                                                        len(self.construction_points_array)))
+            self._check_errorcode(unur_hinv_set_guidefactor(self.par, guide_factor))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    def _validate_args(self, dist, domain, order, max_intervals, u_resolution, tol,
+                       construction_points):
+        domain = _validate_domain(domain, dist)
+        # UNU.RAN raises warning and sets a default value. Prefer an error instead.
+        if order not in {1, 3, 5}:
+            raise ValueError("`order` must be either 1, 3, or 5.")
+        if int(max_intervals) != max_intervals or max_intervals <= 1:
+            raise ValueError("`max_intervals' must be an integer greater than 1.")
+        if tol is not None:
+            warnings.warn("`tol` has been deprecated in favor of `u_resolution`.",
+                          DeprecationWarning)
+            u_resolution = tol
+        u_resolution = float(u_resolution)
+        self.construction_points_array = np.ascontiguousarray(construction_points,
+                                                              dtype=np.float64)
+        if len(self.construction_points_array) == 0:
+            raise ValueError("`construction_points` must be a non-empty array.")
+        return (domain, order, u_resolution)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+        cdef:
+            size_t i
+        for i in range(N):
+            out[i] = unur_hinv_eval_approxinvcdf(self.rng, u[i])
+
+    def ppf(self, u):
+        """
+        ppf(u)
+
+        Approximated PPF of the given distribution.
+
+        Parameters
+        ----------
+        u : array_like
+            Qunatiles.
+
+        Returns
+        -------
+        ppf : array_like
+            Percentiles corresponding to given quantiles `u`.
+        """
+        u = np.asarray(u, dtype='d')
+        oshape = u.shape
+        u = u.ravel()
+        # UNU.RAN fills in ends of the support when u < 0 or u > 1 while
+        # SciPy fills in nans. Prefer SciPy behaviour.
+        cond0 = 0 <= u
+        cond1 = u <= 1
+        cond2 = cond0 & cond1
+        goodu = argsreduce(cond2, u)[0]
+        out = np.empty_like(u)
+        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef double[::1] goodout = np.empty_like(u_view)
+        if cond2.any():
+            self._ppf(&u_view[0], &goodout[0], len(goodu))
+        np.place(out, cond2, goodout)
+        np.place(out, ~cond2, np.nan)
+        return np.asarray(out).reshape(oshape)[()]
+
+    def u_error(self, sample_size=100000):
+        """
+        u_error(sample_size=100000)
+
+        Estimate the u-error of the approximation using Monte Carlo simulation.
+        This is only available if the generator was initialized with a `dist`
+        object containing the implementation of the exact CDF under `cdf` method.
+
+        Parameters
+        ----------
+        sample_size : int, optional
+            Number of samples to use for the estimation. It must be greater than
+            or equal to 1000.
+
+        Returns
+        -------
+        max_error : float
+            Maximum u-error.
+        mean_absolute_error : float
+            Maximum absolute u-error.
+        """
+        # UNU.RAN doesn't return a proper error code for this condition.
+        if sample_size < 1000:
+            raise ValueError("`sample_size` must be greater than or equal to 1000.")
+        cdef double max_error, mae
+        cdef ccallback_t callback
+        _lock.acquire()
+        try:
+            self._messages.clear()
+            unur_set_stream(self._messages.handle)
+            init_unuran_callback(&callback, self._callback_wrapper)
+            self._check_errorcode(unur_hinv_estimate_error(self.rng, sample_size,
+                                                           &max_error, &mae))
+        finally:
+            _lock.release()
+            release_unuran_callback(&callback)
+        return UError(max_error, mae)
+
+    def qrvs(self, size=None, d=None, qmc_engine=None):
+        """
+        Quasi-random variates of the given RV.
+
+        The `qmc_engine` is used to draw uniform quasi-random variates, and
+        these are converted to quasi-random variates of the given RV using
+        inverse transform sampling.
+
+        Parameters
+        ----------
+        size : int, tuple of ints, or None; optional
+            Defines shape of random variates array. Default is ``None``.
+        d : int or None, optional
+            Defines dimension of uniform quasi-random variates to be
+            transformed. Default is ``None``.
+        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
+            Defines the object to use for drawing
+            quasi-random variates. Default is ``None``, which uses
+            `scipy.stats.qmc.Halton(1)`.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Quasi-random variates. See Notes for shape information.
+
+        Notes
+        -----
+        The shape of the output array depends on `size`, `d`, and `qmc_engine`.
+        The intent is for the interface to be natural, but the detailed rules
+        to achieve this are complicated.
+
+        - If `qmc_engine` is ``None``, a `scipy.stats.qmc.Halton` instance is
+          created with dimension `d`. If `d` is not provided, ``d=1``.
+        - If `qmc_engine` is not ``None`` and `d` is ``None``, `d` is
+          determined from the dimension of the `qmc_engine`.
+        - If `qmc_engine` is not ``None`` and `d` is not ``None`` but the
+          dimensions are inconsistent, a ``ValueError`` is raised.
+        - After `d` is determined according to the rules above, the output
+          shape is ``tuple_shape + d_shape``, where:
+
+              - ``tuple_shape = tuple()`` if `size` is ``None``,
+              - ``tuple_shape = (size,)`` if `size` is an ``int``,
+              - ``tuple_shape = size`` if `size` is a sequence,
+              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+              - ``d_shape = (d,)`` if `d` is greater than 1.
+
+        The elements of the returned array are part of a low-discrepancy
+        sequence. If `d` is 1, this means that none of the samples are truly
+        independent. If `d` > 1, each slice ``rvs[..., i]`` will be of a
+        quasi-independent sequence; see `scipy.stats.qmc.QMCEngine` for
+        details. Note that when `d` > 1, the samples returned are still those
+        of the provided univariate distribution, not a multivariate
+        generalization of that distribution.
+
+        """
+        # Input validation for `qmc_engine` and `d`
+        # Error messages for invalid `d` are raised by QMCEngine
+        # we could probably use a stats.qmc.check_qrandom_state
+        if isinstance(qmc_engine, stats.qmc.QMCEngine):
+            message = "`d` must be consistent with dimension of `qmc_engine`."
+            if d is not None and qmc_engine.d != d:
+                raise ValueError(message)
+            d = qmc_engine.d if d is None else d
+        elif qmc_engine is None:
+            d = 1 if d is None else d
+            qmc_engine = stats.qmc.Halton(d)
+        else:
+            message = ("`qmc_engine` must be an instance of "
+                       "`scipy.stats.qmc.QMCEngine` or `None`.")
+            raise ValueError(message)
+
+        # `rvs` is flexible about whether `size` is an int or tuple, so this
+        # should be, too.
+        try:
+            if size is None:
+                tuple_size = (1, )
+            else:
+                tuple_size = tuple(size)
+        except TypeError:
+            tuple_size = (size,)
+
+        cdef unur_urng *unuran_urng
+        cdef double[::1] qrvs_view
+        N = 1 if size is None else np.prod(size)
+        N = N*d
+        qrvs_view = np.empty(N, dtype=np.float64)
+        _lock.acquire()
+        try:
+            # the call below must be under a lock
+            unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
+            unur_chg_urng(self.rng, unuran_urng)
+            self._rvs_cont(qrvs_view)
+            qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
+        finally:
+            _lock.release()
+
+        # Output reshaping for user convenience
+        if size is None:
+            return qrvs.squeeze()[()]
+        else:
+            if d == 1:
+                return qrvs.reshape(tuple_size)
+            else:
+                return qrvs.reshape(tuple_size + (d,))
+
+    @property
+    def intervals(self):
+        """
+        Get number of nodes (design points) used for Hermite interpolation in the
+        generator object. The number of intervals is the number of nodes minus 1.
+        """
+        return unur_hinv_get_n_intervals(self.rng)
 
 
 cdef class DiscreteAliasUrn(Method):
