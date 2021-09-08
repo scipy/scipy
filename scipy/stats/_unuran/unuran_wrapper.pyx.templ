@@ -1833,6 +1833,7 @@ cdef class NumericalInverseHermite(Method):
             unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
             unur_chg_urng(self.rng, unuran_urng)
             self._rvs_cont(qrvs_view)
+            self.set_random_state(self.numpy_rng)
             qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
         finally:
             _lock.release()
