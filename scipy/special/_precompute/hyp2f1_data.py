@@ -53,9 +53,11 @@ The --parameter_groups optional argument allows the user to specify a list of
 parameter groups to which computation will be restricted.
 
 The argument z is taken from a grid in the box
-    -2 <= real(z) <= 2, -2 <= imag(z) <= 2.
-with grid size specified using the optional command line argument --grid-size.
-The default value is 20, yielding a 20 * 20 grid in this box.
+    -box_size <= real(z) <= box_size, -box_size <= imag(z) <= box_size.
+with grid size specified using the optional command line argument --grid_size,
+and box_size specificed with the command line argument --box_size.
+The default value of grid_size is 20 and the default value of box_size is 2.0,
+yielding a 20 * 20 grid in the box with corners -2-2j, -2+2j, 2-2j, 2+2j.
 
 The final four columns have the expected value of hyp2f1 for the given
 parameters and argument as calculated with mpmath, the observed value
@@ -207,6 +209,7 @@ def make_hyp2f1_test_cases(rows):
 def main(
         outpath,
         n_jobs=1,
+        box_size=2.0,
         grid_size=20,
         regions=None,
         parameter_groups=None,
@@ -338,7 +341,8 @@ def main(
     # grid_size * grid_size grid in box with corners
     # -2 - 2j, -2 + 2j, 2 - 2j, 2 + 2j
     X, Y = np.meshgrid(
-        np.linspace(-2, 2, grid_size), np.linspace(-2, 2, grid_size)
+        np.linspace(-box_size, box_size, grid_size),
+        np.linspace(-box_size, box_size, grid_size)
     )
     Z = X + Y * 1j
     Z = Z.flatten().tolist()
@@ -389,11 +393,18 @@ if __name__ == "__main__":
         help="Number of jobs for multiprocessing.",
     )
     parser.add_argument(
+        "--box_size",
+        type=float,
+        default=2.0,
+        help="hyp2f1 is evaluated in box of side_length 2*box_size centered"
+        " at the origin."
+    )
+    parser.add_argument(
         "--grid_size",
         type=int,
         default=20,
         help="hyp2f1 is evaluated on grid_size * grid_size grid in box of side"
-        " length 2 centered at the origin."
+        " length 2*box_size centered at the origin."
     )
     parser.add_argument(
         "--parameter_groups",
@@ -425,6 +436,7 @@ if __name__ == "__main__":
     main(
         args.outpath,
         n_jobs=args.n_jobs,
+        box_size=args.box_size,
         grid_size=args.grid_size,
         parameter_groups=args.parameter_groups,
         regions=args.regions,
