@@ -115,8 +115,8 @@ def get_result(a, b, c, z, group):
 
 def get_result_no_mp(a, b, c, z, group):
     """Get results for given parameter and value combination."""
-    expected, observed = None, hyp2f1(a, b, c, z)
-    relative_error = None
+    expected, observed = complex('nan'), hyp2f1(a, b, c, z)
+    relative_error, absolute_error = float('nan'), float('nan')
     return (
         a,
         b,
@@ -128,7 +128,7 @@ def get_result_no_mp(a, b, c, z, group):
         expected,
         observed,
         relative_error,
-        None,
+        absolute_error,
     )
 
 
