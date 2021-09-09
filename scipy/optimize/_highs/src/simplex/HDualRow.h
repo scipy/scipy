@@ -144,30 +144,29 @@ class HDualRow {
   HighsModelObject& workHMO;  //!< Local copy of pointer to model
   int workSize = -1;  //!< Size of the HDualRow slice: Initialise it here to
                       //!< avoid compiler warning
-  const int* workNumTotPermutation;  //!< Pointer to model->numTotPermutation();
-  const int* workMove;     //!< Pointer to workHMO.simplex_basis_.nonbasicMove_;
-  const double* workDual;  //!< Pointer to workHMO.simplex_info_.workDual_;
-  const double* workRange;  //!< Pointer to workHMO.simplex_info_.workRange_;
-  const int*
-      work_devex_index;  //!< Pointer to workHMO.simplex_info_.devex_index;
+  const int* workNumTotPermutation = NULL;  //!< Pointer to model->numTotPermutation();
+  const int* workMove = NULL;     //!< Pointer to workHMO.simplex_basis_.nonbasicMove_;
+  const double* workDual = NULL;  //!< Pointer to workHMO.simplex_info_.workDual_;
+  const double* workRange = NULL;  //!< Pointer to workHMO.simplex_info_.workRange_;
+  const int* work_devex_index = NULL;  //!< Pointer to workHMO.simplex_info_.devex_index;
 
   // Freelist:
   std::set<int> freeList;  //!< Freelist itself
 
   // packed data:
-  int packCount;                  //!< number of packed indices/values
+  int packCount = 0;                  //!< number of packed indices/values
   std::vector<int> packIndex;     //!< Packed indices
   std::vector<double> packValue;  //!< Packed values
 
   // (Local) value of computed weight
-  double computed_edge_weight;
+  double computed_edge_weight = 0.;
 
-  double workDelta;  //!< Local copy of dual.deltaPrimal
-  double workAlpha;  //!< Original copy of pivotal computed row-wise
-  double workTheta;  //!< Original copy of dual step workDual[workPivot] /
+  double workDelta = 0.;  //!< Local copy of dual.deltaPrimal
+  double workAlpha = 0.;  //!< Original copy of pivotal computed row-wise
+  double workTheta = 0.;  //!< Original copy of dual step workDual[workPivot] /
                      //!< workAlpha;
-  int workPivot;     //!< Index of the column entering the basis
-  int workCount;     //!< Number of BFRT flips
+  int workPivot = 0;     //!< Index of the column entering the basis
+  int workCount = 0;     //!< Number of BFRT flips
 
   std::vector<std::pair<int, double>>
       workData;  //!< Index-Value pairs for ratio test
@@ -175,12 +174,12 @@ class HDualRow {
       workGroup;  //!< Pointers into workData for degenerate nodes in BFRT
 
   // Independent identifiers for heap-based sort in BFRT
-  int alt_workCount;
+  int alt_workCount = 0;
   std::vector<std::pair<int, double>> original_workData;
   std::vector<std::pair<int, double>> sorted_workData;
   std::vector<int> alt_workGroup;
 
-  HighsSimplexAnalysis* analysis;
+  HighsSimplexAnalysis* analysis = NULL;
 };
 
 #endif /* SIMPLEX_HDUALROW_H_ */

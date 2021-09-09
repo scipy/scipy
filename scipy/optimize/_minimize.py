@@ -788,6 +788,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         else:
             options.setdefault('xtol', tol)
 
+    # replace boolean "disp" option, if specified, by an integer value.
+    disp = options.get('disp')
+    if isinstance(disp, bool):
+        options['disp'] = 2 * int(disp)
+
     if meth == '_custom':
         return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
@@ -796,11 +801,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        # replace boolean "disp" option, if specified, by an integer value, as
-        # expected by _minimize_scalar_bounded()
-        disp = options.get('disp')
-        if isinstance(disp, bool):
-            options['disp'] = 2 * int(disp)
         return _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
         return _minimize_scalar_golden(fun, bracket, args, **options)

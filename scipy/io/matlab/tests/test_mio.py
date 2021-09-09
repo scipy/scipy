@@ -1223,8 +1223,8 @@ def test_save_unicode_field(tmpdir):
 
 def test_filenotfound():
     # Check the correct error is thrown
-    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
-    assert_raises(IOError, loadmat, "NotExistentFile00")
+    assert_raises(OSError, loadmat, "NotExistentFile00.mat")
+    assert_raises(OSError, loadmat, "NotExistentFile00")
 
 
 def test_simplify_cells():

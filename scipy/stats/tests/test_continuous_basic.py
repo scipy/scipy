@@ -109,7 +109,7 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance',
-                   'studentized_range'])
+                   'truncnorm', 'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -132,9 +132,6 @@ def cases_test_cont_basic():
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
     # this test skips slow distributions
-
-    if distname == 'truncnorm':
-        pytest.xfail(reason=distname)
 
     try:
         distfn = getattr(stats, distname)
@@ -245,6 +242,7 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
+    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -254,25 +252,28 @@ def cases_test_moments():
             msg = ("studentized_range is far too slow for this test and it is "
                    "redundant with test_distributions::TestStudentizedRange::"
                    "test_moment_against_mp")
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason=msg))
             continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
+        cond3 = distname not in fail_loc_scale
 
-        yield distname, arg, cond1, cond2, False
+        yield distname, arg, cond1, cond2, cond3, False
 
-        if not cond1 or not cond2:
+        if not cond1 or not cond2 or not cond3:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,is_xfailing',
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
+                         'loc_scale_ok,is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
+                 is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -296,7 +297,9 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
 
-        check_loc_scale(distfn, arg, m, v, distname)
+        if loc_scale_ok:
+            check_loc_scale(distfn, arg, m, v, distname)
+
         check_moment(distfn, arg, m, v, distname)
 
 
@@ -633,7 +636,9 @@ def check_vecentropy(distfn, args):
 
 
 def check_loc_scale(distfn, arg, m, v, msg):
-    loc, scale = 10.0, 10.0
+    # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
+    # `loc` and `scale` arrays improperly broadcast with shapes.
+    loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
@@ -719,3 +724,112 @@ def test_burr_fisk_moment_gh13234_regression():
 
     vals1 = stats.fisk.moment(1, 8)
     assert isinstance(vals1, float)
+
+
+def test_moments_with_array_gh12192_regression():
+    # array loc and scalar scale
+    vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=1)
+    expected0 = np.array([1., 2., 3.])
+    npt.assert_equal(vals0, expected0)
+
+    # array loc and invalid scalar scale
+    vals1 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=-1)
+    expected1 = np.array([np.nan, np.nan, np.nan])
+    npt.assert_equal(vals1, expected1)
+
+    # array loc and array scale with invalid entries
+    vals2 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[-3, 1, 0])
+    expected2 = np.array([np.nan, 2., np.nan])
+    npt.assert_equal(vals2, expected2)
+
+    # (loc == 0) & (scale < 0)
+    vals3 = stats.norm.moment(n=2, loc=0, scale=-4)
+    expected3 = np.nan
+    npt.assert_equal(vals3, expected3)
+    assert isinstance(vals3, expected3.__class__)
+
+    # array loc with 0 entries and scale with invalid entries
+    vals4 = stats.norm.moment(n=2, loc=[1, 0, 2], scale=[3, -4, -5])
+    expected4 = np.array([10., np.nan, np.nan])
+    npt.assert_equal(vals4, expected4)
+
+    # all(loc == 0) & (array scale with invalid entries)
+    vals5 = stats.norm.moment(n=2, loc=[0, 0, 0], scale=[5., -2, 100.])
+    expected5 = np.array([25., np.nan, 10000.])
+    npt.assert_equal(vals5, expected5)
+
+    # all( (loc == 0) & (scale < 0) )
+    vals6 = stats.norm.moment(n=2, loc=[0, 0, 0], scale=[-5., -2, -100.])
+    expected6 = np.array([np.nan, np.nan, np.nan])
+    npt.assert_equal(vals6, expected6)
+
+    # scalar args, loc, and scale
+    vals7 = stats.chi.moment(n=2, df=1, loc=0, scale=0)
+    expected7 = np.nan
+    npt.assert_equal(vals7, expected7)
+    assert isinstance(vals7, expected7.__class__)
+
+    # array args, scalar loc, and scalar scale
+    vals8 = stats.chi.moment(n=2, df=[1, 2, 3], loc=0, scale=0)
+    expected8 = np.array([np.nan, np.nan, np.nan])
+    npt.assert_equal(vals8, expected8)
+
+    # array args, array loc, and array scale
+    vals9 = stats.chi.moment(n=2, df=[1, 2, 3], loc=[1., 0., 2.],
+                             scale=[1., -3., 0.])
+    expected9 = np.array([3.59576912, np.nan, np.nan])
+    npt.assert_allclose(vals9, expected9, rtol=1e-8)
+
+    # (n > 4), all(loc != 0), and all(scale != 0)
+    vals10 = stats.norm.moment(5, [1., 2.], [1., 2.])
+    expected10 = np.array([26., 832.])
+    npt.assert_allclose(vals10, expected10, rtol=1e-13)
+
+    # test broadcasting and more
+    a = [-1.1, 0, 1, 2.2, np.pi]
+    b = [-1.1, 0, 1, 2.2, np.pi]
+    loc = [-1.1, 0, np.sqrt(2)]
+    scale = [-2.1, 0, 1, 2.2, np.pi]
+
+    a = np.array(a).reshape((-1, 1, 1, 1))
+    b = np.array(b).reshape((-1, 1, 1))
+    loc = np.array(loc).reshape((-1, 1))
+    scale = np.array(scale)
+
+    vals11 = stats.beta.moment(n=2, a=a, b=b, loc=loc, scale=scale)
+
+    a, b, loc, scale = np.broadcast_arrays(a, b, loc, scale)
+
+    for i in np.ndenumerate(a):
+        with np.errstate(invalid='ignore', divide='ignore'):
+            i = i[0]  # just get the index
+            # check against same function with scalar input
+            expected = stats.beta.moment(n=2, a=a[i], b=b[i],
+                                         loc=loc[i], scale=scale[i])
+            np.testing.assert_equal(vals11[i], expected)
+
+
+def test_broadcasting_in_moments_gh12192_regression():
+    vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[[1]])
+    expected0 = np.array([[1., 2., 3.]])
+    npt.assert_equal(vals0, expected0)
+    assert vals0.shape == expected0.shape
+
+    vals1 = stats.norm.moment(n=1, loc=np.array([[1], [2], [3]]),
+                              scale=[1, 2, 3])
+    expected1 = np.array([[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]])
+    npt.assert_equal(vals1, expected1)
+    assert vals1.shape == expected1.shape
+
+    vals2 = stats.chi.moment(n=1, df=[1., 2., 3.], loc=0., scale=1.)
+    expected2 = np.array([0.79788456, 1.25331414, 1.59576912])
+    npt.assert_allclose(vals2, expected2, rtol=1e-8)
+    assert vals2.shape == expected2.shape
+
+    vals3 = stats.chi.moment(n=1, df=[[1.], [2.], [3.]], loc=[0., 1., 2.],
+                             scale=[-1., 0., 3.])
+    expected3 = np.array([[np.nan, np.nan, 4.39365368],
+                          [np.nan, np.nan, 5.75994241],
+                          [np.nan, np.nan, 6.78730736]])
+    npt.assert_allclose(vals3, expected3, rtol=1e-8)
+    assert vals3.shape == expected3.shape
