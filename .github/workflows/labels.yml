@@ -13,4 +13,4 @@ jobs:
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         configuration-path: ".github/pr_path_labeler.yml"
-        sync-labels: true  # remove labels if file not modified anymore
+        sync-labels: false  # would remove labels if file not modified anymore
