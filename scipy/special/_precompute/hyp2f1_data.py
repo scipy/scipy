@@ -431,7 +431,7 @@ if __name__ == "__main__":
         help="If this flag is set, do not compute results with mpmath. Saves"
         " time if results have already been computed elsewhere. Fills in"
         " \"expected\" column with None values."
-    )         
+    )
     args = parser.parse_args()
     compute_mp = not args.no_mp
     main(
