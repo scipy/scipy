@@ -113,6 +113,7 @@ def get_result(a, b, c, z, group):
         abs(expected - observed),
     )
 
+
 def get_result_no_mp(a, b, c, z, group):
     """Get results for given parameter and value combination."""
     expected, observed = complex('nan'), hyp2f1(a, b, c, z)
