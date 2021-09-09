@@ -43,6 +43,7 @@ pico = 1e-12
 femto = 1e-15
 atto = 1e-18
 zepto = 1e-21
+yocto = 1e-24
 
 # binary prefixes
 kibi = 2**10
