@@ -8,7 +8,8 @@ from numpy.lib import NumpyVersion
 from scipy.stats import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
-    NumericalInversePolynomial
+    NumericalInversePolynomial,
+    NaiveRatioUniforms
 )
 from scipy.stats import UNURANError
 from scipy import stats
@@ -52,9 +53,11 @@ class Binomial:
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
-    ("NumericalInversePolynomial", {"dist": StandardNormal()})
+    ("NumericalInversePolynomial", {"dist": StandardNormal()}),
+    ("NaiveRatioUniforms", {"dist": StandardNormal(),
+                            "u_min": -np.exp(-0.5) * np.sqrt(2),
+                            "u_max": np.exp(-0.5) * np.sqrt(2), "v_max": 1.0})
 ]
-
 
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
@@ -835,3 +838,52 @@ class TestNumericalInversePolynomial:
         msg = r"Exact CDF required but not found."
         with pytest.raises(ValueError, match=msg):
             rng.u_error()
+
+
+class TestNaiveRatioUniforms:
+
+    def test_rv_generation(self):
+        # use KS test to check distribution of rvs
+        # normal distribution
+        dist = StandardNormal()
+        u = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
+        v_max = np.sqrt(dist.pdf(0))
+        rng = NaiveRatioUniforms(dist, u_min=-u, u_max=u, v_max=v_max,
+                                 random_state=3756)
+        check_cont_samples(rng, dist, (0, 1))
+        # assert cramervonmises(rvs, 'norm').pvalue > 0.1
+
+        # exponential distribution
+        class Exponential():
+            def pdf(self, x):
+                return np.exp(-x)
+
+            def cdf(self, x):
+                return 1 - np.exp(-x)
+
+        dist = Exponential()
+        rng = NaiveRatioUniforms(dist, v_max=1, u_min=0, u_max=2*np.exp(-1),
+                                 random_state=76525)
+
+        check_cont_samples(rng, dist, (1, 1))
+
+    def test_exceptions(self):
+        dist = StandardNormal()
+        # need vmin < vmax
+        msg = r"`u_min` must be smaller than `u_max`."
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, v_max=1, u_min=3, u_max=1)
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, v_max=1, u_min=1, u_max=1)
+        # need umax > 0
+        msg = r'`v_max` must be positive.'
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, v_max=-1, u_min=1, u_max=3)
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, v_max=0, u_min=1, u_max=3)
+        # need r > 0
+        msg = r'`r` must be positive.'
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, r=0, v_max=1, u_min=1, u_max=3)
+        with pytest.raises(ValueError, match=msg):
+            NaiveRatioUniforms(dist, r=-0.24, v_max=1, u_min=1, u_max=3)
