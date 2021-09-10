@@ -466,7 +466,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._censored_data import CensoredData
+from ._censored_data import CensoredData  # noqa
 from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
