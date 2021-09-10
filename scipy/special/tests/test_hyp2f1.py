@@ -682,13 +682,91 @@ class TestHyp2f1:
         needs special care.
         """
         a, b, c, z, expected, rtol = hyp2f1_test_case
-        assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1  # Tests the test
+        assert 0.9 <= abs(z) <= 1 and abs(1 - z) >= 0.9  # Tests the test
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
-    # Marked as slow so it won't run by default. This test is not slow.
-    # Including it only increases the running time of the entire suite by
-    # a handful of hundreths of seconds. This test could become slow in the
-    # future if enough test cases are added.
+    @pytest.mark.parametrize(
+        "hyp2f1_test_case",
+        [
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.9629749245209605,
+                    c=-15.963511401609862,
+                    z=(0.5689655172413794+0.8724137931034486j),
+                    expected=(0.9683742145914286-0.048443124235771795j),
+                    rtol=5e-14,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=1.0272592605282642,
+                    b=-0.9629749245209605,
+                    c=-15.963511401609862,
+                    z=(0.18965517241379315-1.024137931034483j),
+                    expected=(1.0098843186454511-0.06280143623246379j),
+                    rtol=5e-14,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=1.0561196186065624,
+                    c=-7.93846038215665,
+                    z=(0.03793103448275881-1.024137931034483j),
+                    expected=(-38.360327255785194+35.04857691900649j),
+                    rtol=5e-14,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=16.088264119063613,
+                    c=8.031683612216888,
+                    z=(0.11379310344827598+1.024137931034483j),
+                    expected=(-0.15958384614043472+0.08857651074574026j),
+                    rtol=1e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=4.080187217753502,
+                    b=2.050308316530781,
+                    c=8.031683612216888,
+                    z=(0.4931034482758623-0.9482758620689655j),
+                    expected=(0.4598746931718083-1.0353295496568469j),
+                    rtol=5e-14,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=2.02764642551431,
+                    b=2.050308316530781,
+                    c=4.078873014294075,
+                    z=(0.6448275862068968-0.8724137931034484j),
+                    expected=(0.45438199001611607-1.1417466328647023j),
+                    rtol=5e-14,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-0.9220024191881196,
+                    b=-0.9629749245209605,
+                    c=-159.6351140160986,
+                    z=(0.26551724137931054+1.024137931034483j),
+                    expected=(0.9985231857432526-0.005696065263707214j),
+                    rtol=1e-03,
+                ),
+            ),
+        ]
+    )
+    def test_region5(self, hyp2f1_test_case):
+        """|z| > 1."""
+        a, b, c, z, expected, rtol = hyp2f1_test_case
+        assert abs(z) > 1  # Tests the test
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
+    # Marked as slow so it won't run by default.
     @pytest.mark.slow
     @check_version(mpmath, "1.0.0")
     def test_test_hyp2f1(self):
