@@ -761,9 +761,9 @@ class TestHyp2f1:
         ]
     )
     def test_region5(self, hyp2f1_test_case):
-        """|z| > 1."""
+        """1 < |z| < 1.1 and |1 - z| >= 0.9 and real(z) >= 0"""
         a, b, c, z, expected, rtol = hyp2f1_test_case
-        assert abs(z) > 1  # Tests the test
+        assert 1 < abs(z) < 1.1 and abs(1 - z) >= 0.9 and z.real >= 0
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     # Marked as slow so it won't run by default.

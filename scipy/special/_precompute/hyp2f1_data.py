@@ -22,9 +22,10 @@ a region code for which region of the complex plane belongs to. The regions are
 
     1) |z| < 0.9 and real(z) >= 0
     2) |z| <= 1 and real(z) < 0
-    3) 0.9 <= |z| <= 1 and |1 - z| < 1.0:
-    4) 0.9 <= |z| =< 1 and |1 - z| >= 1.0 and real(z) >= 0:
-    5) |z| > 1
+    3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
+    4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9 and real(z) >= 0:
+    5) 1 < |z| <= 1.1 and |1 - z| >= 0.9 and real(z) >= 0
+    6) |z| > 1 and not in 5)
 
 The --regions optional argument allows the user to specify a list of regions
 to which computation will be restricted.
@@ -87,12 +88,14 @@ def get_region(z):
         return 1
     elif abs(z) <= 1 and z.real < 0:
         return 2
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 1.0:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 0.9:
         return 3
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1.0:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 0.9:
         return 4
-    else:
+    elif 1 < abs(z) < 1.1 and abs(1 - z) >= 0.9 and z.real >= 0:
         return 5
+    else:
+        return 6
 
 
 def get_result(a, b, c, z, group):
