@@ -121,17 +121,25 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
 
-    for r in xrange(n):
+    # lower triangular part
+    for r in range(n-1, 0, -1):
         # Only bother if outside the existing band:
-        for c in xrange(min(r-lower_band, m - 1)):
+        for c in range(min(r-lower_band, m - 1)):
             if A[r, c] != zero:
                 lower_band = r - c
                 break
+        # If the first element is full don't go higher we are done
+        if lower_band == r:
+            break
 
-        for c in xrange(m - 1, r + upper_band, -1):
+    # upper triangular part
+    for r in range(n-1):
+        for c in range(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
+        if upper_band == c:
+            break
 
     return lower_band, upper_band
 
@@ -144,17 +152,25 @@ cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
 
-    for r in xrange(n):
+    # lower triangular part
+    for r in range(n-1, 0, -1):
         # Only bother if outside the existing band:
-        for c in xrange(min(r-lower_band, m - 1)):
+        for c in range(min(r-lower_band, m - 1)):
             if A[r, c] != zero:
                 lower_band = r - c
                 break
+        # If the first element is full don't go higher; we are done
+        if lower_band == r:
+            break
 
-        for c in xrange(m - 1, r + upper_band, -1):
+    # upper triangular part
+    for r in range(n-1):
+        for c in range(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
+        if upper_band == c:
+            break
 
     return lower_band, upper_band
 
