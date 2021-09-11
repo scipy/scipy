@@ -186,7 +186,7 @@ def bspline(x, n):
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
     condlist = [func(ax) for func in condfuncs]
-    return piecewise(ax, condlist, funclist)
+    return piecewise(ax.astype('float'), condlist, funclist)
 
 
 def gauss_spline(x, n):
@@ -281,7 +281,7 @@ def cubic(x):
 
     """
     ax = abs(asarray(x))
-    res = zeros_like(ax)
+    res = zeros_like(ax, dtype='float')
     cond1 = less(ax, 1)
     if cond1.any():
         ax1 = ax[cond1]
@@ -333,7 +333,7 @@ def quadratic(x):
 
     """
     ax = abs(asarray(x))
-    res = zeros_like(ax)
+    res = zeros_like(ax, dtype='float')
     cond1 = less(ax, 0.5)
     if cond1.any():
         ax1 = ax[cond1]
