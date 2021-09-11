@@ -9,7 +9,8 @@ from numpy.lib import NumpyVersion
 from scipy.stats import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
-    NumericalInversePolynomial
+    NumericalInversePolynomial,
+    NumericalInverseHermite
 )
 from scipy.stats import UNURANError
 from scipy import stats
@@ -55,7 +56,8 @@ class Binomial:
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
-    ("NumericalInversePolynomial", {"dist": StandardNormal()})
+    ("NumericalInversePolynomial", {"dist": StandardNormal()}),
+    ("NumericalInverseHermite", {"dist": StandardNormal()})
 ]
 
 
@@ -841,9 +843,79 @@ class TestNumericalInversePolynomial:
 
 
 class TestNumericalInverseHermite:
+    #         /  (1 +sin(2 Pi x))/2  if |x| <= 1
+    # f(x) = <
+    #         \  0        otherwise
+    # Taken from UNU.RAN test suite (from file t_hinv.c)
+    class dist0:
+        def pdf(self, x):
+            return 0.5*(1. + np.sin(2.*np.pi*x))
+
+        def dpdf(self, x):
+            return np.pi*np.cos(2.*np.pi*x)
+
+        def cdf(self, x):
+            return (1. + 2.*np.pi*(1 + x) - np.cos(2.*np.pi*x)) / (4.*np.pi)
+
+        def support(self):
+            return -1, 1
+
+    #         /  Max(sin(2 Pi x)),0)Pi/2  if -1 < x <0.5
+    # f(x) = <
+    #         \  0        otherwise
+    # Taken from UNU.RAN test suite (from file t_hinv.c)
+    class dist1:
+        def pdf(self, x):
+            if (x <= -0.5):
+                return np.sin((2. * np.pi) * x) * 0.5 * np.pi
+            if (x < 0.):
+                return 0.
+            if (x <= 0.5):
+                return np.sin((2. * np.pi) * x) * 0.5 * np.pi
+
+        def dpdf(self, x):
+            if (x <= -0.5):
+                return np.cos((2. * np.pi) * x) * np.pi * np.pi
+            if (x < 0.):
+                return 0.
+            if (x <= 0.5):
+                return np.cos((2. * np.pi) * x) * np.pi * np.pi
+
+        def cdf(self, x):
+            if (x <= -0.5):
+                return 0.25 * (1 - np.cos((2. * np.pi) * x))
+            if (x < 0.):
+                return 0.5
+            if (x <= 0.5):
+                return 0.75 - 0.25 * np.cos((2. * np.pi) * x)
+
+        def support(self):
+            return -1, 0.5
+
+    dists = [dist0(), dist1()]
+
+    # exact mean and variance of the distributions in the list dists
+    mv0 = [-1/(2*np.pi), 1/3 - 1/(4*np.pi*np.pi)]
+    mv1 = [-1/4, 3/8-1/(2*np.pi*np.pi) - 1/16]
+    mvs = [mv0, mv1]
+
+    @pytest.mark.parametrize("dist, mv_ex",
+                             zip(dists, mvs))
+    @pytest.mark.parametrize("order", [3, 5])
+    def test_basic(self, dist, mv_ex, order):
+        rng = NumericalInverseHermite(dist, order=order, random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+
+    # test domains with inf + nan in them. need to write a custom test for
+    # this because not all methods support infinite tails.
+    @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
+    def test_inf_nan_domains(self, domain, err, msg):
+        with pytest.raises(err, match=msg):
+            NumericalInverseHermite(StandardNormal(), domain=domain)
+
     @pytest.mark.xslow
     @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic(self, distname, shapes):
+    def test_basic_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range'}
@@ -873,16 +945,17 @@ class TestNumericalInverseHermite:
         assert u_tol < 1e-12
 
     def test_input_validation(self):
+        match = r"`order` must be either 1, 3, or 5."
+        with pytest.raises(ValueError, match=match):
+            NumericalInverseHermite(StandardNormal(), order=2)
+
         match = "`cdf` required but not found"
         with pytest.raises(ValueError, match=match):
             stats.NumericalInverseHermite("norm")
 
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, "`tol` has been deprecated in"
-                                               " favor of `u_resolution`.")
-                stats.NumericalInverseHermite(StandardNormal(), tol='ekki')
+            stats.NumericalInverseHermite(StandardNormal(), tol='ekki')
 
         match = "`max_intervals' must be..."
         with pytest.raises(ValueError, match=match):
@@ -1006,10 +1079,7 @@ class TestNumericalInverseHermite:
             stats.NumericalInverseHermite(stats.beta(*shapes))
 
         # no error with coarser tol
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`tol` has been deprecated in "
-                                           "favor of `u_resolution`.")
-            stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-8)
+        stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-8)
 
     def test_custom_distribution(self):
         dist1 = StandardNormal()
@@ -1019,3 +1089,50 @@ class TestNumericalInverseHermite:
         fni2 = stats.NumericalInverseHermite(dist2)
 
         assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
+
+    u = [
+        # check the correctness of the PPF for equidistant points between
+        # 0.02 and 0.98.
+        np.linspace(0., 1., num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
+
+    @pytest.mark.parametrize("u", u)
+    def test_ppf(self, u):
+        dist = StandardNormal()
+        rng = NumericalInverseHermite(dist, u_resolution=1e-12)
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+            res = rng.ppf(u)
+            expected = stats.norm.ppf(u)
+        assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
+        assert res.shape == expected.shape
+
+    def test_u_error(self):
+        dist = StandardNormal()
+        rng = NumericalInverseHermite(dist, u_resolution=1e-10)
+        max_error, mae = rng.u_error()
+        assert max_error < 1e-10
+        assert mae <= max_error
+        with suppress_warnings() as sup:
+            # ignore warning about u-resolution being too small.
+            sup.filter(RuntimeWarning)
+            rng = NumericalInverseHermite(dist, u_resolution=1e-14)
+        max_error, mae = rng.u_error()
+        assert max_error < 1e-14
+        assert mae <= max_error

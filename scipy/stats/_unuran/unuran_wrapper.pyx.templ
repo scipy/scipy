@@ -1403,7 +1403,7 @@ cdef class NumericalInversePolynomial(Method):
 
 cdef class NumericalInverseHermite(Method):
     """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, tol=None, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
 
     A Hermite spline fast numerical inverse of a probability distribution.
 
@@ -1651,8 +1651,6 @@ cdef class NumericalInverseHermite(Method):
         if int(max_intervals) != max_intervals or max_intervals <= 1:
             raise ValueError("`max_intervals' must be an integer greater than 1.")
         if tol is not None:
-            warnings.warn("`tol` has been deprecated in favor of `u_resolution`.",
-                          DeprecationWarning)
             u_resolution = tol
         u_resolution = float(u_resolution)
         self.construction_points_array = np.ascontiguousarray(construction_points,
