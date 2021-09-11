@@ -182,7 +182,7 @@ def bspline(x, n):
     True
 
     """
-    ax = -abs(asarray(x,dtype=float))
+    ax = -abs(asarray(x))
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
     condlist = [func(ax) for func in condfuncs]
