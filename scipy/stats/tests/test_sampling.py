@@ -1,4 +1,5 @@
 from functools import partial
+import math
 import threading
 import pickle
 import pytest
@@ -840,19 +841,27 @@ class TestNumericalInversePolynomial:
             rng.u_error()
 
 
+class Gamma:
+    def __init__(self, p):
+        self.p = p
+
+    def pdf(self, x):
+        if x < 0:
+            return 0.0
+        return x**(self.p - 1) * math.exp(-x)
+
+    def cdf(self, x):
+        return stats.gamma.cdf(x, self.p)
+
+    @staticmethod
+    def support():
+        return 0, np.inf
+
+
 class TestNaiveRatioUniforms:
 
-    def test_rv_generation(self):
-        # use KS test to check distribution of rvs
-        # normal distribution
-        dist = StandardNormal()
-        u = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
-        v_max = np.sqrt(dist.pdf(0))
-        rng = NaiveRatioUniforms(dist, u_min=-u, u_max=u, v_max=v_max,
-                                 random_state=3756)
-        check_cont_samples(rng, dist, (0, 1))
-        # assert cramervonmises(rvs, 'norm').pvalue > 0.1
-
+    def test_rv_generation_default(self):
+        # use default settings (r=1, center=0)
         # exponential distribution
         class Exponential():
             def pdf(self, x):
@@ -866,6 +875,37 @@ class TestNaiveRatioUniforms:
                                  random_state=76525)
 
         check_cont_samples(rng, dist, (1, 1))
+
+    @pytest.mark.parametrize("r", [0.36, 1.0, 1.43])
+    def test_rv_generation_r(self, r):
+        # test different values of r
+        # note: u_max, u_min are attained at the points -/+ sqrt((r+1)/r)
+        dist = StandardNormal()
+        y = np.sqrt((r+1)/r)
+        u = (dist.pdf(y))**(r/(r+1)) * y
+        v_max = (dist.pdf(0))**(1/(r+1))
+        rng = NaiveRatioUniforms(dist, r=r, u_min=-u, u_max=u, v_max=v_max,
+                                 random_state=7303)
+        check_cont_samples(rng, dist, (0, 1))
+
+    @pytest.mark.parametrize("p", [1.5, 2.83])
+    def test_rv_generation_mode_shift(self, p):
+        # test mode shift with Gamma(p) distribution, mode=p-1
+        # note: the pdf is bounded only if p >= 1
+        # note: u_max, u_min can be computed explicitly
+        def u_bound(x, p, m):
+            if x < 0:
+                return 0
+            return (x - m) * x**((p-1)/2) * math.exp(-x/2)
+        dist = Gamma(p)
+        m = p-1
+        h = (p+1+m)/2
+        k = np.sqrt(h**2 - m*(p-1))
+        u_min, u_max = u_bound(h-k, p, m), u_bound(h+k, p, m)
+        v_max = np.sqrt(dist.pdf(m))
+        rng = NaiveRatioUniforms(dist, center=m, u_min=u_min, u_max=u_max,
+                                 v_max=v_max, random_state=357)
+        check_cont_samples(rng, dist, (p, p))
 
     def test_exceptions(self):
         dist = StandardNormal()
