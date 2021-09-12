@@ -42,12 +42,13 @@
 #pragma GCC optimize("unroll-loops")
 #endif
 #endif
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <numpy/npy_math.h>
+
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 
 #include "distance_impl.h"
 

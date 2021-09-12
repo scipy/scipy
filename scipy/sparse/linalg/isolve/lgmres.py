@@ -71,7 +71,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     store_outer_Av : bool, optional
         Whether LGMRES should store also A*v in addition to vectors `v`
         in the `outer_v` list. Default is True.
-    prepend_outer_v : bool, optional 
+    prepend_outer_v : bool, optional
         Whether to put outer_v augmentation vectors before Krylov iterates.
         In standard LGMRES, prepend_outer_v=False.
 
@@ -144,6 +144,10 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     nrm2 = get_blas_funcs('nrm2', [b])
 
     b_norm = nrm2(b)
+    if b_norm == 0:
+        x = b
+        return (postprocess(x), 0)
+
     ptol_max_factor = 1.0
 
     for k_outer in range(maxiter):

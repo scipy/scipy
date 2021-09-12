@@ -14,7 +14,11 @@ from typing import Optional, Union
 __all__ = ['entropy', 'differential_entropy']
 
 
-def entropy(pk, qk=None, base=None, axis=0):
+def entropy(pk: np.typing.ArrayLike,
+            qk: Optional[np.typing.ArrayLike] = None,
+            base: Optional[float] = None,
+            axis: int = 0
+            ) -> Union[np.number, np.ndarray]:
     """Calculate the entropy of a distribution for given probability values.
 
     If only probabilities `pk` are given, the entropy is calculated as
@@ -27,10 +31,11 @@ def entropy(pk, qk=None, base=None, axis=0):
 
     Parameters
     ----------
-    pk : sequence
-        Defines the (discrete) distribution. ``pk[i]`` is the (possibly
-        unnormalized) probability of event ``i``.
-    qk : sequence, optional
+    pk : array_like
+        Defines the (discrete) distribution. Along each axis-slice of ``pk``,
+        element ``i`` is the  (possibly unnormalized) probability of event
+        ``i``.
+    qk : array_like, optional
         Sequence against which the relative entropy is computed. Should be in
         the same format as `pk`.
     base : float, optional
@@ -40,7 +45,7 @@ def entropy(pk, qk=None, base=None, axis=0):
 
     Returns
     -------
-    S : float
+    S : {float, array_like}
         The calculated entropy.
 
     Examples
