@@ -10,12 +10,11 @@ from pytest import raises
 import scipy.signal.bsplines as bsp
 from scipy import signal
 
-
 class TestBSplines:
-    """Test behaviors of B-splines. Some of the values tested against were returned as of
-    SciPy 1.1.0 and are included for regression testing purposes. Others (at integer
-    points) are compared to theoretical expressions (cf. Unser, Aldroubi, Eden,
-    IEEE TSP 1993, Table 1)."""
+    """Test behaviors of B-splines. Some of the values tested against were 
+    returned as of SciPy 1.1.0 and are included for regression testing 
+    purposes. Others (at integer points) are compared to theoretical 
+    expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
     def test_spline_filter(self):
         np.random.seed(12457)
@@ -106,7 +105,7 @@ class TestBSplines:
 
     def test_bspline(self):
         np.random.seed(12458)
-        # Verify with theoretical results at integer points up to order 5 (see docstring)
+        # Verify with theoretical results at integer points up to order 5
         assert_allclose(bsp.bspline([-1, 0, 1], 0),
                         array([0, 1, 0]))
         assert_allclose(bsp.bspline([-1, 0, 1], 1),
