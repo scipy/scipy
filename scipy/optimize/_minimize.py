@@ -120,7 +120,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         or dogleg), the keywords {'2-point', '3-point', 'cs'} select a finite
         difference scheme for numerical estimation. Or, objects implementing
         the `HessianUpdateStrategy` interface can be used to approximate the
-        Hessian. Available quasi-Newton methods implementing this interface are:
+        Hessian. Available quasi-Newton methods implementing this interface
+        are:
 
             - `BFGS`;
             - `SR1`.
