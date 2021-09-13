@@ -24,7 +24,7 @@ a region code for which region of the complex plane belongs to. The regions are
     2) |z| <= 1 and real(z) < 0
     3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
     4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9 and real(z) >= 0:
-    5) 1 < |z| <= 1.1 and |1 - z| >= 0.9 and real(z) >= 0
+    5) 1 < |z| < 1.1 and |1 - z| >= 0.9 and real(z) >= 0
     6) |z| > 1 and not in 5)
 
 The --regions optional argument allows the user to specify a list of regions
