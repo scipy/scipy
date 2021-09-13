@@ -3535,8 +3535,9 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         else:
             # Find out if any of the axis that are being averaged consist
             # entirely of NaN.  If one exists, set the result (res) to NaN
-            nshape = 0 if axis is None else axis
-            smask = nmask.shape[nshape] == nmask.sum(axis=axis)
+            nshape = (0,) if axis is None else axis
+            nmask_sum = nmask.sum(axis=axis)
+            smask = np.logical_and.reduce([nmask.shape[ns] == nmask_sum for ns in nshape])
             if smask.any():
                 res[smask] = np.nan
 
