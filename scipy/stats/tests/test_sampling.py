@@ -918,7 +918,8 @@ class TestNumericalInverseHermite:
     def test_basic_all_scipy_dists(self, distname, shapes):
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
+                      'norminvgauss', 'genhyperbolic', 'studentized_range',
+                      'vonmises', 'kappa4'}
 
         if distname in slow_dists:
             pytest.skip("Distribution is too slow")
