@@ -130,8 +130,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Partial singular value decomposition of a sparse matrix.
 
     Compute the largest or smallest `k` singular values and corresponding
-    singular vectors of a sparse matrix `A`. The order in which the singular
-    values are returned is not guaranteed.
+    singular vectors of a sparse matrix `A`.
 
     In the descriptions below, let ``M, N = A.shape``.
 
@@ -205,7 +204,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
     s : ndarray, shape=(k,)
-        The singular values.
+        The singular values in ascending order.
     vh : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
 
