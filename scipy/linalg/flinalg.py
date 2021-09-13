@@ -28,8 +28,8 @@ def get_flinalg_funcs(names,arrays=(),debug=0):
     """Return optimal available _flinalg function objects with
     names. Arrays are used to determine optimal prefix."""
     ordering = []
-    for i in range(len(arrays)):
-        t = arrays[i].dtype.char
+    for i, ar in enumerate(arrays):
+        t = ar.dtype.char
         if t not in _type_conv:
             t = 'd'
         ordering.append((t,i))

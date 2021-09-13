@@ -77,14 +77,14 @@ def direct_idft(x):
 
 def direct_dftn(x):
     x = asarray(x)
-    for axis in range(len(x.shape)):
+    for axis in range(x.ndim):
         x = fft(x, axis=axis)
     return x
 
 
 def direct_idftn(x):
     x = asarray(x)
-    for axis in range(len(x.shape)):
+    for axis in range(x.ndim):
         x = ifft(x, axis=axis)
     return x
 

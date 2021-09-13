@@ -5,6 +5,7 @@ the implementation of mp_hyp2f1 below, which modifies mpmath's hyp2f1 to
 return the same branch as scipy's on the standard branch cut.
 """
 
+import sys
 import pytest
 import numpy as np
 from typing import NamedTuple
@@ -93,7 +94,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340")
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -104,7 +104,6 @@ class TestHyp2f1:
                     expected=1 + 0j,
                     rtol=0
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -125,7 +124,6 @@ class TestHyp2f1:
                     expected=np.inf + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -136,7 +134,6 @@ class TestHyp2f1:
                     expected=np.nan + 0j,
                     rtol=0,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -147,7 +144,6 @@ class TestHyp2f1:
                     expected=(1.0495404166666666+0.05708208333333334j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -158,7 +154,6 @@ class TestHyp2f1:
                     expected=(1.092966013125+0.13455014673750001j),
                     rtol=1e-15,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -169,7 +164,6 @@ class TestHyp2f1:
                     expected=(-0.07712512000000005+0.12752814080000005j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -180,7 +174,6 @@ class TestHyp2f1:
                     expected=(1.6400000000000001+0.6400000000000001j),
                     rtol=1e-13,
                 ),
-                marks=pytest.mark.xfail(reason="gh-7340"),
             ),
         ]
     )
@@ -220,7 +213,6 @@ class TestHyp2f1:
                     expected=1.3396562400934e117 + 0j,
                     rtol=1e-12,
                 ),
-                marks=pytest.mark.xfail(reason="overflow"),
             ),
             pytest.param(
                 Hyp2f1TestCase(
@@ -241,7 +233,6 @@ class TestHyp2f1:
                     expected=-1.3113641413099326e-56 + 0j,
                     rtol=1e-12,
                 ),
-                marks=pytest.mark.xfail(reason="underflow"),
             ),
         ],
     )
@@ -295,7 +286,10 @@ class TestHyp2f1:
                     expected=45143784.46783885 + 0j,
                     rtol=1e-7,
                 ),
-                marks=pytest.mark.xfail,
+                marks=pytest.mark.xfail(
+                    condition=sys.maxsize < 2**32,
+                    reason="Fails on 32 bit.",
+                )
             ),
         ],
     )
@@ -338,7 +332,7 @@ class TestHyp2f1:
                     c=4.0013768449590685,
                     z=(0.9473684210526314-0.10526315789473695j),
                     expected=(-0.0003054674127221263-9.261359291755414e-05j),
-                    rtol=5e-11,
+                    rtol=1e-10,
                 ),
             ),
             pytest.param(
@@ -348,7 +342,7 @@ class TestHyp2f1:
                     c=-3.9316537064827854,
                     z=(1.1578947368421053-0.3157894736842106j),
                     expected=(-0.0020809502580892937-0.0041877333232365095j),
-                    rtol=1e-13,
+                    rtol=5e-12,
                 ),
             ),
             pytest.param(
@@ -381,6 +375,16 @@ class TestHyp2f1:
                     rtol=5e-12,
                 ),
             ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-10000,
+                    b=2.2,
+                    c=93459345.3,
+                    z=(2+2j),
+                    expected=(0.9995292071559088-0.00047047067522659253j),
+                    rtol=1e-12,
+                ),
+            ),
         ]
     )
     def test_a_b_negative_int(self, hyp2f1_test_case):
@@ -408,7 +412,7 @@ class TestHyp2f1:
                     c=1.5,
                     z=(0.9473684210526314-0.10526315789473695j),
                     expected=(4.0793167523167675-10.11694246310966j),
-                    rtol=5e-12,
+                    rtol=6e-12,
                 ),
             ),
             pytest.param(
@@ -493,7 +497,7 @@ class TestHyp2f1:
                     c=8.031683612216888,
                     z=(0.3157894736842106-0.736842105263158j),
                     expected=(-0.4075277891264672-0.06819344579666956j),
-                    rtol=1e-12,
+                    rtol=2e-12,
                 ),
             ),
             pytest.param(

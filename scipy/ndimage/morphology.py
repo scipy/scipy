@@ -1,3 +1,8 @@
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
+# Use the `scipy.ndimage` namespace for importing the functions
+# included below.
+
+import warnings
 from . import _morphology
 
 
@@ -18,6 +23,11 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            f"scipy.ndimage.morphology has no attribute {name}.")
+            "scipy.ndimage.morphology is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.ndimage instead.")
+
+    warnings.warn(f"Please use `{name}` from the `scipy.ndimage` namespace, "
+                  "the `scipy.ndimage.morphology` namespace is deprecated.",
+                  category=DeprecationWarning, stacklevel=2)
 
     return getattr(_morphology, name)

@@ -1535,7 +1535,7 @@ class _nchypergeom_gen(rv_discrete):
             return urn.moments()
 
         m, v = _moments1(M, n, N, odds) if ("m" in moments
-                                            or "v" in moments) else None
+                                            or "v" in moments) else (None, None)
         s, k = None, None
         return m, v, s, k
 
@@ -1707,7 +1707,7 @@ nchypergeom_wallenius = nchypergeom_wallenius_gen(
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().items())
+pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_discrete)
 
 __all__ = _distn_names + _distn_gen_names

@@ -2890,6 +2890,11 @@ class TestBeta:
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
 
+    def test_boost_eval_issue_14606(self):
+        q, a, b = 0.995, 1.0e11, 1.0e13
+        with pytest.warns(RuntimeWarning):
+            stats.beta.ppf(q, a, b)
+
 
 class TestBetaPrime:
     def test_logpdf(self):

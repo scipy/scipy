@@ -4,7 +4,7 @@ from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
-from scipy.stats.stats import _broadcast_concatenate
+from ._axis_nan_policy import _broadcast_concatenate
 
 
 def _vectorize_statistic(statistic):
@@ -265,14 +265,14 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
+        Pseudorandom number generator state used to generate resamples.
+
         If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
-        Pseudorandom number generator state used to generate resamples.
 
     Returns
     -------
@@ -293,7 +293,7 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
     .. [2] Nathaniel E. Helwig, "Bootstrap Confidence Intervals",
        http://users.stat.umn.edu/~helwig/notes/bootci-Notes.pdf
     .. [3] Bootstrapping (statistics), Wikipedia,
-       https://en.wikipedia.org/wiki/Bootstrapping_(statistics)
+       https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29
 
     Examples
     --------

@@ -144,8 +144,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     beta1 = sqrt(abs(beta1))
 
-    r0norm = norm(r1)
-
     if check:
         # are these too strict?
 
@@ -278,7 +276,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
             test2 = inf
         else:
             test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
-        testrnorm = rnorm / r0norm
+        testrnorm = rnorm / bnorm
 
 
         # Estimate  cond(A).
