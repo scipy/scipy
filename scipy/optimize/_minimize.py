@@ -84,7 +84,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
               see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
-        depending on if the problem has constraints or bounds.
+        depending on whether or not the problem has constraints or bounds.
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
