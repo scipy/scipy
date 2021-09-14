@@ -91,15 +91,6 @@ def make_system(A, M, x0, b):
     b = asarray(b,dtype=xtype)  # make b the same type as x
     b = b.ravel()
 
-    if x0 is None:
-        x = zeros(N, dtype=xtype)
-    else:
-        x = array(x0, dtype=xtype)
-        if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError('shapes of A {} and x0 {} are incompatible'
-                            .format(A.shape, x.shape))
-        x = x.ravel()
-
     # process preconditioner
     if M is None:
         if hasattr(A_,'psolve'):
@@ -119,5 +110,18 @@ def make_system(A, M, x0, b):
         M = aslinearoperator(M)
         if A.shape != M.shape:
             raise ValueError('matrix and preconditioner have different shapes')
+
+    # set initial guess
+    if x0 is None:
+        x = zeros(N, dtype=xtype)
+    elif x0 is True:  # use nonzero initial guess ``M * b``
+        bCopy = b.copy()
+        x = M.matvec(bCopy)
+    else:
+        x = array(x0, dtype=xtype)
+        if not (x.shape == (N,1) or x.shape == (N,)):
+            raise ValueError('shapes of A {} and x0 {} are incompatible'
+                            .format(A.shape, x.shape))
+        x = x.ravel()
 
     return A, M, x, b, postprocess
