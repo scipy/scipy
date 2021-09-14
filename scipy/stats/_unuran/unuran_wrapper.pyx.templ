@@ -1544,6 +1544,7 @@ cdef class NumericalInverseHermite(Method):
     distribution.
 
     >>> rng = NumericalInverseHermite(dist)
+    >>> p = np.linspace(0.01, 0.99, 99) # percentiles from 1% to 99%
     >>> np.allclose(rng.ppf(p), norm.ppf(p))
     True
 
