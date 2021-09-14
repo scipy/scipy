@@ -1626,6 +1626,21 @@ cdef class NumericalInverseHermite(Method):
     >>> f = lambda: NumericalInverseHermite(dist, u_resolution=1e-13)
     >>> timeit(f, number=1)
     0.08671202100003939  # may vary
+
+    Since the PPF of the normal distribution is available as a special function, we
+    can also check the x-error, i.e. the difference between the approximated PPF and
+    exact PPF::
+
+    >>> import matplotlib.pyplot as plt
+    >>> u = np.linspace(0.01, 0.99, 1000)
+    >>> approxppf = rng.ppf(u)
+    >>> exactppf = norm.ppf(u)
+    >>> error = np.abs(exactppf - approxppf)
+    >>> plt.plot(u, error)
+    >>> plt.xlabel('u')
+    >>> plt.ylabel('error')
+    >>> plt.title('Error between exact and approximated PPF (x-error)')
+    >>> plt.show()
     """
     cdef double[::1] construction_points_array
 
