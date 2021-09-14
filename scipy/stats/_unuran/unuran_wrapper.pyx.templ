@@ -1449,7 +1449,7 @@ cdef class NumericalInverseHermite(Method):
           `dist`, it is used to set the domain of the distribution.
         * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
 
-    order : int, optional
+    order : int, default: ``3``
         Set order of Hermite interpolation. Valid orders are 1, 3, and 5.
         Valid orders are 1, 3, and 5. Notice that order greater than 1 requires the density
         of the distribution, and order greater than 3 even requires the derivative of the
@@ -1457,7 +1457,7 @@ cdef class NumericalInverseHermite(Method):
         and is therefore not recommended. If the maximal error in u-direction is very small
         (say smaller than 1.e-10), order 5 is recommended as it leads to considerably fewer
         design points, as long there are no poles or heavy tails.
-    u_resolution : float, optional
+    u_resolution : float, default: ``1e-12``
         Set maximal tolerated u-error. Notice that the resolution of most uniform random
         number sources is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion
         algorithm that could be called exact. For most simulations slightly bigger values
@@ -1468,13 +1468,13 @@ cdef class NumericalInverseHermite(Method):
         special design points for computing the Hermite interpolation to guarantee that the
         maximal u-error can not be bigger than desired. Such points are points where the
         density is not differentiable or has a local extremum.
-    max_intervals : int, optional
+    max_intervals : int, default: ``100000``
         Maximum number of intervals in the Hermite spline used to
         approximate the percent point function. The default is 100000.
-    guide_factor : float, optional
+    guide_factor : float, default: ``1``
         Set factor for relative size of the guide table for indexed search.
         It must be greater than or equal to 0. When set to 0, then sequential
-        search is used. Default is 2.
+        search is used. Default is 1.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
