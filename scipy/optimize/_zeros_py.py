@@ -792,11 +792,15 @@ def brenth(f, a, b, args=(),
 
     A variation on the classic Brent routine to find a zero of the function f
     between the arguments a and b that uses hyperbolic extrapolation instead of
-    inverse quadratic extrapolation. There was a paper back in the 1980's ...
+    inverse quadratic extrapolation. Bus & Dekker (1975) guarantee convergence
+    for this method, claiming that the upper bound of function evaluations here
+    is 4 or 5 times lesser than that for bisection.
     f(a) and f(b) cannot have the same signs. Generally, on a par with the
     brent routine, but not as heavily tested. It is a safe version of the
-    secant method that uses hyperbolic extrapolation. The version here is by
-    Chuck Harris.
+    secant method that uses hyperbolic extrapolation.
+    The version here is by Chuck Harris, and implements Algorithm M of
+    [BusAndDekker1975]_, where further details (convergence properties,
+    additional remarks and such) can be found
 
     Parameters
     ----------
@@ -842,6 +846,15 @@ def brenth(f, a, b, args=(),
     r : `RootResults` (present if ``full_output = True``)
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
+
+    References
+    ----------
+    .. [BusAndDekker1975]
+       Bus, J. C. P., Dekker, T. J.,
+       *Two Efficient Algorithms with Guaranteed Convergence for Finding a Zero
+       of a Function*. ACM Transactions on Mathematical Software, Vol. 1, Issue
+       4, Dec. 1975, pp. 330-345. Section 3: "Algorithm M".
+       DOI:https://doi.org/10.1145/355656.355659
 
     Examples
     --------
