@@ -30,22 +30,27 @@ def prepare_events(events):
     if callable(events):
         events = (events,)
 
-    if events is not None:
-        is_terminal = np.empty(len(events), dtype=bool)
-        direction = np.empty(len(events))
-        for i, event in enumerate(events):
-            try:
-                is_terminal[i] = event.terminal
-            except AttributeError:
-                is_terminal[i] = False
+    is_terminal = np.empty((len(events), 2))
+    direction = np.empty(len(events))
+    for i, event in enumerate(events):
+        try:
+            terminal = event.terminal
+            if isinstance(terminal, bool):
+                is_terminal[i] = [1, 1] if terminal else [0, np.nan]
+            elif isinstance(terminal, int):
+                assert terminal > 0, ("If provided as an int, terminal must be"
+                                      " greater than zero")
+                is_terminal[i] = [1, terminal]
+            else:
+                raise TypeError("The terminal attribute of each event must"
+                                " have either bool or int type.")
+        except AttributeError:
+            is_terminal[i] = [0, np.nan]
 
-            try:
-                direction[i] = event.direction
-            except AttributeError:
-                direction[i] = 0
-    else:
-        is_terminal = None
-        direction = None
+        try:
+            direction[i] = event.direction
+        except AttributeError:
+            direction[i] = 0
 
     return events, is_terminal, direction
 
@@ -78,7 +83,8 @@ def solve_event_equation(event, sol, t_old, t):
                   xtol=4 * EPS, rtol=4 * EPS)
 
 
-def handle_events(sol, events, active_events, is_terminal, t_old, t):
+def handle_events(sol, events, active_events, event_count, is_terminal,
+                  t_old, t):
     """Helper function to handle events.
 
     Parameters
@@ -90,8 +96,8 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
         Event functions with signatures ``event(t, y)``.
     active_events : ndarray
         Indices of events which occurred.
-    is_terminal : ndarray, shape (n_events,)
-        Which events are terminal.
+    is_terminal : ndarray, shape (n_events, 2)
+        Which events are terminal and how many times can they occur.
     t_old, t : float
         Previous and new values of time.
 
@@ -110,14 +116,16 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
 
     roots = np.asarray(roots)
 
-    if np.any(is_terminal[active_events]):
+    if np.any((is_terminal[active_events, 0].astype(int))
+              & (is_terminal[active_events, 1] == event_count[active_events])):
         if t > t_old:
             order = np.argsort(roots)
         else:
             order = np.argsort(-roots)
         active_events = active_events[order]
         roots = roots[order]
-        t = np.nonzero(is_terminal[active_events])[0][0]
+        t = np.nonzero(is_terminal[active_events, 1]
+                       == event_count[active_events])[0][0]
         active_events = active_events[:t + 1]
         roots = roots[:t + 1]
         terminate = True
@@ -256,8 +264,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         missed. Additionally each `event` function might have the following
         attributes:
 
-            terminal: bool, optional
-                Whether to terminate integration if this event occurs.
+            terminal: bool or int, optional
+                If a bool, whether to terminate integration if this event
+                occurs. If an int, assumes event is terminal and specifies the
+                number of occurrences of that event before termination occurs.
                 Implicitly False if not assigned.
             direction: float, optional
                 Direction of a zero crossing. If `direction` is positive,
@@ -567,9 +577,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     interpolants = []
 
-    events, is_terminal, event_dir = prepare_events(events)
-
     if events is not None:
+        events, is_terminal, event_dir = prepare_events(events)
+        event_count = np.zeros(len(events))
         if args is not None:
             # Wrap user functions in lambdas to hide the additional parameters.
             # The original event function is passed as a keyword argument to the
@@ -611,8 +621,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 if sol is None:
                     sol = solver.dense_output()
 
+                event_count[active_events] += 1
                 root_indices, roots, terminate = handle_events(
-                    sol, events, active_events, is_terminal, t_old, t)
+                    sol, events, active_events, event_count, is_terminal,
+                    t_old, t)
 
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
