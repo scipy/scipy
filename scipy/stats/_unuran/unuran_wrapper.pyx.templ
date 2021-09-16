@@ -1621,7 +1621,13 @@ cdef class NaiveRatioUniforms(Method):
 
     Naive Ratio-Of-Uniforms (NROU) Method.
 
-    ...
+    NROU is an implementation of the (generalized) ratio-of-uniforms method
+    which uses (minimal) bounding rectangles ([3]_, [5]_). It uses a positive
+    control parameter `r` for adjusting the algorithm to the given distribution
+    to improve performance and/or to make this method applicable. Larger values
+    of `r` increase the class of distributions for which the method works at
+    the expense of a higher rejection constant. For computational reasons,
+    ``r=1`` should be used if possible.
 
     Parameters
     ----------
@@ -1685,14 +1691,6 @@ cdef class NaiveRatioUniforms(Method):
     Notes
     -----
 
-    NROU is an implementation of the (generalized) ratio-of-uniforms method
-    which uses (minimal) bounding rectangles. It uses a positive control
-    parameter `r` for adjusting the algorithm to the given distribution to
-    improve performance and/or to make this method applicable. Larger values
-    of `r` increase the class of distributions for which the method works at
-    the expense of a higher rejection constant. For computational reasons,
-    ``r=1`` should be used if possible.
-
     If ``r==1``, the method works as follows: for a given `pdf` and a constant
     `center`, define the set
     ``A = {(u, v) : 0 < v <= sqrt(pdf(u/v + center))}``.
@@ -1749,10 +1747,12 @@ cdef class NaiveRatioUniforms(Method):
            ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
     .. [4] L. Devroye, "Non-Uniform Random Variate Generation",
            Springer-Verlag, 1986.
+    .. [5] J. C. Wakefield, A. E. Gelfand, and A. F. M. Smith. "Efficient
+           generation of random variates via the ratio-of-uniforms method."
+           Statistics and Computing 1.2, p. 129--133, 1991.
 
     Examples
     --------
-    >>> import math
     >>> from scipy.stats import NaiveRatioUniforms
 
     Suppose we want to generate normally distributed random variables.
@@ -1764,7 +1764,7 @@ cdef class NaiveRatioUniforms(Method):
     >>> urng = np.random.default_rng()
     >>> class MyDist:
     ...     def pdf(self, x):
-    ...         return math.exp(-0.5*x*x)
+    ...         return np.exp(-0.5*x*x)
     >>> dist = MyDist()
     >>> u_bound = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
     >>> v_max = np.sqrt(dist.pdf(0))

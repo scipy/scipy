@@ -14,10 +14,10 @@ Naive Ratio-Of-Uniforms (NROU) Method
   * Sampling: moderate
 
 NROU is an implementation of the (generalized) ratio-of-uniforms method which
-uses (minimal) bounding rectangles. It uses a positive control parameter r for
-adjusting the algorithm to the given distribution to improve performance and/or
-to make this method applicable. Larger values of r increase the class of
-distributions for which the method works at the expense of a higher
+uses (minimal) bounding rectangles ([3]_, [5]_). It uses a positive control
+parameter r for adjusting the algorithm to the given distribution to improve
+performance and/or to make this method applicable. Larger values of r increase
+the class of distributions for which the method works at the expense of a higher
 rejection constant. For computational reasons r=1 should be used if possible.
 Moreover, this implementation uses the center of the distribution. 
 
@@ -86,7 +86,7 @@ An example of using this method is shown below:
     >>> u_bound = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
     >>> urng = np.random.default_rng()
     >>> rng = NaiveRatioUniforms(dist, v_max=1, u_min=-u_bound,
-                                 u_max=u_bound, random_state=urng)
+    ...                          u_max=u_bound, random_state=urng)
     >>> rng.rvs()
     -0.5677819961248616
 
@@ -96,10 +96,110 @@ computing the PDF. This usually helps speed up the sampling stage. Also, note
 that the PDF doesn't need to be vectorized. It should accept and return a
 scalar.
 
+Note that ``v_max`` is determined by the mode of the distribution. If the mode is
+far away from zero, note that ``u_max`` will become large if ``center == 0``: it
+is at least ``mode * pdf(mode)**(r/(r+1)``. This can be avoided by shifting the
+distribution, e.g., if ``center == mode``, see [5]_. We illustrate this with the
+Gamma distribution. For a given shape parameter ``p > 0``, the density is proportional
+to ``x**(p-1) * exp(-x)``:
 
-TODO: show mode shift, r != 0
+    >>> import math
+    >>>
+    >>> class Gamma:
+    ...     def __init__(self, p):
+    ...         self.p = p
+    ...
+    ...     def pdf(self, x):
+    ...         if x < 0:
+    ...             return 0.0
+    ...         return x**(self.p - 1) * math.exp(-x)
+    ...     @staticmethod
+    ...     def support():
+    ...         return 0, np.inf
 
-Please see [1]_, [2]_, [3]_ and [4]_ for more details on this method.
+If ``p < 1``, the pdf is unbounded and we cannot use NROU (``v_max`` needs to
+be finite). If ``p >= 1`, the mode is at ``p-1``. We want to apply NROU with
+``r=1``. It is possible to compute the points that determine ``u_min`` and
+``u_max`` explicitly by finding the extrema of the following function:
+
+    >>> def u_bound(x, p, center):
+    ...     if x < 0:
+    ...         return 0
+    ...     return (x - center) * x**((p-1)/2) * math.exp(-x/2)
+
+Depending on ``p`` and ``center``, the bounding rectangle is given by
+
+    >>> def rectangle(p, center):
+    ...     h = (p+1+center)/2
+    ...     k = np.sqrt(h**2 - center*(p-1))
+    ...     u_min, u_max = u_bound(h-k, p, center), u_bound(h+k, p, center)
+    ...     v_max = math.sqrt((p-1)**(p-1) * math.exp(-(p-1)))
+    ...     return u_min, u_max, v_max
+
+We can compare the resulting rejection constants if we set ``center=0`` and
+``center=p-1`` (the mode) for different values of ``p``. We use the formula
+for the rejection constant stated above (note that we need to take into
+account the normalization constant of the Gamma density):
+
+    >>> from scipy import special as sc
+    >>> ps = np.arange(1.0, 2.5, 0.1)
+    >>> reject_const, reject_const_shift = [], []
+    >>> for p in ps:
+    ...     # no shift (center=0)
+    ...     u_min, u_max, v_max = rectangle(p, 0)
+    ...     reject_const.append(2*v_max*(u_max - u_min) / sc.gamma(p))
+    ...     # mode shift (center=p-1)
+    ...     u_min, u_max, v_max = rectangle(p, p-1)
+    ...     reject_const_shift.append(2*v_max*(u_max - u_min) / sc.gamma(p))
+
+We can see that it becomes advantageous to apply the mode shift once as the
+mode moves further away from zero:
+
+.. plot::
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(ps, reject_const, 'o', label='center=0')
+    >>> ax.plot(ps, reject_const_shift, 'o', label='center=mode')
+    >>> plt.xlabel('Shape parameter p of the Gamma distribution')
+    >>> plt.title('NROU rejection constants for the Gamma distribution')
+    >>> plt.legend()
+    >>> plt.show()
+
+To conclude this example, we generate random variates for ``Gamma(2.2)`` by
+applying NROU with mode shift and create a histogram:
+
+.. plot::
+
+    >>> from scipy import stats
+    >>> p = 2.2
+    >>> dist = Gamma(p)
+    >>> u_min, u_max, v_max = rectangle(p, p-1)
+    >>> rng = NaiveRatioUniforms(dist, center=p-1, v_max=v_max,
+    ...                          u_min=u_min, u_max=u_max, random_state=urng)
+    >>> rvs = rng.rvs(1000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=500)
+    >>> fx = stats.gamma.pdf(x, p)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, fx, "r-", label=" Gamma({}) pdf".format(p))
+    >>> ax.hist(rvs, bins=30, density=True, alpha=0.8, label="rvs")
+    >>> plt.xlabel("x")
+    >>> plt.title("Samples drawn using NROU method with mode shift.")
+    >>> plt.legend()
+    >>> plt.show()
+
+Finally, we remark that the parameter ``r`` can be used to transform the
+density. In general, it is recommended to use ``r=1`` for computational
+reasons. However, larger values of r increase the class of distributions
+for which the method works. For example, if the right tail of the pdf
+decreases like ``x**(-1.5)``, ``u_max`` is not finite if ``r=1``
+since ``x*sqrt(x**(-1.5)) = x**(0.25)`` is unbounded as ``x`` increases.
+However, if we use ``r=2``, note that ``x * x**(-1.5*r/(r+1)) = 1``,
+so ``u_max`` is bounded.
+
+Please see [1]_, [2]_, [3]_, [4]_ and [5]_ for more details on this method.
 
 
 References
@@ -115,4 +215,7 @@ References
        ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
 .. [4] L. Devroye, "Non-Uniform Random Variate Generation",
        Springer-Verlag, 1986.
+.. [5] J. C. Wakefield, A. E. Gelfand, and A. F. M. Smith. "Efficient
+       generation of random variates via the ratio-of-uniforms method."
+       Statistics and Computing 1.2, p. 129--133, 1991.
 
