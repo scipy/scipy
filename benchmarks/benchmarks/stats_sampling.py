@@ -42,6 +42,11 @@ class contdist2:
     def cdf(self, x):
         return special.ndtr(x)
 
+    def nrou_bounds(self):
+        # return bounding rectangle u_min, u_max, v_max for NaiveRatioUniforms
+        u_bound = np.sqrt(self.pdf(np.sqrt(2))) * np.sqrt(2)
+        return -u_bound, u_bound, np.sqrt(self.pdf(0))
+
     def __repr__(self):
         return 'norm(0, 1)'
 
@@ -178,6 +183,35 @@ class NumericalInversePolynomial(Benchmark):
             )
 
     def time_pinv_rvs(self, dist):
+        self.rng.rvs(100000)
+
+
+class NaiveRatioUniforms(Benchmark):
+
+    param_names = ['dist']
+
+    params = [allcontdists]
+
+    def setup(self, dist):
+        self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
+        # to run the benchmark, the bounding rectangle must be specified
+        # in the dist object
+        if hasattr(dist, 'nrou_bounds'):
+            u_min, u_max, v_max = dist.nrou_bounds()
+            self.rng = stats.NaiveRatioUniforms(
+                dist, random_state=self.urng, u_min=u_min, u_max=u_max,
+                v_max=v_max
+            )
+        else:
+            raise NotImplementedError(f"no rectangle specified for {dist}")
+
+    def time_nrou_setup(self, dist):
+        u_min, u_max, v_max = dist.nrou_bounds
+        self.rng = stats.NaiveRatioUniforms(
+            dist, random_state=self.urng, u_min=u_min, u_max=u_max, v_max=v_max
+        )
+
+    def time_nrou_rvs(self, dist):
         self.rng.rvs(100000)
 
 

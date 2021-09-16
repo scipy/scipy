@@ -155,8 +155,6 @@ account the normalization constant of the Gamma density):
 We can see that it becomes advantageous to apply the mode shift once as the
 mode moves further away from zero:
 
-.. plot::
-
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -167,10 +165,12 @@ mode moves further away from zero:
     >>> plt.legend()
     >>> plt.show()
 
+.. plot:: tutorial/stats/plots/nrou_plot1.py
+   :align: center
+   :include-source: 0
+
 To conclude this example, we generate random variates for ``Gamma(2.2)`` by
 applying NROU with mode shift and create a histogram:
-
-.. plot::
 
     >>> from scipy import stats
     >>> p = 2.2
@@ -189,6 +189,10 @@ applying NROU with mode shift and create a histogram:
     >>> plt.title("Samples drawn using NROU method with mode shift.")
     >>> plt.legend()
     >>> plt.show()
+
+.. plot:: tutorial/stats/plots/nrou_plot2.py
+   :align: center
+   :include-source: 0
 
 Finally, we remark that the parameter ``r`` can be used to transform the
 density. In general, it is recommended to use ``r=1`` for computational
