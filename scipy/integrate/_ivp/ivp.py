@@ -1,5 +1,6 @@
 import inspect
 import numpy as np
+import warnings
 from .bdf import BDF
 from .radau import Radau
 from .rk import RK23, RK45, DOP853
@@ -26,33 +27,49 @@ class OdeResult(OptimizeResult):
 
 
 def prepare_events(events):
-    """Standardize event functions and extract is_terminal and direction."""
+    """Standardize event functions and extract the 'terminal',
+    'terminate_after', and 'direction' event function attributes."""
     if callable(events):
         events = (events,)
 
-    is_terminal = np.empty((len(events), 2))
+    max_events = np.empty(len(events))
     direction = np.empty(len(events))
     for i, event in enumerate(events):
         try:
             terminal = event.terminal
-            if isinstance(terminal, bool):
-                is_terminal[i] = [1, 1] if terminal else [0, np.nan]
-            elif isinstance(terminal, int):
-                assert terminal > 0, ("If provided as an int, terminal must be"
-                                      " greater than zero")
-                is_terminal[i] = [1, terminal]
-            else:
-                raise TypeError("The terminal attribute of each event must"
-                                " have either bool or int type.")
+            terminate_after = event.terminate_after
+            raise RuntimeError("Only one of 'terminal' and 'terminate_after' "
+                               "attributes can be supplied for a given event.")
         except AttributeError:
-            is_terminal[i] = [0, np.nan]
+            pass
+
+        try:
+            terminal = event.terminal
+            warnings.warn(
+                "The 'terminal' event function attribute is deprecated and "
+                "will be removed in SciPy release 1.8.0. Please use the new "
+                "'terminate_after' attribute, which can be set to 1 to "
+                "replicate the behaviour of the 'terminal' attribute.",
+                DeprecationWarning, stacklevel=3)
+            max_events[i] = 1 if terminal else np.inf
+        except AttributeError:
+            try:
+                terminate_after = event.terminate_after
+                assert (isinstance(terminate_after, (int, float))
+                        and not isinstance(terminate_after, bool)
+                        and terminate_after >= 1), (
+                    "The 'terminate_after' event function attribute must have "
+                    "type int or float and be greater or equal to one.")
+                max_events[i] = terminate_after
+            except AttributeError:
+                max_events[i] = np.inf
 
         try:
             direction[i] = event.direction
         except AttributeError:
             direction[i] = 0
 
-    return events, is_terminal, direction
+    return events, max_events, direction
 
 
 def solve_event_equation(event, sol, t_old, t):
@@ -83,7 +100,7 @@ def solve_event_equation(event, sol, t_old, t):
                   xtol=4 * EPS, rtol=4 * EPS)
 
 
-def handle_events(sol, events, active_events, event_count, is_terminal,
+def handle_events(sol, events, active_events, event_count, max_events,
                   t_old, t):
     """Helper function to handle events.
 
@@ -96,8 +113,11 @@ def handle_events(sol, events, active_events, event_count, is_terminal,
         Event functions with signatures ``event(t, y)``.
     active_events : ndarray
         Indices of events which occurred.
-    is_terminal : ndarray, shape (n_events, 2)
-        Which events are terminal and how many times can they occur.
+    event_count : ndarray
+        Current number of occurrences for each event.
+    max_events : ndarray, shape (n_events,)
+        Number of occurrences allowed for each event before integration
+        termination is issued.
     t_old, t : float
         Previous and new values of time.
 
@@ -116,16 +136,15 @@ def handle_events(sol, events, active_events, event_count, is_terminal,
 
     roots = np.asarray(roots)
 
-    if np.any((is_terminal[active_events, 0].astype(int))
-              & (is_terminal[active_events, 1] == event_count[active_events])):
+    if np.any(event_count[active_events] >= max_events[active_events]):
         if t > t_old:
             order = np.argsort(roots)
         else:
             order = np.argsort(-roots)
         active_events = active_events[order]
         roots = roots[order]
-        t = np.nonzero(is_terminal[active_events, 1]
-                       == event_count[active_events])[0][0]
+        t = np.nonzero(event_count[active_events]
+                       >= max_events[active_events])[0][0]
         active_events = active_events[:t + 1]
         roots = roots[:t + 1]
         terminate = True
@@ -264,11 +283,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         missed. Additionally each `event` function might have the following
         attributes:
 
-            terminal: bool or int, optional
-                If a bool, whether to terminate integration if this event
-                occurs. If an int, assumes event is terminal and specifies the
-                number of occurrences of that event before termination occurs.
+            terminal: bool, optional
+                Whether to terminate integration if this event occurs.
                 Implicitly False if not assigned.
+            terminate_after: int or float, optional
+                Number of occurrences of the `event` before termination occurs.
+                Implicitly np.inf if not assigned.
             direction: float, optional
                 Direction of a zero crossing. If `direction` is positive,
                 `event` will only trigger when going from negative to positive,
@@ -578,7 +598,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     interpolants = []
 
     if events is not None:
-        events, is_terminal, event_dir = prepare_events(events)
+        events, max_events, event_dir = prepare_events(events)
         event_count = np.zeros(len(events))
         if args is not None:
             # Wrap user functions in lambdas to hide the additional parameters.
@@ -623,7 +643,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
                 event_count[active_events] += 1
                 root_indices, roots, terminate = handle_events(
-                    sol, events, active_events, event_count, is_terminal,
+                    sol, events, active_events, event_count, max_events,
                     t_old, t)
 
                 for e, te in zip(root_indices, roots):
