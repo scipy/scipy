@@ -1019,11 +1019,6 @@
             "nbdtri": "iid->d"
         }
     },
-    "nbdtrik": {
-        "cdf_wrappers.h": {
-            "cdfnbn2_wrap": "ddd->d"
-        }
-    },
     "nbdtrin": {
         "cdf_wrappers.h": {
             "cdfnbn3_wrap": "ddd->d"

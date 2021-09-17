@@ -68,6 +68,18 @@ the same shared library.
 
 """
 
+import pathlib
+from shutil import copyfile
+import subprocess
+import sys
+
+
+def make_boost():
+     # Call code generator inside _boost directory
+     code_gen = pathlib.Path(__file__).parent / '_boost/include/code_gen.py'
+     subprocess.run([sys.executable, str(code_gen)], check=True)
+
+
 # -----------------------------------------------------------------------------
 # Extra code
 # -----------------------------------------------------------------------------
@@ -1483,3 +1495,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    make_boost()

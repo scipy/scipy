@@ -162,6 +162,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_files('tests/data/*.npz')
 
+    config.add_subpackage('_boost')
     config.add_subpackage('_precompute')
 
     # Type stubs

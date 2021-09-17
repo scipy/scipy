@@ -664,8 +664,10 @@ from ._spherical_bessel import (
     spherical_in,
     spherical_kn
 )
+from ._boost import _nbinom_cdf as nbdtrik
 
 __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+    'nbdtrik',
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'orthogonal',  # Not public, but kept in __all__ for back-compat
