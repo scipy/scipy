@@ -583,8 +583,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
-        result.fill(0)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, np.std)
+        result.fill(np.nan)
+        flatcount = np.bincount(binnumbers, None)
+        a = flatcount.nonzero()
+        for vv in builtins.range(Vdim):
+            flatsum = np.bincount(binnumbers, values[vv])
+            delta = values[vv] - flatsum[binnumbers] / flatcount[binnumbers]
+            std = np.sqrt(np.bincount(binnumbers, delta**2)[a] / flatcount[a])
+            result[vv, a] = std
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -598,13 +604,25 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, np.median)
+        for vv in builtins.range(Vdim):
+            i = np.lexsort((values[vv], binnumbers))
+            _, j, counts = np.unique(binnumbers[i],
+                                     return_index=True, return_counts=True)
+            mid = j + (counts - 1) / 2
+            mid_a = values[vv, i][np.floor(mid).astype(int)]
+            mid_b = values[vv, i][np.ceil(mid).astype(int)]
+            medians = (mid_a + mid_b) / 2
+            result[vv, binnumbers[i][j]] = medians
     elif statistic == 'min':
         result.fill(np.nan)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, np.min)
+        for vv in builtins.range(Vdim):
+            i = np.argsort(values[vv])[::-1]  # Reversed so the min is last
+            result[vv, binnumbers[i]] = values[vv, i]
     elif statistic == 'max':
         result.fill(np.nan)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, np.max)
+        for vv in builtins.range(Vdim):
+            i = np.argsort(values[vv])
+            result[vv, binnumbers[i]] = values[vv, i]
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
@@ -613,8 +631,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             except Exception:
                 null = np.nan
         result.fill(null)
-        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic,
-                               is_callable=True)
+        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic)
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))
@@ -636,19 +653,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
     return BinnedStatisticddResult(result, edges, binnumbers)
 
 
-def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
-                           is_callable=False):
+def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func):
     unique_bin_numbers = np.unique(bin_numbers)
     for vv in builtins.range(Vdim):
         bin_map = _create_binned_data(bin_numbers, unique_bin_numbers,
                                       values, vv)
         for i in unique_bin_numbers:
-            # if the stat_func is callable, all results should be updated
-            # if the stat_func is np.std, calc std only when binned data is 2
-            # or more for speed up.
-            if is_callable or not (stat_func is np.std and
-                                   len(bin_map[i]) < 2):
-                result[vv, i] = stat_func(np.array(bin_map[i]))
+            result[vv, i] = stat_func(np.array(bin_map[i]))
 
 
 def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):

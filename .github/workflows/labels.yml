@@ -1,0 +1,16 @@
+# Triage PRs based on modified paths
+# Rely on .github/pr_path_labeler.yml
+# https://github.com/marketplace/actions/labeler
+name: "Pull Request Labeler"
+on:
+- pull_request_target
+
+jobs:
+  triage-on-file-paths:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@v3
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        configuration-path: ".github/pr_path_labeler.yml"
+        sync-labels: false  # would remove labels if file not modified anymore

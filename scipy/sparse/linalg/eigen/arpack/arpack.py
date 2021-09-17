@@ -49,7 +49,6 @@ from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
-from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
 

@@ -1,0 +1,51 @@
+# Labeler triggered by .github/workflows/labels.yml
+
+github:
+- any: [".github/**/*", "!.github/workflows/**/*"]
+
+CI:
+- any: ["**/*.yml"]
+- any: ["**/*.yaml"]
+
+gitpod:
+- any: [".gitpod.yml"]
+- any: ["tools/docker_dev/gitpod.Dockerfile"]
+
+Documentation:
+- any: ["**/*.rst"]
+- any: ["**/*.md"]
+
+Benchmarks: benchmarks/**/*
+
+C/C++:
+- any: ["**/*.c"]
+- any: ["**/*.cpp"]
+- any: ["**/*.cxx"]
+- any: ["**/*.h"]
+
+Cython: "**/*.pyx"
+
+Fortran: "**/*.f"
+
+scipy.cluster: scipy/cluster/**/*
+scipy.constants: scipy/constants/**/*
+scipy.fft: scipy/fft/**/*
+scipy.fftpack: scipy/fftpack/**/*
+scipy.integrate: scipy/integrate/**/*
+scipy.interpolate: scipy/interpolate/**/*
+scipy.io: scipy/io/**/*
+scipy._lib: scipy/_lib/**/*
+scipy.linalg: scipy/linalg/**/*
+scipy.misc: scipy/misc/**/*
+scipy.ndimage: scipy/ndimage/**/*
+scipy.odr: scipy/odr/**/*
+scipy.optimize: scipy/optimize/**/*
+scipy.signal: scipy/signal/**/*
+scipy.sparse:
+- any: ["scipy/sparse/**/*", "!scipy/sparse/csgraph/**/*", "!scipy/sparse/linalg/**/*"]
+scipy.sparse.csgraph: scipy/sparse/csgraph/**/*
+scipy.sparse.linalg: scipy/sparse/linalg/**/*
+scipy.spatial: scipy/spatial/**/*
+scipy.special: scipy/special/**/*
+scipy.stats: scipy/stats/**/*
+scipy.weave: scipy/weave/**/*

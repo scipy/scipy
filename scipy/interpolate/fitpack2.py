@@ -1926,13 +1926,13 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fig2 = plt.figure()
     >>> s = [3e9, 2e9, 1e9, 1e8]
-    >>> for ii in range(len(s)):
-    ...     lut = RectSphereBivariateSpline(lats, lons, data, s=s[ii])
+    >>> for idx, sval in enumerate(s, 1):
+    ...     lut = RectSphereBivariateSpline(lats, lons, data, s=sval)
     ...     data_interp = lut.ev(new_lats.ravel(),
     ...                          new_lons.ravel()).reshape((360, 180)).T
-    ...     ax = fig2.add_subplot(2, 2, ii+1)
+    ...     ax = fig2.add_subplot(2, 2, idx)
     ...     ax.imshow(data_interp, interpolation='nearest')
-    ...     ax.set_title("s = %g" % s[ii])
+    ...     ax.set_title(f"s = {sval:g}")
     >>> plt.show()
 
     """

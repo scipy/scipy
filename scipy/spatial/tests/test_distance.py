@@ -58,10 +58,10 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
-                                    kulsinski, mahalanobis, matching,
-                                    minkowski, rogerstanimoto, russellrao,
-                                    seuclidean, sokalmichener, sokalsneath,
-                                    sqeuclidean, yule)
+                                    kulsinski, kulczynski1, mahalanobis,
+                                    matching, minkowski, rogerstanimoto,
+                                    russellrao, seuclidean, sokalmichener,
+                                    sokalsneath, sqeuclidean, yule)
 from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
@@ -377,6 +377,7 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wkulsinski = _weight_checked(kulsinski)
+wkulczynski1 = _weight_checked(kulczynski1)
 wminkowski = _weight_checked(minkowski, const_test=False)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
@@ -535,9 +536,11 @@ class TestCdist:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric == 'wminkowski':
                     continue
-                if metric in {'dice', 'yule', 'kulsinski', 'matching',
-                              'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                if metric in {'dice', 'yule', 'kulsinski',
+                              'matching', 'rogerstanimoto',
+                              'russellrao', 'sokalmichener',
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X1, X2, metric)
@@ -1451,7 +1454,8 @@ class TestPdist:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X, metric)

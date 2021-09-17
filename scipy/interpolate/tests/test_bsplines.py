@@ -516,6 +516,58 @@ class TestBSpline:
         with assert_raises(ValueError):
             BSpline.design_matrix(x, t, k)
 
+    @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
+                                         'periodic', 'not-a-knot'])
+    def test_from_power_basis(self, bc_type):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(20))
+        y = np.random.random(20)
+        if bc_type == 'periodic':
+            y[-1] = y[0]
+        cb = CubicSpline(x, y, bc_type=bc_type)
+        bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
+        xx = np.linspace(0, 1, 20)
+        assert_allclose(cb(xx), bspl(xx), atol=1e-15)
+        bspl_new = make_interp_spline(x, y, bc_type=bc_type)
+        assert_allclose(bspl.c, bspl_new.c, atol=1e-15)
+
+    @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
+                                         'periodic', 'not-a-knot'])
+    def test_from_power_basis_complex(self, bc_type):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(20))
+        y = np.random.random(20) + np.random.random(20) * 1j
+        if bc_type == 'periodic':
+            y[-1] = y[0]
+        cb = CubicSpline(x, y, bc_type=bc_type)
+        bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
+        bspl_new_real = make_interp_spline(x, y.real, bc_type=bc_type)
+        bspl_new_imag = make_interp_spline(x, y.imag, bc_type=bc_type)
+        assert_equal(bspl.c.dtype, (bspl_new_real.c
+                                    + 1j * bspl_new_imag.c).dtype)
+        assert_allclose(bspl.c, bspl_new_real.c
+                        + 1j * bspl_new_imag.c, atol=1e-15)
+
+    def test_from_power_basis_exmp(self):
+        '''
+        For x = [0, 1, 2, 3, 4] and y = [1, 1, 1, 1, 1]
+        the coefficients of Cubic Spline in the power basis:
+
+        $[[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[1, 1, 1, 1, 1]]$
+
+        It could be shown explicitly that coefficients of the interpolating
+        function in B-spline basis are c = [1, 1, 1, 1, 1, 1, 1]
+        '''
+        x = np.array([0, 1, 2, 3, 4])
+        y = np.array([1, 1, 1, 1, 1])
+        bspl = BSpline.from_power_basis(CubicSpline(x, y, bc_type='natural'),
+                                        bc_type='natural')
+        assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
+
+
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
     # multiplicity.
