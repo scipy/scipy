@@ -28,8 +28,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
         The N x N matrix representing an undirected graph over N nodes
         (see notes below).
     overwrite : bool, optional
-        if true, then parts of the input graph will be overwritten for
-        efficiency.
+        If true, then parts of the input graph will be overwritten for
+        efficiency. Default is False.
 
     Returns
     -------
