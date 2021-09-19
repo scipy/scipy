@@ -178,6 +178,7 @@ Note that this comes at the cost of increased setup time and number of intervals
     >>> timeit(f, number=1)
     0.08671202100003939  # may vary
 
+Please see [1]_ and [2]_ for more details on this method.
 
 References
 ----------
