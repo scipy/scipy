@@ -1338,7 +1338,7 @@ cdef class NumericalInversePolynomial(Method):
         Parameters
         ----------
         u : array_like
-            Qunatiles.
+            Quantiles.
 
         Returns
         -------
@@ -1382,7 +1382,7 @@ cdef class NumericalInversePolynomial(Method):
         max_error : float
             Maximum u-error.
         mean_absolute_error : float
-            Maximum absolute u-error.
+            Mean absolute u-error.
         """
         # UNU.RAN doesn't return a proper error code for this condition.
         if sample_size < 1000:
@@ -1753,7 +1753,7 @@ cdef class NumericalInverseHermite(Method):
         Parameters
         ----------
         u : array_like
-            Qunatiles.
+            Quantiles.
 
         Returns
         -------
@@ -1797,7 +1797,7 @@ cdef class NumericalInverseHermite(Method):
         max_error : float
             Maximum u-error.
         mean_absolute_error : float
-            Maximum absolute u-error.
+            Mean absolute u-error.
         """
         # UNU.RAN doesn't return a proper error code for this condition.
         if sample_size < 1000:
@@ -1818,6 +1818,8 @@ cdef class NumericalInverseHermite(Method):
 
     def qrvs(self, size=None, d=None, qmc_engine=None):
         """
+        qrvs(size=None, d=None, qmc_engine=None)
+
         Quasi-random variates of the given RV.
 
         The `qmc_engine` is used to draw uniform quasi-random variates, and
