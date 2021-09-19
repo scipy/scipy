@@ -178,13 +178,18 @@ cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
 # %% ========================================== issymmetric, ishermitian
 
 @cython.embedsignature(True)
-def issymmetric(a):
+def issymmetric(a, atol=None, rtol=None):
     """Check if a square 2D array is symmetric.
+
 
     Parameters
     ----------
     a: ndarray
         Input array of size (N, N)
+    atol: float, optional
+        Absolute error bound
+    rtol: float, optional
+        Relative error bound
 
     Returns
     -------
@@ -198,7 +203,17 @@ def issymmetric(a):
     examples)
 
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
-    similar problematic entries on the diagonal, they will be ignored.
+    similar problematic entries on the diagonal, they will be ignored. However,
+    `numpy.inf` will be treated as a number, that is to say
+    ``[[1, inf], [inf, 2]]`` will return ``True``. On the other hand ``np.NaN``
+    is never symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
+
+    When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
+    by `numpy.allclose` and the tolerance values are passed to it. Otherwise an
+    exact comparison against zero is performed by internal functions. Hence
+    performance can improve or degrade depending on the size and dtype of the
+    array. If one of ``atol`` or ``rtol`` given the other one is automatically
+    set to zero.
 
     See Also
     --------
@@ -208,9 +223,7 @@ def issymmetric(a):
     ------
     TypeError
         If the dtype of the array is not supported, in particular, NumPy
-        float16, float128 and complex256 dtypes.
-    ValueError
-        If the input array is not a square 2D NumPy array.
+        float16, float128 and complex256 dtypes for exact comparisons.
 
     Examples
     --------
@@ -230,6 +243,15 @@ def issymmetric(a):
         raise ValueError('Input array must be square.')
     if a.size == 0:
         return True
+
+    # It's not worth going element-by-element basis if comparison is inexact
+    # Also integers do not have tolerances
+    if (atol or rtol) and not np.issubdtype(a.dtype, np.integer):
+        # We ended up here because one of atol/rtol is given
+        # Don't send None to allclose if not provided; replace with 0.
+        return np.allclose(a, a.T,
+                           atol=atol if atol else 0.,
+                           rtol=rtol if rtol else 0.)
 
     if a.flags['C_CONTIGUOUS']:
         s = is_sym_her_real_c(a)
@@ -284,13 +306,17 @@ cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
 
 
 @cython.embedsignature(True)
-def ishermitian(a):
+def ishermitian(a, atol=None, rtol=None):
     """Check if a square 2D array is Hermitian.
 
     Parameters
     ----------
     a: ndarray
         Input array of size (N, N)
+    atol: float, optional
+        Absolute error bound
+    rtol: float, optional
+        Relative error bound
 
     Returns
     -------
@@ -301,13 +327,22 @@ def ishermitian(a):
     -----
     For square empty arrays the result is returned True by convention.
 
+    `numpy.inf` will be treated as a number, that is to say
+    ``[[1, inf], [inf, 2]]`` will return ``True``. On the other hand ``np.NaN``
+    is never symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
+
+    When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
+    by `numpy.allclose` and the tolerance values are passed to it. Otherwise an
+    exact comparison against zero is performed by internal functions. Hence
+    performance can improve or degrade depending on the size and dtype of the
+    array. If one of ``atol`` or ``rtol`` given the other one is automatically
+    set to zero.
+
     Raises
     ------
     TypeError
         If the dtype of the array is not supported, in particular, NumPy
         float16, float128 and complex256 dtypes.
-    ValueError
-        If the input array is not a 2D NumPy array.
 
     See Also
     --------
@@ -326,6 +361,12 @@ def ishermitian(a):
     >>> Ac = np.array([[1. + 1.j, 3.j], [3.j, 2.]])
     >>> ishermitian(Ac)  # not Hermitian but symmetric
     False
+    >>> Af = np.array([[0, 1 + 1j], [1+ (1+1e-12)*1j, 0]])
+    >>> ishermitian(Af)
+    False
+    >>> ishermitian(Af, atol=5e-11)
+    True
+
 
     """
     if a.ndim != 2:
@@ -334,6 +375,16 @@ def ishermitian(a):
         raise ValueError('Input array must be square.')
     if a.size == 0:
         return True
+
+    # It's not worth going element-by-element basis if comparison is inexact
+    # Also integers do not have tolerances
+    if (atol or rtol) and not np.issubdtype(a.dtype, np.integer):
+        # We ended up here because one of atol/rtol is given
+        # Don't send None to allclose if not provided; replace with 0.
+        return np.allclose(a, a.conj().T,
+                           atol=atol if atol else 0.,
+                           rtol=rtol if rtol else 0.)
+
 
     if np.iscomplexobj(a):
         # complex entries on the diagonal
