@@ -507,17 +507,22 @@ cdef class Method:
         cdef double[::1] out_cont
         cdef int[::1] out_discr
         N = 1 if size is None else np.prod(size)
+        prev_random_state = self.numpy_rng
         if random_state is not None:
             self.set_random_state(random_state)
         if unur_distr_is_cont(unur_get_distr(self.rng)):
             out_cont = np.empty(N, dtype=np.float64)
             self._rvs_cont(out_cont)
+            if random_state is not None:
+                self.set_random_state(prev_random_state)
             if size is None:
                 return out_cont[0]
             return np.asarray(out_cont).reshape(size)
         elif unur_distr_is_discr(unur_get_distr(self.rng)):
             out_discr = np.empty(N, dtype=np.int32)
             self._rvs_discr(out_discr)
+            if random_state is not None:
+                self.set_random_state(prev_random_state)
             if size is None:
                 return out_discr[0]
             return np.asarray(out_discr).reshape(size)
@@ -1525,7 +1530,7 @@ cdef class NumericalInverseHermite(Method):
     Examples
     --------
     >>> from scipy.stats import NumericalInverseHermite
-    >>> from scipy.stats import norm
+    >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
 
     To create a generator to sample from the standard normal distribution, do:
@@ -1552,9 +1557,11 @@ cdef class NumericalInverseHermite(Method):
     method, the random variates generated may be nearly identical, given
     the same random state.
 
+    >>> dist = genexpon(9, 16, 3)
+    >>> rng = NumericalInverseHermite(dist)
     >>> # `seed` ensures identical random streams are used by each `rvs` method
     >>> seed = 500072020
-    >>> rvs1 = norm.rvs(size=100, random_state=np.random.default_rng(seed))
+    >>> rvs1 = dist.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> rvs2 = rng.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> np.allclose(rvs1, rvs2)
     True
@@ -1563,6 +1570,8 @@ cdef class NumericalInverseHermite(Method):
     look at its histogram:
 
     >>> import matplotlib.pyplot as plt
+    >>> dist = StandardNormal()
+    >>> rng = NumericalInverseHermite(dist)
     >>> rvs = rng.rvs(10000)
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
     >>> fx = norm.pdf(x)
@@ -1642,6 +1651,7 @@ cdef class NumericalInverseHermite(Method):
     >>> plt.ylabel('error')
     >>> plt.title('Error between exact and approximated PPF (x-error)')
     >>> plt.show()
+
     """
     cdef double[::1] construction_points_array
 
