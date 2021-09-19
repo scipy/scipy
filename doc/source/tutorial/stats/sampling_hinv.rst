@@ -177,3 +177,14 @@ Note that this comes at the cost of increased setup time and number of intervals
     >>> f = lambda: NumericalInverseHermite(dist, u_resolution=1e-13)
     >>> timeit(f, number=1)
     0.08671202100003939  # may vary
+
+
+References
+----------
+
+.. [1] Hörmann, Wolfgang, and Josef Leydold. "Continuous random variate
+       generation by fast numerical inversion." ACM Transactions on
+       Modeling and Computer Simulation (TOMACS) 13.4 (2003): 347-362.
+.. [2] UNU.RAN reference manual, Section 5.3.5,
+       "HINV - Hermite interpolation based INVersion of CDF",
+       https://statmath.wu.ac.at/software/unuran/doc/unuran.html#HINV
