@@ -67,10 +67,10 @@ def connected_components(csgraph, directed=True, connection='weak',
     >>> from scipy.sparse.csgraph import connected_components
 
     >>> graph = [
-    ... [ 0, 1 , 1, 0 , 0 ],
-    ... [ 0, 0 , 1 , 0 ,0 ],
-    ... [ 0, 0, 0, 0, 0],
-    ... [0, 0 , 0, 0, 1],
+    ... [0, 1, 1, 0, 0],
+    ... [0, 0, 1, 0, 0],
+    ... [0, 0, 0, 0, 0],
+    ... [0, 0, 0, 0, 1],
     ... [0, 0, 0, 0, 0]
     ... ]
     >>> graph = csr_matrix(graph)
@@ -310,7 +310,7 @@ cpdef breadth_first_order(csgraph, i_start,
     >>> from scipy.sparse.csgraph import breadth_first_order
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -493,7 +493,7 @@ cpdef depth_first_order(csgraph, i_start,
     >>> from scipy.sparse.csgraph import depth_first_order
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
