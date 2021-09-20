@@ -613,7 +613,7 @@ class Checker(doctest.OutputChecker):
                 return self.check_output(s_want, s_got, optionflags)
 
             # maybe we are dealing with masked arrays?
-            # their repr uses '--' for masked values and this is invalid syntax.
+            # their repr uses '--' for masked values and this is invalid syntax
             # If so, replace '--' by nans (they are masked anyway) and retry
             if 'masked_array' in want or 'masked_array' in got:
                 s_want = want.replace('--', 'nan')

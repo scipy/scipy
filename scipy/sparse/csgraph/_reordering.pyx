@@ -52,7 +52,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
