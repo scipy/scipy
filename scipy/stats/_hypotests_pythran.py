@@ -77,7 +77,7 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     to (m, n) which satisfy |x/m - y/n| < h / lcm(m, n).
     The paths make steps of size +1 in either positive x or positive y
     directions.
-    We are, however, interested in 1 - proportion to computs p-values,
+    We are, however, interested in 1 - proportion to computes p-values,
     so we change the recursion to compute 1 - p directly while staying
     within the "inside method" a described by Hodges.
 
@@ -120,7 +120,7 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     # Instead we rescale based on the magnitude of the right most term in
     # the column and keep track of an exponent separately and apply
     # it at the end of the calculation.  Similarly when multiplying by
-    # the binomial coefficint
+    # the binomial coefficient
     dtype = np.float64
     A = np.ones(lenA, dtype=dtype)
     # Initialize the first column

@@ -3886,7 +3886,6 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
-    @pytest.mark.slow
     def test_gh12999(self):
         for x in range(1000, 12000, 1000):
             vals1 = np.random.normal(size=(x))
