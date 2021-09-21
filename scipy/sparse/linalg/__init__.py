@@ -95,6 +95,7 @@ The `svds` function supports the following solvers:
 
     sparse.linalg.svds-arpack
     sparse.linalg.svds-lobpcg
+    sparse.linalg.svds-propack
 
 Complete or incomplete LU factorizations
 
