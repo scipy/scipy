@@ -869,6 +869,15 @@ def test_regress_simple():
     assert_almost_equal(result.stderr, 0.002395781449783862)
     assert_almost_equal(result.intercept_stderr, 0.13866936078570702)
 
+
+def test_linregress_identical_x():
+    x = np.zeros(10)
+    y = np.random.random(10)
+    msg = "Cannot calculate a linear regression if all x values are identical"
+    with assert_raises(ValueError, match=msg):
+        mstats.linregress(x, y)
+
+
 def test_theilslopes():
     # Test for basic slope and intercept.
     slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
