@@ -646,7 +646,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if t_eval is None:
         ts = np.array(ts)
         ys = np.vstack(ys).T
-    else:
+    elif ts:
         ts = np.hstack(ts)
         ys = np.hstack(ys)
 
