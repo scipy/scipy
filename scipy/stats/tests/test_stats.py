@@ -16,7 +16,8 @@ from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
-                           assert_string_equal)
+                           assert_string_equal,
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
@@ -3885,6 +3886,16 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
+    def test_gh12999(self):
+        for x in range(1000, 12000, 1000):
+            vals1 = np.random.normal(size=(x))
+            vals2 = np.random.normal(size=(x + 10), loc=0.5)
+            exact = stats.ks_2samp(vals1, vals2, mode='exact').pvalue
+            asymp = stats.ks_2samp(vals1, vals2, mode='asymp').pvalue
+            # these two p-values should be in line with each other
+            assert_array_less(exact, 3 * asymp)
+            assert_array_less(asymp, 3 * exact)
+
     @pytest.mark.slow
     def testLargeBoth(self):
         # 10000, 11000
@@ -3912,9 +3923,12 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
+        from scipy.stats.stats import (
+            _count_paths_outside_method,
+            _compute_outer_prob_inside_method
+        )
 
-        _compute_prob_inside_method(1, 1, 1, 1)
+        _compute_outer_prob_inside_method(1, 1, 1, 1)
         _count_paths_outside_method(1000, 1, 1, 1001)
 
         assert_raises(FloatingPointError, _count_paths_outside_method, 1100, 1099, 1, 1)
