@@ -40,7 +40,9 @@ def make_system(A, M, x0, b):
         preconditioner
         sparse or dense matrix (or any valid input to aslinearoperator)
     x0 : {array_like, None}
-        initial guess to iterative method
+        initial guess to iterative method.
+        ``x0 = ['Mb']`` means using the nonzero initial guess ``M * b``.
+        Default is `None`, which means using the zero initial guess.
     b : array_like
         right hand side
 
@@ -114,14 +116,13 @@ def make_system(A, M, x0, b):
     # set initial guess
     if x0 is None:
         x = zeros(N, dtype=xtype)
-    elif x0 is True:  # use nonzero initial guess ``M * b``
+    elif len(x0) == 1 and x0[0] == 'Mb':  # use nonzero initial guess ``M * b``
         bCopy = b.copy()
         x = M.matvec(bCopy)
     else:
         x = array(x0, dtype=xtype)
         if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError('shapes of A {} and x0 {} are incompatible'
-                            .format(A.shape, x.shape))
+            raise ValueError(f'shapes of A {A.shape} and x0 {x.shape} are incompatible')
         x = x.ravel()
 
     return A, M, x, b, postprocess
