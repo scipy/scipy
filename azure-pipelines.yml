@@ -55,21 +55,6 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: pre_release_deps_source_dist
-    condition: eq(variables['System.PullRequest.TargetBranch'], 'master')
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "--pre --upgrade --timeout=60 -i $(PRE_WHEELS) numpy"
-        other_spec: "--pre --upgrade --timeout=60"
   - job: coverage_full_tests
     pool:
       vmImage: 'ubuntu-18.04'
