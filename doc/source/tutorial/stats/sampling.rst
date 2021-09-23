@@ -286,6 +286,7 @@ Generators in :mod:`scipy.stats`
    sampling_tdr
    sampling_dau
    sampling_pinv
+   sampling_hinv
 
 
 References
