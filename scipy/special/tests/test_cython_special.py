@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose, suppress_warnings
 from scipy import special
 from scipy.special import cython_special
 
-
 bint_points = [True, False]
 int_points = [-10, -1, 1, 10]
 real_points = [-10.0, -1.0, 1.0, 10.0]
@@ -204,7 +203,7 @@ PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.nbdtr, cython_special.nbdtr, ('lld', 'ddd'), None),
     (special.nbdtrc, cython_special.nbdtrc, ('lld', 'ddd'), None),
     (special.nbdtri, cython_special.nbdtri, ('lld', 'ddd'), None),
-    (special.nbdtrik, cython_special.nbdtrik, ('ddd',), None),
+    # (special.nbdtrik, special._boost._nbinom_ppf, ('ddd',), None),
     (special.nbdtrin, cython_special.nbdtrin, ('ddd',), None),
     (special.ncfdtr, cython_special.ncfdtr, ('dddd',), None),
     (special.ncfdtri, cython_special.ncfdtri, ('dddd',), None),

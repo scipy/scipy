@@ -15,9 +15,11 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
+from ._boost import _nbinom_ppf as nbdtrik
 
 
 __all__ = [
+    'nbdtrik',
     'ai_zeros',
     'assoc_laguerre',
     'bei_zeros',

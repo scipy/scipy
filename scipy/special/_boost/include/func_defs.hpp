@@ -67,6 +67,9 @@ template<template <typename, typename> class Dst, class RealType, class...Args>
 RealType
 boost_cdf(const RealType x, const Args ... args)
 {
+    if (isnan(x)) {
+        return NAN;
+    }
     if (std::isfinite(x)) {
         return boost::math::cdf(Dst<RealType, Policy>(args...), x);
     }

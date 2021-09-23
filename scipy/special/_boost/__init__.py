@@ -1,1 +1,1 @@
-from scipy.special._boost.nbinom_ufunc import _nbinom_cdf
+from scipy.special._boost.nbinom_ufunc import _nbinom_cdf, _nbinom_ppf
