@@ -1410,7 +1410,7 @@ cdef class NumericalInverseHermite(Method):
     """
     NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
 
-    Hermite interpolation based INVersion of CDF (PINV).
+    Hermite interpolation based INVersion of CDF (HINV).
 
     HINV is a variant of numerical inversion, where the inverse CDF is approximated using
     Hermite interpolation, i.e., the interval [0,1] is split into several intervals and
