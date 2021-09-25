@@ -1518,6 +1518,11 @@ cdef class NumericalInverseHermite(Method):
     tolerance is achieved or when the number of mesh intervals after the next
     refinement could exceed the maximum allowed number `max_intervals`.
 
+    This method accepted a `tol` parameter to specify the maximum tolerable u-error
+    but it has now been doc-deprecated in the favor of the `u_resolution` parameter.
+    A deprecation warning will be raised in v1.9.0 and the parameter will be removed
+    in v1.10.0.
+
     References
     ----------
     .. [1] Hörmann, Wolfgang, and Josef Leydold. "Continuous random variate
