@@ -144,7 +144,7 @@ def shortest_path(csgraph, method='auto',
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -269,7 +269,7 @@ def floyd_warshall(csgraph, directed=True,
     >>> from scipy.sparse.csgraph import floyd_warshall
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -285,10 +285,10 @@ def floyd_warshall(csgraph, directed=True,
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
-    array([[ 0.,  1.,  2.,  2.],
-           [ 1.,  0.,  3.,  1.],
-           [ 2.,  3.,  0.,  3.],
-           [ 2.,  1.,  3.,  0.]])
+    array([[0., 1., 2., 2.],
+           [1., 0., 3., 1.],
+           [2., 3., 0., 3.],
+           [2., 1., 3., 0.]])
     >>> predecessors
     array([[-9999,     0,     0,     1],
            [    1, -9999,     0,     1],
@@ -505,7 +505,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1002,7 +1002,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1236,7 +1236,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 

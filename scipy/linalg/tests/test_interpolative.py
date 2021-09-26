@@ -31,205 +31,149 @@ import numpy as np
 from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg.interpolative import interp_decomp
-import time
 import itertools
 
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
+import pytest
 from pytest import raises as assert_raises
+import sys
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
-def _debug_print(s):
-    if 0:
-        print(s)
+@pytest.fixture()
+def eps():
+    yield 1e-12
+
+
+@pytest.fixture(params=[np.float64, np.complex128])
+def A(request):
+    # construct Hilbert matrix
+    # set parameters
+    n = 300
+    yield hilbert(n).astype(request.param)
+
+
+@pytest.fixture()
+def L(A):
+    yield aslinearoperator(A)
+
+
+@pytest.fixture()
+def rank(A, eps):
+    S = np.linalg.svd(A, compute_uv=False)
+    try:
+        rank = np.nonzero(S < eps)[0][0]
+    except IndexError:
+        rank = A.shape[0]
+    return rank
 
 
 class TestInterpolativeDecomposition:
-    def test_id(self):
-        for dtype in [np.float64, np.complex128]:
-            self.check_id(dtype)
 
-    def check_id(self, dtype):
+    @pytest.mark.parametrize(
+        "rand,lin_op",
+        [(False, False), (True, False), (True, True)])
+    def test_real_id_fixed_precision(self, A, L, eps, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         # Test ID routines on a Hilbert matrix.
+        A_or_L = A if not lin_op else L
 
-        # set parameters
-        n = 300
-        eps = 1e-12
-
-        # construct Hilbert matrix
-        A = hilbert(n).astype(dtype)
-        if np.issubdtype(dtype, np.complexfloating):
-            A = A * (1 + 1j)
-        L = aslinearoperator(A)
-
-        # find rank
-        S = np.linalg.svd(A, compute_uv=False)
-        try:
-            rank = np.nonzero(S < eps)[0][0]
-        except IndexError:
-            rank = n
-
-        # print input summary
-        _debug_print("Hilbert matrix dimension:        %8i" % n)
-        _debug_print("Working precision:               %8.2e" % eps)
-        _debug_print("Rank to working precision:       %8i" % rank)
-
-        # set print format
-        fmt = "%8.2e (s) / %5s"
-
-        # test real ID routines
-        _debug_print("-----------------------------------------")
-        _debug_print("Real ID routines")
-        _debug_print("-----------------------------------------")
-
-        # fixed precision
-        _debug_print("Calling iddp_id / idzp_id  ...",)
-        t0 = time.time()
-        k, idx, proj = pymatrixid.interp_decomp(A, eps, rand=False)
-        t = time.time() - t0
+        k, idx, proj = pymatrixid.interp_decomp(A_or_L, eps, rand=rand)
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_aid / idzp_aid ...",)
-        t0 = time.time()
-        k, idx, proj = pymatrixid.interp_decomp(A, eps)
-        t = time.time() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        _debug_print("Calling iddp_rid / idzp_rid ...",)
-        t0 = time.time()
-        k, idx, proj = pymatrixid.interp_decomp(L, eps)
-        t = time.time() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        # fixed rank
+    @pytest.mark.parametrize(
+        "rand,lin_op",
+        [(False, False), (True, False), (True, True)])
+    def test_real_id_fixed_rank(self, A, L, eps, rank, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
         k = rank
+        A_or_L = A if not lin_op else L
 
-        _debug_print("Calling iddr_id / idzr_id  ...",)
-        t0 = time.time()
-        idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
-        t = time.time() - t0
+        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand)
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddr_aid / idzr_aid ...",)
-        t0 = time.time()
-        idx, proj = pymatrixid.interp_decomp(A, k)
-        t = time.time() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
+    @pytest.mark.parametrize("rand,lin_op", [(False, False)])
+    def test_real_id_skel_and_interp_matrices(
+            self, A, L, eps, rank, rand, lin_op):
+        k = rank
+        A_or_L = A if not lin_op else L
 
-        _debug_print("Calling iddr_rid / idzr_rid ...",)
-        t0 = time.time()
-        idx, proj = pymatrixid.interp_decomp(L, k)
-        t = time.time() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        # check skeleton and interpolation matrices
-        idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
+        idx, proj = pymatrixid.interp_decomp(A_or_L, k, rand=rand)
         P = pymatrixid.reconstruct_interp_matrix(idx, proj)
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
-        assert_allclose(B, A[:,idx[:k]], rtol=eps, atol=1e-08)
+        assert_allclose(B, A[:, idx[:k]], rtol=eps, atol=1e-08)
         assert_allclose(B @ P, A, rtol=eps, atol=1e-08)
 
-        # test SVD routines
-        _debug_print("-----------------------------------------")
-        _debug_print("SVD routines")
-        _debug_print("-----------------------------------------")
+    @pytest.mark.parametrize(
+        "rand,lin_op",
+        [(False, False), (True, False), (True, True)])
+    def test_svd_fixed_precison(self, A, L, eps, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
+        A_or_L = A if not lin_op else L
 
-        # fixed precision
-        _debug_print("Calling iddp_svd / idzp_svd ...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(A, eps, rand=False)
-        t = time.time() - t0
+        U, S, V = pymatrixid.svd(A_or_L, eps, rand=rand)
         B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_asvd / idzp_asvd...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(A, eps)
-        t = time.time() - t0
+    @pytest.mark.parametrize(
+        "rand,lin_op",
+        [(False, False), (True, False), (True, True)])
+    def test_svd_fixed_rank(self, A, L, eps, rank, rand, lin_op):
+        if _IS_32BIT and A.dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
+        k = rank
+        A_or_L = A if not lin_op else L
+
+        U, S, V = pymatrixid.svd(A_or_L, k, rand=rand)
         B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        _debug_print("Calling iddp_rsvd / idzp_rsvd...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(L, eps)
-        t = time.time() - t0
-        B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        # fixed rank
+    def test_id_to_svd(self, A, eps, rank):
         k = rank
 
-        _debug_print("Calling iddr_svd / idzr_svd ...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(A, k, rand=False)
-        t = time.time() - t0
-        B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        _debug_print("Calling iddr_asvd / idzr_asvd ...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(A, k)
-        t = time.time() - t0
-        B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        _debug_print("Calling iddr_rsvd / idzr_rsvd ...",)
-        t0 = time.time()
-        U, S, V = pymatrixid.svd(L, k)
-        t = time.time() - t0
-        B = U * S @ V.T.conj()
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_allclose(A, B, rtol=eps, atol=1e-08)
-
-        # ID to SVD
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
-        Up, Sp, Vp = pymatrixid.id_to_svd(A[:, idx[:k]], idx, proj)
+        U, S, V = pymatrixid.id_to_svd(A[:, idx[:k]], idx, proj)
         B = U * S @ V.T.conj()
         assert_allclose(A, B, rtol=eps, atol=1e-08)
 
-        # Norm estimates
+    def test_estimate_spectral_norm(self, A):
         s = svdvals(A)
         norm_2_est = pymatrixid.estimate_spectral_norm(A)
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
+    def test_estimate_spectral_norm_diff(self, A):
         B = A.copy()
-        B[:,0] *= 1.2
+        B[:, 0] *= 1.2
         s = svdvals(A - B)
         norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B)
         assert_allclose(norm_2_est, s[0], rtol=1e-6, atol=1e-8)
 
-        # Rank estimates
-        B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=dtype)
+    def test_rank_estimates_array(self, A):
+        B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=A.dtype)
+
         for M in [A, B]:
-            ML = aslinearoperator(M)
-
             rank_tol = 1e-9
-            rank_np = np.linalg.matrix_rank(M, norm(M, 2)*rank_tol)
+            rank_np = np.linalg.matrix_rank(M, norm(M, 2) * rank_tol)
             rank_est = pymatrixid.estimate_rank(M, rank_tol)
-            rank_est_2 = pymatrixid.estimate_rank(ML, rank_tol)
-
             assert_(rank_est >= rank_np)
             assert_(rank_est <= rank_np + 10)
 
-            assert_(rank_est_2 >= rank_np - 4)
-            assert_(rank_est_2 <= rank_np + 4)
+    def test_rank_estimates_lin_op(self, A):
+        B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=A.dtype)
+
+        for M in [A, B]:
+            ML = aslinearoperator(M)
+            rank_tol = 1e-9
+            rank_np = np.linalg.matrix_rank(M, norm(M, 2) * rank_tol)
+            rank_est = pymatrixid.estimate_rank(ML, rank_tol)
+            assert_(rank_est >= rank_np - 4)
+            assert_(rank_est <= rank_np + 4)
 
     def test_rand(self):
         pymatrixid.seed('default')
@@ -281,18 +225,18 @@ class TestInterpolativeDecomposition:
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
         assert_allclose(A, B @ P)
 
-    def test_bug_9793(self):
-        dtypes = [np.float_, np.complex_]
-        rands = [True, False]
-        epss = [1, 0.1]
-
-        for dtype, eps, rand in itertools.product(dtypes, epss, rands):
-            A = np.array([[-1, -1, -1, 0, 0, 0],
-                          [0, 0, 0, 1, 1, 1],
-                          [1, 0, 0, 1, 0, 0],
-                          [0, 1, 0, 0, 1, 0],
-                          [0, 0, 1, 0, 0, 1]],
-                         dtype=dtype, order="C")
-            B = A.copy()
-            interp_decomp(A.T, eps, rand=rand)
-            assert_array_equal(A, B)
+    @pytest.mark.parametrize("dtype", [np.float_, np.complex_])
+    @pytest.mark.parametrize("rand", [True, False])
+    @pytest.mark.parametrize("eps", [1, 0.1])
+    def test_bug_9793(self, dtype, rand, eps):
+        if _IS_32BIT and dtype == np.complex_ and rand:
+            pytest.xfail("bug in external fortran code")
+        A = np.array([[-1, -1, -1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1],
+                      [1, 0, 0, 1, 0, 0],
+                      [0, 1, 0, 0, 1, 0],
+                      [0, 0, 1, 0, 0, 1]],
+                     dtype=dtype, order="C")
+        B = A.copy()
+        interp_decomp(A.T, eps, rand=rand)
+        assert_array_equal(A, B)

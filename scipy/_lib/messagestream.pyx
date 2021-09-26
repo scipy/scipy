@@ -17,7 +17,7 @@ cdef class MessageStream:
     to a temporary file, residing in memory (if possible) or on disk.
     """
 
-    def __init__(self):
+    def __cinit__(self):
         # Try first in-memory files, if available
         self._memstream_ptr = NULL
         self.handle = messagestream_open_memstream(&self._memstream_ptr,
@@ -33,14 +33,14 @@ cdef class MessageStream:
         self.handle = stdio.fopen(self._filename, "wb+")
         if self.handle == NULL:
             stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
+            raise OSError(f"Failed to open file {self._filename}")
         self._removed = 0
 
         # Use a posix-style deleted file, if possible
         if stdio.remove(self._filename) == 0:
             self._removed = 1
 
-    def __del__(self):
+    def __dealloc__(self):
         self.close()
 
     def get(self):
@@ -65,7 +65,7 @@ cdef class MessageStream:
                 stdio.rewind(self.handle)
                 nread = stdio.fread(buf, 1, pos, self.handle)
                 if nread != <size_t>pos:
-                    raise IOError("failed to read messages from buffer")
+                    raise OSError("failed to read messages from buffer")
 
                 obj = PyBytes_FromStringAndSize(buf, nread)
             finally:
@@ -76,7 +76,7 @@ cdef class MessageStream:
     def clear(self):
         stdio.rewind(self.handle)
 
-    def close(self):
+    cpdef close(self):
         if self.handle != NULL:
             stdio.fclose(self.handle)
             self.handle = NULL

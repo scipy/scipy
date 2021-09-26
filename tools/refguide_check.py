@@ -477,6 +477,7 @@ CHECK_NAMESPACE = {
       # recognize numpy repr's
       'array': np.array,
       'matrix': np.matrix,
+      'masked_array': np.ma.masked_array,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -609,6 +610,14 @@ class Checker(doctest.OutputChecker):
             if cond:
                 s_want = ", ".join(s_want[1:-1].split())
                 s_got = ", ".join(s_got[1:-1].split())
+                return self.check_output(s_want, s_got, optionflags)
+
+            # maybe we are dealing with masked arrays?
+            # their repr uses '--' for masked values and this is invalid syntax
+            # If so, replace '--' by nans (they are masked anyway) and retry
+            if 'masked_array' in want or 'masked_array' in got:
+                s_want = want.replace('--', 'nan')
+                s_got = got.replace('--', 'nan')
                 return self.check_output(s_want, s_got, optionflags)
 
             if "=" not in want and "=" not in got:
