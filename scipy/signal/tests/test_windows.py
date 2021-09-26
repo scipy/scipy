@@ -643,6 +643,19 @@ class TestGetWindow:
         with assert_raises(ValueError, match='must have the same length'):
             resample(sig, len(sig) * osfactor, window=win)
 
+    def test_general_cosine(self):
+        assert_allclose(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4),
+                        [0.4, 0.3, 1, 0.3])
+        assert_allclose(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4,
+                                   fftbins=False),
+                        [0.4, 0.55, 0.55, 0.4])
+
+    def test_general_hamming(self):
+        assert_allclose(get_window(('general_hamming', 0.7), 5),
+                        [0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949])
+        assert_allclose(get_window(('general_hamming', 0.7), 5, fftbins=False),
+                        [0.4, 0.7, 1.0, 0.7, 0.4])
+
 
 def test_windowfunc_basics():
     for window_name, params in window_funcs:
@@ -701,10 +714,33 @@ def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'dss', 'dpss',
-                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk', 'dpss']:
+                   'dss', 'dpss', 'general cosine', 'general_cosine',
+                   'chebwin', 'cheb', 'general hamming', 'general_hamming',
+                   ]:
         assert_raises(ValueError, get_window, winstr, 7)
+
+
+def test_not_needs_params():
+    for winstr in ['barthann',
+                   'bartlett',
+                   'blackman',
+                   'blackmanharris',
+                   'bohman',
+                   'boxcar',
+                   'cosine',
+                   'flattop',
+                   'hamming',
+                   'hanning',
+                   'nuttall',
+                   'parzen',
+                   'taylor',
+                   'exponential',
+                   'poisson',
+                   'tukey',
+                   'tuk',
+                   'triangle']:
+        win = get_window(winstr, 7)
+        assert_equal(len(win), 7)
 
 
 def test_deprecation():

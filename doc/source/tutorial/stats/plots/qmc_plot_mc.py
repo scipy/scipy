@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-rng = np.random.default_rng(12345)
+rng = np.random.default_rng()
 
 n_sample = 256
 dim = 2

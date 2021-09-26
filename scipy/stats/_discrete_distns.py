@@ -6,18 +6,19 @@ from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
 from scipy._lib._util import _lazywhere, rng_integers
+from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-        _check_shape)
+    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+    _check_shape)
+import scipy.stats._boost as _boost
 from .biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
-
 
 class binom_gen(rv_discrete):
     r"""A binomial discrete random variable.
@@ -63,32 +64,30 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return exp(self._logpmf(x, n, p))
+        return _boost._binom_pdf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        vals = special.bdtr(k, n, p)
-        return vals
+        return _boost._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return special.bdtrc(k, n, p)
+        return _boost._binom_sf(k, n, p)
+
+    def _isf(self, x, n, p):
+        return _boost._binom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        vals = ceil(special.bdtrik(q, n, p))
-        vals1 = np.maximum(vals - 1, 0)
-        temp = special.bdtr(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        q = 1.0 - p
-        mu = n * p
-        var = n * p * q
+        mu = _boost._binom_mean(n, p)
+        var = _boost._binom_variance(n, p)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = (q - p) / sqrt(var)
+            g1 = _boost._binom_skewness(n, p)
         if 'k' in moments:
-            g2 = (1.0 - 6*p*q) / var
+            g2 = _boost._binom_kurtosis_excess(n, p)
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
@@ -148,6 +147,9 @@ class bernoulli_gen(binom_gen):
 
     def _sf(self, x, p):
         return binom._sf(x, 1, p)
+
+    def _isf(self, x, p):
+        return binom._isf(x, 1, p)
 
     def _ppf(self, q, p):
         return binom._ppf(q, 1, p)
@@ -302,7 +304,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return exp(self._logpmf(x, n, p))
+        return _boost._nbinom_pdf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -310,7 +312,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return special.betainc(n, k+1, p)
+        return _boost._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -326,25 +328,23 @@ class nbinom_gen(rv_discrete):
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
-    def _sf_skip(self, x, n, p):
-        # skip because special.nbdtrc doesn't work for 0<n<1
+    def _sf(self, x, n, p):
         k = floor(x)
-        return special.nbdtrc(k, n, p)
+        return _boost._nbinom_sf(k, n, p)
+
+    def _isf(self, x, n, p):
+        return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        vals = ceil(special.nbdtrik(q, n, p))
-        vals1 = (vals-1).clip(0.0, np.inf)
-        temp = self._cdf(vals1, n, p)
-        return np.where(temp >= q, vals1, vals)
+        return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        Q = 1.0 / p
-        P = Q - 1.0
-        mu = n*P
-        var = n*P*Q
-        g1 = (Q+P)/sqrt(n*P*Q)
-        g2 = (1.0 + 6*P*Q) / (n*P*Q)
-        return mu, var, g1, g2
+        return(
+            _boost._nbinom_mean(n, p),
+            _boost._nbinom_variance(n, p),
+            _boost._nbinom_skewness(n, p),
+            _boost._nbinom_kurtosis_excess(n, p),
+        )
 
 
 nbinom = nbinom_gen(name='nbinom')
@@ -504,26 +504,27 @@ class hypergeom_gen(rv_discrete):
         return result
 
     def _pmf(self, k, M, n, N):
-        # same as the following but numerically more precise
-        # return comb(good, k) * comb(bad, N-k) / comb(tot, N)
-        return exp(self._logpmf(k, M, n, N))
+        return _boost._hypergeom_pdf(k, n, N, M)
+
+    def _cdf(self, k, M, n, N):
+        return _boost._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
-        # tot, good, sample_size = M, n, N
-        # "wikipedia".replace('N', 'M').replace('n', 'N').replace('K', 'n')
-        M, n, N = 1.*M, 1.*n, 1.*N
+        M, n, N = 1. * M, 1. * n, 1. * N
         m = M - n
-        p = n/M
-        mu = N*p
 
-        var = m*n*N*(M - N)*1.0/(M*M*(M-1))
-        g1 = (m - n)*(M-2*N) / (M-2.0) * sqrt((M-1.0) / (m*n*N*(M-N)))
-
-        g2 = M*(M+1) - 6.*N*(M-N) - 6.*n*m
-        g2 *= (M-1)*M*M
-        g2 += 6.*n*N*(M-N)*m*(5.*M-6)
-        g2 /= n * N * (M-N) * m * (M-2.) * (M-3.)
-        return mu, var, g1, g2
+        # Boost kurtosis_excess doesn't return the same as the value
+        # computed here.
+        g2 = M * (M + 1) - 6. * N * (M - N) - 6. * n * m
+        g2 *= (M - 1) * M * M
+        g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
+        g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
+        return (
+            _boost._hypergeom_mean(n, N, M),
+            _boost._hypergeom_variance(n, N, M),
+            _boost._hypergeom_skewness(n, N, M),
+            g2,
+        )
 
     def _entropy(self, M, n, N):
         k = np.r_[N - (M - n):min(n, N) + 1]
@@ -531,17 +532,7 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        # This for loop is needed because `k` can be an array. If that's the
-        # case, the sf() method makes M, n and N arrays of the same shape. We
-        # therefore unpack all inputs args, so we can do the manual
-        # integration.
-        res = []
-        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
-            # Manual integration over probability mass function. More accurate
-            # than integrate.quad.
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(np.sum(self._pmf(k2, tot, good, draw)))
-        return np.asarray(res)
+        return _boost._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
         res = []
@@ -670,12 +661,29 @@ class nhypergeom_gen(rv_discrete):
            http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     """
+
     def _get_support(self, M, n, r):
         return 0, n
 
     def _argcheck(self, M, n, r):
         cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
         return cond
+
+    def _rvs(self, M, n, r, size=None, random_state=None):
+
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, r, size, random_state):
+            # invert cdf by calculating all values in support, scalar M, n, r
+            a, b = self.support(M, n, r)
+            ks = np.arange(a, b+1)
+            cdf = self.cdf(ks, M, n, r)
+            ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
+            rvs = ppf(random_state.uniform(size=size)).astype(int)
+            if size is None:
+                return rvs.item()
+            return rvs
+
+        return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
@@ -1189,7 +1197,7 @@ class zipfian_gen(rv_discrete):
         return 1.0 / _gen_harmonic(n, a) / k**a
 
     def _cdf(self, k, a, n):
-        return  _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
         k = k + 1  # # to match SciPy convention
@@ -1213,6 +1221,7 @@ class zipfian_gen(rv_discrete):
               - 3*Hna1**4) / mu2n**2
         g2 -= 3
         return mu1, mu2, g1, g2
+
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
 

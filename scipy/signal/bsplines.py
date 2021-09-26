@@ -4,7 +4,7 @@ from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
                               less_equal, greater_equal)
 
 # From splinemodule.c
-from .spline import cspline2d, sepfir2d
+from ._spline import cspline2d, sepfir2d
 
 from scipy.special import comb
 from scipy._lib._util import float_factorial
@@ -459,8 +459,9 @@ def cspline1d(signal, lamb=0.0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
+    >>> rng = np.random.default_rng()
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
     >>> filtered = cspline1d_eval(cspline1d(sig), time)
     >>> plt.plot(sig, label="signal")
@@ -508,8 +509,9 @@ def qspline1d(signal, lamb=0.0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
+    >>> rng = np.random.default_rng()
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
     >>> filtered = qspline1d_eval(qspline1d(sig), time)
     >>> plt.plot(sig, label="signal")
@@ -562,8 +564,9 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
+    >>> rng = np.random.default_rng()
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
     >>> filtered = cspline1d_eval(cspline1d(sig), time)
     >>> plt.plot(sig, label="signal")
@@ -636,8 +639,9 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
+    >>> rng = np.random.default_rng()
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
     >>> filtered = qspline1d_eval(qspline1d(sig), time)
     >>> plt.plot(sig, label="signal")

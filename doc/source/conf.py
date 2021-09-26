@@ -43,6 +43,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
+    'sphinx_panels',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
@@ -59,6 +60,10 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
+
+# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
+# already loads it
+panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -106,10 +111,10 @@ add_function_parentheses = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+# pygments_style = 'sphinx'
 
 # Ensure all our internal links work
 nitpicky = True
@@ -143,6 +148,7 @@ for key in (
         r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'contextfunction' is renamed to 'pass_context'",  # Jinja
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -168,39 +174,15 @@ for key in (
 # HTML output
 # -----------------------------------------------------------------------------
 
-themedir = os.path.join(os.pardir, 'scipy-sphinx-theme', '_theme')
-if os.path.isdir(themedir):
-    html_theme = 'scipy'
-    html_theme_path = [themedir]
+html_theme = 'pydata_sphinx_theme'
 
-    if 'scipyorg' in tags:
-        # Build for the scipy.org website
-        html_theme_options = {
-            "edit_link": True,
-            "sidebar": "right",
-            "scipy_org_logo": True,
-            "rootlinks": [("https://scipy.org/", "SciPy.org"),
-                          ("https://docs.scipy.org/", "Docs")]
-        }
-    else:
-        # Default build
-        html_theme_options = {
-            "edit_link": False,
-            "sidebar": "left",
-            "scipy_org_logo": False,
-            "rootlinks": []
-        }
-        html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
-else:
-    # Build without scipy.org sphinx theme present
-    if 'scipyorg' in tags:
-        raise RuntimeError("Get the scipy-sphinx-theme first, "
-                           "via git submodule init & update")
-    else:
-        html_style = 'scipy_fallback.css'
-        html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
+html_logo = '_static/scipyshiny_small.png'
+
+html_theme_options = {
+  "logo_link": "index",
+  "github_url": "https://github.com/scipy/scipy",
+  "navbar_start": ["navbar-logo", "version"],
+}
 
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
@@ -210,16 +192,29 @@ if 'versionwarning' in tags:
            'script.src = "/doc/_static/versionwarning.js";\n'
            'document.head.appendChild(script);');
     html_context = {
-        'VERSIONCHECK_JS': src
+        'VERSIONCHECK_JS': src,
+        'versionwarning': True
     }
     html_js_files = ['versioncheck.js']
+else:
+    html_context = {
+        'versionwarning': False
+    }
 
-html_title = "%s v%s Reference Guide" % (project, version)
+html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
+html_css_files = [
+    "scipy.css",
+]
+
+# html_additional_pages = {
+#     'index': 'indexcontent.html',
+# }
 html_additional_pages = {}
-html_domain_indices = True
+html_use_modindex = True
+html_domain_indices = False
 html_copy_source = False
 html_file_suffix = '.html'
 
@@ -371,7 +366,8 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 # Autosummary
 # -----------------------------------------------------------------------------
 
-autosummary_generate = glob.glob("*.rst")
+autosummary_generate = True
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
@@ -381,6 +377,7 @@ autodoc_default_options = {
     'inherited-members': None,
 }
 autodoc_typehints = 'none'
+
 
 # -----------------------------------------------------------------------------
 # Coverage checker

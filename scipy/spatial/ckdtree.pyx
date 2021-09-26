@@ -669,7 +669,7 @@ cdef class cKDTree:
     def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
               object workers=None, **kwargs):
-        """
+        r"""
         query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1)
 
         Query the kd-tree for nearest neighbors
@@ -737,41 +737,47 @@ cdef class cKDTree:
 
         To query the nearest neighbours and return squeezed result, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
-        >>> print(dd, ii)
-        [2.         0.14142136] [ 0 13]
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=1)
+        >>> print(dd, ii, sep='\n')
+        [2.         0.2236068]
+        [ 0 13]
 
         To query the nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[1])
+        >>> print(dd, ii, sep='\n')
         [[2.        ]
-         [0.14142136]] [[ 0]
+         [0.2236068]]
+        [[ 0]
          [13]]
 
-        To query the second nearest neighbours and return unsqueezed result, use
+        To query the second nearest neighbours and return unsqueezed result,
+        use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[2])
+        >>> print(dd, ii, sep='\n')
         [[2.23606798]
-         [0.90553851]] [[ 6]
-         [12]]
+         [0.80622577]]
+        [[ 6]
+         [19]]
 
         To query the first and second nearest neighbours, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=2)
+        >>> print(dd, ii, sep='\n')
         [[2.         2.23606798]
-         [0.14142136 0.90553851]] [[ 0  6]
-         [13 12]]
+         [0.2236068  0.80622577]]
+        [[ 0  6]
+         [13 19]]
 
         or, be more specific
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[1, 2])
+        >>> print(dd, ii, sep='\n')
         [[2.         2.23606798]
-         [0.14142136 0.90553851]] [[ 0  6]
-         [13 12]]
+         [0.2236068  0.80622577]]
+        [[ 0  6]
+         [13 19]]
 
         """
 
@@ -1021,9 +1027,9 @@ cdef class cKDTree:
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((15, 2))
-        >>> points2 = np.random.random((15, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((15, 2))
+        >>> points2 = rng.random((15, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points1[:, 0], points1[:, 1], "xk", markersize=14)
         >>> plt.plot(points2[:, 0], points2[:, 1], "og", markersize=14)
@@ -1115,8 +1121,8 @@ cdef class cKDTree:
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> np.random.seed(21701)
-        >>> points = np.random.random((20, 2))
+        >>> rng = np.random.default_rng()
+        >>> points = rng.random((20, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
         >>> kd_tree = cKDTree(points)
@@ -1317,20 +1323,20 @@ cdef class cKDTree:
 
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((5, 2))
-        >>> points2 = np.random.random((5, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((5, 2))
+        >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = cKDTree(points1)
         >>> kd_tree2 = cKDTree(points2)
         >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
-        9
+        1
 
         This number is same as the total pair number calculated by
         `query_ball_tree`:
 
         >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
         >>> sum([len(i) for i in indexes])
-        9
+        1
 
         """
         cdef:
@@ -1489,28 +1495,28 @@ cdef class cKDTree:
 
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((5, 2))
-        >>> points2 = np.random.random((5, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((5, 2))
+        >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = cKDTree(points1)
         >>> kd_tree2 = cKDTree(points2)
         >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
         >>> sdm.toarray()
-        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
-            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
-            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
-            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
-            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+        array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.28942611, 0.        , 0.        , 0.2333084 , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.24617575, 0.29571802, 0.26836782, 0.        , 0.        ]])
 
         You can check distances above the `max_distance` are zeros:
 
         >>> from scipy.spatial import distance_matrix
         >>> distance_matrix(points1, points2)
-        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
-            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
-            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
-            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
-            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
+        array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
+           [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
+           [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
+           [0.31994999, 0.72658602, 0.71124834, 0.55396483, 0.90785663],
+           [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
 

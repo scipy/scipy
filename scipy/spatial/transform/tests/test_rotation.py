@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
-from numpy.testing import assert_allclose, assert_array_less
+from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
@@ -725,7 +725,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quat(np.random.normal(size=(1, 4)))
+    x = Rotation.from_quat(rnd.normal(size=(1, 4)))
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -753,7 +753,7 @@ def test_single_identity_magnitude():
 
 def test_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity(n)
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -764,7 +764,7 @@ def test_identity_invariance():
 
 def test_single_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity()
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -978,6 +978,39 @@ def test_getitem():
     assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
+def test_getitem_single():
+    with pytest.raises(TypeError, match='not subscriptable'):
+        Rotation.identity()[0]
+
+
+def test_setitem_single():
+    r = Rotation.identity()
+    with pytest.raises(TypeError, match='not subscriptable'):
+        r[0] = Rotation.identity()
+
+
+def test_setitem_slice():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(5, random_state=rng)
+    r1[1:6] = r2
+    assert_equal(r1[1:6].as_quat(), r2.as_quat())
+
+
+def test_setitem_integer():
+    rng = np.random.RandomState(seed=0)
+    r1 = Rotation.random(10, random_state=rng)
+    r2 = Rotation.random(random_state=rng)
+    r1[1] = r2
+    assert_equal(r1[1].as_quat(), r2.as_quat())
+
+
+def test_setitem_wrong_type():
+    r = Rotation.random(10, random_state=0)
+    with pytest.raises(TypeError, match='Rotation object'):
+        r[0] = 1
+
+
 def test_n_rotations():
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1008,7 +1041,7 @@ def test_align_vectors_no_rotation():
 def test_align_vectors_no_noise():
     rnd = np.random.RandomState(0)
     c = Rotation.from_quat(rnd.normal(size=4))
-    b = np.random.normal(size=(5, 3))
+    b = rnd.normal(size=(5, 3))
     a = c.apply(b)
 
     est, rmsd = Rotation.align_vectors(a, b)
@@ -1046,14 +1079,14 @@ def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
     rot = Rotation.from_euler('xyz', rnd.normal(size=3))
-    vectors = np.random.normal(size=(n_vectors, 3))
+    vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
     # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
-        np.random.normal(
+        rnd.normal(
             size=(n_vectors, 3),
             scale=sigma
         )
@@ -1108,11 +1141,12 @@ def test_align_vectors_invalid_input():
 
 
 def test_random_rotation_shape():
-    assert_equal(Rotation.random().as_quat().shape, (4,))
-    assert_equal(Rotation.random(None).as_quat().shape, (4,))
+    rnd = np.random.RandomState(0)
+    assert_equal(Rotation.random(random_state=rnd).as_quat().shape, (4,))
+    assert_equal(Rotation.random(None, random_state=rnd).as_quat().shape, (4,))
 
-    assert_equal(Rotation.random(1).as_quat().shape, (1, 4))
-    assert_equal(Rotation.random(5).as_quat().shape, (5, 4))
+    assert_equal(Rotation.random(1, random_state=rnd).as_quat().shape, (1, 4))
+    assert_equal(Rotation.random(5, random_state=rnd).as_quat().shape, (5, 4))
 
 
 def test_slerp():
@@ -1246,8 +1280,8 @@ def test_multiplication_stability():
 
 
 def test_rotation_within_numpy_array():
-    single = Rotation.random()
-    multiple = Rotation.random(2)
+    single = Rotation.random(random_state=0)
+    multiple = Rotation.random(2, random_state=1)
 
     array = np.array(single)
     assert_equal(array.shape, ())
@@ -1297,3 +1331,16 @@ def test_as_euler_contiguous():
     assert all(i >= 0 for i in e1.strides)
     assert all(i >= 0 for i in e2.strides)
 
+
+def test_concatenate():
+    rotation = Rotation.random(10, random_state=0)
+    sizes = [1, 2, 3, 1, 3]
+    starts = [0] + list(np.cumsum(sizes))
+    split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
+    result = Rotation.concatenate(split)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+
+def test_concatenate_wrong_type():
+    with pytest.raises(TypeError, match='Rotation objects only'):
+        Rotation.concatenate([Rotation.identity(), 1, None])

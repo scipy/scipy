@@ -55,7 +55,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -67,7 +68,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Cosine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -113,7 +114,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -171,7 +173,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 
@@ -183,7 +186,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
     """
-    Return multidimensional Discrete Sine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -229,7 +232,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 

@@ -84,25 +84,4 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     >>> cost[row_ind, col_ind].sum()
     5
     """
-    cost_matrix = np.asarray(cost_matrix)
-    if cost_matrix.ndim != 2:
-        raise ValueError("expected a matrix (2-D array), got a %r array"
-                         % (cost_matrix.shape,))
-
-    if not (np.issubdtype(cost_matrix.dtype, np.number) or
-            cost_matrix.dtype == np.dtype(np.bool_)):
-        raise ValueError("expected a matrix containing numerical entries, got %s"
-                         % (cost_matrix.dtype,))
-
-    if maximize:
-        cost_matrix = -cost_matrix
-
-    cost_matrix = cost_matrix.astype(np.double)
-
-    # The algorithm expects more columns than rows in the cost matrix.
-    if cost_matrix.shape[1] < cost_matrix.shape[0]:
-        a, b = _lsap_module.calculate_assignment(cost_matrix.T)
-        indices = np.argsort(b)
-        return (b[indices], a[indices])
-    else:
-        return _lsap_module.calculate_assignment(cost_matrix)
+    return _lsap_module.calculate_assignment(cost_matrix, maximize)

@@ -131,7 +131,17 @@ class ScalarFunction:
             # Send a copy because the user may overwrite it.
             # Overwriting results in undefined behaviour because
             # fun(self.x) will change self.x, with the two no longer linked.
-            return fun(np.copy(x), *args)
+            fx = fun(np.copy(x), *args)
+            # Make sure the function returns a true scalar
+            if not np.isscalar(fx):
+                try:
+                    fx = np.asarray(fx).item()
+                except (TypeError, ValueError) as e:
+                    raise ValueError(
+                        "The user-provided objective function "
+                        "must return a scalar value."
+                    ) from e
+            return fx
 
         def update_fun():
             self.f = fun_wrapped(self.x)
@@ -595,4 +605,4 @@ class IdentityVectorFunction(LinearVectorFunction):
         else:
             A = np.eye(n)
             sparse_jacobian = False
-        super(IdentityVectorFunction, self).__init__(A, x0, sparse_jacobian)
+        super().__init__(A, x0, sparse_jacobian)

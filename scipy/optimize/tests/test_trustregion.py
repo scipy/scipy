@@ -5,10 +5,14 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
+import itertools
+from copy import deepcopy
 import numpy as np
-from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
-                            rosen_hess_prod)
 from numpy.testing import assert_, assert_equal, assert_allclose
+from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
+                            rosen_hess_prod, BFGS)
+from scipy.optimize._differentiable_functions import FD_METHODS
+import pytest
 
 
 class Accumulator:
@@ -102,3 +106,31 @@ class TestTrustRegionSolvers:
         r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
                      tol=1e-8, method='trust-exact')
         assert_allclose(self.x_opt, r['x'])
+
+    def test_finite_differences(self):
+        # if the Hessian is estimated by finite differences or
+        # a HessianUpdateStrategy (and no hessp is provided) then creation
+        # of a hessp is possible.
+        # GH13754
+        methods = ["trust-ncg", "trust-krylov", "dogleg"]
+        product = itertools.product(
+            FD_METHODS + (BFGS,),
+            methods
+        )
+        # a hessian needs to be specified for trustregion
+        for method in methods:
+            with pytest.raises(ValueError):
+                minimize(rosen, x0=self.x_opt, jac=rosen_der, method=method)
+
+        # estimate hessian by finite differences. In _trustregion.py this
+        # creates a hessp from the LinearOperator/HessianUpdateStrategy
+        # that's returned from ScalarFunction.
+        for fd, method in product:
+            hess = fd
+            if fd == BFGS:
+                # don't want to use the same object over and over
+                hess = deepcopy(fd())
+
+            r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=hess,
+                         tol=1e-8, method=method)
+            assert_allclose(self.x_opt, r['x'])

@@ -56,7 +56,7 @@ UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
 GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
-				print(git_version()[:10])")
+				print(git_version()[0][:10])")
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
