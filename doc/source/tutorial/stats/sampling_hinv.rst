@@ -28,14 +28,14 @@ the given u-resolution.
 
 The method is not exact, as it only produces random variates of the approximated
 distribution. Nevertheless, the maximal numerical error in "u-direction" (i.e.
-``|U - CDF(X)|`` where ``X`` is the approximate percentile corressponding to the
+``|U - CDF(X)|`` where ``X`` is the approximate percentile corresponding to the
 quantile ``U`` i.e. ``X = approx_ppf(U)``) can be set to the
 required resolution (within machine precision). Notice that very small values of
 the u-resolution are possible but may increase the cost for the setup step.
 
 `NumericalInverseHermite` approximates the inverse of a continuous
 statistical distribution's CDF with a Hermite spline. Order of the
-hermite spline can be specified by passing the ``order`` parameter.
+hermite spline can be specified by passing the `order` parameter.
 
 As described in [1]_, it begins by evaluating the distribution's PDF and
 CDF at a mesh of quantiles ``x`` within the distribution's support.
@@ -125,7 +125,7 @@ look at its histogram:
     >>> plt.show()
 
 Given the derivative of the PDF w.r.t the variate (i.e. ``x``), we can use
-quintic Hermite interpolation to approximate the PPF by passing the ``order``
+quintic Hermite interpolation to approximate the PPF by passing the `order`
 parameter:
 
     >>> class StandardNormal:
@@ -140,7 +140,7 @@ parameter:
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, order=5, random_state=urng)
 
-Higher orders result is fewer number of intervals:
+Higher orders result in a fewer number of intervals:
 
     >>> rng3 = NumericalInverseHermite(dist, order=3)
     >>> rng5 = NumericalInverseHermite(dist, order=5)
@@ -148,10 +148,10 @@ Higher orders result is fewer number of intervals:
     (3000, 522)
 
 The u-error can be estimated by calling the `u_error` method. It runs a small
-Monte-Carlo simulation to estimate the u-error. By default, 100000 samples are
-used. To change this, you can pass the number of samples as an argument:
+Monte-Carlo simulation to estimate the u-error. By default, 100,000 samples are
+used. This can be changed by passing the `sample_size` argument:
 
-    >>> rng1 = NumericalInverseHermite(dist, u_resolution=1.e-10)
+    >>> rng1 = NumericalInverseHermite(dist, u_resolution=1e-10)
     >>> rng1.u_error(sample_size=1000000)  # uses one million samples
     UError(max_error=9.53167544892608e-11, mean_absolute_error=2.2450136432146864e-11)
 
@@ -160,11 +160,12 @@ absolute u-error.
 
 The u-error can be reduced by decreasing the u-resolution (maximum allowed u-error):
 
-    >>> rng2 = NumericalInverseHermite(dist, u_resolution=1.e-13)
+    >>> rng2 = NumericalInverseHermite(dist, u_resolution=1e-13)
     >>> rng2.u_error(sample_size=1000000)
     UError(max_error=9.32027892364129e-14, mean_absolute_error=1.5194172675685075e-14)
 
-Note that this comes at the cost of increased setup time and number of intervals.
+Note that this comes at the cost of computation time as a result of the increased
+setup time and number of intervals.
 
     >>> rng1.intervals
     1022
@@ -178,7 +179,7 @@ Note that this comes at the cost of increased setup time and number of intervals
     >>> timeit(f, number=1)
     0.08671202100003939  # may vary
 
-Please see [1]_ and [2]_ for more details on this method.
+See [1]_ and [2]_ for more details on this method.
 
 References
 ----------
