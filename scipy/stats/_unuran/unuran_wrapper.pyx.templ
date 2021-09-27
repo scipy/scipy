@@ -21,6 +21,7 @@ from collections import namedtuple
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 from scipy._lib._util import check_random_state
+import warnings
 
 
 __all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn',
@@ -573,7 +574,7 @@ cdef class TransformedDensityRejection(Method):
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is
           expected to be: ``def pdf(self, x: float) -> float``. i.e.
-          the PDF should accept a Python float and the parameters and
+          the PDF should accept a Python float and
           return a Python float. It doesn't need to integrate to 1 i.e.
           the PDF doesn't need to be normalized.
         * ``dpdf``: Derivative of the PDF w.r.t x (i.e. the variate). Must
@@ -981,9 +982,9 @@ cdef class NumericalInversePolynomial(Method):
         An instance of a class with a ``pdf`` and optionally a ``cdf`` method.
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is expected to be:
-          ``def pdf(self, x: float) -> float``. i.e. the PDF should accept a Python
-          float and return a Python float. It doesn't need to integrate to 1 i.e. the
-          PDF doesn't need to be normalized.
+          ``def pdf(self, x: float) -> float``, i.e., the PDF should accept a Python
+          float and return a Python float. It doesn't need to integrate to 1,
+          i.e., the PDF doesn't need to be normalized.
         * ``cdf``: CDF of the distribution. This method is optional. If provided, it
           enables the calculation of "u-error". See `u_error`. Must have the same
           signature as the PDF.
@@ -1617,7 +1618,7 @@ cdef class DiscreteAliasUrn(Method):
 
 cdef class NaiveRatioUniforms(Method):
     r"""
-    NaiveRatioUniforms(dist, center=0, *, domain=None, r=1.0, u_min=None, u_max=None, v_max=None, random_state=None)
+    NaiveRatioUniforms(dist, *, center=0, domain=None, r=1.0, u_min=None, u_max=None, v_max=None, random_state=None)
 
     Naive Ratio-Of-Uniforms (NROU) Method.
 
@@ -1635,9 +1636,9 @@ cdef class NaiveRatioUniforms(Method):
         An instance of a class with ``pdf`` method.
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is
-          expected to be: ``def pdf(self, x: float) -> float``. i.e.
-          the PDF should accept a Python float and the parameters and
-          return a Python float. It doesn't need to integrate to 1 i.e.
+          expected to be: ``def pdf(self, x: float) -> float``, i.e.,
+          the PDF should accept a Python float and return a Python float.
+          It doesn't need to integrate to 1, i.e.,
           the PDF doesn't need to be normalized.
 
     center : float, optional
@@ -1657,24 +1658,34 @@ cdef class NaiveRatioUniforms(Method):
         Set parameter ``r > 0`` for generalized Ratio-Of-Uniforms method.
         The default is 1.0.
 
-    u_min: float
+    u_min: float, optional
         Sets the left boundary of the bounding rectangle, see details under
         Notes. If necessary, consider computing the bound numerically using
         methods in `scipy.optimize`. Important: The bound has to be
-        provided for ``dist.pdf(x - center)``.
+        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
+        routine will be used to find the bound. This routine can fail,
+        especially when the rectangle is not bounded. Note: If either `u_min`
+        or `u_max` is ``None``, both values are computed numerically.
+        The default is ``None``.
 
-    u_max: float
+    u_max: float, optional
         Sets the right boundary of the bounding rectangle. Sets the left
         boundary of the bounding rectangle, see details under
         Notes. If necessary, consider computing the bound numerically using
         methods in `scipy.optimize`. Important: The bound has to be
-        provided for ``dist.pdf(x - center)``.
+        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
+        routine will be used to find the bound. This routine can fail,
+        especially when the rectangle is not bounded. Note: If either `u_min`
+        or `u_max` is ``None``, both values are computed numerically.
+        The default is ``None``.
 
-    v_max: float
+    v_max: float, optional
         Sets the upper boundary of the bounding rectangle. If the mode of the
         pdf is known, it can be easily computed, see Notes for details.
         Otherwise consider computing the bound numerically using
-        methods in `scipy.optimize`.
+        methods in `scipy.optimize`. If ``None``, a numerical routine will be
+        used to find the bound. This routine can fail, especially when the
+        rectangle is not bounded. The default is ``None``.
 
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
@@ -1735,6 +1746,9 @@ cdef class NaiveRatioUniforms(Method):
     - ``u_min = inf_x (x - center) (pdf(x))**(r/(r+1))``
     - ``u_max = sup_x (x - center) (pdf(x))**(r/(r+1))``
 
+    The rejection constant is given by
+    ``(r+1) * v_max * (u_max - u_min) / area(pdf)`` in the general case.
+
     References
     ----------
     .. [1] UNU.RAN reference manual, Section 5.3.11,
@@ -1792,11 +1806,11 @@ cdef class NaiveRatioUniforms(Method):
                   *,
                   domain=None,
                   r=1.0,
-                  u_min,
-                  u_max,
-                  v_max,
+                  u_min=None,
+                  u_max=None,
+                  v_max=None,
                   random_state=None):
-        (domain, r, u_min, u_max, v_max) = self._validate_args( dist, domain, r, u_min, u_max, v_max)
+        (domain, r, u_min, u_max, v_max) = self._validate_args(dist, domain, r, u_min, u_max, v_max)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -1839,8 +1853,10 @@ cdef class NaiveRatioUniforms(Method):
                 raise UNURANError(self._messages.get())
             self._check_errorcode(unur_nrou_set_r(self.par, r))
 
-            self._check_errorcode(unur_nrou_set_u(self.par, u_min, u_max))
-            self._check_errorcode(unur_nrou_set_v(self.par, v_max))
+            if (u_min is not None) and (u_max is not None):
+                self._check_errorcode(unur_nrou_set_u(self.par, u_min, u_max))
+            if v_max is not None:
+                self._check_errorcode(unur_nrou_set_v(self.par, v_max))
 
             self._set_rng(random_state)
         finally:
@@ -1848,11 +1864,26 @@ cdef class NaiveRatioUniforms(Method):
 
     cdef object _validate_args(self, dist, domain, r, u_min, u_max, v_max):
         domain = _validate_domain(domain, dist)
+        # if one of u_min / u_max is None, set the other to None as well
+        # the reason is that the numerical routine to find the bounds can only
+        # be used for both bounds at the same time
+        warn = False
+        if (u_min is None) and (u_max is not None):
+            u_max = None
+            warn = True
+        if (u_min is not None) and (u_max is None):
+            u_min = None
+            warn = True
+        if warn:
+            msg = ("Only of the values of u_min and u_max is None. "
+                   "The value that is not None is ignored and both values "
+                   "will be computed numerically.")
+            warnings.warn(msg, RuntimeWarning)
         if r <= 0:
             raise ValueError("`r` must be positive.")
-        if v_max <= 0:
+        if (v_max is not None) and (v_max <= 0):
             raise ValueError("`v_max` must be positive.")
-        if u_min >= u_max:
+        if (u_min is not None) and (u_max is not None) and (u_min >= u_max):
             raise ValueError("`u_min` must be smaller than `u_max`.")
 
         return domain, r, u_min, u_max, v_max

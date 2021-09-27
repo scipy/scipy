@@ -102,8 +102,8 @@ class NROUDist(Protocol):
 class NaiveRatioUniforms(Method):
     def __init__(self,
                  dist: NROUDist,
-                 center: None | float = ...,
                  *,
+                 center: float = ...,
                  domain: None | Tuple[float, float] = ...,
                  r: float = ...,
                  u_min: None | float = ...,

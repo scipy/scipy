@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import stats
-from scipy import special as sc
 import matplotlib.pyplot as plt
 import math
 
@@ -18,10 +17,12 @@ class Gamma:
     def support():
         return 0, np.inf
 
+
 def u_bound(x, p, center):
     if x < 0:
         return 0
     return (x - center) * x**((p-1)/2) * math.exp(-x/2)
+
 
 # bounding rectangle for Gamma(p) shifted by center
 def rectangle(p, center):
@@ -30,6 +31,7 @@ def rectangle(p, center):
     u_min, u_max = u_bound(h-k, p, center), u_bound(h+k, p, center)
     v_max = math.sqrt((p-1)**(p-1) * math.exp(-(p-1)))
     return u_min, u_max, v_max
+
 
 urng = np.random.default_rng()
 p = 2.2

@@ -907,15 +907,32 @@ class TestNaiveRatioUniforms:
                                  v_max=v_max, random_state=357)
         check_cont_samples(rng, dist, (p, p))
 
+    def test_setup_no_bounds(self):
+        dist = StandardNormal()
+        u_bound = np.exp(-0.5) * np.sqrt(2)
+        v_max = 1.0
+
+        # no bound
+        rng = NaiveRatioUniforms(dist, random_state=7303)
+        check_cont_samples(rng, dist, (0, 1))
+        # just v_max
+        rng = NaiveRatioUniforms(dist, v_max=v_max, random_state=7303)
+        check_cont_samples(rng, dist, (0, 1))
+        # just one u-bound is missing
+        msg = 'Only of the values of u_min and u_max is None.'
+        with pytest.warns(RuntimeWarning, match=msg):
+            rng = NaiveRatioUniforms(dist, u_max=u_bound, random_state=7303)
+            check_cont_samples(rng, dist, (0, 1))
+
     def test_exceptions(self):
         dist = StandardNormal()
-        # need vmin < vmax
+        # need u_min < u_max
         msg = r"`u_min` must be smaller than `u_max`."
         with pytest.raises(ValueError, match=msg):
             NaiveRatioUniforms(dist, v_max=1, u_min=3, u_max=1)
         with pytest.raises(ValueError, match=msg):
             NaiveRatioUniforms(dist, v_max=1, u_min=1, u_max=1)
-        # need umax > 0
+        # need v_max > 0
         msg = r'`v_max` must be positive.'
         with pytest.raises(ValueError, match=msg):
             NaiveRatioUniforms(dist, v_max=-1, u_min=1, u_max=3)
