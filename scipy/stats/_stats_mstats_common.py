@@ -146,6 +146,10 @@ def linregress(x, y=None, alternative='two-sided'):
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
