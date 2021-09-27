@@ -100,7 +100,7 @@ class lagrange(poly1d):
         diff = self._M - len(self.coeffs)
         if diff > 0:
             tmp = np.zeros(diff)
-            self._coord = np.insert(self.coeffs, 0, tmp)
+            self._coord = np.append(tmp, self.coeffs)
         else:
             self._coord = self.coeffs
         return self._coord
