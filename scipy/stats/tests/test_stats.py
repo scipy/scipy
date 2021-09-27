@@ -1863,6 +1863,12 @@ class TestRegression:
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)
 
+    def test_identical_x(self):
+        x = np.zeros(10)
+        y = np.random.random(10)
+        msg = "Cannot calculate a linear regression"
+        with assert_raises(ValueError, match=msg):
+            stats.linregress(x, y)
 
 def test_theilslopes():
     # Basic slope test.

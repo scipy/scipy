@@ -998,6 +998,10 @@ def linregress(x, y=None):
     x = x.flatten()
     y = y.flatten()
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
         x = ma.array(x, mask=m)
