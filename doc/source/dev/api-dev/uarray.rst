@@ -18,9 +18,10 @@ which can come in multiple ``types``. A couple of these common arguments
 in the ndimage module functions are : ``'output'`` and ``'index'``.
 
 * ``output``:
-  This is the output array which holds the output of a function.
-  It can take different types include a python ``str`` when output='f',
-  or ``output='float32'`` and dtypes like ``output=np.float32``.
+  This can be either an actual array in which the function output will be
+  stored or an indication of the data type for the output array. It can take
+  different types, including a python ``str`` when ``output='f'`` or
+  ``output='float32'`` and dtypes like ``output=np.float32``.
   Hence we need to special case these different types in ``__ua_convert__``.
   Here we create a class called ``ndimage_output`` to represent the
   output types and then check for a particular dispatch type within the
@@ -30,10 +31,7 @@ in the ndimage module functions are : ``'output'`` and ``'index'``.
           if isinstance(value, np.ndarray):
               return np.asarray(value)
           else:
-              try:
-                  return np.dtype(str(value))
-              except TypeError:
-                  return np.dtype(value)
+              return np.dtype(value)
 
 
 * ``index``:

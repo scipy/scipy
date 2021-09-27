@@ -58,19 +58,13 @@ class _ScipyImageBackend:
             return np.asarray(value)
 
         if dispatch_type is np.dtype:
-            try:
-                return np.dtype(str(value))
-            except TypeError:
-                return np.dtype(value)
+            return np.dtype(value)
 
         if dispatch_type is ndimage_output:
             if isinstance(value, np.ndarray):
                 return np.asarray(value)
             else:
-                try:
-                    return np.dtype(str(value))
-                except TypeError:
-                    return np.dtype(value)
+                return np.dtype(value)
 
         if dispatch_type is ndimage_index:
             if isinstance(value, np.ndarray):
