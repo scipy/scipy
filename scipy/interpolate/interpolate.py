@@ -22,12 +22,13 @@ from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
-def lagrange(x, w):
+class lagrange(poly1d):
     r"""
-    Return a Lagrange interpolating polynomial.
+    poly = lagrange(x, y)
+    Return a Lagrange interpolating polynomial
 
-    Given two 1-D arrays `x` and `w,` returns the Lagrange interpolating
-    polynomial through the points ``(x, w)``.
+    Given two 1-D arrays `x` and `y,` returns the Lagrange interpolating
+    polynomial through the points ``(x, y)``.
 
     Warning: This implementation is numerically unstable. Do not expect to
     be able to use more than about 20 points even if they are chosen optimally.
@@ -36,8 +37,8 @@ def lagrange(x, w):
     ----------
     x : array_like
         `x` represents the x-coordinates of a set of datapoints.
-    w : array_like
-        `w` represents the y-coordinates of a set of datapoints, i.e., f(`x`).
+    y : array_like
+        `y` represents the y-coordinates of a set of datapoints, i.e., f(`x`).
 
     Returns
     -------
@@ -66,29 +67,43 @@ def lagrange(x, w):
     >>> from numpy.polynomial.polynomial import Polynomial
     >>> Polynomial(poly.coef[::-1]).coef
     array([ 0., -2.,  3.])
+    >>> Polynomial(poly.coord[::-1]).coef
+    array([0., -2., 3.])
 
     >>> import matplotlib.pyplot as plt
     >>> x_new = np.arange(0, 2.1, 0.1)
     >>> plt.scatter(x, y, label='data')
-    >>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial')
+    >>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial-1')
+    >>> plt.plot(x_new, Polynomial(poly.coord[::-1])(x_new), label='Polynomial-2')
     >>> plt.plot(x_new, 3*x_new**2 - 2*x_new + 0*x_new,
     ...          label=r"$3 x^2 - 2 x$", linestyle='-.')
     >>> plt.legend()
     >>> plt.show()
-
     """
 
-    M = len(x)
-    p = poly1d(0.0)
-    for j in range(M):
-        pt = poly1d(w[j])
-        for k in range(M):
-            if k == j:
-                continue
-            fac = x[j]-x[k]
-            pt *= poly1d([1.0, -x[k]])/fac
-        p += pt
-    return p
+    def __init__(self, x, y):
+        self._M = len(x)
+        p = poly1d(0.0)
+        for j in range(self._M):
+            pt = poly1d(y[j])
+            for k in range(self._M):
+                if k == j:
+                    continue
+                fac = x[j]-x[k]
+                pt *= poly1d([1.0, -x[k]])/fac
+            p += pt
+
+        poly1d.__init__(self, p.coeffs, r=False, variable=None)
+
+    @property
+    def coord(self):
+        diff = self._M - len(self.coeffs)
+        if diff > 0:
+            tmp = np.zeros(diff)
+            self._coord = np.insert(self.coeffs, 0, tmp)
+        else:
+            self._coord = self.coeffs
+        return self._coord
 
 
 # !! Need to find argument for keeping initialize. If it isn't

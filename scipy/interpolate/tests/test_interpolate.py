@@ -753,13 +753,22 @@ class TestInterp1D:
 
 
 class TestLagrange:
-
     def test_lagrange(self):
-        p = poly1d([5,2,1,4,3])
+        p = poly1d([5, 2, 1, 4, 3])
         xs = np.arange(len(p.coeffs))
         ys = p(xs)
-        pl = lagrange(xs,ys)
-        assert_array_almost_equal(p.coeffs,pl.coeffs)
+        pl = lagrange(xs, ys)
+        assert_array_almost_equal(p.coeffs, pl.coeffs)
+        assert_array_equal(pl.coord, pl.coeffs)
+
+    def test_reduced_coeffs(self):
+        a = np.array([0, 2, 1])
+        p = poly1d(a)
+        x = np.arange(len(a))
+        y = p(x)
+        pl = lagrange(x, y)
+        assert_array_almost_equal(a, pl.coord)
+        assert_array_almost_equal(p.coeffs, pl.coeffs)
 
 
 class TestAkima1DInterpolator:
