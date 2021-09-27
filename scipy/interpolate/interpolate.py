@@ -75,7 +75,6 @@ def lagrange(x, w):
     ...          label=r"$3 x^2 - 2 x$", linestyle='-.')
     >>> plt.legend()
     >>> plt.show()
-
     """
 
     M = len(x)
@@ -88,6 +87,17 @@ def lagrange(x, w):
             fac = x[j]-x[k]
             pt *= poly1d([1.0, -x[k]])/fac
         p += pt
+    # Add the attribute 'coord' to a 'poly1d' object. which is initialized as 'p.coeffs'
+    p.coord = p.coeffs
+    diff = M - len(p.coeffs)
+    # If the number of interpolation points is greater than the number of
+    # polynomial coefficients, zeros will be filled in the later to ensure
+    # the size of the both is equal, that is the size of 'p.coord' is same
+    # as the size of 'x' and 'p.coord' equals 'p.coeffs' except for these
+    # zero fill-in
+    if diff > 0:
+        tmp = np.zeros(diff)
+        p.coord = np.append(tmp, p.coeffs)
     return p
 
 
