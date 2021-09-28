@@ -116,8 +116,8 @@ def make_system(A, M, x0, b):
     # set initial guess
     if x0 is None:
         x = zeros(N, dtype=xtype)
-    elif isinstance(x0, str):  # use nonzero initial guess ``M * b``
-        if x0 == 'Mb':
+    elif isinstance(x0, str):
+        if x0 == 'Mb':  # use nonzero initial guess ``M * b``
             bCopy = b.copy()
             x = M.matvec(bCopy)
     else:
