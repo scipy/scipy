@@ -6322,47 +6322,98 @@ class t_gen(rv_continuous):
         return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
+        # limiting case: fallback to the normal distribution
+        x, df = np.broadcast_arrays(x, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(x, dtype='d')
+        res[mask] = norm._pdf(x[mask])
         #                                gamma((df+1)/2)
         # t.pdf(x, df) = ---------------------------------------------------
         #                sqrt(pi*df) * gamma(df/2) * (1+x**2/df)**((df+1)/2)
-        r = np.asarray(df*1.0)
-        Px = (np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
-              / (np.sqrt(r*np.pi)*(1+(x**2)/r)**((r+1)/2)))
+        r = df[imask]*1.0
+        res[imask] = (np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
+                      / (np.sqrt(r*np.pi)*(1+(x[imask]**2)/r)**((r+1)/2)))
 
-        return Px
+        return res
 
     def _logpdf(self, x, df):
-        r = df*1.0
-        lPx = (sc.gammaln((r+1)/2) - sc.gammaln(r/2)
-               - (0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x**2)/r)))
-        return lPx
+        x, df = np.broadcast_arrays(x, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(x, dtype='d')
+        res[mask] = norm._logpdf(x[mask])
+        r = df[imask]*1.0
+        res[imask] = (sc.gammaln((r+1)/2) - sc.gammaln(r/2)
+                      - (0.5*np.log(r*np.pi)
+                         + (r+1)/2*np.log(1+(x[imask]**2)/r)))
+        return res
 
     def _cdf(self, x, df):
-        return sc.stdtr(df, x)
+        x, df = np.broadcast_arrays(x, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(x, dtype='d')
+        res[mask] = norm._cdf(x[mask])
+        res[imask] = sc.stdtr(df[imask], x[imask])
+        return res
 
     def _sf(self, x, df):
-        return sc.stdtr(df, -x)
+        x, df = np.broadcast_arrays(x, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(x, dtype='d')
+        res[mask] = norm._sf(x[mask])
+        res[imask] = sc.stdtr(df[imask], -x[imask])
+        return res
 
     def _ppf(self, q, df):
-        return sc.stdtrit(df, q)
+        q, df = np.broadcast_arrays(q, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(q, dtype='d')
+        res[mask] = norm._ppf(q[mask])
+        res[imask] = sc.stdtrit(df[imask], q[imask])
+        return res
 
     def _isf(self, q, df):
-        return -sc.stdtrit(df, q)
+        q, df = np.broadcast_arrays(q, df)
+        mask = (df == np.inf)
+        imask = ~mask
+        res = np.empty_like(q, dtype='d')
+        res[mask] = norm._isf(q[mask])
+        res[imask] = -sc.stdtrit(df[imask], q[imask])
+        return res
 
     def _stats(self, df):
-        mu = np.where(df > 1, 0.0, np.inf)
-        mu2 = _lazywhere(df > 2, (df,),
-                         lambda df: df / (df-2.0),
-                         np.inf)
-        mu2 = np.where(df <= 1, np.nan, mu2)
-        g1 = np.where(df > 3, 0.0, np.nan)
-        g2 = _lazywhere(df > 4, (df,),
-                        lambda df: 6.0 / (df-4.0),
-                        np.inf)
-        g2 = np.where(df <= 2, np.nan, g2)
+        mask = (df == np.inf)
+        imask = ~mask
+        mu = np.empty_like(df, dtype='d')
+        mu2 = np.empty_like(df, dtype='d')
+        g1 = np.empty_like(df, dtype='d')
+        g2 = np.empty_like(df, dtype='d')
+        if np.any(mask):
+            res = norm._stats()
+            mu[mask], mu2[mask], g1[mask], g2[mask] = (res[0], res[1],
+                                                       res[2], res[3])
+        gooddf = df[imask]
+        goodmu = np.where(gooddf > 1, 0.0, np.inf)
+        goodmu2 = _lazywhere(gooddf > 2, (gooddf,),
+                             lambda df_: df_ / (df_-2.0),
+                             np.inf)
+        goodmu2 = np.where(gooddf <= 1, np.nan, goodmu2)
+        goodg1 = np.where(gooddf > 3, 0.0, np.nan)
+        goodg2 = _lazywhere(gooddf > 4, (gooddf,),
+                            lambda df_: 6.0 / (df_-4.0),
+                            np.inf)
+        goodg2 = np.where(gooddf <= 2, np.nan, goodg2)
+        mu[imask], mu2[imask], g1[imask], g2[imask] = (goodmu, goodmu2,
+                                                       goodg1, goodg2)
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
+        if df == np.inf:
+            return norm._entropy()
         half = df/2
         half1 = (df + 1)/2
         return (half1*(sc.digamma(half1) - sc.digamma(half))
