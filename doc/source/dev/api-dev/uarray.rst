@@ -29,7 +29,7 @@ in the ndimage module functions are : ``'output'`` and ``'index'``.
 
       if dispatch_type is ndimage_output:
           if isinstance(value, np.ndarray):
-              return np.asarray(value)
+              return value
           else:
               return np.dtype(value)
 
@@ -42,7 +42,8 @@ in the ndimage module functions are : ``'output'`` and ``'index'``.
   type within the protocol::
 
       if dispatch_type is ndimage_index:
-          if isinstance(value, np.ndarray):
-              return np.asarray(value)
-          else:
+          if np.isscalar(value):
               return value
+          elif not coerce and not isinstance(value, np.ndarray):
+              return NotImplemented
+          return np.asarray(value)

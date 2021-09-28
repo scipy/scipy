@@ -34,7 +34,7 @@ _mark_non_coercible = functools.partial(Dispatchable,
                                         coercible=False)
 _mark_index = functools.partial(Dispatchable,
                                 dispatch_type=ndimage_index,
-                                coercible=False)
+                                coercible=True)
 
 _create_ndimage = functools.partial(create_multimethod,
                                     domain="numpy.scipy.ndimage")
