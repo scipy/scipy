@@ -1137,3 +1137,11 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
         assert mae <= max_error
+
+    def test_midpoint_error_deprecation(self):
+        msg = ("`midpoint_error` has been deprecated and will "
+               "be removed in v1.9.0.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            rng = NumericalInverseHermite(StandardNormal())
+            midpoint_error = rng.midpoint_error
+        assert np.isnan(midpoint_error)

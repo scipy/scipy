@@ -1937,6 +1937,12 @@ cdef class NumericalInverseHermite(Method):
         """
         return unur_hinv_get_n_intervals(self.rng)
 
+    @property
+    def midpoint_error(self):
+        msg = "`midpoint_error` has been deprecated and will be removed in v1.9.0."
+        warnings.warn(msg, DeprecationWarning)
+        return np.nan
+
 
 cdef class DiscreteAliasUrn(Method):
     r"""
