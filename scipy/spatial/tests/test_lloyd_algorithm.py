@@ -37,6 +37,21 @@ def test_lloyd():
         base_l2 = curr_l2
 
 
+def test_lloyd_non_mutating():
+    """
+    Verify that the input points are not mutated in place and that they do not
+    share memory with the output.
+    """
+    orig_points = np.array([[0.1, 0.1],
+                            [0.1, 0.2],
+                            [0.2, 0.1],
+                            [0.2, 0.2]])
+    points_copy = orig_points.copy()
+    new_points = lloyd_centroidal_voronoi_tessellation(points=orig_points)
+    assert_allclose(orig_points, points_copy)
+    assert not np.may_share_memory(orig_points, new_points)
+
+
 def test_lloyd_decay():
     rng = np.random.default_rng()
     points = rng.random((20, 2))

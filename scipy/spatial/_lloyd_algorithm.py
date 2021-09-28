@@ -177,7 +177,7 @@ def lloyd_centroidal_voronoi_tessellation(
     0.0278...  # random
 
     """
-    points = np.asarray(points)
+    points = np.asarray(points).copy()
 
     if not points.ndim == 2:
         raise ValueError('Sample is not a 2D array')
