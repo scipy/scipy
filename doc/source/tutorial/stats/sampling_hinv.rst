@@ -97,19 +97,6 @@ the same random state.
 To check that the random variates closely follow the given distribution, we can
 look at its histogram:
 
-.. plot::
-
-    >>> import numpy as np
-    >>> from scipy.stats import NumericalInverseHermite
-    >>> from scipy.stats import norm, genexpon
-    >>> from scipy.special import ndtr
-    >>> import matplotlib.pyplot as plt
-    >>> class StandardNormal:
-    ...     def pdf(self, x):
-    ...        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
-    ...     def cdf(self, x):
-    ...        return ndtr(x)
-    ... 
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, random_state=urng)
@@ -123,6 +110,10 @@ look at its histogram:
     >>> plt.title('Numerical Inverse Hermite Samples')
     >>> plt.legend()
     >>> plt.show()
+
+.. plot:: tutorial/stats/plots/hinv_plot.py
+   :align: center
+   :include-source: 0
 
 Given the derivative of the PDF w.r.t the variate (i.e. ``x``), we can use
 quintic Hermite interpolation to approximate the PPF by passing the `order`
