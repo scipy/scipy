@@ -529,11 +529,11 @@ def test_x0_equals_Mb(solver):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             A = case.A
             b = case.b
-            x0 = ['Mb']
+            x0 = 'Mb'
             tol = 1e-8
             x, info = solver(A, b, x0=x0, tol=tol)
 
-            assert_array_equal(x0, ['Mb'])  # ensure that x0 is not overwritten
+            assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
             assert_equal(info, 0)
             assert_normclose(A.dot(x), b, tol=tol)
 

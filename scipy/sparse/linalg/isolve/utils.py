@@ -116,9 +116,10 @@ def make_system(A, M, x0, b):
     # set initial guess
     if x0 is None:
         x = zeros(N, dtype=xtype)
-    elif len(x0) == 1 and x0[0] == 'Mb':  # use nonzero initial guess ``M * b``
-        bCopy = b.copy()
-        x = M.matvec(bCopy)
+    elif isinstance(x0, str):  # use nonzero initial guess ``M * b``
+        if x0 == 'Mb':
+            bCopy = b.copy()
+            x = M.matvec(bCopy)
     else:
         x = array(x0, dtype=xtype)
         if not (x.shape == (N,1) or x.shape == (N,)):
