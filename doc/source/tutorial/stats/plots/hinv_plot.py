@@ -1,16 +1,16 @@
 import numpy as np
 from scipy.stats import NumericalInverseHermite
-from scipy.stats import norm, genexpon
+from scipy.stats import norm
 from scipy.special import ndtr
 import matplotlib.pyplot as plt
 
 
 class StandardNormal:
     def pdf(self, x):
-       return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
+        return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
 
     def cdf(self, x):
-       return ndtr(x)
+        return ndtr(x)
 
 
 dist = StandardNormal()
