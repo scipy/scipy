@@ -6338,10 +6338,12 @@ class t_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, df):
-        return sc.stdtr(df, x)
+        dftmp = np.where(df < np.inf, df, 1e+50)
+        return sc.stdtr(dftmp, x)
 
     def _sf(self, x, df):
-        return sc.stdtr(df, -x)
+        dftmp = np.where(df < np.inf, df, 1e+50)
+        return sc.stdtr(dftmp, -x)
 
     def _ppf(self, q, df):
         return sc.stdtrit(df, q)
