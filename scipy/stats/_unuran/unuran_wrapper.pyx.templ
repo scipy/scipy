@@ -1749,6 +1749,12 @@ cdef class NaiveRatioUniforms(Method):
     The rejection constant is given by
     ``(r+1) * v_max * (u_max - u_min) / area(pdf)`` in the general case.
 
+    Note that in the current implementation, the speed of this generation
+    method is reduced by the fact that the pdf of `dist` needs to be called
+    from C for each random variate that is simulated even if the pdf is
+    vectorized (to simulate N random variates, the average number of
+    evaluations of the pdf is N times the rejection constant).
+
     References
     ----------
     .. [1] UNU.RAN reference manual, Section 5.3.11,
@@ -1802,8 +1808,8 @@ cdef class NaiveRatioUniforms(Method):
 
     def __cinit__(self,
                   dist,
-                  center=0.0,
                   *,
+                  center=0.0,
                   domain=None,
                   r=1.0,
                   u_min=None,
@@ -1868,17 +1874,13 @@ cdef class NaiveRatioUniforms(Method):
         # the reason is that the numerical routine to find the bounds can only
         # be used for both bounds at the same time
         warn = False
-        if (u_min is None) and (u_max is not None):
-            u_max = None
-            warn = True
-        if (u_min is not None) and (u_max is None):
-            u_min = None
-            warn = True
-        if warn:
-            msg = ("Only of the values of u_min and u_max is None. "
+        if (u_min is None) ^ (u_max is None):
+            u_min, u_max = None, None
+            msg = ("Only one of the values of u_min and u_max is None. "
                    "The value that is not None is ignored and both values "
                    "will be computed numerically.")
             warnings.warn(msg, RuntimeWarning)
+
         if r <= 0:
             raise ValueError("`r` must be positive.")
         if (v_max is not None) and (v_max <= 0):

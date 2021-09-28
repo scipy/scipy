@@ -919,7 +919,7 @@ class TestNaiveRatioUniforms:
         rng = NaiveRatioUniforms(dist, v_max=v_max, random_state=7303)
         check_cont_samples(rng, dist, (0, 1))
         # just one u-bound is missing
-        msg = 'Only of the values of u_min and u_max is None.'
+        msg = 'Only one of the values of u_min and u_max is None.'
         with pytest.warns(RuntimeWarning, match=msg):
             rng = NaiveRatioUniforms(dist, u_max=u_bound, random_state=7303)
             check_cont_samples(rng, dist, (0, 1))
