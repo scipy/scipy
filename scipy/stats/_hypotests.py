@@ -1418,6 +1418,12 @@ class TukeyHSDResult:
         element at index ``(i, j)`` is the p-value for the comparison
         between groups ``i`` and ``j``.
 
+    Notes
+    -----
+    The string representation of this object displays the most recently
+    calculated confidence interval, and if none have been previously
+    calculated, it will evaluate ``confidence_interval()``.
+
     References
     ----------
     .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
@@ -1432,15 +1438,24 @@ class TukeyHSDResult:
         self._ntreatments = _ntreatments
         self._nobs = _nobs
         self._stand_err = _stand_err
+        self._ci = None
+        self._ci_cl = None
 
     def __str__(self):
-        s = "Tukey's HSD Pairwise Group Comparisons\n"
-        s += "Comparison  Statistic  p-value\n"
-
+        # Note: `__str__` prints the confidence intervals from the most
+        # recent call to `confidence_interval`. If it has not been called,
+        # it will be called with the default CL of .95.
+        if self._ci is None:
+            self.confidence_interval()
+        s = f"Tukey's HSD Pairwise Group Comparisons ({self._ci_cl*100:.1f}% Confidence Interval)\n"
+        s += f"Comparison  Statistic  p-value  Lower CI  Upper CI\n"
         for i in range(self.pvalue.shape[0]):
             for j in range(self.pvalue.shape[0]):
-                s += (f"({i} - {j}) {self.statistic[i, j]:>10.3f}"
-                      f" {self.pvalue[i, j]:>10.3f}\n")
+                if i != j:
+                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                          f"{self.pvalue[i, j]:>10.3f}"
+                          f"{self._ci.low[i, j]:>10.3f}"
+                          f"{self._ci.high[i, j]:>10.3f}\n")
         return s
 
     def confidence_interval(self, confidence_level=.95):
@@ -1484,6 +1499,12 @@ class TukeyHSDResult:
                [ 8.249159,  3.649159,  7.989159],
                [ 3.909159, -0.690841,  3.649159]])
         """
+        # check to see if the supplied confidence level matches that of the
+        # previously computed CI.
+        if (self._ci is not None and self._ci_cl is not None and
+                confidence_level == self._ci_cl):
+            return self._ci
+
         if not 0 < confidence_level < 1:
             raise ValueError("Confidence level must be between 0 and 1.")
         # determine the critical value of the studentized range using the
@@ -1502,7 +1523,9 @@ class TukeyHSDResult:
         # `mean_differences` +- `tukey_criterion`
         upper_conf = self.statistic + tukey_criterion
         lower_conf = self.statistic - tukey_criterion
-        return ConfidenceInterval(low=lower_conf, high=upper_conf)
+        self._ci = ConfidenceInterval(low=lower_conf, high=upper_conf)
+        self._ci_cl = confidence_level
+        return self._ci
 
 
 def _tukey_hsd_iv(args):
@@ -1566,7 +1589,7 @@ def tukey_hsd(*args):
     -----
     The use of this test relies on several assumptions.
 
-    1. The observations are indendent within and among groups.
+    1. The observations are independent within and among groups.
     2. The observations within each group are normally distributed.
     3. The distributions from which the samples are drawn have the same finite
        variance.
@@ -1592,7 +1615,7 @@ def tukey_hsd(*args):
            Accessed 25 May 2021.
     .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
            The ANOVA table and tests of hypotheses about means"
-           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.html,
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
            2 June 2021.
     .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
            Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
@@ -1619,24 +1642,21 @@ def tukey_hsd(*args):
     >>> ax.set_ylabel("mean") # doctest: +SKIP
     >>> plt.show()
 
-    From the box and whisker plot we can see overlap in the interquartile
+    From the box and whisker plot, we can see overlap in the interquartile
     ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
     test to determine if the difference between means is significant. We
-    a significance level of .05 to reject the null hypothesis.
+    set a significance level of .05 to reject the null hypothesis.
 
     >>> res = tukey_hsd(group0, group1, group2)
     >>> print(res)
-    Tukey's HSD Pairwise Group Comparisons
-    Comparison  Statistic  p-value
-    (0 - 0)      0.000      1.000
-    (0 - 1)     -4.600      0.014
-    (0 - 2)     -0.260      0.980
-    (1 - 0)      4.600      0.014
-    (1 - 1)      0.000      1.000
-    (1 - 2)      4.340      0.020
-    (2 - 0)      0.260      0.980
-    (2 - 1)     -4.340      0.020
-    (2 - 2)      0.000      1.000
+    Tukey's HSD Pairwise Group Comparisons (95.0% Confidence Interval)
+    Comparison  Statistic  p-value   Lower CI   Upper CI
+    (0 - 1)     -4.600      0.014     -8.249     -0.951
+    (0 - 2)     -0.260      0.980     -3.909      3.389
+    (1 - 0)      4.600      0.014      0.951      8.249
+    (1 - 2)      4.340      0.020      0.691      7.989
+    (2 - 0)      0.260      0.980     -3.389      3.909
+    (2 - 1)     -4.340      0.020     -7.989     -0.691
 
     The null hypothesis is that each group has the same mean. The p-value for
     comparisons between ``group0`` and ``group1`` as well as ``group1`` and
@@ -1652,18 +1672,18 @@ def tukey_hsd(*args):
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
     >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
     >>> result = tukey_hsd(group0, group1, group2)
-    >>> conf = res.confidence_interval()
+    >>> conf = res.confidence_interval(confidence_level=.99)
     >>> for ((i, j), l) in np.ndenumerate(conf.low):
     ...     # filter out self comparisons
     ...     if i != j:
     ...         h = conf.high[i,j]
     ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
-    (0 - 1) -8.249 -0.951
-    (0 - 2) -3.909  3.389
-    (1 - 0)  0.951  8.249
-    (1 - 2)  0.691  7.989
-    (2 - 0) -3.389  3.909
-    (2 - 1) -7.989 -0.691
+    (0 - 1) -9.480  0.280
+    (0 - 2) -5.140  4.620
+    (1 - 0) -0.280  9.480
+    (1 - 2) -0.540  9.220
+    (2 - 0) -4.620  5.140
+    (2 - 1) -9.220  0.540
     """
     args = _tukey_hsd_iv(args)
     ntreatments = len(args)
