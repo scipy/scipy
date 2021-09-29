@@ -345,7 +345,7 @@ class KDTree(cKDTree):
 
     def query(
             self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
-        """Query the kd-tree for nearest neighbors.
+        r"""Query the kd-tree for nearest neighbors.
 
         Parameters
         ----------
@@ -406,42 +406,47 @@ class KDTree(cKDTree):
 
         To query the nearest neighbours and return squeezed result, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
-        >>> print(dd, ii)
-        [2.         0.14142136] [ 0 13]
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=1)
+        >>> print(dd, ii, sep='\n')
+        [2.         0.2236068]
+        [ 0 13]
 
         To query the nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[1])
+        >>> print(dd, ii, sep='\n')
         [[2.        ]
-         [0.14142136]] [[ 0]
+         [0.2236068]]
+        [[ 0]
          [13]]
 
         To query the second nearest neighbours and return unsqueezed result,
         use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[2])
+        >>> print(dd, ii, sep='\n')
         [[2.23606798]
-         [0.90553851]] [[ 6]
-         [12]]
+         [0.80622577]]
+        [[ 6]
+         [19]]
 
         To query the first and second nearest neighbours, use
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=2)
+        >>> print(dd, ii, sep='\n')
         [[2.         2.23606798]
-         [0.14142136 0.90553851]] [[ 0  6]
-         [13 12]]
+         [0.2236068  0.80622577]]
+        [[ 0  6]
+         [13 19]]
 
         or, be more specific
 
-        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
-        >>> print(dd, ii)
+        >>> dd, ii = tree.query([[0, 0], [2.2, 2.9]], k=[1, 2])
+        >>> print(dd, ii, sep='\n')
         [[2.         2.23606798]
-         [0.14142136 0.90553851]] [[ 0  6]
-         [13 12]]
+         [0.2236068  0.80622577]]
+        [[ 0  6]
+         [13 19]]
 
         """
         x = np.asarray(x)

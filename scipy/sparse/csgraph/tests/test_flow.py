@@ -4,6 +4,9 @@ import pytest
 
 from scipy.sparse import csr_matrix, csc_matrix
 from scipy.sparse.csgraph import maximum_flow
+from scipy.sparse.csgraph._flow import (
+    _add_reverse_edges, _make_edge_pointers, _make_tails
+)
 
 methods = ['edmonds_karp', 'dinic']
 
@@ -26,6 +29,12 @@ def test_raises_on_floating_point_input():
         graph = csr_matrix([[0, 1.5], [0, 0]], dtype=np.float64)
         maximum_flow(graph, 0, 1)
         maximum_flow(graph, 0, 1, method='edmonds_karp')
+
+
+def test_raises_on_non_square_input():
+    with pytest.raises(ValueError):
+        graph = csr_matrix([[0, 1, 2], [2, 1, 0]])
+        maximum_flow(graph, 0, 1)
 
 
 def test_raises_when_source_is_sink():
@@ -134,3 +143,59 @@ def test_disconnected_graph(method):
     assert res.flow_value == 0
     expected_residual = np.zeros((4, 4), dtype=np.int32)
     assert_array_equal(res.residual.toarray(), expected_residual)
+
+
+@pytest.mark.parametrize('method', methods)
+def test_add_reverse_edges_large_graph(method):
+    # Regression test for https://github.com/scipy/scipy/issues/14385
+    n = 100_000
+    indices = np.arange(1, n)
+    indptr = np.array(list(range(n)) + [n - 1])
+    data = np.ones(n - 1, dtype=np.int32)
+    graph = csr_matrix((data, indices, indptr), shape=(n, n))
+    res = maximum_flow(graph, 0, n - 1, method=method)
+    assert res.flow_value == 1
+    expected_residual = graph - graph.transpose()
+    assert_array_equal(res.residual.data, expected_residual.data)
+    assert_array_equal(res.residual.indices, expected_residual.indices)
+    assert_array_equal(res.residual.indptr, expected_residual.indptr)
+
+
+@pytest.mark.parametrize("a,b_data_expected", [
+    ([[]], []),
+    ([[0], [0]], []),
+    ([[1, 0, 2], [0, 0, 0], [0, 3, 0]], [1, 2, 0, 0, 3]),
+    ([[9, 8, 7], [4, 5, 6], [0, 0, 0]], [9, 8, 7, 4, 5, 6, 0, 0])])
+def test_add_reverse_edges(a, b_data_expected):
+    """Test that the reversal of the edges of the input graph works
+    as expected.
+    """
+    a = csr_matrix(a, dtype=np.int32, shape=(len(a), len(a)))
+    b = _add_reverse_edges(a)
+    assert_array_equal(b.data, b_data_expected)
+
+
+@pytest.mark.parametrize("a,expected", [
+    ([[]], []),
+    ([[0]], []),
+    ([[1]], [0]),
+    ([[0, 1], [10, 0]], [1, 0]),
+    ([[1, 0, 2], [0, 0, 3], [4, 5, 0]], [0, 3, 4, 1, 2])
+])
+def test_make_edge_pointers(a, expected):
+    a = csr_matrix(a, dtype=np.int32)
+    rev_edge_ptr = _make_edge_pointers(a)
+    assert_array_equal(rev_edge_ptr, expected)
+
+
+@pytest.mark.parametrize("a,expected", [
+    ([[]], []),
+    ([[0]], []),
+    ([[1]], [0]),
+    ([[0, 1], [10, 0]], [0, 1]),
+    ([[1, 0, 2], [0, 0, 3], [4, 5, 0]], [0, 0, 1, 2, 2])
+])
+def test_make_tails(a, expected):
+    a = csr_matrix(a, dtype=np.int32)
+    tails = _make_tails(a)
+    assert_array_equal(tails, expected)

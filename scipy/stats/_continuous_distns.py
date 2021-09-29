@@ -4133,15 +4133,28 @@ class norminvgauss_gen(rv_continuous):
     `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
     to generate random variates.
 
+    Another common parametrization of the distribution (see Equation 2.1 in
+    [2]_) is given by the following expression of the pdf:
+
+    .. math::
+
+        g(x, \alpha, \beta, \delta, \mu) =
+        \frac{\alpha\delta K_1\left(\alpha\sqrt{\delta^2 + (x - \mu)^2}\right)}
+        {\pi \sqrt{\delta^2 + (x - \mu)^2}} \,
+        e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
+
+    In SciPy, this corresponds to
+    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+
     References
     ----------
-    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
-    pp. 151-157, 1978.
+    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+           Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+           pp. 151-157, 1978.
 
-    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
-    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
-    pp. 1-13, 1997.
+    .. [2] O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and
+           Stochastic Volatility Modelling", Scandinavian Journal of
+           Statistics, Vol. 24, pp. 1-13, 1997.
 
     %(example)s
 
@@ -6655,7 +6668,7 @@ class pearson3_gen(rv_continuous):
         # close to this small.
         norm2pearson_transition = 0.000016
 
-        ans, x, skew = np.broadcast_arrays([1.0], x, skew)
+        ans, x, skew = np.broadcast_arrays(1.0, x, skew)
         ans = ans.copy()
 
         # mask is True where skew is small enough to use the normal approx.
@@ -8224,31 +8237,37 @@ class truncnorm_gen(rv_continuous):
                           np.nan)
 
     def _stats(self, a, b, moments='mv'):
-        pA, pB = self._pdf(np.array([a, b]), a, b)
-        m1 = pA - pB
-        mu = m1
-        # use _lazywhere to avoid nan (See detailed comment in _munp)
-        probs = [pA, -pB]
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
-                          fillvalue=0)
-        m2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
-                          fillvalue=0)
-        # mu2 = m2 - mu**2, but not as numerically stable as:
-        # mu2 = (a-mu)*pA - (b-mu)*pB + 1
-        mu2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
-                          fillvalue=0)
-        m3 = 2*m1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
-                          fillvalue=0)
-        m4 = 3*m2 + np.sum(vals)
+        pA, pB = self.pdf(np.array([a, b]), a, b)
 
-        mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
-        g1 = mu3 / np.power(mu2, 1.5)
-        mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
-        g2 = mu4 / mu2**2 - 3
-        return mu, mu2, g1, g2
+        def _truncnorm_stats_scalar(a, b, pA, pB, moments):
+            m1 = pA - pB
+            mu = m1
+            # use _lazywhere to avoid nan (See detailed comment in _munp)
+            probs = [pA, -pB]
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
+                              fillvalue=0)
+            m2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
+                              fillvalue=0)
+            # mu2 = m2 - mu**2, but not as numerically stable as:
+            # mu2 = (a-mu)*pA - (b-mu)*pB + 1
+            mu2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
+                              fillvalue=0)
+            m3 = 2*m1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
+                              fillvalue=0)
+            m4 = 3*m2 + np.sum(vals)
+
+            mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
+            g1 = mu3 / np.power(mu2, 1.5)
+            mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
+            g2 = mu4 / mu2**2 - 3
+            return mu, mu2, g1, g2
+
+        _truncnorm_stats = np.vectorize(_truncnorm_stats_scalar,
+                                        excluded=('moments',))
+        return _truncnorm_stats(a, b, pA, pB, moments)
 
     def _rvs(self, a, b, size=None, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create

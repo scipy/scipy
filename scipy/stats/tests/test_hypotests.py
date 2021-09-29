@@ -181,8 +181,6 @@ class TestMannWhitneyU:
             mannwhitneyu([], y)
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
             mannwhitneyu(x, [])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu([np.nan, 2], y)
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -508,10 +506,11 @@ class TestMannWhitneyU:
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res2.pvalue)
 
-        # NaNs should raise an error. No nan_policy for now.
+        # NaNs should propagate by default.
         y[4] = np.nan
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(x, y)
+        res3 = mannwhitneyu(x, y)
+        assert_equal(res3.statistic, np.nan)
+        assert_equal(res3.pvalue, np.nan)
 
     cases_11355 = [([1, 2, 3, 4],
                     [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
@@ -583,11 +582,12 @@ class TestMannWhitneyU:
             mannwhitneyu([], [])
 
     def test_gh_4067(self):
-        # Test for correct behavior with all NaN input
+        # Test for correct behavior with all NaN input - default is propagate
         a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu(a, b)
+        res = mannwhitneyu(a, b)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     # All cases checked against R wilcox.test, e.g.
     # options(digits=16)
@@ -857,6 +857,72 @@ class TestSomersD:
         y = np.arange(10)
         res = stats.somersd(x, y)
         assert_equal(res.table, np.eye(10))
+
+    def test_somersd_alternative(self):
+        # Test alternative parameter, asymptotic method (due to tie)
+
+        # Based on scipy.stats.test_stats.TestCorrSpearman2::test_alternative
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+
+        # strong positive correlation
+        expected = stats.somersd(x1, x2, alternative="two-sided")
+        assert expected.statistic > 0
+
+        # rank correlation > 0 -> large "less" p-value
+        res = stats.somersd(x1, x2, alternative="less")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, 1 - (expected.pvalue / 2))
+
+        # rank correlation > 0 -> small "greater" p-value
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue / 2)
+
+        # reverse the direction of rank correlation
+        x2.reverse()
+
+        # strong negative correlation
+        expected = stats.somersd(x1, x2, alternative="two-sided")
+        assert expected.statistic < 0
+
+        # rank correlation < 0 -> large "greater" p-value
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, 1 - (expected.pvalue / 2))
+
+        # rank correlation < 0 -> small "less" p-value
+        res = stats.somersd(x1, x2, alternative="less")
+        assert_equal(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue / 2)
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.somersd(x1, x2, alternative="ekki-ekki")
+
+    @pytest.mark.parametrize("positive_correlation", (False, True))
+    def test_somersd_perfect_correlation(self, positive_correlation):
+        # Before the addition of `alternative`, perfect correlation was
+        # treated as a special case. Now it is treated like any other case, but
+        # make sure there are no divide by zero warnings or associated errors
+
+        x1 = np.arange(10)
+        x2 = x1 if positive_correlation else np.flip(x1)
+        expected_statistic = 1 if positive_correlation else -1
+
+        # perfect correlation -> small "two-sided" p-value (0)
+        res = stats.somersd(x1, x2, alternative="two-sided")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == 0
+
+        # rank correlation > 0 -> large "less" p-value (1)
+        res = stats.somersd(x1, x2, alternative="less")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (1 if positive_correlation else 0)
+
+        # rank correlation > 0 -> small "greater" p-value (0)
+        res = stats.somersd(x1, x2, alternative="greater")
+        assert res.statistic == expected_statistic
+        assert res.pvalue == (0 if positive_correlation else 1)
 
 
 class TestBarnardExact:
@@ -1138,6 +1204,7 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
 
 class TestCvm_2samp:
     def test_invalid_input(self):

@@ -45,7 +45,7 @@ Building SciPy
 
       If ``conda`` is not a recognized command, try restarting your terminal. If it is still not recognized, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
-#. Enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pythran pytest gfortran_linux-64 gxx_linux-64 sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
+#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pythran pytest gfortran_linux-64 gxx_linux-64 sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 

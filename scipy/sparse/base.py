@@ -840,7 +840,7 @@ class spmatrix:
         order : {'C', 'F'}, optional
             Whether to store multi-dimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
-            is 'None', indicating the NumPy default of C-ordered.
+            is 'None', which provides no ordering guarantees.
             Cannot be specified in conjunction with the `out`
             argument.
 
@@ -872,7 +872,7 @@ class spmatrix:
         order : {'C', 'F'}, optional
             Whether to store multidimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
-            is 'None', indicating the NumPy default of C-ordered.
+            is 'None', which provides no ordering guarantees.
             Cannot be specified in conjunction with the `out`
             argument.
 

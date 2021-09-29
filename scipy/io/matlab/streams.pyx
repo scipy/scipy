@@ -62,7 +62,7 @@ cdef class GenericStream:
             count += read_size
 
         if count != n:
-            raise IOError('could not read bytes')
+            raise OSError('could not read bytes')
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
@@ -70,7 +70,7 @@ cdef class GenericStream:
         if copy != True:
             data = self.fobj.read(n)
             if PyBytes_Size(data) != n:
-                raise IOError('could not read bytes')
+                raise OSError('could not read bytes')
             pp[0] = <void*>PyBytes_AS_STRING(data)
             return data
 
@@ -164,7 +164,7 @@ cdef class ZlibInputStream(GenericStream):
         self._total_position += count
 
         if count != n:
-            raise IOError('could not read bytes')
+            raise OSError('could not read bytes')
 
         return 0
 
@@ -187,7 +187,7 @@ cdef class ZlibInputStream(GenericStream):
 
     cpdef long int tell(self) except -1:
         if self._total_position == -1:
-            raise IOError("Invalid file position.")
+            raise OSError("Invalid file position.")
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
@@ -197,12 +197,12 @@ cdef class ZlibInputStream(GenericStream):
         elif whence == 0:
             new_pos = offset
         elif whence == 2:
-            raise IOError("Zlib stream cannot seek from file end")
+            raise OSError("Zlib stream cannot seek from file end")
         else:
             raise ValueError("Invalid value for whence")
 
         if new_pos < self._total_position:
-            raise IOError("Zlib stream cannot seek backwards")
+            raise OSError("Zlib stream cannot seek backwards")
 
         while self._total_position < new_pos:
             self._fill_buffer()

@@ -14,7 +14,13 @@ np.import_array()
 cdef extern from "<thread>" namespace "std" nogil:
     cdef cppclass thread:
         thread()
-        void thread[A, B, C, D, E, F](A, B, C, D, E, F)
+        # Since we are using the C++ thread constructor, Cython forces us
+        # to define how many arguments will take the constructor. Here,
+        # `_cy_wrapper_van_der_corput_scrambled` takes 7 arguments thus
+        # the `A, B, C, D, E, F, G` inside the constructor. Since the other
+        # threaded loops take less arguments, we need to find a workaround
+        # to pass 7 arguments to the functions. Here we use `_`.
+        void thread[A, B, C, D, E, F, G](A, B, C, D, E, F, G)
         void join()
 
 cdef extern from "<mutex>" namespace "std" nogil:
@@ -309,7 +315,7 @@ cdef double threaded_loops(func_type loop_func,
             n / workers * (tid + 1)) if tid < workers - 1 else n
         threads.push_back(
             thread(one_thread_loop, loop_func, ref(disc2),
-                   sample_view, istart, istop)
+                   sample_view, istart, istop, None)
         )
 
     for tid in range(workers):
@@ -318,11 +324,123 @@ cdef double threaded_loops(func_type loop_func,
     return disc2
 
 
-cdef void one_thread_loop(func_type loop_func, double& disc, double[:,
-                         ::1] sample_view, Py_ssize_t istart, Py_ssize_t istop) nogil:
+cdef void one_thread_loop(func_type loop_func,
+                          double& disc,
+                          double[:, ::1] sample_view,
+                          Py_ssize_t istart,
+                          Py_ssize_t istop,
+                          _) nogil:
 
     cdef double tmp = loop_func(sample_view, istart, istop)
 
     threaded_sum_mutex.lock()
     (&disc)[0] += tmp # workaround to "disc += tmp", see cython issue #1863
     threaded_sum_mutex.unlock()
+
+
+def _cy_van_der_corput(Py_ssize_t n,
+                       long base,
+                       long start_index,
+                       unsigned int workers):
+    sequence = np.zeros(n, dtype=np.double)
+
+    cdef:
+        double[::1] sequence_view = sequence
+        vector[thread] threads
+        unsigned int tid
+        Py_ssize_t istart, istop
+
+    if workers <= 1:
+        _cy_van_der_corput_threaded_loop(0, n, base, start_index,
+                                         sequence_view, None)
+        return sequence
+
+    for tid in range(workers):
+        istart = <Py_ssize_t> (n / workers * tid)
+        istop = <Py_ssize_t> (
+                n / workers * (tid + 1)) if tid < workers - 1 else n
+        threads.push_back(
+            thread(_cy_van_der_corput_threaded_loop, istart, istop, base,
+                   start_index, sequence_view, None)
+        )
+
+    for tid in range(workers):
+        threads[tid].join()
+
+    return sequence
+
+
+cdef _cy_van_der_corput_threaded_loop(Py_ssize_t istart,
+                                      Py_ssize_t istop,
+                                      long base,
+                                      long start_index,
+                                      double[::1] sequence_view,
+                                      _):
+    cdef:
+        long quotient, remainder
+        Py_ssize_t i
+        double b2r
+
+    for i in range(istart, istop):
+        quotient = start_index + i
+        b2r = 1.0 / base
+        while quotient > 0:
+            remainder = quotient % base
+            sequence_view[i] += remainder * b2r
+            b2r /= base
+            quotient //= base
+
+
+def _cy_van_der_corput_scrambled(Py_ssize_t n,
+                                 long base,
+                                 long start_index,
+                                 long[:,::1] permutations,
+                                 unsigned int workers):
+    sequence = np.zeros(n)
+
+    cdef:
+        double[::1] sequence_view = sequence
+        vector[thread] threads
+        unsigned int tid
+        Py_ssize_t istart, istop
+
+    if workers <= 1:
+        _cy_van_der_corput_scrambled_loop(0, n, base, start_index,
+                                          permutations, sequence_view)
+        return sequence
+
+    for tid in range(workers):
+        istart = <Py_ssize_t> (n / workers * tid)
+        istop = <Py_ssize_t> (
+                n / workers * (tid + 1)) if tid < workers - 1 else n
+        threads.push_back(
+            thread(_cy_van_der_corput_scrambled_loop, istart, istop, base,
+                   start_index, permutations, sequence_view)
+        )
+
+    for tid in range(workers):
+        threads[tid].join()
+
+    return sequence
+
+
+cdef _cy_van_der_corput_scrambled_loop(Py_ssize_t istart,
+                                       Py_ssize_t istop,
+                                       long base,
+                                       long start_index,
+                                       long[:,::1] permutations,
+                                       double[::1] sequence_view):
+
+    cdef:
+        long i, j, quotient, remainder
+        double b2r
+
+    for i in range(istart, istop):
+        quotient = start_index + i
+        b2r = 1.0 / base
+        for j in range(permutations.shape[0]):
+            remainder = quotient % base
+            remainder = permutations[j, remainder]
+            sequence_view[i] += remainder * b2r
+            b2r /= base
+            quotient //= base

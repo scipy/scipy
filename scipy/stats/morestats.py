@@ -18,6 +18,7 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 __all__ = ['mvsdist',
@@ -2981,6 +2982,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(WilcoxonResult, paired=True,
+                          n_samples=lambda kwds: 2
+                          if kwds.get('y', None) is not None else 1)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", mode='auto'):
     """Calculate the Wilcoxon signed-rank test.

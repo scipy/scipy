@@ -1247,23 +1247,24 @@ def test_kdtree_duplicated_inputs(kdtree_type):
     # check kdtree with duplicated inputs
     n = 1024
     for m in range(1, 8):
-        data = np.concatenate([
-            np.full((n // 2, m), 1),
-            np.full((n // 2, m), 2)], axis=0)
+        data = np.ones((n, m))
+        data[n//2:] = 2
 
-        # it shall not divide more than 3 nodes.
-        # root left (1), and right (2)
-        kdtree = kdtree_type(data, leafsize=1)
-        assert_equal(kdtree.size, 3)
+        for balanced, compact in itertools.product((False, True), repeat=2):
+            kdtree = kdtree_type(data, balanced_tree=balanced,
+                                 compact_nodes=compact, leafsize=1)
+            assert kdtree.size == 3
 
-        kdtree = kdtree_type(data)
-        assert_equal(kdtree.size, 3)
+            tree = (kdtree.tree if kdtree_type is cKDTree else
+                    kdtree.tree._node)
 
-        # if compact_nodes are disabled, the number
-        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
-        # and the root
-        kdtree = kdtree_type(data, compact_nodes=False, leafsize=1)
-        assert_equal(kdtree.size, n + m * 2 - 1)
+            assert_equal(
+                np.sort(tree.lesser.indices),
+                np.arange(0, n // 2))
+            assert_equal(
+                np.sort(tree.greater.indices),
+                np.arange(n // 2, n))
+
 
 def test_kdtree_noncumulative_nondecreasing(kdtree_type):
     # check kdtree with duplicated inputs
