@@ -1952,7 +1952,6 @@ def _triage_segments(window, nperseg, input_length):
     nperseg : int
         Length of each segment. If window is str or tuple, nperseg is set to
         256. If window is array_like, nperseg is set to the length of the
-        6
         window.
     """
     # parse window; if array like, then set nperseg = win.shape
