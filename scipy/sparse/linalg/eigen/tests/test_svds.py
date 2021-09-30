@@ -223,7 +223,7 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         A = rng.random((10, 10))
         res = svds(A, k=k, which=which, solver=self.solver, random_state=0)
-        _check_svds(A, k, *res, which=which, atol=2e-10)
+        _check_svds(A, k, *res, which=which, atol=8e-10)
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
@@ -252,7 +252,7 @@ class SVDSCommonTests:
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
-                      'arpack': [1e-15, 1e-10, 1e-10],
+                      'arpack': [5e-15, 1e-10, 1e-10],
                       'lobpcg': [1e-11, 1e-3, 10]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
