@@ -465,6 +465,8 @@ def lobpcg(A, X,
             if B is not None:
                 activeBlockVectorBP = _as2d(blockVectorBP[:, activeMask])
 
+        if activeBlockVectorR is None:
+            break
         if M is not None:
             # Apply preconditioner T to the active residuals.
             activeBlockVectorR = M(activeBlockVectorR)
@@ -474,6 +476,8 @@ def lobpcg(A, X,
         if blockVectorY is not None:
             _applyConstraints(activeBlockVectorR,
                               gramYBY, blockVectorBY, blockVectorY)
+        if activeBlockVectorR is None:
+            break
 
         ##
         # B-orthogonalize the preconditioned residuals to X.
@@ -491,6 +495,8 @@ def lobpcg(A, X,
         aux = _b_orthonormalize(B, activeBlockVectorR)
         activeBlockVectorR, activeBlockVectorBR = aux
 
+        if activeBlockVectorR is None:
+            break
         activeBlockVectorAR = A(activeBlockVectorR)
 
         if iterationNumber > 0:
