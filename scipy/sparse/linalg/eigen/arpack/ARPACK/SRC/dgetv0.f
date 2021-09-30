@@ -3,13 +3,13 @@ c\BeginDoc
 c
 c\Name: dgetv0
 c
-c\Description: 
+c\Description:
 c  Generate a random initial residual vector for the Arnoldi process.
-c  Force the residual vector to be in the range of the operator OP.  
+c  Force the residual vector to be in the range of the operator OP.
 c
 c\Usage:
 c  call dgetv0
-c     ( IDO, BMAT, ITRY, INITV, N, J, V, LDV, RESID, RNORM, 
+c     ( IDO, BMAT, ITRY, INITV, N, J, V, LDV, RESID, RNORM,
 c       IPNTR, WORKD, IERR )
 c
 c\Arguments
@@ -36,7 +36,7 @@ c          B = 'I' -> standard eigenvalue problem A*x = lambda*x
 c          B = 'G' -> generalized eigenvalue problem A*x = lambda*B*x
 c
 c  ITRY    Integer.  (INPUT)
-c          ITRY counts the number of times that dgetv0 is called.  
+c          ITRY counts the number of times that dgetv0 is called.
 c          It should be set to 1 on the initial call to dgetv0.
 c
 c  INITV   Logical variable.  (INPUT)
@@ -55,11 +55,11 @@ c          The first J-1 columns of V contain the current Arnoldi basis
 c          if this is a "restart".
 c
 c  LDV     Integer.  (INPUT)
-c          Leading dimension of V exactly as declared in the calling 
+c          Leading dimension of V exactly as declared in the calling
 c          program.
 c
 c  RESID   Double precision array of length N.  (INPUT/OUTPUT)
-c          Initial residual vector to be generated.  If RESID is 
+c          Initial residual vector to be generated.  If RESID is
 c          provided, force RESID into the range of the operator OP.
 c
 c  RNORM   Double precision scalar.  (OUTPUT)
@@ -88,7 +88,7 @@ c\References:
 c  1. D.C. Sorensen, "Implicit Application of Polynomial Filters in
 c     a k-Step Arnoldi Method", SIAM J. Matr. Anal. Apps., 13 (1992),
 c     pp 357-385.
-c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly 
+c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly
 c     Restarted Arnoldi Iteration", Rice University Technical Report
 c     TR95-13, Department of Computational and Applied Mathematics.
 c
@@ -98,7 +98,7 @@ c     dvout   ARPACK utility routine for vector output.
 c     dlarnv  LAPACK routine for generating a random vector.
 c     dgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     dcopy   Level 1 BLAS that copies one vector to another.
-c     ddot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     ddot    Level 1 BLAS that computes the scalar product of two vectors.
 c     dnrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
@@ -106,20 +106,20 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: getv0.F   SID: 2.7   DATE OF SID: 04/07/99   RELEASE: 2
 c
 c\EndLib
 c
 c-----------------------------------------------------------------------
 c
-      subroutine dgetv0 
-     &   ( ido, bmat, itry, initv, n, j, v, ldv, resid, rnorm, 
+      subroutine dgetv0
+     &   ( ido, bmat, itry, initv, n, j, v, ldv, resid, rnorm,
      &     ipntr, workd, ierr )
-c 
+c
 c     %----------------------------------------------------%
 c     | Include files for debugging and timing information |
 c     %----------------------------------------------------%
@@ -208,7 +208,7 @@ c
       end if
 c
       if (ido .eq.  0) then
-c 
+c
 c        %-------------------------------%
 c        | Initialize timing statistics  |
 c        | & message level for debugging |
@@ -216,7 +216,7 @@ c        %-------------------------------%
 c
          call arscnd (t0)
          msglvl = mgetv0
-c 
+c
          ierr   = 0
          iter   = 0
          first  = .FALSE.
@@ -235,23 +235,25 @@ c
             idist = 2
             call dlarnv (idist, iseed, n, resid)
          end if
-c 
+c
 c        %----------------------------------------------------------%
 c        | Force the starting vector into the range of OP to handle |
 c        | the generalized problem when B is possibly (singular).   |
 c        %----------------------------------------------------------%
 c
          call arscnd (t2)
-         if (bmat .eq. 'G') then
+         if (itry .eq. 1) then
             nopx = nopx + 1
             ipntr(1) = 1
             ipntr(2) = n + 1
             call dcopy (n, resid, 1, workd, 1)
             ido = -1
             go to 9000
+         else if (itry .gt. 1 .and. bmat .eq. 'G') then
+            call dcopy (n, resid, 1, workd(n + 1), 1)
          end if
       end if
-c 
+c
 c     %-----------------------------------------%
 c     | Back from computing OP*(initial-vector) |
 c     %-----------------------------------------%
@@ -259,16 +261,16 @@ c
       if (first) go to 20
 c
 c     %-----------------------------------------------%
-c     | Back from computing B*(orthogonalized-vector) |
+c     | Back from computing OP*(orthogonalized-vector) |
 c     %-----------------------------------------------%
 c
       if (orth)  go to 40
-c 
+c
       if (bmat .eq. 'G') then
          call arscnd (t3)
          tmvopx = tmvopx + (t3 - t2)
       end if
-c 
+c
 c     %------------------------------------------------------%
 c     | Starting vector is now in the range of OP; r = OP*r; |
 c     | Compute B-norm of starting vector.                   |
@@ -276,9 +278,9 @@ c     %------------------------------------------------------%
 c
       call arscnd (t2)
       first = .TRUE.
+      if (itry .eq. 1) call dcopy (n, workd(n + 1), 1, resid, 1)
       if (bmat .eq. 'G') then
          nbx = nbx + 1
-         call dcopy (n, workd(n+1), 1, resid, 1)
          ipntr(1) = n + 1
          ipntr(2) = 1
          ido = 2
@@ -286,14 +288,14 @@ c
       else if (bmat .eq. 'I') then
          call dcopy (n, resid, 1, workd, 1)
       end if
-c 
+c
    20 continue
 c
       if (bmat .eq. 'G') then
          call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
-c 
+c
       first = .FALSE.
       if (bmat .eq. 'G') then
           rnorm0 = ddot (n, resid, 1, workd, 1)
@@ -308,7 +310,7 @@ c     | Exit if this is the very first Arnoldi step |
 c     %---------------------------------------------%
 c
       if (j .eq. 1) go to 50
-c 
+c
 c     %----------------------------------------------------------------
 c     | Otherwise need to B-orthogonalize the starting vector against |
 c     | the current Arnoldi basis using Gram-Schmidt with iter. ref.  |
@@ -324,11 +326,11 @@ c
       orth = .TRUE.
    30 continue
 c
-      call dgemv ('T', n, j-1, one, v, ldv, workd, 1, 
+      call dgemv ('T', n, j-1, one, v, ldv, workd, 1,
      &            zero, workd(n+1), 1)
-      call dgemv ('N', n, j-1, -one, v, ldv, workd(n+1), 1, 
+      call dgemv ('N', n, j-1, -one, v, ldv, workd(n+1), 1,
      &            one, resid, 1)
-c 
+c
 c     %----------------------------------------------------------%
 c     | Compute the B-norm of the orthogonalized starting vector |
 c     %----------------------------------------------------------%
@@ -344,14 +346,14 @@ c
       else if (bmat .eq. 'I') then
          call dcopy (n, resid, 1, workd, 1)
       end if
-c 
+c
    40 continue
 c
       if (bmat .eq. 'G') then
          call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
-c 
+c
       if (bmat .eq. 'G') then
          rnorm = ddot (n, resid, 1, workd, 1)
          rnorm = sqrt(abs(rnorm))
@@ -364,14 +366,14 @@ c     | Check for further orthogonalization. |
 c     %--------------------------------------%
 c
       if (msglvl .gt. 2) then
-          call dvout (logfil, 1, rnorm0, ndigit, 
+          call dvout (logfil, 1, [rnorm0], ndigit,
      &                '_getv0: re-orthonalization ; rnorm0 is')
-          call dvout (logfil, 1, rnorm, ndigit, 
+          call dvout (logfil, 1, [rnorm], ndigit,
      &                '_getv0: re-orthonalization ; rnorm is')
       end if
 c
       if (rnorm .gt. 0.717*rnorm0) go to 50
-c 
+c
       iter = iter + 1
       if (iter .le. 5) then
 c
@@ -393,11 +395,11 @@ c
          rnorm = zero
          ierr = -1
       end if
-c 
+c
    50 continue
 c
       if (msglvl .gt. 0) then
-         call dvout (logfil, 1, rnorm, ndigit,
+         call dvout (logfil, 1, [rnorm], ndigit,
      &        '_getv0: B-norm of initial / restarted starting vector')
       end if
       if (msglvl .gt. 3) then
@@ -405,10 +407,10 @@ c
      &        '_getv0: initial / restarted starting vector')
       end if
       ido = 99
-c 
+c
       call arscnd (t1)
       tgetv0 = tgetv0 + (t1 - t0)
-c 
+c
  9000 continue
       return
 c
