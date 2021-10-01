@@ -201,6 +201,16 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
+def test_failure():
+    """Check that the code exists gracefully without failing. Issue #10974.
+    """
+    X = np.random.randn(100, 10)
+    A = X @ X.T
+    Q = np.random.randn(X.shape[0], 4)
+    eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    assert(np.max(eigenvalues) > 0)
+
+
 def test_hermitian():
     """Check complex-value Hermitian cases.
     """
