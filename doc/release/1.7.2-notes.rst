@@ -12,13 +12,18 @@ version of OpenBLAS, 0.3.17.
 Authors
 =======
 
+* Isuru Fernando
 * Ralf Gommers
 * Matt Haberland
 * Nicholas McKibben
 * Judah Rand +
 * Tyler Reddy
+* Pamphile Roy
+* Charles Harris
+* Matti Picus
+* Hugo van Kemenade
 
-A total of 5 people contributed to this release.
+A total of 10 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -37,7 +42,9 @@ Pull requests for 1.7.2
 * `#14207 <https://github.com/scipy/scipy/pull/14207>`__: DOC: stats: remove 'Methods' section from \`binomtest\` docstring...
 * `#14316 <https://github.com/scipy/scipy/pull/14316>`__: MAINT: Update \`openblas_support.py\` to support Apple Silicon
 * `#14323 <https://github.com/scipy/scipy/pull/14323>`__: BUG: Speed up sparse compressed indexing with very many rows
+* `#14333 <https://github.com/scipy/scipy/pull/14333>`__: MAINT: Use /usr/bin/linux32 so that sysconfig.get_platform()...
 * `#14478 <https://github.com/scipy/scipy/pull/14478>`__: BUG: geometric_slerp t ndim guard
+* `#14605 <https://github.com/scipy/scipy/pull/14605>`__: MAINT: Skip some interpolative decomposition tests
 * `#14616 <https://github.com/scipy/scipy/pull/14616>`__: REL: update build dependency versions in pyproject.toml for 1.7.2
 * `#14618 <https://github.com/scipy/scipy/pull/14618>`__: FIX: raise RuntimeWarning when Boost evaluation_error is encountered
 * `#14672 <https://github.com/scipy/scipy/pull/14672>`__: BLD: add \`zip_safe=False\` to the \`setup()\` call

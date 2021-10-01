@@ -18,7 +18,7 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.15
+# the version of OpenBLAS used is currently 0.3.17
 # and should be updated to match scipy-wheels as appropriate
 variables:
     openblas_version: 0.3.17
