@@ -1448,7 +1448,7 @@ class TukeyHSDResult:
         if self._ci is None:
             self.confidence_interval()
         s = f"Tukey's HSD Pairwise Group Comparisons ({self._ci_cl*100:.1f}% Confidence Interval)\n"
-        s += f"Comparison  Statistic  p-value  Lower CI  Upper CI\n"
+        s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
         for i in range(self.pvalue.shape[0]):
             for j in range(self.pvalue.shape[0]):
                 if i != j:
