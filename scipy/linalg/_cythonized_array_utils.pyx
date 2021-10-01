@@ -22,10 +22,7 @@ ctypedef fused np_complex_numeric_t:
     cnp.complex64_t
     cnp.complex128_t
 
-
 __all__ = ['get_array_bandwidth', 'issymmetric', 'ishermitian']
-
-# %% ========================================== get_array_bandwidth
 
 
 @cython.embedsignature(True)
@@ -175,12 +172,9 @@ cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
     return lower_band, upper_band
 
 
-# %% ========================================== issymmetric, ishermitian
-
 @cython.embedsignature(True)
 def issymmetric(a, atol=None, rtol=None):
     """Check if a square 2D array is symmetric.
-
 
     Parameters
     ----------
@@ -361,12 +355,11 @@ def ishermitian(a, atol=None, rtol=None):
     >>> Ac = np.array([[1. + 1.j, 3.j], [3.j, 2.]])
     >>> ishermitian(Ac)  # not Hermitian but symmetric
     False
-    >>> Af = np.array([[0, 1 + 1j], [1+ (1+1e-12)*1j, 0]])
+    >>> Af = np.array([[0, 1 + 1j], [1 - (1+1e-12)*1j, 0]])
     >>> ishermitian(Af)
     False
     >>> ishermitian(Af, atol=5e-11)
     True
-
 
     """
     if a.ndim != 2:
