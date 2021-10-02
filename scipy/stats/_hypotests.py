@@ -1446,8 +1446,9 @@ class TukeyHSDResult:
         # recent call to `confidence_interval`. If it has not been called,
         # it will be called with the default CL of .95.
         if self._ci is None:
-            self.confidence_interval()
-        s = f"Tukey's HSD Pairwise Group Comparisons ({self._ci_cl*100:.1f}% Confidence Interval)\n"
+            self.confidence_interval(confidence_level=.95)
+        s = ("Tukey's HSD Pairwise Group Comparisons"
+             f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
         for i in range(self.pvalue.shape[0]):
             for j in range(self.pvalue.shape[0]):
@@ -1473,7 +1474,7 @@ class TukeyHSDResult:
             The object has attributes ``low`` and ``high`` that hold the
             lower and upper bounds of the confidence intervals for each
             comparison. The high and low values are accessible for each
-            comparison at index ``(i, j)`` between groups ``i`` and ``j``..
+            comparison at index ``(i, j)`` between groups ``i`` and ``j``.
 
         References
         ----------
