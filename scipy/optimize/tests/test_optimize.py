@@ -533,7 +533,7 @@ def test_maxfev_test():
 
     for imaxfev in [1, 10, 50]:
         for method in ['Powell']:  # TODO: extend to more methods
-            result = optimize.minimize(cost, np.random.rand(10),
+            result = optimize.minimize(cost, rng.random(10),
                                        method=method,
                                        options={'maxfev': imaxfev})
             assert result["nfev"] == imaxfev
