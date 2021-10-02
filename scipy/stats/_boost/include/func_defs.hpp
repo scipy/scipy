@@ -3,12 +3,35 @@
 
 #include <utility>
 #include <cmath>
+
 #include "boost/math/distributions.hpp"
+#include "boost/format.hpp"
 
 // Round up to achieve correct ppf(cdf) round-trips for discrete distributions
 typedef boost::math::policies::policy<
     boost::math::policies::discrete_quantile<
         boost::math::policies::integer_round_up > > Policy;
+
+// Run user_error function when evaluation_errors are encountered
+typedef boost::math::policies::policy<
+    boost::math::policies::evaluation_error<
+        boost::math::policies::user_error> > user_error_policy;
+BOOST_MATH_DECLARE_SPECIAL_FUNCTIONS(user_error_policy)
+
+// Raise a RuntimeWarning making users aware that something went wrong during
+// evaluation of the function, but return the best guess
+template <class RealType>
+RealType
+boost::math::policies::user_evaluation_error(const char* function, const char* message, const RealType& val) {
+    std::string msg("Error in function ");
+    msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
+    // "message" may have %1%, but arguments don't always contain all
+    // required information, so don't call boost::format for now
+    msg += message;
+    PyErr_WarnEx(NULL, msg.c_str(), 1);
+    return val;
+}
+
 
 template<template <typename, typename> class Dst, class RealType, class...Args>
 RealType

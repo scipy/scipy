@@ -582,6 +582,7 @@ def setup_package():
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         install_requires=[req_np],
         python_requires=req_py,
+        zip_safe=False,
     )
 
     if "--force" in sys.argv:
