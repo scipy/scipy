@@ -956,7 +956,8 @@ class TestNumericalInverseHermite:
 
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(StandardNormal(), tol='ekki')
+            stats.NumericalInverseHermite(StandardNormal(),
+                                          u_resolution='ekki')
 
         match = "`max_intervals' must be..."
         with pytest.raises(ValueError, match=match):
@@ -1080,7 +1081,7 @@ class TestNumericalInverseHermite:
             stats.NumericalInverseHermite(stats.beta(*shapes))
 
         # no error with coarser tol
-        stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-8)
+        stats.NumericalInverseHermite(stats.beta(*shapes), u_resolution=1e-8)
 
     def test_custom_distribution(self):
         dist1 = StandardNormal()
@@ -1138,10 +1139,14 @@ class TestNumericalInverseHermite:
         assert max_error < 1e-14
         assert mae <= max_error
 
-    def test_midpoint_error_deprecation(self):
-        msg = ("`midpoint_error` has been deprecated and will "
-               "be removed in v1.9.0.")
+    def test_deprecations(self):
+        msg = ("`midpoint_error` has been deprecated and will be removed in "
+               "a future release.")
         with pytest.warns(DeprecationWarning, match=msg):
             rng = NumericalInverseHermite(StandardNormal())
             midpoint_error = rng.midpoint_error
         assert np.isnan(midpoint_error)
+        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
+               "It will be completely removed in a future release.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            rng = NumericalInverseHermite(StandardNormal(), tol=1e-12)

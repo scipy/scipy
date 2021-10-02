@@ -1408,7 +1408,7 @@ cdef class NumericalInversePolynomial(Method):
 
 cdef class NumericalInverseHermite(Method):
     """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-10, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
 
     Hermite interpolation based INVersion of CDF (HINV).
 
@@ -1462,11 +1462,11 @@ cdef class NumericalInverseHermite(Method):
         and is therefore not recommended. If the maximal error in u-direction is very small
         (say smaller than 1.e-10), order 5 is recommended as it leads to considerably fewer
         design points, as long there are no poles or heavy tails.
-    u_resolution : float, default: ``1e-12``
+    u_resolution : float, default: ``1e-10``
         Set maximal tolerated u-error. Notice that the resolution of most uniform random
         number sources is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion
         algorithm that could be called exact. For most simulations slightly bigger values
-        for the maximal error are enough as well. Default is 1e-12.
+        for the maximal error are enough as well. Default is 1e-10.
     construction_points : array_like, optional
         Set starting construction points (nodes) for Hermite interpolation. As the possible
         maximal error is only estimated in the setup it may be necessary to set some
@@ -1665,7 +1665,7 @@ cdef class NumericalInverseHermite(Method):
                   *,
                   domain=None,
                   order=3,
-                  u_resolution=1e-12,
+                  u_resolution=1e-10,
                   tol=None,
                   construction_points=None,
                   max_intervals=100000,
@@ -1733,6 +1733,9 @@ cdef class NumericalInverseHermite(Method):
         if int(max_intervals) != max_intervals or max_intervals <= 1:
             raise ValueError("`max_intervals' must be an integer greater than 1.")
         if tol is not None:
+            warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
+                          "It will be completely removed in a future release.",
+                          DeprecationWarning)
             u_resolution = tol
         u_resolution = float(u_resolution)
         self.construction_points_array = np.ascontiguousarray(construction_points,
@@ -1939,7 +1942,8 @@ cdef class NumericalInverseHermite(Method):
 
     @property
     def midpoint_error(self):
-        msg = "`midpoint_error` has been deprecated and will be removed in v1.9.0."
+        msg = ("`midpoint_error` has been deprecated and will be removed in a future "
+               "release. Use `u_error` method instead to calculate the maximum u-error.")
         warnings.warn(msg, DeprecationWarning)
         return np.nan
 
