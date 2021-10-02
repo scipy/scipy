@@ -488,7 +488,7 @@ def _wrap_scalar_function_with_validation(function, args, maxfun):
 
     def function_wrapper(x, *wrapper_args):
         if ncalls[0] >= maxfun:
-            raise _MaxFuncCallError()
+            raise _MaxFuncCallError("Too many function calls")
         ncalls[0] += 1
         # A copy of x is sent to the user function (gh13740)
         fx = function(np.copy(x), *(wrapper_args + args))

@@ -528,6 +528,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
 def test_maxfev_test():
     rng = np.random.default_rng(271707100830272976862395227613146332411)
+
     def cost(x):
         return rng.random(1) * 1000  # never converged problem
 
