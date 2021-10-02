@@ -3028,6 +3028,84 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    @pytest.fixture
+    def nolan_pdf_sample_data(self):
+        """Sample data points for pdf computed with Nolan's stablec
+
+        See - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+        There's a known limitation of Nolan's executable for alpha < 0.2.
+
+        The data table loaded below is generated from Nolan's stablec
+        with the following parameter space:
+
+            alpha = 0.1, 0.2, ..., 2.0
+            beta = -1.0, -0.9, ..., 1.0
+            p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+        and the equivalent for the right tail
+
+        Typically inputs for stablec:
+
+            stablec.exe <<
+            1 # pdf
+            1 # Nolan S equivalent to S0 in scipy
+            .25,2,.25 # alpha
+            -1,-1,0 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-pdf-sample-data.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        return data
+
+    @pytest.fixture
+    def nolan_cdf_sample_data(self):
+        """Sample data points for cdf computed with Nolan's stablec
+
+        See - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+        There's a known limitation of Nolan's executable for alpha < 0.2.
+
+        The data table loaded below is generated from Nolan's stablec
+        with the following parameter space:
+
+            alpha = 0.1, 0.2, ..., 2.0
+            beta = -1.0, -0.9, ..., 1.0
+            p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+
+        and the equivalent for the right tail
+
+        Ideally, Nolan's output for CDF values should match the percentile
+        from where they have been sampled from. Even more so as we extract
+        percentile x positions from stablec too. However, we note at places
+        Nolan's stablec will produce absolute errors in order of 1e-5. We
+        compare against his calculations here. In future, once we less
+        reliant on Nolan's paper we might switch to comparing directly at
+        percentiles (those x values being produced from some alternative
+        means).
+
+        Typically inputs for stablec:
+
+            stablec.exe <<
+            2 # cdf
+            1 # Nolan S equivalent to S0 in scipy
+            .25,2,.25 # alpha
+            -1,-1,0 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-cdf-sample-data.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        return data
+
     @pytest.mark.parametrize(
         "sample_size", [
             pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
@@ -3095,38 +3173,9 @@ class TestLevyStable:
         assert_almost_equal(loc2, .03354, 4)
 
     @pytest.mark.slow
-    def test_pdf_nolan_samples(self):
-        """ Test pdf values against Nolan's stablec.exe output
-            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
-
-            There's a known limitation of Nolan's executable for alpha < 0.2.
-
-            The data table loaded below is generated from Nolan's stablec
-            with the following parameter space:
-
-                alpha = 0.1, 0.2, ..., 2.0
-                beta = -1.0, -0.9, ..., 1.0
-                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
-                    and the equivalent for the right tail
-
-            Typically inputs for stablec:
-
-                stablec.exe <<
-                1 # pdf
-                1 # Nolan S equivalent to S0 in scipy
-                .25,2,.25 # alpha
-                -1,-1,0 # beta
-                -10,10,1 # x
-                1,0 # gamma, delta
-                2 # output file
-        """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-Z1-pdf-sample-data.npy'
-        )
-
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
-
+    def test_pdf_nolan_samples(self, nolan_pdf_sample_data):
+        """Test pdf values against Nolan's stablec.exe output"""
+        data = nolan_pdf_sample_data
         # support numpy 1.8.2 for travis
         npisin = np.isin if hasattr(np, "isin") else np.in1d
 
@@ -3237,47 +3286,11 @@ class TestLevyStable:
                 )
 
     @pytest.mark.slow
-    def test_cdf_nolan_samples(self):
+    def test_cdf_nolan_samples(self, nolan_cdf_sample_data):
         """ Test cdf values against Nolan's stablec.exe output
-            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
 
-            There's a known limitation of Nolan's executable for alpha < 0.2.
-
-            The data table loaded below is generated from Nolan's stablec
-            with the following parameter space:
-
-                alpha = 0.1, 0.2, ..., 2.0
-                beta = -1.0, -0.9, ..., 1.0
-                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
-                    and the equivalent for the right tail
-
-            Ideally, Nolan's output for CDF values should match the percentile
-            from where they have been sampled from. Even more so as we extract
-            percentile x positions from stablec too. However, we note at places
-            Nolan's stablec will produce absolute errors in order of 1e-5. We
-            compare against his calculations here. In future, once we less
-            reliant on Nolan's paper we might switch to comparing directly at
-            percentiles (those x values being produced from some alternative
-            means).
-
-            Typically inputs for stablec:
-
-                stablec.exe <<
-                2 # cdf
-                1 # Nolan S equivalent to S0 in scipy
-                .25,2,.25 # alpha
-                -1,-1,0 # beta
-                -10,10,1 # x
-                1,0 # gamma, delta
-                2 # output file
         """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-Z1-cdf-sample-data.npy'
-        )
-
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
-
+        data = nolan_cdf_sample_data
         tests = [
             # piecewise generally good accuracy
             ['piecewise', 1e-12, lambda r: ~(
