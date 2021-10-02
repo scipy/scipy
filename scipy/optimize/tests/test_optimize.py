@@ -527,8 +527,9 @@ class CheckOptimizeParameterized(CheckOptimize):
 
 
 def test_maxfev_test():
+    rng = np.random.default_rng(271707100830272976862395227613146332411)
     def cost(x):
-        return np.random.rand(1) * 1000  # never converged problem
+        return rng.random(1) * 1000  # never converged problem
 
     for imaxfev in [1, 10, 50]:
         for method in ['Powell']:  # TODO: extend to more methods
