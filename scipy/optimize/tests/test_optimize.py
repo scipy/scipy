@@ -552,7 +552,8 @@ def test_wrap_scalar_function_with_validation():
         func(np.asarray(i))
         assert fcalls[0] == i+1
 
-    with assert_raises(optimize.optimize._MaxFuncCallError):
+    msg = "Too many function calls"
+    with assert_raises(optimize.optimize._MaxFuncCallError, match=msg):
         func(np.asarray(i))  # exceeded maximum function call
 
 
