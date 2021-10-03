@@ -3190,11 +3190,13 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                 temp = fx - fx2
                 t -= delta*temp*temp
                 if t < 0.0:
-                    fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                         tol=xtol * 100,
-                                                         lower_bound=lower_bound,
-                                                         upper_bound=upper_bound,
-                                                         fval=fval)
+                    fval, x, direc1 = _linesearch_powell(
+                        func, x, direc1,
+                        tol=xtol * 100,
+                        lower_bound=lower_bound,
+                        upper_bound=upper_bound,
+                        fval=fval
+                    )
                     if np.any(direc1):
                         direc[bigind] = direc[-1]
                         direc[-1] = direc1
