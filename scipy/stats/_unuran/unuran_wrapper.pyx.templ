@@ -1702,41 +1702,40 @@ cdef class NaiveRatioUniforms(Method):
     Notes
     -----
 
-    If ``r==1``, the method works as follows: for a given `pdf` and a constant
+    If ``r==1``, the method works as follows: for a given pdf and a constant
     `center`, define the set
     ``A = {(u, v) : 0 < v <= sqrt(pdf(u/v + center))}``.
-    If `(U, V)` is a random vector uniformly distributed over `A`,
-    then `U/V + center` follows a distribution according to `pdf`.
+    If (U, V) is a random vector uniformly distributed over A,
+    then ``U/V + center`` follows a distribution according to ``dist.pdf``.
 
-    Typical choices of `center` are zero or the mode of `pdf`. The set `A` is a
+    Typical choices of `center` are zero or the mode of pdf. The set A is a
     subset of the rectangle ``R = [u_min, u_max] x [0, v_max]`` where
 
     - ``v_max = sup_x sqrt(pdf(x))``
     - ``u_min = inf_x (x - center) sqrt(pdf(x))``
     - ``u_max = sup_x (x - center) sqrt(pdf(x))``
 
-    In particular, these values are finite if `pdf` is bounded and
+    In particular, these values are finite if the pdf is bounded and
     ``x**2 * pdf(x)`` is bounded (i.e. subquadratic tails).
-    One can generate `(U, V)` uniformly on `R` and return
-    `U/V + center` if `(U, V)` are also in `A` which can be directly
+    One can generate (U, V) uniformly on R and return
+    ``U/V + center`` if (U, V) are also in A which can be directly
     verified.
 
-    The algorithm is not changed if one replaces `pdf` by k * `pdf` for any
-    constant k > 0. Thus, it is often convenient to work with a function
-    that is proportional to the probability density function by dropping
+    The algorithm is not changed if one replaces the pdf by a function
+    that is proportional to it, e.g., by dropping
     unneccessary normalization factors.
 
-    Intuitively, the method works well if `A` fills up most of the
-    enclosing rectangle such that the probability is high that `(U, V)`
-    lies in `A` whenever it lies in `R` as the number of required
+    Intuitively, the method works well if A fills up most of the
+    enclosing rectangle such that the probability is high that (U, V)
+    lies in A whenever it lies in R as the number of required
     iterations becomes too large otherwise. To be more precise, note that
-    the expected number of iterations to draw `(U, V)` uniformly
-    distributed on `R` such that `(U, V)` is also in `A` is given by
+    the expected number of iterations to draw (U, V) uniformly
+    distributed on R such that (U, V) is also in A is given by
     the ratio ``area(R) / area(A) = 2 * v_max * (u_max - u_min) / area(pdf)``,
-    where `area(pdf)` is the integral of `pdf` (which is equal to one if the
-    probability density function is used but can take on other values if a
-    function proportional to the density is used). The equality holds since
-    the area of `A` is equal to 0.5 * area(pdf) (Theorem 7.1 in [4]_).
+    where ``area(pdf)`` is the integral of the pdf (which is equal to one if
+    the true pdf is used but can take on other values if a
+    function proportional to the true pdf is used). The equality holds since
+    the area of A is equal to ``0.5 * area(pdf)`` (Theorem 7.1 in [4]_).
 
     In the general case, the acceptance region is defined as
     ``A = {(u, v) : 0 < v <= (pdf(u/v**r + center))**(1/(r+1))}`` and the
