@@ -540,6 +540,22 @@ def test_maxfev_test():
             assert result["nfev"] == imaxfev
 
 
+def test_wrap_scalar_function_with_validation():
+
+    def func(x):
+        return x
+
+    fcalls, func = optimize.optimize.\
+        _wrap_scalar_function_with_validation(func, np.asarray(1), 5)
+
+    for i in range(5):
+        func(np.asarray(i))
+        assert fcalls[0] == i+1
+
+    with assert_raises(optimize.optimize._MaxFuncCallError):
+        func(np.asarray(i))  # exceeded maximum function call
+
+
 def test_obj_func_returns_scalar():
     match = ("The user-provided "
              "objective function must "

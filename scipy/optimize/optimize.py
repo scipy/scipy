@@ -493,7 +493,8 @@ def _wrap_scalar_function_with_validation(function, args, maxfun):
         # A copy of x is sent to the user function (gh13740)
         fx = function(np.copy(x), *(wrapper_args + args))
         # Ideally, we'd like to a have a true scalar returned from f(x). For
-        # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+        # backwards-compatibility, also allow np.array([1.3]),
+        # np.array([[1.3]]) etc.
         if not np.isscalar(fx):
             try:
                 fx = np.asarray(fx).item()
