@@ -3332,37 +3332,86 @@ class TestLevyStable:
                     verbose=False
                 )
 
-    @pytest.mark.slow
-    def test_cdf_nolan_samples(self, nolan_cdf_sample_data):
+    @pytest.mark.parametrize(
+        "pct_range,alpha_range,beta_range", [
+            pytest.param(
+                [.01, .5, .99],
+                [.1, 1, 2],
+                [-1, 0, .8],
+            ),
+            pytest.param(
+                [.01, .05, .5, .95, .99],
+                [.1, .5, 1, 1.5, 2],
+                [-.9, -.5, 0, .3, .6, 1],
+                marks=pytest.mark.slow
+            ),
+            pytest.param(
+                [.01, .05, .1, .25, .35, .5, .65, .75, .9, .95, .99],
+                np.linspace(0.1, 2, 20),
+                np.linspace(-1, 1, 21),
+                marks=pytest.mark.xslow,
+            ),
+        ]
+    )
+    def test_cdf_nolan_samples(
+            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
+    ):
         """ Test cdf values against Nolan's stablec.exe output
 
         """
         data = nolan_cdf_sample_data
         tests = [
             # piecewise generally good accuracy
-            ['piecewise', 1e-12, lambda r: ~(
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
-                    & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
-                    & (r['pct'] == 0.99))
+            ['piecewise', 1e-12, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
+                ~(
+                    ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
+                     & (r['pct'] == 0.01))
+                    | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
+                       & (r['pct'] == 0.99))
+                )
             )],
             # for some points with alpha=1, Nolan's STABLE clearly
             # loses accuracy
             ['piecewise', 5e-2, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
                 ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
                     & (r['pct'] == 0.01))
                 | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
                     & (r['pct'] == 0.99))
             )],
-
             # fft accuracy poor, very poor alpha < 1
-            ['fft-simpson', 1e-5, lambda r: r['alpha'] > 1.7],
-            ['fft-simpson', 1e-4, lambda r: (r['alpha'] > 1.5)
-                & (r['alpha'] <= 1.7)],
-            ['fft-simpson', 1e-3, lambda r: (r['alpha'] > 1.3)
-                & (r['alpha'] <= 1.5)],
-            ['fft-simpson', 1e-2, lambda r: (r['alpha'] > 1.0)
-                & (r['alpha'] <= 1.3)],
+            ['fft-simpson', 1e-5, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
+                (r['alpha'] > 1.7)
+            )],
+            ['fft-simpson', 1e-4, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
+                (r['alpha'] > 1.5) &
+                (r['alpha'] <= 1.7)
+            )],
+            ['fft-simpson', 1e-3, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
+                (r['alpha'] > 1.3) &
+                (r['alpha'] <= 1.5)
+            )],
+            ['fft-simpson', 1e-2, lambda r: (
+                np.isin(r['pct'], pct_range) &
+                np.isin(r['alpha'], alpha_range) &
+                np.isin(r['beta'], beta_range) &
+                (r['alpha'] > 1.0) &
+                (r['alpha'] <= 1.3)
+            )],
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
