@@ -3281,7 +3281,7 @@ class TestLevyStable:
                             np.isin(np.abs(r['beta']), [-.1, .1])
                         ) |
                         # various points ok but too sparse to list
-                        (r['alpha'] >= 1.1),
+                        (r['alpha'] >= 1.1)
                     )
                 )
             ],
