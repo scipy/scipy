@@ -542,11 +542,11 @@ def test_maxfev_test():
 
 def test_wrap_scalar_function_with_validation():
 
-    def func(x):
+    def func_(x):
         return x
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func, np.asarray(1), 5)
+        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
         func(np.asarray(i))
@@ -555,6 +555,13 @@ def test_wrap_scalar_function_with_validation():
     msg = "Too many function calls"
     with assert_raises(optimize.optimize._MaxFuncCallError, match=msg):
         func(np.asarray(i))  # exceeded maximum function call
+
+    fcalls, func = optimize.optimize.\
+        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+
+    msg = "The user-provided objective function must return a scalar value."
+    with assert_raises(ValueError, match=msg):
+        func(np.array([1, 1]))
 
 
 def test_obj_func_returns_scalar():
