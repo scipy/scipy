@@ -3107,6 +3107,21 @@ class TestLevyStable:
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
         return data
 
+    @pytest.fixture
+    def nolan_loc_scale_sample_data(self):
+        """Sample data where loc, scale are different from 0, 1
+
+        Data extracted in similar way to pdf/cdf above using
+        Nolan's stablec but set to an arbitrary location scale of
+        (2, 3) for various important parameters alpha, beta and for
+        parameterisations S0 and S1.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-loc-scale-sample-data.npy'
+        )
+        return data
+
     @pytest.mark.parametrize(
         "sample_size", [
             pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
@@ -3527,17 +3542,10 @@ class TestLevyStable:
                     verbose=False
                 )
 
-    def test_location_scale(self):
-        """Data extracted in similar way to pdf/cdf above using
-        Nolan's stablec but set to an arbitrary location scale of
-        (2, 3) for various important parameters alpha, beta and for
-        parameterisations S0 and S1.
+    def test_location_scale(self, nolan_loc_scale_sample_data):
+        """Tests for pdf and cdf where loc, scale are different from 0, 1
         """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-loc-scale-sample-data.npy'
-        )
-
+        data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
         # are same for other methods.
         stats.levy_stable.cdf_default_method = "piecewise"
@@ -3615,7 +3623,6 @@ class TestLevyStable:
                 args[0], args[1], loc=args[2], scale=args[3], moments='mvsk'
             )
             assert_almost_equal(calc_stats, exp_stats)
-
 
     @pytest.mark.parametrize('alpha', [0.25, 0.5, 0.75])
     def test_distribution_outside_support(self, alpha):
