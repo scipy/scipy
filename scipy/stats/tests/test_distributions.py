@@ -9,6 +9,7 @@ import platform
 from pathlib import Path
 import os
 import json
+import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -3172,8 +3173,30 @@ class TestLevyStable:
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
 
-    @pytest.mark.slow
-    def test_pdf_nolan_samples(self, nolan_pdf_sample_data):
+    @pytest.mark.parametrize(
+        "pct_range,alpha_range,beta_range", [
+            pytest.param(
+                [.01, .5, .99],
+                [.1, 1, 2],
+                [-1, 0, .8],
+            ),
+            pytest.param(
+                [.01, .05, .5, .95, .99],
+                [.1, .5, 1, 1.5, 2],
+                [-.9, -.5, 0, .3, .6, 1],
+                marks=pytest.mark.slow
+            ),
+            pytest.param(
+                [.01, .05, .1, .25, .35, .5, .65, .75, .9, .95, .99],
+                np.linspace(0.1, 2, 20),
+                np.linspace(-1, 1, 21),
+                marks=pytest.mark.xslow,
+            ),
+        ]
+    )
+    def test_pdf_nolan_samples(
+            self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
+    ):
         """Test pdf values against Nolan's stablec.exe output"""
         data = nolan_pdf_sample_data
         # support numpy 1.8.2 for travis
@@ -3189,53 +3212,77 @@ class TestLevyStable:
         tests = [
             # TODO: reduce range of pct to speed up computation as
             # numerical integration slow, eg [.01, .05, .5, .95, .99]
-            ['dni', 1e-7, lambda r: ~(
-                ((r['beta'] == 0) & (r['pct'] == 0.5))
-                | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6)
-                    & (r['pct'] == 0.5))
-                | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
-                | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
-                | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75])
-                    & npisin(np.abs(r['beta']), [.5, .6, .7]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
-                    & npisin(np.abs(r['beta']), [.1]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.35, .65])
-                    & npisin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5]))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
-                    & (r['pct'] == 0.25))
-                | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
-                    & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.3)
-                    & (r['pct'] == 0.35))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.5])
-                    & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
-                    & npisin(np.abs(r['beta']), [.8, .9, 1.]))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.01, .99])
-                    & npisin(np.abs(r['beta']), [-.1, .1]))
-                # various points ok but too sparse to list
-                | ((r['alpha'] >= 1.1))
+            ['dni', 1e-7, lambda r: (
+                npisin(r['pct'], pct_range) &
+                npisin(r['alpha'], alpha_range) &
+                npisin(r['beta'], beta_range) &
+                ~(
+                    ((r['beta'] == 0) & (r['pct'] == 0.5))
+                    | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6)
+                       & (r['pct'] == 0.5))
+                    | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
+                    | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
+                    | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
+                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75])
+                       & npisin(np.abs(r['beta']), [.5, .6, .7]))
+                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
+                       & npisin(np.abs(r['beta']), [.1]))
+                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.35, .65])
+                       & npisin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5]))
+                    | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
+                       & (r['pct'] == 0.25))
+                    | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
+                       & (r['pct'] == 0.65))
+                    | ((r['alpha'] == 0.2) & (r['beta'] == 0.3)
+                       & (r['pct'] == 0.35))
+                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.5])
+                       & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
+                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
+                       & npisin(np.abs(r['beta']), [.8, .9, 1.]))
+                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.01, .99])
+                       & npisin(np.abs(r['beta']), [-.1, .1]))
+                    # various points ok but too sparse to list
+                    | ((r['alpha'] >= 1.1))
+                )
             )],
-
             # piecewise generally good accuracy
             ['piecewise', 1e-11, lambda r: (
+                npisin(r['pct'], pct_range) &
+                npisin(r['alpha'], alpha_range) &
+                npisin(r['beta'], beta_range) &
                 (r['alpha'] > 0.2) & (r['alpha'] != 1.)
             )],
             # for alpha = 1. for linux 32 bit optimize.bisect
             # has some issues for .01 and .99 percentile
             ['piecewise', 1e-11, lambda r: (
-                (r['alpha'] == 1.) & (not is_linux_32)
+                (r['alpha'] == 1.) & (not is_linux_32) &
+                npisin(r['pct'], pct_range) &
+                (1.0 in alpha_range) &
+                npisin(r['beta'], beta_range)
             )],
             # for small alpha very slightly reduced accuracy
             ['piecewise', 5e-11, lambda r: (
+                npisin(r['pct'], pct_range) &
+                npisin(r['alpha'], alpha_range) &
+                npisin(r['beta'], beta_range) &
                 (r['alpha'] <= 0.2)
             )],
-
             # fft accuracy reduces as alpha decreases
-            ['fft-simpson', 1e-5, lambda r: r['alpha'] >= 1.9],
-            ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1)
-                & (r['alpha'] < 1.9)],
+            ['fft-simpson', 1e-5, lambda r: (
+                (r['alpha'] >= 1.9) &
+                npisin(r['pct'], pct_range) &
+                npisin(r['alpha'], alpha_range) &
+                npisin(r['beta'], beta_range)
+            ),
+            ],
+            ['fft-simpson', 1e-6, lambda r: (
+                npisin(r['pct'], pct_range) &
+                npisin(r['alpha'], alpha_range) &
+                npisin(r['beta'], beta_range) &
+                (r['alpha'] > 1) &
+                (r['alpha'] < 1.9)
+            )
+            ],
             # fft relative errors for alpha < 1, will raise if enabled
             # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
             # ['fft-simpson', 1e-3, lambda r: r['alpha'] == 0.8],
