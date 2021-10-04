@@ -3199,8 +3199,6 @@ class TestLevyStable:
     ):
         """Test pdf values against Nolan's stablec.exe output"""
         data = nolan_pdf_sample_data
-        # support numpy 1.8.2 for travis
-        npisin = np.isin if hasattr(np, "isin") else np.in1d
 
         # some tests break on linux 32 bit
         uname = platform.uname()
@@ -3210,78 +3208,130 @@ class TestLevyStable:
 
         # fmt: off
         tests = [
-            # TODO: reduce range of pct to speed up computation as
-            # numerical integration slow, eg [.01, .05, .5, .95, .99]
-            ['dni', 1e-7, lambda r: (
-                npisin(r['pct'], pct_range) &
-                npisin(r['alpha'], alpha_range) &
-                npisin(r['beta'], beta_range) &
-                ~(
-                    ((r['beta'] == 0) & (r['pct'] == 0.5))
-                    | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6)
-                       & (r['pct'] == 0.5))
-                    | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
-                    | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
-                    | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
-                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75])
-                       & npisin(np.abs(r['beta']), [.5, .6, .7]))
-                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
-                       & npisin(np.abs(r['beta']), [.1]))
-                    | ((r['alpha'] == 0.1) & npisin(r['pct'], [.35, .65])
-                       & npisin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5]))
-                    | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
-                       & (r['pct'] == 0.25))
-                    | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
-                       & (r['pct'] == 0.65))
-                    | ((r['alpha'] == 0.2) & (r['beta'] == 0.3)
-                       & (r['pct'] == 0.35))
-                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.5])
-                       & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
-                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
-                       & npisin(np.abs(r['beta']), [.8, .9, 1.]))
-                    | ((r['alpha'] == 1.) & npisin(r['pct'], [.01, .99])
-                       & npisin(np.abs(r['beta']), [-.1, .1]))
-                    # various points ok but too sparse to list
-                    | ((r['alpha'] >= 1.1))
+            [
+                'dni', 1e-7, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    ~(
+                        (
+                            (r['beta'] == 0) &
+                            (r['pct'] == 0.5)
+                        ) |
+                        (
+                            (r['beta'] >= 0.9) &
+                            (r['alpha'] >= 1.6) &
+                            (r['pct'] == 0.5)
+                        ) |
+                        (
+                            (r['alpha'] <= 0.4) &
+                            np.isin(r['pct'], [.01, .99])
+                        ) |
+                        (
+                            (r['alpha'] <= 0.3) &
+                            np.isin(r['pct'], [.05, .95])
+                        ) |
+                        (
+                            (r['alpha'] <= 0.2) &
+                            np.isin(r['pct'], [.1, .9])
+                        ) | 
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.25, .75]) &
+                            np.isin(np.abs(r['beta']), [.5, .6, .7])
+                        ) |
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.5]) &
+                            np.isin(np.abs(r['beta']), [.1])
+                        ) |
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.35, .65]) &
+                            np.isin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5])
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == 0.5) &
+                            (r['pct'] == 0.25)
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == -0.3) &
+                            (r['pct'] == 0.65)
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == 0.3) &
+                            (r['pct'] == 0.35)
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.5]) &
+                            np.isin(np.abs(r['beta']), [.1, .2, .3, .4])
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.35, .65]) &
+                            np.isin(np.abs(r['beta']), [.8, .9, 1.])
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.01, .99]) &
+                            np.isin(np.abs(r['beta']), [-.1, .1])
+                        ) |
+                        # various points ok but too sparse to list
+                        (r['alpha'] >= 1.1),
+                    )
                 )
-            )],
+            ],
             # piecewise generally good accuracy
-            ['piecewise', 1e-11, lambda r: (
-                npisin(r['pct'], pct_range) &
-                npisin(r['alpha'], alpha_range) &
-                npisin(r['beta'], beta_range) &
-                (r['alpha'] > 0.2) & (r['alpha'] != 1.)
-            )],
+            [
+                'piecewise', 1e-11, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 0.2) &
+                    (r['alpha'] != 1.)
+                )
+            ],
             # for alpha = 1. for linux 32 bit optimize.bisect
             # has some issues for .01 and .99 percentile
-            ['piecewise', 1e-11, lambda r: (
-                (r['alpha'] == 1.) & (not is_linux_32) &
-                npisin(r['pct'], pct_range) &
-                (1.0 in alpha_range) &
-                npisin(r['beta'], beta_range)
-            )],
-            # for small alpha very slightly reduced accuracy
-            ['piecewise', 5e-11, lambda r: (
-                npisin(r['pct'], pct_range) &
-                npisin(r['alpha'], alpha_range) &
-                npisin(r['beta'], beta_range) &
-                (r['alpha'] <= 0.2)
-            )],
-            # fft accuracy reduces as alpha decreases
-            ['fft-simpson', 1e-5, lambda r: (
-                (r['alpha'] >= 1.9) &
-                npisin(r['pct'], pct_range) &
-                npisin(r['alpha'], alpha_range) &
-                npisin(r['beta'], beta_range)
-            ),
+            [
+                'piecewise', 1e-11, lambda r: (
+                    (r['alpha'] == 1.) &
+                    (not is_linux_32) &
+                    np.isin(r['pct'], pct_range) &
+                    (1. in alpha_range) &
+                    np.isin(r['beta'], beta_range)
+                )
             ],
-            ['fft-simpson', 1e-6, lambda r: (
-                npisin(r['pct'], pct_range) &
-                npisin(r['alpha'], alpha_range) &
-                npisin(r['beta'], beta_range) &
-                (r['alpha'] > 1) &
-                (r['alpha'] < 1.9)
-            )
+            # for small alpha very slightly reduced accuracy
+            [
+                'piecewise', 5e-11, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] <= 0.2)
+                )
+            ],
+            # fft accuracy reduces as alpha decreases
+            [
+                'fft-simpson', 1e-5, lambda r: (
+                    (r['alpha'] >= 1.9) &
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range)
+                ),
+            ],
+            [
+                'fft-simpson', 1e-6, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1) &
+                    (r['alpha'] < 1.9)
+                )
             ],
             # fft relative errors for alpha < 1, will raise if enabled
             # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
@@ -3362,56 +3412,80 @@ class TestLevyStable:
         data = nolan_cdf_sample_data
         tests = [
             # piecewise generally good accuracy
-            ['piecewise', 1e-12, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                ~(
-                    ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
-                     & (r['pct'] == 0.01))
-                    | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
-                       & (r['pct'] == 0.99))
+            [
+                'piecewise', 1e-12, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    ~(
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['beta'], [-0.3, -0.2, -0.1]) &
+                            (r['pct'] == 0.01)
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['beta'], [0.1, 0.2, 0.3]) &
+                            (r['pct'] == 0.99)
+                        )
+                    )
                 )
-            )],
+            ],
             # for some points with alpha=1, Nolan's STABLE clearly
             # loses accuracy
-            ['piecewise', 5e-2, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
-                    & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
-                    & (r['pct'] == 0.99))
-            )],
+            [
+                'piecewise', 5e-2, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (
+                        (r['alpha'] == 1.) &
+                        np.isin(r['beta'], [-0.3, -0.2, -0.1]) &
+                        (r['pct'] == 0.01)
+                    ) |
+                    (
+                        (r['alpha'] == 1.) &
+                        np.isin(r['beta'], [0.1, 0.2, 0.3]) &
+                        (r['pct'] == 0.99)
+                    )
+                )
+            ],
             # fft accuracy poor, very poor alpha < 1
-            ['fft-simpson', 1e-5, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                (r['alpha'] > 1.7)
-            )],
-            ['fft-simpson', 1e-4, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                (r['alpha'] > 1.5) &
-                (r['alpha'] <= 1.7)
-            )],
-            ['fft-simpson', 1e-3, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                (r['alpha'] > 1.3) &
-                (r['alpha'] <= 1.5)
-            )],
-            ['fft-simpson', 1e-2, lambda r: (
-                np.isin(r['pct'], pct_range) &
-                np.isin(r['alpha'], alpha_range) &
-                np.isin(r['beta'], beta_range) &
-                (r['alpha'] > 1.0) &
-                (r['alpha'] <= 1.3)
-            )],
+            [
+                'fft-simpson', 1e-5, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.7)
+                )
+            ],
+            [
+                'fft-simpson', 1e-4, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.5) &
+                    (r['alpha'] <= 1.7)
+                )
+            ],
+            [
+                'fft-simpson', 1e-3, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.3) &
+                    (r['alpha'] <= 1.5)
+                )
+            ],
+            [
+                'fft-simpson', 1e-2, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.0) &
+                    (r['alpha'] <= 1.3)
+                )
+            ],
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
