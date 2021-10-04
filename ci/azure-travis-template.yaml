@@ -66,7 +66,7 @@ steps:
     pip install --upgrade ${{parameters.numpy_spec}} &&
     pip install --upgrade pip==20.2.4 setuptools wheel &&
     pip install ${{parameters.other_spec}}
-    cython
+    "cython<3.0a5"
     gmpy2
     mpmath
     pythran
