@@ -475,6 +475,37 @@ def _wrap_scalar_function(function, args):
     return ncalls, function_wrapper
 
 
+class _MaxFuncCallError(RuntimeError):
+    pass
+
+
+def _wrap_scalar_function_with_validation(function, args, maxfun):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    ncalls = [0]
+    if function is None:
+        return ncalls, None
+
+    def function_wrapper(x, *wrapper_args):
+        if ncalls[0] >= maxfun:
+            raise _MaxFuncCallError("Too many function calls")
+        ncalls[0] += 1
+        # A copy of x is sent to the user function (gh13740)
+        fx = function(np.copy(x), *(wrapper_args + args))
+        # Ideally, we'd like to a have a true scalar returned from f(x). For
+        # backwards-compatibility, also allow np.array([1.3]),
+        # np.array([[1.3]]) etc.
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError("The user-provided objective function "
+                                 "must return a scalar value.") from e
+        return fx
+
+    return ncalls, function_wrapper
+
+
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
     """
@@ -3062,9 +3093,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
-    # we need to use a mutable object here that we can update in the
-    # wrapper function
-    fcalls, func = _wrap_scalar_function(func, args)
+
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
@@ -3085,6 +3114,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             maxfun = N * 1000
         else:
             maxfun = np.inf
+
+    # we need to use a mutable object here that we can update in the
+    # wrapper function
+    fcalls, func = _wrap_scalar_function_with_validation(func, args, maxfun)
 
     if direc is None:
         direc = eye(N, dtype=float)
@@ -3113,57 +3146,62 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     iter = 0
     ilist = list(range(N))
     while True:
-        fx = fval
-        bigind = 0
-        delta = 0.0
-        for i in ilist:
-            direc1 = direc[i]
-            fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                 tol=xtol * 100,
-                                                 lower_bound=lower_bound,
-                                                 upper_bound=upper_bound,
-                                                 fval=fval)
-            if (fx2 - fval) > delta:
-                delta = fx2 - fval
-                bigind = i
-        iter += 1
-        if callback is not None:
-            callback(x)
-        if retall:
-            allvecs.append(x)
-        bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
-        if 2.0 * (fx - fval) <= bnd:
-            break
-        if fcalls[0] >= maxfun:
-            break
-        if iter >= maxiter:
-            break
-        if np.isnan(fx) and np.isnan(fval):
-            # Ended up in a nan-region: bail out
-            break
-
-        # Construct the extrapolated point
-        direc1 = x - x1
-        x2 = 2*x - x1
-        x1 = x.copy()
-        fx2 = squeeze(func(x2))
-
-        if (fx > fx2):
-            t = 2.0*(fx + fx2 - 2.0*fval)
-            temp = (fx - fval - delta)
-            t *= temp*temp
-            temp = fx - fx2
-            t -= delta*temp*temp
-            if t < 0.0:
+        try:
+            fx = fval
+            bigind = 0
+            delta = 0.0
+            for i in ilist:
+                direc1 = direc[i]
+                fx2 = fval
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
                                                      tol=xtol * 100,
                                                      lower_bound=lower_bound,
                                                      upper_bound=upper_bound,
                                                      fval=fval)
-                if np.any(direc1):
-                    direc[bigind] = direc[-1]
-                    direc[-1] = direc1
+                if (fx2 - fval) > delta:
+                    delta = fx2 - fval
+                    bigind = i
+            iter += 1
+            if callback is not None:
+                callback(x)
+            if retall:
+                allvecs.append(x)
+            bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
+            if 2.0 * (fx - fval) <= bnd:
+                break
+            if fcalls[0] >= maxfun:
+                break
+            if iter >= maxiter:
+                break
+            if np.isnan(fx) and np.isnan(fval):
+                # Ended up in a nan-region: bail out
+                break
+
+            # Construct the extrapolated point
+            direc1 = x - x1
+            x2 = 2*x - x1
+            x1 = x.copy()
+            fx2 = squeeze(func(x2))
+
+            if (fx > fx2):
+                t = 2.0*(fx + fx2 - 2.0*fval)
+                temp = (fx - fval - delta)
+                t *= temp*temp
+                temp = fx - fx2
+                t -= delta*temp*temp
+                if t < 0.0:
+                    fval, x, direc1 = _linesearch_powell(
+                        func, x, direc1,
+                        tol=xtol * 100,
+                        lower_bound=lower_bound,
+                        upper_bound=upper_bound,
+                        fval=fval
+                    )
+                    if np.any(direc1):
+                        direc[bigind] = direc[-1]
+                        direc[-1] = direc1
+        except _MaxFuncCallError:
+            break
 
     warnflag = 0
     # out of bounds is more urgent than exceeding function evals or iters,
