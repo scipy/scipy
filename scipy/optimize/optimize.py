@@ -865,6 +865,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                                 sim[j] = np.clip(
                                     sim[j], lower_bound, upper_bound)
                             fsim[j] = func(sim[j])
+            iterations += 1
         except _MaxFuncCallError:
             pass
         finally:
@@ -873,7 +874,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fsim = np.take(fsim, ind, 0)
             if callback is not None:
                 callback(sim[0])
-            iterations += 1
             if retall:
                 allvecs.append(sim[0])
 
