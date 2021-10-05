@@ -5,6 +5,7 @@
 #include "dia.h"
 #include "csgraph.h"
 #include "coo.h"
+#include "csr.h"
 
 extern "C" {
 #include "other_impl.h"

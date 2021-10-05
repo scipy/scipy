@@ -113,8 +113,9 @@ csr_has_sorted_indices    i iII
 csr_has_canonical_format  i iII
 """
 
-# coo.h, dia.h, csgraph.h
+# csr.h, coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
+csr_hstack          v iiIIIT*I*I*T
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_matvec          v lIITT*T

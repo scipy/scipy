@@ -13,6 +13,7 @@ import numpy as np
 from scipy._lib._util import check_random_state, rng_integers
 from .sputils import upcast, get_index_dtype, isscalarlike
 
+from ._sparsetools import csr_hstack
 from .csr import csr_matrix
 from .csc import csc_matrix
 from .bsr import bsr_matrix
@@ -434,6 +435,65 @@ def _compressed_sparse_stack(blocks, axis):
                           shape=(constant_dim, sum_dim))
 
 
+def _compressed_sparse_hard_stack(blocks, axis, stack_idx = 0):
+    """
+    Stacking fast path for CSR/CSC matrices along the harder axis
+    (i) hstack for CSR, (ii) vstack for CSC.
+    """
+    n_blocks = len(blocks)
+    if n_blocks == 1:
+        return blocks[0]
+
+    # check for incompatible dimensions
+    other_axis = 1 if axis == 0 else 0
+    constant_dim_cat = np.array([b.shape[other_axis] for b in blocks])
+    constant_dim = constant_dim_cat[0]
+    bad_dim = (constant_dim_cat != constant_dim)
+    if np.any(bad_dim):
+        bad = np.argwhere(bad_dim)[0][0]
+        if isinstance(blocks[0], csr_matrix):
+            msg = ('blocks[{i},:] has incompatible row dimensions. '
+                   'Got blocks[{i},{j}].shape[0] == {got}, '
+                   'expected {exp}.'.format(i=stack_idx, j=bad,
+                                            exp=constant_dim,
+                                            got=constant_dim_cat[bad]))
+        else:
+            msg = ('blocks[:,{i}] has incompatible column dimensions. '
+                   'Got blocks[{j},{i}].shape[1] == {got}, '
+                   'expected {exp}.'.format(i=stack_idx, j=bad,
+                                            exp=constant_dim,
+                                            got=constant_dim_cat[bad]))
+        raise ValueError(msg)
+
+    # Do the stacking
+    indptr_list = [b.indptr for b in blocks]
+    indptr_cat = np.concatenate(indptr_list)
+    indices_cat = np.concatenate([b.indices for b in blocks])
+    data_cat = np.concatenate([b.data for b in blocks])
+    idx_dtype = get_index_dtype(arrays=indptr_list,
+                                maxval=max(data_cat.size, constant_dim))
+    stack_dim_cat = np.array([b.shape[axis] for b in blocks]).astype(idx_dtype)
+    if data_cat.size > 0:
+        indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
+        indices = np.empty(data_cat.size, dtype=idx_dtype)
+        data = np.empty(data_cat.size, dtype=data_cat.dtype)
+        csr_hstack(n_blocks, constant_dim, stack_dim_cat,
+                   indptr_cat, indices_cat, data_cat,
+                   indptr, indices, data)
+    else:
+        indptr = np.zeros(constant_dim + 1, dtype=idx_dtype)
+        indices = np.empty(0, dtype=idx_dtype)
+        data = np.empty(0, dtype=data_cat.dtype)
+
+    sum_dim = np.sum(stack_dim_cat)
+    if axis == 0:
+        return csc_matrix((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csr_matrix((data, indices, indptr),
+                          shape=(constant_dim, sum_dim))
+
+
 def hstack(blocks, format=None, dtype=None):
     """
     Stack sparse matrices horizontally (column wise)
@@ -552,15 +612,31 @@ def bmat(blocks, format=None, dtype=None):
     M,N = blocks.shape
 
     # check for fast path cases
-    if (N == 1 and format in (None, 'csr') and all(isinstance(b, csr_matrix)
-                                                   for b in blocks.flat)):
-        A = _compressed_sparse_stack(blocks[:,0], 0)
+    if (format in (None, 'csr') and all(isinstance(b, csr_matrix)
+                                        for b in blocks.flat)):
+        if N > 1:
+            A = _compressed_sparse_stack(
+                    np.asarray([
+                            _compressed_sparse_hard_stack(blocks[b,:], 1)
+                                                for b in range(M)
+                    ], dtype='object'),
+                    0)
+        else:
+            A = _compressed_sparse_stack(blocks[:, 0], 0)
         if dtype is not None:
             A = A.astype(dtype)
         return A
-    elif (M == 1 and format in (None, 'csc')
-          and all(isinstance(b, csc_matrix) for b in blocks.flat)):
-        A = _compressed_sparse_stack(blocks[0,:], 1)
+    elif (format in (None, 'csc') and all(isinstance(b, csc_matrix)
+                                          for b in blocks.flat)):
+        if M > 1:
+            A = _compressed_sparse_stack(
+                    np.asarray([
+                            _compressed_sparse_hard_stack(blocks[:,b], 0)
+                                                for b in range(N)
+                    ], dtype='object'),
+                    1)
+        else:
+            A = _compressed_sparse_stack(blocks[0, :], 1)
         if dtype is not None:
             A = A.astype(dtype)
         return A
@@ -590,7 +666,7 @@ def bmat(blocks, format=None, dtype=None):
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 elif bcol_lengths[j] != A.shape[1]:
-                    msg = ('blocks[:,{j}] has incompatible row dimensions. '
+                    msg = ('blocks[:,{j}] has incompatible column dimensions. '
                            'Got blocks[{i},{j}].shape[1] == {got}, '
                            'expected {exp}.'.format(i=i, j=j,
                                                     exp=bcol_lengths[j],
