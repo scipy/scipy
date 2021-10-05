@@ -149,7 +149,7 @@ def evaluate_spline(const double[::1] t,
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.
-            # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
+            # on return, first k+1 elements of work are B_{m-k},..., B_{m}
             _deBoor_D(&t[0], xval, k, interval, nu, &work[0])
 
             # Form linear combinations
@@ -435,7 +435,7 @@ def _make_design_matrix(const double[::1] x,
     -------
     design_matrix : `csr_matrix` object
         Sparse matrix in CSR format where in each row all the basis
-        elemets are evaluated at the certain point (first row - x[0],
+        elements are evaluated at the certain point (first row - x[0],
         ..., last row - x[-1]).
     """
     cdef:
