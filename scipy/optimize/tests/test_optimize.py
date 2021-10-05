@@ -533,7 +533,8 @@ def test_maxfev_test():
         return rng.random(1) * 1000  # never converged problem
 
     for imaxfev in [1, 10, 50]:
-        for method in ['Powell', 'Nelder-Mead']:  # TODO: extend to more methods
+        # TODO: extend to more methods
+        for method in ['Powell', 'Nelder-Mead']:
             result = optimize.minimize(cost, rng.random(10),
                                        method=method,
                                        options={'maxfev': imaxfev})
