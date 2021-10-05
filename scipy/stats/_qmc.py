@@ -542,7 +542,7 @@ def n_primes(n: IntNumber) -> List[int]:
     if len(primes) < n:
         big_number = 2000
         while 'Not enough primes':
-            primes = primes_from_2_to(big_number)[:n]  # type: ignore[misc]
+            primes = primes_from_2_to(big_number)[:n]  # type: ignore
             if len(primes) == n:
                 break
             big_number += 1000
@@ -1153,7 +1153,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
+        return oa_lhs_sample[:, :self.d]  # type: ignore
 
     def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
         """Optimal LHS on CD.
