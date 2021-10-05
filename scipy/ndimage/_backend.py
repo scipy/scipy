@@ -1,6 +1,7 @@
 import scipy._lib.uarray as ua
 from scipy.ndimage import _api
 import numpy as np
+from typing import Type
 
 
 __all__ = ['register_backend', 'set_backend',
@@ -61,7 +62,9 @@ class _ScipyImageBackend:
             return np.dtype(value)
 
         if dispatch_type is ndimage_output:
-            if isinstance(value, np.ndarray):
+            if not isinstance(value, (np.ndarray, Type, np.dtype, str)):
+                return NotImplemented
+            elif isinstance(value, np.ndarray):
                 return value
             else:
                 return np.dtype(value)
@@ -97,7 +100,7 @@ def _backend_from_arg(backend):
     return backend
 
 
-def set_global_backend(backend, coerce=True, only=False, try_last=True):
+def set_global_backend(backend, coerce=False, only=False, try_last=False):
     """Sets the global ndimage backend
 
     This utility method replaces the default backend for permanent use. It
@@ -135,7 +138,7 @@ def set_global_backend(backend, coerce=True, only=False, try_last=True):
     We can set the global ndimage backend:
 
     >>> from scipy.ndimage import correlate, set_global_backend
-    >>> set_global_backend("scipy")  # Sets global backend.
+    >>> set_global_backend("scipy", coerce=True)  # Sets global backend.
     >>> correlate(np.arange(10), [1, 2.5])  # Calls the global backend
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     """
@@ -263,4 +266,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy')
+set_global_backend('scipy', coerce=True, try_last=True)
