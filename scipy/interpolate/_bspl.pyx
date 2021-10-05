@@ -9,6 +9,8 @@ cimport numpy as cnp
 
 cimport cython
 
+cnp.import_array()
+
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
