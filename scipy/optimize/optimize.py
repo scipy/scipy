@@ -479,7 +479,7 @@ class _MaxFuncCallError(RuntimeError):
     pass
 
 
-def _wrap_scalar_function_with_validation(function, args, maxfun):
+def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
     # wraps a minimizer function to count number of evaluations
     # and to easily provide an args kwd.
     ncalls = [0]
@@ -784,7 +784,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     one2np1 = list(range(1, N + 1))
     fsim = np.empty((N + 1,), float)
 
-    fcalls, func = _wrap_scalar_function_with_validation(func, args, maxfun)
+    fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
 
     for k in range(N + 1):
         try:
@@ -3124,7 +3124,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
 
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = _wrap_scalar_function_with_validation(func, args, maxfun)
+    fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
 
     if direc is None:
         direc = eye(N, dtype=float)

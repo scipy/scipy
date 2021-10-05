@@ -546,7 +546,7 @@ def test_wrap_scalar_function_with_validation():
         return x
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
         func(np.asarray(i))
@@ -557,7 +557,7 @@ def test_wrap_scalar_function_with_validation():
         func(np.asarray(i))  # exceeded maximum function call
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     msg = "The user-provided objective function must return a scalar value."
     with assert_raises(ValueError, match=msg):
