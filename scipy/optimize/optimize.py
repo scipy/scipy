@@ -786,11 +786,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
 
-    for k in range(N + 1):
-        try:
+    try:
+        for k in range(N + 1):
             fsim[k] = func(sim[k])
-        except _MaxFuncCallError:
-            break
+    except _MaxFuncCallError:
+        pass
+    finally:
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
 
     ind = np.argsort(fsim)
     fsim = np.take(fsim, ind, 0)
@@ -861,7 +865,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                                 sim[j] = np.clip(
                                     sim[j], lower_bound, upper_bound)
                             fsim[j] = func(sim[j])
-
+        except _MaxFuncCallError:
+            pass
+        finally:
             ind = np.argsort(fsim)
             sim = np.take(sim, ind, 0)
             fsim = np.take(fsim, ind, 0)
@@ -870,8 +876,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
             if retall:
                 allvecs.append(sim[0])
-        except _MaxFuncCallError:
-            break
 
     x = sim[0]
     fval = np.min(fsim)
