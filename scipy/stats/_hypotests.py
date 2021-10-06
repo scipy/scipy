@@ -6,13 +6,15 @@ from itertools import combinations
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
+from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
+           'tukey_hsd']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -1400,3 +1402,326 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
+
+
+class TukeyHSDResult:
+    """Result of `scipy.stats.tukey_hsd`.
+
+    Attributes
+    ----------
+    statistic : float ndarray
+        The computed statistic of the test for each comparison. The element
+        at index ``(i, j)`` is the statistic for the comparison between groups
+        ``i`` and ``j``.
+    pvalue : float ndarray
+        The associated p-value from the studentized range distribution. The
+        element at index ``(i, j)`` is the p-value for the comparison
+        between groups ``i`` and ``j``.
+
+    Notes
+    -----
+    The string representation of this object displays the most recently
+    calculated confidence interval, and if none have been previously
+    calculated, it will evaluate ``confidence_interval()``.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    """
+
+    def __init__(self, statistic, pvalue, _nobs, _ntreatments, _stand_err):
+        self.statistic = statistic
+        self.pvalue = pvalue
+        self._ntreatments = _ntreatments
+        self._nobs = _nobs
+        self._stand_err = _stand_err
+        self._ci = None
+        self._ci_cl = None
+
+    def __str__(self):
+        # Note: `__str__` prints the confidence intervals from the most
+        # recent call to `confidence_interval`. If it has not been called,
+        # it will be called with the default CL of .95.
+        if self._ci is None:
+            self.confidence_interval(confidence_level=.95)
+        s = ("Tukey's HSD Pairwise Group Comparisons"
+             f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
+        s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
+        for i in range(self.pvalue.shape[0]):
+            for j in range(self.pvalue.shape[0]):
+                if i != j:
+                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                          f"{self.pvalue[i, j]:>10.3f}"
+                          f"{self._ci.low[i, j]:>10.3f}"
+                          f"{self._ci.high[i, j]:>10.3f}\n")
+        return s
+
+    def confidence_interval(self, confidence_level=.95):
+        """Compute the confidence interval for the specified confidence level.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is .95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence intervals for each
+            comparison. The high and low values are accessible for each
+            comparison at index ``(i, j)`` between groups ``i`` and ``j``.
+
+        References
+        ----------
+        .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1.
+               Tukey's Method."
+               https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+               28 November 2020.
+
+        Examples
+        --------
+        >>> from scipy.stats import tukey_hsd
+        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> result = tukey_hsd(group0, group1, group2)
+        >>> ci = result.confidence_interval()
+        >>> ci.low
+        array([[-3.649159, -8.249159, -3.909159],
+               [ 0.950841, -3.649159,  0.690841],
+               [-3.389159, -7.989159, -3.649159]])
+        >>> ci.high
+        array([[ 3.649159, -0.950841,  3.389159],
+               [ 8.249159,  3.649159,  7.989159],
+               [ 3.909159, -0.690841,  3.649159]])
+        """
+        # check to see if the supplied confidence level matches that of the
+        # previously computed CI.
+        if (self._ci is not None and self._ci_cl is not None and
+                confidence_level == self._ci_cl):
+            return self._ci
+
+        if not 0 < confidence_level < 1:
+            raise ValueError("Confidence level must be between 0 and 1.")
+        # determine the critical value of the studentized range using the
+        # appropriate confidence level, number of treatments, and degrees
+        # of freedom as determined by the number of data less the number of
+        # treatments. ("Confidence limits for Tukey's method")[1]. Note that
+        # in the cases of unequal sample sizes there will be a criterion for
+        # each group comparison.
+        params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
+        srd = distributions.studentized_range.ppf(*params)
+        # also called maximum critical value, the Tukey criterion is the
+        # studentized range critical value * the square root of mean square
+        # error over the sample size.
+        tukey_criterion = srd * self._stand_err
+        # the confidence levels are determined by the
+        # `mean_differences` +- `tukey_criterion`
+        upper_conf = self.statistic + tukey_criterion
+        lower_conf = self.statistic - tukey_criterion
+        self._ci = ConfidenceInterval(low=lower_conf, high=upper_conf)
+        self._ci_cl = confidence_level
+        return self._ci
+
+
+def _tukey_hsd_iv(args):
+    if (len(args)) < 2:
+        raise ValueError("There must be more than 1 treatment.")
+    args = [np.asarray(arg) for arg in args]
+    for arg in args:
+        if arg.ndim != 1:
+            raise ValueError("Input samples must be one-dimensional.")
+        if arg.size <= 1:
+            raise ValueError("Input sample size must be greater than one.")
+        if np.isinf(arg).any():
+            raise ValueError("Input samples must be finite.")
+    return args
+
+
+def tukey_hsd(*args):
+    """Perform Tukey's HSD test for equality of means over multiple treatments.
+
+    Tukey's honestly significant difference (HSD) test performs pairwise
+    comparison of means for a set of samples. Whereas ANOVA (e.g. `f_oneway`)
+    assesses whether the true means underlying each sample are identical,
+    Tukey's HSD is a post hoc test used to compare the mean of each sample
+    to the mean of each other sample.
+
+    The null hypothesis is that the distributions underlying the samples all
+    have the same mean. The test statistic, which is computed for every
+    possible pairing of samples, is simply the difference between the sample
+    means. For each pair, the p-value is the probability under the null
+    hypothesis (and other assumptions; see notes) of observing such an extreme
+    value of the statistic, considering that many pairwise comparisons are
+    being performed. Confidence intervals for the difference between each pair
+    of means are also available.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group. There must be at least
+        two arguments.
+
+    Returns
+    -------
+    result : `~scipy.stats._result_classes.TukeyHSDResult` instance
+        The return value is an object with the following attributes:
+
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The element
+            at index ``(i, j)`` is the statistic for the comparison between
+            groups ``i`` and ``j``.
+        pvalue : float ndarray
+            The computed p-value of the test for each comparison. The element
+            at index ``(i, j)`` is the p-value for the comparison between
+            groups ``i`` and ``j``.
+
+        The object has the following methods:
+
+        confidence_interval(confidence_level=0.95):
+            Compute the confidence interval for the specified confidence level.
+
+    Notes
+    -----
+    The use of this test relies on several assumptions.
+
+    1. The observations are independent within and among groups.
+    2. The observations within each group are normally distributed.
+    3. The distributions from which the samples are drawn have the same finite
+       variance.
+
+    The original formulation of the test was for samples of equal size [6]_.
+    In case of unequal sample sizes, the test uses the Tukey-Kramer method
+    [4]_.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    .. [2] Abdi, Herve & Williams, Lynne. (2021). "Tukey's Honestly Significant
+           Difference (HSD) Test."
+           https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
+    .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
+           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+    .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
+           Means with Unequal Numbers of Replications." Biometrics, vol. 12,
+           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
+           Accessed 25 May 2021.
+    .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
+           The ANOVA table and tests of hypotheses about means"
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
+           2 June 2021.
+    .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
+           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+
+
+    Examples
+    --------
+    Here are some data comparing the time to relief of three brands of
+    headache medicine, reported in minutes. Data adapted from [3]_.
+
+    >>> from scipy.stats import tukey_hsd
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
+    We would like to see if the means between any of the groups are
+    significantly different. First, visually examine a box and whisker plot.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.boxplot([group0, group1, group2])
+    >>> ax.set_xticklabels(["group0", "group1", "group2"]) # doctest: +SKIP
+    >>> ax.set_ylabel("mean") # doctest: +SKIP
+    >>> plt.show()
+
+    From the box and whisker plot, we can see overlap in the interquartile
+    ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
+    test to determine if the difference between means is significant. We
+    set a significance level of .05 to reject the null hypothesis.
+
+    >>> res = tukey_hsd(group0, group1, group2)
+    >>> print(res)
+    Tukey's HSD Pairwise Group Comparisons (95.0% Confidence Interval)
+    Comparison  Statistic  p-value   Lower CI   Upper CI
+    (0 - 1)     -4.600      0.014     -8.249     -0.951
+    (0 - 2)     -0.260      0.980     -3.909      3.389
+    (1 - 0)      4.600      0.014      0.951      8.249
+    (1 - 2)      4.340      0.020      0.691      7.989
+    (2 - 0)      0.260      0.980     -3.389      3.909
+    (2 - 1)     -4.340      0.020     -7.989     -0.691
+
+    The null hypothesis is that each group has the same mean. The p-value for
+    comparisons between ``group0`` and ``group1`` as well as ``group1`` and
+    ``group2`` do not exceed .05, so we reject the null hypothesis that they
+    have the same means. The p-value of the comparison between ``group0``
+    and ``group2`` exceeds .05, so we accept the null hypothesis that there
+    is not a significant difference between their means.
+
+    We can also compute the confidence interval associated with our chosen
+    confidence level.
+
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    >>> result = tukey_hsd(group0, group1, group2)
+    >>> conf = res.confidence_interval(confidence_level=.99)
+    >>> for ((i, j), l) in np.ndenumerate(conf.low):
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         h = conf.high[i,j]
+    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    (0 - 1) -9.480  0.280
+    (0 - 2) -5.140  4.620
+    (1 - 0) -0.280  9.480
+    (1 - 2) -0.540  9.220
+    (2 - 0) -4.620  5.140
+    (2 - 1) -9.220  0.540
+    """
+    args = _tukey_hsd_iv(args)
+    ntreatments = len(args)
+    means = np.asarray([np.mean(arg) for arg in args])
+    nsamples_treatments = np.asarray([a.size for a in args])
+    nobs = np.sum(nsamples_treatments)
+
+    # determine mean square error [5]. Note that this is sometimes called
+    # mean square error within.
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_treatments - 1)) / (nobs - ntreatments))
+
+    # The calculation of the standard error differs when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
+    if np.unique(nsamples_treatments).size == 1:
+        # all input groups are the same length, so only one value needs to be
+        # calculated [1].
+        normalize = 2 / nsamples_treatments[0]
+    else:
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix. [3], verified against [4] (page 308).
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
+
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
+
+    # the mean difference is the test statistic.
+    mean_differences = means[None].T - means
+
+    # Calculate the t-statistic to use within the survival function of the
+    # studentized range to get the p-value.
+    t_stat = np.abs(mean_differences) / stand_err
+
+    params = t_stat, ntreatments, nobs - ntreatments
+    pvalues = distributions.studentized_range.sf(*params)
+
+    return TukeyHSDResult(mean_differences, pvalues, ntreatments,
+                          nobs, stand_err)
