@@ -21,7 +21,7 @@ are:
   also covered by ``scipy.stats``.
 - `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
   functionality, interfaces to other statistical languages.
-- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+- `PyMC <https://docs.pymc.io/>`__: Bayesian statistical
   modeling, probabilistic machine learning.
 - `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
   model selection.
