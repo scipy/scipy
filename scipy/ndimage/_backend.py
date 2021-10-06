@@ -1,7 +1,6 @@
 import scipy._lib.uarray as ua
 from scipy.ndimage import _api
 import numpy as np
-from typing import Type
 
 
 __all__ = ['register_backend', 'set_backend',
@@ -62,7 +61,7 @@ class _ScipyImageBackend:
             return np.dtype(value)
 
         if dispatch_type is ndimage_output:
-            if not isinstance(value, (np.ndarray, Type, np.dtype, str)):
+            if not isinstance(value, (np.ndarray, np.dtype, type, str)):
                 return NotImplemented
             elif isinstance(value, np.ndarray):
                 return value

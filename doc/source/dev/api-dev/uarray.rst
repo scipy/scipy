@@ -28,7 +28,7 @@ in the ndimage module functions are : ``'output'`` and ``'index'``.
   protocol::
 
       if dispatch_type is ndimage_output:
-          if not isinstance(value, (np.ndarray, Type, np.dtype, str)):
+          if not isinstance(value, (np.ndarray, np.dtype, type, str)):
               return NotImplemented
           elif isinstance(value, np.ndarray):
               return value
