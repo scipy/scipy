@@ -23,6 +23,8 @@ import threading
 import operator
 import warnings
 
+np.import_array()
+
 cdef extern from "<limits.h>":
     long LONG_MAX
 
