@@ -23,6 +23,8 @@ import os
 import sys
 import tempfile
 
+np.import_array()
+
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
 
