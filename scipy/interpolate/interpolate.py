@@ -385,7 +385,8 @@ class interp1d(_Interpolator1D):
           ``x_new > x[-1]``. Anything that is not a 2-element tuple (e.g.,
           list or ndarray, regardless of shape) is taken to be a single
           array-like argument meant to be used for both bounds as
-          ``below, above = fill_value, fill_value``.
+          ``below, above = fill_value, fill_value``. Using a two-element tuple
+          or ndarray requires ``bounds_error=False``.
 
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
