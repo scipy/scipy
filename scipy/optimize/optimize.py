@@ -782,7 +782,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.empty((N + 1,), float)
+    fsim = np.full((N + 1,), np.inf, dtype=float)
 
     fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
 
