@@ -224,7 +224,7 @@ class BSpline:
             # and axis !=0 means that we have c.shape (..., n, ...)
             #                                               ^
             #                                              axis
-            self.c = np.rollaxis(self.c, axis)
+            self.c = np.moveaxis(self.c, axis, 0)
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
@@ -1236,7 +1236,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
         raise ValueError("First and last points does not match while "
@@ -1475,7 +1475,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     axis = normalize_axis_index(axis, y.ndim)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")

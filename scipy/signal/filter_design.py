@@ -463,8 +463,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
             if b.ndim > 1:
                 # Last axis of h has length 1, so drop it.
                 h = h[..., 0]
-                # Rotate the first axis of h to the end.
-                h = np.rollaxis(h, 0, h.ndim)
+                # Move the first axis of h to the end.
+                h = np.moveaxis(h, 0, -1)
     else:
         w = atleast_1d(worN)
         del worN

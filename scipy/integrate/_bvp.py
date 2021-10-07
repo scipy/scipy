@@ -594,7 +594,7 @@ def create_spline(y, yp, x, h):
     c[1] = (slope - yp[:, :-1]) / h - t
     c[2] = yp[:, :-1]
     c[3] = y[:, :-1]
-    c = np.rollaxis(c, 1)
+    c = np.moveaxis(c, 1, 0)
 
     return PPoly(c, x, extrapolate=True, axis=1)
 

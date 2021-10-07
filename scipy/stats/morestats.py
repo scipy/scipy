@@ -2949,7 +2949,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     xy = np.concatenate((x, y), axis=axis)
     if axis != 0:
-        xy = np.rollaxis(xy, axis)
+        xy = np.moveaxis(xy, axis, 0)
 
     xy = xy.reshape(xy.shape[0], -1)
 
