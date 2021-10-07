@@ -4808,9 +4808,9 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
-                                      np.moveaxis(rvs2_3D, 2, 0),
-                                      axis=2, equal_var=False)
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
+                           axis=2, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
