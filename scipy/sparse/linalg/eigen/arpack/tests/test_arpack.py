@@ -73,7 +73,7 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
         tol = 30 * np.finfo(np.float32).eps
         rtol *= 5
 
-    if type_char in ('D','F')  and which in ('LM','SM','LA') and \
+    if type_char in ('D','F') and which in ('LM','SM','LA') and \
           D_type.name == "gen-hermitian-Mc":
         # missing case 2, and more, from PR 14798
         tol = 30 * np.finfo(np.float32).eps
@@ -272,7 +272,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
             ntries += 1
 
         if check_evecs:
-        # check eigenvectors
+            # check eigenvectors
             LHS = np.dot(a, evec)
             if general:
                 RHS = eigenvalues * np.dot(b, evec)
