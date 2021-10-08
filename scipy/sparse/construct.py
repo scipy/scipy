@@ -435,7 +435,7 @@ def _compressed_sparse_stack(blocks, axis):
                           shape=(constant_dim, sum_dim))
 
 
-def _compressed_sparse_hard_stack(blocks, axis, stack_idx = 0):
+def _compressed_sparse_hard_stack(blocks, axis, stack_idx=0):
     """
     Stacking fast path for CSR/CSC matrices along the harder axis
     (i) hstack for CSR, (ii) vstack for CSC.
@@ -617,8 +617,8 @@ def bmat(blocks, format=None, dtype=None):
         if N > 1:
             A = _compressed_sparse_stack(
                     np.asarray([
-                            _compressed_sparse_hard_stack(blocks[b,:], 1)
-                                                for b in range(M)
+                            _compressed_sparse_hard_stack(blocks[b, :], 1, b)
+                            for b in range(M)
                     ], dtype='object'),
                     0)
         else:
@@ -631,8 +631,8 @@ def bmat(blocks, format=None, dtype=None):
         if M > 1:
             A = _compressed_sparse_stack(
                     np.asarray([
-                            _compressed_sparse_hard_stack(blocks[:,b], 0)
-                                                for b in range(N)
+                            _compressed_sparse_hard_stack(blocks[:, b], 0, b)
+                            for b in range(N)
                     ], dtype='object'),
                     1)
         else:

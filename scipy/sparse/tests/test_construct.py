@@ -315,16 +315,31 @@ class TestConstructUtils:
         expected = matrix([[1, 2],
                            [3, 4],
                            [5, 6]])
-        assert_equal(construct.vstack([A,B]).todense(), expected)
-        assert_equal(construct.vstack([A,B], dtype=np.float32).dtype, np.float32)
-        assert_equal(construct.vstack([A.tocsr(),B.tocsr()]).todense(),
-                     expected)
-        assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
+        assert_equal(construct.vstack([A, B]).todense(), expected)
+        assert_equal(construct.vstack([A, B], dtype=np.float32).dtype,
                      np.float32)
-        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
-                                      dtype=np.float32).indices.dtype, np.int32)
-        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
-                                      dtype=np.float32).indptr.dtype, np.int32)
+        assert_equal(construct.vstack([A.tocsr(), B.tocsr()]).todense(),
+                     expected)
+        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
+                                      dtype=np.float32).dtype,
+                     np.float32)
+        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
+                                      dtype=np.float32).indices.dtype,
+                     np.int32)
+        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
+                                      dtype=np.float32).indptr.dtype,
+                     np.int32)
+        assert_equal(construct.vstack([A.tocsc(), B.tocsc()]).todense(),
+                     expected)
+        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
+                                      dtype=np.float32).dtype,
+                     np.float32)
+        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
+                                      dtype=np.float32).indices.dtype,
+                     np.int32)
+        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
+                                      dtype=np.float32).indptr.dtype,
+                     np.int32)
 
     def test_hstack(self):
 
@@ -333,42 +348,73 @@ class TestConstructUtils:
 
         expected = matrix([[1, 2, 5],
                            [3, 4, 6]])
-        assert_equal(construct.hstack([A,B]).todense(), expected)
-        assert_equal(construct.hstack([A,B], dtype=np.float32).dtype, np.float32)
-        assert_equal(construct.hstack([A.tocsc(),B.tocsc()]).todense(),
+        assert_equal(construct.hstack([A, B]).todense(), expected)
+        assert_equal(construct.hstack([A, B], dtype=np.float32).dtype,
+                     np.float32)
+        assert_equal(construct.hstack([A.tocsc(), B.tocsc()]).todense(),
                      expected)
-        assert_equal(construct.hstack([A.tocsc(),B.tocsc()], dtype=np.float32).dtype,
+        assert_equal(construct.hstack([A.tocsc(), B.tocsc()],
+                                      dtype=np.float32).dtype,
+                     np.float32)
+        assert_equal(construct.hstack([A.tocsr(), B.tocsr()]).todense(),
+                     expected)
+        assert_equal(construct.hstack([A.tocsr(), B.tocsr()],
+                                      dtype=np.float32).dtype,
                      np.float32)
 
     def test_bmat(self):
 
-        A = coo_matrix([[1,2],[3,4]])
+        A = coo_matrix([[1, 2], [3, 4]])
         B = coo_matrix([[5],[6]])
         C = coo_matrix([[7]])
-        D = coo_matrix((0,0))
+        D = coo_matrix((0, 0))
 
         expected = matrix([[1, 2, 5],
                            [3, 4, 6],
                            [0, 0, 7]])
-        assert_equal(construct.bmat([[A,B],[None,C]]).todense(), expected)
+        assert_equal(construct.bmat([[A, B], [None, C]]).todense(), expected)
+        E = csr_matrix((1, 2), dtype='i')
+        assert_equal(construct.bmat([[A.tocsr(), B.tocsr()],
+                                     [E, C.tocsr()]]).todense(),
+                     expected)
+        assert_equal(construct.bmat([[A.tocsc(), B.tocsc()],
+                                     [E.tocsc(), C.tocsc()]]).todense(),
+                     expected)
 
         expected = matrix([[1, 2, 0],
                            [3, 4, 0],
                            [0, 0, 7]])
-        assert_equal(construct.bmat([[A,None],[None,C]]).todense(), expected)
+        assert_equal(construct.bmat([[A, None], [None, C]]).todense(),
+                     expected)
+        assert_equal(construct.bmat([[A.tocsr(), E.T.tocsr()],
+                                     [E, C.tocsr()]]).todense(),
+                     expected)
+        assert_equal(construct.bmat([[A.tocsc(), E.T.tocsc()],
+                                     [E.tocsc(), C.tocsc()]]).todense(),
+                     expected)
 
+        Z = csr_matrix((1, 1), dtype='i')
         expected = matrix([[0, 5],
                            [0, 6],
                            [7, 0]])
-        assert_equal(construct.bmat([[None,B],[C,None]]).todense(), expected)
+        assert_equal(construct.bmat([[None, B], [C, None]]).todense(),
+                     expected)
+        assert_equal(construct.bmat([[E.T.tocsr(), B.tocsr()],
+                                     [C.tocsr(), Z]]).todense(),
+                     expected)
+        assert_equal(construct.bmat([[E.T.tocsc(), B.tocsc()],
+                                     [C.tocsc(), Z.tocsc()]]).todense(),
+                     expected)
 
-        expected = matrix(np.empty((0,0)))
-        assert_equal(construct.bmat([[None,None]]).todense(), expected)
-        assert_equal(construct.bmat([[None,D],[D,None]]).todense(), expected)
+        expected = matrix(np.empty((0, 0)))
+        assert_equal(construct.bmat([[None, None]]).todense(), expected)
+        assert_equal(construct.bmat([[None, D], [D, None]]).todense(),
+                     expected)
 
         # test bug reported in gh-5976
         expected = matrix([[7]])
-        assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
+        assert_equal(construct.bmat([[None, D], [C, None]]).todense(),
+                     expected)
 
         # test failure cases
         with assert_raises(ValueError) as excinfo:
@@ -376,8 +422,24 @@ class TestConstructUtils:
         excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A.tocsr()], [B.tocsr()]])
+        excinfo.match(r'incompatible dimensions for axis 1')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A.tocsc()], [B.tocsc()]])
+        excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
             construct.bmat([[A, C]])
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A.tocsr(), C.tocsr()]])
+        excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A.tocsc(), C.tocsc()]])
+        excinfo.match(r'incompatible dimensions for axis 0')
 
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
