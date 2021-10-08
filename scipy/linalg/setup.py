@@ -147,6 +147,9 @@ def configuration(parent_package='', top_path=None):
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')
 
+    # Type stubs
+    config.add_data_files('*.pyi')
+
     return config
 
 
