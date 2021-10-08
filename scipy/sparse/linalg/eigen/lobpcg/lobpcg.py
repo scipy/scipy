@@ -19,12 +19,11 @@ References
 
 import warnings
 import numpy as np
-from scipy.linalg import (inv, eigh, cho_factor, cho_solve, cholesky,
-                          LinAlgError)
+from scipy.linalg import inv, eigh, cho_factor, cho_solve, cholesky, LinAlgError
 from scipy.sparse.linalg import aslinearoperator
 from numpy import block as bmat
 
-__all__ = ['lobpcg']
+__all__ = ["lobpcg"]
 
 
 def _report_nonhermitian(M, name):
@@ -39,9 +38,10 @@ def _report_nonhermitian(M, name):
     tol = 10 * np.finfo(M.dtype).eps
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
-        print('matrix %s of the type %s is not sufficiently Hermitian:'
-              % (name, M.dtype))
-        print('condition: %.e < %e' % (nmd, tol))
+        print(
+            "matrix %s of the type %s is not sufficiently Hermitian:" % (name, M.dtype)
+        )
+        print("condition: %.e < %e" % (nmd, tol))
 
 
 def _as2d(ar):
@@ -67,7 +67,7 @@ def _makeOperator(operatorInput, expectedShape):
         operator = aslinearoperator(operatorInput)
 
     if operator.shape != expectedShape:
-        raise ValueError('operator has invalid shape')
+        raise ValueError("operator has invalid shape")
 
     return operator
 
@@ -81,7 +81,7 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
 
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
     """B-orthonormalize the given block vector using Cholesky."""
-    normalization = blockVectorV.max(axis=0)+np.finfo(blockVectorV.dtype).eps
+    normalization = blockVectorV.max(axis=0) + np.finfo(blockVectorV.dtype).eps
     blockVectorV = blockVectorV / normalization
     if blockVectorBV is None:
         if B is not None:
@@ -103,7 +103,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
         else:
             blockVectorBV = None
     except LinAlgError:
-        #raise ValueError('Cholesky has failed')
+        # raise ValueError('Cholesky has failed')
         blockVectorV = None
         blockVectorBV = None
         VBV = None
@@ -118,18 +118,26 @@ def _get_indx(_lambda, num, largest):
     """Get `num` indices into `_lambda` depending on `largest` option."""
     ii = np.argsort(_lambda)
     if largest:
-        ii = ii[:-num-1:-1]
+        ii = ii[: -num - 1 : -1]
     else:
         ii = ii[:num]
 
     return ii
 
 
-def lobpcg(A, X,
-           B=None, M=None, Y=None,
-           tol=None, maxiter=None,
-           largest=True, verbosityLevel=0,
-           retLambdaHistory=False, retResidualNormsHistory=False):
+def lobpcg(
+    A,
+    X,
+    B=None,
+    M=None,
+    Y=None,
+    tol=None,
+    maxiter=None,
+    largest=True,
+    verbosityLevel=0,
+    retLambdaHistory=False,
+    retResidualNormsHistory=False,
+):
     """Locally Optimal Block Preconditioned Conjugate Gradient Method (LOBPCG)
 
     LOBPCG is a preconditioned eigensolver for large symmetric positive
@@ -303,7 +311,7 @@ def lobpcg(A, X,
 
     # Block size.
     if len(blockVectorX.shape) != 2:
-        raise ValueError('expected rank-2 array for argument X')
+        raise ValueError("expected rank-2 array for argument X")
 
     n, sizeX = blockVectorX.shape
 
@@ -339,20 +347,20 @@ def lobpcg(A, X,
         sizeX = min(sizeX, n)
 
         if blockVectorY is not None:
-            raise NotImplementedError('The dense eigensolver '
-                                      'does not support constraints.')
+            raise NotImplementedError(
+                "The dense eigensolver " "does not support constraints."
+            )
 
         # Define the closed range of indices of eigenvalues to return.
         if largest:
-            eigvals = (n - sizeX, n-1)
+            eigvals = (n - sizeX, n - 1)
         else:
-            eigvals = (0, sizeX-1)
+            eigvals = (0, sizeX - 1)
 
         A_dense = A(np.eye(n, dtype=A.dtype))
         B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
 
-        vals, vecs = eigh(A_dense, B_dense, eigvals=eigvals,
-                          check_finite=False)
+        vals, vecs = eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
         if largest:
             # Reverse order to be compatible with eigs() in 'LM' mode.
             vals = vals[::-1]
@@ -377,7 +385,7 @@ def lobpcg(A, X,
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
         except LinAlgError as e:
-            raise ValueError('cannot handle linearly dependent constraints') from e
+            raise ValueError("cannot handle linearly dependent constraints") from e
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
@@ -424,7 +432,7 @@ def lobpcg(A, X,
     while iterationNumber < maxiter:
         iterationNumber += 1
         if verbosityLevel > 0:
-            print('iteration %d' % iterationNumber)
+            print("iteration %d" % iterationNumber)
 
         if B is not None:
             aux = blockVectorBX * _lambda[np.newaxis, :]
@@ -452,9 +460,9 @@ def lobpcg(A, X,
             break
 
         if verbosityLevel > 0:
-            print('current block size:', currentBlockSize)
-            print('eigenvalue:', _lambda)
-            print('residual norms:', residualNorms)
+            print("current block size:", currentBlockSize)
+            print("eigenvalue:", _lambda)
+            print("residual norms:", residualNorms)
         if verbosityLevel > 10:
             print(eigBlockVector)
 
@@ -471,8 +479,8 @@ def lobpcg(A, X,
                 "Iteration %d failed not reaching tolerance %g."
                 % (iterationNumber, residualTolerance),
                 UserWarning,
-           )
-           break
+            )
+            break
         if M is not None:
             # Apply preconditioner T to the active residuals.
             activeBlockVectorR = M(activeBlockVectorR)
@@ -480,8 +488,7 @@ def lobpcg(A, X,
         ##
         # Apply constraints to the preconditioned residuals.
         if blockVectorY is not None:
-            _applyConstraints(activeBlockVectorR,
-                              gramYBY, blockVectorBY, blockVectorY)
+            _applyConstraints(activeBlockVectorR, gramYBY, blockVectorBY, blockVectorY)
         if activeBlockVectorR is None:
             warnings.warn(
                 "Iteration %d failed not reaching tolerance %g."
@@ -493,13 +500,13 @@ def lobpcg(A, X,
         ##
         # B-orthogonalize the preconditioned residuals to X.
         if B is not None:
-            activeBlockVectorR = activeBlockVectorR - np.matmul(blockVectorX,
-                                 np.matmul(blockVectorBX.T.conj(),
-                                 activeBlockVectorR))
+            activeBlockVectorR = activeBlockVectorR - np.matmul(
+                blockVectorX, np.matmul(blockVectorBX.T.conj(), activeBlockVectorR)
+            )
         else:
-            activeBlockVectorR = activeBlockVectorR - np.matmul(blockVectorX,
-                                 np.matmul(blockVectorX.T.conj(),
-                                 activeBlockVectorR))
+            activeBlockVectorR = activeBlockVectorR - np.matmul(
+                blockVectorX, np.matmul(blockVectorX.T.conj(), activeBlockVectorR)
+            )
 
         ##
         # B-orthonormalize the preconditioned residuals.
@@ -517,8 +524,9 @@ def lobpcg(A, X,
 
         if iterationNumber > 0:
             if B is not None:
-                aux = _b_orthonormalize(B, activeBlockVectorP,
-                                        activeBlockVectorBP, retInvR=True)
+                aux = _b_orthonormalize(
+                    B, activeBlockVectorP, activeBlockVectorBP, retInvR=True
+                )
                 activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
             else:
                 aux = _b_orthonormalize(B, activeBlockVectorP, retInvR=True)
@@ -535,9 +543,9 @@ def lobpcg(A, X,
         # Perform the Rayleigh Ritz Procedure:
         # Compute symmetric Gram matrices:
 
-        if activeBlockVectorAR.dtype == 'float32':
+        if activeBlockVectorAR.dtype == "float32":
             myeps = 1
-        elif activeBlockVectorR.dtype == 'float32':
+        elif activeBlockVectorR.dtype == "float32":
             myeps = 1e-4
         else:
             myeps = 1e-8
@@ -560,9 +568,9 @@ def lobpcg(A, X,
         gramRAR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAR)
 
         if explicitGramFlag:
-            gramRAR = (gramRAR + gramRAR.T.conj())/2
+            gramRAR = (gramRAR + gramRAR.T.conj()) / 2
             gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
-            gramXAX = (gramXAX + gramXAX.T.conj())/2
+            gramXAX = (gramXAX + gramXAX.T.conj()) / 2
             gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
             gramRBR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBR)
             gramXBR = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
@@ -574,12 +582,12 @@ def lobpcg(A, X,
 
         def _handle_gramA_gramB_verbosity(gramA, gramB):
             if verbosityLevel > 0:
-                _report_nonhermitian(gramA, 'gramA')
-                _report_nonhermitian(gramB, 'gramB')
+                _report_nonhermitian(gramA, "gramA")
+                _report_nonhermitian(gramB, "gramB")
             if verbosityLevel > 10:
                 # Note: not documented, but leave it in here for now
-                np.savetxt('gramA.txt', gramA)
-                np.savetxt('gramB.txt', gramB)
+                np.savetxt("gramA.txt", gramA)
+                np.savetxt("gramB.txt", gramB)
 
         if not restart:
             gramXAP = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
@@ -588,41 +596,44 @@ def lobpcg(A, X,
             gramXBP = np.dot(blockVectorX.T.conj(), activeBlockVectorBP)
             gramRBP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBP)
             if explicitGramFlag:
-                gramPAP = (gramPAP + gramPAP.T.conj())/2
-                gramPBP = np.dot(activeBlockVectorP.T.conj(),
-                                 activeBlockVectorBP)
+                gramPAP = (gramPAP + gramPAP.T.conj()) / 2
+                gramPBP = np.dot(activeBlockVectorP.T.conj(), activeBlockVectorBP)
             else:
                 gramPBP = ident
 
-            gramA = bmat([[gramXAX, gramXAR, gramXAP],
-                          [gramXAR.T.conj(), gramRAR, gramRAP],
-                          [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP]])
-            gramB = bmat([[gramXBX, gramXBR, gramXBP],
-                          [gramXBR.T.conj(), gramRBR, gramRBP],
-                          [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP]])
+            gramA = bmat(
+                [
+                    [gramXAX, gramXAR, gramXAP],
+                    [gramXAR.T.conj(), gramRAR, gramRAP],
+                    [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP],
+                ]
+            )
+            gramB = bmat(
+                [
+                    [gramXBX, gramXBR, gramXBP],
+                    [gramXBR.T.conj(), gramRBR, gramRBP],
+                    [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP],
+                ]
+            )
 
             _handle_gramA_gramB_verbosity(gramA, gramB)
 
             try:
-                _lambda, eigBlockVector = eigh(gramA, gramB,
-                                               check_finite=False)
+                _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
             except LinAlgError:
                 # try again after dropping the direction vectors P from RR
                 restart = True
 
         if restart:
-            gramA = bmat([[gramXAX, gramXAR],
-                          [gramXAR.T.conj(), gramRAR]])
-            gramB = bmat([[gramXBX, gramXBR],
-                          [gramXBR.T.conj(), gramRBR]])
+            gramA = bmat([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
+            gramB = bmat([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
 
             _handle_gramA_gramB_verbosity(gramA, gramB)
 
             try:
-                _lambda, eigBlockVector = eigh(gramA, gramB,
-                                               check_finite=False)
+                _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
             except LinAlgError as e:
-                raise ValueError('eigh has failed in lobpcg iterations') from e
+                raise ValueError("eigh has failed in lobpcg iterations") from e
 
         ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:
@@ -635,12 +646,12 @@ def lobpcg(A, X,
         lambdaHistory.append(_lambda)
 
         if verbosityLevel > 10:
-            print('lambda:', _lambda)
-#         # Normalize eigenvectors!
-#         aux = np.sum( eigBlockVector.conj() * eigBlockVector, 0 )
-#         eigVecNorms = np.sqrt( aux )
-#         eigBlockVector = eigBlockVector / eigVecNorms[np.newaxis, :]
-#         eigBlockVector, aux = _b_orthonormalize( B, eigBlockVector )
+            print("lambda:", _lambda)
+        #         # Normalize eigenvectors!
+        #         aux = np.sum( eigBlockVector.conj() * eigBlockVector, 0 )
+        #         eigVecNorms = np.sqrt( aux )
+        #         eigBlockVector = eigBlockVector / eigVecNorms[np.newaxis, :]
+        #         eigBlockVector, aux = _b_orthonormalize( B, eigBlockVector )
 
         if verbosityLevel > 10:
             print(eigBlockVector)
@@ -649,8 +660,8 @@ def lobpcg(A, X,
         if B is not None:
             if not restart:
                 eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:sizeX+currentBlockSize]
-                eigBlockVectorP = eigBlockVector[sizeX+currentBlockSize:]
+                eigBlockVectorR = eigBlockVector[sizeX : sizeX + currentBlockSize]
+                eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize :]
 
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
                 pp += np.dot(activeBlockVectorP, eigBlockVectorP)
@@ -682,8 +693,8 @@ def lobpcg(A, X,
         else:
             if not restart:
                 eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:sizeX+currentBlockSize]
-                eigBlockVectorP = eigBlockVector[sizeX+currentBlockSize:]
+                eigBlockVectorR = eigBlockVector[sizeX : sizeX + currentBlockSize]
+                eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize :]
 
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
                 pp += np.dot(activeBlockVectorP, eigBlockVectorP)
@@ -723,8 +734,8 @@ def lobpcg(A, X,
     # Computing the actual true residuals
 
     if verbosityLevel > 0:
-        print('final eigenvalue:', _lambda)
-        print('final residual norms:', residualNorms)
+        print("final eigenvalue:", _lambda)
+        print("final residual norms:", residualNorms)
 
     if retLambdaHistory:
         if retResidualNormsHistory:
