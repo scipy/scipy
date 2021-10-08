@@ -31,18 +31,24 @@ class IndexMixin:
     """
     def __getitem__(self, key):
         row, col = self._validate_indices(key)
+        def vector(data):
+            if self._is_array:
+                return data.todense().squeeze()
+            else:
+                return data
+
         # Dispatch to specialized methods.
         if isinstance(row, INT_TYPES):
             if isinstance(col, INT_TYPES):
                 return self._get_intXint(row, col)
             elif isinstance(col, slice):
-                return self._get_intXslice(row, col)
+                return vector(self._get_intXslice(row, col))
             elif col.ndim == 1:
-                return self._get_intXarray(row, col)
+                return vector(self._get_intXarray(row, col))
             raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
             if isinstance(col, INT_TYPES):
-                return self._get_sliceXint(row, col)
+                return vector(self._get_sliceXint(row, col))
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
                     return self.copy()
@@ -52,12 +58,12 @@ class IndexMixin:
             raise IndexError('index results in >2 dimensions')
         elif row.ndim == 1:
             if isinstance(col, INT_TYPES):
-                return self._get_arrayXint(row, col)
+                return vector(self._get_arrayXint(row, col))
             elif isinstance(col, slice):
                 return self._get_arrayXslice(row, col)
         else:  # row.ndim == 2
             if isinstance(col, INT_TYPES):
-                return self._get_arrayXint(row, col)
+                return vector(self._get_arrayXint(row, col))
             elif isinstance(col, slice):
                 raise IndexError('index results in >2 dimensions')
             elif row.shape[1] == 1 and (col.ndim == 1 or col.shape[0] == 1):

@@ -132,8 +132,7 @@ class dia_matrix(_data_matrix):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            from ._coo import coo_matrix
-            A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
+            A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
             self._shape = check_shape(A.shape)
@@ -212,7 +211,7 @@ class dia_matrix(_data_matrix):
             else:
                 res = np.zeros(num_cols, dtype=x.dtype)
                 res[:x.shape[0]] = x
-            ret = matrix(res, dtype=res_dtype)
+            ret = self._ascontainer(res, dtype=res_dtype)
 
         else:
             row_sums = np.zeros(num_rows, dtype=res_dtype)
@@ -220,7 +219,7 @@ class dia_matrix(_data_matrix):
             dia_matvec(num_rows, num_cols, len(self.offsets),
                        self.data.shape[1], self.offsets, self.data, one, row_sums)
 
-            row_sums = matrix(row_sums)
+            row_sums = self._ascontainer(row_sums)
 
             if axis is None:
                 return row_sums.sum(dtype=dtype, out=out)
@@ -228,7 +227,7 @@ class dia_matrix(_data_matrix):
             if axis is not None:
                 row_sums = row_sums.T
 
-            ret = matrix(row_sums.sum(axis=axis))
+            ret = self._ascontainer(row_sums.sum(axis=axis))
 
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
@@ -344,7 +343,7 @@ class dia_matrix(_data_matrix):
         data = np.hstack((self.data, np.zeros((self.data.shape[0], pad_amount),
                                               dtype=self.data.dtype)))
         data = data[r, c]
-        return dia_matrix((data, offsets), shape=(
+        return self._dia_container((data, offsets), shape=(
             num_cols, num_rows), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
@@ -370,7 +369,7 @@ class dia_matrix(_data_matrix):
     def tocsc(self, copy=False):
         from ._csc import csc_matrix
         if self.nnz == 0:
-            return csc_matrix(self.shape, dtype=self.dtype)
+            return self._csc_container(self.shape, dtype=self.dtype)
 
         num_rows, num_cols = self.shape
         num_offsets, offset_len = self.data.shape
@@ -388,8 +387,8 @@ class dia_matrix(_data_matrix):
         indptr[offset_len+1:] = indptr[offset_len]
         indices = row.T[mask.T].astype(idx_dtype, copy=False)
         data = self.data.T[mask.T]
-        return csc_matrix((data, indices, indptr), shape=self.shape,
-                          dtype=self.dtype)
+        return self._csc_container((data, indices, indptr), shape=self.shape,
+                                   dtype=self.dtype)
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
@@ -407,8 +406,7 @@ class dia_matrix(_data_matrix):
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
         data = self.data[mask]
 
-        from ._coo import coo_matrix
-        A = coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype)
+        A = self._coo_container((data,(row,col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -420,9 +418,9 @@ class dia_matrix(_data_matrix):
         but with different data.  By default the structure arrays are copied.
         """
         if copy:
-            return dia_matrix((data, self.offsets.copy()), shape=self.shape)
+            return self._dia_container((data, self.offsets.copy()), shape=self.shape)
         else:
-            return dia_matrix((data,self.offsets), shape=self.shape)
+            return self._dia_container((data,self.offsets), shape=self.shape)
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -465,4 +463,5 @@ def isspmatrix_dia(x):
     >>> isspmatrix_dia(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, dia_matrix)
+    from ._arrays import dia_array
+    return isinstance(x, dia_matrix) or isinstance(x, dia_array)
