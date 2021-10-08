@@ -3613,16 +3613,18 @@ class TestLevyStable:
                     pdf, density, decimal_places, default_method
                 )
 
-    def test_stats(self):
-        param_sets = [
+    @pytest.mark.parametrize(
+        "params,expected",
+        [
             [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
             [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
-        for args, exp_stats in param_sets:
-            calc_stats = stats.levy_stable.stats(
-                args[0], args[1], loc=args[2], scale=args[3], moments='mvsk'
-            )
-            assert_almost_equal(calc_stats, exp_stats)
+    )
+    def test_stats(self, params, expected):
+        observed = stats.levy_stable.stats(
+            params[0], params[1], loc=params[2], scale=params[3], moments='mvsk'
+        )
+        assert_almost_equal(observed, expected)
 
     @pytest.mark.parametrize('alpha', [0.25, 0.5, 0.75])
     def test_distribution_outside_support(self, alpha):
