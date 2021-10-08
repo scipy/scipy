@@ -3574,7 +3574,14 @@ class TestLevyStable:
             )
             assert_allclose(v1cdf, subdata['cdf'], 1e-5)
 
-    def test_pdf_alpha_equals_one_beta_non_zero(self):
+    @pytest.mark.parametrize(
+        "method,decimal_places",
+        [
+            ['dni', 4],
+            ['piecewise', 4],
+        ]
+    )
+    def test_pdf_alpha_equals_one_beta_non_zero(self, method, decimal_places):
         """ sample points extracted from Tables and Graphs of Stable
         Probability Density Functions - Donald R Holt - 1973 - p 187.
         """
@@ -3594,24 +3601,17 @@ class TestLevyStable:
                 .25, .5, 1
             ]
         )
-
-        tests = [
-            ['dni', 4],
-            ['piecewise', 4],
-        ]
-
         with np.errstate(all='ignore'), suppress_warnings() as sup:
             sup.filter(
                 category=RuntimeWarning,
                 message="Density calculation unstable.*"
             )
-            for default_method, decimal_places in tests:
-                stats.levy_stable.pdf_default_method = default_method
-                #stats.levy_stable.fft_grid_spacing = 0.0001
-                pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
-                assert_almost_equal(
-                    pdf, density, decimal_places, default_method
-                )
+            stats.levy_stable.pdf_default_method = method
+            #stats.levy_stable.fft_grid_spacing = 0.0001
+            pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
+            assert_almost_equal(
+                pdf, density, decimal_places, method
+            )
 
     @pytest.mark.parametrize(
         "params,expected",
