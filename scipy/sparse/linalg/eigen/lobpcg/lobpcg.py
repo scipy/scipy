@@ -17,6 +17,7 @@ References
        https://github.com/lobpcg/blopex
 """
 
+import warnings
 import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve, cholesky,
                           LinAlgError)
@@ -466,6 +467,9 @@ def lobpcg(A, X,
                 activeBlockVectorBP = _as2d(blockVectorBP[:, activeMask])
 
         if activeBlockVectorR is None:
+            warnings.warn("Iteration '%s' failed." % iterationNumber
+                          "tolerance '%s' may be violated." % residualTolerance,
+                          UserWarning)
             break
         if M is not None:
             # Apply preconditioner T to the active residuals.
@@ -477,6 +481,9 @@ def lobpcg(A, X,
             _applyConstraints(activeBlockVectorR,
                               gramYBY, blockVectorBY, blockVectorY)
         if activeBlockVectorR is None:
+            warnings.warn("Iteration '%s' failed." % iterationNumber
+                          "tolerance '%s' may be violated." % residualTolerance,
+                          UserWarning)
             break
 
         ##
@@ -496,6 +503,9 @@ def lobpcg(A, X,
         activeBlockVectorR, activeBlockVectorBR = aux
 
         if activeBlockVectorR is None:
+            warnings.warn("Iteration '%s' failed." % iterationNumber
+                          "tolerance '%s' may be violated." % residualTolerance,
+                          UserWarning)
             break
         activeBlockVectorAR = A(activeBlockVectorR)
 
