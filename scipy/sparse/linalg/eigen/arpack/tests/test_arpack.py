@@ -28,7 +28,7 @@ from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 
 
-def _get_test_tolerance(type_char, mattype=None):
+def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
     """
     Return tolerance values suitable for a given test:
 
@@ -66,6 +66,14 @@ def _get_test_tolerance(type_char, mattype=None):
     if mattype is csr_matrix and type_char in ('f', 'F'):
         # sparse in single precision: worse errors
         rtol *= 5
+
+
+    if mattype is np.asarray and type_char == 'F' and which == 'LA' \
+          and D_type.name == "gen-hermitian-Mc":
+        # missing case from PR 14798
+        tol = 30 * np.finfo(np.float32).eps
+        rtol *= 5
+
 
     return tol, rtol, atol
 
@@ -223,8 +231,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         kwargs['OPpart'] = OPpart
 
     # compute suitable tolerances
-    kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype)
-
+    kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype, d, which)
     # on rare occasions, ARPACK routines return results that are proper
     # eigenvalues and -vectors, but not necessarily the ones requested in
     # the parameter which. This is inherent to the Krylov methods, and
