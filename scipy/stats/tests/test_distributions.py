@@ -3222,6 +3222,10 @@ class TestLevyStable:
             [uname.system, uname.machine, uname.processor])
 
         # fmt: off
+        # There are a number of cases which fail on some but not all platforms.
+        # These are excluded by the filters below. TODO: Rewrite tests so that
+        # the now filtered out test cases are still run but marked in pytest as
+        # expected to fail.
         tests = [
             [
                 'dni', 1e-7, lambda r: (
