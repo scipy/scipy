@@ -3421,9 +3421,7 @@ class TestLevyStable:
     def test_cdf_nolan_samples(
             self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
     ):
-        """ Test cdf values against Nolan's stablec.exe output
-
-        """
+        """ Test cdf values against Nolan's stablec.exe output."""
         data = nolan_cdf_sample_data
         tests = [
             # piecewise generally good accuracy
@@ -3542,7 +3540,11 @@ class TestLevyStable:
                     verbose=False
                 )
 
-    def test_location_scale(self, nolan_loc_scale_sample_data):
+    @pytest.mark.parametrize("param", [0, 1])
+    @pytest.mark.parametrize("case", ["pdf", "cdf"])
+    def test_location_scale(
+            self, nolan_loc_scale_sample_data, param, case
+    ):
         """Tests for pdf and cdf where loc, scale are different from 0, 1
         """
         data = nolan_loc_scale_sample_data
@@ -3551,28 +3553,18 @@ class TestLevyStable:
         stats.levy_stable.cdf_default_method = "piecewise"
         stats.levy_stable.pdf_default_method = "piecewise"
 
-        for param in [0, 1]:
+        subdata = data[data["param"] == param]
+        stats.levy_stable.parameterization = f"S{param}"
 
-            subdata = data[data["param"] == param]
-            stats.levy_stable.parameterization = f"S{param}"
+        assert case in ["pdf", "cdf"]
+        function = (
+            stats.levy_stable.pdf if case == "pdf" else stats.levy_stable.cdf
+        )
 
-            v1pdf = stats.levy_stable.pdf(
-                subdata['x'],
-                subdata['alpha'],
-                subdata['beta'],
-                scale=2,
-                loc=3
-            )
-            assert_allclose(v1pdf, subdata['pdf'], 1e-5)
-
-            v1cdf = stats.levy_stable.cdf(
-                subdata['x'],
-                subdata['alpha'],
-                subdata['beta'],
-                scale=2,
-                loc=3
-            )
-            assert_allclose(v1cdf, subdata['cdf'], 1e-5)
+        v1 = function(
+            subdata['x'], subdata['alpha'], subdata['beta'], scale=2, loc=3
+        )
+        assert_allclose(v1, subdata[case], 1e-5)
 
     @pytest.mark.parametrize(
         "method,decimal_places",
