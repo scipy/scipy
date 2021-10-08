@@ -3,9 +3,9 @@ c
 c\Name: csortc
 c
 c\Description:
-c  Sorts the Complex array in X into the order 
+c  Sorts the Complex array in X into the order
 c  specified by WHICH and optionally applies the permutation to the
-c  Real  array Y. 
+c  Real  array Y.
 c
 c\Usage:
 c  call csortc
@@ -15,7 +15,7 @@ c\Arguments
 c  WHICH   Character*2.  (Input)
 c          'LM' -> sort X into increasing order of magnitude.
 c          'SM' -> sort X into decreasing order of magnitude.
-c          'LR' -> sort X with real(X) in increasing algebraic order 
+c          'LR' -> sort X with real(X) in increasing algebraic order
 c          'SR' -> sort X with real(X) in decreasing algebraic order
 c          'LI' -> sort X with imag(X) in increasing algebraic order
 c          'SI' -> sort X with imag(X) in decreasing algebraic order
@@ -45,9 +45,9 @@ c\Author
 c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
-c     Applied Mathematics 
-c     Rice University           
-c     Houston, Texas 
+c     Applied Mathematics
+c     Rice University
+c     Houston, Texas
 c
 c     Adapted from the sort routine in LANSO.
 c
@@ -72,7 +72,7 @@ c     %-----------------%
 c     | Array Arguments |
 c     %-----------------%
 c
-      Complex     
+      Complex
      &           x(0:n-1), y(0:n-1)
 c
 c     %---------------%
@@ -80,9 +80,9 @@ c     | Local Scalars |
 c     %---------------%
 c
       integer    i, igap, j
-      Complex     
+      Complex
      &           temp
-      Real 
+      Real
      &           temp1, temp2
 c
 c     %--------------------%
@@ -103,7 +103,7 @@ c     | Executable Statements |
 c     %-----------------------%
 c
       igap = n / 2
-c 
+c
       if (which .eq. 'LM') then
 c
 c        %--------------------------------------------%
@@ -163,7 +163,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -177,7 +177,7 @@ c
    60    continue
          igap = igap / 2
          go to 40
-c 
+c
       else if (which .eq. 'LR') then
 c
 c        %------------------------------------------------%
@@ -197,7 +197,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -211,7 +211,7 @@ c
    90    continue
          igap = igap / 2
          go to 70
-c 
+c
       else if (which .eq. 'SR') then
 c
 c        %------------------------------------------------%
@@ -230,7 +230,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -244,7 +244,7 @@ c
   120    continue
          igap = igap / 2
          go to 100
-c 
+c
       else if (which .eq. 'LI') then
 c
 c        %--------------------------------------------%
@@ -277,7 +277,7 @@ c
   150    continue
          igap = igap / 2
          go to 130
-c 
+c
       else if (which .eq. 'SI') then
 c
 c        %---------------------------------------------%
@@ -296,7 +296,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -311,7 +311,7 @@ c
          igap = igap / 2
          go to 160
       end if
-c 
+c
  9000 continue
       return
 c

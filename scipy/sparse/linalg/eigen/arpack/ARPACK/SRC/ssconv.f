@@ -3,7 +3,7 @@ c\BeginDoc
 c
 c\Name: ssconv
 c
-c\Description: 
+c\Description:
 c  Convergence testing for the symmetric Arnoldi eigenvalue routine.
 c
 c\Usage:
@@ -35,22 +35,22 @@ c\BeginLib
 c
 c\Routines called:
 c     arscnd  ARPACK utility routine for timing.
-c     slamch  LAPACK routine that determines machine constants. 
+c     slamch  LAPACK routine that determines machine constants.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
-c     Richard Lehoucq              CRPC / Rice University 
-c     Dept. of Computational &     Houston, Texas 
+c     Richard Lehoucq              CRPC / Rice University
+c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: sconv.F   SID: 2.4   DATE OF SID: 4/19/96   RELEASE: 2
 c
 c\Remarks
 c     1. Starting with version 2.4, this routine no longer uses the
-c        Parlett strategy using the gap conditions. 
+c        Parlett strategy using the gap conditions.
 c
 c\EndLib
 c
@@ -108,7 +108,7 @@ c     %-----------------------%
 c
       call arscnd (t0)
 c
-      eps23 = slamch('Epsilon-Machine') 
+      eps23 = slamch('Epsilon-Machine')
       eps23 = eps23**(2.0E+0 / 3.0E+0)
 c
       nconv  = 0
@@ -125,10 +125,10 @@ c
          end if
 c
    10 continue
-c 
+c
       call arscnd (t1)
       tsconv = tsconv + (t1 - t0)
-c 
+c
       return
 c
 c     %---------------%

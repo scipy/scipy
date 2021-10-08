@@ -26,7 +26,7 @@ c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.
 c          If ISHIFT=0, NP is the number of shifts the user needs
-c          to provide via reverse comunication. 0 < NP < NCV-NEV.
+c          to provide via reverse communication. 0 < NP < NCV-NEV.
 c          NP may be less than NCV-NEV since a leading block of the current
 c          upper Hessenberg matrix has split off and contains "unwanted"
 c          Ritz values.
@@ -142,7 +142,7 @@ c     dvout    ARPACK utility routine that prints vectors.
 c     dlamch   LAPACK routine that determines machine constants.
 c     dlapy2   LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     zcopy    Level 1 BLAS that copies one vector to another .
-c     wzdotc    Level 1 BLAS that computes the scalar product of two vectors.
+c     zdotc    Level 1 BLAS that computes the scalar product of two vectors.
 c     zswap    Level 1 BLAS that swaps two vectors.
 c     dznrm2   Level 1 BLAS that computes the norm of a vector.
 c
@@ -247,10 +247,10 @@ c     | External functions |
 c     %--------------------%
 c
       Complex*16
-     &           wzdotc
+     &           zdotc
       Double precision
      &           dznrm2 , dlamch , dlapy2
-      external   wzdotc , dznrm2 , dlamch , dlapy2
+      external   zdotc , dznrm2 , dlamch , dlapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -389,7 +389,7 @@ c
          iter = iter + 1
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, iter, ndigit,
+            call ivout (logfil, 1, [iter], ndigit,
      &           '_naup2: **** Start of major iteration number ****')
          end if
 c
@@ -402,9 +402,9 @@ c
          np  = kplusp - nev
 c
          if (msglvl .gt. 1) then
-            call ivout (logfil, 1, nev, ndigit,
+            call ivout (logfil, 1, [nev], ndigit,
      &     '_naup2: The length of the current Arnoldi factorization')
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &           '_naup2: Extend the Arnoldi factorization by')
          end if
 c
@@ -430,7 +430,7 @@ c
          update = .false.
 c
          if (msglvl .gt. 1) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &           '_naup2: Corresponding B-norm of the residual')
          end if
 c
@@ -658,7 +658,7 @@ c
          end if
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, nconv, ndigit,
+            call ivout (logfil, 1, [nconv], ndigit,
      &           '_naup2: no. of "converged" Ritz values at this iter.')
             if (msglvl .gt. 1) then
                kp(1) = nev
@@ -698,7 +698,7 @@ c
          end if
 c
          if (msglvl .gt. 2) then
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &                  '_naup2: The number of shifts to apply ')
             call zvout  (logfil, np, ritz, ndigit,
      &                  '_naup2: values of the shifts')
@@ -754,7 +754,7 @@ c
          end if
 c
          if (bmat .eq. 'G') then
-            cmpnorm = wzdotc  (n, resid, 1, workd, 1)
+            cmpnorm = zdotc  (n, resid, 1, workd, 1)
             rnorm = sqrt(dlapy2 (dble (cmpnorm),dimag (cmpnorm)))
          else if (bmat .eq. 'I') then
             rnorm = dznrm2 (n, resid, 1)
@@ -762,7 +762,7 @@ c
          cnorm = .false.
 c
          if (msglvl .gt. 2) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &      '_naup2: B-norm of residual for compressed factorization')
             call zmout  (logfil, nev, nev, h, ldh, ndigit,
      &        '_naup2: Compressed upper Hessenberg matrix H')

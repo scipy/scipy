@@ -251,22 +251,25 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         eigenvalues = eigenvalues[ind]
         evec = evec[:, ind]
 
-        # check eigenvectors
-        LHS = np.dot(a, evec)
-        if general:
-            RHS = eigenvalues * np.dot(b, evec)
-        else:
-            RHS = eigenvalues * evec
-
-            assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
-
         try:
             # check eigenvalues
             assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol,
                                err_msg=err)
-            break
+            check_evecs = True
         except AssertionError:
+            check_evecs = False
             ntries += 1
+
+        if check_evecs:
+        # check eigenvectors
+            LHS = np.dot(a, evec)
+            if general:
+                RHS = eigenvalues * np.dot(b, evec)
+            else:
+                RHS = eigenvalues * evec
+
+            assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
+            break
 
     # check eigenvalues
     assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol, err_msg=err)
