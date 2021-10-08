@@ -467,10 +467,12 @@ def lobpcg(A, X,
                 activeBlockVectorBP = _as2d(blockVectorBP[:, activeMask])
 
         if activeBlockVectorR is None:
-            warnings.warn("Iteration '%s' failed." % iterationNumber
-                          "tolerance '%s' may be violated." % residualTolerance,
-                          UserWarning)
-            break
+            warnings.warn(
+                "Iteration %d failed not reaching tolerance %g."
+                % (iterationNumber, residualTolerance),
+                UserWarning,
+           )
+           break
         if M is not None:
             # Apply preconditioner T to the active residuals.
             activeBlockVectorR = M(activeBlockVectorR)
@@ -481,9 +483,11 @@ def lobpcg(A, X,
             _applyConstraints(activeBlockVectorR,
                               gramYBY, blockVectorBY, blockVectorY)
         if activeBlockVectorR is None:
-            warnings.warn("Iteration '%s' failed." % iterationNumber
-                          "tolerance '%s' may be violated." % residualTolerance,
-                          UserWarning)
+            warnings.warn(
+                "Iteration %d failed not reaching tolerance %g."
+                % (iterationNumber, residualTolerance),
+                UserWarning,
+            )
             break
 
         ##
@@ -503,9 +507,11 @@ def lobpcg(A, X,
         activeBlockVectorR, activeBlockVectorBR = aux
 
         if activeBlockVectorR is None:
-            warnings.warn("Iteration '%s' failed." % iterationNumber
-                          "tolerance '%s' may be violated." % residualTolerance,
-                          UserWarning)
+            warnings.warn(
+                "Iteration %d failed not reaching tolerance %g."
+                % (iterationNumber, residualTolerance),
+                UserWarning,
+            )
             break
         activeBlockVectorAR = A(activeBlockVectorR)
 
