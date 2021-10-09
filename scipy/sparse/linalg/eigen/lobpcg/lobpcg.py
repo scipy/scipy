@@ -474,13 +474,6 @@ def lobpcg(
             if B is not None:
                 activeBlockVectorBP = _as2d(blockVectorBP[:, activeMask])
 
-        if activeBlockVectorR is None:
-            warnings.warn(
-                "Iteration %d failed not reaching tolerance %g."
-                % (iterationNumber, residualTolerance),
-                UserWarning,
-            )
-            break
         if M is not None:
             # Apply preconditioner T to the active residuals.
             activeBlockVectorR = M(activeBlockVectorR)
@@ -489,13 +482,6 @@ def lobpcg(
         # Apply constraints to the preconditioned residuals.
         if blockVectorY is not None:
             _applyConstraints(activeBlockVectorR, gramYBY, blockVectorBY, blockVectorY)
-        if activeBlockVectorR is None:
-            warnings.warn(
-                "Iteration %d failed not reaching tolerance %g."
-                % (iterationNumber, residualTolerance),
-                UserWarning,
-            )
-            break
 
         ##
         # B-orthogonalize the preconditioned residuals to X.
@@ -515,8 +501,8 @@ def lobpcg(
 
         if activeBlockVectorR is None:
             warnings.warn(
-                "Iteration %d failed not reaching tolerance %g."
-                % (iterationNumber, residualTolerance),
+                "Iteration %d failed at tolerance %g not reaching %g."
+                % (iterationNumber, np.max(residualNorms), residualTolerance),
                 UserWarning,
             )
             break
