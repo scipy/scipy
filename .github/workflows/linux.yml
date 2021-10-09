@@ -81,15 +81,16 @@ jobs:
 
     - name: Install packages
       run: |
+        which python
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
+        python -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
-        python3.10 -m pip install -r mypy_requirements.txt
+        python -m pip install -r mypy_requirements.txt
 
     - name: Mypy
       run: |
-        python3.10 -u runtests.py --mypy
+        python -u runtests.py --mypy
 
     - name: Test SciPy
       run: |
-        python3.10 -u runtests.py -m fast
+        python -u runtests.py -m fast
