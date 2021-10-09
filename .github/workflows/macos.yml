@@ -32,7 +32,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Add stdlib to ld path (to be removed after gcc version bump)
       run: |
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
+        export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
     - name: Setup gfortran
       run: |
         # this is taken verbatim from the numpy azure pipeline setup.
