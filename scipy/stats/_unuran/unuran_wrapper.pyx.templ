@@ -1614,3 +1614,94 @@ cdef class DiscreteAliasUrn(Method):
             pv_view = _validate_pv(dist)
 
         return pv_view, domain
+
+
+cdef class DiscreteGuideTable(Method):
+
+    cdef double[::1] pv_view
+
+    def __cinit__(self,
+                  dist,
+                  *,
+                  domain=None,
+                  guide_factor=1,
+                  variant=2,
+                  random_state=None):
+
+        cdef double[::1] pv_view
+
+        (pv_view, domain) = self._validate_args(dist, domain, variant)
+
+        # increment ref count of pv_view to make sure it doesn't get garbage collected.
+        self.pv_view = pv_view
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'domain': domain,
+            'guide_factor': guide_factor,
+            'variant': variant,
+            'random_state': random_state}
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self._messages = MessageStream()
+        _lock.acquire()
+
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_discr_new()
+
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+
+            n_pv = len(pv_view)
+            self._check_errorcode(unur_distr_discr_set_pv(self.distr, &pv_view[0], n_pv))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_discr_set_domain(self.distr, domain[0], domain[1]))
+
+            self.par = unur_dgt_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+
+            self._check_errorcode(unur_dgt_set_guidefactor(self.par, guide_factor))
+            self._check_errorcode(unur_dgt_set_variant(self.par, variant))
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain, variant):
+        cdef double[::1] pv_view
+
+        domain = _validate_domain(domain, dist)
+        if domain is not None:
+            if not np.isfinite(domain).all():
+                raise ValueError("`domain` must be finite.")
+        else:
+            if hasattr(dist, 'pmf'):
+                raise ValueError("`domain` must be provided when the "
+                                 "probability vector is not available.")
+
+        if variant not in {1, 2}:
+            raise ValueError("`variant` must be either 1 or 2")
+
+        if hasattr(dist, 'pmf'):
+            # we assume the PMF accepts and return floats. So, we need
+            # to vectorize it to call with an array of points in the domain.
+            pmf = np.vectorize(dist.pmf)
+            k = np.arange(domain[0], domain[1]+1)
+            pv = pmf(k)
+            try:
+                pv_view = _validate_pv(pv)
+            except ValueError as err:
+                msg = "PMF returned invalid values: " + err.args[0]
+                raise ValueError(msg) from None
+        else:
+            pv_view = _validate_pv(dist)
+
+        return pv_view, domain

@@ -52,6 +52,7 @@ class Binomial:
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
+    ("DiscreteGuideTable", {"dist": [0.02, 0.18, 0.8]}),
     ("NumericalInversePolynomial", {"dist": StandardNormal()})
 ]
 
