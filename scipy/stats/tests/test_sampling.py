@@ -8,6 +8,7 @@ from numpy.lib import NumpyVersion
 from scipy.stats import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
+    DiscreteGuideTable,
     NumericalInversePolynomial
 )
 from scipy.stats import UNURANError
