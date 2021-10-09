@@ -19,7 +19,8 @@ References
 
 import warnings
 import numpy as np
-from scipy.linalg import inv, eigh, cho_factor, cho_solve, cholesky, LinAlgError
+from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
+                          cholesky, LinAlgError)
 from scipy.sparse.linalg import aslinearoperator
 from numpy import block as bmat
 
@@ -39,7 +40,7 @@ def _report_nonhermitian(M, name):
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
         print(
-            "matrix %s of the type %s is not sufficiently Hermitian:" % (name, M.dtype)
+            "matrix %s of the type %s is not Hermitian:"% (name, M.dtype)
         )
         print("condition: %.e < %e" % (nmd, tol))
 
@@ -360,7 +361,10 @@ def lobpcg(
         A_dense = A(np.eye(n, dtype=A.dtype))
         B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
 
-        vals, vecs = eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
+        vals, vecs = eigh(A_dense,
+                          B_dense,
+                          eigvals=eigvals,
+                          check_finite=False)
         if largest:
             # Reverse order to be compatible with eigs() in 'LM' mode.
             vals = vals[::-1]
@@ -385,7 +389,7 @@ def lobpcg(
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
         except LinAlgError as e:
-            raise ValueError("cannot handle linearly dependent constraints") from e
+            raise ValueError("linearly dependent constraints") from e
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
@@ -481,17 +485,22 @@ def lobpcg(
         ##
         # Apply constraints to the preconditioned residuals.
         if blockVectorY is not None:
-            _applyConstraints(activeBlockVectorR, gramYBY, blockVectorBY, blockVectorY)
+            _applyConstraints(activeBlockVectorR,
+                              gramYBY,
+                              blockVectorBY,
+                              blockVectorY)
 
         ##
         # B-orthogonalize the preconditioned residuals to X.
         if B is not None:
             activeBlockVectorR = activeBlockVectorR - np.matmul(
-                blockVectorX, np.matmul(blockVectorBX.T.conj(), activeBlockVectorR)
+                blockVectorX,
+                np.matmul(blockVectorBX.T.conj(), activeBlockVectorR)
             )
         else:
             activeBlockVectorR = activeBlockVectorR - np.matmul(
-                blockVectorX, np.matmul(blockVectorX.T.conj(), activeBlockVectorR)
+                blockVectorX,
+                np.matmul(blockVectorX.T.conj(), activeBlockVectorR)
             )
 
         ##
@@ -583,7 +592,8 @@ def lobpcg(
             gramRBP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBP)
             if explicitGramFlag:
                 gramPAP = (gramPAP + gramPAP.T.conj()) / 2
-                gramPBP = np.dot(activeBlockVectorP.T.conj(), activeBlockVectorBP)
+                gramPBP = np.dot(activeBlockVectorP.T.conj(),
+                                 activeBlockVectorBP)
             else:
                 gramPBP = ident
 
@@ -605,7 +615,9 @@ def lobpcg(
             _handle_gramA_gramB_verbosity(gramA, gramB)
 
             try:
-                _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
+                _lambda, eigBlockVector = eigh(gramA,
+                                               gramB,
+                                               check_finite=False)
             except LinAlgError:
                 # try again after dropping the direction vectors P from RR
                 restart = True
@@ -617,7 +629,9 @@ def lobpcg(
             _handle_gramA_gramB_verbosity(gramA, gramB)
 
             try:
-                _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
+                _lambda, eigBlockVector = eigh(gramA,
+                                               gramB,
+                                               check_finite=False)
             except LinAlgError as e:
                 raise ValueError("eigh has failed in lobpcg iterations") from e
 
@@ -646,7 +660,8 @@ def lobpcg(
         if B is not None:
             if not restart:
                 eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX: sizeX + currentBlockSize]
+                eigBlockVectorR = eigBlockVector[sizeX:
+                                                 sizeX + currentBlockSize]
                 eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize:]
 
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
@@ -679,7 +694,8 @@ def lobpcg(
         else:
             if not restart:
                 eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX: sizeX + currentBlockSize]
+                eigBlockVectorR = eigBlockVector[sizeX:
+                                                 sizeX + currentBlockSize]
                 eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize:]
 
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
