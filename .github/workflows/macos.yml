@@ -30,6 +30,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Setup gfortran
       run: |
         # this is taken verbatim from the numpy azure pipeline setup.
