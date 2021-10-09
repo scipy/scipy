@@ -83,7 +83,7 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
-    "gmpy2",
+    "gmpy2==2.1.0rc1",
     "scikit-umfpack",
 ]
 doc = [
