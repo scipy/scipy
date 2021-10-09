@@ -12,11 +12,12 @@ typedef boost::math::policies::policy<
     boost::math::policies::discrete_quantile<
         boost::math::policies::integer_round_up > > Policy;
 
-// Run user_error function when evaluation_errors are encountered
+// Run user_error function when evaluation_errors and overflow_errors are encountered
 typedef boost::math::policies::policy<
-    boost::math::policies::evaluation_error<
-        boost::math::policies::user_error> > user_error_policy;
+    boost::math::policies::evaluation_error<boost::math::policies::user_error>,
+    boost::math::policies::overflow_error<boost::math::policies::user_error> > user_error_policy;
 BOOST_MATH_DECLARE_SPECIAL_FUNCTIONS(user_error_policy)
+
 
 // Raise a RuntimeWarning making users aware that something went wrong during
 // evaluation of the function, but return the best guess
@@ -29,6 +30,17 @@ boost::math::policies::user_evaluation_error(const char* function, const char* m
     // required information, so don't call boost::format for now
     msg += message;
     PyErr_WarnEx(NULL, msg.c_str(), 1);
+    return val;
+}
+
+
+template <class RealType>
+RealType
+boost::math::policies::user_overflow_error(const char* function, const char* message, const RealType& val) {
+    std::string msg("Error in function ");
+    msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
+    msg += message;
+    PyErr_SetString(PyExc_OverflowError, msg.c_str());
     return val;
 }
 
