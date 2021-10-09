@@ -40,7 +40,7 @@ def _report_nonhermitian(M, name):
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
         print(
-            "matrix %s of the type %s is not Hermitian:"% (name, M.dtype)
+            "matrix %s of the type %s is not Hermitian:" % (name, M.dtype)
         )
         print("condition: %.e < %e" % (nmd, tol))
 
