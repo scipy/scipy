@@ -209,7 +209,7 @@ def test_failure_to_run_iterations():
     A = X @ X.T
     Q = np.random.randn(X.shape[0], 4)
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*failed not reaching.*")
+        sup.filter(UserWarning, ".*not reaching.*")
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
         assert(np.max(eigenvalues) > 0)
 
