@@ -57,22 +57,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10]
+        python-version: ["3.10"]
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
 
-    - name: Install Python 3.10
-      if: matrix.python-version == '3.10'
-      run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo apt-get update
-        sudo apt install -y --no-install-recommends python3.10-dev python3.10-distutils python3.10-venv
-        # GitHub doesn't provide a pip interface with py3.10 yet. Therefore, install it manually :
-        curl -O https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py && rm get-pip.py
-        python3.10 -m pip install --upgrade pip setuptools
+# Keeping this for later 3.11
+#    - name: Install Python 3.11
+#      if: matrix.python-version == '3.11'
+#      run: |
+#        sudo add-apt-repository ppa:deadsnakes/ppa
+#        sudo apt-get update
+#        sudo apt install -y --no-install-recommends python3.11-dev python3.11-distutils python3.11-venv
+#        # GitHub doesn't provide a pip interface with py3.11 yet. Therefore, install it manually :
+#        curl -O https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py && rm get-pip.py
+#        python3.11 -m pip install --upgrade pip setuptools
 
     - name: Install other build dependencies
       run: |

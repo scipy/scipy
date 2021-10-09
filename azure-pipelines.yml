@@ -55,7 +55,7 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: coverage_full_tests
+  - job: prerelease_deps_coverage_64bit_blas
     pool:
       vmImage: 'ubuntu-18.04'
     steps:
@@ -68,29 +68,16 @@ stages:
       parameters:
         test_mode: full
         coverage: true
-        numpy_spec: "numpy==1.18.5"
-  - job: prerelease_deps_64bit_blas
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
         numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         other_spec: "--pre --upgrade --timeout=60"
         use_64bit_blas: true
   - job: refguide_asv_check
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -106,7 +93,7 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -148,7 +135,7 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - script: >-
@@ -231,16 +218,16 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python38-64bit-full-ilp64:
-            PYTHON_VERSION: '3.8'
+          Python39-64bit-full-ilp64:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-full:
-            PYTHON_VERSION: '3.9'
+          Python310-64bit-full:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             BITS: 64
