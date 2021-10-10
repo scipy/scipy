@@ -27,7 +27,7 @@ __all__ = ['get_array_bandwidth', 'issymmetric', 'ishermitian']
 
 @cython.embedsignature(True)
 def get_array_bandwidth(a):
-    """Return the lower and upper bandwidth of a numeric array.
+    """Return the lower and upper bandwidth of a 2D numeric array.
 
     Parameters
     ----------
@@ -36,7 +36,7 @@ def get_array_bandwidth(a):
 
     Returns
     -------
-    lu: tuple
+    lu : tuple
         2-tuple of ints indicating the lower and upper bandwith. A zero
         denotes no sub- or super-diagonal on that side (triangular), and,
         say for N rows (N-1) means that side is full. Same example applies
@@ -63,8 +63,6 @@ def get_array_bandwidth(a):
     TypeError
         If the dtype of the array is not supported, in particular, NumPy
         float16, float128 and complex256 dtypes.
-    ValueError
-        If the input array is not a 2D NumPy array.
 
     Examples
     --------
@@ -178,16 +176,18 @@ def issymmetric(a, atol=None, rtol=None):
 
     Parameters
     ----------
-    a: ndarray
-        Input array of size (N, N)
-    atol: float, optional
+    a : ndarray
+        Input array of size (N, N).
+
+    atol : float, optional
         Absolute error bound
-    rtol: float, optional
+
+    rtol : float, optional
         Relative error bound
 
     Returns
     -------
-    sym: bool
+    sym : bool
         Returns True if the array symmetric.
 
     Notes
@@ -198,9 +198,9 @@ def issymmetric(a, atol=None, rtol=None):
 
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored. However,
-    `numpy.inf` will be treated as a number, that is to say
-    ``[[1, inf], [inf, 2]]`` will return ``True``. On the other hand ``np.NaN``
-    is never symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
+    `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
     by `numpy.allclose` and the tolerance values are passed to it. Otherwise an
@@ -305,25 +305,27 @@ def ishermitian(a, atol=None, rtol=None):
 
     Parameters
     ----------
-    a: ndarray
+    a : ndarray
         Input array of size (N, N)
-    atol: float, optional
+
+    atol : float, optional
         Absolute error bound
-    rtol: float, optional
+
+    rtol : float, optional
         Relative error bound
 
     Returns
     -------
-    her: bool
+    her : bool
         Returns True if the array Hermitian.
 
     Notes
     -----
     For square empty arrays the result is returned True by convention.
 
-    `numpy.inf` will be treated as a number, that is to say
-    ``[[1, inf], [inf, 2]]`` will return ``True``. On the other hand ``np.NaN``
-    is never symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
+    `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
     by `numpy.allclose` and the tolerance values are passed to it. Otherwise an
@@ -358,7 +360,7 @@ def ishermitian(a, atol=None, rtol=None):
     >>> Af = np.array([[0, 1 + 1j], [1 - (1+1e-12)*1j, 0]])
     >>> ishermitian(Af)
     False
-    >>> ishermitian(Af, atol=5e-11)
+    >>> ishermitian(Af, atol=5e-11) # almost hermitian with atol
     True
 
     """
