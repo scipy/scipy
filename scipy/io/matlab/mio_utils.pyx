@@ -5,6 +5,8 @@
 import numpy as np
 cimport numpy as cnp
 
+cnp.import_array()
+
 
 cpdef object squeeze_element(cnp.ndarray arr):
     ''' Return squeezed element
