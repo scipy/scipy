@@ -1617,7 +1617,51 @@ cdef class DiscreteAliasUrn(Method):
 
 
 cdef class DiscreteGuideTable(Method):
+    r"""
+    DiscreteGuideTable(dist, *, domain=None, guide_factor=1, variant=2, random_state=None)
 
+    Discrete Guide Table method.
+
+    The Discrete Guide Table method  samples from arbitrary, but finite,
+    probability vectors. It uses the probability vector of size :math:`N` or a
+    probability mass function with a finite support to generate random
+    numbers from the distribution. Discrete Guide Table has a very slow set up
+    (linear with the vector length) but provides very fast sampling.
+
+    Parameters
+    ----------
+    dist : array_like or object, optional
+        Probability vector (PV) of the distribution. If PV isn't available,
+        an instance of a class with a ``pmf`` method is expected. The signature
+        of the PMF is expected to be: ``def pmf(self, k: int) -> float``. i.e. it
+        should accept a Python integer and return a Python float.
+    domain : int, optional
+        Support of the PMF. If a probability vector (``pv``) is not available, a
+        finite domain must be given. i.e. the PMF must have a finite support.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise, the support is assumed to be ``(0, len(pv))``. When this
+          parameter is passed in combination with a probability vector,
+          ``domain[0]`` is used to relocate the distribution from
+          ``(0, len(pv))`` to ``(domain[0], domain[0]+len(pv))`` and
+          ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
+           explanation.
+    guide_factor: int, optional
+        Size of the guide table relative to length of PV. Larger guide tables
+        result in faster generation time but require a more expensive setup.
+        Sizes larger than 3 are not recommended. If the relative size is set to
+        0, sequential search is used. However, this is not recommended, except
+        in exceptional cases, since method DSS has almost no setup and is thus
+        faster (but requires the sum over the PV as input parameter). Default
+        is 1.
+    variant: int, optional
+        variant for setup step. Possible values are 1 or 2. Variant 2 is faster
+        but more sensitive to roundoff errors when the guide table is large.
+        Variant 2 should be used for short probability vectors (N<1000) and
+        variant 1 otherwise. Default is 2.
+    """
     cdef double[::1] pv_view
 
     def __cinit__(self,
