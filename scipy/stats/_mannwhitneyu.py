@@ -161,20 +161,6 @@ def _tie_check(xy):
     return np.any(t != 1)
 
 
-def _mwu_choose_method(n1, n2, xy, method):
-    """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
-
-    # if both inputs are large, asymptotic is OK
-    if n1 > 8 and n2 > 8:
-        return "asymptotic"
-
-    # if there are any ties, asymptotic is preferred
-    if np.apply_along_axis(_tie_check, -1, xy).any():
-        return "asymptotic"
-
-    return "exact"
-
-
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
@@ -395,9 +381,6 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     n1, n2 = x.shape[-1], y.shape[-1]
 
-    if method == "auto":
-        method = _mwu_choose_method(n1, n2, xy, method)
-
     # Follows [2]
     ranks = stats.rankdata(xy, axis=-1)  # method 2, step 1
     R1 = ranks[..., :n1].sum(axis=-1)    # method 2, step 2
@@ -411,8 +394,22 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     else:
         U, f = np.maximum(U1, U2), 2  # multiply SF by two for two-sided test
 
+    if method == "auto":
+        # if inputs are small and there are no ties, exact is preferred
+        if (n1 <= 8 or n2 <= 8) and not \
+                np.apply_along_axis(_tie_check, -1, xy).any():
+            method = "exact"
+        else:
+            method = "asymptotic"
     if method == "exact":
-        p = _mwu_state.sf(U.astype(int), n1, n2)
+        try:
+            p = _mwu_state.sf(U.astype(int), n1, n2)
+        except RecursionError as e:
+            raise Exception("Hit recursion limit. Please "
+                            "increase recursion limit using "
+                            "sys.setrecursionlimit or "
+                            "chose method="
+                            "'asymptotic'. ").with_traceback(e.__traceback__)
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
         p = stats.norm.sf(z)
