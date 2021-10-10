@@ -855,7 +855,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
         raise ValueError('Shapes of c {} and b {} are incompatible'
                          .format(c.shape, b.shape))
 
-    fc = np.fft.fft(np.rollaxis(c, caxis, c.ndim), axis=-1)
+    fc = np.fft.fft(np.moveaxis(c, caxis, -1), axis=-1)
     abs_fc = np.abs(fc)
     if tol is None:
         # This is the same tolerance as used in np.linalg.matrix_rank.
@@ -875,7 +875,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
             # division fb/fc below.
             fc[near_zeros] = 1
 
-    fb = np.fft.fft(np.rollaxis(b, baxis, b.ndim), axis=-1)
+    fb = np.fft.fft(np.moveaxis(b, baxis, -1), axis=-1)
 
     q = fb / fc
 
@@ -892,7 +892,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
     if not (np.iscomplexobj(c) or np.iscomplexobj(b)):
         x = x.real
     if outaxis != -1:
-        x = np.rollaxis(x, -1, outaxis)
+        x = np.moveaxis(x, -1, outaxis)
     return x
 
 

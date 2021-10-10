@@ -1039,7 +1039,7 @@ class matrix_normal_gen(multi_rv_generic):
 
         """
         numrows, numcols = dims
-        roll_dev = np.rollaxis(X-mean, axis=-1, start=0)
+        roll_dev = np.moveaxis(X-mean, -1, 0)
         scale_dev = np.tensordot(col_prec_rt.T,
                                  np.dot(roll_dev, row_prec_rt), 1)
         maha = np.sum(np.sum(np.square(scale_dev), axis=-1), axis=0)
@@ -1124,7 +1124,7 @@ class matrix_normal_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
         std_norm = random_state.standard_normal(size=(dims[1], size, dims[0]))
         roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
-        out = np.rollaxis(roll_rvs.T, axis=1, start=0) + mean[np.newaxis, :, :]
+        out = np.moveaxis(roll_rvs.T, 1, 0) + mean[np.newaxis, :, :]
         if size == 1:
             out = out.reshape(mean.shape)
         return out

@@ -1451,7 +1451,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if time_axis != Zxx.ndim-1:
             if freq_axis < time_axis:
                 time_axis -= 1
-            x = np.rollaxis(x, -1, time_axis)
+            x = np.moveaxis(x, -1, time_axis)
 
     time = np.arange(x.shape[0])/float(fs)
     return time, x
@@ -1714,14 +1714,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     else:
         if x.size == 0 or y.size == 0:
             outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
-            emptyout = np.rollaxis(np.empty(outshape), -1, axis)
+            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
             return emptyout, emptyout, emptyout
 
     if x.ndim > 1:
         if axis != -1:
-            x = np.rollaxis(x, axis, len(x.shape))
+            x = np.moveaxis(x, axis, -1)
             if not same_data and y.ndim > 1:
-                y = np.rollaxis(y, axis, len(y.shape))
+                y = np.moveaxis(y, axis, -1)
 
     # Check if x and y are the same length, zero-pad if necessary
     if not same_data:
@@ -1791,9 +1791,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         # Wrap this function so that it receives a shape that it could
         # reasonably expect to receive.
         def detrend_func(d):
-            d = np.rollaxis(d, -1, axis)
+            d = np.moveaxis(d, -1, axis)
             d = detrend(d)
-            return np.rollaxis(d, axis, len(d.shape))
+            return np.moveaxis(d, axis, -1)
     else:
         detrend_func = detrend
 
@@ -1866,7 +1866,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         axis -= 1
 
     # Roll frequency axis back to axis where the data came from
-    result = np.rollaxis(result, -1, axis)
+    result = np.moveaxis(result, -1, axis)
 
     return freqs, time, result
 

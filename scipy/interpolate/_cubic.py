@@ -15,7 +15,7 @@ def prepare_input(x, y, axis, dydx=None):
     """Prepare input for cubic spline interpolators.
 
     All data are converted to numpy arrays and checked for correctness.
-    Axes equal to `axis` of arrays `y` and `dydx` are rolled to be the 0th
+    Axes equal to `axis` of arrays `y` and `dydx` are moved to be the 0th
     axis. The value of `axis` is converted to lie in
     [0, number of dimensions of `y`).
     """
@@ -60,9 +60,9 @@ def prepare_input(x, y, axis, dydx=None):
     if np.any(dx <= 0):
         raise ValueError("`x` must be strictly increasing sequence.")
 
-    y = np.rollaxis(y, axis)
+    y = np.moveaxis(y, axis, 0)
     if dydx is not None:
-        dydx = np.rollaxis(dydx, axis)
+        dydx = np.moveaxis(dydx, axis, 0)
 
     return x, dx, y, axis, dydx
 
