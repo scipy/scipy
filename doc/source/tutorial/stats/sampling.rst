@@ -98,6 +98,7 @@ where
 Methods for discrete distributions     Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
 =====================================  ===============  ===============  ===========  ==============
 :class:`~DiscreteAliasUrn`             pv               pmf              slow         very fast
+:class:`~DiscreteGuideTable`           pv               pmf              slow         very fast
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -286,6 +287,7 @@ Generators in :mod:`scipy.stats`
    sampling_tdr
    sampling_dau
    sampling_pinv
+   sampling_dgt
 
 
 References
