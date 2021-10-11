@@ -276,7 +276,7 @@ class TestGenlaguerre:
 
 
 def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
-                      rtol=1e-15, atol=1e-14):
+                      rtol=1e-15, atol=5e-14):
     # this test is copied from numpy's TestGauss in test_hermite.py
     x, w, mu = root_func(N, True)
 

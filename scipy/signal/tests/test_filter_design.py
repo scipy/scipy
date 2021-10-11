@@ -2790,7 +2790,7 @@ class TestCheby1:
                         sorted(z2, key=np.imag), rtol=1e-13)
         assert_allclose(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-15)
+        assert_allclose(k, k2, rtol=0, atol=5e-16)
 
     def test_ba_output(self):
         # with transfer function conversion,  without digital conversion
