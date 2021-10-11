@@ -18,6 +18,7 @@ your `SciPy <https://github.com/scipy/scipy>`_ clone::
     git submodule update --init
 
     # Build SciPy for development work plus run tests
+    python setup.py build_ext --inplace
     python runtests.py    # Alternatively, it's fine to use `python setup.py develop`
 
     # Install SciPy in develop mode in conda
