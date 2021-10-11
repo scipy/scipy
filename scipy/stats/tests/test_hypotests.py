@@ -1537,3 +1537,88 @@ class TestTukeyHSD:
         res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
+
+
+class TestPoissonETest:
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+        # example from [1], 6. Illustrative examples: Example 1
+        [0, 100, 3, 100, 0.0884],
+        [2, 100, 6, 100, 0.1749]
+    ))
+    def test_paper_examples(self, c1, n1, c2, n2, p_expect):
+        res = stats.poisson_means_test(c1, n1, c2, n2)
+        assert_allclose(res.pvalue, p_expect, atol=1e-4)
+
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect, alt, d", (
+        # These test cases are produced by the wrapped fortran code from the
+        # original authors. Using a slightly modified version of this fortran,
+        # found here, https://github.com/nolanbconaway/poisson-etest,
+        # additional tests were created.
+        [20, 10, 20, 10, 0.9999997568929630, 'two-sided', 0],
+        [10, 10, 10, 10, 0.9999998403241203, 'two-sided', 0],
+        [10, 10, 10, 10, 0.741441295832156, 'two-sided', .1],
+        [3, 100, 20, 300, 0.12202725450896404, 'two-sided', 0]
+    ))
+    def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
+        res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
+        assert_allclose(res.pvalue, p_expect, atol=1e-6)
+
+    def test_different_results(self):
+        # The implementation in Fortran is known to break down at higher
+        # counts and observations, so we expect different results. By
+        # inspection we can infer the p-value to be near one.
+        count1, count2 = 10000, 10000
+        nobs1, nobs2 = 10000, 10000
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_less_than_zero_lambda_hat2(self):
+        # demonstrates behavior that fixes a known fault from original Fortran.
+        # p-value should clearly be near one.
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_allclose(res.pvalue, 1)
+
+    def test_non_int_args_error(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(.7, nobs1, count2, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, .7, count2, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, nobs1, .7, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, nobs1, count2, .7)
+
+    def test_negative_count_error(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        message = "...count2 should be greater than or equal to 0"
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(-1, nobs1, count2, nobs2)
+        message = "...count2 should be greater than or equal to 0"
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, -1, nobs2)
+
+    def test_zero_nobs_error(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        message = "...nobs2 should be greater than 0"
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, -1, count2, nobs2)
+        message = "...nobs2 should be greater than 0"
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, -1)
+
+    def test_diff_less_zero_error(self):
+        count1, count2 = 0, 0
+        nobs1, nobs2 = 1, 1
+        diff = -1
+        with assert_raises(ValueError, match="diff can not have negative"):
+            stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=diff)
+
+    def test_invalid_alt(self):
+        with assert_raises(ValueError, match="unknown alternative 'error'"):
+            stats.poisson_means_test(1, 2, 1, 2, alternative='error')
