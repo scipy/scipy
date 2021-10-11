@@ -3893,6 +3893,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
     def test_gh12999(self):
+        np.random.seed(123456)
         for x in range(1000, 12000, 1000):
             vals1 = np.random.normal(size=(x))
             vals2 = np.random.normal(size=(x + 10), loc=0.5)
