@@ -3028,27 +3028,140 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    @pytest.fixture
+    def nolan_pdf_sample_data(self):
+        """Sample data points for pdf computed with Nolan's stablec
+
+        See - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+        There's a known limitation of Nolan's executable for alpha < 0.2.
+
+        The data table loaded below is generated from Nolan's stablec
+        with the following parameter space:
+
+            alpha = 0.1, 0.2, ..., 2.0
+            beta = -1.0, -0.9, ..., 1.0
+            p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+        and the equivalent for the right tail
+
+        Typically inputs for stablec:
+
+            stablec.exe <<
+            1 # pdf
+            1 # Nolan S equivalent to S0 in scipy
+            .25,2,.25 # alpha
+            -1,-1,0 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-pdf-sample-data.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        return data
+
+    @pytest.fixture
+    def nolan_cdf_sample_data(self):
+        """Sample data points for cdf computed with Nolan's stablec
+
+        See - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+        There's a known limitation of Nolan's executable for alpha < 0.2.
+
+        The data table loaded below is generated from Nolan's stablec
+        with the following parameter space:
+
+            alpha = 0.1, 0.2, ..., 2.0
+            beta = -1.0, -0.9, ..., 1.0
+            p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+
+        and the equivalent for the right tail
+
+        Ideally, Nolan's output for CDF values should match the percentile
+        from where they have been sampled from. Even more so as we extract
+        percentile x positions from stablec too. However, we note at places
+        Nolan's stablec will produce absolute errors in order of 1e-5. We
+        compare against his calculations here. In future, once we less
+        reliant on Nolan's paper we might switch to comparing directly at
+        percentiles (those x values being produced from some alternative
+        means).
+
+        Typically inputs for stablec:
+
+            stablec.exe <<
+            2 # cdf
+            1 # Nolan S equivalent to S0 in scipy
+            .25,2,.25 # alpha
+            -1,-1,0 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-cdf-sample-data.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        return data
+
+    @pytest.fixture
+    def nolan_loc_scale_sample_data(self):
+        """Sample data where loc, scale are different from 0, 1
+
+        Data extracted in similar way to pdf/cdf above using
+        Nolan's stablec but set to an arbitrary location scale of
+        (2, 3) for various important parameters alpha, beta and for
+        parameterisations S0 and S1.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-loc-scale-sample-data.npy'
+        )
+        return data
+
+    @pytest.mark.parametrize(
+        "sample_size", [
+            pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
+        ]
+    )
+    @pytest.mark.parametrize("parameterization", ["S0", "S1"])
+    @pytest.mark.parametrize(
+        "alpha,beta", [(1.0, 0), (1.0, -0.5), (1.5, 0), (1.9, 0.5)]
+    )
+    @pytest.mark.parametrize("gamma,delta", [(1, 0), (3, 2)])
+    def test_rvs(
+            self,
+            parameterization,
+            alpha,
+            beta,
+            gamma,
+            delta,
+            sample_size,
+    ):
+        stats.levy_stable.parameterization = parameterization
+        ls = stats.levy_stable(
+            alpha=alpha, beta=beta, scale=gamma, loc=delta
+        )
+        _, p = stats.kstest(
+            ls.rvs(size=sample_size, random_state=1234), ls.cdf
+        )
+        assert p > 0.05
+
     @pytest.mark.slow
-    def test_rvs(self):
-        for param in ["S0", "S1"]:
-            # Various arbitrary pairs. It's
-            # important to have variations of
-            # alpha, beta == 1 and !=1.
-            for alpha, beta in [
-                (1.0, 0),
-                (1.0, -0.5),
-                (1.5, 0),
-                (1.9, 0.5),
-            ]:
-                # check standardized and non-standardized
-                for gamma, delta in [(1, 0), (3, 2)]:
-                    stats.levy_stable.parameterization = param
-                    ls = stats.levy_stable(
-                        alpha=alpha, beta=beta,
-                        scale=gamma, loc=delta)
-                    _, p = stats.kstest(
-                        ls.rvs(size=1500, random_state=1234), ls.cdf)
-                    assert_equal(p > 0.05, True)
+    @pytest.mark.parametrize('beta', [0.5, 1])
+    def test_rvs_alpha1(self, beta):
+        """Additional test cases for rvs for alpha equal to 1."""
+        np.random.seed(987654321)
+        alpha = 1.0
+        loc = 0.5
+        scale = 1.5
+        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
+                                  size=5000)
+        stat, p = stats.kstest(x, 'levy_stable',
+                               args=(alpha, beta, loc, scale))
+        assert p > 0.01
 
     def test_fit(self):
         # construct data to have percentiles that match
@@ -3074,41 +3187,32 @@ class TestLevyStable:
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
 
-    @pytest.mark.slow
-    def test_pdf_nolan_samples(self):
-        """ Test pdf values against Nolan's stablec.exe output
-            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
-
-            There's a known limitation of Nolan's executable for alpha < 0.2.
-
-            The data table loaded below is generated from Nolan's stablec
-            with the following parameter space:
-
-                alpha = 0.1, 0.2, ..., 2.0
-                beta = -1.0, -0.9, ..., 1.0
-                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
-                    and the equivalent for the right tail
-
-            Typically inputs for stablec:
-
-                stablec.exe <<
-                1 # pdf
-                1 # Nolan S equivalent to S0 in scipy
-                .25,2,.25 # alpha
-                -1,-1,0 # beta
-                -10,10,1 # x
-                1,0 # gamma, delta
-                2 # output file
-        """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-Z1-pdf-sample-data.npy'
-        )
-
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
-
-        # support numpy 1.8.2 for travis
-        npisin = np.isin if hasattr(np, "isin") else np.in1d
+    @pytest.mark.parametrize(
+        "pct_range,alpha_range,beta_range", [
+            pytest.param(
+                [.01, .5, .99],
+                [.1, 1, 2],
+                [-1, 0, .8],
+            ),
+            pytest.param(
+                [.01, .05, .5, .95, .99],
+                [.1, .5, 1, 1.5, 2],
+                [-.9, -.5, 0, .3, .6, 1],
+                marks=pytest.mark.slow
+            ),
+            pytest.param(
+                [.01, .05, .1, .25, .35, .5, .65, .75, .9, .95, .99],
+                np.linspace(0.1, 2, 20),
+                np.linspace(-1, 1, 21),
+                marks=pytest.mark.xslow,
+            ),
+        ]
+    )
+    def test_pdf_nolan_samples(
+            self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
+    ):
+        """Test pdf values against Nolan's stablec.exe output"""
+        data = nolan_pdf_sample_data
 
         # some tests break on linux 32 bit
         uname = platform.uname()
@@ -3117,56 +3221,136 @@ class TestLevyStable:
             [uname.system, uname.machine, uname.processor])
 
         # fmt: off
+        # There are a number of cases which fail on some but not all platforms.
+        # These are excluded by the filters below. TODO: Rewrite tests so that
+        # the now filtered out test cases are still run but marked in pytest as
+        # expected to fail.
         tests = [
-            # TODO: reduce range of pct to speed up computation as
-            # numerical integration slow, eg [.01, .05, .5, .95, .99]
-            ['dni', 1e-7, lambda r: ~(
-                ((r['beta'] == 0) & (r['pct'] == 0.5))
-                | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6)
-                    & (r['pct'] == 0.5))
-                | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
-                | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
-                | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75])
-                    & npisin(np.abs(r['beta']), [.5, .6, .7]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
-                    & npisin(np.abs(r['beta']), [.1]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.35, .65])
-                    & npisin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5]))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
-                    & (r['pct'] == 0.25))
-                | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
-                    & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.3)
-                    & (r['pct'] == 0.35))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.5])
-                    & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
-                    & npisin(np.abs(r['beta']), [.8, .9, 1.]))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.01, .99])
-                    & npisin(np.abs(r['beta']), [-.1, .1]))
-                # various points ok but too sparse to list
-                | ((r['alpha'] >= 1.1))
-            )],
-
+            [
+                'dni', 1e-7, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    ~(
+                        (
+                            (r['beta'] == 0) &
+                            (r['pct'] == 0.5)
+                        ) |
+                        (
+                            (r['beta'] >= 0.9) &
+                            (r['alpha'] >= 1.6) &
+                            (r['pct'] == 0.5)
+                        ) |
+                        (
+                            (r['alpha'] <= 0.4) &
+                            np.isin(r['pct'], [.01, .99])
+                        ) |
+                        (
+                            (r['alpha'] <= 0.3) &
+                            np.isin(r['pct'], [.05, .95])
+                        ) |
+                        (
+                            (r['alpha'] <= 0.2) &
+                            np.isin(r['pct'], [.1, .9])
+                        ) | 
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.25, .75]) &
+                            np.isin(np.abs(r['beta']), [.5, .6, .7])
+                        ) |
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.5]) &
+                            np.isin(np.abs(r['beta']), [.1])
+                        ) |
+                        (
+                            (r['alpha'] == 0.1) &
+                            np.isin(r['pct'], [.35, .65]) &
+                            np.isin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5])
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == 0.5) &
+                            (r['pct'] == 0.25)
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == -0.3) &
+                            (r['pct'] == 0.65)
+                        ) |
+                        (
+                            (r['alpha'] == 0.2) &
+                            (r['beta'] == 0.3) &
+                            (r['pct'] == 0.35)
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.5]) &
+                            np.isin(np.abs(r['beta']), [.1, .2, .3, .4])
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.35, .65]) &
+                            np.isin(np.abs(r['beta']), [.8, .9, 1.])
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['pct'], [.01, .99]) &
+                            np.isin(np.abs(r['beta']), [-.1, .1])
+                        ) |
+                        # various points ok but too sparse to list
+                        (r['alpha'] >= 1.1)
+                    )
+                )
+            ],
             # piecewise generally good accuracy
-            ['piecewise', 1e-11, lambda r: (
-                (r['alpha'] > 0.2) & (r['alpha'] != 1.)
-            )],
+            [
+                'piecewise', 1e-11, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 0.2) &
+                    (r['alpha'] != 1.)
+                )
+            ],
             # for alpha = 1. for linux 32 bit optimize.bisect
             # has some issues for .01 and .99 percentile
-            ['piecewise', 1e-11, lambda r: (
-                (r['alpha'] == 1.) & (not is_linux_32)
-            )],
+            [
+                'piecewise', 1e-11, lambda r: (
+                    (r['alpha'] == 1.) &
+                    (not is_linux_32) &
+                    np.isin(r['pct'], pct_range) &
+                    (1. in alpha_range) &
+                    np.isin(r['beta'], beta_range)
+                )
+            ],
             # for small alpha very slightly reduced accuracy
-            ['piecewise', 5e-11, lambda r: (
-                (r['alpha'] <= 0.2)
-            )],
-
+            [
+                'piecewise', 5e-11, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] <= 0.2)
+                )
+            ],
             # fft accuracy reduces as alpha decreases
-            ['fft-simpson', 1e-5, lambda r: r['alpha'] >= 1.9],
-            ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1)
-                & (r['alpha'] < 1.9)],
+            [
+                'fft-simpson', 1e-5, lambda r: (
+                    (r['alpha'] >= 1.9) &
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range)
+                ),
+            ],
+            [
+                'fft-simpson', 1e-6, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1) &
+                    (r['alpha'] < 1.9)
+                )
+            ],
             # fft relative errors for alpha < 1, will raise if enabled
             # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
             # ['fft-simpson', 1e-3, lambda r: r['alpha'] == 0.8],
@@ -3216,73 +3400,108 @@ class TestLevyStable:
                     verbose=False
                 )
 
-    @pytest.mark.slow
-    def test_cdf_nolan_samples(self):
-        """ Test cdf values against Nolan's stablec.exe output
-            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
-
-            There's a known limitation of Nolan's executable for alpha < 0.2.
-
-            The data table loaded below is generated from Nolan's stablec
-            with the following parameter space:
-
-                alpha = 0.1, 0.2, ..., 2.0
-                beta = -1.0, -0.9, ..., 1.0
-                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
-                    and the equivalent for the right tail
-
-            Ideally, Nolan's output for CDF values should match the percentile
-            from where they have been sampled from. Even more so as we extract
-            percentile x positions from stablec too. However, we note at places
-            Nolan's stablec will produce absolute errors in order of 1e-5. We
-            compare against his calculations here. In future, once we less
-            reliant on Nolan's paper we might switch to comparing directly at
-            percentiles (those x values being produced from some alternative
-            means).
-
-            Typically inputs for stablec:
-
-                stablec.exe <<
-                2 # cdf
-                1 # Nolan S equivalent to S0 in scipy
-                .25,2,.25 # alpha
-                -1,-1,0 # beta
-                -10,10,1 # x
-                1,0 # gamma, delta
-                2 # output file
-        """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-Z1-cdf-sample-data.npy'
-        )
-
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
-
+    @pytest.mark.parametrize(
+        "pct_range,alpha_range,beta_range", [
+            pytest.param(
+                [.01, .5, .99],
+                [.1, 1, 2],
+                [-1, 0, .8],
+            ),
+            pytest.param(
+                [.01, .05, .5, .95, .99],
+                [.1, .5, 1, 1.5, 2],
+                [-.9, -.5, 0, .3, .6, 1],
+                marks=pytest.mark.slow
+            ),
+            pytest.param(
+                [.01, .05, .1, .25, .35, .5, .65, .75, .9, .95, .99],
+                np.linspace(0.1, 2, 20),
+                np.linspace(-1, 1, 21),
+                marks=pytest.mark.xslow,
+            ),
+        ]
+    )
+    def test_cdf_nolan_samples(
+            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
+    ):
+        """ Test cdf values against Nolan's stablec.exe output."""
+        data = nolan_cdf_sample_data
         tests = [
             # piecewise generally good accuracy
-            ['piecewise', 1e-12, lambda r: ~(
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
-                    & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
-                    & (r['pct'] == 0.99))
-            )],
+            [
+                'piecewise', 1e-12, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    ~(
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['beta'], [-0.3, -0.2, -0.1]) &
+                            (r['pct'] == 0.01)
+                        ) |
+                        (
+                            (r['alpha'] == 1.) &
+                            np.isin(r['beta'], [0.1, 0.2, 0.3]) &
+                            (r['pct'] == 0.99)
+                        )
+                    )
+                )
+            ],
             # for some points with alpha=1, Nolan's STABLE clearly
             # loses accuracy
-            ['piecewise', 5e-2, lambda r: (
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
-                    & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
-                    & (r['pct'] == 0.99))
-            )],
-
+            [
+                'piecewise', 5e-2, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (
+                        (r['alpha'] == 1.) &
+                        np.isin(r['beta'], [-0.3, -0.2, -0.1]) &
+                        (r['pct'] == 0.01)
+                    ) |
+                    (
+                        (r['alpha'] == 1.) &
+                        np.isin(r['beta'], [0.1, 0.2, 0.3]) &
+                        (r['pct'] == 0.99)
+                    )
+                )
+            ],
             # fft accuracy poor, very poor alpha < 1
-            ['fft-simpson', 1e-5, lambda r: r['alpha'] > 1.7],
-            ['fft-simpson', 1e-4, lambda r: (r['alpha'] > 1.5)
-                & (r['alpha'] <= 1.7)],
-            ['fft-simpson', 1e-3, lambda r: (r['alpha'] > 1.3)
-                & (r['alpha'] <= 1.5)],
-            ['fft-simpson', 1e-2, lambda r: (r['alpha'] > 1.0)
-                & (r['alpha'] <= 1.3)],
+            [
+                'fft-simpson', 1e-5, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.7)
+                )
+            ],
+            [
+                'fft-simpson', 1e-4, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.5) &
+                    (r['alpha'] <= 1.7)
+                )
+            ],
+            [
+                'fft-simpson', 1e-3, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.3) &
+                    (r['alpha'] <= 1.5)
+                )
+            ],
+            [
+                'fft-simpson', 1e-2, lambda r: (
+                    np.isin(r['pct'], pct_range) &
+                    np.isin(r['alpha'], alpha_range) &
+                    np.isin(r['beta'], beta_range) &
+                    (r['alpha'] > 1.0) &
+                    (r['alpha'] <= 1.3)
+                )
+            ],
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
@@ -3324,46 +3543,40 @@ class TestLevyStable:
                     verbose=False
                 )
 
-    def test_location_scale(self):
-        """Data extracted in similar way to pdf/cdf above using
-        Nolan's stablec but set to an arbitrary location scale of
-        (2, 3) for various important parameters alpha, beta and for
-        parameterisations S0 and S1.
+    @pytest.mark.parametrize("param", [0, 1])
+    @pytest.mark.parametrize("case", ["pdf", "cdf"])
+    def test_location_scale(
+            self, nolan_loc_scale_sample_data, param, case
+    ):
+        """Tests for pdf and cdf where loc, scale are different from 0, 1
         """
-        data = np.load(
-            Path(__file__).parent /
-            'data/levy_stable/stable-loc-scale-sample-data.npy'
-        )
-
+        data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
         # are same for other methods.
         stats.levy_stable.cdf_default_method = "piecewise"
         stats.levy_stable.pdf_default_method = "piecewise"
 
-        for param in [0, 1]:
+        subdata = data[data["param"] == param]
+        stats.levy_stable.parameterization = f"S{param}"
 
-            subdata = data[data["param"] == param]
-            stats.levy_stable.parameterization = f"S{param}"
+        assert case in ["pdf", "cdf"]
+        function = (
+            stats.levy_stable.pdf if case == "pdf" else stats.levy_stable.cdf
+        )
 
-            v1pdf = stats.levy_stable.pdf(
-                subdata['x'],
-                subdata['alpha'],
-                subdata['beta'],
-                scale=2,
-                loc=3
-            )
-            assert_allclose(v1pdf, subdata['pdf'], 1e-5)
+        v1 = function(
+            subdata['x'], subdata['alpha'], subdata['beta'], scale=2, loc=3
+        )
+        assert_allclose(v1, subdata[case], 1e-5)
 
-            v1cdf = stats.levy_stable.cdf(
-                subdata['x'],
-                subdata['alpha'],
-                subdata['beta'],
-                scale=2,
-                loc=3
-            )
-            assert_allclose(v1cdf, subdata['cdf'], 1e-5)
-
-    def test_pdf_alpha_equals_one_beta_non_zero(self):
+    @pytest.mark.parametrize(
+        "method,decimal_places",
+        [
+            ['dni', 4],
+            ['piecewise', 4],
+        ]
+    )
+    def test_pdf_alpha_equals_one_beta_non_zero(self, method, decimal_places):
         """ sample points extracted from Tables and Graphs of Stable
         Probability Density Functions - Donald R Holt - 1973 - p 187.
         """
@@ -3383,51 +3596,64 @@ class TestLevyStable:
                 .25, .5, 1
             ]
         )
-
-        tests = [
-            ['dni', 4],
-            ['piecewise', 4],
-        ]
-
         with np.errstate(all='ignore'), suppress_warnings() as sup:
             sup.filter(
                 category=RuntimeWarning,
                 message="Density calculation unstable.*"
             )
-            for default_method, decimal_places in tests:
-                stats.levy_stable.pdf_default_method = default_method
-                #stats.levy_stable.fft_grid_spacing = 0.0001
-                pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
-                assert_almost_equal(
-                    pdf, density, decimal_places, default_method
-                )
+            stats.levy_stable.pdf_default_method = method
+            #stats.levy_stable.fft_grid_spacing = 0.0001
+            pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
+            assert_almost_equal(
+                pdf, density, decimal_places, method
+            )
 
-    def test_stats(self):
-        param_sets = [
+    @pytest.mark.parametrize(
+        "params,expected",
+        [
             [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
             [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
-        for args, exp_stats in param_sets:
-            calc_stats = stats.levy_stable.stats(
-                args[0], args[1], loc=args[2], scale=args[3], moments='mvsk'
-            )
-            assert_almost_equal(calc_stats, exp_stats)
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('beta', [0.5, 1])
-    def test_rvs_alpha1(self, beta):
-        np.random.seed(987654321)
-        alpha = 1.0
-        loc = 0.5
-        scale = 1.5
-        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
-                                  size=5000)
-        stat, p = stats.kstest(x, 'levy_stable',
-                               args=(alpha, beta, loc, scale))
-        assert p > 0.01
+    )
+    def test_stats(self, params, expected):
+        observed = stats.levy_stable.stats(
+            params[0], params[1], loc=params[2], scale=params[3], moments='mvsk'
+        )
+        assert_almost_equal(observed, expected)
 
     @pytest.mark.parametrize('alpha', [0.25, 0.5, 0.75])
-    def test_distribution_outside_support(self, alpha):
+    @pytest.mark.parametrize(
+        'function,beta,points,expected',
+        [
+            (
+                stats.levy_stable.cdf,
+                1.0,
+                np.linspace(-25, 0, 10),
+                0.0,
+            ),
+            (
+                stats.levy_stable.pdf,
+                1.0,
+                np.linspace(-25, 0, 10),
+                0.0,
+            ),
+            (
+                stats.levy_stable.cdf,
+                -1.0,
+                np.linspace(0, 25, 10),
+                1.0,
+            ),
+            (
+                stats.levy_stable.pdf,
+                -1.0,
+                np.linspace(0, 25, 10),
+                0.0,
+            )
+        ]
+    )
+    def test_distribution_outside_support(
+            self, alpha, function, beta, points, expected
+    ):
         """Ensure the pdf/cdf routines do not return nan outside support.
 
         This distribution's support becomes truncated in a few special cases:
@@ -3435,26 +3661,11 @@ class TestLevyStable:
             support is (-infty, mu] if alpha < 1 and beta = -1
         Otherwise, the support is all reals. Here, mu is zero by default.
         """
-
         assert 0 < alpha < 1
-
-        # check beta = 1 case
-        for x in np.linspace(-25, 0, 10):
-            assert_almost_equal(
-                stats.levy_stable.cdf(x, alpha=alpha, beta=1.0), 0.0
-            )
-            assert_almost_equal(
-                stats.levy_stable.pdf(x, alpha=alpha, beta=1.0), 0.0
-            )
-
-        # check beta = -1 case
-        for x in np.linspace(0, 25, 10):
-            assert_almost_equal(
-                stats.levy_stable.cdf(x, alpha=alpha, beta=-1.0), 1.0
-            )
-            assert_almost_equal(
-                stats.levy_stable.pdf(x, alpha=alpha, beta=-1.0), 0.0
-            )
+        assert_almost_equal(
+            function(points, alpha=alpha, beta=beta),
+            np.full(len(points), expected)
+        )
 
 
 class TestArrayArgument:  # test for ticket:992
