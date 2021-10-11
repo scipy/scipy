@@ -336,7 +336,7 @@ def _chck_args_poisson_mean_test(k1, n1, k2, n2, diff, alternative):
     if k1 < 0 or k2 < 0:
         raise ValueError(count_err)
 
-    if n2 <= 0 or n2 <= 0:
+    if n1 <= 0 or n2 <= 0:
         raise ValueError('nobs1 and nobs2 should be greater than 0')
 
     if diff < 0:
