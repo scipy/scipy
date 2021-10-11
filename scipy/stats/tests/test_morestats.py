@@ -2115,7 +2115,7 @@ class TestCircFuncs:
         x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(x)
         normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=1e-8)
+        assert_allclose(circstat, normal, atol=2e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],
