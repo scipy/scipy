@@ -332,7 +332,7 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     zeta = _nolan.zeta
     xi = _nolan.xi
     c1 = _nolan.c1
-    c2 = _nolan.c2
+    # c2 = _nolan.c2
     c3 = _nolan.c3
     g = _nolan.g
 
@@ -483,7 +483,7 @@ def _fitstart_S1(data):
     # fmt: off
     # Table III and IV
     nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4,
-                        5, 6, 8, 10, 15, 25]
+                      5, 6, 8, 10, 15, 25]
     nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
 
     # table III - alpha = psi_1(nu_alpha, nu_beta)
@@ -524,7 +524,7 @@ def _fitstart_S1(data):
 
     # Table V and VII
     alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
-                    1, 0.9, 0.8, 0.7, 0.6, 0.5]
+                   1, 0.9, 0.8, 0.7, 0.6, 0.5]
     beta_range = [0, 0.25, 0.5, 0.75, 1]
 
     # Table V - nu_c = psi_3(alpha, beta)
@@ -574,7 +574,8 @@ def _fitstart_S1(data):
     )
 
     def psi_2_1(nu_beta, nu_alpha):
-        return psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+        return psi_2(nu_beta, nu_alpha) \
+            if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
 
     phi_3 = interpolate.interp2d(
         beta_range, alpha_range, nu_c_table, kind="linear"
@@ -1008,7 +1009,10 @@ class levy_stable_gen(rv_continuous):
         fft_grid_spacing = self.pdf_fft_grid_spacing
         fft_n_points_two_power = self.pdf_fft_n_points_two_power
         fft_interpolation_level = self.pdf_fft_interpolation_level
-        fft_interpolation_kind = self.pdf_fft_interpolation_kind
+        # TODO: CDF handling does not use fft_interpolation_kind.
+        #  This variable is assigned, but never used.
+        #  Is this intended?
+        # fft_interpolation_kind = self.pdf_fft_interpolation_kind
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)

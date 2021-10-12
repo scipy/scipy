@@ -60,12 +60,15 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
             (-1) ** steps * Cotes[n, indices] * np.fft.fft(
                 (-1)**steps * cf(-L + h * steps + h * indices / (n - 1))
             ) * np.exp(
-                1j * np.pi * indices / (n - 1) - 2 * 1j * np.pi * indices * steps /
+                1j * np.pi * indices / (n - 1)
+                - 2 * 1j * np.pi * indices * steps /
                 (N * (n - 1))
             ),
             axis=0
         )
     else:
-        s1 = (-1) ** steps * Cotes[n, 0] * np.fft.fft((-1) ** steps * cf(-L + h * steps))
+        s1 = (-1) ** steps * Cotes[n, 0] * np.fft.fft(
+            (-1) ** steps * cf(-L + h * steps)
+        )
     density = h * s1 / (2 * np.pi * np.sum(Cotes[n]))
     return (x_l, density)

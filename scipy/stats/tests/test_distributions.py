@@ -3377,12 +3377,13 @@ class TestLevyStable:
                     loc=0
                 )
                 with np.errstate(over="ignore"):
-                    subdata2 = rec_append_fields(subdata,
+                    subdata2 = rec_append_fields(
+                        subdata,
                         ['calc', 'abserr', 'relerr'],
                         [
                             p,
                             np.abs(p - subdata['p']),
-                            np.abs(p - subdata['p'])/np.abs(subdata['p'])
+                            np.abs(p - subdata['p']) / np.abs(subdata['p'])
                         ]
                     )
                 failures = subdata2[
@@ -3522,12 +3523,13 @@ class TestLevyStable:
                     loc=0
                 )
                 with np.errstate(over="ignore"):
-                    subdata2 = rec_append_fields(subdata,
+                    subdata2 = rec_append_fields(
+                        subdata,
                         ['calc', 'abserr', 'relerr'],
                         [
                             p,
                             np.abs(p - subdata['p']),
-                            np.abs(p - subdata['p'])/np.abs(subdata['p'])
+                            np.abs(p - subdata['p']) / np.abs(subdata['p'])
                         ]
                     )
                 failures = subdata2[
@@ -3602,7 +3604,7 @@ class TestLevyStable:
                 message="Density calculation unstable.*"
             )
             stats.levy_stable.pdf_default_method = method
-            #stats.levy_stable.fft_grid_spacing = 0.0001
+            # stats.levy_stable.fft_grid_spacing = 0.0001
             pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
             assert_almost_equal(
                 pdf, density, decimal_places, method
@@ -3617,7 +3619,8 @@ class TestLevyStable:
     )
     def test_stats(self, params, expected):
         observed = stats.levy_stable.stats(
-            params[0], params[1], loc=params[2], scale=params[3], moments='mvsk'
+            params[0], params[1], loc=params[2], scale=params[3],
+            moments='mvsk'
         )
         assert_almost_equal(observed, expected)
 
