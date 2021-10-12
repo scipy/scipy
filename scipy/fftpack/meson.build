@@ -1,0 +1,25 @@
+py3.extension_module('convolve',
+  'convolve.pyx',
+  include_directories: inc_np,
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/fftpack'
+)
+
+
+python_sources = [
+  '__init__.py',
+  'basic.py',
+  'helper.py',
+  'pseudo_diffs.py',
+  'realtransforms.py'
+]
+
+
+py3.install_sources(
+  python_sources,
+  pure: false,             # Will be installed next to binaries
+  subdir: 'scipy/fftpack'  # Folder relative to site-packages to install to
+)
+
+subdir('tests')
