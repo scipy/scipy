@@ -187,7 +187,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_freezing(distfn, arg)
 
     # Entropy
-    if distname not in ['kstwobign', 'kstwo']:
+    if distname not in ['kstwobign', 'kstwo', 'ncf']:
         check_entropy(distfn, arg, distname)
 
     if distfn.numargs == 0:

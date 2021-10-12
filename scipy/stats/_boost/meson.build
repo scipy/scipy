@@ -1,0 +1,59 @@
+cpp_args = [
+  '-DBOOST_MATH_DOMAIN_ERROR_POLICY=ignore_error',
+  '-DBOOST_MATH_EVALUATION_ERROR_POLICY=user_error'
+]
+
+if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
+  cpp_args += ['-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false',
+                numpy_nodepr_api]
+endif
+
+include = include_directories('include')
+inc_boost = include_directories('..' / '..' / '_lib' / 'boost')
+
+hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
+  _stats_gen_pyx[4],
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: cpp_args,
+  dependencies: [py3_dep],
+  override_options: ['cython_language=cpp'],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+nbinom_ufunc = py3.extension_module('nbinom_ufunc',
+  _stats_gen_pyx[5],
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: cpp_args,
+  dependencies: [py3_dep],
+  override_options: ['cython_language=cpp'],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+beta_ufunc = py3.extension_module('beta_ufunc',
+  _stats_gen_pyx[1],
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: cpp_args,
+  dependencies: [py3_dep],
+  override_options: ['cython_language=cpp'],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+binom_ufunc = py3.extension_module('binom_ufunc',
+  _stats_gen_pyx[2],
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: cpp_args,
+  dependencies: [py3_dep],
+  override_options: ['cython_language=cpp'],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+py3.install_sources([
+    '__init__.py'
+  ],
+  pure: false,
+  subdir: 'scipy/stats/_boost'
+)
