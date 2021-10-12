@@ -1406,7 +1406,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     """
     Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
-    Calculate a generalized inverse of a copmlex Hermitian/real symmetric
+    Calculate a generalized inverse of a complex Hermitian/real symmetric
     matrix using its eigenvalue decomposition and including all eigenvalues
     with 'large' absolute value.
 
