@@ -48,6 +48,7 @@ the organization section.
    contributor/public_cython_api
    contributor/adding_new
    contributor/continuous_integration
+   contributor/meson
 
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if
