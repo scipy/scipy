@@ -77,6 +77,8 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
+# install directory for Meson
+installdir/
 
 # Paver generated files #
 #########################
