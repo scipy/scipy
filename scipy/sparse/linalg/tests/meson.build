@@ -1,0 +1,13 @@
+py3.install_sources([
+    '__init__.py',
+    'test_expm_multiply.py',
+    'test_interface.py',
+    'test_matfuncs.py',
+    'test_norm.py',
+    'test_onenormest.py',
+    'test_propack.py',
+    'test_pydata_sparse.py'
+  ],
+  pure: false,
+  subdir: 'scipy/sparse/linalg/tests'
+)
