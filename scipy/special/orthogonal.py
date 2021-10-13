@@ -317,6 +317,45 @@ def jacobi(n, alpha, beta, monic=False):
     :math:`P_n^{(\alpha, \beta)}` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x)^\alpha(1 + x)^\beta`.
 
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The Jacobi polynomials satisfy the recurrence relation:
+
+    .. math::
+        P_n^{(\alpha, \beta-1)}(x) - P_n^{(\alpha-1, \beta)}(x)
+          = P_{n-1}^{(\alpha, \beta)}(x)
+
+    This can be verified, for example, for :math:`\alpha = \beta = 2`
+    and :math:`n = 1` over the interval :math:`[-1, 1]`:
+
+    >>> import numpy as np
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(jacobi(0, 2, 2)(x),
+    ...             jacobi(1, 2, 1)(x) - jacobi(1, 1, 2)(x))
+    True
+
+    Plot of the Jacobi polynomial :math:`P_5^{(\alpha, -0.5)}` for
+    different values of :math:`\alpha`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Jacobi polynomials $P_5^{(\alpha, -0.5)}$')
+    >>> for alpha in np.arange(0, 4, 1):
+    ...     ax.plot(x, jacobi(5, alpha, -0.5)(x), label=rf'$\alpha={alpha}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -554,6 +593,45 @@ def genlaguerre(n, alpha, monic=False):
     See Also
     --------
     laguerre : Laguerre polynomial.
+    hyp1f1 : confluent hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The generalized Laguerre polynomials are closely related to the confluent
+    hypergeometric function :math:`{}_1F_1`:
+
+        .. math::
+            L_n^{(\alpha)} = \binom{n + \alpha}{n} {}_1F_1(-n, \alpha +1, x)
+
+    This can be verified, for example,  for :math:`n = \alpha = 3` over the
+    interval :math:`[-1, 1]`:
+
+    >>> from scipy.special import binom
+    >>> from scipy.special import genlaguerre
+    >>> from scipy.special import hyp1f1
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(genlaguerre(3, 3)(x), binom(6, 3) * hyp1f1(-3, 4, x))
+    True
+
+    This is the plot of the generalized Laguerre polynomials
+    :math:`L_3^{(\alpha)}` for some values of :math:`\alpha`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import genlaguerre
+    >>> x = np.arange(-4.0, 12.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-5.0, 10.0)
+    >>> ax.set_title(r'Generalized Laguerre polynomials $L_3^{\alpha}$')
+    >>> for alpha in np.arange(0, 5):
+    ...     ax.plot(x, genlaguerre(3, alpha)(x), label=rf'$L_3^{(alpha)}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     if alpha <= -1:
@@ -647,6 +725,55 @@ def laguerre(n, monic=False):
     -----
     The polynomials :math:`L_n` are orthogonal over :math:`[0,
     \infty)` with weight function :math:`e^{-x}`.
+
+    See Also
+    --------
+    genlaguerre : Generalized (associated) Laguerre polynomial.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    The Laguerre polynomials :math:`L_n` are the special case
+    :math:`\alpha = 0` of the generalized Laguerre polynomials
+    :math:`L_n^{(\alpha)}`.
+    Let's verify it on the interval :math:`[-1, 1]`:
+
+    >>> from scipy.special import genlaguerre
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(genlaguerre(3, 0)(x), laguerre(3)(x))
+    True
+
+    The polynomials :math:`L_n` also satisfy the recurrence relation:
+
+    .. math::
+        (n + 1)L_{n+1}(x) = (2n +1 -x)L_n(x) - nL_{n-1}(x)
+
+    This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
+
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(0.0, 1.0, 0.01)
+    >>> np.allclose(4 * laguerre(4)(x),
+    ...             (7 - x) * laguerre(3)(x) - 3 * laguerre(2)(x))
+    True
+
+    This is the plot of the first few Laguerre polynomials :math:`L_n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import laguerre
+    >>> x = np.arange(-1.0, 5.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-5.0, 5.0)
+    >>> ax.set_title(r'Laguerre polynomials $L_n$')
+    >>> for n in np.arange(0, 5):
+    ...     ax.plot(x, laguerre(n)(x), label=rf'$L_{n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     if n < 0:
@@ -1535,6 +1662,65 @@ def chebyt(n, monic=False):
     --------
     chebyu : Chebyshev polynomial of the second kind.
 
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Chebyshev polynomials of the first kind of order :math:`n` can
+    be obtained as the determinant of specific :math:`n \times n`
+    matrices. As an example we can check how the points obtained from
+    the determinant of the following :math:`3 \times 3` matrix
+    lay exacty on :math:`T_3`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.linalg import det
+    >>> from scipy.special import chebyt
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Chebyshev polynomial $T_3$')
+    >>> ax.plot(x, chebyt(3)(x), label=rf'$T_3$')
+    >>> for p in np.arange(-1.0, 1.0, 0.1):
+    ...     ax.plot(p,
+    ...             det(np.array([[p, 1, 0], [1, 2*p, 1], [0, 1, 2*p]])),
+    ...             'rx')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    They are also related to the Jacobi Polynomials
+    :math:`P_n^{(-0.5, -0.5)}` through the relation:
+
+    .. math::
+        P_n^{(-0.5, -0.5)}(x) = \frac{1}{4^n} \binom{2n}{n} T_n(x)
+
+    Let's verify it for :math:`n = 3`:
+
+    >>> from scipy.special import binom
+    >>> from scipy.special import chebyt
+    >>> from scipy.special import jacobi
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(jacobi(3, -0.5, -0.5)(x),
+    ...             1/64 * binom(6, 3) * chebyt(3)(x))
+    True
+
+    We can plot the Chebyshev polynomials :math:`T_n` for some values
+    of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import chebyt
+    >>> x = np.arange(-1.5, 1.5, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-4.0, 4.0)
+    >>> ax.set_title(r'Chebyshev polynomials $T_n$')
+    >>> for n in np.arange(2,5):
+    ...     ax.plot(x, chebyt(n)(x), label=rf'$T_n={n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1638,6 +1824,63 @@ def chebyu(n, monic=False):
     See Also
     --------
     chebyt : Chebyshev polynomial of the first kind.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Chebyshev polynomials of the second kind of order :math:`n` can
+    be obtained as the determinant of specific :math:`n \times n`
+    matrices. As an example we can check how the points obtained from
+    the determinant of the following :math:`3 \times 3` matrix
+    lay exacty on :math:`U_3`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.linalg import det
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-2.0, 2.0)
+    >>> ax.set_title(r'Chebyshev polynomial $U_3$')
+    >>> ax.plot(x, chebyu(3)(x), label=rf'$U_3$')
+    >>> for p in np.arange(-1.0, 1.0, 0.1):
+    ...     ax.plot(p,
+    ...             det(np.array([[2*p, 1, 0], [1, 2*p, 1], [0, 1, 2*p]])),
+    ...             'rx')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    They satisfy the recurrence relation:
+
+    .. math::
+        U_{2n-1}(x) = 2 T_n(x)U_{n-1}(x)
+
+    where the :math:`T_n` are the Chebyshev polynomial of the first kind.
+    Let's verify it for :math:`n = 2`:
+
+    >>> from scipy.special import chebyt
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> np.allclose(chebyu(3)(x), 2 * chebyt(2)(x) * chebyu(1)(x))
+    True
+
+    We can plot the Chebyshev polynomials :math:`U_n` for some values
+    of :math:`n`:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import chebyu
+    >>> x = np.arange(-1.0, 1.0, 0.01)
+    >>> fig, ax = plt.subplots()
+    >>> ax.set_ylim(-1.5, 1.5)
+    >>> ax.set_title(r'Chebyshev polynomials $U_n$')
+    >>> for n in np.arange(1,5):
+    ...     ax.plot(x, chebyu(n)(x), label=rf'$U_n={n}$')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
 
     """
     base = jacobi(n, 0.5, 0.5, monic=monic)

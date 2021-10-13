@@ -430,6 +430,143 @@ class TestBSpline:
         spl1 = BSpline(t, c[1], k)
         assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
+    def test_design_matrix_bc_types(self):
+        '''
+        Splines with different boundary conditions are built on different
+        types of vectors of knots. As far as design matrix depends only on
+        vector of knots, `k` and `x` it is useful to make tests for different
+        boundary conditions (and as following different vectors of knots).
+        '''
+        def run_design_matrix_tests(n, k, bc_type):
+            '''
+            To avoid repetition of the code the following function is
+            provided.
+            '''
+            np.random.seed(1234)
+            x = np.sort(np.random.random_sample(n) * 40 - 20)
+            y = np.random.random_sample(n) * 40 - 20
+            if bc_type == "periodic":
+                y[0] = y[-1]
+
+            bspl = make_interp_spline(x, y, k=k, bc_type=bc_type)
+
+            c = np.eye(len(bspl.t) - k - 1)
+            des_matr_def = BSpline(bspl.t, c, k)(x)
+            des_matr_csr = BSpline.design_matrix(x,
+                                                 bspl.t,
+                                                 k).toarray()
+            assert_allclose(des_matr_csr @ bspl.c, y, atol=1e-14)
+            assert_allclose(des_matr_def, des_matr_csr, atol=1e-14)
+
+        # "clamped" and "natural" work only with `k = 3`
+        n = 11
+        k = 3
+        for bc in ["clamped", "natural"]:
+            run_design_matrix_tests(n, k, bc)
+
+        # "not-a-knot" works with odd `k`
+        for k in range(3, 8, 2):
+            run_design_matrix_tests(n, k, "not-a-knot")
+
+        # "periodic" works with any `k` (even more than `n`)
+        n = 5  # smaller `n` to test `k > n` case
+        for k in range(2, 7):
+            run_design_matrix_tests(n, k, "periodic")
+
+    def test_design_matrix_x_shapes(self):
+        # test for different `x` shapes
+        np.random.seed(1234)
+        n = 10
+        k = 3
+        x = np.sort(np.random.random_sample(n) * 40 - 20)
+        y = np.random.random_sample(n) * 40 - 20
+
+        bspl = make_interp_spline(x, y, k=k)
+        for i in range(1, 4):
+            xc = x[:i]
+            yc = y[:i]
+            des_matr_csr = BSpline.design_matrix(xc,
+                                                 bspl.t,
+                                                 k).toarray()
+            assert_allclose(des_matr_csr @ bspl.c, yc, atol=1e-14)
+
+    def test_design_matrix_t_shapes(self):
+        # test for minimal possible `t` shape
+        t = [1., 1., 1., 2., 3., 4., 4., 4.]
+        des_matr = BSpline.design_matrix(2., t, 3).toarray()
+        assert_allclose(des_matr,
+                        [[0.25, 0.58333333, 0.16666667, 0.]],
+                        atol=1e-14)
+
+    def test_design_matrix_asserts(self):
+        np.random.seed(1234)
+        n = 10
+        k = 3
+        x = np.sort(np.random.random_sample(n) * 40 - 20)
+        y = np.random.random_sample(n) * 40 - 20
+        bspl = make_interp_spline(x, y, k=k)
+        # invalid vector of knots (should be a 1D non-descending array)
+        # here the actual vector of knots is reversed, so it is invalid
+        with assert_raises(ValueError):
+            BSpline.design_matrix(x, bspl.t[::-1], k)
+        k = 2
+        t = [0., 1., 2., 3., 4., 5.]
+        x = [1., 2., 3., 4.]
+        # out of bounds
+        with assert_raises(ValueError):
+            BSpline.design_matrix(x, t, k)
+
+    @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
+                                         'periodic', 'not-a-knot'])
+    def test_from_power_basis(self, bc_type):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(20))
+        y = np.random.random(20)
+        if bc_type == 'periodic':
+            y[-1] = y[0]
+        cb = CubicSpline(x, y, bc_type=bc_type)
+        bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
+        xx = np.linspace(0, 1, 20)
+        assert_allclose(cb(xx), bspl(xx), atol=1e-15)
+        bspl_new = make_interp_spline(x, y, bc_type=bc_type)
+        assert_allclose(bspl.c, bspl_new.c, atol=1e-15)
+
+    @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
+                                         'periodic', 'not-a-knot'])
+    def test_from_power_basis_complex(self, bc_type):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(20))
+        y = np.random.random(20) + np.random.random(20) * 1j
+        if bc_type == 'periodic':
+            y[-1] = y[0]
+        cb = CubicSpline(x, y, bc_type=bc_type)
+        bspl = BSpline.from_power_basis(cb, bc_type=bc_type)
+        bspl_new_real = make_interp_spline(x, y.real, bc_type=bc_type)
+        bspl_new_imag = make_interp_spline(x, y.imag, bc_type=bc_type)
+        assert_equal(bspl.c.dtype, (bspl_new_real.c
+                                    + 1j * bspl_new_imag.c).dtype)
+        assert_allclose(bspl.c, bspl_new_real.c
+                        + 1j * bspl_new_imag.c, atol=1e-15)
+
+    def test_from_power_basis_exmp(self):
+        '''
+        For x = [0, 1, 2, 3, 4] and y = [1, 1, 1, 1, 1]
+        the coefficients of Cubic Spline in the power basis:
+
+        $[[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[0, 0, 0, 0, 0],\\$
+        $[1, 1, 1, 1, 1]]$
+
+        It could be shown explicitly that coefficients of the interpolating
+        function in B-spline basis are c = [1, 1, 1, 1, 1, 1, 1]
+        '''
+        x = np.array([0, 1, 2, 3, 4])
+        y = np.array([1, 1, 1, 1, 1])
+        bspl = BSpline.from_power_basis(CubicSpline(x, y, bc_type='natural'),
+                                        bc_type='natural')
+        assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying

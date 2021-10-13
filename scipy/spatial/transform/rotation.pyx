@@ -10,6 +10,8 @@ from cython.view cimport array
 from libc.math cimport sqrt, sin, cos, atan2, acos
 from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
 
+np.import_array()
+
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n):
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
@@ -333,6 +335,7 @@ cdef class Rotation:
     as_rotvec
     as_mrp
     as_euler
+    concatenate
     apply
     __mul__
     inv
@@ -791,6 +794,8 @@ cdef class Rotation:
         degrees : bool, optional
             If True, then the given magnitudes are assumed to be in degrees.
             Default is False.
+
+            .. versionadded:: 1.7.0
 
         Returns
         -------
@@ -1570,6 +1575,30 @@ cdef class Rotation:
         else:
             return np.asarray(mrps)
 
+    @classmethod
+    def concatenate(cls, rotations):
+        """Concatenate a sequence of `Rotation` objects.
+
+        Parameters
+        ----------
+        rotations : sequence of `Rotation` objects
+            The rotations to concatenate.
+
+        Returns
+        -------
+        concatenated : `Rotation` instance
+            The concatenated rotations.
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+        """
+        if not all(isinstance(x, Rotation) for x in rotations):
+            raise TypeError("input must contain Rotation objects only")
+
+        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
+        return cls(quats, normalize=False)
+
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
 
@@ -1991,7 +2020,7 @@ cdef class Rotation:
                     np.einsum('ix,j,kx', lv, ps, rv) -
                     np.einsum('ix,jx,k', lv, pv, rs) -
                     np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
-        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+        qs = np.reshape(np.moveaxis(qs, 1, 0), (qs.shape[1], -1))
 
         # Find best indices from scalar components
         max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
@@ -2112,6 +2141,37 @@ cdef class Rotation:
             raise TypeError("Single rotation is not subscriptable.")
 
         return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
+
+    def __setitem__(self, indexer, value):
+        """Set rotation(s) at given index(es) from object.
+
+        Parameters
+        ----------
+        indexer : index, slice, or index array
+            Specifies which rotation(s) to replace. A single indexer must be
+            specified, i.e. as if indexing a 1 dimensional array or list.
+
+        value : `Rotation` instance
+            The rotations to set.
+
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.8.0
+        """
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
+        quat = np.asarray(self._quat)
+        quat[indexer] = value.as_quat()
+        self._quat = quat
 
     @classmethod
     def identity(cls, num=None):

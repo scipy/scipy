@@ -18,8 +18,8 @@ pytestmark = pytest.mark.skipif(sparse is None,
 msg = "pydata/sparse (0.8) does not implement necessary operations"
 
 
-sparse_params = [pytest.param("COO"),
-                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
+sparse_params = (pytest.param("COO"),
+                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
 
 scipy_sparse_classes = [
     sp.bsr_matrix,

@@ -646,7 +646,7 @@ def signm(A, disp=True):
 
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
-    vals = svd(A, compute_uv=0)
+    vals = svd(A, compute_uv=False)
     max_sv = np.amax(vals)
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv

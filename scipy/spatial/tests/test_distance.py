@@ -35,6 +35,7 @@
 import os.path
 
 from functools import wraps, partial
+import weakref
 
 import numpy as np
 import warnings
@@ -57,10 +58,10 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
-                                    kulsinski, mahalanobis, matching,
-                                    minkowski, rogerstanimoto, russellrao,
-                                    seuclidean, sokalmichener, sokalsneath,
-                                    sqeuclidean, yule)
+                                    kulsinski, kulczynski1, mahalanobis,
+                                    matching, minkowski, rogerstanimoto,
+                                    russellrao, seuclidean, sokalmichener,
+                                    sokalsneath, sqeuclidean, yule)
 from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
@@ -376,6 +377,7 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wkulsinski = _weight_checked(kulsinski)
+wkulczynski1 = _weight_checked(kulczynski1)
 wminkowski = _weight_checked(minkowski, const_test=False)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
@@ -534,9 +536,11 @@ class TestCdist:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric == 'wminkowski':
                     continue
-                if metric in {'dice', 'yule', 'kulsinski', 'matching',
-                              'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                if metric in {'dice', 'yule', 'kulsinski',
+                              'matching', 'rogerstanimoto',
+                              'russellrao', 'sokalmichener',
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X1, X2, metric)
@@ -649,6 +653,28 @@ class TestCdist:
                 Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
                 # test that output is numerically equivalent
                 _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+    def test_cdist_refcount(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
+            for metric in _METRICS_NAMES:
+                x1 = np.random.rand(10, 10)
+                x2 = np.random.rand(10, 10)
+
+                kwargs = dict()
+                if metric in ['minkowski', 'wminkowski']:
+                    kwargs['p'] = 1.23
+                    if metric == 'wminkowski':
+                        kwargs['w'] = 1.0 / x1.std(axis=0)
+
+                out = cdist(x1, x2, metric=metric, **kwargs)
+
+                # Check reference counts aren't messed up. If we only hold weak
+                # references, the arrays should be deallocated.
+                weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+                del x1, x2, out
+                assert all(weak_ref() is None for weak_ref in weak_refs)
+
 
 class TestPdist:
 
@@ -1428,7 +1454,8 @@ class TestPdist:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X, metric)

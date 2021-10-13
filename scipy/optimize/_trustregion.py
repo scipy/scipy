@@ -186,6 +186,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # calculation/creation of a hessp. BUT you only want to do this
         # if the user *hasn't* provided a callable(hessp) function.
         hess = None
+
         def hessp(x, p, *args):
             return sf.hess(x).dot(p)
     else:
@@ -220,7 +221,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # has reached the trust region boundary or not.
         try:
             p, hits_boundary = m.solve(trust_radius)
-        except np.linalg.linalg.LinAlgError:
+        except np.linalg.LinAlgError:
             warnflag = 3
             break
 

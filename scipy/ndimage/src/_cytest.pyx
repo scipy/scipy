@@ -6,6 +6,7 @@ from cpython.pycapsule cimport (
 cimport numpy as np
 from numpy cimport npy_intp as intp
 
+np.import_array()
 
 cdef void _destructor(obj):
     cdef void *callback_data = PyCapsule_GetContext(obj)

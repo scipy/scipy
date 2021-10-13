@@ -64,8 +64,17 @@ def lagrange(x, w):
         \end{aligned}
 
     >>> from numpy.polynomial.polynomial import Polynomial
-    >>> Polynomial(poly).coef
-    array([ 3., -2.,  0.])
+    >>> Polynomial(poly.coef[::-1]).coef
+    array([ 0., -2.,  3.])
+
+    >>> import matplotlib.pyplot as plt
+    >>> x_new = np.arange(0, 2.1, 0.1)
+    >>> plt.scatter(x, y, label='data')
+    >>> plt.plot(x_new, Polynomial(poly.coef[::-1])(x_new), label='Polynomial')
+    >>> plt.plot(x_new, 3*x_new**2 - 2*x_new + 0*x_new,
+    ...          label=r"$3 x^2 - 2 x$", linestyle='-.')
+    >>> plt.legend()
+    >>> plt.show()
 
     """
 
@@ -376,7 +385,8 @@ class interp1d(_Interpolator1D):
           ``x_new > x[-1]``. Anything that is not a 2-element tuple (e.g.,
           list or ndarray, regardless of shape) is taken to be a single
           array-like argument meant to be used for both bounds as
-          ``below, above = fill_value, fill_value``.
+          ``below, above = fill_value, fill_value``. Using a two-element tuple
+          or ndarray requires ``bounds_error=False``.
 
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
@@ -516,7 +526,8 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_previousnext
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
+                np_types = (np.float_, np.int_)
+                cond = self.x.dtype in np_types and self.y.dtype in np_types
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
 
@@ -745,14 +756,14 @@ class _PPolyBase:
 
         self.axis = axis
         if axis != 0:
-            # roll the interpolation axis to be the first one in self.c
+            # move the interpolation axis to be the first one in self.c
             # More specifically, the target shape for self.c is (k, m, ...),
             # and axis !=0 means that we have c.shape (..., k, m, ...)
             #                                               ^
             #                                              axis
             # So we roll two of them.
-            self.c = np.rollaxis(self.c, axis+1)
-            self.c = np.rollaxis(self.c, axis+1)
+            self.c = np.moveaxis(self.c, axis+1, 0)
+            self.c = np.moveaxis(self.c, axis+1, 0)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")

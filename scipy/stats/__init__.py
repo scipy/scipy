@@ -21,7 +21,7 @@ are:
   also covered by ``scipy.stats``.
 - `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
   functionality, interfaces to other statistical languages.
-- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+- `PyMC <https://docs.pymc.io/>`__: Bayesian statistical
   modeling, probabilistic machine learning.
 - `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
   model selection.
@@ -301,6 +301,7 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   tukey_hsd
 
 .. autosummary::
    :toctree: generated/
@@ -377,6 +378,9 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
    NumericalInverseHermite
+   NumericalInversePolynomial
+   TransformedDensityRejection
+   DiscreteAliasUrn
 
 Circular statistical functions
 ------------------------------
@@ -424,8 +428,8 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
-Warnings used in :mod:`scipy.stats`
------------------------------------
+Warnings / Errors used in :mod:`scipy.stats`
+--------------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -435,6 +439,7 @@ Warnings used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
+   UNURANError
 
 """
 
@@ -453,6 +458,7 @@ from ._bootstrap import bootstrap
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from ._unuran import *  # noqa
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 
