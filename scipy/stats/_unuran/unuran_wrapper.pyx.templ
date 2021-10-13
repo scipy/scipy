@@ -1716,6 +1716,13 @@ cdef class DiscreteGuideTable(Method):
     in combination with the PV, it has the effect of relocating the
     distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
     ``domain[1]`` is ignored in this case.
+
+    References
+    ----------
+    .. [1] UNU.RAN reference manual, Section 5.8.4,
+           "DGT – (Discrete) Guide Table method (indexed search)"
+           https://statmath.wu.ac.at/unuran/doc/unuran.html#DGT
+
     """
     cdef double[::1] pv_view
 
