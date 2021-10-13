@@ -466,10 +466,8 @@ class TerminationCondition:
             return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
-        return int((f_norm <= self.f_tol
-                    and f_norm/self.f_rtol <= self.f0_norm)
-                   and (dx_norm <= self.x_tol
-                        and dx_norm/self.x_rtol <= x_norm))
+        return int((f_norm <= min(self.f_tol, self.f_rtol * self.f0_norm)) and
+                   (dx_norm <= min(self.x_tol, self.x_rtol * x_norm)))
 
 
 #------------------------------------------------------------------------------
