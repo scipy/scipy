@@ -3252,7 +3252,7 @@ class TestLevyStable:
                         (
                             (r['alpha'] <= 0.2) &
                             np.isin(r['pct'], [.1, .9])
-                        ) | 
+                        ) |
                         (
                             (r['alpha'] == 0.1) &
                             np.isin(r['pct'], [.25, .75]) &
