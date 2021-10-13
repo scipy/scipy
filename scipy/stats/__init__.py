@@ -381,6 +381,7 @@ Random variate generation / CDF Inversion
    NumericalInversePolynomial
    TransformedDensityRejection
    DiscreteAliasUrn
+   DiscreteGuideTable
 
 Circular statistical functions
 ------------------------------
