@@ -87,7 +87,8 @@ def lagrange(x, w):
             fac = x[j]-x[k]
             pt *= poly1d([1.0, -x[k]])/fac
         p += pt
-    # Add the attribute 'coord' to a 'poly1d' object. which is initialized as 'p.coeffs'
+    # Add the attribute 'coord' to a 'poly1d' object. which is initialized
+    # as 'p.coeffs'
     p.coord = p.coeffs
     diff = M - len(p.coeffs)
     # If the number of interpolation points is greater than the number of
