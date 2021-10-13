@@ -840,6 +840,11 @@ class TestNumericalInversePolynomial:
 
 
 class TestDiscreteGuideTable:
+    basic_fail_dists = {
+        'nchypergeom_fisher',  # numerical erros on tails
+        'nchypergeom_wallenius',  # numerical erros on tails
+        'randint'  # fails on 32-bit ubuntu
+    }
 
     def test_guide_factor_gt3_raises_warning(self):
         pv = [0.1, 0.3, 0.6]
@@ -852,3 +857,29 @@ class TestDiscreteGuideTable:
         urng = np.random.default_rng()
         with pytest.warns(RuntimeWarning):
             DiscreteGuideTable(pv, random_state=urng, guide_factor=0)
+
+    @pytest.mark.parametrize("distname, params", distdiscrete)
+    def test_basic(self, distname, params):
+        if distname in self.basic_fail_dists:
+            msg = ("DGT fails on these probably because of large domains "
+                   "and small computation errors in PMF.")
+            pytest.skip(msg)
+
+        if not isinstance(distname, str):
+            dist = distname
+        else:
+            dist = getattr(stats, distname)
+
+        dist = dist(*params)
+        domain = dist.support()
+
+        if not np.isfinite(domain[1] - domain[0]):
+            # DGT only works with finite domain. So, skip the distributions
+            # with infinite tails.
+            pytest.skip("DGT only works with a finite domain.")
+
+        k = np.arange(domain[0], domain[1]+1)
+        pv = dist.pmf(k)
+        mv_ex = dist.stats('mv')
+        rng = DiscreteGuideTable(dist, random_state=42)
+        check_discr_samples(rng, pv, mv_ex)
