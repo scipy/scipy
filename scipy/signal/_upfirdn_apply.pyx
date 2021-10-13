@@ -40,6 +40,7 @@ from cython import bint  # boolean integer type
 from libc.stdlib cimport malloc, free
 from libc.string cimport memset
 
+np.import_array()
 
 ctypedef double complex double_complex
 ctypedef float complex float_complex
