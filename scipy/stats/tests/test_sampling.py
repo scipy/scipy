@@ -858,6 +858,15 @@ class TestDiscreteGuideTable:
         with pytest.warns(RuntimeWarning):
             DiscreteGuideTable(pv, random_state=urng, guide_factor=0)
 
+    def test_negative_guide_factor_raises_warning(self):
+        # This occurs from the UNU.RAN wrapper automatically.
+        # however it already gives a useful warning
+        # Here we just test that a warning is raised.
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=-1)
+
     @pytest.mark.parametrize("distname, params", distdiscrete)
     def test_basic(self, distname, params):
         if distname in self.basic_fail_dists:
