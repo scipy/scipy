@@ -11,6 +11,8 @@ try:
 except ImportError:
     from time import clock as timer
 
+np.import_array()
+
 __all__ = ['LU', 'BGLU']
 
 @cython.boundscheck(False)

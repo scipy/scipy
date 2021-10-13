@@ -111,10 +111,10 @@ class OptimizeResult(dict):
 
     Notes
     -----
-    There may be additional attributes not listed above depending of the
-    specific solver. Since this class is essentially a subclass of dict
-    with attribute accessors, one can see which attributes are available
-    using the `keys()` method.
+    `OptimizeResult` may have additional attributes not listed here depending
+    on the specific solver being used. Since this class is essentially a
+    subclass of dict with attribute accessors, one can see which
+    attributes are available using the `OptimizeResult.keys` method.
     """
 
     def __getattr__(self, name):
@@ -475,6 +475,37 @@ def _wrap_scalar_function(function, args):
     return ncalls, function_wrapper
 
 
+class _MaxFuncCallError(RuntimeError):
+    pass
+
+
+def _wrap_scalar_function_maxfun_validation(function, args, maxfun):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    ncalls = [0]
+    if function is None:
+        return ncalls, None
+
+    def function_wrapper(x, *wrapper_args):
+        if ncalls[0] >= maxfun:
+            raise _MaxFuncCallError("Too many function calls")
+        ncalls[0] += 1
+        # A copy of x is sent to the user function (gh13740)
+        fx = function(np.copy(x), *(wrapper_args + args))
+        # Ideally, we'd like to a have a true scalar returned from f(x). For
+        # backwards-compatibility, also allow np.array([1.3]),
+        # np.array([[1.3]]) etc.
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError("The user-provided objective function "
+                                 "must return a scalar value.") from e
+        return fx
+
+    return ncalls, function_wrapper
+
+
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
     """
@@ -678,8 +709,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = _wrap_scalar_function(func, args)
-
     x0 = asfarray(x0).flatten()
 
     if adaptive:
@@ -753,10 +782,19 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.empty((N + 1,), float)
+    fsim = np.full((N + 1,), np.inf, dtype=float)
 
-    for k in range(N + 1):
-        fsim[k] = func(sim[k])
+    fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
+
+    try:
+        for k in range(N + 1):
+            fsim[k] = func(sim[k])
+    except _MaxFuncCallError:
+        pass
+    finally:
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
 
     ind = np.argsort(fsim)
     fsim = np.take(fsim, ind, 0)
@@ -766,74 +804,78 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (np.max(np.ravel(np.abs(sim[1:] - sim[0]))) <= xatol and
-                np.max(np.abs(fsim[0] - fsim[1:])) <= fatol):
-            break
+        try:
+            if (np.max(np.ravel(np.abs(sim[1:] - sim[0]))) <= xatol and
+                    np.max(np.abs(fsim[0] - fsim[1:])) <= fatol):
+                break
 
-        xbar = np.add.reduce(sim[:-1], 0) / N
-        xr = (1 + rho) * xbar - rho * sim[-1]
-        if bounds is not None:
-            xr = np.clip(xr, lower_bound, upper_bound)
-        fxr = func(xr)
-        doshrink = 0
-
-        if fxr < fsim[0]:
-            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            xbar = np.add.reduce(sim[:-1], 0) / N
+            xr = (1 + rho) * xbar - rho * sim[-1]
             if bounds is not None:
-                xe = np.clip(xe, lower_bound, upper_bound)
-            fxe = func(xe)
+                xr = np.clip(xr, lower_bound, upper_bound)
+            fxr = func(xr)
+            doshrink = 0
 
-            if fxe < fxr:
-                sim[-1] = xe
-                fsim[-1] = fxe
-            else:
-                sim[-1] = xr
-                fsim[-1] = fxr
-        else:  # fsim[0] <= fxr
-            if fxr < fsim[-2]:
-                sim[-1] = xr
-                fsim[-1] = fxr
-            else:  # fxr >= fsim[-2]
-                # Perform contraction
-                if fxr < fsim[-1]:
-                    xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
-                    if bounds is not None:
-                        xc = np.clip(xc, lower_bound, upper_bound)
-                    fxc = func(xc)
+            if fxr < fsim[0]:
+                xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+                if bounds is not None:
+                    xe = np.clip(xe, lower_bound, upper_bound)
+                fxe = func(xe)
 
-                    if fxc <= fxr:
-                        sim[-1] = xc
-                        fsim[-1] = fxc
-                    else:
-                        doshrink = 1
+                if fxe < fxr:
+                    sim[-1] = xe
+                    fsim[-1] = fxe
                 else:
-                    # Perform an inside contraction
-                    xcc = (1 - psi) * xbar + psi * sim[-1]
-                    if bounds is not None:
-                        xcc = np.clip(xcc, lower_bound, upper_bound)
-                    fxcc = func(xcc)
-
-                    if fxcc < fsim[-1]:
-                        sim[-1] = xcc
-                        fsim[-1] = fxcc
-                    else:
-                        doshrink = 1
-
-                if doshrink:
-                    for j in one2np1:
-                        sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                    sim[-1] = xr
+                    fsim[-1] = fxr
+            else:  # fsim[0] <= fxr
+                if fxr < fsim[-2]:
+                    sim[-1] = xr
+                    fsim[-1] = fxr
+                else:  # fxr >= fsim[-2]
+                    # Perform contraction
+                    if fxr < fsim[-1]:
+                        xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
                         if bounds is not None:
-                            sim[j] = np.clip(sim[j], lower_bound, upper_bound)
-                        fsim[j] = func(sim[j])
+                            xc = np.clip(xc, lower_bound, upper_bound)
+                        fxc = func(xc)
 
-        ind = np.argsort(fsim)
-        sim = np.take(sim, ind, 0)
-        fsim = np.take(fsim, ind, 0)
-        if callback is not None:
-            callback(sim[0])
-        iterations += 1
-        if retall:
-            allvecs.append(sim[0])
+                        if fxc <= fxr:
+                            sim[-1] = xc
+                            fsim[-1] = fxc
+                        else:
+                            doshrink = 1
+                    else:
+                        # Perform an inside contraction
+                        xcc = (1 - psi) * xbar + psi * sim[-1]
+                        if bounds is not None:
+                            xcc = np.clip(xcc, lower_bound, upper_bound)
+                        fxcc = func(xcc)
+
+                        if fxcc < fsim[-1]:
+                            sim[-1] = xcc
+                            fsim[-1] = fxcc
+                        else:
+                            doshrink = 1
+
+                    if doshrink:
+                        for j in one2np1:
+                            sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                            if bounds is not None:
+                                sim[j] = np.clip(
+                                    sim[j], lower_bound, upper_bound)
+                            fsim[j] = func(sim[j])
+            iterations += 1
+        except _MaxFuncCallError:
+            pass
+        finally:
+            ind = np.argsort(fsim)
+            sim = np.take(sim, ind, 0)
+            fsim = np.take(fsim, ind, 0)
+            if callback is not None:
+                callback(sim[0])
+            if retall:
+                allvecs.append(sim[0])
 
     x = sim[0]
     fval = np.min(fsim)
@@ -865,7 +907,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     return result
 
 
-def approx_fprime(xk, f, epsilon, *args):
+def approx_fprime(xk, f, epsilon=_epsilon, *args):
     """Finite-difference approximation of the gradient of a scalar function.
 
     Parameters
@@ -877,11 +919,12 @@ def approx_fprime(xk, f, epsilon, *args):
         Should take `xk` as first argument, other arguments to `f` can be
         supplied in ``*args``. Should return a scalar, the value of the
         function at `xk`.
-    epsilon : array_like
+    epsilon : {float, array_like}, optional
         Increment to `xk` to use for determining the function gradient.
         If a scalar, uses the same finite difference delta for all partial
         derivatives. If an array, should contain one value per element of
-        `xk`.
+        `xk`. Defaults to ``sqrt(np.finfo(float).eps)``, which is approximately
+        1.49e-08.
     \\*args : args, optional
         Any other arguments that are to be passed to `f`.
 
@@ -3062,9 +3105,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
-    # we need to use a mutable object here that we can update in the
-    # wrapper function
-    fcalls, func = _wrap_scalar_function(func, args)
+
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
@@ -3085,6 +3126,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             maxfun = N * 1000
         else:
             maxfun = np.inf
+
+    # we need to use a mutable object here that we can update in the
+    # wrapper function
+    fcalls, func = _wrap_scalar_function_maxfun_validation(func, args, maxfun)
 
     if direc is None:
         direc = eye(N, dtype=float)
@@ -3113,57 +3158,62 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     iter = 0
     ilist = list(range(N))
     while True:
-        fx = fval
-        bigind = 0
-        delta = 0.0
-        for i in ilist:
-            direc1 = direc[i]
-            fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                 tol=xtol * 100,
-                                                 lower_bound=lower_bound,
-                                                 upper_bound=upper_bound,
-                                                 fval=fval)
-            if (fx2 - fval) > delta:
-                delta = fx2 - fval
-                bigind = i
-        iter += 1
-        if callback is not None:
-            callback(x)
-        if retall:
-            allvecs.append(x)
-        bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
-        if 2.0 * (fx - fval) <= bnd:
-            break
-        if fcalls[0] >= maxfun:
-            break
-        if iter >= maxiter:
-            break
-        if np.isnan(fx) and np.isnan(fval):
-            # Ended up in a nan-region: bail out
-            break
-
-        # Construct the extrapolated point
-        direc1 = x - x1
-        x2 = 2*x - x1
-        x1 = x.copy()
-        fx2 = squeeze(func(x2))
-
-        if (fx > fx2):
-            t = 2.0*(fx + fx2 - 2.0*fval)
-            temp = (fx - fval - delta)
-            t *= temp*temp
-            temp = fx - fx2
-            t -= delta*temp*temp
-            if t < 0.0:
+        try:
+            fx = fval
+            bigind = 0
+            delta = 0.0
+            for i in ilist:
+                direc1 = direc[i]
+                fx2 = fval
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
                                                      tol=xtol * 100,
                                                      lower_bound=lower_bound,
                                                      upper_bound=upper_bound,
                                                      fval=fval)
-                if np.any(direc1):
-                    direc[bigind] = direc[-1]
-                    direc[-1] = direc1
+                if (fx2 - fval) > delta:
+                    delta = fx2 - fval
+                    bigind = i
+            iter += 1
+            if callback is not None:
+                callback(x)
+            if retall:
+                allvecs.append(x)
+            bnd = ftol * (np.abs(fx) + np.abs(fval)) + 1e-20
+            if 2.0 * (fx - fval) <= bnd:
+                break
+            if fcalls[0] >= maxfun:
+                break
+            if iter >= maxiter:
+                break
+            if np.isnan(fx) and np.isnan(fval):
+                # Ended up in a nan-region: bail out
+                break
+
+            # Construct the extrapolated point
+            direc1 = x - x1
+            x2 = 2*x - x1
+            x1 = x.copy()
+            fx2 = squeeze(func(x2))
+
+            if (fx > fx2):
+                t = 2.0*(fx + fx2 - 2.0*fval)
+                temp = (fx - fval - delta)
+                t *= temp*temp
+                temp = fx - fx2
+                t -= delta*temp*temp
+                if t < 0.0:
+                    fval, x, direc1 = _linesearch_powell(
+                        func, x, direc1,
+                        tol=xtol * 100,
+                        lower_bound=lower_bound,
+                        upper_bound=upper_bound,
+                        fval=fval
+                    )
+                    if np.any(direc1):
+                        direc[bigind] = direc[-1]
+                        direc[-1] = direc1
+        except _MaxFuncCallError:
+            break
 
     warnflag = 0
     # out of bounds is more urgent than exceeding function evals or iters,
@@ -3785,8 +3835,8 @@ def main():
     print("\nMinimizing the Rosenbrock function of order 3\n")
     print(" Algorithm \t\t\t       Seconds")
     print("===========\t\t\t      =========")
-    for k in range(len(algor)):
-        print(algor[k], "\t -- ", times[k])
+    for alg, tme in zip(algor, times):
+        print(alg, "\t -- ", tme)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, isspmatrix, isspmatrix_coo,
                           SparseEfficiencyWarning)
 from . import maximum_bipartite_matching
 
+np.import_array()
 
 include 'parameters.pxi'
 
@@ -52,7 +53,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
