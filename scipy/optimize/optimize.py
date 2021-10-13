@@ -907,7 +907,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     return result
 
 
-def approx_fprime(xk, f, epsilon, *args):
+def approx_fprime(xk, f, epsilon=_epsilon, *args):
     """Finite-difference approximation of the gradient of a scalar function.
 
     Parameters
@@ -919,11 +919,12 @@ def approx_fprime(xk, f, epsilon, *args):
         Should take `xk` as first argument, other arguments to `f` can be
         supplied in ``*args``. Should return a scalar, the value of the
         function at `xk`.
-    epsilon : array_like
+    epsilon : {float, array_like}, optional
         Increment to `xk` to use for determining the function gradient.
         If a scalar, uses the same finite difference delta for all partial
         derivatives. If an array, should contain one value per element of
-        `xk`.
+        `xk`. Defaults to ``sqrt(np.finfo(float).eps)``, which is approximately
+        1.49e-08.
     \\*args : args, optional
         Any other arguments that are to be passed to `f`.
 
