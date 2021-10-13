@@ -41,13 +41,13 @@ One can generate (U, V) uniformly on R and return
 verified.
 
 The algorithm is not changed if one replaces the pdf by a function
-that is proportional to it, e.g., by dropping unneccessary normalization
+that is proportional to it, e.g., by dropping unnecessary normalization
 factors.
 
 Intuitively, the method works well if A fills up most of the
 enclosing rectangle such that the probability is high that (U, V)
 lies in A whenever it lies in R as the number of required
-iterations becomes too large otherwise. To be more precise, note that
+iterations become too large otherwise. To be more precise, note that
 the expected number of iterations to draw (U, V) uniformly
 distributed on R such that (U, V) is also in A is given by
 the ratio ``area(R) / area(A) = 2 * v_max * (u_max - u_min) / area(pdf)``,

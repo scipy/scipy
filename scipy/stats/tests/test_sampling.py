@@ -846,8 +846,6 @@ class Gamma:
         self.p = p
 
     def pdf(self, x):
-        if x < 0:
-            return 0.0
         return x**(self.p - 1) * math.exp(-x)
 
     def cdf(self, x):

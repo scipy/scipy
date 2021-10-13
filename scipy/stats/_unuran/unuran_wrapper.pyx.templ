@@ -1723,12 +1723,12 @@ cdef class NaiveRatioUniforms(Method):
 
     The algorithm is not changed if one replaces the pdf by a function
     that is proportional to it, e.g., by dropping
-    unneccessary normalization factors.
+    unnecessary normalization factors.
 
     Intuitively, the method works well if A fills up most of the
     enclosing rectangle such that the probability is high that (U, V)
     lies in A whenever it lies in R as the number of required
-    iterations becomes too large otherwise. To be more precise, note that
+    iterations become too large otherwise. To be more precise, note that
     the expected number of iterations to draw (U, V) uniformly
     distributed on R such that (U, V) is also in A is given by
     the ratio ``area(R) / area(A) = 2 * v_max * (u_max - u_min) / area(pdf)``,
@@ -1872,7 +1872,6 @@ cdef class NaiveRatioUniforms(Method):
         # if one of u_min / u_max is None, set the other to None as well
         # the reason is that the numerical routine to find the bounds can only
         # be used for both bounds at the same time
-        warn = False
         if (u_min is None) ^ (u_max is None):
             u_min, u_max = None, None
             msg = ("Only one of the values of u_min and u_max is None. "
