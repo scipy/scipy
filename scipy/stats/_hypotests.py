@@ -147,7 +147,7 @@ PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
 
 def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     r"""
-    Calculates the poisson mean test, the "E-test", for the mean difference of
+    Calculates the poisson means test, the "E-test", for the mean difference of
     two samples that follow a Poisson distribution from descriptive statistics.
 
     This is a two-sided test. The null hypothesis is that two independent
@@ -163,7 +163,7 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
 
     Let `count1` and `count2` be the observed values of :math:`X_1` and
-    :math:`X_2`, respectively. The null hypothesis and alternative 
+    :math:`X_2`, respectively. The null hypothesis and alternative
     hypothesis under comparison are
 
     .. math::
@@ -175,15 +175,16 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     Parameters
     ----------
     k1 : int
-        Sample values of interest from sample 1.
+        Sample value of interest from sample 1.
     n1: int
         Sample size from sample 1.
     k2 : int
-        Sample values of interest from sample 2.
+        Sample value of interest from sample 2.
     n2: int
         Sample size from sample 2.
     diff : int or float, optional
         The difference of mean between two samples under the null hypothesis
+        (default is 0).
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -195,7 +196,7 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     Returns
     -------
     statistic : float
-        The test statistic calculated from observed samples
+        The test statistic calculated from observed samples.
     pvalue : float
         The associated p-value based on the estimated p-value of the
         standardized difference.
@@ -206,7 +207,7 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     with smaller sample sizes which can reduce sampling costs [1]_. It has
     been evaluated and determined to be more powerful than the comparable
     C-test, sometimes referred to as the poisson exact test.
-    
+
     References
     ----------
     .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
@@ -221,7 +222,11 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     --------
 
     Suppose that a gardener wishes to test the number of dodder seeds, a weed,
-    in a sack of clover seeds that they buy from a seed company.
+    in a sack of clover seeds that they buy from a seed company. It has
+    previously been established that the number of dodder seeds in clover
+    follows the Poisson distribution.
+
+
     A 100 gram sample is drawn from the sack before being shipped to the
     gardener. The sample is analyzed, and it is found to contain no dodder
     seeds; that is, `k1` is 0. However, upon arrival, the gardener draws
@@ -245,14 +250,14 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     regarded as significant at this level.
     """
 
-    _chck_args_poisson_mean_test(k1, n1, k2, n2, diff, alternative)
+    _iv_poisson_mean_test(k1, n1, k2, n2, diff, alternative)
 
     # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
     lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
 
     # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
     # case the null hypothesis cannot be rejected ... [and] it is not necessary
-    # to compute the p-value". [1] page 26 below eq. (3.6). 
+    # to compute the p-value". [1] page 26 below eq. (3.6).
     if lmbd_hat2 <= 0:
         return PoissonMeansTestResult(0, 1)
     # the unbiased variance estimate [1] (3.2)
@@ -302,23 +307,26 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
 
     # this is the 'pivot statistic' for use in the indicator of the summation
-    # (left side of "I[.]"). Before dividing, mask zero-elements in the 
+    # (left side of "I[.]"). Before dividing, mask zero-elements in the
     # denominator with infinity so that they are `false` in the indicator.
-    mask_out_invalid = (np.abs(lmbd_x1 - lmbd_x2) > diff
-                        if alternative == 'two-sided' else lmbds_diff > 0)
+    if alternative == 'two-sided':
+        mask_out_invalid = np.abs(lmbd_x1 - lmbd_x2) > diff
+    elif alternative == 'less':
+        mask_out_invalid = lmbds_diff < 0
+    else:
+        mask_out_invalid = lmbds_diff > 0
+
     var_x1x2[~mask_out_invalid] = np.inf
     t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
 
-    if alternative == 'two-sided':
-        alternative_comparison = lambda x, y: np.abs(x) >= np.abs(y)
-    elif alternative == 'less':
-        alternative_comparison = lambda x, y: np.less_equal(x, y)
-    else: 
-        alternative_comparison = lambda x, y: np.less_equal(x, y)
-
     # `[indicator]` implements the "I[.] ... the indicator function" per
     # the paragraph following equation (3.5).
-    indicator = alternative_comparison(t_x1x2, t_k1k2)
+    if alternative == 'two-sided':
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+    elif alternative == 'less':
+        indicator = t_x1x2 <= t_k1k2
+    else:
+        indicator = t_x1x2 >= t_k1k2
 
     # multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
@@ -327,7 +335,7 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     return PoissonMeansTestResult(t_k1k2, pvalue)
 
 
-def _chck_args_poisson_mean_test(k1, n1, k2, n2, diff, alternative):
+def _iv_poisson_mean_test(k1, n1, k2, n2, diff, alternative):
     # """check for valid types and values of input to `poisson_mean_test`."""
     if not all(isinstance(item, int) for item in [k1, n1, k2, n2]):
         raise TypeError('count1, count2, nobs1, and nobs2 must be of type int')
