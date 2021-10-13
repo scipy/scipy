@@ -21,6 +21,7 @@ from collections import namedtuple
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 from scipy._lib._util import check_random_state
+import warnings
 
 np.import_array()
 
@@ -1674,7 +1675,7 @@ cdef class DiscreteGuideTable(Method):
 
         cdef double[::1] pv_view
 
-        (pv_view, domain) = self._validate_args(dist, domain, variant)
+        (pv_view, domain) = self._validate_args(dist, domain, variant, guide_factor)
 
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
@@ -1719,7 +1720,7 @@ cdef class DiscreteGuideTable(Method):
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, dist, domain, variant):
+    cdef object _validate_args(self, dist, domain, variant, guide_factor):
         cdef double[::1] pv_view
 
         domain = _validate_domain(domain, dist)
@@ -1733,6 +1734,18 @@ cdef class DiscreteGuideTable(Method):
 
         if variant not in {1, 2}:
             raise ValueError("`variant` must be either 1 or 2")
+
+        if guide_factor > 3:
+            msg = "guide_factor sizes larger than 3 are not recommended."
+            warnings.warn(msg, RuntimeWarning)
+
+        if guide_factor == 0:
+            msg = ("If the relative size (guide_factor) is set to 0, "
+                   "sequential search is used. However, this is not "
+                   "recommended, except in exceptional cases, since the "
+                   "discrete sequential search method has almost no setup and "
+                   "is thus faster.")
+            warnings.warn(msg, RuntimeWarning)
 
         if hasattr(dist, 'pmf'):
             # we assume the PMF accepts and return floats. So, we need

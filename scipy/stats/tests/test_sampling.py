@@ -837,3 +837,18 @@ class TestNumericalInversePolynomial:
         msg = r"Exact CDF required but not found."
         with pytest.raises(ValueError, match=msg):
             rng.u_error()
+
+
+class TestDiscreteGuideTable:
+
+    def test_guide_factor_gt3_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=7)
+
+    def test_guide_factor_zero_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=0)
