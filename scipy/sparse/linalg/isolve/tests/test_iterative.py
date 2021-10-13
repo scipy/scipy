@@ -520,7 +520,8 @@ def test_x0_working(solver):
     assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
 
 
-@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk])
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:

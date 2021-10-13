@@ -122,8 +122,9 @@ def make_system(A, M, x0, b):
             x = M.matvec(bCopy)
     else:
         x = array(x0, dtype=xtype)
-        if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError(f'shapes of A {A.shape} and x0 {x.shape} are incompatible')
+        if not (x.shape == (N, 1) or x.shape == (N,)):
+            raise ValueError(f'shapes of A {A.shape} and '
+                             f'x0 {x.shape} are incompatible')
         x = x.ravel()
 
     return A, M, x, b, postprocess
