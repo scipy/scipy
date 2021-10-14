@@ -2670,7 +2670,7 @@ class TestIQR:
         q = stats.iqr(o)
 
         assert_equal(stats.iqr(x, axis=(0, 1)), q)
-        x = np.rollaxis(x, -1, 0)               # x.shape = (10, 71, 23)
+        x = np.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
         assert_equal(stats.iqr(x, axis=(2, 1)), q)
         x = x.swapaxes(0, 1)                    # x.shape = (71, 10, 23)
         assert_equal(stats.iqr(x, axis=(0, 2)), q)
@@ -3893,6 +3893,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
     def test_gh12999(self):
+        np.random.seed(123456)
         for x in range(1000, 12000, 1000):
             vals1 = np.random.normal(size=(x))
             vals2 = np.random.normal(size=(x + 10), loc=0.5)
@@ -3997,7 +3998,8 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_rel(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_rel(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
@@ -4179,7 +4181,8 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_ind(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -4806,13 +4809,14 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
-                                   axis=2, equal_var=False)
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
+                           axis=2, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
-    args = _desc_stats(np.rollaxis(rvs1_3D, 2),
-                       np.rollaxis(rvs2_3D, 2), axis=2)
+    args = _desc_stats(np.moveaxis(rvs1_3D, 2, 0),
+                       np.moveaxis(rvs2_3D, 2, 0), axis=2)
     t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -5966,7 +5970,7 @@ class TestTrim:
         a = np.random.randint(20, size=(5, 6, 4, 7))
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
-            res2 = stats.trim_mean(np.rollaxis(a, axis), 2/6.)
+            res2 = stats.trim_mean(np.moveaxis(a, axis, 0), 2/6.)
             assert_equal(res1, res2)
 
         res1 = stats.trim_mean(a, 2/6., axis=None)

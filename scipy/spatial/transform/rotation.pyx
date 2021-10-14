@@ -2020,7 +2020,7 @@ cdef class Rotation:
                     np.einsum('ix,j,kx', lv, ps, rv) -
                     np.einsum('ix,jx,k', lv, pv, rs) -
                     np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
-        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+        qs = np.reshape(np.moveaxis(qs, 1, 0), (qs.shape[1], -1))
 
         # Find best indices from scalar components
         max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)

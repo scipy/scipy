@@ -59,7 +59,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         specify the function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
-        where 'n' is the number of independent variables.
+        where ``n`` is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (`fun`, `jac` and `hess` functions).
@@ -84,7 +84,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
               see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
-        depending if the problem has constraints or bounds.
+        depending on whether or not the problem has constraints or bounds.
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
@@ -114,14 +114,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
-        where x is a (n,) ndarray and `args` is a tuple with the fixed
+        where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
         parameters. LinearOperator and sparse matrix returns are only allowed
-        for 'trust-constr' method. Alternatively, the keywords
-        {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation. Or, objects implementing the
-        `HessianUpdateStrategy` interface can be used to approximate
-        the Hessian. Available quasi-Newton methods implementing
-        this interface are:
+        for 'trust-constr' method. Alternatively (not available for Newton-CG
+        or dogleg), the keywords {'2-point', '3-point', 'cs'} select a finite
+        difference scheme for numerical estimation. Or, objects implementing
+        the `HessianUpdateStrategy` interface can be used to approximate the
+        Hessian. Available quasi-Newton methods implementing this interface
+        are:
 
             - `BFGS`;
             - `SR1`.
@@ -141,8 +141,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``hessp(x, p, *args) ->  ndarray shape (n,)``
 
-        where x is a (n,) ndarray, p is an arbitrary vector with
-        dimension (n,) and `args` is a tuple with the fixed
+        where ``x`` is a (n,) ndarray, ``p`` is an arbitrary vector with
+        dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
         Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
@@ -153,7 +153,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                is used to specify no bound.
 
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition (only for COBYLA, SLSQP and trust-constr).
+        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
 
         Constraints for 'trust-constr' are defined as a single object or a
         list of objects specifying constraints to the optimization problem.
