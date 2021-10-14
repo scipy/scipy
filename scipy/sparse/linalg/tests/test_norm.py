@@ -27,9 +27,9 @@ class TestNorm:
         assert_allclose(spnorm(self.b, 1), 7)
         assert_allclose(spnorm(self.b, -1), 6)
 
-        # _multi_svd_norm is not implemented for sparse matrix
-        assert_raises(NotImplementedError, spnorm, self.b, 2)
-        assert_raises(NotImplementedError, spnorm, self.b, -2)
+        # Spectral norm computed by LOBPCG
+        assert_allclose(spnorm(self.b, 2), 7.3484692283495345)
+        assert_allclose(spnorm(self.b, -2), 0.)
 
     def test_matrix_norm_axis(self):
         for m, axis in ((self.b, None), (self.b, (0, 1)), (self.b.T, (1, 0))):
@@ -39,6 +39,8 @@ class TestNorm:
             assert_allclose(spnorm(m, -np.inf, axis=axis), 2)
             assert_allclose(spnorm(m, 1, axis=axis), 7)
             assert_allclose(spnorm(m, -1, axis=axis), 6)
+            assert_allclose(spnorm(m, 2, axis=axis), 7.3484692283495345)
+            assert_allclose(spnorm(m, -2, axis=axis), 0.)
 
     def test_vector_norm(self):
         v = [4.5825756949558398, 4.2426406871192848, 4.5825756949558398]
@@ -95,6 +97,8 @@ class TestVsNumpyNorm:
                 assert_allclose(spnorm(S, -np.inf), npnorm(M, -np.inf))
                 assert_allclose(spnorm(S, 1), npnorm(M, 1))
                 assert_allclose(spnorm(S, -1), npnorm(M, -1))
+                assert_allclose(spnorm(S, 2), npnorm(M, 2))
+                assert_allclose(spnorm(S, -2), npnorm(M, -2), atol=1e-14)
 
     def test_sparse_matrix_norms_with_axis(self):
         for sparse_type in self._sparse_types:
@@ -102,9 +106,12 @@ class TestVsNumpyNorm:
                 S = sparse_type(M)
                 for axis in None, (0, 1), (1, 0):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
-                    for ord in 'fro', np.inf, -np.inf, 1, -1:
+                    for ord in 'fro', np.inf, -np.inf, 1, -1, 2:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
+                    assert_allclose(spnorm(S, -2, axis=axis),
+                                    npnorm(M, -2, axis=axis),
+                                    atol=1e-14)
                 # Some numpy matrix norms are allergic to negative axes.
                 for axis in (-2, -1), (-1, -2), (1, -2):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
@@ -112,6 +119,11 @@ class TestVsNumpyNorm:
                                     npnorm(M, 'f', axis=axis))
                     assert_allclose(spnorm(S, 'fro', axis=axis),
                                     npnorm(M, 'fro', axis=axis))
+                    assert_allclose(spnorm(S, 2, axis=axis),
+                                    npnorm(M, 2, axis=axis))
+                    assert_allclose(spnorm(S, -2, axis=axis),
+                                    npnorm(M, -2, axis=axis),
+                                    atol=1e-14)
 
     def test_sparse_vector_norms(self):
         for sparse_type in self._sparse_types:
