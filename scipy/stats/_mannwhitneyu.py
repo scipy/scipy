@@ -23,6 +23,9 @@ class _MWU:
     def __init__(self):
         '''Minimal initializer'''
         self._fmnks = -np.ones((1, 1, 1))
+        self._stack = []
+        self._accumulator = 0
+        self._use_iter = False
 
     def pmf(self, k, m, n):
         '''Probability mass function'''
@@ -30,7 +33,13 @@ class _MWU:
         # could loop over just the unique elements, but probably not worth
         # the time to find them
         for i in np.ravel(k):
-            self._f(m, n, i)
+            if not self._use_iter:
+                try:
+                    self._f_rec(m, n, i)
+                except RecursionError:
+                    self._use_iter = True
+            else:
+                self._f_iter(m, n, i)
         return self._fmnks[m, n, k] / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
@@ -39,6 +48,9 @@ class _MWU:
         # summing more than m*n/2 terms, but it might not be worth the
         # overhead. Let's leave that to an improvement.
         pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
+        # if we had to use iteration, reset the state to recursion
+        if self._use_iter:
+            self._use_iter = False
         cdfs = np.cumsum(pmfs)
         return cdfs[k]
 
@@ -64,7 +76,7 @@ class _MWU:
             fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
             self._fmnks = fmnks
 
-    def _f(self, m, n, k):
+    def _f_rec(self, m, n, k):
         '''Recursive implementation of function of [3] Theorem 2.5'''
 
         # [3] Theorem 2.5 Line 1
@@ -78,11 +90,74 @@ class _MWU:
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
         else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
+            fmnk = self._f_rec(m-1, n, k-n) + self._f_rec(m, n-1, k)
 
         self._fmnks[m, n, k] = fmnk  # remember result
 
         return fmnk
+    
+    def _get_node(self, args):
+        '''Nodes for the full binary tree in _f_iter.'''
+        
+        if args is None:
+            return None
+       
+        # if already calculated, return the value
+        m, n, k = args
+        if self._fmnks[m, n, k] >= 0:
+            return [self._fmnks[m, n, k], args, None, None, None]
+        
+        # these are the same as in _f_rec
+        if k < 0 or m < 0 or n < 0 or k > m*n:
+            return [0, (m, n, k), None, None, False]
+        if k == 0 and m >= 0 and n >= 0:
+            return [1, (m, n, k), None, None, True]
+        else:
+            return [0, (m, n, k), (m-1, n, k-n), (m, n-1, k), False]
+    
+    def _visit_node(self, node):
+        '''Accumulates the solution and cached args in _f_iter.'''
+        
+        # if node is a leaf node, accumulate the result
+        if node[-1]:
+            self._accumulator += node[0]
+        
+        # if the node value is non-zero, cache the result
+        # if node[0] != 0:
+        m, n, k = node[1]
+        self._fmnks[m, n, k] = node[0]
+       
+        # the parent node is always the peek node during post-order traversal
+        # which allows for accumulating cached values as well
+        if self._stack:
+            self._stack[-1][0] += node[0]
+    
+    def _f_iter(self, m, n, k):
+        '''Iterative implementation of function of [3] Theorem 2.5 for edge
+        cases in which the recursion limit would be hit by _f_rec.'''
+        
+        # zero accumulator and stack
+        self._accumulator = 0
+        self._stack = []
+        
+        # initialize post-order traversal
+        last_visited = None
+        node = self._get_node((m, n, k))
+        
+        # start iteration
+        while self._stack or node:
+            if node:
+                self._stack.append(node)
+                node = self._get_node(node[2])
+            else:
+                peek_node = self._stack[-1]
+                if peek_node[3] and last_visited[1] != peek_node[3]:
+                    node = self._get_node(peek_node[3])
+                else:
+                    last_visited = self._stack.pop()
+                    self._visit_node(peek_node)
+        
+        return self._accumulator
 
 
 # Maintain state for faster repeat calls to mannwhitneyu w/ method='exact'
