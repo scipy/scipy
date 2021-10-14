@@ -1656,8 +1656,8 @@ void csr_hstack(const I n_blocks,
                       I Bj[],
                       T Bx[])
 {
-	// First, mark the blocks in the input data while
-	// computing their column offsets:
+    // First, mark the blocks in the input data while
+    // computing their column offsets:
     std::vector<I> col_offset(n_blocks);
     std::vector<const I*> bAp(n_blocks);
     std::vector<const I*> bAj(n_blocks);
@@ -1667,7 +1667,7 @@ void csr_hstack(const I n_blocks,
     bAj[0] = Aj_cat;
     bAx[0] = Ax_cat;
     for (I b = 1; b < n_blocks; b++){
-    	col_offset[b] = col_offset[b - 1] + n_col_cat[b - 1];
+        col_offset[b] = col_offset[b - 1] + n_col_cat[b - 1];
         bAp[b] = bAp[b - 1] + (n_row + 1);
         bAj[b] = bAj[b - 1] + bAp[b - 1][n_row];
         bAx[b] = bAx[b - 1] + bAp[b - 1][n_row];
@@ -1682,7 +1682,7 @@ void csr_hstack(const I n_blocks,
             I jj_end = bAp[b][i + 1];
             I offset = col_offset[b];
             std::transform(&bAj[b][jj_start], &bAj[b][jj_end],
-            		       &Bj[s], [&](I x){return (x + offset);});
+                           &Bj[s], [&](I x){return (x + offset);});
             std::copy(&bAx[b][jj_start], &bAx[b][jj_end], &Bx[s]);
             s += jj_end - jj_start;
         }

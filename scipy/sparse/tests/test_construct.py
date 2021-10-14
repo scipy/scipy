@@ -318,28 +318,20 @@ class TestConstructUtils:
         assert_equal(construct.vstack([A, B]).todense(), expected)
         assert_equal(construct.vstack([A, B], dtype=np.float32).dtype,
                      np.float32)
+
         assert_equal(construct.vstack([A.tocsr(), B.tocsr()]).todense(),
                      expected)
-        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
-                                      dtype=np.float32).dtype,
-                     np.float32)
-        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
-                                      dtype=np.float32).indices.dtype,
-                     np.int32)
-        assert_equal(construct.vstack([A.tocsr(), B.tocsr()],
-                                      dtype=np.float32).indptr.dtype,
-                     np.int32)
+        result = construct.vstack([A.tocsr(), B.tocsr()], dtype=np.float32)
+        assert_equal(result.dtype, np.float32)
+        assert_equal(result.indices.dtype, np.int32)
+        assert_equal(result.indptr.dtype, np.int32)
+
         assert_equal(construct.vstack([A.tocsc(), B.tocsc()]).todense(),
                      expected)
-        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
-                                      dtype=np.float32).dtype,
-                     np.float32)
-        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
-                                      dtype=np.float32).indices.dtype,
-                     np.int32)
-        assert_equal(construct.vstack([A.tocsc(), B.tocsc()],
-                                      dtype=np.float32).indptr.dtype,
-                     np.int32)
+        result = construct.vstack([A.tocsc(), B.tocsc()], dtype=np.float32)
+        assert_equal(result.dtype, np.float32)
+        assert_equal(result.indices.dtype, np.int32)
+        assert_equal(result.indptr.dtype, np.int32)
 
     def test_hstack(self):
 
@@ -373,7 +365,7 @@ class TestConstructUtils:
                            [3, 4, 6],
                            [0, 0, 7]])
         assert_equal(construct.bmat([[A, B], [None, C]]).todense(), expected)
-        E = csr_matrix((1, 2), dtype='i')
+        E = csr_matrix((1, 2), dtype=np.int32)
         assert_equal(construct.bmat([[A.tocsr(), B.tocsr()],
                                      [E, C.tocsr()]]).todense(),
                      expected)
@@ -393,7 +385,7 @@ class TestConstructUtils:
                                      [E.tocsc(), C.tocsc()]]).todense(),
                      expected)
 
-        Z = csr_matrix((1, 1), dtype='i')
+        Z = csr_matrix((1, 1), dtype=np.int32)
         expected = matrix([[0, 5],
                            [0, 6],
                            [7, 0]])
@@ -427,7 +419,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc()], [B.tocsc()]])
-        excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
+        excinfo.match(r'Mismatching dimensions along axis 1: {1, 2}')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A, C]])
@@ -435,7 +427,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsr(), C.tocsr()]])
-        excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
+        excinfo.match(r'Mismatching dimensions along axis 0: {1, 2}')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc(), C.tocsc()]])

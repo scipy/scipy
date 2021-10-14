@@ -312,7 +312,6 @@ def kron(A, B, format=None):
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         # B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
-
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
@@ -418,7 +417,7 @@ def _compressed_sparse_stack(blocks, axis):
     sum_indices = 0
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
-            raise ValueError('incompatible dimensions for axis %d' % other_axis)
+            raise ValueError(f'incompatible dimensions for axis {other_axis}')
         indices[sum_indices:sum_indices+b.indices.size] = b.indices
         sum_indices += b.indices.size
         idxs = slice(sum_dim, sum_dim + b.shape[axis])
@@ -435,48 +434,39 @@ def _compressed_sparse_stack(blocks, axis):
                           shape=(constant_dim, sum_dim))
 
 
-def _compressed_sparse_hard_stack(blocks, axis, stack_idx=0):
+def _stack_along_minor_axis(blocks, axis):
     """
-    Stacking fast path for CSR/CSC matrices along the harder axis
+    Stacking fast path for CSR/CSC matrices along the minor axis
     (i) hstack for CSR, (ii) vstack for CSC.
     """
     n_blocks = len(blocks)
+    if n_blocks == 0:
+        raise ValueError('Missing block matrices')
+
     if n_blocks == 1:
         return blocks[0]
 
     # check for incompatible dimensions
     other_axis = 1 if axis == 0 else 0
-    constant_dim_cat = np.array([b.shape[other_axis] for b in blocks])
-    constant_dim = constant_dim_cat[0]
-    bad_dim = (constant_dim_cat != constant_dim)
-    if np.any(bad_dim):
-        bad = np.argwhere(bad_dim)[0][0]
-        if isinstance(blocks[0], csr_matrix):
-            msg = ('blocks[{i},:] has incompatible row dimensions. '
-                   'Got blocks[{i},{j}].shape[0] == {got}, '
-                   'expected {exp}.'.format(i=stack_idx, j=bad,
-                                            exp=constant_dim,
-                                            got=constant_dim_cat[bad]))
-        else:
-            msg = ('blocks[:,{i}] has incompatible column dimensions. '
-                   'Got blocks[{j},{i}].shape[1] == {got}, '
-                   'expected {exp}.'.format(i=stack_idx, j=bad,
-                                            exp=constant_dim,
-                                            got=constant_dim_cat[bad]))
-        raise ValueError(msg)
+    other_axis_dims = set(b.shape[other_axis] for b in blocks)
+    if len(other_axis_dims) > 1:
+        raise ValueError(f'Mismatching dimensions along axis {other_axis}: '
+                         f'{other_axis_dims}')
+    constant_dim, = other_axis_dims
 
     # Do the stacking
     indptr_list = [b.indptr for b in blocks]
-    indptr_cat = np.concatenate(indptr_list)
-    indices_cat = np.concatenate([b.indices for b in blocks])
     data_cat = np.concatenate([b.data for b in blocks])
     idx_dtype = get_index_dtype(arrays=indptr_list,
                                 maxval=max(data_cat.size, constant_dim))
-    stack_dim_cat = np.array([b.shape[axis] for b in blocks]).astype(idx_dtype)
+    stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
+        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
+        indices_cat = (np.concatenate([b.indices for b in blocks])
+                       .astype(idx_dtype))
         indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
-        indices = np.empty(data_cat.size, dtype=idx_dtype)
-        data = np.empty(data_cat.size, dtype=data_cat.dtype)
+        indices = np.empty_like(indices_cat)
+        data = np.empty_like(data_cat)
         csr_hstack(n_blocks, constant_dim, stack_dim_cat,
                    indptr_cat, indices_cat, data_cat,
                    indptr, indices, data)
@@ -485,7 +475,7 @@ def _compressed_sparse_hard_stack(blocks, axis, stack_idx=0):
         indices = np.empty(0, dtype=idx_dtype)
         data = np.empty(0, dtype=data_cat.dtype)
 
-    sum_dim = np.sum(stack_dim_cat)
+    sum_dim = stack_dim_cat.sum()
     if axis == 0:
         return csc_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
@@ -615,28 +605,26 @@ def bmat(blocks, format=None, dtype=None):
     if (format in (None, 'csr') and all(isinstance(b, csr_matrix)
                                         for b in blocks.flat)):
         if N > 1:
-            A = _compressed_sparse_stack(
-                    np.asarray([
-                            _compressed_sparse_hard_stack(blocks[b, :], 1, b)
-                            for b in range(M)
-                    ], dtype='object'),
-                    0)
-        else:
-            A = _compressed_sparse_stack(blocks[:, 0], 0)
+            # stack along columns (axis 1):
+            blocks = [[_stack_along_minor_axis(blocks[b, :], 1)]
+                      for b in range(M)]   # must have shape: (M, 1)
+            blocks = np.asarray(blocks, dtype='object')
+
+        # stack along rows (axis 0):
+        A = _compressed_sparse_stack(blocks[:, 0], 0)
         if dtype is not None:
             A = A.astype(dtype)
         return A
     elif (format in (None, 'csc') and all(isinstance(b, csc_matrix)
                                           for b in blocks.flat)):
         if M > 1:
-            A = _compressed_sparse_stack(
-                    np.asarray([
-                            _compressed_sparse_hard_stack(blocks[:, b], 0, b)
-                            for b in range(N)
-                    ], dtype='object'),
-                    1)
-        else:
-            A = _compressed_sparse_stack(blocks[0, :], 1)
+            # stack along rows (axis 0):
+            blocks = [[_stack_along_minor_axis(blocks[:, b], 0)
+                       for b in range(N)]]   # must have shape: (1, N)
+            blocks = np.asarray(blocks, dtype='object')
+
+        # stack along columns (axis 1):
+        A = _compressed_sparse_stack(blocks[0, :], 1)
         if dtype is not None:
             A = A.astype(dtype)
         return A
@@ -656,21 +644,17 @@ def bmat(blocks, format=None, dtype=None):
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
                 elif brow_lengths[i] != A.shape[0]:
-                    msg = ('blocks[{i},:] has incompatible row dimensions. '
-                           'Got blocks[{i},{j}].shape[0] == {got}, '
-                           'expected {exp}.'.format(i=i, j=j,
-                                                    exp=brow_lengths[i],
-                                                    got=A.shape[0]))
+                    msg = (f'blocks[{i},:] has incompatible row dimensions. '
+                           f'Got blocks[{i},{j}].shape[0] == {A.shape[0]}, '
+                           f'expected {brow_lengths[i]}.')
                     raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 elif bcol_lengths[j] != A.shape[1]:
-                    msg = ('blocks[:,{j}] has incompatible column dimensions. '
-                           'Got blocks[{i},{j}].shape[1] == {got}, '
-                           'expected {exp}.'.format(i=i, j=j,
-                                                    exp=bcol_lengths[j],
-                                                    got=A.shape[1]))
+                    msg = (f'blocks[:,{j}] has incompatible column dimensions. '
+                           f'Got blocks[{i},{j}].shape[1] == {got=A.shape[1]}, '
+                           f'expected {bcol_lengths[j]}.')
                     raise ValueError(msg)
 
     nnz = sum(block.nnz for block in blocks[block_mask])

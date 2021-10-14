@@ -107,15 +107,15 @@ csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I
+csr_hstack          v iiIIIT*I*I*T
 expandptr           v iI*I
 test_throw_error    i
 csr_has_sorted_indices    i iII
 csr_has_canonical_format  i iII
 """
 
-# csr.h, coo.h, dia.h, csgraph.h
+# coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
-csr_hstack          v iiIIIT*I*I*T
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_matvec          v lIITT*T
