@@ -1610,7 +1610,7 @@ cdef class NumericalInverseHermite(Method):
     >>> rng3 = NumericalInverseHermite(dist, order=3)
     >>> rng5 = NumericalInverseHermite(dist, order=5)
     >>> rng3.intervals, rng5.intervals
-    (3000, 522)
+    (1022, 242)
 
     The u-error can be estimated by calling the `u_error` method. It runs a small
     Monte-Carlo simulation to estimate the u-error. By default, 100,000 samples are
