@@ -3278,7 +3278,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        h = firwin(2 * half_len + 1, f_c, window=window)
+        h = firwin(2 * half_len + 1, f_c,
+                   window=window).astype(x.dtype)  # match dtype of x
     h *= up
 
     # Zero-pad our filter to put the output samples at the center

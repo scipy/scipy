@@ -748,9 +748,9 @@ class TestFFTConvolve:
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
-        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
-        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
+        a = np.moveaxis(a.swapaxes(0, 2), 1, 4)
+        b = np.moveaxis(b.swapaxes(0, 2), 1, 4)
+        expected = np.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
         a = np.tile(a, [2, 1, 3, 1, 1])
@@ -1257,6 +1257,14 @@ class TestResample:
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
         assert(y.dtype == np.float32)
+
+    @pytest.mark.parametrize('padtype', padtype_options)
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_output_match_dtype(self, padtype, dtype):
+        # Test that the dtype of x is preserved per issue #14733
+        x = np.arange(10, dtype=dtype)
+        y = signal.resample_poly(x, 1, 2, padtype=padtype)
+        assert(y.dtype == x.dtype)
 
     @pytest.mark.parametrize(
         "method, ext, padtype",

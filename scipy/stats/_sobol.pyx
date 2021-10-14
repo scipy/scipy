@@ -6,6 +6,8 @@ cimport numpy as cnp
 import os
 import numpy as np
 
+cnp.import_array()
+
 # Parameters are linked to the direction numbers list.
 # See `initialize_direction_numbers` for more details.
 # Declared using DEF to be known at compilation time for ``poly`` et ``vinit``
