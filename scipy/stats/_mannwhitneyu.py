@@ -38,6 +38,7 @@ class _MWU:
                     self._f_rec(m, n, i)
                 except RecursionError:
                     self._use_iter = True
+                    self._f_iter(m, n, i)
             else:
                 self._f_iter(m, n, i)
         return self._fmnks[m, n, k] / special.binom(m + n, m)
