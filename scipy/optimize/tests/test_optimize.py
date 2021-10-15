@@ -2424,7 +2424,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
-    def f (x):
+    def f(x):
         return x[0]**3 + x[1]**2 + x[2]*x[3]
 
     cfun = lambda x: x[0] + x[1] + x[2] + x[3] - 40
