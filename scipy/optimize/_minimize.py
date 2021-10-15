@@ -634,6 +634,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                     callback = _remove_from_func(callback, i_fixed, x_fixed)
                 if callable(jac):
                     jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+
+                # make a copy of the constraints so the user's version doesn't
+                # get changed. (Shallow copy is ok)
+                constraints = [con.copy() for con in constraints]
                 for con in constraints:  # yes, guaranteed to be a list
                     con['fun'] = _remove_from_func(con['fun'], i_fixed,
                                                    x_fixed, min_dim=1,
