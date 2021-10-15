@@ -1,7 +1,7 @@
 """ Collection of Model instances for use with the odrpack fitting package.
 """
 import numpy as np
-from scipy.odr.odrpack import Model
+from scipy.odr._odrpack import Model
 
 __all__ = ['Model', 'exponential', 'multilinear', 'unilinear', 'quadratic',
            'polynomial']
