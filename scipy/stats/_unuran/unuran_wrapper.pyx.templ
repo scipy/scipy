@@ -21,6 +21,7 @@ from collections import namedtuple
 import numpy as np
 from scipy.stats._distn_infrastructure import argsreduce
 from scipy._lib._util import check_random_state
+import warnings
 
 np.import_array()
 
@@ -574,7 +575,7 @@ cdef class TransformedDensityRejection(Method):
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is
           expected to be: ``def pdf(self, x: float) -> float``. i.e.
-          the PDF should accept a Python float and the parameters and
+          the PDF should accept a Python float and
           return a Python float. It doesn't need to integrate to 1 i.e.
           the PDF doesn't need to be normalized.
         * ``dpdf``: Derivative of the PDF w.r.t x (i.e. the variate). Must
@@ -982,9 +983,9 @@ cdef class NumericalInversePolynomial(Method):
         An instance of a class with a ``pdf`` and optionally a ``cdf`` method.
 
         * ``pdf``: PDF of the distribution. The signature of the PDF is expected to be:
-          ``def pdf(self, x: float) -> float``. i.e. the PDF should accept a Python
-          float and return a Python float. It doesn't need to integrate to 1 i.e. the
-          PDF doesn't need to be normalized.
+          ``def pdf(self, x: float) -> float``, i.e., the PDF should accept a Python
+          float and return a Python float. It doesn't need to integrate to 1,
+          i.e., the PDF doesn't need to be normalized.
         * ``cdf``: CDF of the distribution. This method is optional. If provided, it
           enables the calculation of "u-error". See `u_error`. Must have the same
           signature as the PDF.
@@ -1614,3 +1615,276 @@ cdef class DiscreteAliasUrn(Method):
             pv_view = _validate_pv(dist)
 
         return pv_view, domain
+
+
+cdef class NaiveRatioUniforms(Method):
+    r"""
+    NaiveRatioUniforms(dist, *, center=0, domain=None, r=1.0, u_min=None, u_max=None, v_max=None, random_state=None)
+
+    Naive Ratio-Of-Uniforms (NROU) Method.
+
+    NROU is an implementation of the (generalized) ratio-of-uniforms method
+    which uses (minimal) bounding rectangles ([3]_, [5]_). It uses a positive
+    control parameter `r` for adjusting the algorithm to the given distribution
+    to improve performance and/or to make this method applicable. Larger values
+    of `r` increase the class of distributions for which the method works at
+    the expense of a higher rejection constant. For computational reasons,
+    ``r=1`` should be used if possible.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a class with ``pdf`` method.
+
+        * ``pdf``: PDF of the distribution. The signature of the PDF is
+          expected to be: ``def pdf(self, x: float) -> float``, i.e.,
+          the PDF should accept a Python float and return a Python float.
+          It doesn't need to integrate to 1, i.e.,
+          the PDF doesn't need to be normalized.
+
+    center : float, optional
+        Approximate location of the mode or the mean of the distribution.
+        This location provides some information about the main part of the
+        PDF and is used to avoid numerical problems. Default is ``None``.
+
+    domain : list or tuple of length 2, optional
+        The support of the distribution.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
+    r : float, optional
+        Set parameter ``r > 0`` for generalized Ratio-Of-Uniforms method.
+        The default is 1.0.
+
+    u_min: float, optional
+        Sets the left boundary of the bounding rectangle, see details under
+        Notes. If necessary, consider computing the bound numerically using
+        methods in `scipy.optimize`. Important: The bound has to be
+        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
+        routine will be used to find the bound. This routine can fail,
+        especially when the rectangle is not bounded. Note: If either `u_min`
+        or `u_max` is ``None``, both values are computed numerically.
+        The default is ``None``.
+
+    u_max: float, optional
+        Sets the right boundary of the bounding rectangle. Sets the left
+        boundary of the bounding rectangle, see details under
+        Notes. If necessary, consider computing the bound numerically using
+        methods in `scipy.optimize`. Important: The bound has to be
+        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
+        routine will be used to find the bound. This routine can fail,
+        especially when the rectangle is not bounded. Note: If either `u_min`
+        or `u_max` is ``None``, both values are computed numerically.
+        The default is ``None``.
+
+    v_max: float, optional
+        Sets the upper boundary of the bounding rectangle. If the mode of the
+        pdf is known, it can be easily computed, see Notes for details.
+        Otherwise consider computing the bound numerically using
+        methods in `scipy.optimize`. If ``None``, a numerical routine will be
+        used to find the bound. This routine can fail, especially when the
+        rectangle is not bounded. The default is ``None``.
+
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance
+        then that instance is used.
+
+    Notes
+    -----
+
+    If ``r==1``, the method works as follows: for a given pdf and a constant
+    `center`, define the set
+    ``A = {(u, v) : 0 < v <= sqrt(pdf(u/v + center))}``.
+    If (U, V) is a random vector uniformly distributed over A,
+    then ``U/V + center`` follows a distribution according to ``dist.pdf``.
+
+    Typical choices of `center` are zero or the mode of pdf. The set A is a
+    subset of the rectangle ``R = [u_min, u_max] x [0, v_max]`` where
+
+    - ``v_max = sup_x sqrt(pdf(x))``
+    - ``u_min = inf_x (x - center) sqrt(pdf(x))``
+    - ``u_max = sup_x (x - center) sqrt(pdf(x))``
+
+    In particular, these values are finite if the pdf is bounded and
+    ``x**2 * pdf(x)`` is bounded (i.e. subquadratic tails).
+    One can generate (U, V) uniformly on R and return
+    ``U/V + center`` if (U, V) are also in A which can be directly
+    verified.
+
+    The algorithm is not changed if one replaces the pdf by a function
+    that is proportional to it, e.g., by dropping
+    unnecessary normalization factors.
+
+    Intuitively, the method works well if A fills up most of the
+    enclosing rectangle such that the probability is high that (U, V)
+    lies in A whenever it lies in R as the number of required
+    iterations become too large otherwise. To be more precise, note that
+    the expected number of iterations to draw (U, V) uniformly
+    distributed on R such that (U, V) is also in A is given by
+    the ratio ``area(R) / area(A) = 2 * v_max * (u_max - u_min) / area(pdf)``,
+    where ``area(pdf)`` is the integral of the pdf (which is equal to one if
+    the true pdf is used but can take on other values if a
+    function proportional to the true pdf is used). The equality holds since
+    the area of A is equal to ``0.5 * area(pdf)`` (Theorem 7.1 in [4]_).
+
+    In the general case, the acceptance region is defined as
+    ``A = {(u, v) : 0 < v <= (pdf(u/v**r + center))**(1/(r+1))}`` and the
+    bounding rectangle is given by
+
+    - ``v_max = sup_x pdf(x)**(1/(r+1))``
+    - ``u_min = inf_x (x - center) (pdf(x))**(r/(r+1))``
+    - ``u_max = sup_x (x - center) (pdf(x))**(r/(r+1))``
+
+    The rejection constant is given by
+    ``(r+1) * v_max * (u_max - u_min) / area(pdf)`` in the general case.
+
+    Note that in the current implementation, the speed of this generation
+    method is reduced by the fact that the pdf of `dist` needs to be called
+    from C for each random variate that is simulated even if the pdf is
+    vectorized (to simulate N random variates, the average number of
+    evaluations of the pdf is N times the rejection constant).
+
+    References
+    ----------
+    .. [1] UNU.RAN reference manual, Section 5.3.11,
+           "NROU - Naive Ratio-Of-Uniforms method",
+           http://statmath.wu.ac.at/software/unuran/doc/unuran.html#NROU
+    .. [2] W. Hörmann, J. Leydold and G. Derflinger (2004). Automatic
+           Nonuniform Random Variate Generation, Springer, Berlin.
+    .. [3] A.J. Kinderman and J.F. Monahan, "Computer Generation of Random
+           Variables Using the Ratio of Uniform Deviates",
+           ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
+    .. [4] L. Devroye, "Non-Uniform Random Variate Generation",
+           Springer-Verlag, 1986.
+    .. [5] J. C. Wakefield, A. E. Gelfand, and A. F. M. Smith. "Efficient
+           generation of random variates via the ratio-of-uniforms method."
+           Statistics and Computing 1.2, p. 129--133, 1991.
+
+    Examples
+    --------
+    >>> from scipy.stats import NaiveRatioUniforms
+
+    Suppose we want to generate normally distributed random variables.
+    It is easy to compute the bounding rectangle explicitly in that case.
+    Note that we drop the normalization factor of the density. Since the mode
+    of the distribution is located at zero, there is no need to change the
+    default value of the parameter `center`.
+
+    >>> urng = np.random.default_rng()
+    >>> class MyDist:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5*x*x)
+    >>> dist = MyDist()
+    >>> u_bound = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
+    >>> v_max = np.sqrt(dist.pdf(0))
+    >>> rng = NaiveRatioUniforms(dist, u_min=-u_bound, u_max=u_bound,
+    ...                          v_max=v_max, random_state=urng)
+
+    Once we have created the generator, we can draw samples of the normal
+    distribution:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(1000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 100)
+    >>> fx = dist.pdf(x) / np.sqrt(2*np.pi)
+    >>> plt.plot(x, fx, 'r-', lw=2, label='normal pdf')
+    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.legend()
+    >>> plt.show()
+
+    """
+
+    def __cinit__(self,
+                  dist,
+                  *,
+                  center=0.0,
+                  domain=None,
+                  r=1.0,
+                  u_min=None,
+                  u_max=None,
+                  v_max=None,
+                  random_state=None):
+        (domain, r, u_min, u_max, v_max) = self._validate_args(dist, domain, r, u_min, u_max, v_max)
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'center': center,
+            'domain': domain,
+            'r': r,
+            'u_min': u_min,
+            'u_max': u_max,
+            'v_max': v_max,
+            'random_state': random_state
+        }
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
+        self._callback_wrapper = _callback_wrapper
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+
+            self.par = unur_nrou_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+            self._check_errorcode(unur_nrou_set_r(self.par, r))
+
+            if (u_min is not None) and (u_max is not None):
+                self._check_errorcode(unur_nrou_set_u(self.par, u_min, u_max))
+            if v_max is not None:
+                self._check_errorcode(unur_nrou_set_v(self.par, v_max))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain, r, u_min, u_max, v_max):
+        domain = _validate_domain(domain, dist)
+        # if one of u_min / u_max is None, set the other to None as well
+        # the reason is that the numerical routine to find the bounds can only
+        # be used for both bounds at the same time
+        if (u_min is None) ^ (u_max is None):
+            u_min, u_max = None, None
+            msg = ("Only one of the values of u_min and u_max is None. "
+                   "The value that is not None is ignored and both values "
+                   "will be computed numerically.")
+            warnings.warn(msg, RuntimeWarning)
+
+        if r <= 0:
+            raise ValueError("`r` must be positive.")
+        if (v_max is not None) and (v_max <= 0):
+            raise ValueError("`v_max` must be positive.")
+        if (u_min is not None) and (u_max is not None) and (u_min >= u_max):
+            raise ValueError("`u_min` must be smaller than `u_max`.")
+
+        return domain, r, u_min, u_max, v_max

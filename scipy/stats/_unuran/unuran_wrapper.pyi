@@ -92,6 +92,26 @@ class NumericalInversePolynomial(Method):
     def u_error(self, sample_size: int = ...) -> UError: ...
 
 
+class NROUDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class NaiveRatioUniforms(Method):
+    def __init__(self,
+                 dist: NROUDist,
+                 *,
+                 center: float = ...,
+                 domain: None | Tuple[float, float] = ...,
+                 r: float = ...,
+                 u_min: None | float = ...,
+                 u_max: None | float = ...,
+                 v_max: None | float = ...,
+                 random_state: SeedType = ...) -> None: ...
+
+
 class DAUDist(Protocol):
     @property
     def pmf(self) -> Callable[..., float]: ...

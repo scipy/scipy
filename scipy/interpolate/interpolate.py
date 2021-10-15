@@ -756,14 +756,14 @@ class _PPolyBase:
 
         self.axis = axis
         if axis != 0:
-            # roll the interpolation axis to be the first one in self.c
+            # move the interpolation axis to be the first one in self.c
             # More specifically, the target shape for self.c is (k, m, ...),
             # and axis !=0 means that we have c.shape (..., k, m, ...)
             #                                               ^
             #                                              axis
             # So we roll two of them.
-            self.c = np.rollaxis(self.c, axis+1)
-            self.c = np.rollaxis(self.c, axis+1)
+            self.c = np.moveaxis(self.c, axis+1, 0)
+            self.c = np.moveaxis(self.c, axis+1, 0)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")

@@ -533,7 +533,8 @@ def test_maxfev_test():
         return rng.random(1) * 1000  # never converged problem
 
     for imaxfev in [1, 10, 50]:
-        for method in ['Powell']:  # TODO: extend to more methods
+        # TODO: extend to more methods
+        for method in ['Powell', 'Nelder-Mead']:
             result = optimize.minimize(cost, rng.random(10),
                                        method=method,
                                        options={'maxfev': imaxfev})
@@ -546,7 +547,7 @@ def test_wrap_scalar_function_with_validation():
         return x
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
         func(np.asarray(i))
@@ -557,7 +558,7 @@ def test_wrap_scalar_function_with_validation():
         func(np.asarray(i))  # exceeded maximum function call
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     msg = "The user-provided objective function must return a scalar value."
     with assert_raises(ValueError, match=msg):
@@ -570,6 +571,14 @@ def test_obj_func_returns_scalar():
              "return a scalar value.")
     with assert_raises(ValueError, match=match):
         optimize.minimize(lambda x: x, np.array([1, 1]), method='BFGS')
+
+
+def test_neldermead_iteration_num():
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    res = optimize._minimize._minimize_neldermead(optimize.rosen, x0,
+                                                  xatol=1e-8)
+    assert res.nit <= 339
+
 
 def test_neldermead_xatol_fatol():
     # gh4484
