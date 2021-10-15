@@ -2413,12 +2413,35 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     assert res.success
     assert_allclose(res.fun, expected.fun, rtol=1e-6)
-    assert_allclose(res.x, expected.x, rtol=1e-6)
+    assert_allclose(res.x, expected.x, rtol=3e-6)
 
     if fd_needed or kwds['jac'] is False:
         expected.jac[i_eb] = np.nan
     assert res.jac.shape[0] == 4
     assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+
+def test_eb_constraints():
+    # make sure constraint functions aren't overwritten when equal bounds
+    # are employed, and a parameter is factored out. GH14859
+    def f(x):
+        return x[0]**3 + x[1]**2 + x[2]*x[3]
+
+    def cfun(x):
+        return x[0] + x[1] + x[2] + x[3] - 40
+
+    constraints = [{'type': 'ineq', 'fun': cfun}]
+
+    bounds = [(0, 20)] * 4
+    bounds[1] = (5, 5)
+    optimize.minimize(
+        f,
+        x0=[1, 2, 3, 4],
+        method='SLSQP',
+        bounds=bounds,
+        constraints=constraints,
+    )
+    assert constraints[0]['fun'] == cfun
 
 
 def test_show_options():
