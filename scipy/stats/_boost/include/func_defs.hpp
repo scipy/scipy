@@ -39,9 +39,11 @@ RealType
 boost::math::policies::user_overflow_error(const char* function, const char* message, const RealType& val) {
     std::string msg("Error in function ");
     msg += (boost::format(function) % typeid(RealType).name()).str() + ": ";
+    // From Boost docs: "overflow and underflow messages do not contain this %1% specifier
+    //                   (since the value of value is immaterial in these cases)."
     msg += message;
     PyErr_SetString(PyExc_OverflowError, msg.c_str());
-    return val;
+    return 0;
 }
 
 
