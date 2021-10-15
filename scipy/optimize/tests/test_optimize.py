@@ -2427,7 +2427,8 @@ def test_eb_constraints():
     def f(x):
         return x[0]**3 + x[1]**2 + x[2]*x[3]
 
-    cfun = lambda x: x[0] + x[1] + x[2] + x[3] - 40
+    def cfun(x):
+        return x[0] + x[1] + x[2] + x[3] - 40
 
     constraints = [{'type': 'ineq', 'fun': cfun}]
 
