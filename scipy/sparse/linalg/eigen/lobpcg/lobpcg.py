@@ -91,15 +91,15 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
             blockVectorBV = blockVectorV  # Shared data!!!
     else:
         blockVectorBV = blockVectorBV / normalization
-    VBV = np.matmul(blockVectorV.T.conj(), blockVectorBV)
+    VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        blockVectorV = np.matmul(blockVectorV, VBV)
+        blockVectorV = blockVectorV @ VBV
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
-            blockVectorBV = np.matmul(blockVectorBV, VBV)
+            blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
         else:
             blockVectorBV = None
@@ -493,14 +493,14 @@ def lobpcg(
         ##
         # B-orthogonalize the preconditioned residuals to X.
         if B is not None:
-            activeBlockVectorR = activeBlockVectorR - np.matmul(
-                blockVectorX,
-                np.matmul(blockVectorBX.T.conj(), activeBlockVectorR)
+            activeBlockVectorR = activeBlockVectorR - (
+                blockVectorX @
+                (blockVectorBX.T.conj() @ activeBlockVectorR)
             )
         else:
-            activeBlockVectorR = activeBlockVectorR - np.matmul(
-                blockVectorX,
-                np.matmul(blockVectorX.T.conj(), activeBlockVectorR)
+            activeBlockVectorR = activeBlockVectorR - (
+                blockVectorX @
+                (blockVectorX.T.conj() @ activeBlockVectorR)
             )
 
         ##
