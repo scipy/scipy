@@ -510,9 +510,9 @@ def lobpcg(
 
         if activeBlockVectorR is None:
             warnings.warn(
-                "Iteration %d failed at tolerance %g not reaching %g."
-                % (iterationNumber, np.max(residualNorms), residualTolerance),
-                UserWarning,
+                f"Iteration {iterationNumber} failed at tolerance "
+                f"{np.max(residualNorms)} not reaching {residualTolerance}.",
+                UserWarning, stacklevel=3
             )
             break
         activeBlockVectorAR = A(activeBlockVectorR)
