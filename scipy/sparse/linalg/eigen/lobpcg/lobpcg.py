@@ -736,8 +736,8 @@ def lobpcg(
     # Computing the actual true residuals
 
     if verbosityLevel > 0:
-        print("final eigenvalue:", _lambda)
-        print("final residual norms:", residualNorms)
+        print("Final eigenvalue(s):", _lambda)
+        print("Final residual norm(s):", residualNorms)
 
     if retLambdaHistory:
         if retResidualNormsHistory:
