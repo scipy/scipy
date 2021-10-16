@@ -5,7 +5,8 @@ import platform
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less)
+                           assert_allclose, assert_array_less,
+                           suppress_warnings)
 
 import pytest
 
@@ -199,6 +200,18 @@ def test_fiedler_large_12():
     """
     # This does not trigger the dense path, because 2*5 <= 12.
     _check_fiedler(12, 2)
+
+
+def test_failure_to_run_iterations():
+    """Check that the code exists gracefully without breaking. Issue #10974.
+    """
+    X = np.random.randn(100, 10)
+    A = X @ X.T
+    Q = np.random.randn(X.shape[0], 4)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*not reaching.*")
+        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+        assert(np.max(eigenvalues) > 0)
 
 
 def test_hermitian():
