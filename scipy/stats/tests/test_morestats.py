@@ -3,7 +3,7 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 import warnings
-from sys import float_info
+import sys
 
 import numpy as np
 from numpy.random import RandomState
@@ -749,9 +749,10 @@ class TestBinomP:
         res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
 
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
-        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=float_info.min)
+        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
 
 
 class TestBinomTestP(TestBinomP):
