@@ -734,6 +734,8 @@ def lobpcg(
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
     # Computing the actual true residuals
+    # Keeping the best iterates
+    # Adding warning if the required tolerance is not met
 
     if verbosityLevel > 0:
         print("Final eigenvalue(s):", _lambda)
