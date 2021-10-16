@@ -10,6 +10,8 @@ from cython.view cimport array
 from libc.math cimport sqrt, sin, cos, atan2, acos
 from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
 
+np.import_array()
+
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n):
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
@@ -2018,7 +2020,7 @@ cdef class Rotation:
                     np.einsum('ix,j,kx', lv, ps, rv) -
                     np.einsum('ix,jx,k', lv, pv, rs) -
                     np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
-        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+        qs = np.reshape(np.moveaxis(qs, 1, 0), (qs.shape[1], -1))
 
         # Find best indices from scalar components
         max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)

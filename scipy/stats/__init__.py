@@ -21,7 +21,7 @@ are:
   also covered by ``scipy.stats``.
 - `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
   functionality, interfaces to other statistical languages.
-- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+- `PyMC <https://docs.pymc.io/>`__: Bayesian statistical
   modeling, probabilistic machine learning.
 - `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
   model selection.
@@ -301,6 +301,7 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   tukey_hsd
 
 .. autosummary::
    :toctree: generated/
@@ -376,6 +377,7 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
+   NaiveRatioUniforms
    NumericalInverseHermite
    NumericalInversePolynomial
    TransformedDensityRejection
