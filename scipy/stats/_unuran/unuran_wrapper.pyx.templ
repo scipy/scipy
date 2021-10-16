@@ -1917,11 +1917,10 @@ cdef class DiscreteGuideTable(Method):
         * If a ``support`` method is provided by the distribution object
           `dist`, it is used to set the domain of the distribution.
         * Otherwise, the support is assumed to be ``(0, len(pv))``. When this
-          parameter is passed in combination with a probability vector,
-          ``domain[0]`` is used to relocate the distribution from
-          ``(0, len(pv))`` to ``(domain[0], domain[0]+len(pv))`` and
-          ``domain[1]`` is ignored. See Notes and tutorial for a more detailed
-           explanation.
+          parameter is passed in combination with a probability vector, ``domain[0]``
+          is used to relocate the distribution from ``(0, len(pv))`` to
+          ``(domain[0], domain[0]+len(pv))`` and ``domain[1]`` is ignored. See Notes
+          and tutorial for a more detailed explanation.
     guide_factor: int, optional
         Size of the guide table relative to length of PV. Larger guide tables
         result in faster generation time but require a more expensive setup.
