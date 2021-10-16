@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from collections import namedtuple
 from scipy import special
 from scipy import stats
@@ -37,6 +38,14 @@ class _MWU:
                 try:
                     self._f_rec(m, n, i)
                 except RecursionError:
+                    warnings.warn("Recursion limit hit by the exact method. "
+                                  "Switching to an iterative algorithm. With "
+                                  "large samples, this might be slow. Using "
+                                  "the much faster asymptotic method will "
+                                  "yield different p-values. The difference is"
+                                  " likely small, but this is not guaranteed. "
+                                  "Use method='asymptotic' if an exact p-value"
+                                  " is not critical for your analysis.")
                     self._use_iter = True
                     self._f_iter(m, n, i)
             else:
@@ -96,18 +105,18 @@ class _MWU:
         self._fmnks[m, n, k] = fmnk  # remember result
 
         return fmnk
-    
+
     def _get_node(self, args):
         '''Nodes for the full binary tree in _f_iter.'''
-        
+
         if args is None:
             return None
-       
+
         # if already calculated, return the value
         m, n, k = args
         if self._fmnks[m, n, k] >= 0:
-            return [self._fmnks[m, n, k], args, None, None, None]
-        
+            return [self._fmnks[m, n, k], args, None, None, True]
+
         # these are the same as in _f_rec
         if k < 0 or m < 0 or n < 0 or k > m*n:
             return [0, (m, n, k), None, None, False]
@@ -115,36 +124,35 @@ class _MWU:
             return [1, (m, n, k), None, None, True]
         else:
             return [0, (m, n, k), (m-1, n, k-n), (m, n-1, k), False]
-    
+
     def _visit_node(self, node):
         '''Accumulates the solution and cached args in _f_iter.'''
-        
+
         # if node is a leaf node, accumulate the result
         if node[-1]:
             self._accumulator += node[0]
-        
-        # if the node value is non-zero, cache the result
-        # if node[0] != 0:
+
+        # cache the result
         m, n, k = node[1]
         self._fmnks[m, n, k] = node[0]
-       
+
         # the parent node is always the peek node during post-order traversal
         # which allows for accumulating cached values as well
         if self._stack:
             self._stack[-1][0] += node[0]
-    
+
     def _f_iter(self, m, n, k):
         '''Iterative implementation of function of [3] Theorem 2.5 for edge
         cases in which the recursion limit would be hit by _f_rec.'''
-        
+
         # zero accumulator and stack
         self._accumulator = 0
         self._stack = []
-        
+
         # initialize post-order traversal
         last_visited = None
         node = self._get_node((m, n, k))
-        
+
         # start iteration
         while self._stack or node:
             if node:
@@ -157,7 +165,7 @@ class _MWU:
                 else:
                     last_visited = self._stack.pop()
                     self._visit_node(peek_node)
-        
+
         return self._accumulator
 
 

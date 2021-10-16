@@ -5407,16 +5407,6 @@ class TestMannWhitneyU:
         attributes = ('statistic', 'pvalue')
         res = stats.mannwhitneyu(self.X, self.Y, alternative="less")
         check_named_results(res, attributes)
-    
-    def test_mwu_recursion_iteration_equivalence(self):
-        m, n, k = 614, 5, 200
-        mwu = stats._mannwhitneyu._MWU()
-        mwu._resize_fmnks(m, n, k)
-        res_rec = mwu._f_rec(m, n, k)
-        mwu = stats._mannwhitneyu._MWU()
-        mwu._resize_fmnks(m, n, k)
-        res_iter = mwu._f_iter(m, n, k)
-        assert_equal(res_rec, res_iter)
 
 
 def test_pointbiserial():

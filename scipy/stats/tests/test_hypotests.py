@@ -380,6 +380,34 @@ class TestMannWhitneyU:
                 pmf2 = _mwu_state.pmf(k=u2, m=n, n=m)
                 assert_allclose(pmf, pmf2)
 
+                # the same tests with the iterative algorithm
+                # check p-value against table
+                u = np.arange(0, len(p))
+
+                _mwu_state._use_iter = True
+                assert_allclose(_mwu_state.cdf(k=u, m=m, n=n), p, atol=1e-3)
+
+                # check identity CDF + SF - PMF = 1
+                # ( In this implementation, SF(U) includes PMF(U) )
+                u2 = np.arange(0, m*n+1)
+                _mwu_state._use_iter = True
+                cdf = _mwu_state.cdf(k=u2, m=m, n=n)
+                _mwu_state._use_iter = True
+                sf = _mwu_state.sf(k=u2, m=m, n=n)
+                _mwu_state._use_iter = True
+                pmf = _mwu_state.pmf(k=u2, m=m, n=n)
+                assert_allclose(cdf + sf - pmf, 1)
+
+                # check symmetry about mean of U, i.e. pmf(U) = pmf(m*n-U)
+                _mwu_state._use_iter = True
+                pmf = _mwu_state.pmf(k=u2, m=m, n=n)
+                assert_allclose(pmf, pmf[::-1])
+
+                # check symmetry w.r.t. interchange of m, n
+                _mwu_state._use_iter = True
+                pmf2 = _mwu_state.pmf(k=u2, m=n, n=m)
+                assert_allclose(pmf, pmf2)
+
     def test_asymptotic_behavior(self):
         np.random.seed(0)
 
@@ -612,6 +640,17 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
+
+    def test_exact_iterative_with_ndarray(self):
+        # check if iterative algorithm works with n-d arrays
+        a = np.random.randn(5, 3, 4)
+        b = np.random.randn(5, 3, 4)
+        for i in [0, 1, 2]:
+            res_rec = mannwhitneyu(a, b, axis=i)
+            _mwu_state._use_iter = True
+            res_iter = mannwhitneyu(a, b, axis=i)
+            print(f"{res_rec}, {res_iter}")
+            assert_allclose(res_rec, res_iter)
 
 
 class TestSomersD:
