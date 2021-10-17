@@ -516,7 +516,7 @@ def lobpcg(
 
         if activeBlockVectorR is None:
             warnings.warn(
-                f"Iteration {iterationNumber} failed with accuracies "
+                f"Failed at iteration {iterationNumber} with accuracies "
                 f"{residualNorms}\n not reaching the requested "
                 f"tolerance {residualTolerance}.",
                 UserWarning, stacklevel=3
@@ -739,7 +739,7 @@ def lobpcg(
 
     if np.max(residualNorms) > residualTolerance:
         warnings.warn(
-            f"Iteration {iterationNumber} exited with accuracies \n"
+            f"Exited at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n not reaching the requested "
             f"tolerance {residualTolerance}.",
             UserWarning, stacklevel=3
