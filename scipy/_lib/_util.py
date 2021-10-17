@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 import functools
 import operator
@@ -12,7 +14,11 @@ from typing import (
     Union,
     TYPE_CHECKING,
     TypeVar,
+    Callable,
+    cast,
 )
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 import numpy as np
 
@@ -238,9 +244,14 @@ def check_random_state(seed):
                      ' instance' % seed)
 
 
-def _asarray_validated(a, check_finite=True,
-                       sparse_ok=False, objects_ok=False, mask_ok=False,
-                       as_inexact=False):
+def _asarray_validated(
+    a: npt.ArrayLike,
+    check_finite: bool = True,
+    sparse_ok: bool = False,
+    objects_ok: bool = False,
+    mask_ok: bool = False,
+    as_inexact: bool = False,
+) -> np.ndarray:
     """
     Helper function for SciPy argument validation.
 
@@ -283,7 +294,10 @@ def _asarray_validated(a, check_finite=True,
     if not mask_ok:
         if np.ma.isMaskedArray(a):
             raise ValueError('masked arrays are not supported')
-    toarray = np.asarray_chkfinite if check_finite else np.asarray
+    toarray = cast(
+        Callable[..., np.ndarray],
+        np.asarray_chkfinite if check_finite else np.asarray,
+    )
     a = toarray(a)
     if not objects_ok:
         if a.dtype is np.dtype('O'):

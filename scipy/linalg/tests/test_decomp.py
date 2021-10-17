@@ -18,12 +18,13 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
-                          schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
+from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr, schur,
+                          rsf2csf, lu_solve, lu_factor, solve, diagsvd,
                           hessenberg, rq, eig_banded, eigvals_banded, eigh,
-                          eigvalsh, qr_multiply, qz, orth, ordqz,
-                          subspace_angles, hadamard, eigvalsh_tridiagonal,
-                          eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
+                          eigvalsh, qr_multiply, qz, higher_order_svd, orth,
+                          ordqz, subspace_angles, hadamard,
+                          eigvalsh_tridiagonal, eigh_tridiagonal, null_space,
+                          cdf2rdf, LinAlgError)
 
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx)
@@ -1249,6 +1250,55 @@ class TestDiagSVD:
     def test_simple(self):
         assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
                                   [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+
+class TestHigherOrderSVD:
+    def setup_method(self):
+        seed(1234)
+
+    def test_simple(self):
+        A_exact = np.array(
+            [
+                [[0.5, 1, 3], [2, 4, 1.7]],
+                [[3.5, -3, 0.8], [0.3, -23, 337]],
+                [[4.4, 31.23, 11.223], [1, 2, 3]],
+            ]
+        )
+
+        for full_tensor in (True, False):
+            U, S = higher_order_svd(A_exact, full_tensor=full_tensor)
+
+            A = S
+            for i in range(len(U)):
+                A = np.tensordot(A, U[i], (0, 1))
+
+            assert_allclose(A, A_exact)
+
+    def test_random(self):
+        n = 5
+        for _ in range(5):
+            A_exact = random((n, n, n, n))
+
+            U, S = higher_order_svd(A_exact)
+
+            A = S
+            for i in range(len(U)):
+                A = np.tensordot(A, U[i], (0, 1))
+
+            assert_allclose(A, A_exact)
+
+    def test_random_no_full_tensor(self):
+        n = 5
+        for _ in range(5):
+            A_exact = random((n, n, n, n))
+
+            U, S = higher_order_svd(A_exact, full_tensor=False)
+
+            A = S
+            for i in range(len(U)):
+                A = np.tensordot(A, U[i], (0, 1))
+
+            assert_allclose(A, A_exact)
 
 
 class TestQR:
