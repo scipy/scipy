@@ -21,7 +21,7 @@ import functools
 from collections import namedtuple
 import numpy as np
 import scipy.stats as stats
-from scipy.stats._distn_infrastructure import argsreduce
+from scipy.stats._distn_infrastructure import argsreduce, rv_frozen, rv_generic
 from scipy._lib._util import check_random_state
 import warnings
 
@@ -249,6 +249,49 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
         are not found.
     """
     cdef dict callbacks = {}
+    if isinstance(dist, rv_generic):
+        # create a frozen distribution
+        dist = dist()
+    if isinstance(dist, rv_frozen):
+        if isinstance(dist.dist, stats.rv_continuous):
+            class wrap_dist:
+                def __init__(self, dist):
+                    self.dist = dist
+                    self.args = dist.args
+                    self.kwds = dist.kwds
+                def pdf(self, x):
+                    # some distributions require array inputs.
+                    x = np.asarray(x)
+                    return max(0, self.dist.dist._pdf(x, *self.args,
+                                                      **self.kwds))
+                def cdf(self, x):
+                    x = np.asarray(x)
+                    res = self.dist.dist._cdf(x, *self.args, **self.kwds)
+                    if res > 1:
+                        return 1
+                    elif res < 0:
+                        return 0
+                    return res
+        elif isinstance(dist.dist, stats.rv_discrete):
+            class wrap_dist:
+                def __init__(self, dist):
+                    self.dist = dist
+                    self.args = dist.args
+                    self.kwds = dist.kwds
+                def pmf(self, x):
+                    # some distributions require array inputs.
+                    x = np.asarray(x)
+                    return max(0, self.dist.dist._pmf(x, *self.args,
+                                                      **self.kwds))
+                def cdf(self, x):
+                    x = np.asarray(x)
+                    res = self.dist.dist._cdf(x, *self.args, **self.kwds)
+                    if res > 1:
+                        return 1
+                    elif res < 0:
+                        return 0
+                    return res
+        dist = wrap_dist(dist)
     for meth in meths:
         if hasattr(dist, meth):
             callbacks[meth] = getattr(dist, meth)
