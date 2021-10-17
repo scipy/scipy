@@ -29,9 +29,16 @@
  * and cn(u|m) = cos(phi).  Phi is called the amplitude of u.
  *
  * Computation is by means of the arithmetic-geometric mean
- * algorithm, except when m is within 1e-9 of 0 or 1.  In the
- * latter case with m close to 1, the approximation applies
- * only for phi < pi/2.
+ * algorithm, except when m is within 1e-9 of 0 or 1.
+ *
+ * In the latter case, when m is near 1, the functions `sn`, `cn`, and `dn`
+ * are found using an approximation for `phi` given by 16.15.4 in [2].
+ * As this approximation is only valid when `phi < pi/2` (i.e.,
+ * when `u<K`), the computation only uses 16.15.4 to find the "principal"
+ * part of `phi` or the remainder `dphi=phi%(pi/2)`. The returned value
+ * value of `phi`, valid for all `u`, is `pi*n/2+dphi` where `n=floor(u/K)`
+ * and `K` is the quarter-period.
+ *
  *
  * ACCURACY:
  *
@@ -70,9 +77,9 @@ extern double MACHEP;
 
 int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
 {
-    double ai, b, phi, t, twon, dnfac;
+    double ai, b, phi, t, twon, dnfac, K, du, uabs;
     double a[9], c[9];
-    int i;
+    int i,j,r;
 
     /* Check for special cases */
     if (m < 0.0 || m > 1.0 || cephes_isnan(m)) {
@@ -93,17 +100,44 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
         *dn = 1.0 - 0.5 * m * t * t;
         return (0);
     }
+
+    /* if m is near 1, use approximation for amplitude
+       given in Abramowitz and Stegun, 16.15.4 */
     if (m >= 0.9999999999) {
-        ai = 0.25 * (1.0 - m);
-        b = cosh(u);
-        t = tanh(u);
-        phi = 1.0 / b;
-        twon = b * sinh(u);
-        *sn = t + ai * (twon - u) / (b * b);
-        *ph = 2.0 * atan(exp(u)) - NPY_PI_2 + ai * (twon - u) / b;
-        ai *= t * phi;
-        *cn = phi - ai * (twon - u);
-        *dn = phi + ai * (twon + u);
+        /* Evaluate the complete elliptic integral using the
+           1-m<<1 approximation in ellpk.c */
+        K = ellpk(1.0-m);
+        uabs = fabs(u);
+        j = (int)(uabs/K);
+        du = uabs-((double)j)*K;
+        r = j%4;
+
+        /* When phi is in the I and III quadrants */
+        if(r == 0 || r == 2) {
+            t = cosh(du);
+            phi = 0.25*(1.0-m)*(sinh(du)-du/t);
+            /* add Gudermannian term */
+            phi += 2.0*atan(exp(du)) - NPY_PI_2;
+        }
+        /* When phi is in the II and IV quadrants */
+        else{
+            du = K-du;
+            t = cosh(du);
+            phi = 0.25*(1.0-m)*(sinh(du)-du/t);
+            /* add Gudermannian term */
+            phi += 2.0*atan(exp(du)) - NPY_PI_2;
+            phi = NPY_PI_2-phi;
+        }
+        phi += ((double)j)*NPY_PI_2;
+        if (u < 0) {
+            phi *= -1.0;
+        }
+
+        *sn = sin(phi);
+        *cn = cos(phi);
+        *dn = sqrt(1.0-m*(*sn)*(*sn));
+        *ph = phi;
+
         return (0);
     }
 
