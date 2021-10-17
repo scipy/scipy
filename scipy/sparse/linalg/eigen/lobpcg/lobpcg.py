@@ -343,8 +343,8 @@ def lobpcg(
 
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
-            f"The problem size {n} minus the constraints size {sizeY} \n"
-            f"is too small relative to the block size {sizeX}. \n"
+            f"The problem size {n} minus the constraints size {sizeY} "
+            f"is too small relative to the block size {sizeX}. "
             f"Using a dense eigensolver instead of LOBPCG.",
             UserWarning, stacklevel=3
         )
