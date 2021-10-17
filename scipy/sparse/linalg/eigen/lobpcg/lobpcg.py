@@ -343,8 +343,8 @@ def lobpcg(
 
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
-            f"The problem size {n} minus the constraints size {sizeY} "
-            f"is too small relative to the block size {sizeX}. "
+            f"The problem size {n} minus the constraints size {sizeY} \n"
+            f"is too small relative to the block size {sizeX}. \n"
             f"Using a dense eigensolver instead of LOBPCG.",
             UserWarning, stacklevel=3
         )
@@ -353,7 +353,7 @@ def lobpcg(
 
         if blockVectorY is not None:
             raise NotImplementedError(
-                "The dense eigensolver " "does not support constraints."
+                "The dense eigensolver does not support constraints."
             )
 
         # Define the closed range of indices of eigenvalues to return.
@@ -516,8 +516,9 @@ def lobpcg(
 
         if activeBlockVectorR is None:
             warnings.warn(
-                f"Iteration {iterationNumber} failed at tolerance "
-                f"{np.max(residualNorms)} not reaching {residualTolerance}.",
+                f"Iteration {iterationNumber} failed with accuracies "
+                f"{residualNorms}\n not reaching the requested "
+                f"tolerance {residualTolerance}.",
                 UserWarning, stacklevel=3
             )
             break
@@ -736,6 +737,14 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
+    if np.max(residualNorms) > residualTolerance:
+        warnings.warn(
+            f"Iteration {iterationNumber} exited with accuracies \n"
+            f"{residualNorms}\n not reaching the requested "
+            f"tolerance {residualTolerance}.",
+            UserWarning, stacklevel=3
+        )
+
     # Future work: Need to add Postprocessing here:
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
@@ -744,8 +753,8 @@ def lobpcg(
     # Adding warning if the required tolerance is not met
 
     if verbosityLevel > 0:
-        print("Final eigenvalue(s):", _lambda)
-        print("Final residual norm(s):", residualNorms)
+        print("Final eigenvalue(s):\n", _lambda)
+        print("Final residual norm(s):\n", residualNorms)
 
     if retLambdaHistory:
         if retResidualNormsHistory:
