@@ -923,7 +923,7 @@ class TestNumericalInverseHermite:
         slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
         fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                       'norminvgauss', 'genhyperbolic', 'studentized_range',
-                      'vonmises', 'kappa4'}
+                      'vonmises', 'kappa4', 'invgauss', 'wald'}
 
         if distname in slow_dists:
             pytest.skip("Distribution is too slow")
@@ -947,7 +947,7 @@ class TestNumericalInverseHermite:
         u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
         assert p_tol < 1e-8
-        assert u_tol < 1e-12
+        assert u_tol < 1e-10
 
     def test_input_validation(self):
         match = r"`order` must be either 1, 3, or 5."
