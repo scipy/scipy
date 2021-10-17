@@ -62,6 +62,8 @@ class TestSolveBanded:
         for b in [b4, b4by1, b4by2, b4by4]:
             x = solve_banded((l, u), ab, b)
             assert_array_almost_equal(dot(a, x), b)
+            x = solve_banded((l, u), a, b, diagonal_form=False)
+            assert_array_almost_equal(dot(a, x), b)
 
     def test_complex(self):
         a = array([[1.0, 20, 0, 0],
@@ -85,6 +87,8 @@ class TestSolveBanded:
                        [0, 1, 0, 0]])
         for b in [b4, b4by1, b4by2, b4by4]:
             x = solve_banded((l, u), ab, b)
+            assert_array_almost_equal(dot(a, x), b)
+            x = solve_banded((l, u), a, b, diagonal_form=False)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_tridiag_real(self):
@@ -142,6 +146,10 @@ class TestSolveBanded:
         assert_array_almost_equal(dot(a, x), b4)
 
     def test_bad_shape(self):
+        a = array([[1.0, 20, 0, 0],
+                   [-30, 4, 6, 0],
+                   [2, 1, 20, 2],
+                   [0, -1, 7, 14]])
         ab = array([[0.0, 20, 6, 2],
                     [1, 4, 20, 14],
                     [-30, 1, 7, 0],
@@ -150,9 +158,12 @@ class TestSolveBanded:
         bad = array([1.0, 2.0, 3.0, 4.0]).reshape(-1, 4)
         assert_raises(ValueError, solve_banded, (l, u), ab, bad)
         assert_raises(ValueError, solve_banded, (l, u), ab, [1.0, 2.0])
+        assert_raises(ValueError, solve_banded, (1, 1), array([[1, 2, 3], [2, 3, 4]]), [1, 2], diagonal_form=False)
 
         # Values of (l,u) are not compatible with ab.
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
+        assert_raises(ValueError, solve_banded, (4, 3), a, [10.0, 0.0, 2.0, 14.0], diagonal_form=False)
+        assert_raises(ValueError, solve_banded, (1, 5), a, [10.0, 0.0, 2.0, 14.0], diagonal_form=False)
 
     def test_1x1(self):
         b = array([[1., 2., 3.]])
@@ -173,6 +184,9 @@ class TestSolveBanded:
         l, u = 2, 1
         b = [10.0, 0.0, 2.0, 14.0]
         x = solve_banded((l, u), ab, b)
+        assert_array_almost_equal(dot(a, x), b)
+
+        x = solve_banded((l, u), a, b, diagonal_form=False)
         assert_array_almost_equal(dot(a, x), b)
 
 
