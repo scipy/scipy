@@ -61,10 +61,12 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
-    A, B = ElasticRod(10)
-    compare_solutions(A, B, 10)
-    A, B = MikotaPair(10)
-    compare_solutions(A, B, 10)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*too small.*")
+        A, B = ElasticRod(10)
+        compare_solutions(A, B, 10)
+        A, B = MikotaPair(10)
+        compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
@@ -192,7 +194,9 @@ def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
     # This triggers the dense path because 8 < 2*5.
-    _check_fiedler(8, 2)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*too small.*")
+        _check_fiedler(8, 2)
 
 
 def test_fiedler_large_12():
@@ -223,34 +227,36 @@ def test_hermitian():
     ks = [1, 3, 10, 50]
     gens = [True, False]
 
-    for size, k, gen in itertools.product(sizes, ks, gens):
-        if k > size:
-            continue
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*too small.*")
+        for size, k, gen in itertools.product(sizes, ks, gens):
+            if k > size:
+                continue
 
-        H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-        H = 10 * np.eye(size) + H + H.T.conj()
+            H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+            H = 10 * np.eye(size) + H + H.T.conj()
 
-        X = np.random.rand(size, k)
+            X = np.random.rand(size, k)
 
-        if not gen:
-            B = np.eye(size)
-            w, v = lobpcg(H, X, maxiter=5000)
-            w0, _ = eigh(H)
-        else:
-            B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-            B = 10 * np.eye(size) + B.dot(B.T.conj())
-            w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
-            w0, _ = eigh(H, B)
+            if not gen:
+                B = np.eye(size)
+                w, v = lobpcg(H, X, maxiter=5000)
+                w0, _ = eigh(H)
+            else:
+                B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+                B = 10 * np.eye(size) + B.dot(B.T.conj())
+                w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
+                w0, _ = eigh(H, B)
 
-        for wx, vx in zip(w, v.T):
-            # Check eigenvector
-            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
-                            / np.linalg.norm(H.dot(vx)),
-                            0, atol=5e-4, rtol=0)
+            for wx, vx in zip(w, v.T):
+                # Check eigenvector
+                assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
+                                / np.linalg.norm(H.dot(vx)),
+                                0, atol=5e-4, rtol=0)
 
-            # Compare eigenvalues
-            j = np.argmin(abs(w0 - wx))
-            assert_allclose(wx, w0[j], rtol=1e-4)
+                # Compare eigenvalues
+                j = np.argmin(abs(w0 - wx))
+                assert_allclose(wx, w0[j], rtol=1e-4)
 
 
 # The n=5 case tests the alternative small matrix code path that uses eigh().
@@ -258,15 +264,17 @@ def test_hermitian():
 def test_eigs_consistency(n, atol):
     """Check eigs vs. lobpcg consistency.
     """
-    vals = np.arange(1, n+1, dtype=np.float64)
-    A = spdiags(vals, 0, n, n)
-    np.random.seed(345678)
-    X = np.random.rand(n, 2)
-    lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-    vals, _ = eigs(A, k=2)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*too small.*")
+        vals = np.arange(1, n+1, dtype=np.float64)
+        A = spdiags(vals, 0, n, n)
+        np.random.seed(345678)
+        X = np.random.rand(n, 2)
+        lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
+        vals, _ = eigs(A, k=2)
 
-    _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
-    assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
+        _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
+        assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
 def test_verbosity(tmpdir):
