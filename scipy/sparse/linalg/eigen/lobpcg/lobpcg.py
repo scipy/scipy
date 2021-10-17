@@ -342,8 +342,12 @@ def lobpcg(
     M = _makeOperator(M, (n, n))
 
     if (n - sizeY) < (5 * sizeX):
-        # warn('The problem size is small compared to the block size.' \
-        #        ' Using dense eigensolver instead of LOBPCG.')
+        warnings.warn(
+            f"The problem size {n} minus the constraints size {sizeY} \n"
+            f"is too small relative to the block size {sizeX}. \n"
+            f"Using a dense eigensolver instead of LOBPCG.",
+            UserWarning, stacklevel=3
+        )
 
         sizeX = min(sizeX, n)
 
@@ -389,13 +393,15 @@ def lobpcg(
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
         except LinAlgError as e:
-            raise ValueError("linearly dependent constraints") from e
+            raise ValueError("Linearly dependent constraints") from e
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
     ##
     # B-orthonormalize X.
     blockVectorX, blockVectorBX = _b_orthonormalize(B, blockVectorX)
+    if blockVectorX is None:
+        raise ValueError("Linearly dependent initial approximations")
 
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
