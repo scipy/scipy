@@ -229,22 +229,22 @@ def test_hermitian():
 
     with suppress_warnings() as sup:
         sup.filter(UserWarning, ".*too small.*")
-        for size, k, gen in itertools.product(sizes, ks, gens):
-            if k > size:
+        for s, k, gen in itertools.product(sizes, ks, gens):
+            if k > s:
                 continue
 
-            H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-            H = 10 * np.eye(size) + H + H.T.conj()
+            H = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
+            H = 10 * np.eye(s) + H + H.T.conj()
 
-            X = np.random.rand(size, k)
+            X = np.random.rand(s, k)
 
             if not gen:
-                B = np.eye(size)
+                B = np.eye(s)
                 w, v = lobpcg(H, X, maxiter=5000)
                 w0, _ = eigh(H)
             else:
-                B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-                B = 10 * np.eye(size) + B.dot(B.T.conj())
+                B = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
+                B = 10 * np.eye(s) + B.dot(B.T.conj())
                 w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
                 w0, _ = eigh(H, B)
 
