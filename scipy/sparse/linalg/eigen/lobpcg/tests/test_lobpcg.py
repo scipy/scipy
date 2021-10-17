@@ -62,7 +62,7 @@ def compare_solutions(A, B, m):
 
 def test_Small():
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*too small.*")
+        sup.filter(UserWarning, ".*The problem size.*")
         A, B = ElasticRod(10)
         compare_solutions(A, B, 10)
         A, B = MikotaPair(10)
@@ -195,7 +195,7 @@ def test_fiedler_small_8():
     """
     # This triggers the dense path because 8 < 2*5.
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*too small.*")
+        sup.filter(UserWarning, ".*The problem size.*")
         _check_fiedler(8, 2)
 
 
@@ -213,7 +213,7 @@ def test_failure_to_run_iterations():
     A = X @ X.T
     Q = np.random.randn(X.shape[0], 4)
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*not reaching.*")
+        sup.filter(UserWarning, ".*Failed at iteration.*")
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
         assert(np.max(eigenvalues) > 0)
 
@@ -228,7 +228,7 @@ def test_hermitian():
     gens = [True, False]
 
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*too small.*")
+        sup.filter(UserWarning, ".*The problem size.*")
         for s, k, gen in itertools.product(sizes, ks, gens):
             if k > s:
                 continue
@@ -265,7 +265,7 @@ def test_eigs_consistency(n, atol):
     """Check eigs vs. lobpcg consistency.
     """
     with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*too small.*")
+        sup.filter(UserWarning, ".*The problem size.*")
         vals = np.arange(1, n+1, dtype=np.float64)
         A = spdiags(vals, 0, n, n)
         np.random.seed(345678)
