@@ -914,9 +914,9 @@ class _TestCommon:
 
     def test_sum(self):
         np.random.seed(1234)
-        dat_1 = array([[0, 1, 2],
-                       [3, -4, 5],
-                       [-6, 7, 9]])
+        dat_1 = matrix([[0, 1, 2],
+                        [3, -4, 5],
+                        [-6, 7, 9]])
         dat_2 = np.random.rand(5, 5)
         dat_3 = np.array([[]])
         dat_4 = np.zeros((40, 40))
@@ -924,7 +924,7 @@ class _TestCommon:
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
-            dat = array(matrices[j], dtype=dtype)
+            dat = matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
             with np.errstate(over='ignore'):
                 assert_array_almost_equal(dat.sum(), datsp.sum())
@@ -934,21 +934,13 @@ class _TestCommon:
                                           datsp.sum(axis=None))
                 assert_equal(dat.sum(axis=None).dtype,
                              datsp.sum(axis=None).dtype)
-                assert_array_almost_equal(
-                    dat.sum(axis=0, keepdims=True), datsp.sum(axis=0)
-                )
+                assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
                 assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
-                assert_array_almost_equal(
-                    dat.sum(axis=1, keepdims=True), datsp.sum(axis=1)
-                )
+                assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
                 assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-                assert_array_almost_equal(
-                    dat.sum(axis=-2, keepdims=True), datsp.sum(axis=-2)
-                )
+                assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
                 assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-                assert_array_almost_equal(
-                    dat.sum(axis=-1, keepdims=True), datsp.sum(axis=-1)
-                )
+                assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
                 assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
