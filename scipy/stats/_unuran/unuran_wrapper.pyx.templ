@@ -257,16 +257,16 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
             class wrap_dist:
                 def __init__(self, dist):
                     self.dist = dist
-                    self.args = dist.args
-                    self.kwds = dist.kwds
+                    (self.args, self.loc,
+                     self.scale) = dist.dist._parse_args(*dist.args,
+                                                         **dist.kwds)
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray(x)
-                    return max(0, self.dist.dist._pdf(x, *self.args,
-                                                      **self.kwds))
+                    x = np.asarray((x-self.loc)/self.scale)
+                    return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
                 def cdf(self, x):
-                    x = np.asarray(x)
-                    res = self.dist.dist._cdf(x, *self.args, **self.kwds)
+                    x = np.asarray((x-self.loc)/self.scale)
+                    res = self.dist.dist._cdf(x, *self.args)
                     if res > 1:
                         return 1
                     elif res < 0:
@@ -276,16 +276,16 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
             class wrap_dist:
                 def __init__(self, dist):
                     self.dist = dist
-                    self.args = dist.args
-                    self.kwds = dist.kwds
+                    (self.args, self.loc,
+                     _) = dist.dist._parse_args(*dist.args,
+                                                **dist.kwds)
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.asarray(x)
-                    return max(0, self.dist.dist._pmf(x, *self.args,
-                                                      **self.kwds))
+                    x = np.asarray(x-self.loc)
+                    return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.asarray(x)
-                    res = self.dist.dist._cdf(x, *self.args, **self.kwds)
+                    x = np.asarray(x-self.loc)
+                    res = self.dist.dist._cdf(x, *self.args)
                     if res > 1:
                         return 1
                     elif res < 0:
