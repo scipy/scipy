@@ -53,7 +53,7 @@ def compare_solutions(A, B, m):
     np.random.seed(0)
     V = rand(n, m)
     X = orth(V)
-    eigvals, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False)
+    eigvals, _ = lobpcg(A, X, B=B, tol=1e-4, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eig(A, b=B)
     w.sort()
@@ -71,7 +71,9 @@ def test_Small():
 
 def test_ElasticRod():
     A, B = ElasticRod(20)
-    compare_solutions(A, B, 2)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*Exited at iteration.*")
+        compare_solutions(A, B, 2)
 
 
 def test_MikotaPair():
