@@ -1986,10 +1986,7 @@ cdef class NumericalInverseHermite(Method):
 
     @property
     def midpoint_error(self):
-        msg = ("`midpoint_error` has been deprecated and will be removed in a future "
-               "release. Use `u_error` method instead to calculate the maximum u-error.")
-        warnings.warn(msg, DeprecationWarning)
-        return np.nan
+        return self.u_error()[0]
 
 
 cdef class DiscreteAliasUrn(Method):
