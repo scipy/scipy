@@ -2411,14 +2411,30 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
                                  jac=optimize.rosen_der, bounds=bounds,
                                  constraints=reference_constraints)
 
+    # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
     assert_allclose(res.fun, expected.fun, rtol=1e-6)
-    assert_allclose(res.x, expected.x, rtol=3e-6)
+    assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
         expected.jac[i_eb] = np.nan
     assert res.jac.shape[0] == 4
     assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+    if not (kwds['jac'] or test_constraints or isinstance(bounds, Bounds)):
+        # compare the output to an equivalent FD minimization that doesn't
+        # need factorization
+        def fun(x):
+            new_x = np.array([np.nan, 2, np.nan, -1])
+            new_x[[0, 2]] = x
+            return optimize.rosen(new_x)
+
+        fd_res = optimize.minimize(fun,
+                                   x0[[0, 2]],
+                                   method=method,
+                                   bounds=bounds[::2])
+        assert_allclose(res.fun, fd_res.fun)
+        assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
 def test_eb_constraints():
