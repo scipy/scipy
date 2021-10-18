@@ -771,7 +771,11 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    %(origin_multiple)s
+    origin : int, optional
+        Controls the origin of the input signal, which is where the
+        filter is centered to produce the first element of the output.
+        Positive values shift the filter to the right, and negative values
+        shift the filter to the left. Default is 0.
 
     Returns
     -------
