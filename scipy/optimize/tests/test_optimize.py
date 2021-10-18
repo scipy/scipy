@@ -19,6 +19,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
+from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
@@ -42,7 +43,7 @@ def test_check_grad():
 
     r = optimize.check_grad(logit, der_logit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, 
+    r = optimize.check_grad(logit, der_logit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
@@ -533,7 +534,8 @@ def test_maxfev_test():
         return rng.random(1) * 1000  # never converged problem
 
     for imaxfev in [1, 10, 50]:
-        for method in ['Powell']:  # TODO: extend to more methods
+        # TODO: extend to more methods
+        for method in ['Powell', 'Nelder-Mead']:
             result = optimize.minimize(cost, rng.random(10),
                                        method=method,
                                        options={'maxfev': imaxfev})
@@ -546,7 +548,7 @@ def test_wrap_scalar_function_with_validation():
         return x
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
         func(np.asarray(i))
@@ -557,7 +559,7 @@ def test_wrap_scalar_function_with_validation():
         func(np.asarray(i))  # exceeded maximum function call
 
     fcalls, func = optimize.optimize.\
-        _wrap_scalar_function_with_validation(func_, np.asarray(1), 5)
+        _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     msg = "The user-provided objective function must return a scalar value."
     with assert_raises(ValueError, match=msg):
@@ -570,6 +572,14 @@ def test_obj_func_returns_scalar():
              "return a scalar value.")
     with assert_raises(ValueError, match=match):
         optimize.minimize(lambda x: x, np.array([1, 1]), method='BFGS')
+
+
+def test_neldermead_iteration_num():
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    res = optimize._minimize._minimize_neldermead(optimize.rosen, x0,
+                                                  xatol=1e-8)
+    assert res.nit <= 339
+
 
 def test_neldermead_xatol_fatol():
     # gh4484
@@ -2277,6 +2287,161 @@ def test_gh12696():
     with assert_no_warnings():
         optimize.fminbound(
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
+
+
+# --- Test minimize with equal upper and lower bounds --- #
+
+def setup_test_equal_bounds():
+
+    np.random.seed(0)
+    x0 = np.random.rand(4)
+    lb = np.array([0, 2, -1, -1])
+    ub = np.array([3, 2, 2, -1])
+    i_eb = (lb == ub)
+
+    def check_x(x, check_size=True, check_values=True):
+        if check_size:
+            assert x.size == 4
+        if check_values:
+            assert_allclose(x[i_eb], lb[i_eb])
+
+    def func(x):
+        check_x(x)
+        return optimize.rosen(x)
+
+    def grad(x):
+        check_x(x)
+        return optimize.rosen_der(x)
+
+    def callback(x, *args):
+        check_x(x)
+
+    def constraint1(x):
+        check_x(x, check_values=False)
+        return x[0:1] - 1
+
+    def jacobian1(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[0] = 1
+        return dc
+
+    def constraint2(x):
+        check_x(x, check_values=False)
+        return x[2:3] - 0.5
+
+    def jacobian2(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[2] = 1
+        return dc
+
+    c1a = NonlinearConstraint(constraint1, -np.inf, 0)
+    c1b = NonlinearConstraint(constraint1, -np.inf, 0, jacobian1)
+    c2a = NonlinearConstraint(constraint2, -np.inf, 0)
+    c2b = NonlinearConstraint(constraint2, -np.inf, 0, jacobian2)
+
+    # test using the three methods that accept bounds, use derivatives, and
+    # have some trouble when bounds fix variables
+    methods = ('L-BFGS-B', 'SLSQP', 'TNC')
+
+    # test w/out gradient, w/ gradient, and w/ combined objective/gradient
+    kwds = ({"fun": func, "jac": False},
+            {"fun": func, "jac": grad},
+            {"fun": (lambda x: (func(x), grad(x))),
+             "jac": True})
+
+    # test with both old- and new-style bounds
+    bound_types = (lambda lb, ub: list(zip(lb, ub)),
+                   Bounds)
+
+    # Test for many combinations of constraints w/ and w/out jacobian
+    # Pairs in format: (test constraints, reference constraints)
+    # (always use analytical jacobian in reference)
+    constraints = ((None, None), ([], []),
+                   (c1a, c1b), (c2b, c2b),
+                   ([c1b], [c1b]), ([c2a], [c2b]),
+                   ([c1a, c2a], [c1b, c2b]),
+                   ([c1a, c2b], [c1b, c2b]),
+                   ([c1b, c2b], [c1b, c2b]))
+
+    # test with and without callback function
+    callbacks = (None, callback)
+
+    data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
+            "constraints": constraints, "callbacks": callbacks,
+            "lb": lb, "ub": ub, "x0": x0, "i_eb": i_eb}
+
+    return data
+
+
+eb_data = setup_test_equal_bounds()
+
+
+# This test is about handling fixed variables, not the accuracy of the solvers
+@pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.parametrize('method', eb_data["methods"])
+@pytest.mark.parametrize('kwds', eb_data["kwds"])
+@pytest.mark.parametrize('bound_type', eb_data["bound_types"])
+@pytest.mark.parametrize('constraints', eb_data["constraints"])
+@pytest.mark.parametrize('callback', eb_data["callbacks"])
+def test_equal_bounds(method, kwds, bound_type, constraints, callback):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    lb, ub = eb_data["lb"], eb_data["ub"]
+    x0, i_eb = eb_data["x0"], eb_data["i_eb"]
+
+    test_constraints, reference_constraints = constraints
+    if test_constraints and not method == 'SLSQP':
+        pytest.skip('Only SLSQP supports nonlinear constraints')
+    # reference constraints always have analytical jacobian
+    # if test constraints are not the same, we'll need finite differences
+    fd_needed = (test_constraints != reference_constraints)
+
+    bounds = bound_type(lb, ub)  # old- or new-style
+
+    kwds.update({"x0": x0, "method": method, "bounds": bounds,
+                 "constraints": test_constraints, "callback": callback})
+    res = optimize.minimize(**kwds)
+
+    expected = optimize.minimize(optimize.rosen, x0, method=method,
+                                 jac=optimize.rosen_der, bounds=bounds,
+                                 constraints=reference_constraints)
+
+    assert res.success
+    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.x, expected.x, rtol=3e-6)
+
+    if fd_needed or kwds['jac'] is False:
+        expected.jac[i_eb] = np.nan
+    assert res.jac.shape[0] == 4
+    assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+
+def test_eb_constraints():
+    # make sure constraint functions aren't overwritten when equal bounds
+    # are employed, and a parameter is factored out. GH14859
+    def f(x):
+        return x[0]**3 + x[1]**2 + x[2]*x[3]
+
+    def cfun(x):
+        return x[0] + x[1] + x[2] + x[3] - 40
+
+    constraints = [{'type': 'ineq', 'fun': cfun}]
+
+    bounds = [(0, 20)] * 4
+    bounds[1] = (5, 5)
+    optimize.minimize(
+        f,
+        x0=[1, 2, 3, 4],
+        method='SLSQP',
+        bounds=bounds,
+        constraints=constraints,
+    )
+    assert constraints[0]['fun'] == cfun
 
 
 def test_show_options():

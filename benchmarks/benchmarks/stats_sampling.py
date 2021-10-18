@@ -181,6 +181,30 @@ class NumericalInversePolynomial(Benchmark):
         self.rng.rvs(100000)
 
 
+class NaiveRatioUniforms(Benchmark):
+
+    param_names = ['dist']
+    # only benchmark a few distributions since NROU is quite slow
+    params = [contdist2(), contdist3(), contdist5()]
+
+    def setup(self, dist):
+        self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            try:
+                self.rng = stats.NaiveRatioUniforms(
+                    dist, random_state=self.urng
+                )
+            except stats.UNURANError:
+                raise NotImplementedError(f"setup failed for {dist}")
+
+    def time_nrou_setup(self, dist):
+        self.rng = stats.NaiveRatioUniforms(dist, random_state=self.urng)
+
+    def time_nrou_rvs(self, dist):
+        self.rng.rvs(100000)
+
+
 class DiscreteAliasUrn(Benchmark):
 
     param_names = ['distribution']

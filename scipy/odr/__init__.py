@@ -116,8 +116,8 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
-from .odrpack import *
-from .models import *
+from ._odrpack import *
+from ._models import *
 from . import _add_newdocs
 
 __all__ = [s for s in dir()
