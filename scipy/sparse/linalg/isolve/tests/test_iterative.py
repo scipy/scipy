@@ -293,14 +293,14 @@ def check_precond_inverse(solver, case):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A, b)
 
     def rinverse(b,which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A.T, b)
 
     matvec_count = [0]
