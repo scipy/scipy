@@ -53,7 +53,7 @@ def compare_solutions(A, B, m):
     np.random.seed(0)
     V = rand(n, m)
     X = orth(V)
-    eigvals, _ = lobpcg(A, X, B=B, tol=1e-4, maxiter=50, largest=False)
+    eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eig(A, b=B)
     w.sort()
