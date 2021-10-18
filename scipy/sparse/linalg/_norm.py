@@ -3,7 +3,7 @@
 """
 import numpy as np
 from scipy.sparse import issparse
-from scipy.sparse.linalg.eigen.lobpcg import lobpcg
+from scipy.sparse.linalg.eigen import svds
 
 from numpy import Inf, sqrt, abs
 
@@ -20,22 +20,13 @@ def _sparse_frobenius_norm(x):
 
 # More suitable for larger-scale sparse matrics
 def _sparse_spectral_norm(x, ord):
-    # Check the shape of 'x'
-    diff = x.shape[1] - x.shape[0]
-    idx = diff if diff > 0 else 0
+    # Check the date type of 'x'
+    if np.issubdtype(x.dtype, np.integer):
+        x = x.astype(float)
+    which = 'LM' if ord == 2 else 'SM'
 
-    xHx = x.H @ x
-    eigvec = np.zeros((xHx.shape[0], (ord != 2) * idx + 1))
-    if ord == 2:
-        # Use LOBPCG to obtain the largest sing. value of 'x' efficiently
-        return sqrt(lobpcg(xHx, eigvec)[0][0])
-    else:
-        # Use LOBPCG to obtain the smallest sing. value of 'x' efficiently
-        smallestEig = abs(lobpcg(xHx, eigvec, largest=False)[0][idx])
-        # For singular matrices, smallestEig equals zero in the sense of 1e-14
-        if smallestEig < 1e-14:
-            smallestEig = 0.
-        return sqrt(smallestEig)
+    # Use LOBPCG to obtain the largest/smallest sing. value of 'x' efficiently
+    return svds(x, k=1, which=which, solver='lobpcg')[1][0]
 
 
 def norm(x, ord=None, axis=None):
