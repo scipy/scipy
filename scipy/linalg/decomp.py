@@ -313,7 +313,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Defines which LAPACK driver should be used. Valid options are "ev",
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section.
-        The default for standard problems is "evd". For generalized problems,
+        The default for standard problems is "evr". For generalized problems,
         "gvd" is used for full set, and "gvx" for subset requested cases.
     type : int, optional
         For the generalized problems, this keyword specifies the problem type
