@@ -286,7 +286,7 @@ def lobpcg(
     The preconditioner function is passed to lobpcg as a `LinearOperator`:
 
     >>> M = LinearOperator(matvec=precond, matmat=precond,
-    ...                    shape=(n, n), dtype=float)
+    ...                    shape=(n, n), dtype=np.float64)
 
     Let us now solve the eigenvalue problem for the matrix A:
 
@@ -740,15 +740,15 @@ def lobpcg(
     if np.max(residualNorms) > residualTolerance:
         warnings.warn(
             f"Exited at iteration {iterationNumber} with accuracies \n"
-            f"{residualNorms}\n not reaching the requested "
-            f"tolerance {residualTolerance}.",
+            f"{residualNorms}\n"
+            f"not reaching the requested tolerance {residualTolerance}.",
             UserWarning, stacklevel=3
         )
 
     # Future work: Need to add Postprocessing here:
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
-    # Keeping the best iterates
+    # Keeping the best iterates in case of divergence
 
     if verbosityLevel > 0:
         print(f"Final eigenvalue(s):\n{_lambda}")
