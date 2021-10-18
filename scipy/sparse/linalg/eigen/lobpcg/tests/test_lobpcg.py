@@ -70,13 +70,13 @@ def test_Small():
 
 
 def test_ElasticRod():
-    A, B = ElasticRod(100)
-    compare_solutions(A, B, 20)
+    A, B = ElasticRod(20)
+    compare_solutions(A, B, 2)
 
 
 def test_MikotaPair():
-    A, B = MikotaPair(100)
-    compare_solutions(A, B, 20)
+    A, B = MikotaPair(20)
+    compare_solutions(A, B, 2)
 
 
 def test_regression():
@@ -209,11 +209,13 @@ def test_fiedler_large_12():
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
+    np.random.seed(1234)
     X = np.random.randn(100, 10)
     A = X @ X.T
     Q = np.random.randn(X.shape[0], 4)
     with suppress_warnings() as sup:
         sup.filter(UserWarning, ".*Failed at iteration.*")
+        sup.filter(UserWarning, ".*Exited at iteration.*")
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
         assert(np.max(eigenvalues) > 0)
 
@@ -280,14 +282,14 @@ def test_eigs_consistency(n, atol):
 def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
-    A, B = ElasticRod(100)
-    n = A.shape[0]
-    m = 20
-    np.random.seed(0)
-    V = rand(n, m)
-    X = orth(V)
-    _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                  verbosityLevel=9)
+    np.random.seed(1234)
+    X = np.random.randn(10, 10)
+    A = X @ X.T
+    Q = np.random.randn(X.shape[0], 1)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*Exited at iteration.*")
+        _, _ = lobpcg(A, Q, tol=1e-5, maxiter=3, largest=False,
+                      verbosityLevel=9)
 
 
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
@@ -303,7 +305,7 @@ def test_tolerance_float32():
     A = A.astype(np.float32)
     X = np.random.randn(n, m)
     X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-9, maxiter=50, verbosityLevel=0)
+    eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
 
 
@@ -323,7 +325,7 @@ def test_random_initial_float32():
 
 
 def test_maxit_None():
-    """Check lobpcg if maxit=None runs 20 iterations (the default)
+    """Check lobpcg if maxit=None runs 10 iterations (the default)
     by checking the size of the iteration history output, which should
     be the number of iterations plus 2 (initial and final values).
     """
@@ -335,8 +337,10 @@ def test_maxit_None():
     A = A.astype(np.float32)
     X = np.random.randn(n, m)
     X = X.astype(np.float32)
-    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 20+2)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, ".*Exited at iteration.*")
+        _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
+        assert_allclose(np.shape(l_h)[0], 10+2)
 
 
 @pytest.mark.slow
