@@ -1144,12 +1144,6 @@ class TestNumericalInverseHermite:
         assert mae <= max_error
 
     def test_deprecations(self):
-        msg = ("`midpoint_error` has been deprecated and will be removed in "
-               "a future release.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            rng = NumericalInverseHermite(StandardNormal())
-            midpoint_error = rng.midpoint_error
-        assert np.isnan(midpoint_error)
         msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
                "It will be completely removed in a future release.")
         with pytest.warns(DeprecationWarning, match=msg):
