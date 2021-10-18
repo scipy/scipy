@@ -1995,6 +1995,100 @@ cdef class DiscreteGuideTable(Method):
            "DGT – (Discrete) Guide Table method (indexed search)"
            https://statmath.wu.ac.at/unuran/doc/unuran.html#DGT
 
+    Examples
+    --------
+    >>> from scipy.stats import DiscreteGuideTable
+
+    To create a random number generator using a probability vector, use:
+
+    >>> pv = [0.1, 0.3, 0.6]
+    >>> urng = np.random.default_rng()
+    >>> rng = DiscreteGuideTable(pv, random_state=urng)
+
+    The RNG has been setup. Now, we can now use the `rvs` method to
+    generate samples from the distribution:
+
+    >>> rvs = rng.rvs(size=1000)
+
+    To verify that the random variates follow the given distribution, we can
+    use the chi-squared test (as a measure of goodness-of-fit):
+
+    >>> from scipy.stats import chisquare
+    >>> _, freqs = np.unique(rvs, return_counts=True)
+    >>> freqs = freqs / np.sum(freqs)
+    >>> freqs
+    array([0.092, 0.355, 0.553])
+    >>> chisquare(freqs, pv).pvalue
+    0.9987382966178464
+
+    As the p-value is very high, we fail to reject the null hypothesis that
+    the observed frequencies are the same as the expected frequencies. Hence,
+    we can safely assume that the variates have been generated from the given
+    distribution. Note that this just gives the correctness of the algorithm
+    and not the quality of the samples.
+
+    If a PV is not available, an instance of a class with a PMF method and a
+    finite domain can also be passed.
+
+    >>> urng = np.random.default_rng()
+    >>> class Binomial:
+    ...     def __init__(self, n, p):
+    ...         self.n = n
+    ...         self.p = p
+    ...     def pmf(self, x):
+    ...         # note that the pmf doesn't need to be normalized.
+    ...         return self.p**x * (1-self.p)**(self.n-x)
+    ...     def support(self):
+    ...         return (0, self.n)
+    ...
+    >>> n, p = 10, 0.2
+    >>> dist = Binomial(n, p)
+    >>> rng = DiscreteGuideTable(dist, random_state=urng)
+
+    Now, we can sample from the distribution using the `rvs` method
+    and also measure the goodness-of-fit of the samples:
+
+    >>> rvs = rng.rvs(1000)
+    >>> _, freqs = np.unique(rvs, return_counts=True)
+    >>> freqs = freqs / np.sum(freqs)
+    >>> obs_freqs = np.zeros(11)  # some frequencies may be zero.
+    >>> obs_freqs[:freqs.size] = freqs
+    >>> pv = [dist.pmf(i) for i in range(0, 11)]
+    >>> pv = np.asarray(pv) / np.sum(pv)
+    >>> chisquare(obs_freqs, pv).pvalue
+    0.9999999999999989
+
+    To check that the samples have been drawn from the correct distribution,
+    we can visualize the histogram of the samples:
+
+    >>> import matplotlib.pyplot as plt
+    >>> rvs = rng.rvs(1000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> x = np.arange(0, n+1)
+    >>> fx = dist.pmf(x)
+    >>> fx = fx / fx.sum()
+    >>> ax.plot(x, fx, 'bo', label='true distribution')
+    >>> ax.vlines(x, 0, fx, lw=2)
+    >>> ax.hist(rvs, bins=np.r_[x, n+1]-0.5, density=True, alpha=0.5,
+    ...         color='r', label='samples')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PMF(x)')
+    >>> ax.set_title('Discrete Alias Urn Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
+    There are two possible variants to setup the guide table. Variant 2 is
+    faster, but, more sensitive to round off errors when the guide table is
+    large. Use the `variant` keyword argument to set the variant used.
+
+    >>> rng = DiscreteGuideTable(pv, variant=1, random_state=urng)
+
+    To set the size of the guide table use the `guide_factor` keyword argument
+    this sets the size of the guide table relative to the probability vector
+
+    >>> rng = DiscreteGuideTable(pv, guide_factor=1, random_state=urng)
+
     """
     cdef double[::1] pv_view
 
