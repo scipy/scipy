@@ -34,16 +34,15 @@ def _report_nonhermitian(M, name):
     from scipy.linalg import norm
 
     md = M - M.T.conj()
-
     nmd = norm(md, 1)
     tol = 10 * np.finfo(M.dtype).eps
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
-        print(
-            "matrix %s of the type %s is not Hermitian:" % (name, M.dtype)
-        )
-        print("condition: %.e < %e" % (nmd, tol))
-
+        warnings.warn(
+              f"matrix {name} of the type {M.dtype} is not Hermitian:"
+              f"condition: {nmd} < {tol}",
+              UserWarning, stacklevel=3
+         )
 
 def _as2d(ar):
     """
@@ -442,7 +441,7 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
         if verbosityLevel > 0:
-            print("iteration %d" % iterationNumber)
+            print(f"iteration {iterationNumber}")
 
         if B is not None:
             aux = blockVectorBX * _lambda[np.newaxis, :]
@@ -470,9 +469,9 @@ def lobpcg(
             break
 
         if verbosityLevel > 0:
-            print("current block size:", currentBlockSize)
-            print("eigenvalue:", _lambda)
-            print("residual norms:", residualNorms)
+            print(f"current block size: {currentBlockSize}")
+            print(f"eigenvalue(s):\n{_lambda}")
+            print(f"residual norm(s):\n{residualNorms}")
         if verbosityLevel > 10:
             print(eigBlockVector)
 
@@ -645,7 +644,7 @@ def lobpcg(
         ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:
             print(ii)
-            print(_lambda)
+            print(f"lambda:\n{_lambda}")
 
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
@@ -653,7 +652,7 @@ def lobpcg(
         lambdaHistory.append(_lambda)
 
         if verbosityLevel > 10:
-            print("lambda:", _lambda)
+            print(f"lambda:\n{_lambda}")
         #         # Normalize eigenvectors!
         #         aux = np.sum( eigBlockVector.conj() * eigBlockVector, 0 )
         #         eigVecNorms = np.sqrt( aux )
@@ -753,8 +752,8 @@ def lobpcg(
     # Adding warning if the required tolerance is not met
 
     if verbosityLevel > 0:
-        print("Final eigenvalue(s):\n", _lambda)
-        print("Final residual norm(s):\n", residualNorms)
+        print(f"Final eigenvalue(s):\n{_lambda}")
+        print(f"Final residual norm(s):\n{residualNorms}")
 
     if retLambdaHistory:
         if retResidualNormsHistory:
