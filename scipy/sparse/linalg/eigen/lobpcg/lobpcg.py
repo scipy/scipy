@@ -39,9 +39,9 @@ def _report_nonhermitian(M, name):
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
         warnings.warn(
-              f"matrix {name} of the type {M.dtype} is not Hermitian:"
-              f"condition: {nmd} < {tol}",
-              UserWarning, stacklevel=3
+              f"Matrix {name} of the type {M.dtype} is not Hermitian: "
+              f"condition: {nmd} < {tol} fails.",
+              UserWarning, stacklevel=5
          )
 
 def _as2d(ar):
@@ -342,8 +342,8 @@ def lobpcg(
 
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
-            f"The problem size {n} minus the constraints size {sizeY} \n"
-            f"is too small relative to the block size {sizeX}. \n"
+            f"The problem size {n} minus the constraints size {sizeY} "
+            f"is too small relative to the block size {sizeX}. "
             f"Using a dense eigensolver instead of LOBPCG.",
             UserWarning, stacklevel=3
         )
@@ -441,6 +441,7 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
         if verbosityLevel > 0:
+            print("-"*50)
             print(f"iteration {iterationNumber}")
 
         if B is not None:
@@ -747,9 +748,7 @@ def lobpcg(
     # Future work: Need to add Postprocessing here:
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
-    # Computing the actual true residuals
     # Keeping the best iterates
-    # Adding warning if the required tolerance is not met
 
     if verbosityLevel > 0:
         print(f"Final eigenvalue(s):\n{_lambda}")
