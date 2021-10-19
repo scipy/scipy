@@ -920,10 +920,13 @@ class TestDiscreteGuideTable:
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
             DiscreteGuideTable(Binomial(10, 0.2), domain=domain)
+
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
             DiscreteGuideTable(Binomial(10, 0.2), domain=domain)
+
+
 class Gamma:
     def __init__(self, p):
         self.p = p
