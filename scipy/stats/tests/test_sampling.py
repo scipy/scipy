@@ -897,7 +897,20 @@ class TestDiscreteGuideTable:
         rng = DiscreteGuideTable(dist, random_state=42)
         check_discr_samples(rng, pv, mv_ex)
 
+    @pytest.mark.parametrize("pv, msg", bad_pv_common)
+    def test_bad_pv(self, pv, msg):
+        with pytest.raises(ValueError, match=msg):
+            DiscreteGuideTable(pv)
 
+    # DGT doesn't support infinite tails. So, it should throw an error when
+    # inf is present in the domain.
+    inf_domain = [(-np.inf, np.inf), (np.inf, np.inf), (-np.inf, -np.inf),
+                  (0, np.inf), (-np.inf, 0)]
+
+    @pytest.mark.parametrize("domain", inf_domain)
+    def test_inf_domain(self, domain):
+        with pytest.raises(ValueError, match=r"must be finite"):
+            DiscreteGuideTable(Binomial(10, 0.2), domain=domain)
 class Gamma:
     def __init__(self, p):
         self.p = p
