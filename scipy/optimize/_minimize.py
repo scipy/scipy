@@ -727,6 +727,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - :ref:`Bounded <optimize.minimize_scalar-bounded>`
             - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
+
             See the 'Notes' section for details of each solver.
 
     tol : float, optional
