@@ -2160,9 +2160,6 @@ cdef class DiscreteGuideTable(Method):
                 raise ValueError("`domain` must be provided when the "
                                  "probability vector is not available.")
 
-        if variant not in {1, 2}:
-            raise ValueError("`variant` must be either 1 or 2")
-
         if guide_factor > 3:
             msg = "guide_factor sizes larger than 3 are not recommended."
             warnings.warn(msg, RuntimeWarning)
@@ -2188,5 +2185,14 @@ cdef class DiscreteGuideTable(Method):
                 raise ValueError(msg) from None
         else:
             pv_view = _validate_pv(dist)
+
+        if variant not in {1, 2}:
+            raise ValueError("`variant` must be either 1 or 2")
+        elif (variant == 1) and (len(pv_view) < 1000):
+            msg = 'Variant 2 should be used for short probability vectors (N<1000)'
+            warnings.warn(msg, RuntimeWarning)
+        elif (variant == 2) and (len(pv_view) > 1000):
+            msg = "Variant 1 should be used for long probability vectors (N>1000)"
+            warnings.warn(msg, RuntimeWarning)
 
         return pv_view, domain

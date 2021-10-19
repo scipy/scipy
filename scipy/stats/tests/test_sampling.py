@@ -850,6 +850,22 @@ class TestDiscreteGuideTable:
         'randint'  # fails on 32-bit ubuntu
     }
 
+    def test_invalid_variant(self):
+        pv = [0.1, 0.3, 0.6]
+        msg = "`variant` must be either 1 or 2"
+        with pytest.raises(ValueError, match=msg):
+            DiscreteGuideTable(pv, variant=3)
+
+    def test_variant_1_for_small_pv_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, variant=1)
+
+    def test_variant_2_for_large_pv_raises_warning(self):
+        pv = np.random.random_sample(1002)
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, variant=2)
+
     def test_guide_factor_gt3_raises_warning(self):
         pv = [0.1, 0.3, 0.6]
         urng = np.random.default_rng()
