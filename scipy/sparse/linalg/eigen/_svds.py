@@ -348,7 +348,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     t = eigvec.dtype.char.lower()
     factor = {'f': 1E3, 'd': 1E6}
     cond = factor[t] * np.finfo(t).eps
-    cutoff = max(cond * np.max(eigvals), 1e-14)
+    cutoff = max(cond * np.max(eigvals), 50. * np.finfo(t).eps)
 
     # Get a mask indicating which eigenpairs are not degenerately tiny,
     # and create the re-ordered array of thresholded singular values.

@@ -4,6 +4,7 @@
 import numpy as np
 from numpy.linalg import norm as npnorm
 from numpy.testing import assert_allclose
+import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
@@ -16,7 +17,9 @@ class TestNorm:
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_matrix(b)
 
-    def test_matrix_norm(self):
+    @pytest.mark.parametrize("dtype", ['i', 'l', 'f', 'd'])
+    def test_matrix_norm(self, dtype):
+        self.b = self.b.astype(dtype)
 
         # Frobenius norm is the default
         assert_allclose(spnorm(self.b), 7.745966692414834)        
@@ -31,7 +34,9 @@ class TestNorm:
         assert_allclose(spnorm(self.b, 2), 7.3484692283495345)
         assert_allclose(spnorm(self.b, -2), 0.)
 
-    def test_matrix_norm_axis(self):
+    @pytest.mark.parametrize("dtype", ['i', 'l', 'f', 'd'])
+    def test_matrix_norm_axis(self, dtype):
+        self.b = self.b.astype(dtype)
         for m, axis in ((self.b, None), (self.b, (0, 1)), (self.b.T, (1, 0))):
             assert_allclose(spnorm(m, axis=axis), 7.745966692414834)        
             assert_allclose(spnorm(m, 'fro', axis=axis), 7.745966692414834)
@@ -42,7 +47,9 @@ class TestNorm:
             assert_allclose(spnorm(m, 2, axis=axis), 7.3484692283495345)
             assert_allclose(spnorm(m, -2, axis=axis), 0.)
 
-    def test_vector_norm(self):
+    @pytest.mark.parametrize("dtype", ['i', 'l', 'f', 'd'])
+    def test_vector_norm(self, dtype):
+        self.b = self.b.astype(dtype)
         v = [4.5825756949558398, 4.2426406871192848, 4.5825756949558398]
         for m, a in (self.b, 0), (self.b.T, 1):
             for axis in a, (a, ), a-2, (a-2, ):
@@ -52,7 +59,9 @@ class TestNorm:
                 assert_allclose(spnorm(m, ord=2, axis=axis), v)
                 assert_allclose(spnorm(m, ord=None, axis=axis), v)
 
-    def test_norm_exceptions(self):
+    @pytest.mark.parametrize("dtype", ['i', 'l', 'f', 'd'])
+    def test_norm_exceptions(self, dtype):
+        self.b = self.b.astype(dtype)
         m = self.b
         assert_raises(TypeError, spnorm, m, None, 1.5)
         assert_raises(TypeError, spnorm, m, None, [2])
@@ -87,10 +96,11 @@ class TestVsNumpyNorm:
                 [-1, 1, 4j]],
             )
 
-    def test_sparse_matrix_norms(self):
+    @pytest.mark.parametrize("dtype", ['F', 'D'])
+    def test_sparse_matrix_norms(self, dtype):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:
-                S = sparse_type(M)
+                S = sparse_type(M, dtype=dtype)
                 assert_allclose(spnorm(S), npnorm(M))
                 assert_allclose(spnorm(S, 'fro'), npnorm(M, 'fro'))
                 assert_allclose(spnorm(S, np.inf), npnorm(M, np.inf))
@@ -98,20 +108,26 @@ class TestVsNumpyNorm:
                 assert_allclose(spnorm(S, 1), npnorm(M, 1))
                 assert_allclose(spnorm(S, -1), npnorm(M, -1))
                 assert_allclose(spnorm(S, 2), npnorm(M, 2))
-                assert_allclose(spnorm(S, -2), npnorm(M, -2), atol=1e-14)
+                spnormS = spnorm(S, -2)
+                t = spnormS.dtype.char
+                assert_allclose(spnormS, npnorm(M, -2),
+                                atol=10 * np.finfo(t).eps)
 
-    def test_sparse_matrix_norms_with_axis(self):
+    @pytest.mark.parametrize("dtype", ['F', 'D'])
+    def test_sparse_matrix_norms_with_axis(self, dtype):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:
-                S = sparse_type(M)
+                S = sparse_type(M, dtype=dtype)
                 for axis in None, (0, 1), (1, 0):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
                     for ord in 'fro', np.inf, -np.inf, 1, -1, 2:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
-                    assert_allclose(spnorm(S, -2, axis=axis),
+                    spnormS = spnorm(S, -2, axis=axis)
+                    t = spnormS.dtype.char
+                    assert_allclose(spnormS,
                                     npnorm(M, -2, axis=axis),
-                                    atol=1e-14)
+                                    atol=10 * np.finfo(t).eps)
                 # Some numpy matrix norms are allergic to negative axes.
                 for axis in (-2, -1), (-1, -2), (1, -2):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
@@ -121,9 +137,11 @@ class TestVsNumpyNorm:
                                     npnorm(M, 'fro', axis=axis))
                     assert_allclose(spnorm(S, 2, axis=axis),
                                     npnorm(M, 2, axis=axis))
-                    assert_allclose(spnorm(S, -2, axis=axis),
+                    spnormS = spnorm(S, -2, axis=axis)
+                    t = spnormS.dtype.char
+                    assert_allclose(spnormS,
                                     npnorm(M, -2, axis=axis),
-                                    atol=1e-14)
+                                    atol=10 * np.finfo(t).eps)
 
     def test_sparse_vector_norms(self):
         for sparse_type in self._sparse_types:
