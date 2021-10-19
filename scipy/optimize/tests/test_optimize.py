@@ -2295,8 +2295,8 @@ def setup_test_equal_bounds():
 
     np.random.seed(0)
     x0 = np.random.rand(4)
-    lb = np.array([0, 2, -1, -1])
-    ub = np.array([3, 2, 2, -1])
+    lb = np.array([0, 2, -1, -1.0])
+    ub = np.array([3, 2, 2, -1.0])
     i_eb = (lb == ub)
 
     def check_x(x, check_size=True, check_values=True):
@@ -2411,14 +2411,35 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
                                  jac=optimize.rosen_der, bounds=bounds,
                                  constraints=reference_constraints)
 
+    # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
     assert_allclose(res.fun, expected.fun, rtol=1e-6)
-    assert_allclose(res.x, expected.x, rtol=3e-6)
+    assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
         expected.jac[i_eb] = np.nan
     assert res.jac.shape[0] == 4
     assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+    if not (kwds['jac'] or test_constraints or isinstance(bounds, Bounds)):
+        # compare the output to an equivalent FD minimization that doesn't
+        # need factorization
+        def fun(x):
+            new_x = np.array([np.nan, 2, np.nan, -1])
+            new_x[[0, 2]] = x
+            return optimize.rosen(new_x)
+
+        fd_res = optimize.minimize(fun,
+                                   x0[[0, 2]],
+                                   method=method,
+                                   bounds=bounds[::2])
+        assert_allclose(res.fun, fd_res.fun)
+        # TODO this test should really be equivalent to factorized version
+        # above, down to res.nfev. However, testing found that when TNC is
+        # called with or without a callback the output is different. The two
+        # should be the same! This indicates that the TNC callback may be
+        # mutating something when it should't.
+        assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
 def test_eb_constraints():
