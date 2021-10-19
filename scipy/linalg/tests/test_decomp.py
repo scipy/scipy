@@ -28,7 +28,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx)
 
-from scipy.linalg.misc import norm
+from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
@@ -2489,7 +2489,7 @@ class TestOrdQZWorkspaceSize:
 class TestDatacopied:
 
     def test_datacopied(self):
-        from scipy.linalg.decomp import _datacopied
+        from scipy.linalg._decomp import _datacopied
 
         M = matrix([[0, 1], [2, 3]])
         A = asarray(M)
