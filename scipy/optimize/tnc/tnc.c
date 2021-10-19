@@ -799,9 +799,9 @@ static tnc_rc tnc_minimize(int n, double x[],
 
         /* Invoke the callback function */
         if (callback) {
-            unscalex(n, x, xscale, xoffset);
-            callback(x, state);
-            scalex(n, x, xscale, xoffset);
+            dcopy1(n, x, temp);
+            unscalex(n, temp, xscale, xoffset);
+            callback(temp, state);
         }
 
         /* Set up parameters used in convergence and resetting tests */

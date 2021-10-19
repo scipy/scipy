@@ -1,6 +1,10 @@
 # TNC Release History
 # $Jeannot: HISTORY,v 1.15 2005/01/28 18:27:31 js Exp $
 
+10/20/2021         : x is no longer unscaled/scaled when using the callback
+                     because doing so can change x, and alter the course of
+                     the minimization. The callback uses a temporary copy of
+                     an unscaled x. (contributed by Andrew Nelson)
 01/28/2005, V1.3   : Fix a bug in the anti-zigzaging mechanism (many thanks
                      to S.G. NASH).
                      Warning: API changes: refined stopping criterions (xtol,
