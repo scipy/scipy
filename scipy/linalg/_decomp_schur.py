@@ -5,9 +5,9 @@ from numpy.linalg import norm
 
 
 # Local imports.
-from .misc import LinAlgError, _datacopied
+from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
-from .decomp import eigvals
+from ._decomp import eigvals
 
 __all__ = ['schur', 'rsf2csf']
 

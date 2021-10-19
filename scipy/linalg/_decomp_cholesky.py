@@ -3,7 +3,7 @@
 from numpy import asarray_chkfinite, asarray, atleast_2d
 
 # Local imports
-from .misc import LinAlgError, _datacopied
+from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',

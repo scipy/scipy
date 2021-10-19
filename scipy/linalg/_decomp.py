@@ -23,7 +23,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
 from scipy._lib._util import _asarray_validated
-from .misc import LinAlgError, _datacopied, norm
+from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
 
