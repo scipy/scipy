@@ -137,7 +137,7 @@ def pdf():
     ref = os.path.join(bdir_latex, "scipy-ref.pdf")
     shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
-def tarball_name(type_name='gztar'):
+def  tarball_name(type_name='gztar'):
     root = 'scipy-%s' % FULLVERSION
     if type_name == 'gztar':
         return root + '.tar.gz'
