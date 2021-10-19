@@ -1892,7 +1892,7 @@ cdef class NaiveRatioUniforms(Method):
 
 cdef class DiscreteGuideTable(Method):
     r"""
-    DiscreteGuideTable(dist, *, domain=None, guide_factor=1, variant=2, random_state=None)
+    DiscreteGuideTable(dist, *, domain=None, guide_factor=1, variant=None, random_state=None)
 
     Discrete Guide Table method.
 
@@ -2097,7 +2097,7 @@ cdef class DiscreteGuideTable(Method):
                   *,
                   domain=None,
                   guide_factor=1,
-                  variant=2,
+                  variant=None,
                   random_state=None):
 
         cdef double[::1] pv_view
@@ -2143,7 +2143,8 @@ cdef class DiscreteGuideTable(Method):
                 raise UNURANError(self._messages.get())
 
             self._check_errorcode(unur_dgt_set_guidefactor(self.par, guide_factor))
-            self._check_errorcode(unur_dgt_set_variant(self.par, variant))
+            if variant is not None:
+                self._check_errorcode(unur_dgt_set_variant(self.par, variant))
             self._set_rng(random_state)
         finally:
             _lock.release()
@@ -2186,7 +2187,7 @@ cdef class DiscreteGuideTable(Method):
         else:
             pv_view = _validate_pv(dist)
 
-        if variant not in {1, 2}:
+        if variant not in {None, 1, 2}:
             raise ValueError("`variant` must be either 1 or 2")
         elif (variant == 1) and (len(pv_view) < 1000):
             msg = 'Variant 2 should be used for short probability vectors (N<1000)'

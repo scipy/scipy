@@ -139,5 +139,5 @@ class DiscreteGuideTable(Method):
                  *,
                  domain: None | Tuple[float, float] = ...,
                  guide_factor: float = ...,
-                 variant: int = ...,
+                 variant: None | int = ...,
                  random_state: SeedType = ...) -> None: ...
