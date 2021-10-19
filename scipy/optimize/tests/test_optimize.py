@@ -2295,8 +2295,8 @@ def setup_test_equal_bounds():
 
     np.random.seed(0)
     x0 = np.random.rand(4)
-    lb = np.array([0, 2, -1, -1])
-    ub = np.array([3, 2, 2, -1])
+    lb = np.array([0, 2, -1, -1.0])
+    ub = np.array([3, 2, 2, -1.0])
     i_eb = (lb == ub)
 
     def check_x(x, check_size=True, check_values=True):
@@ -2434,6 +2434,11 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
                                    method=method,
                                    bounds=bounds[::2])
         assert_allclose(res.fun, fd_res.fun)
+        # TODO this test should really be equivalent to factorized version
+        # above, down to res.nfev. However, testing found that when TNC is
+        # called with or without a callback the output is different. The two
+        # should be the same! This indicates that the TNC callback may be
+        # mutating something when it should't.
         assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
