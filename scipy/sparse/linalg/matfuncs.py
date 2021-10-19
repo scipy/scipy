@@ -14,7 +14,7 @@ import numpy as np
 
 import scipy.special
 from scipy._lib._util import float_factorial
-from scipy.linalg.basic import solve, solve_triangular
+from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.linalg import spsolve

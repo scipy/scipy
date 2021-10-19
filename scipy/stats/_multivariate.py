@@ -9,7 +9,7 @@ from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
-from scipy.linalg.misc import LinAlgError
+from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom

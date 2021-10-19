@@ -12,11 +12,11 @@ from numpy import (Inf, dot, diag, prod, logical_not, ravel,
 import numpy as np
 
 # Local imports
-from .misc import norm
-from .basic import solve, inv
-from .special_matrices import triu
-from .decomp_svd import svd
-from .decomp_schur import schur, rsf2csf
+from ._misc import norm
+from ._basic import solve, inv
+from ._special_matrices import triu
+from ._decomp_svd import svd
+from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 

@@ -3,7 +3,7 @@ import numpy
 
 # Local imports
 from .lapack import get_lapack_funcs
-from .misc import _datacopied
+from ._misc import _datacopied
 
 __all__ = ['qr', 'qr_multiply', 'rq']
 

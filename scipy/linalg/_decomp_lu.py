@@ -5,9 +5,9 @@ from warnings import warn
 from numpy import asarray, asarray_chkfinite
 
 # Local imports
-from .misc import _datacopied, LinAlgWarning
+from ._misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
-from .flinalg import get_flinalg_funcs
+from ._flinalg_py import get_flinalg_funcs
 
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 

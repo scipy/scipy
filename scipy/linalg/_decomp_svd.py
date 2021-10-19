@@ -3,9 +3,9 @@ import numpy
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 # Local imports.
-from .misc import LinAlgError, _datacopied
+from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
-from .decomp import _asarray_validated
+from ._decomp import _asarray_validated
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
