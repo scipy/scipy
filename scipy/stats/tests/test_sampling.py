@@ -845,8 +845,8 @@ class TestNumericalInversePolynomial:
 
 class TestDiscreteGuideTable:
     basic_fail_dists = {
-        'nchypergeom_fisher',  # numerical erros on tails
-        'nchypergeom_wallenius',  # numerical erros on tails
+        'nchypergeom_fisher',  # numerical errors on tails
+        'nchypergeom_wallenius',  # numerical errors on tails
         'randint'  # fails on 32-bit ubuntu
     }
 

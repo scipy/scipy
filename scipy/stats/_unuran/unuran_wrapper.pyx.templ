@@ -1935,7 +1935,7 @@ cdef class DiscreteGuideTable(Method):
         Variant 2 should be used for short probability vectors (N<1000) and
         variant 1 otherwise. Default is 2.
     random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
+                    `numpy.random.RandomState`}, optional
 
         A NumPy random number generator or seed for the underlying NumPy random
         number generator used to generate the stream of uniform random numbers.
@@ -1986,13 +1986,13 @@ cdef class DiscreteGuideTable(Method):
     By default, the probability vector is indexed starting at 0. However, this
     can be changed by passing a ``domain`` parameter. When ``domain`` is given
     in combination with the PV, it has the effect of relocating the
-    distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
+    distribution from ``(0, len(pv))`` to ``(domain[0], domain[0] + len(pv))``.
     ``domain[1]`` is ignored in this case.
 
     References
     ----------
     .. [1] UNU.RAN reference manual, Section 5.8.4,
-           "DGT – (Discrete) Guide Table method (indexed search)"
+           "DGT - (Discrete) Guide Table method (indexed search)"
            https://statmath.wu.ac.at/unuran/doc/unuran.html#DGT
 
     Examples
@@ -2084,8 +2084,8 @@ cdef class DiscreteGuideTable(Method):
 
     >>> rng = DiscreteGuideTable(pv, variant=1, random_state=urng)
 
-    To set the size of the guide table use the `guide_factor` keyword argument
-    this sets the size of the guide table relative to the probability vector
+    To set the size of the guide table use the `guide_factor` keyword argument.
+    This sets the size of the guide table relative to the probability vector
 
     >>> rng = DiscreteGuideTable(pv, guide_factor=1, random_state=urng)
 
@@ -2113,7 +2113,8 @@ cdef class DiscreteGuideTable(Method):
             'domain': domain,
             'guide_factor': guide_factor,
             'variant': variant,
-            'random_state': random_state}
+            'random_state': random_state
+        }
 
         cdef:
             unur_distr *distr
