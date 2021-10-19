@@ -1632,6 +1632,17 @@ class TestOptimizeScalar:
             optimize.minimize_scalar(self.fun, options={"disp": disp})
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_result_attributes(self, method):
+        result = optimize.minimize_scalar(self.fun, method=method,
+                                          bounds=[-10, 10])
+        assert hasattr(result, "x")
+        assert hasattr(result, "success")
+        assert hasattr(result, "message")
+        assert hasattr(result, "fun")
+        assert hasattr(result, "nfev")
+        assert hasattr(result, "nit")
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
