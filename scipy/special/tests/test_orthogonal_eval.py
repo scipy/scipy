@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose
 import pytest
 
-import scipy.special.orthogonal as orth
+import scipy.special._orthogonal as orth
 from scipy.special._testutils import FuncData
 
 

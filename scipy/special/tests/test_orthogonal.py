@@ -7,7 +7,7 @@ from pytest import raises as assert_raises
 from scipy import integrate
 import scipy.special as sc
 from scipy.special import gamma
-import scipy.special.orthogonal as orth
+import scipy.special._orthogonal as orth
 
 
 class TestCheby:

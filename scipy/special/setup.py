@@ -56,7 +56,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('sc_specfun',sources=specfun_src)
 
     # Extension specfun
-    config.add_extension('specfun',
+    config.add_extension('_specfun',
                          sources=['specfun.pyf'],
                          f2py_options=['--no-wrap-functions'],
                          depends=specfun_src,

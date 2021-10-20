@@ -85,7 +85,8 @@ from scipy.special import airy
 from . import _ufuncs
 from . import _ufuncs as cephes
 _gam = cephes.gamma
-from . import specfun
+# There is no .pyi file for _specfun
+from . import _specfun  # type: ignore
 
 _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
              'jacobi', 'laguerre', 'genlaguerre', 'hermite',
@@ -977,7 +978,7 @@ def _initial_nodes_b(n, k):
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
     # Airy roots by approximation
-    ak = specfun.airyzo(k.max(), 1)[0][::-1]
+    ak = _specfun.airyzo(k.max(), 1)[0][::-1]
     # Initial approximation of Hermite roots (square)
     xksq = (nu +
             2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
@@ -2474,7 +2475,7 @@ def sh_legendre(n, monic=False):
 poch = cephes.poch
 
 # eval_chebyu, eval_sh_chebyt and eval_sh_chebyu: These functions are not
-# used in orthogonal.py, they are not in _rootfuns_map, but their names
+# used in _orthogonal.py, they are not in _rootfuns_map, but their names
 # do appear in _evalfuns, so they must be kept.
 from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
                       eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
