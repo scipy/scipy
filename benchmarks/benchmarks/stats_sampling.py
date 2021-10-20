@@ -254,34 +254,6 @@ class DiscreteGuideTable(Benchmark):
         self.pv = dist.pmf(x, *params)
         self.rng = stats.DiscreteGuideTable(self.pv, random_state=self.urng)
 
-    def time_dau_setup(self, distribution):
-        stats.DiscreteGuideTable(self.pv, random_state=self.urng)
-
-    def time_dau_rvs(self, distribution):
-        self.rng.rvs(100000)
-
-
-class DiscreteGuideTable(Benchmark):
-
-    param_names = ['distribution']
-
-    params = [
-        # a subset of discrete distributions with finite domain.
-        [['nhypergeom', (20, 7, 1)],
-         ['hypergeom', (30, 12, 6)],
-         ['nchypergeom_wallenius', (140, 80, 60, 0.5)],
-         ['binom', (5, 0.4)]]
-    ]
-
-    def setup(self, distribution):
-        distname, params = distribution
-        dist = getattr(stats, distname)
-        domain = dist.support(*params)
-        self.urng = np.random.default_rng(0x2fc9eb71cd5120352fa31b7a048aa867)
-        x = np.arange(domain[0], domain[1] + 1)
-        self.pv = dist.pmf(x, *params)
-        self.rng = stats.DiscreteGuideTable(self.pv, random_state=self.urng)
-
     def time_dgt_setup(self, distribution):
         stats.DiscreteGuideTable(self.pv, random_state=self.urng)
 
