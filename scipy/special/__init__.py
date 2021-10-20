@@ -638,7 +638,7 @@ Convenience functions
 
 """
 
-from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
@@ -648,10 +648,10 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
-from . import orthogonal
-from .orthogonal import *
+from . import _orthogonal
+from ._orthogonal import *
 
-from .spfun_stats import multigammaln
+from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -665,10 +665,9 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
     'log_softmax',
