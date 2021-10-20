@@ -225,6 +225,13 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {
+        if (arr_shape[i] <= 1) {
+            // Under NumPy's relaxed stride checking, dimensions with
+            // 1 or fewer elements are ignored.
+            desc.strides[i] = 0;
+            continue;
+        }
+
         if (desc.strides[i] % desc.element_size != 0) {
             throw std::runtime_error("Arrays must be aligned");
         }
