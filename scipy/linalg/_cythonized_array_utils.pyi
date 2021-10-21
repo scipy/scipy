@@ -1,7 +1,7 @@
 from numpy.typing import NDArray
 from typing import Any, Tuple
 
-def get_array_bandwidth(a: NDArray[Any]) -> Tuple[int, int]: ...
+def bandwidth(a: NDArray[Any]) -> Tuple[int, int]: ...
 
 def issymmetric(
     a: NDArray[Any],
