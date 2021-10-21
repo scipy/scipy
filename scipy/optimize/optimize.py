@@ -2668,9 +2668,9 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     success = nit < maxiter and not (np.isnan(fval) or np.isnan(xmin))
 
     if success:
-        message = "\nOptimization terminated successfully;\n" \
-                  "The returned value satisfies the termination criteria\n" \
-                  f"(using xtol = {xtol} )"
+        message = ("\nOptimization terminated successfully;\n" 
+                   "The returned value satisfies the termination criteria\n" 
+                   f"(using xtol = {xtol} )")
     else:
         if nit >= maxiter:
             message = "\nMaximum number of iterations exceeded"
