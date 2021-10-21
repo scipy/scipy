@@ -396,8 +396,8 @@ class multivariate_normal_gen(multi_rv_generic):
         cov = np.asarray(cov, dtype=float)
 
         if dim == 1:
-            mean.shape = (1,)
-            cov.shape = (1, 1)
+            mean = mean.reshape(1)
+            cov = cov.reshape(1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
             raise ValueError("Array 'mean' must be a vector of length %d." %
@@ -4125,8 +4125,8 @@ class multivariate_t_gen(multi_rv_generic):
             dim = loc.size
 
         if dim == 1:
-            loc.shape = (1,)
-            shape.shape = (1, 1)
+            loc = loc.reshape(1)
+            shape = shape.reshape(1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
             raise ValueError("Array 'loc' must be a vector of length %d." %
