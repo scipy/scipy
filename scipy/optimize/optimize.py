@@ -2491,9 +2491,9 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
     success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
 
     if success:
-        message = "\nOptimization terminated successfully;\n" \
-                  "The returned value satisfies the termination criteria\n"\
-                  f"(using xtol = {xtol} )"
+        message = ("\nOptimization terminated successfully;\n" 
+                   "The returned value satisfies the termination criteria\n"
+                   f"(using xtol = {xtol} )")
     else:
         if nit >= maxiter:
             message = "\nMaximum number of iterations exceeded"
