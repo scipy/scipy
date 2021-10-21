@@ -30,10 +30,11 @@ def spdiags(data, diags, m, n, format=None):
     ----------
     data : array_like
         matrix diagonals stored row-wise
-    diags : diagonals to set
-        - k = 0  the main diagonal
-        - k > 0  the k-th upper diagonal
-        - k < 0  the k-th lower diagonal
+    diags : sequence of int or an int
+        Diagonals to set:
+          - k = 0  the main diagonal
+          - k > 0  the kth upper diagonal
+          - k < 0  the kth lower diagonal
     m, n : int
         shape of the result
     format : str, optional
