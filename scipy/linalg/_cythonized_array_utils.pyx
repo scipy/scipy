@@ -22,11 +22,11 @@ ctypedef fused np_complex_numeric_t:
     cnp.complex64_t
     cnp.complex128_t
 
-__all__ = ['get_array_bandwidth', 'issymmetric', 'ishermitian']
+__all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 
 
 @cython.embedsignature(True)
-def get_array_bandwidth(a):
+def bandwidth(a):
     """Return the lower and upper bandwidth of a 2D numeric array.
 
     Parameters
@@ -66,13 +66,13 @@ def get_array_bandwidth(a):
 
     Examples
     --------
-    >>> from scipy.linalg import get_array_bandwidth
+    >>> from scipy.linalg import bandwidth
     >>> A = np.array([[3., 0., 0., 0., 0.],
     ...               [0., 4., 0., 0., 0.],
     ...               [0., 0., 5., 1., 0.],
     ...               [8., 0., 0., 6., 2.],
     ...               [0., 9., 0., 0., 7.]])
-    >>> get_array_bandwidth(A)
+    >>> bandwidth(A)
     (3, 1)
 
     """
@@ -83,17 +83,17 @@ def get_array_bandwidth(a):
         raise ValueError('Input array must be a 2D NumPy array.')
 
     if a.flags['C_CONTIGUOUS']:
-        l, u = get_array_bandwidth_c(a)
+        l, u = bandwidth_c(a)
     elif a.flags['F_CONTIGUOUS']:
-        u, l = get_array_bandwidth_c(a.T)
+        u, l = bandwidth_c(a.T)
     else:
-        l, u = get_array_bandwidth_noncontig(a)
+        l, u = bandwidth_noncontig(a)
 
     return l, u
 
 
 @cython.initializedcheck(False)
-def get_array_bandwidth_c(np_numeric_t[:, ::1]A):
+def bandwidth_c(np_numeric_t[:, ::1]A):
     cdef int l, u
     with nogil:
         l, u = band_check_internal_c(A)
@@ -101,7 +101,7 @@ def get_array_bandwidth_c(np_numeric_t[:, ::1]A):
 
 
 @cython.initializedcheck(False)
-def get_array_bandwidth_noncontig(np_numeric_t[:, :]A):
+def bandwidth_noncontig(np_numeric_t[:, :]A):
     cdef int l, u
     with nogil:
         l, u = band_check_internal_noncontig(A)
