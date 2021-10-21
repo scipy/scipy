@@ -29,14 +29,14 @@ def spdiags(data, diags, m, n, format=None):
     Parameters
     ----------
     data : array_like
-        matrix diagonals stored row-wise
+        Matrix diagonals stored row-wise
     diags : sequence of int or an int
         Diagonals to set:
           - k = 0  the main diagonal
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
     m, n : int
-        shape of the result
+        Shape of the result
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
