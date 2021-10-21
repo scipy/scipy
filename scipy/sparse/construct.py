@@ -32,9 +32,9 @@ def spdiags(data, diags, m, n, format=None):
         Matrix diagonals stored row-wise
     diags : sequence of int or an int
         Diagonals to set:
-          - k = 0  the main diagonal
-          - k > 0  the kth upper diagonal
-          - k < 0  the kth lower diagonal
+        * k = 0  the main diagonal
+        * k > 0  the kth upper diagonal
+        * k < 0  the kth lower diagonal
     m, n : int
         Shape of the result
     format : str, optional
