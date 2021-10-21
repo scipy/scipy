@@ -45,7 +45,7 @@ Basics
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
    subspace_angles - Compute the subspace angles between two matrices
-   get_array_bandwidth - Return the lower and upper bandwidth of an array
+   bandwidth - Return the lower and upper bandwidth of an array
    issymmetric - Check if a square 2D array is symmetric
    ishermitian - Check if a square 2D array is Hermitian
    LinAlgError
