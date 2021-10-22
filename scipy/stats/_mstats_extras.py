@@ -20,7 +20,7 @@ from numpy import float_, int_, ndarray
 import numpy.ma as ma
 from numpy.ma import MaskedArray
 
-from . import mstats_basic as mstats
+from . import _mstats_basic as mstats
 
 from scipy.stats.distributions import norm, beta, t, binom
 

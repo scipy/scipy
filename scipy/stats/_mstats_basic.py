@@ -1,5 +1,5 @@
 """
-An extension of scipy.stats.stats to support masked arrays
+An extension of scipy.stats._stats_py to support masked arrays
 
 """
 # Original author (2007): Pierre GF Gerard-Marchant
@@ -42,7 +42,7 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
-import scipy.stats.stats
+import scipy.stats._stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
@@ -521,7 +521,7 @@ def pearsonr(x, y):
     if df < 0:
         return (masked, masked)
 
-    return scipy.stats.stats.pearsonr(ma.masked_array(x, mask=m).compressed(),
+    return scipy.stats._stats_py.pearsonr(ma.masked_array(x, mask=m).compressed(),
                                       ma.masked_array(y, mask=m).compressed())
 
 
@@ -638,7 +638,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        t, prob = scipy.stats.stats._ttest_finish(dof, t, alternative)
+        t, prob = scipy.stats._stats_py._ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
@@ -846,7 +846,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         var_s /= 18.
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
-        _, prob = scipy.stats.stats._normtest_finish(z, alternative)
+        _, prob = scipy.stats._stats_py._normtest_finish(z, alternative)
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
@@ -1207,7 +1207,7 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
 
-    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
     return Ttest_1sampResult(t, prob)
 
 
@@ -1291,7 +1291,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
 
-    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
     return Ttest_indResult(t, prob)
 
 
@@ -1352,7 +1352,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
     return Ttest_relResult(t, prob)
 
 
@@ -1509,7 +1509,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_1samp(
+    return scipy.stats._stats_py.ks_1samp(
         x, cdf, args=args, alternative=alternative, mode=mode)
 
 
@@ -1544,11 +1544,11 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
 
     """
     # Ideally this would be accomplished by
-    # ks_2samp = scipy.stats.stats.ks_2samp
-    # but the circular dependencies between mstats_basic and stats prevent that.
+    # ks_2samp = scipy.stats._stats_py.ks_2samp
+    # but the circular dependencies between _mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative,
+    return scipy.stats._stats_py.ks_2samp(data1, data2, alternative=alternative,
                                       mode=mode)
 
 
@@ -1572,7 +1572,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     tuple of (K-S statistic, probability)
 
     """
-    return scipy.stats.stats.kstest(data1, data2, args,
+    return scipy.stats._stats_py.kstest(data1, data2, args,
                                     alternative=alternative, mode=mode)
 
 
@@ -2351,7 +2351,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = scipy.stats.stats._contains_nan(a, nan_policy)
+    contains_nan, nan_policy = scipy.stats._stats_py._contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2784,7 +2784,7 @@ def skewtest(a, axis=0, alternative='two-sided'):
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
 
-    return SkewtestResult(*scipy.stats.stats._normtest_finish(Z, alternative))
+    return SkewtestResult(*scipy.stats._stats_py._normtest_finish(Z, alternative))
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -2857,7 +2857,7 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
     return KurtosistestResult(
-        *scipy.stats.stats._normtest_finish(Z, alternative)
+        *scipy.stats._stats_py._normtest_finish(Z, alternative)
     )
 
 

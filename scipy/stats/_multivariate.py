@@ -13,7 +13,7 @@ from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import mvn
+from . import _mvn
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -545,7 +545,7 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         lower = np.full(mean.shape, -np.inf)
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
+        func1d = lambda x_slice: _mvn.mvnun(lower, x_slice, mean, cov,
                                            maxpts, abseps, releps)[0]
         out = np.apply_along_axis(func1d, -1, x)
         return _squeeze_output(out)

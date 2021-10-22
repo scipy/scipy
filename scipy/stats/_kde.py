@@ -31,7 +31,7 @@ from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
 import numpy as np
 
 # Local imports.
-from . import mvn
+from . import _mvn
 from ._stats import gaussian_kernel_estimate
 
 
@@ -367,11 +367,11 @@ class gaussian_kde:
         else:
             extra_kwds = {}
 
-        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds,
+        value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
                                            self.dataset, self.weights,
                                            self.covariance, **extra_kwds)
         if inform:
-            msg = ('An integral in mvn.mvnun requires more points than %s' %
+            msg = ('An integral in _mvn.mvnun requires more points than %s' %
                    (self.d * 1000))
             warnings.warn(msg)
 

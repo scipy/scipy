@@ -11,9 +11,9 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 
 from scipy import optimize
 from scipy import special
-from . import statlib
-from . import stats
-from .stats import find_repeats, _contains_nan, _normtest_finish
+from . import _statlib
+from . import _stats_py
+from ._stats_py import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -398,7 +398,7 @@ def _calc_uniform_order_statistic_medians(n):
     and greatest order statistics, and the remaining medians are approximated
     by points spread evenly across a sub-interval of the unit interval:
 
-    >>> from scipy.morestats import _calc_uniform_order_statistic_medians
+    >>> from scipy.stats import _calc_uniform_order_statistic_medians
     >>> _calc_uniform_order_statistic_medians(n)
     array([0.15910358, 0.38545246, 0.61454754, 0.84089642])
 
@@ -602,7 +602,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = _stats_py.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo')
@@ -708,7 +708,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     #  correlation
     def tempfunc(shape, mi, yvals, func):
         xvals = func(mi, shape)
-        r, prob = stats.pearsonr(xvals, yvals)
+        r, prob = _stats_py.pearsonr(xvals, yvals)
         return 1 - r
 
     return optimize.brent(tempfunc, brack=brack,
@@ -1213,7 +1213,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             # correlation.
             y = boxcox(samps, lmbda)
             yvals = np.sort(y)
-            r, prob = stats.pearsonr(xvals, yvals)
+            r, prob = _stats_py.pearsonr(xvals, yvals)
             return 1 - r
 
         return _optimizer(_eval_pearsonr, args=(xvals, x))
@@ -1753,7 +1753,7 @@ def shapiro(x):
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
+    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
         warnings.warn("Input data for shapiro has range zero. The results "
                       "may not be accurate.")
@@ -2175,7 +2175,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = statlib.gscale(n, m)
+            astart, a1, _ = _statlib.gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
@@ -2329,7 +2329,7 @@ def ansari(x, y, alternative='two-sided'):
 
     N = m + n
     xy = r_[x, y]  # combine
-    rank = stats.rankdata(xy)
+    rank = _stats_py.rankdata(xy)
     symrank = amin(array((rank, N - rank + 1)), 0)
     AB = np.sum(symrank[:n], axis=0)
     uxy = unique(xy)
@@ -2570,7 +2570,7 @@ def levene(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(stats.trimboth(np.sort(arg), proportiontocut)
+        args = tuple(_stats_py.trimboth(np.sort(arg), proportiontocut)
                      for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
@@ -2819,7 +2819,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
+        args = tuple(_stats_py.trimboth(arg, proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
     Ni = asarray([len(args[j]) for j in range(k)])
@@ -2833,7 +2833,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
         allZij.extend(list(Zij[i]))
         g.append(len(allZij))
 
-    ranks = stats.rankdata(allZij)
+    ranks = _stats_py.rankdata(allZij)
     a = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
@@ -2958,7 +2958,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     # performance consider vectorizing rankdata function.
     all_ranks = np.empty_like(xy)
     for j in range(xy.shape[1]):
-        all_ranks[:, j] = stats.rankdata(xy[:, j])
+        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
 
     Ri = all_ranks[:n]
     M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
@@ -3158,7 +3158,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if count < 10 and mode == "approx":
         warnings.warn("Sample size too small for normal approximation.")
 
-    r = stats.rankdata(abs(d))
+    r = _stats_py.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r)
     r_minus = np.sum((d < 0) * r)
 

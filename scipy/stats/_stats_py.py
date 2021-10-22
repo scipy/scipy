@@ -41,7 +41,7 @@ from scipy._lib._util import (check_random_state, MapWrapper,
 import scipy.special as special
 from scipy import linalg
 from . import distributions
-from . import mstats_basic
+from . import _mstats_basic as mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
