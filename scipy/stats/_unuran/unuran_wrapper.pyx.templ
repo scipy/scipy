@@ -1925,15 +1925,12 @@ cdef class DiscreteGuideTable(Method):
         Size of the guide table relative to length of PV. Larger guide tables
         result in faster generation time but require a more expensive setup.
         Sizes larger than 3 are not recommended. If the relative size is set to
-        0, sequential search is used. However, this is not recommended, except
-        in exceptional cases, since method DSS has almost no setup and is thus
-        faster (but requires the sum over the PV as input parameter). Default
-        is 1.
+        0, sequential search is used. Default is 1.
     variant: int, optional
         variant for setup step. Possible values are 1 or 2. Variant 2 is faster
         but more sensitive to roundoff errors when the guide table is large.
         Variant 2 should be used for short probability vectors (N<1000) and
-        variant 1 otherwise. Default is 2.
+        variant 1 otherwise.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -1967,8 +1964,7 @@ cdef class DiscreteGuideTable(Method):
     2, when the guide table has the same size as the probability vector
     (this is the default). For larger guide tables this number becomes smaller
     (but is always larger than 1), for smaller tables it becomes larger. For the
-    limit case of table size 1 the algorithm simply does sequential search
-    (but uses a more expensive setup then method DSS.
+    limit case of table size 1 the algorithm simply does sequential search.
 
     On the other hand the setup time for guide table is O(N), where N denotes
     the length of the probability vector (for size 1 no preprocessing is
@@ -2074,7 +2070,7 @@ cdef class DiscreteGuideTable(Method):
     ...         color='r', label='samples')
     >>> ax.set_xlabel('x')
     >>> ax.set_ylabel('PMF(x)')
-    >>> ax.set_title('Discrete Alias Urn Samples')
+    >>> ax.set_title('Discrete Guide Table Samples')
     >>> plt.legend()
     >>> plt.show()
 
@@ -2082,7 +2078,7 @@ cdef class DiscreteGuideTable(Method):
     faster, but, more sensitive to round off errors when the guide table is
     large. Use the `variant` keyword argument to set the variant used.
 
-    >>> rng = DiscreteGuideTable(pv, variant=1, random_state=urng)
+    >>> rng = DiscreteGuideTable(pv, variant=2, random_state=urng)
 
     To set the size of the guide table use the `guide_factor` keyword argument.
     This sets the size of the guide table relative to the probability vector

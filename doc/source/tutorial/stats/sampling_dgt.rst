@@ -24,9 +24,7 @@ search, however, uses a guide table to jump to some I' <= I near I to find
 X in constant time. Indeed the expected number of comparisons is reduced to
 2, when the guide table has the same size as the probability vector
 (this is the default). For larger guide tables this number becomes smaller
-(but is always larger than 1), for smaller tables it becomes larger. For the
-limit case of table size 1 the algorithm simply does sequential search
-(but uses a more expensive setup then method DSS.
+(but is always larger than 1), for smaller tables it becomes larger.
 
 On the other hand the setup time for guide table is O(N), where N denotes
 the length of the probability vector (for size 1 no preprocessing is
@@ -35,7 +33,7 @@ reduce the speed of the algorithm. So we do not recommend to use guide
 tables that are more than three times larger than the given probability
 vector. If only a few random numbers have to be generated, (much) smaller
 table sizes are better. The size of the guide table relative to the length
-of the given probability vector can be set by the guide_factor parameter.
+of the given probability vector can be set by the guide_factor parameter:
 
     >>> import numpy as np
     >>> from scipy.stats import DiscreteGuideTable
@@ -49,7 +47,7 @@ of the given probability vector can be set by the guide_factor parameter.
 By default, the probability vector is indexed starting at 0. However, this
 can be changed by passing a ``domain`` parameter. When ``domain`` is given
 in combination with the PV, it has the effect of relocating the
-distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
+distribution from ``(0, len(pv))`` to ``(domain[0], domain[0] + len(pv))``.
 ``domain[1]`` is ignored in this case.
 
     >>> rng = DiscreteGuideTable(pv, random_state=urng, domain=(10, 13))
@@ -67,7 +65,7 @@ method in the distribution object:
     ...     def pmf(self, x):
     ...             return x ** self.c
     ...     def support(self):
-    ...             return0, 10
+    ...             return 0, 10
     ...
     >>> dist = Distribution(2)
     >>> rng = DiscreteGuideTable(dist, random_state=urng)
@@ -104,14 +102,14 @@ time but require a more expensive setup.
 The setup can be controlled using the ``variant`` parameter. There are two
 options corresponding to 1 or 2. Variant 2 is faster but more sensitive to
 roundoff errors when the guide table is large. Variant 2 should be used for
-short probability vectors (N<1000) and variant 1 otherwise. Default is 2.
+short probability vectors (N<1000) and variant 1 otherwise.
 
     >>> variant = 2
     >>> rng = DiscreteGuideTable(pv, random_state=urng, variant=variant)
     >>> rng.rvs()
     2
 
-Please see [1]_ for more details on this method.
+Please see [1]_ and [2]_ for more details on this method.
 
 References
 ----------
@@ -120,4 +118,5 @@ References
        "DGT - (Discrete) Guide Table method (indexed search)"
        https://statmath.wu.ac.at/unuran/doc/unuran.html#DGT
 
-
+.. [2] H.C. Chen and Y. Asau (1974). On generating random variates from an
+       empirical distribution, AIIE Trans. 6, pp. 163-166.
