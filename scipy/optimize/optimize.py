@@ -2491,7 +2491,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
     success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
 
     if success:
-        message = ("\nOptimization terminated successfully;\n" 
+        message = ("\nOptimization terminated successfully;\n"
                    "The returned value satisfies the termination criteria\n"
                    f"(using xtol = {xtol} )")
     else:
@@ -2668,8 +2668,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     success = nit < maxiter and not (np.isnan(fval) or np.isnan(xmin))
 
     if success:
-        message = ("\nOptimization terminated successfully;\n" 
-                   "The returned value satisfies the termination criteria\n" 
+        message = ("\nOptimization terminated successfully;\n"
+                   "The returned value satisfies the termination criteria\n"
                    f"(using xtol = {xtol} )")
     else:
         if nit >= maxiter:
