@@ -110,6 +110,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     ndofs = A.shape[0]
     if maxiter is None:
         maxiter = min(10000, ndofs * 10)
+
+    # "loops" is twice as "maxiter"
+    loops = maxiter * 2
+
     if x0 is None:
         x0 = x.copy()
 
@@ -132,7 +136,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     else:
         atol = max(atol, tol * r0norm)
 
-    for iter in range(maxiter):
+    for iter in range(loops):
         even = iter % 2 == 0
         if (even):
             vtrstar = np.inner(rstar.conjugate(), v)
@@ -152,11 +156,13 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         z = M.matvec(d)
         x += eta * z
 
-        if callback is not None:
+        if (callback is not None) and (not even):
             callback(x)
 
         # Convergence criterion
         if tau * np.sqrt(iter+2.) < atol:
+            if (callback is not None) and (even):
+                callback(x)
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
                       f"iterations {(iter+1+even)//2}")
@@ -177,5 +183,5 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
-              f"iterations {(maxiter+even)//2}")
-    return (postprocess(x), (maxiter+even)//2)
+              f"iterations {maxiter}")
+    return (postprocess(x), maxiter)
