@@ -99,16 +99,6 @@ time but require a more expensive setup.
     >>> rng.rvs()
     2
 
-The setup can be controlled using the ``variant`` parameter. There are two
-options corresponding to 1 or 2. Variant 2 is faster but more sensitive to
-roundoff errors when the guide table is large. Variant 2 should be used for
-short probability vectors (N<1000) and variant 1 otherwise.
-
-    >>> variant = 2
-    >>> rng = DiscreteGuideTable(pv, random_state=urng, variant=variant)
-    >>> rng.rvs()
-    2
-
 Please see [1]_ and [2]_ for more details on this method.
 
 References
