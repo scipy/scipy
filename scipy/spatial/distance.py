@@ -295,6 +295,16 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 
 def _validate_vector(u, dtype=None):
+
+    if dtype is None:
+        # Preserves float dtypes, but convert everything else to np.float64
+        # for stability only when the dtype is not a subtype of inexact
+        # or the dtype is not string.
+        if not (hasattr(u, "dtype") and
+                (np.issubdtype(u.dtype, np.inexact)
+                 or (u.dtype.kind == 'S'))):
+            dtype = np.float64
+
     # XXX Is order='c' really necessary?
     u = np.asarray(u, dtype=dtype, order='c')
     if u.ndim == 1:
@@ -564,16 +574,8 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    # Preserve float dtypes, but convert everything else to np.float64
-    # for stability.
-    utype, vtype = None, None
-    if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
-        utype = np.float64
-    if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
-        vtype = np.float64
-
-    u = _validate_vector(u, dtype=utype)
-    v = _validate_vector(v, dtype=vtype)
+    u = _validate_vector(u)
+    v = _validate_vector(v)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:

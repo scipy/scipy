@@ -2185,3 +2185,28 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+
+
+def test_dtype_distance_consistency():
+    rnd = np.random.RandomState(1234)
+    vi = np.eye(100)
+    vo = np.ones(100)
+
+    for dtype in [np.int8, np.int16, np.int32, np.int64]:
+        a = rnd.randint(100, size=100, dtype=dtype)
+        b = rnd.randint(100, size=100, dtype=dtype)
+
+        for metric in [cosine, euclidean, correlation, braycurtis, canberra,
+                       chebyshev, cityblock, jensenshannon, minkowski,
+                       sqeuclidean, mahalanobis, seuclidean]:
+            if metric == mahalanobis:
+                assert_almost_equal(metric(a, b, vi),
+                                    metric(a.astype(float), b.astype(float),
+                                           vi))
+            elif metric == seuclidean:
+                assert_almost_equal(metric(a, b, vo),
+                                    metric(a.astype(float), b.astype(float),
+                                           vo))
+            else:
+                assert_almost_equal(metric(a, b),
+                                    metric(a.astype(float), b.astype(float)))
