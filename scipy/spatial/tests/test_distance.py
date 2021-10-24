@@ -2231,4 +2231,3 @@ def test_dtype_list_distance_consistency():
             assert_almost_equal(metric(ai, bi, vo), metric(af, bf, vo))
         else:
             assert_almost_equal(metric(ai, bi), metric(af, bf))
-
