@@ -52,6 +52,8 @@ jobs:
             pip install -r doc_requirements.txt
             pip install nose mpmath argparse Pillow asv pythran
             pip install pybind11
+            # temporary pin for gh-14911
+            pip install pyparsing==2.4.7
 
       - run:
           name: build SciPy
