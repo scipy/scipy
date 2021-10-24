@@ -300,9 +300,8 @@ def _validate_vector(u, dtype=None):
         # Preserves float dtypes, but convert everything else to np.float64
         # for stability only when the dtype is not a subtype of inexact
         # or the dtype is not string.
-        if not (hasattr(u, "dtype") and
-                (np.issubdtype(u.dtype, np.inexact)
-                 or (np.issubdtype(u.dtype, np.character)))):
+        if not (np.issubdtype(u.dtype, np.inexact)
+                or (np.issubdtype(u.dtype, np.character))):
             dtype = np.float64
 
     # XXX Is order='c' really necessary?
