@@ -118,9 +118,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
-    >>> A.todense()
-    matrix([[1, 0],
-            [0, 1]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0],
+           [0, 1]], dtype=int64)
     >>> B = np.array([np.exp(-1.), np.exp(-2.)])
     >>> B
     array([ 0.36787944,  0.13533528])

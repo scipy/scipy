@@ -247,8 +247,8 @@ def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected):  # allow different types of sparse matrices
         assert_(SP.issparse(actual))
-        assert_array_almost_equal(actual.todense(),
-                                  expected.todense(),
+        assert_array_almost_equal(actual.toarray(),
+                                  expected.toarray(),
                                   err_msg=label,
                                   decimal=5)
         return
@@ -382,8 +382,8 @@ def test_gzip_simple():
     finally:
         shutil.rmtree(tmpdir)
 
-    assert_array_almost_equal(actual['x'].todense(),
-                              expected['x'].todense(),
+    assert_array_almost_equal(actual['x'].toarray(),
+                              expected['x'].toarray(),
                               err_msg=repr(actual))
 
 
@@ -989,7 +989,7 @@ def test_sparse_in_struct():
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
-    assert_array_equal(d['a'][0,0]['sparsefield'].todense(), np.eye(4))
+    assert_array_equal(d['a'][0, 0]['sparsefield'].toarray(), np.eye(4))
 
 
 def test_mat_struct_squeeze():
@@ -1167,7 +1167,7 @@ def test_empty_sparse():
     sio.seek(0)
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
-    assert_array_equal(res['x'].todense(), 0)
+    assert_array_equal(res['x'].toarray(), 0)
     # Do empty sparse matrices get written with max nnz 1?
     # See https://github.com/scipy/scipy/issues/4208
     sio.seek(0)
