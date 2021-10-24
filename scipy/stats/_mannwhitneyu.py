@@ -119,7 +119,7 @@ class _MWU:
 
         # these are the same as in _f_rec
         if k < 0 or m < 0 or n < 0 or k > m*n:
-            return [0, (m, n, k), None, None, False]
+            return [0, (m, n, k), None, None, True]
         if k == 0 and m >= 0 and n >= 0:
             return [1, (m, n, k), None, None, True]
         else:

@@ -649,7 +649,6 @@ class TestMannWhitneyU:
             res_rec = mannwhitneyu(a, b, axis=i)
             _mwu_state._use_iter = True
             res_iter = mannwhitneyu(a, b, axis=i)
-            print(f"{res_rec}, {res_iter}")
             assert_allclose(res_rec, res_iter)
 
 
