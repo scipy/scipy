@@ -19,7 +19,7 @@ def sorted_svd(m, k, which='LM'):
     # Compute svd of a dense matrix m, and return singular vectors/values
     # sorted.
     if isspmatrix(m):
-        m = m.todense()
+        m = m.toarray()
     u, s, vh = svd(m)
     if which == 'LM':
         ii = np.argsort(s)[-k:]

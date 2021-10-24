@@ -177,6 +177,7 @@ scipy/linalg/_interpolativemodule.c
 scipy/linalg/_solve_toeplitz.c
 scipy/linalg/_decomp_update.c
 scipy/linalg/_decomp_update.pyx
+scipy/linalg/_cythonized_array_utils.c
 scipy/linalg/_blas_subroutine_wrappers.f
 scipy/linalg/_blas_subroutines.h
 scipy/linalg/_lapack_subroutine_wrappers.f
@@ -269,7 +270,7 @@ scipy/special/cython_special.c
 scipy/special/cython_special.h
 scipy/special/cython_special.pxd
 scipy/special/cython_special.pyx
-scipy/special/specfunmodule.c
+scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f

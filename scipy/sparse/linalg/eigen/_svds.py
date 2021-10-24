@@ -234,7 +234,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> u2, s2, vT2 = svds(A, k=3)
     >>> A2 = u2 @ np.diag(s2) @ vT2
-    >>> np.allclose(A2, A.todense(), atol=1e-3)
+    >>> np.allclose(A2, A.toarray(), atol=1e-3)
     True
 
     With all five singular values/vectors, we can reproduce the original
@@ -242,15 +242,15 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> u3, s3, vT3 = svds(A, k=5)
     >>> A3 = u3 @ np.diag(s3) @ vT3
-    >>> np.allclose(A3, A.todense())
+    >>> np.allclose(A3, A.toarray())
     True
 
     The singular values match the expected singular values, and the singular
     vectors are as expected up to a difference in sign.
 
     >>> (np.allclose(s3, s) and
-    ...  np.allclose(np.abs(u3), np.abs(u.todense())) and
-    ...  np.allclose(np.abs(vT3), np.abs(vT.todense())))
+    ...  np.allclose(np.abs(u3), np.abs(u.toarray())) and
+    ...  np.allclose(np.abs(vT3), np.abs(vT.toarray())))
     True
 
     The singular vectors are also orthogonal.
