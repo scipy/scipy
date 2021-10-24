@@ -668,6 +668,32 @@ class TestMoments:
         y = mstats.skew(self.testcase)
         assert_almost_equal(y,0.0,10)
 
+        # test that skew works on multidimensional masked arrays
+        correct_2d = ma.array(
+            np.array([0.6882870394455785, 0, 0.2665647526856708,
+                      0, -0.05211472114254485]),
+            mask=np.array([False, False, False, True, False], dtype=bool)
+        )
+        assert_array_almost_equal(mstats.skew(self.testcase_2d, 1), correct_2d)
+        for i, row in enumerate(self.testcase_2d):
+            assert_almost_equal(mstats.skew(row), correct_2d[i])
+
+        correct_2d_bias_corrected = ma.array(
+            np.array([1.685952043212545, 0.0, 0.3973712716070531, 0,
+                      -0.09026534484117164]),
+            mask=np.array([False, False, False, True, False], dtype=bool)
+        )
+        assert_array_almost_equal(mstats.skew(self.testcase_2d, 1, bias=False),
+                                  correct_2d_bias_corrected)
+        for i, row in enumerate(self.testcase_2d):
+            assert_almost_equal(mstats.skew(row, bias=False),
+                                correct_2d_bias_corrected[i])
+
+        # Check consistency between stats and mstats implementations
+        assert_array_almost_equal_nulp(mstats.skew(self.testcase_2d[2, :]),
+                                       stats.skew(self.testcase_2d[2, :]),
+                                       nulp=4)
+
     def test_kurtosis(self):
         # Set flags for axis = 0 and fisher=0 (Pearson's definition of kurtosis
         # for compatibility with Matlab)
