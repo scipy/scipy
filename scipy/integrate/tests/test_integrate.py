@@ -669,6 +669,22 @@ def test_odeint_trivial_time():
     assert_array_equal(y, np.array([[y0]]))
 
 
+def test_odeint_empty_y0():
+    y0 = []
+    t = [0, 1, 2, 3]
+
+    y = odeint(lambda x, t: -x, y0, t)
+    assert y.shape == (len(t), 0)
+
+    y, info = odeint(lambda x, t: -x, y0, t, full_output=True)
+    assert y.shape == (len(t), 0)
+    assert info['message'] == 'Integration successful.'
+
+    y, info = odeint(lambda x, t: -x, y0, [0], full_output=True)
+    assert y.shape == (1, 0)
+    assert info['message'] == 'Nothing was done; the integration time was 0.'
+
+
 def test_odeint_banded_jacobian():
     # Test the use of the `Dfun`, `ml` and `mu` options of odeint.
 
