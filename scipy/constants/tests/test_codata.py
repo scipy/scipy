@@ -1,6 +1,5 @@
-from scipy.constants import constants, codata, find, value, ConstantWarning
-from numpy.testing import (assert_equal, assert_, assert_almost_equal,
-                           suppress_warnings)
+from scipy.constants import constants, codata, find, value, precision
+from numpy.testing import (assert_equal, assert_, assert_almost_equal)
 
 
 def test_find():
@@ -30,7 +29,8 @@ def test_basic_table_parse():
 
 
 def test_basic_lookup():
-    assert_equal('%d %s' % (codata.c, codata.unit('speed of light in vacuum')),
+    assert_equal('%d %s' % (codata.value('speed of light in vacuum'),
+                            codata.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
 
 
@@ -50,8 +50,8 @@ def test_2002_vs_2006():
 
 def test_exact_values():
     # Check that updating stored values with exact ones worked.
-    with suppress_warnings() as sup:
-        sup.filter(ConstantWarning)
-        for key in codata.exact_values:
-            assert_((codata.exact_values[key][0] - value(key)) / value(key) == 0)
-
+    exact = dict((k, v[0]) for k, v in codata._physical_constants_2018.items())
+    replace = codata.exact2018(exact)
+    for key, val in replace.items():
+        assert_equal(val, value(key))
+        assert_(precision(key) == 0)
