@@ -1966,7 +1966,7 @@ def test_hamming_unequal_length():
     assert_raises(ValueError, whamming, x, y)
 
 
-def test_hamming_string_array():
+def test_hamming_string_array_and_list():
     # https://github.com/scikit-learn/scikit-learn/issues/4014
     a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
                   'spam', 'spam', 'spam', 'spam', 'eggs', 'eggs', 'spam',
@@ -1978,6 +1978,7 @@ def test_hamming_string_array():
                   dtype='|S4')
     desired = 0.45
     assert_allclose(whamming(a, b), desired)
+    assert_allclose(whamming(a.tolist(), b.tolist()), desired)
 
 
 def test_minkowski_w():
@@ -2187,7 +2188,7 @@ def test_jensenshannon():
                         [0.1402339, 0.0399106, 0.0201815])
 
 
-def test_dtype_distance_consistency():
+def test_dtype_array_distance_consistency():
     rnd = np.random.RandomState(1234)
     vi = np.eye(100)
     vo = np.ones(100)
@@ -2210,3 +2211,24 @@ def test_dtype_distance_consistency():
             else:
                 assert_almost_equal(metric(a, b),
                                     metric(a.astype(float), b.astype(float)))
+
+
+def test_dtype_list_distance_consistency():
+    ai = [0, 1, 2]
+    bi = [3, 4, 5]
+    af = [0.0, 1.0, 2.0]
+    bf = [3.0, 4.0, 5.0]
+    vi = np.eye(3)
+    vo = [1.0, 1.0, 1.0]
+
+    for metric in [cosine, euclidean, correlation, braycurtis,
+                   canberra, chebyshev, cityblock, jensenshannon,
+                   minkowski, sqeuclidean, mahalanobis,
+                   seuclidean]:
+        if metric == mahalanobis:
+            assert_almost_equal(metric(ai, bi, vi), metric(af, bf, vi))
+        elif metric == seuclidean:
+            assert_almost_equal(metric(ai, bi, vo), metric(af, bf, vo))
+        else:
+            assert_almost_equal(metric(ai, bi), metric(af, bf))
+
