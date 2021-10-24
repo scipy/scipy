@@ -302,7 +302,7 @@ def _validate_vector(u, dtype=None):
         # or the dtype is not string.
         if not (hasattr(u, "dtype") and
                 (np.issubdtype(u.dtype, np.inexact)
-                 or (u.dtype.kind == 'S'))):
+                 or (np.issubdtype(u.dtype, np.character)))):
             dtype = np.float64
 
     # XXX Is order='c' really necessary?
