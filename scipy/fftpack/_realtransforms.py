@@ -5,7 +5,7 @@ Real spectrum transforms (DCT, DST, MDCT)
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 from scipy.fft import _pocketfft
-from .helper import _good_shape
+from ._helper import _good_shape
 
 _inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}
 

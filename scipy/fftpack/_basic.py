@@ -1,12 +1,12 @@
 """
-Discrete Fourier Transforms - basic.py
+Discrete Fourier Transforms - _basic.py
 """
 # Created by Pearu Peterson, August,September 2002
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
 from scipy.fft import _pocketfft
-from .helper import _good_shape
+from ._helper import _good_shape
 
 
 def fft(x, n=None, axis=-1, overwrite_x=False):

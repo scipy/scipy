@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal, assert_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.fftpack.realtransforms import (
+from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data

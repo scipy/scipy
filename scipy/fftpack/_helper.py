@@ -83,7 +83,7 @@ def next_fast_len(target):
     Zero-padding to the next 5-smooth length reduces computation time to
     211 us, a speedup of 630 times:
 
-    >>> fftpack.helper.next_fast_len(min_len)
+    >>> fftpack.next_fast_len(min_len)
     10125
     >>> b = fftpack.fft(a, 10125)
 
