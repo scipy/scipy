@@ -3,10 +3,13 @@
 # included below.
 
 import warnings
-from . import _kde
+from . import _statlib  # type: ignore
 
 
-__all__ = ['gaussian_kde']  # noqa: F822
+__all__ = [  # noqa: F822
+    'swilk',
+    'gscale'
+]
 
 
 def __dir__():
@@ -16,11 +19,11 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            "scipy.stats.kde is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.stats instead.")
+            "scipy.stats.statlib is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.special instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.stats` namespace, "
-                  "the `scipy.stats.kde` namespace is deprecated.",
+                  "the `scipy.stats.statlib` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_kde, name)
+    return getattr(_statlib, name)

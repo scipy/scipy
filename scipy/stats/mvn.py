@@ -3,10 +3,14 @@
 # included below.
 
 import warnings
-from . import _kde
+from . import _mvn  # type: ignore
 
 
-__all__ = ['gaussian_kde']  # noqa: F822
+__all__ = [  # noqa: F822
+    'mvnun',
+    'mvnun_weighted',
+    'mvndst'
+]
 
 
 def __dir__():
@@ -16,11 +20,11 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            "scipy.stats.kde is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.stats instead.")
+            "scipy.stats.mvn is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.special instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.stats` namespace, "
-                  "the `scipy.stats.kde` namespace is deprecated.",
+                  "the `scipy.stats.mvn` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_kde, name)
+    return getattr(_mvn, name)

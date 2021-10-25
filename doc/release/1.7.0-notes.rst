@@ -2,8 +2,6 @@
 SciPy 1.7.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.7.0 is not released yet!
-
 .. contents::
 
 SciPy 1.7.0 is the culmination of 6 months of hard work. It contains
@@ -33,7 +31,7 @@ Highlights of this release
   improvements for long-standing weaknesses in `scipy.stats`
 - `scipy.stats` has six new distributions, eight new (or overhauled)
   hypothesis tests, a new function for bootstrapping, a class that enables
-  fast random variate sampling and percentile point function evaluation, 
+  fast random variate sampling and percentile point function evaluation,
   and many other enhancements.
 - ``cdist`` and ``pdist`` distance calculations are faster for several metrics,
   especially weighted cases, thanks to a rewrite to a new C++ backend framework
