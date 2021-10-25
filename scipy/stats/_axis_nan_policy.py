@@ -6,7 +6,7 @@
 
 import numpy as np
 import scipy.stats
-import scipy.stats.stats
+import scipy.stats._stats_py
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
 import inspect
@@ -246,7 +246,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 contains_nans = []
                 for sample in samples:
                     contains_nan, _ = (
-                        scipy.stats.stats._contains_nan(sample, nan_policy))
+                        scipy.stats._stats_py._contains_nan(sample, nan_policy))
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy == "propagate"
@@ -287,7 +287,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             # Addresses nan_policy == "raise"
             contains_nan, _ = (
-                scipy.stats.stats._contains_nan(x, nan_policy))
+                scipy.stats._stats_py._contains_nan(x, nan_policy))
 
             if vectorized and not contains_nan:
                 return hypotest_fun_in(*samples, axis=axis, **kwds)

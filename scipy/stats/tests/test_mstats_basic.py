@@ -18,7 +18,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-from scipy.stats import mstats_basic
+from scipy.stats import _mstats_basic
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -449,7 +449,7 @@ class TestCorr:
                         (200, 9797): 0.74753983745929675209,
                         (201, 9656): 0.40959218958120363618}
         for nc, expected in expectations.items():
-            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
     @pytest.mark.slow
@@ -464,7 +464,7 @@ class TestCorr:
                         (1601, 630304): 0.34465255088058593946}
 
         for nc, expected in expectations.items():
-            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
     def test_pointbiserial(self):
@@ -1820,9 +1820,9 @@ class TestCompareWithStats:
 
     def test_nametuples_agree(self):
         result = stats.kstest([1, 2], [3, 4])
-        assert_(isinstance(result, stats.stats.KstestResult))
-        result2 = stats.stats.Ks_2sampResult(result.statistic, result.pvalue)
-        assert_(isinstance(result2, stats.stats.Ks_2sampResult))
+        assert_(isinstance(result, stats._stats_py.KstestResult))
+        result2 = stats._stats_py.Ks_2sampResult(result.statistic, result.pvalue)
+        assert_(isinstance(result2, stats._stats_py.Ks_2sampResult))
         assert_equal(result, result2)
 
 
