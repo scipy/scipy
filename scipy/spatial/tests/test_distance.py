@@ -2201,16 +2201,14 @@ def test_dtype_array_distance_consistency():
                        chebyshev, cityblock, jensenshannon, minkowski,
                        sqeuclidean, mahalanobis, seuclidean]:
             if metric == mahalanobis:
-                assert_almost_equal(metric(a, b, vi),
-                                    metric(a.astype(float), b.astype(float),
-                                           vi))
+                assert_allclose(metric(a, b, vi),
+                                metric(a.astype(float), b.astype(float), vi))
             elif metric == seuclidean:
-                assert_almost_equal(metric(a, b, vo),
-                                    metric(a.astype(float), b.astype(float),
-                                           vo))
+                assert_allclose(metric(a, b, vo),
+                                metric(a.astype(float), b.astype(float), vo))
             else:
-                assert_almost_equal(metric(a, b),
-                                    metric(a.astype(float), b.astype(float)))
+                assert_allclose(metric(a, b),
+                                metric(a.astype(float), b.astype(float)))
 
 
 def test_dtype_list_distance_consistency():
@@ -2226,8 +2224,8 @@ def test_dtype_list_distance_consistency():
                    minkowski, sqeuclidean, mahalanobis,
                    seuclidean]:
         if metric == mahalanobis:
-            assert_almost_equal(metric(ai, bi, vi), metric(af, bf, vi))
+            assert_allclose(metric(ai, bi, vi), metric(af, bf, vi))
         elif metric == seuclidean:
-            assert_almost_equal(metric(ai, bi, vo), metric(af, bf, vo))
+            assert_allclose(metric(ai, bi, vo), metric(af, bf, vo))
         else:
-            assert_almost_equal(metric(ai, bi), metric(af, bf))
+            assert_allclose(metric(ai, bi), metric(af, bf))
