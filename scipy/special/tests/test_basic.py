@@ -1845,6 +1845,13 @@ class TestFresnel:
         frs = array(special.fresnel(.5))
         assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
 
+    def test_fresnels_negative_half_annulus(self):
+        # https://github.com/scipy/scipy/issues/12309
+        frs = array(special.fresnel(-2.0 + 0.1j))
+        assert_array_almost_equal(frs,array([-0.3109538687728942-0.0005870728836383176j]),8)
+        frs = array(special.fresnel(-0.1 - 1.5j))
+        assert_array_almost_equal(frs,array([-0.03918309471866977+0.7197508454568574j]),8)
+
     def test_fresnel_inf1(self):
         frs = special.fresnel(np.inf)
         assert_equal(frs, (0.5, 0.5))
