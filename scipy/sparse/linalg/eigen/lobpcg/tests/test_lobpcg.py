@@ -93,18 +93,8 @@ def test_regression():
 def test_diagonal():
     """Check for diagonal matrices.
     """
-    # This test was moved from '__main__' in lobpcg.py.
-    # Coincidentally or not, this is the same eigensystem
-    # required to reproduce arpack bug
-    # https://forge.scilab.org/p/arpack-ng/issues/1397/
-    # even using the same n=100.
-
     rnd = np.random.RandomState(0)
-
-    # The system of interest is of size n x n.
     n = 100
-
-    # We care about only m eigenpairs.
     m = 4
 
     # Define the generalized eigenvalue problem Av = cBv
