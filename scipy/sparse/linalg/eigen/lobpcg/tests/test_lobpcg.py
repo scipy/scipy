@@ -59,14 +59,12 @@ def compare_solutions(A, B, m):
     w.sort()
     assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
 
-
+@pytest.mark.filterwarnings("ignore:The problem size")
 def test_Small():
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*The problem size.*")
-        A, B = ElasticRod(10)
-        compare_solutions(A, B, 10)
-        A, B = MikotaPair(10)
-        compare_solutions(A, B, 10)
+    A, B = ElasticRod(10)
+    compare_solutions(A, B, 10)
+    A, B = MikotaPair(10)
+    compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
