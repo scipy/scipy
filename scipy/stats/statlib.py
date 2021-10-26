@@ -20,7 +20,7 @@ def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
             "scipy.stats.statlib is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.special instead.")
+            f"{name}. Try looking in scipy.stats instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.stats` namespace, "
                   "the `scipy.stats.statlib` namespace is deprecated.",
