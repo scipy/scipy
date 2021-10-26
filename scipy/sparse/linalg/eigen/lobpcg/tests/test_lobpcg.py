@@ -50,8 +50,8 @@ def compare_solutions(A, B, m):
     """Check eig vs. lobpcg consistency.
     """
     n = A.shape[0]
-    np.random.seed(0)
-    V = rand(n, m)
+    rnd = np.random.RandomState(0)
+    V = rnd.rand(n, m)
     X = orth(V)
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
@@ -101,7 +101,7 @@ def test_diagonal():
     # https://forge.scilab.org/p/arpack-ng/issues/1397/
     # even using the same n=100.
 
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
 
     # The system of interest is of size n x n.
     n = 100
@@ -121,7 +121,7 @@ def test_diagonal():
     M = diags([1./vals], [0], (n, n))
 
     # Pick random initial vectors.
-    X = np.random.rand(n, m)
+    X = rnd.rand(n, m)
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -146,7 +146,6 @@ def _check_fiedler(n, p):
     """Check the Fiedler vector computation.
     """
     # This is not necessarily the recommended way to find the Fiedler vector.
-    np.random.seed(1234)
     col = np.zeros(n)
     col[1] = 1
     A = toeplitz(col)
@@ -211,10 +210,10 @@ def test_fiedler_large_12():
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
-    np.random.seed(1234)
-    X = np.random.randn(100, 10)
+    rnd = np.random.RandomState(0)
+    X = rnd.randn(100, 10)
     A = X @ X.T
-    Q = np.random.randn(X.shape[0], 4)
+    Q = rnd.randn(X.shape[0], 4)
     with suppress_warnings() as sup:
         sup.filter(UserWarning, ".*Failed at iteration.*")
         sup.filter(UserWarning, ".*Exited at iteration.*")
@@ -225,7 +224,7 @@ def test_failure_to_run_iterations():
 def test_hermitian():
     """Check complex-value Hermitian cases.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
 
     sizes = [3, 10, 50]
     ks = [1, 3, 10, 50]
@@ -237,17 +236,17 @@ def test_hermitian():
             if k > s:
                 continue
 
-            H = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
+            H = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
             H = 10 * np.eye(s) + H + H.T.conj()
 
-            X = np.random.rand(s, k)
+            X = rnd.rand(s, k)
 
             if not gen:
                 B = np.eye(s)
                 w, v = lobpcg(H, X, maxiter=5000)
                 w0, _ = eigh(H)
             else:
-                B = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
+                B = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
                 B = 10 * np.eye(s) + B.dot(B.T.conj())
                 w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
                 w0, _ = eigh(H, B)
@@ -272,8 +271,8 @@ def test_eigs_consistency(n, atol):
         sup.filter(UserWarning, ".*The problem size.*")
         vals = np.arange(1, n+1, dtype=np.float64)
         A = spdiags(vals, 0, n, n)
-        np.random.seed(345678)
-        X = np.random.rand(n, 2)
+        rnd = np.random.RandomState(0)
+        X = rnd.rand(n, 2)
         lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
         vals, _ = eigs(A, k=2)
 
@@ -284,8 +283,8 @@ def test_eigs_consistency(n, atol):
 def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
-    np.random.seed(1234)
-    X = np.random.randn(10, 10)
+    rnd = np.random.RandomState(0)
+    X = rnd.randn(10, 10)
     A = X @ X.T
     Q = np.random.randn(X.shape[0], 1)
     with suppress_warnings() as sup:
@@ -299,13 +298,13 @@ def test_verbosity(tmpdir):
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 3
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.randn(n, m)
+    X = rnd.randn(n, m)
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
@@ -314,13 +313,13 @@ def test_tolerance_float32():
 def test_random_initial_float32():
     """Check lobpcg in float32 for specific initial.
     """
-    np.random.seed(3)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.rand(n, m)
+    X = rnd.rand(n, m)
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
@@ -331,13 +330,13 @@ def test_maxit_None():
     by checking the size of the iteration history output, which should
     be the number of iterations plus 2 (initial and final values).
     """
-    np.random.seed(1566950023)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.randn(n, m)
+    X = rnd.randn(n, m)
     X = X.astype(np.float32)
     with suppress_warnings() as sup:
         sup.filter(UserWarning, ".*Exited at iteration.*")
@@ -349,7 +348,7 @@ def test_maxit_None():
 def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
     n = 40
     m = 4
     # Define the generalized eigenvalue problem Av = cBv
@@ -405,7 +404,7 @@ def test_diagonal_data_types():
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
-        Xf64 = np.random.rand(n, m)
+        Xf64 = rnd.rand(n, m)
         Xf32 = Xf64.astype(np.float32)
         listX = [Xf64, Xf32]
 
