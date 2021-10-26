@@ -296,10 +296,11 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 def _validate_vector(u, dtype=None):
 
-    if dtype is None and type(u) is np.ndarray:
+    if dtype is None:
         # Preserves float dtypes, but convert everything else to np.float64
         # for stability only when the dtype is not a subtype of inexact
         # or the dtype is not string.
+        u = np.asarray(u)
         if not (np.issubdtype(u.dtype, np.inexact)
                 or (np.issubdtype(u.dtype, np.character))):
             dtype = np.float64

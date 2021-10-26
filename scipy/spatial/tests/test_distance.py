@@ -2193,9 +2193,14 @@ def test_dtype_array_distance_consistency():
     vi = np.eye(100)
     vo = np.ones(100)
 
+    class C(np.ndarray):
+        pass
+
     for dtype in [np.int8, np.int16, np.int32, np.int64]:
         a = rnd.randint(100, size=100, dtype=dtype)
         b = rnd.randint(100, size=100, dtype=dtype)
+        c_arr_a = a.view(C)
+        c_arr_b = b.view(C)
 
         for metric in [cosine, euclidean, correlation, braycurtis, canberra,
                        chebyshev, cityblock, jensenshannon, minkowski,
@@ -2203,12 +2208,34 @@ def test_dtype_array_distance_consistency():
             if metric == mahalanobis:
                 assert_allclose(metric(a, b, vi),
                                 metric(a.astype(float), b.astype(float), vi))
+                assert_allclose(metric(a, b, vi),
+                                metric(c_arr_a, c_arr_b, vi))
+                assert_allclose(metric(a, b, vi),
+                                metric(c_arr_a.tolist(), c_arr_b.tolist(),
+                                       vi))
+                assert(isinstance(metric(a, b, vi),
+                                  type(metric(c_arr_a.tolist(),
+                                              c_arr_b.tolist(), vi))))
             elif metric == seuclidean:
                 assert_allclose(metric(a, b, vo),
                                 metric(a.astype(float), b.astype(float), vo))
+                assert_allclose(metric(a, b, vo), metric(c_arr_a, c_arr_b,
+                                                         vo))
+                assert_allclose(metric(a, b, vo),
+                                metric(c_arr_a.tolist(), c_arr_b.tolist(),
+                                       vo))
+                assert(isinstance(metric(a, b, vo),
+                                  type(metric(c_arr_a.tolist(),
+                                              c_arr_b.tolist(), vo))))
             else:
                 assert_allclose(metric(a, b),
                                 metric(a.astype(float), b.astype(float)))
+                assert_allclose(metric(a, b), metric(c_arr_a, c_arr_b))
+                assert_allclose(metric(a, b),
+                                metric(c_arr_a.tolist(), c_arr_b.tolist()))
+                assert(isinstance(metric(a, b),
+                                  type(metric(c_arr_a.tolist(),
+                                              c_arr_b.tolist()))))
 
 
 def test_dtype_list_distance_consistency():
