@@ -59,6 +59,7 @@ def compare_solutions(A, B, m):
     w.sort()
     assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
 
+
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_Small():
     A, B = ElasticRod(10)
@@ -67,11 +68,10 @@ def test_Small():
     compare_solutions(A, B, 10)
 
 
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
 def test_ElasticRod():
     A, B = ElasticRod(20)
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*Exited at iteration.*")
-        compare_solutions(A, B, 2)
+    compare_solutions(A, B, 2)
 
 
 def test_MikotaPair():
@@ -189,13 +189,12 @@ def _check_fiedler(n, p):
     assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
 
 
+@pytest.mark.filterwarnings("ignore:The problem size")
 def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
     # This triggers the dense path because 8 < 2*5.
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*The problem size.*")
-        _check_fiedler(8, 2)
+    _check_fiedler(8, 2)
 
 
 def test_fiedler_large_12():
@@ -205,6 +204,7 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
@@ -212,13 +212,11 @@ def test_failure_to_run_iterations():
     X = rnd.randn(100, 10)
     A = X @ X.T
     Q = rnd.randn(X.shape[0], 4)
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*Failed at iteration.*")
-        sup.filter(UserWarning, ".*Exited at iteration.*")
-        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
-        assert(np.max(eigenvalues) > 0)
+    eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    assert(np.max(eigenvalues) > 0)
 
 
+@pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.
     """
@@ -228,56 +226,54 @@ def test_hermitian():
     ks = [1, 3, 10, 50]
     gens = [True, False]
 
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*The problem size.*")
-        for s, k, gen in itertools.product(sizes, ks, gens):
-            if k > s:
-                continue
+    for s, k, gen in itertools.product(sizes, ks, gens):
+        if k > s:
+            continue
 
-            H = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
-            H = 10 * np.eye(s) + H + H.T.conj()
+        H = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
+        H = 10 * np.eye(s) + H + H.T.conj()
 
-            X = rnd.rand(s, k)
+        X = rnd.rand(s, k)
 
-            if not gen:
-                B = np.eye(s)
-                w, v = lobpcg(H, X, maxiter=5000)
-                w0, _ = eigh(H)
-            else:
-                B = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
-                B = 10 * np.eye(s) + B.dot(B.T.conj())
-                w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
-                w0, _ = eigh(H, B)
+        if not gen:
+            B = np.eye(s)
+            w, v = lobpcg(H, X, maxiter=5000)
+            w0, _ = eigh(H)
+        else:
+            B = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
+            B = 10 * np.eye(s) + B.dot(B.T.conj())
+            w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
+            w0, _ = eigh(H, B)
 
-            for wx, vx in zip(w, v.T):
-                # Check eigenvector
-                assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
-                                / np.linalg.norm(H.dot(vx)),
-                                0, atol=5e-4, rtol=0)
+        for wx, vx in zip(w, v.T):
+            # Check eigenvector
+            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
+                            / np.linalg.norm(H.dot(vx)),
+                            0, atol=5e-4, rtol=0)
 
-                # Compare eigenvalues
-                j = np.argmin(abs(w0 - wx))
-                assert_allclose(wx, w0[j], rtol=1e-4)
+            # Compare eigenvalues
+            j = np.argmin(abs(w0 - wx))
+            assert_allclose(wx, w0[j], rtol=1e-4)
 
 
 # The n=5 case tests the alternative small matrix code path that uses eigh().
+@pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
 def test_eigs_consistency(n, atol):
     """Check eigs vs. lobpcg consistency.
     """
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*The problem size.*")
-        vals = np.arange(1, n+1, dtype=np.float64)
-        A = spdiags(vals, 0, n, n)
-        rnd = np.random.RandomState(0)
-        X = rnd.rand(n, 2)
-        lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-        vals, _ = eigs(A, k=2)
+    vals = np.arange(1, n+1, dtype=np.float64)
+    A = spdiags(vals, 0, n, n)
+    rnd = np.random.RandomState(0)
+    X = rnd.rand(n, 2)
+    lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
+    vals, _ = eigs(A, k=2)
 
-        _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
-        assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
+    _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
+    assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
 def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
@@ -285,10 +281,8 @@ def test_verbosity(tmpdir):
     X = rnd.randn(10, 10)
     A = X @ X.T
     Q = np.random.randn(X.shape[0], 1)
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*Exited at iteration.*")
-        _, _ = lobpcg(A, Q, tol=1e-5, maxiter=3, largest=False,
-                      verbosityLevel=9)
+    _, _ = lobpcg(A, Q, tol=1e-5, maxiter=3, largest=False,
+                  verbosityLevel=9)
 
 
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
@@ -323,6 +317,7 @@ def test_random_initial_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
 def test_maxit_None():
     """Check lobpcg if maxit=None runs 10 iterations (the default)
     by checking the size of the iteration history output, which should
@@ -336,10 +331,8 @@ def test_maxit_None():
     A = A.astype(np.float32)
     X = rnd.randn(n, m)
     X = X.astype(np.float32)
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning, ".*Exited at iteration.*")
-        _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
-        assert_allclose(np.shape(l_h)[0], 10+2)
+    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 10+2)
 
 
 @pytest.mark.slow
