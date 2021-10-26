@@ -129,7 +129,7 @@ C
               IF (K.NE.INT(K/2)*2) S=S+CF
               CF1=CF0
 15            CF0=CF
-           S=SQRT(2.0D0/(PI*ZP))*SIN(ZP)/CF*S
+           S=2.0D0/PI/Z*SIN(ZP)/CF*S
         ELSE
            CR=(1.0D0,0.0D0)
            CF=(1.0D0,0.0D0)
