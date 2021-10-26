@@ -2196,7 +2196,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
                                      1: 'Maximum number of function calls '
                                         'reached.',
                                      2: _status_message['nan']}.get(flag, ''),
-                            x=xf, nfev=num)
+                            x=xf, nfev=num, nit=num)
 
     return result
 
@@ -2490,19 +2490,21 @@ def _minimize_scalar_brent(func, brack=None, args=(), xtol=1.48e-8,
 
     success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
 
-    # for 'disp' purposes
-    if success and disp > 1:
-        print("\nOptimization terminated successfully;\n"
-              "The returned value satisfies the termination criteria\n"
-              "(using xtol = ", xtol, ")")
-    elif not success and disp:
+    if success:
+        message = ("\nOptimization terminated successfully;\n"
+                   "The returned value satisfies the termination criteria\n"
+                   f"(using xtol = {xtol} )")
+    else:
         if nit >= maxiter:
-            print("\nMaximum number of iterations exceeded")
+            message = "\nMaximum number of iterations exceeded"
         if np.isnan(x) or np.isnan(fval):
-            print("\n{}".format(_status_message['nan']))
+            message = f"{_status_message['nan']}"
+
+    if disp:
+        print(message)
 
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
-                          success=success)
+                          success=success, message=message)
 
 
 def golden(func, args=(), brack=None, tol=_epsilon,
@@ -2665,19 +2667,21 @@ def _minimize_scalar_golden(func, brack=None, args=(),
 
     success = nit < maxiter and not (np.isnan(fval) or np.isnan(xmin))
 
-    # for 'disp' purposes
-    if success and disp > 1:
-        print("\nOptimization terminated successfully;\n"
-              "The returned value satisfies the termination criteria\n"
-              "(using xtol = ", xtol, ")")
-    elif not success and disp:
+    if success:
+        message = ("\nOptimization terminated successfully;\n"
+                   "The returned value satisfies the termination criteria\n"
+                   f"(using xtol = {xtol} )")
+    else:
         if nit >= maxiter:
-            print("\nMaximum number of iterations exceeded")
+            message = "\nMaximum number of iterations exceeded"
         if np.isnan(xmin) or np.isnan(fval):
-            print("\n{}".format(_status_message['nan']))
+            message = f"{_status_message['nan']}"
+
+    if disp:
+        print(message)
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
-                          success=success)
+                          success=success, message=message)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
