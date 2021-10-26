@@ -2561,6 +2561,7 @@ def skew(a, axis=0, bias=True):
         n = a.count(axis)
         can_correct = ~zero & (n > 2)
         if can_correct.any():
+            n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
             nval = ma.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
