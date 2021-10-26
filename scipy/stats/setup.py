@@ -56,7 +56,7 @@ def configuration(parent_package='', top_path=None):
         config.ext_modules.append(ext)
 
     # add BiasedUrn module
-    config.add_data_files('biasedurn.pxd')
+    config.add_data_files('_biasedurn.pxd')
     from _generate_pyx import isNPY_OLD  # type: ignore[import]
     NPY_OLD = isNPY_OLD()
 
@@ -70,9 +70,9 @@ def configuration(parent_package='', top_path=None):
         biasedurn_libdirs += get_info('npymath')['library_dirs']
 
     ext = config.add_extension(
-        'biasedurn',
+        '_biasedurn',
         sources=[
-            'biasedurn.cxx',
+            '_biasedurn.cxx',
             'biasedurn/impls.cpp',
             'biasedurn/fnchyppr.cpp',
             'biasedurn/wnchyppr.cpp',
