@@ -51,7 +51,7 @@ def compare_solutions(A, B, m):
     """
     n = A.shape[0]
     rnd = np.random.RandomState(0)
-    V = rnd.rand(n, m)
+    V = rnd.random((n, m))
     X = orth(V)
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
@@ -109,7 +109,7 @@ def test_diagonal():
     M = diags([1./vals], [0], (n, n))
 
     # Pick random initial vectors.
-    X = rnd.rand(n, m)
+    X = rnd.random((n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -199,9 +199,9 @@ def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
     rnd = np.random.RandomState(0)
-    X = rnd.randn(100, 10)
+    X = rnd.standard_normal((100, 10))
     A = X @ X.T
-    Q = rnd.randn(X.shape[0], 4)
+    Q = rnd.standard_normal((X.shape[0], 4))
     eigenvalues, _ = lobpcg(A, Q, maxiter=20)
     assert(np.max(eigenvalues) > 0)
 
@@ -220,17 +220,17 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
+        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.rand(s, k)
+        X = rnd.random((s, k))
 
         if not gen:
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.rand(s, s) + 1.j * rnd.rand(s, s)
+            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
@@ -255,7 +255,7 @@ def test_eigs_consistency(n, atol):
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     rnd = np.random.RandomState(0)
-    X = rnd.rand(n, 2)
+    X = rnd.random((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, _ = eigs(A, k=2)
 
@@ -268,9 +268,9 @@ def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
     rnd = np.random.RandomState(0)
-    X = rnd.randn(10, 10)
+    X = rnd.standard_normal((10, 10))
     A = X @ X.T
-    Q = np.random.randn(X.shape[0], 1)
+    Q = rnd.standard_normal((X.shape[0], 1))
     _, _ = lobpcg(A, Q, tol=1e-5, maxiter=3, largest=False,
                   verbosityLevel=9)
 
@@ -286,7 +286,7 @@ def test_tolerance_float32():
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.randn(n, m)
+    X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
@@ -301,7 +301,7 @@ def test_random_initial_float32():
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.rand(n, m)
+    X = rnd.random((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
@@ -319,7 +319,7 @@ def test_maxit_None():
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.randn(n, m)
+    X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
     _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
     assert_allclose(np.shape(l_h)[0], 10+2)
@@ -385,7 +385,7 @@ def test_diagonal_data_types():
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
-        Xf64 = rnd.rand(n, m)
+        Xf64 = rnd.random((n, m))
         Xf32 = Xf64.astype(np.float32)
         listX = [Xf64, Xf32]
 
