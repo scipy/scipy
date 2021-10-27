@@ -22,5 +22,4 @@ def __getattr__(name):
                   "and will be removed in SciPy v2.0.0.",
                   category=DeprecationWarning, stacklevel=2)
 
-
     return getattr(_lsoda, name)
