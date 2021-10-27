@@ -238,7 +238,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         ndim = points.shape[-1]
 
     if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
-        from .interpolate import interp1d
+        from ._interpolate import interp1d
         points = points.ravel()
         if isinstance(xi, tuple):
             if len(xi) != 1:
