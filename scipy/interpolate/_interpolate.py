@@ -12,12 +12,12 @@ import scipy.special as spec
 from scipy.special import comb
 from scipy._lib._util import prod
 
-from . import fitpack
+from . import _fitpack_py
 from . import dfitpack
 from . import _fitpack
-from .polyint import _Interpolator1D
+from ._polyint import _Interpolator1D
 from . import _ppoly
-from .fitpack2 import RectBivariateSpline
+from ._fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -238,7 +238,7 @@ class interp2d:
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
-            self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky, s=0.0)
+            self.tck = _fitpack_py.bisplrep(x, y, z, kx=kx, ky=ky, s=0.0)
         else:
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(
                 x, y, z, None, None, None, None,
@@ -300,7 +300,7 @@ class interp2d:
                              % ((self.x_min, self.x_max),
                                 (self.y_min, self.y_max)))
 
-        z = fitpack.bisplev(x, y, self.tck, dx, dy)
+        z = _fitpack_py.bisplev(x, y, self.tck, dx, dy)
         z = atleast_2d(z)
         z = transpose(z)
 
@@ -1324,7 +1324,7 @@ class PPoly(_PPolyBase):
 
         cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
         for m in range(k, -1, -1):
-            y = fitpack.splev(t[:-1], tck, der=m)
+            y = _fitpack_py.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
         return cls.construct_fast(cvals, t, extrapolate)
