@@ -12,7 +12,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     """
     Use MINimum RESidual iteration to solve Ax=b
 
-    MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
+    MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
 
     If shift != 0 then the method solves (A - shift*I)x = b
@@ -279,7 +279,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
-        # factorization of the lower Hessenberg matrix,  Q * H = R,
+        # factorization of the lower Hessenberg matrix,  Q @ H = R,
         # where H is the tridiagonal matrix from Lanczos with one
         # extra row, beta(k+1) e_k^T.
 
