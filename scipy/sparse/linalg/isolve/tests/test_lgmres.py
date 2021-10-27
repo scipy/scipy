@@ -29,7 +29,7 @@ count = [0]
 
 def matvec(v):
     count[0] += 1
-    return Am*v
+    return Am@v
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
@@ -42,7 +42,7 @@ def do_solve(**kw):
         x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
                           inner_m=6, tol=1e-14, **kw)
     count_0 = count[0]
-    assert_(allclose(A*x0, b, rtol=1e-12, atol=1e-12), norm(A*x0-b))
+    assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))
     return x0, count_0
 
 
