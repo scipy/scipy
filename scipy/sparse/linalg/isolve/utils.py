@@ -41,7 +41,7 @@ def make_system(A, M, x0, b):
         sparse or dense matrix (or any valid input to aslinearoperator)
     x0 : {array_like, str, None}
         initial guess to iterative method.
-        ``x0 = 'Mb'`` means using the nonzero initial guess ``M * b``.
+        ``x0 = 'Mb'`` means using the nonzero initial guess ``M @ b``.
         Default is `None`, which means using the zero initial guess.
     b : array_like
         right hand side
@@ -117,7 +117,7 @@ def make_system(A, M, x0, b):
     if x0 is None:
         x = zeros(N, dtype=xtype)
     elif isinstance(x0, str):
-        if x0 == 'Mb':  # use nonzero initial guess ``M * b``
+        if x0 == 'Mb':  # use nonzero initial guess ``M @ b``
             bCopy = b.copy()
             x = M.matvec(bCopy)
     else:
