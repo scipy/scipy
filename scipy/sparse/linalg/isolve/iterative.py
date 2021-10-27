@@ -506,7 +506,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     ``M = P^-1``. The inverse should preferably not be calculated
     explicitly.  Rather, use the following template to produce M::
 
-      # Construct a linear operator that computes P^-1 * x.
+      # Construct a linear operator that computes P^-1 @ x.
       import scipy.sparse.linalg as spla
       M_x = lambda x: spla.spsolve(P, x)
       M = spla.LinearOperator((n, n), M_x)
@@ -706,7 +706,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
         Left preconditioner for A.
     M2 : {sparse matrix, ndarray, LinearOperator}
         Right preconditioner for A. Used together with the left
-        preconditioner M1.  The matrix M1*A*M2 should have better
+        preconditioner M1.  The matrix M1@A@M2 should have better
         conditioned than A alone.
     callback : function
         User-supplied function to call after each iteration.  It is called
