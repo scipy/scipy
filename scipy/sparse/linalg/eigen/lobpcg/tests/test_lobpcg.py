@@ -61,7 +61,6 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
-# it will match the string (or part of it) with any warning which is raised during calls within the block
     with pytest.warns(UserWarning, match="The problem size"):
         A, B = ElasticRod(10)
         compare_solutions(A, B, 10)
