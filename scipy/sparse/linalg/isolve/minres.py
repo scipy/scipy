@@ -127,7 +127,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    r1 = b - A*x
+    r1 = b - A@x
     y = psolve(r1)
 
     beta1 = inner(r1, y)
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     residuals = []
 
     def cb(x):
-        residuals.append(norm(b - A*x))
+        residuals.append(norm(b - A@x))
 
     # A = poisson((10,),format='csr')
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
