@@ -106,13 +106,13 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     ::
 
-      1. Unsymmetric equations --    solve  A*x = b
+      1. Unsymmetric equations --    solve  Ax = b
 
-      2. Linear least squares  --    solve  A*x = b
+      2. Linear least squares  --    solve  Ax = b
                                      in the least-squares sense
 
-      3. Damped least squares  --    solve  (   A    )*x = ( b )
-                                            ( damp*I )     ( 0 )
+      3. Damped least squares  --    solve  (   A    )x = ( b )
+                                            ( damp*I )    ( 0 )
                                      in the least-squares sense
 
     Parameters
@@ -183,7 +183,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     acond : float
         Estimate of ``cond(Abar)``.
     arnorm : float
-        Estimate of ``norm(A'*r - damp^2*x)``.
+        Estimate of ``norm(A'@r - damp^2*x)``.
     xnorm : float
         ``norm(x)``
     var : ndarray of float
@@ -223,27 +223,27 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     If some initial estimate ``x0`` is known and if ``damp == 0``,
     one could proceed as follows:
 
-      1. Compute a residual vector ``r0 = b - A*x0``.
-      2. Use LSQR to solve the system  ``A*dx = r0``.
+      1. Compute a residual vector ``r0 = b - A@x0``.
+      2. Use LSQR to solve the system  ``A@dx = r0``.
       3. Add the correction dx to obtain a final solution ``x = x0 + dx``.
 
     This requires that ``x0`` be available before and after the call
     to LSQR.  To judge the benefits, suppose LSQR takes k1 iterations
-    to solve A*x = b and k2 iterations to solve A*dx = r0.
+    to solve A@x = b and k2 iterations to solve A@dx = r0.
     If x0 is "good", norm(r0) will be smaller than norm(b).
     If the same stopping tolerances atol and btol are used for each
     system, k1 and k2 will be similar, but the final solution x0 + dx
     should be more accurate.  The only way to reduce the total work
     is to use a larger stopping tolerance for the second system.
-    If some value btol is suitable for A*x = b, the larger value
-    btol*norm(b)/norm(r0)  should be suitable for A*dx = r0.
+    If some value btol is suitable for A@x = b, the larger value
+    btol*norm(b)/norm(r0)  should be suitable for A@dx = r0.
 
     Preconditioning is another way to reduce the number of iterations.
-    If it is possible to solve a related system ``M*x = b``
+    If it is possible to solve a related system ``M@x = b``
     efficiently, where M approximates A in some helpful way (e.g. M -
     A has low rank or its elements are small relative to those of A),
-    LSQR may converge more rapidly on the system ``A*M(inverse)*z =
-    b``, after which x can be recovered by solving M*x = z.
+    LSQR may converge more rapidly on the system ``A@M(inverse)@z =
+    b``, after which x can be recovered by solving M@x = z.
 
     If A is symmetric, LSQR should not be used!
 
@@ -366,7 +366,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     sn2 = 0
 
     # Set up the first vectors u and v for the bidiagonalization.
-    # These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
+    # These satisfy  beta*u = b - A@x,  alfa*v = A'@u.
     u = b
     bnorm = np.linalg.norm(b)
 
@@ -422,8 +422,8 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         itn = itn + 1
         # Perform the next step of the bidiagonalization to obtain the
         # next  beta, u, alfa, v. These satisfy the relations
-        #     beta*u  =  a*v   -  alfa*u,
-        #     alfa*v  =  A'*u  -  beta*v.
+        #     beta*u  =  a@v   -  alfa*u,
+        #     alfa*v  =  A'@u  -  beta*v.
         u = A.matvec(v) - alfa * u
         beta = np.linalg.norm(u)
 
