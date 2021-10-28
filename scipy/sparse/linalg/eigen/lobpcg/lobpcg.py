@@ -345,7 +345,7 @@ def lobpcg(
             f"The problem size {n} minus the constraints size {sizeY} "
             f"is too small relative to the block size {sizeX}. "
             f"Using a dense eigensolver instead of LOBPCG.",
-            UserWarning, stacklevel=3
+            UserWarning, stacklevel=4
         )
 
         sizeX = min(sizeX, n)
@@ -519,7 +519,7 @@ def lobpcg(
                 f"Failed at iteration {iterationNumber} with accuracies "
                 f"{residualNorms}\n not reaching the requested "
                 f"tolerance {residualTolerance}.",
-                UserWarning, stacklevel=3
+                UserWarning, stacklevel=4
             )
             break
         activeBlockVectorAR = A(activeBlockVectorR)
@@ -742,7 +742,7 @@ def lobpcg(
             f"Exited at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n"
             f"not reaching the requested tolerance {residualTolerance}.",
-            UserWarning, stacklevel=3
+            UserWarning, stacklevel=4
         )
 
     # Future work: Need to add Postprocessing here:
