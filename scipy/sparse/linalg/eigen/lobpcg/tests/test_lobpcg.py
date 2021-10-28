@@ -61,17 +61,14 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
-    with pytest.warns(UserWarning, match="The problem size"):
-        A, B = ElasticRod(10)
-        compare_solutions(A, B, 10)
-    with pytest.warns(UserWarning, match="The problem size"):
-        A, B = MikotaPair(10)
+    A, B = ElasticRod(10)
+    compare_solutions(A, B, 10)
+    A, B = MikotaPair(10)
     compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
-    with pytest.warns(UserWarning, match="Exited at iteration"):
-        A, B = ElasticRod(20)
+    A, B = ElasticRod(20)
     compare_solutions(A, B, 2)
 
 
@@ -202,9 +199,8 @@ def test_failure_to_run_iterations():
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
-    with pytest.warns(UserWarning, match="The problem size"):
-        with pytest.warns(UserWarning, match="Exited at iteration"):
-            eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
     assert(np.max(eigenvalues) > 0)
 
 
@@ -237,7 +233,7 @@ def test_hermitian():
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
-        for wx, vx in zip(w, v.T):
+      for wx, vx in zip(w, v.T):
             # Check eigenvector
             assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
                             / np.linalg.norm(H.dot(vx)),
@@ -249,6 +245,7 @@ def test_hermitian():
 
 
 # The n=5 case tests the alternative small matrix code path that uses eigh().
+@pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
 def test_eigs_consistency(n, atol):
     """Check eigs vs. lobpcg consistency.
@@ -257,8 +254,7 @@ def test_eigs_consistency(n, atol):
     A = spdiags(vals, 0, n, n)
     rnd = np.random.RandomState(0)
     X = rnd.random((n, 2))
-    with pytest.warns(UserWarning, match="The problem size"):
-        lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
+    lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, _ = eigs(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
