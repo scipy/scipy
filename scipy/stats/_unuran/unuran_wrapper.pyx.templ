@@ -21,7 +21,7 @@ import functools
 from collections import namedtuple
 import numpy as np
 import scipy.stats as stats
-from scipy.stats._distn_infrastructure import argsreduce, rv_frozen, rv_generic
+from scipy.stats._distn_infrastructure import argsreduce, rv_frozen
 from scipy._lib._util import check_random_state
 import warnings
 
@@ -249,9 +249,6 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
         are not found.
     """
     cdef dict callbacks = {}
-    if isinstance(dist, rv_generic):
-        # create a frozen distribution
-        dist = dist()
     if isinstance(dist, rv_frozen):
         if isinstance(dist.dist, stats.rv_continuous):
             class wrap_dist:
@@ -267,11 +264,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                 def cdf(self, x):
                     x = np.asarray((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
-                    if res > 1:
-                        return 1
-                    elif res < 0:
-                        return 0
-                    return res
+                    return np.clip(res, 0, 1)
         elif isinstance(dist.dist, stats.rv_discrete):
             class wrap_dist:
                 def __init__(self, dist):
@@ -286,11 +279,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                 def cdf(self, x):
                     x = np.asarray(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
-                    if res > 1:
-                        return 1
-                    elif res < 0:
-                        return 0
-                    return res
+                    return np.clip(res, 0, 1)
         dist = wrap_dist(dist)
     for meth in meths:
         if hasattr(dist, meth):
@@ -1453,7 +1442,7 @@ cdef class NumericalInversePolynomial(Method):
 
 cdef class NumericalInverseHermite(Method):
     """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-10, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
 
     Hermite interpolation based INVersion of CDF (HINV).
 
@@ -1507,11 +1496,11 @@ cdef class NumericalInverseHermite(Method):
         and is therefore not recommended. If the maximal error in u-direction is very small
         (say smaller than 1.e-10), order 5 is recommended as it leads to considerably fewer
         design points, as long there are no poles or heavy tails.
-    u_resolution : float, default: ``1e-10``
+    u_resolution : float, default: ``1e-12``
         Set maximal tolerated u-error. Notice that the resolution of most uniform random
         number sources is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion
         algorithm that could be called exact. For most simulations slightly bigger values
-        for the maximal error are enough as well. Default is 1e-10.
+        for the maximal error are enough as well. Default is 1e-12.
     construction_points : array_like, optional
         Set starting construction points (nodes) for Hermite interpolation. As the possible
         maximal error is only estimated in the setup it may be necessary to set some
@@ -1653,7 +1642,7 @@ cdef class NumericalInverseHermite(Method):
     >>> rng3 = NumericalInverseHermite(dist, order=3)
     >>> rng5 = NumericalInverseHermite(dist, order=5)
     >>> rng3.intervals, rng5.intervals
-    (1022, 242)
+    (3000, 522)
 
     The u-error can be estimated by calling the `u_error` method. It runs a small
     Monte-Carlo simulation to estimate the u-error. By default, 100,000 samples are
@@ -1709,7 +1698,7 @@ cdef class NumericalInverseHermite(Method):
                   *,
                   domain=None,
                   order=3,
-                  u_resolution=1e-10,
+                  u_resolution=1e-12,
                   tol=None,
                   construction_points=None,
                   max_intervals=100000,
