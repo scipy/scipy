@@ -264,7 +264,11 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                 def cdf(self, x):
                     x = np.asarray((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
-                    return np.clip(res, 0, 1)
+                    if res < 0:
+                        return 0
+                    elif res > 1:
+                        return 1
+                    return res
         elif isinstance(dist.dist, stats.rv_discrete):
             class wrap_dist:
                 def __init__(self, dist):
@@ -279,7 +283,11 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                 def cdf(self, x):
                     x = np.asarray(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
-                    return np.clip(res, 0, 1)
+                    if res < 0:
+                        return 0
+                    elif res > 1:
+                        return 1
+                    return res
         dist = wrap_dist(dist)
     for meth in meths:
         if hasattr(dist, meth):
