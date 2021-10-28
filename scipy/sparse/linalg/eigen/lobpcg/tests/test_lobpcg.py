@@ -218,22 +218,22 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+        H = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.random((s, k))
+        X = np.random.rand(s, k)
 
         if not gen:
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+            B = np.random.rand(s, s) + 1.j * np.random.rand(s, s)
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
-      for wx, vx in zip(w, v.T):
+        for wx, vx in zip(w, v.T):
             # Check eigenvector
             assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
                             / np.linalg.norm(H.dot(vx)),
