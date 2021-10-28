@@ -65,7 +65,7 @@ def test_Small():
         compare_solutions(A, B, 10)
     A, B = MikotaPair(10)
     with pytest.warns(UserWarning, match="The problem size"):
-            compare_solutions(A, B, 10)
+        compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
