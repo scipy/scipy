@@ -304,8 +304,9 @@ def test_random_initial_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
-def test_maxit_None():
-    """Check lobpcg if maxit=None runs 10 iterations (the default)
+def test_maxit():
+    """Check lobpcg if maxit=10 runs 10 iterations
+    if maxit=None runs 20 iterations (the default)
     by checking the size of the iteration history output, which should
     be the number of iterations plus 2 (initial and final values).
     """
@@ -320,7 +321,9 @@ def test_maxit_None():
     with pytest.warns(UserWarning, match="Exited at iteration"):
         _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
     assert_allclose(np.shape(l_h)[0], 10+2)
-
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 20+2)
 
 @pytest.mark.slow
 def test_diagonal_data_types():
