@@ -60,7 +60,7 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
-    A, B = ElasticRod(10)    
+    A, B = ElasticRod(10)
     with pytest.warns(UserWarning, match="The problem size"):
         compare_solutions(A, B, 10)
     A, B = MikotaPair(10)
