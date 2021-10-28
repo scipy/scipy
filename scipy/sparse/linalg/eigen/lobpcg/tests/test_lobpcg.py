@@ -11,7 +11,6 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 import pytest
 
 from numpy import ones, r_, diag
-from numpy.random import rand
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye
 from scipy.sparse.linalg import eigs, LinearOperator
@@ -61,14 +60,17 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
-    A, B = ElasticRod(10)
+    with pytest.warns(UserWarning, match="The problem size"):
+        A, B = ElasticRod(10)
     compare_solutions(A, B, 10)
-    A, B = MikotaPair(10)
+    with pytest.warns(UserWarning, match="The problem size"):
+        A, B = MikotaPair(10)
     compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
-    A, B = ElasticRod(20)
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        A, B = ElasticRod(20)
     compare_solutions(A, B, 2)
 
 
@@ -218,17 +220,17 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.random(s, s) + 1.j * rnd.random(s, s)
+        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.random.rand(s, k)
+        X = rnd.random.rand((s, k))
 
         if not gen:
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.random(s, s) + 1.j * rnd.random(s, s)
+            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
