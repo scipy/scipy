@@ -218,7 +218,7 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.random.rand(s, s) + 1.j * rnd.random.rand(s, s)
+        H = rnd.random(s, s) + 1.j * rnd.random(s, s)
         H = 10 * np.eye(s) + H + H.T.conj()
 
         X = rnd.random.rand(s, k)
@@ -228,7 +228,7 @@ def test_hermitian():
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.random.rand(s, s) + 1.j * rnd.random.rand(s, s)
+            B = rnd.random(s, s) + 1.j * rnd.random(s, s)
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
