@@ -2458,6 +2458,20 @@ class TestZmapZscore:
         z = stats.zscore(x)
         assert_equal(z, x)
 
+    def test_gzscore_normal_array(self):
+        z = stats.gzscore([1, 2, 3, 4])
+        desired = ([-1.526072095151, -0.194700599824, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
+    def test_gzscore_masked_array(self):
+        x = np.array([1, 2, -1, 3, 4])
+        mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
+        z = stats.gzscore(mx)
+        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):
