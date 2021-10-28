@@ -1863,7 +1863,7 @@ class TestFresnel:
             ]), 8)
 
     def test_fresnel_negative_large_values(self):
-        # a different algorithm kicks in for "large" values, i.e., abs(z) >= 4.5
+        # a different algorithm kicks in for "large" values, i.e., |z| >= 4.5
         frs = array(special.fresnel(6.0))
         assert_array_almost_equal(frs, array([0.44696076, 0.49953147]), 8)
 
