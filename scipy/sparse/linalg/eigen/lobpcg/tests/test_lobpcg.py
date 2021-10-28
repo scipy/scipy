@@ -60,18 +60,18 @@ def compare_solutions(A, B, m):
 
 
 def test_Small():
+    A, B = ElasticRod(10)    
     with pytest.warns(UserWarning, match="The problem size"):
-        A, B = ElasticRod(10)
-    compare_solutions(A, B, 10)
+        compare_solutions(A, B, 10)
+    A, B = MikotaPair(10)
     with pytest.warns(UserWarning, match="The problem size"):
-        A, B = MikotaPair(10)
-    compare_solutions(A, B, 10)
+            compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
+    A, B = ElasticRod(20)
     with pytest.warns(UserWarning, match="Exited at iteration"):
-        A, B = ElasticRod(20)
-    compare_solutions(A, B, 2)
+        compare_solutions(A, B, 2)
 
 
 def test_MikotaPair():
@@ -223,7 +223,7 @@ def test_hermitian():
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.random.rand((s, k))
+        X = rnd.random((s, k))
 
         if not gen:
             B = np.eye(s)
