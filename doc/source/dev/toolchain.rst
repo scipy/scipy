@@ -79,6 +79,7 @@ The table shows the NumPy versions suitable for each major Python version
 3.7                  1.16.5                     >= 1.20.x
 3.8                  1.17.3                     >= 1.20.x
 3.9                  1.19.3                     >= 1.20.x
+3.10                 1.21.3                     >= 1.21.x
 =================  ========================    ===========================
 
 
@@ -151,7 +152,7 @@ CPython               MS Visual C++    C Standard
 2.7, 3.0, 3.1, 3.2       9.0           C90
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
-3.7, 3.8, 3.9           15.7           Dependent on MSVC version used to build SciPy
+3.7, 3.8, 3.9, 3.10     15.7           Dependent on MSVC version used to build SciPy
 ===================   ==============   =============================================
 
 
