@@ -273,8 +273,7 @@ def test_verbosity(tmpdir):
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 1))
     with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _ = lobpcg(A, Q, tol=1e-5, maxiter=3, largest=False,
-              verbosityLevel=9)
+        _, _ = lobpcg(A, Q, maxiter=3, verbosityLevel=9)
 
 
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
