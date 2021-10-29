@@ -10,7 +10,7 @@ import pytest
 from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial.ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 
 import itertools
