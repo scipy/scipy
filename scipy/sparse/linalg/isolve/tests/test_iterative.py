@@ -273,7 +273,7 @@ def check_precond_dummy(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol)
     assert_equal(info,0)
-    assert_normclose(A*x, b, tol=tol)
+    assert_normclose(A@x, b, tol=tol)
 
 
 def test_precond_dummy():
@@ -582,7 +582,7 @@ class TestQMR:
             x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info,0)
-        assert_normclose(A*x, b, tol=1e-8)
+        assert_normclose(A@x, b, tol=1e-8)
 
 
 class TestGMRES:
