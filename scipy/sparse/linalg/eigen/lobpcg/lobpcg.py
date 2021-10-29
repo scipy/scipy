@@ -206,7 +206,7 @@ def lobpcg(
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
     ratio ``n / m`` should be large. It you call LOBPCG with ``m=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
-    for extremely large ``n / m`` [4]_.
+    for extremely large ``n / m``.
 
     The convergence speed depends basically on two factors:
 
@@ -233,13 +233,7 @@ def lobpcg(
            (BLOPEX) in hypre and PETSc. :arxiv:`0705.2626`
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
-           https://bitbucket.org/joseroman/blopex
-
-    .. [4] S. Yamada, T. Imamura, T. Kano, and M. Machida (2006),
-           High-performance computing for exact numerical approaches to
-           quantum many-body problems on the earth simulator. In Proceedings
-           of the 2006 ACM/IEEE Conference on Supercomputing.
-           :doi:`10.1145/1188455.1188504`
+           https://github.com/lobpcg/blopex
 
     Examples
     --------
