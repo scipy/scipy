@@ -2845,6 +2845,7 @@ class TestBeta:
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12635(self):
         # Confirm that Boost's beta distribution resolves gh-12635.
         # Check against R:
@@ -2886,7 +2887,6 @@ class TestBeta:
         res = stats.beta.cdf(inv, a, b)
         assert_allclose(res, 1 - alpha_2)
 
-    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_endpoints(self):
         # Confirm that boost's beta distribution returns inf at x=1
         # when b<1
