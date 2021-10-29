@@ -79,6 +79,28 @@ def test_MikotaPair():
     compare_solutions(A, B, 2)
 
 
+@pytest.mark.filterwarnings("ignore:Exited at iteration 0")
+def test_nonhermitian_warning():
+    """Check the warning of a Ritz matrix being not Hermitian
+    by feeding a non-Hermitian input matrix.
+    Also check stdout since verbosityLevel=1 and lack of stderr.
+    """
+    n = 10
+    X = np.arange(n * 2).reshape(n, 2).astype(np.float32)
+    A = np.arange(n * n).reshape(n, n).astype(np.float32)
+    with pytest.warns(UserWarning, match="Matrix gramA"):
+       _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
+    captured = capsys.readouterr()  # Capture output
+    assert f"Solving standard eigenvalue" in captured.out  # Test stdout
+    assert f"" in captured.err  # Test stderr
+    # Make the matrix symmetric and the UserWarning dissappears.
+    A += A.T
+    _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
+    captured = capsys.readouterr()  # Capture output
+    assert f"Solving standard eigenvalue" in captured.out  # Test stdout
+    assert f"" in captured.err  # Test stderr
+
+
 def test_regression():
     """Check the eigenvalue of the identity matrix is one.
     """
