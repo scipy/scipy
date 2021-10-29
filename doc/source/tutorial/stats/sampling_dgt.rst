@@ -1,5 +1,5 @@
 
-.. _sampling-dgt
+.. _sampling-dgt:
 
 Discrete Guide Table (DGT)
 
