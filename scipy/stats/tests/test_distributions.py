@@ -37,6 +37,10 @@ from itertools import product
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
+# Failing on macOS 11, Intel CPUs. See gh-14901
+MACOS_INTEL = (sys.platform == 'darwin') and (platform.machine() == 'x86_64')
+
+
 # distributions to skip while testing the fix for the support method
 # introduced in gh-13294. These distributions are skipped as they
 # always return a non-nan support for every parametrization.
@@ -2851,6 +2855,7 @@ class TestBeta:
         p, a, b = 0.9999999999997369, 75.0, 66334470.0
         assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12794(self):
         # Confirm that Boost's beta distribution resolves gh-12794.
         # Check against R.
@@ -2868,6 +2873,7 @@ class TestBeta:
         res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
         assert_allclose(res, p)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12796(self):
         # Confirm that Boost's beta distribution succeeds in the case
         # of gh-12796
@@ -2879,6 +2885,7 @@ class TestBeta:
         res = stats.beta.cdf(inv, a, b)
         assert_allclose(res, 1 - alpha_2)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_endpoints(self):
         # Confirm that boost's beta distribution returns inf at x=1
         # when b<1
