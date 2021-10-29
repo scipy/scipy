@@ -296,15 +296,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 def _validate_vector(u, dtype=None):
 
-    if dtype is None:
-        # Preserves float dtypes, but convert everything else to np.float64
-        # for stability only when the dtype is not a subtype of inexact
-        # or the dtype is not string.
-        u = np.asarray(u)
-        if not (np.issubdtype(u.dtype, np.inexact)
-                or (np.issubdtype(u.dtype, np.character))):
-            dtype = np.float64
-
     # XXX Is order='c' really necessary?
     u = np.asarray(u, dtype=dtype, order='c')
     if u.ndim == 1:
@@ -320,6 +311,19 @@ def _validate_vector(u, dtype=None):
         DeprecationWarning)
     return u
 
+
+def _validate_real_vector(u, dtype=None):
+
+    if dtype is None:
+        # Preserves float dtypes, but convert everything else to np.float64
+        # for stability only when the dtype is not a subtype of inexact
+        # or the dtype is not string.
+        u = np.asarray(u)
+        if not (np.issubdtype(u.dtype, np.inexact)
+                or (np.issubdtype(u.dtype, np.character))):
+            dtype = np.float64
+
+    return _validate_vector(u, dtype=dtype)
 
 def _validate_weights(w, dtype=np.double):
     w = _validate_vector(w, dtype=dtype)
@@ -478,8 +482,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -574,8 +578,8 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
@@ -617,8 +621,8 @@ def correlation(u, v, w=None, centered=True):
         The correlation distance between 1-D array `u` and `v`.
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     if w is not None:
         w = _validate_weights(w)
     if centered:
@@ -969,9 +973,9 @@ def seuclidean(u, v, V):
     3.1780497164141406
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    V = _validate_vector(V, dtype=np.float64)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
+    V = _validate_real_vector(V, dtype=np.float64)
     if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D array of the same dimension '
                         'as u and v.')
@@ -1015,8 +1019,8 @@ def cityblock(u, v, w=None):
     1
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     l1_diff = abs(u - v)
     if w is not None:
         w = _validate_weights(w)
@@ -1063,8 +1067,8 @@ def mahalanobis(u, v, VI):
     1.7320508075688772
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     VI = np.atleast_2d(VI)
     delta = u - v
     m = np.dot(np.dot(delta, VI), delta)
@@ -1105,8 +1109,8 @@ def chebyshev(u, v, w=None):
     1
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v)
     if w is not None:
         w = _validate_weights(w)
         has_weight = w > 0
@@ -1153,8 +1157,8 @@ def braycurtis(u, v, w=None):
     0.33333333333333331
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v, dtype=np.float64)
     l1_diff = abs(u - v)
     l1_sum = abs(u + v)
     if w is not None:
@@ -1204,8 +1208,8 @@ def canberra(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
+    u = _validate_real_vector(u)
+    v = _validate_real_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
     with np.errstate(invalid='ignore'):
