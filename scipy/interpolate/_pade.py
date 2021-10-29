@@ -3,6 +3,7 @@ from scipy import linalg
 
 __all__ = ["pade"]
 
+
 def pade(an, m, n=None):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.
@@ -55,12 +56,11 @@ def pade(an, m, n=None):
     Akj = eye(N+1, n+1, dtype=an.dtype)
     Bkj = zeros((N+1, m), dtype=an.dtype)
     for row in range(1, m+1):
-        Bkj[row,:row] = -(an[:row])[::-1]
+        Bkj[row, :row] = -(an[:row])[::-1]
     for row in range(m+1, N+1):
-        Bkj[row,:] = -(an[row-m:row])[::-1]
+        Bkj[row, :] = -(an[row-m:row])[::-1]
     C = hstack((Akj, Bkj))
     pq = linalg.solve(C, an)
     p = pq[:n+1]
     q = r_[1.0, pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
-
