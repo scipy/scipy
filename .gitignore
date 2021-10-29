@@ -245,12 +245,12 @@ scipy/sparse/sparsetools/csc_impl.h
 scipy/sparse/sparsetools/csr_impl.h
 scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
-scipy/spatial/ckdtree.cxx
+scipy/spatial/_ckdtree.cxx
 scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
-scipy/spatial/qhull.c
+scipy/spatial/_qhull.c
 scipy/spatial/_voronoi.c
-scipy/spatial/transform/rotation.c
+scipy/spatial/transform/_rotation.c
 scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
