@@ -30,7 +30,7 @@ requires = [
     "numpy==1.16.5; python_version=='3.7' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.2; python_version=='3.10' and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.3; python_version=='3.10' and platform_python_implementation != 'PyPy'",
 
     # First PyPy versions for which there are numpy wheels
     "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
@@ -49,7 +49,7 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.7,<3.10"
+requires-python = ">=3.7,<3.11"
 dependencies = [
     "numpy>=1.16.5,<1.24.0",
 ]

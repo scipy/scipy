@@ -44,6 +44,7 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -550,7 +551,7 @@ def setup_package():
     np_minversion = '1.16.5'
     np_maxversion = '1.23.0'
     python_minversion = '3.7'
-    python_maxversion = '3.10'
+    python_maxversion = '3.11'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
         req_py = '>={},<{}'.format(python_minversion, python_maxversion)
