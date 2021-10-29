@@ -41,7 +41,7 @@ def _report_nonhermitian(M, name):
         warnings.warn(
               f"Matrix {name} of the type {M.dtype} is not Hermitian: "
               f"condition: {nmd} < {tol} fails.",
-              UserWarning, stacklevel=5
+              UserWarning, stacklevel=4
          )
 
 def _as2d(ar):
@@ -345,7 +345,7 @@ def lobpcg(
             f"The problem size {n} minus the constraints size {sizeY} "
             f"is too small relative to the block size {sizeX}. "
             f"Using a dense eigensolver instead of LOBPCG.",
-            UserWarning, stacklevel=4
+            UserWarning, stacklevel=2
         )
 
         sizeX = min(sizeX, n)
@@ -519,7 +519,7 @@ def lobpcg(
                 f"Failed at iteration {iterationNumber} with accuracies "
                 f"{residualNorms}\n not reaching the requested "
                 f"tolerance {residualTolerance}.",
-                UserWarning, stacklevel=4
+                UserWarning, stacklevel=2
             )
             break
         activeBlockVectorAR = A(activeBlockVectorR)
@@ -742,7 +742,7 @@ def lobpcg(
             f"Exited at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n"
             f"not reaching the requested tolerance {residualTolerance}.",
-            UserWarning, stacklevel=4
+            UserWarning, stacklevel=2
         )
 
     # Future work: Need to add Postprocessing here:
