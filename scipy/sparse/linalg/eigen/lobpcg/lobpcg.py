@@ -34,16 +34,15 @@ def _report_nonhermitian(M, name):
     from scipy.linalg import norm
 
     md = M - M.T.conj()
-
     nmd = norm(md, 1)
     tol = 10 * np.finfo(M.dtype).eps
     tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
-        print(
-            "matrix %s of the type %s is not Hermitian:" % (name, M.dtype)
-        )
-        print("condition: %.e < %e" % (nmd, tol))
-
+        warnings.warn(
+              f"Matrix {name} of the type {M.dtype} is not Hermitian: "
+              f"condition: {nmd} < {tol} fails.",
+              UserWarning, stacklevel=4
+         )
 
 def _as2d(ar):
     """
@@ -207,7 +206,7 @@ def lobpcg(
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
     ratio ``n / m`` should be large. It you call LOBPCG with ``m=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
-    for extremely large ``n / m`` [4]_.
+    for extremely large ``n / m``.
 
     The convergence speed depends basically on two factors:
 
@@ -234,13 +233,7 @@ def lobpcg(
            (BLOPEX) in hypre and PETSc. :arxiv:`0705.2626`
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
-           https://bitbucket.org/joseroman/blopex
-
-    .. [4] S. Yamada, T. Imamura, T. Kano, and M. Machida (2006),
-           High-performance computing for exact numerical approaches to
-           quantum many-body problems on the earth simulator. In Proceedings
-           of the 2006 ACM/IEEE Conference on Supercomputing.
-           :doi:`10.1145/1188455.1188504`
+           https://github.com/lobpcg/blopex
 
     Examples
     --------
@@ -287,7 +280,7 @@ def lobpcg(
     The preconditioner function is passed to lobpcg as a `LinearOperator`:
 
     >>> M = LinearOperator(matvec=precond, matmat=precond,
-    ...                    shape=(n, n), dtype=float)
+    ...                    shape=(n, n), dtype=np.float64)
 
     Let us now solve the eigenvalue problem for the matrix A:
 
@@ -342,14 +335,18 @@ def lobpcg(
     M = _makeOperator(M, (n, n))
 
     if (n - sizeY) < (5 * sizeX):
-        # warn('The problem size is small compared to the block size.' \
-        #        ' Using dense eigensolver instead of LOBPCG.')
+        warnings.warn(
+            f"The problem size {n} minus the constraints size {sizeY} "
+            f"is too small relative to the block size {sizeX}. "
+            f"Using a dense eigensolver instead of LOBPCG.",
+            UserWarning, stacklevel=2
+        )
 
         sizeX = min(sizeX, n)
 
         if blockVectorY is not None:
             raise NotImplementedError(
-                "The dense eigensolver " "does not support constraints."
+                "The dense eigensolver does not support constraints."
             )
 
         # Define the closed range of indices of eigenvalues to return.
@@ -389,13 +386,15 @@ def lobpcg(
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
         except LinAlgError as e:
-            raise ValueError("linearly dependent constraints") from e
+            raise ValueError("Linearly dependent constraints") from e
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
     ##
     # B-orthonormalize X.
     blockVectorX, blockVectorBX = _b_orthonormalize(B, blockVectorX)
+    if blockVectorX is None:
+        raise ValueError("Linearly dependent initial approximations")
 
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
@@ -436,7 +435,8 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
         if verbosityLevel > 0:
-            print("iteration %d" % iterationNumber)
+            print("-"*50)
+            print(f"iteration {iterationNumber}")
 
         if B is not None:
             aux = blockVectorBX * _lambda[np.newaxis, :]
@@ -464,9 +464,9 @@ def lobpcg(
             break
 
         if verbosityLevel > 0:
-            print("current block size:", currentBlockSize)
-            print("eigenvalue:", _lambda)
-            print("residual norms:", residualNorms)
+            print(f"current block size: {currentBlockSize}")
+            print(f"eigenvalue(s):\n{_lambda}")
+            print(f"residual norm(s):\n{residualNorms}")
         if verbosityLevel > 10:
             print(eigBlockVector)
 
@@ -510,9 +510,10 @@ def lobpcg(
 
         if activeBlockVectorR is None:
             warnings.warn(
-                f"Iteration {iterationNumber} failed at tolerance "
-                f"{np.max(residualNorms)} not reaching {residualTolerance}.",
-                UserWarning, stacklevel=3
+                f"Failed at iteration {iterationNumber} with accuracies "
+                f"{residualNorms}\n not reaching the requested "
+                f"tolerance {residualTolerance}.",
+                UserWarning, stacklevel=2
             )
             break
         activeBlockVectorAR = A(activeBlockVectorR)
@@ -638,7 +639,7 @@ def lobpcg(
         ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:
             print(ii)
-            print(_lambda)
+            print(f"lambda:\n{_lambda}")
 
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
@@ -646,7 +647,7 @@ def lobpcg(
         lambdaHistory.append(_lambda)
 
         if verbosityLevel > 10:
-            print("lambda:", _lambda)
+            print(f"lambda:\n{_lambda}")
         #         # Normalize eigenvectors!
         #         aux = np.sum( eigBlockVector.conj() * eigBlockVector, 0 )
         #         eigVecNorms = np.sqrt( aux )
@@ -730,14 +731,22 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
+    if np.max(residualNorms) > residualTolerance:
+        warnings.warn(
+            f"Exited at iteration {iterationNumber} with accuracies \n"
+            f"{residualNorms}\n"
+            f"not reaching the requested tolerance {residualTolerance}.",
+            UserWarning, stacklevel=2
+        )
+
     # Future work: Need to add Postprocessing here:
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
-    # Computing the actual true residuals
+    # Keeping the best iterates in case of divergence
 
     if verbosityLevel > 0:
-        print("Final eigenvalue(s):", _lambda)
-        print("Final residual norm(s):", residualNorms)
+        print(f"Final eigenvalue(s):\n{_lambda}")
+        print(f"Final residual norm(s):\n{residualNorms}")
 
     if retLambdaHistory:
         if retResidualNormsHistory:
