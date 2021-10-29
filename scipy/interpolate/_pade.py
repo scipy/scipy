@@ -1,7 +1,9 @@
-from numpy import zeros, asarray, eye, poly1d, hstack, r_
+from numpy import zeros, asarray, eye, polynomial, hstack, r_
 from scipy import linalg
 
 __all__ = ["pade"]
+
+_Polynomial = polynomial.Polynomial
 
 
 def pade(an, m, n=None):
@@ -30,8 +32,7 @@ def pade(an, m, n=None):
     >>> e_exp = [1.0, 1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0]
     >>> p, q = pade(e_exp, 2)
 
-    >>> e_exp.reverse()
-    >>> e_poly = np.poly1d(e_exp)
+    >>> e_poly = np.polynomial.Polynomial(e_exp)
 
     Compare ``e_poly(x)`` and the Pade approximation ``p(x)/q(x)``
 
@@ -59,4 +60,4 @@ def pade(an, m, n=None):
     pq = linalg.solve(C, an)
     p = pq[:n+1]
     q = r_[1.0, pq[n+1:]]
-    return poly1d(p[::-1]), poly1d(q[::-1])
+    return _Polynomial(p), _Polynomial(q)
