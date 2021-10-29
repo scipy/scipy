@@ -92,13 +92,13 @@ def test_nonhermitian_warning(capsys):
         _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
     out, err = capsys.readouterr()  # Capture output
     assert out.startswith("Solving standard eigenvalue")  # Test stdout
-    assert err == '' # Test empty stderr
+    assert err == ''  # Test empty stderr
     # Make the matrix symmetric and the UserWarning dissappears.
     A += A.T
     _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
     out, err = capsys.readouterr()  # Capture output
     assert out.startswith("Solving standard eigenvalue")  # Test stdout
-    assert err == '' # Test empty stderr
+    assert err == ''  # Test empty stderr
 
 
 def test_regression():
