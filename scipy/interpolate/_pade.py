@@ -54,11 +54,7 @@ def pade(an, m, n=None):
         raise ValueError("Order of q+p <m+n> must be smaller than len(an).")
     an = an[:N+1]
     Akj = eye(N+1, n+1, dtype=an.dtype)
-    Bkj = zeros((N+1, m), dtype=an.dtype)
-    for row in range(1, m+1):
-        Bkj[row, :row] = -(an[:row])[::-1]
-    for row in range(m+1, N+1):
-        Bkj[row, :] = -(an[row-m:row])[::-1]
+    Bkj = linalg.toeplitz(r_[0, -an[:-1]], zeros(m))
     C = hstack((Akj, Bkj))
     pq = linalg.solve(C, an)
     p = pq[:n+1]
