@@ -98,5 +98,6 @@ def test_pade_complex():
     assert_array_almost_equal(denomp.coef, [1.0, x + xc])
 
     nump, denomp = pade(an, 2, 2)
-    assert_array_almost_equal(nump.coef, [1.0, 2*(x + xc), x**2 + x*xc + xc**2])
+    assert_array_almost_equal(nump.coef,
+                              [1.0, 2*(x + xc), x**2 + x*xc + xc**2])
     assert_array_almost_equal(denomp.coef, [1.0, x + 2*xc, xc**2])

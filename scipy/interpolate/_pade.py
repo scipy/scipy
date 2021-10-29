@@ -57,17 +57,13 @@ def pade(an, m, n=None):
     if m == 0:  # this is just the Taylor series
         return _Polynomial(an), _Polynomial([1])
     # first solve the Toeplitz system for q
-    trail_zeros = m - n - 1
-    if trail_zeros > 0:
-        top = r_[an[n+1::-1], zeros(trail_zeros)]
-    else:
-        top = an[n+1::-1][:m]
-    top = r_[an[n+1::-1][:m+1], [0]*(m-n-1)]  # first row might contain tailing zeros
+    # first row might contain tailing zeros
+    top = r_[an[n+1::-1][:m+1], [0]*(m-n-1)]
     an_mat = linalg.toeplitz(an[n+1:], top)
     # we set q[0] = 1 -> first column is -rhs
     q = r_[1.0, linalg.solve(an_mat[:, 1:], -an_mat[:, 0])]
-    # substitue `q` to get `p`
-    if m > 100:  # arbitrary threshold when to use dedicated toeplitz function
+    # substitute `q` to get `p`
+    if m > 100:  # arbitrary threshold when to use dedicated Toeplitz function
         p = linalg.matmul_toeplitz((an[:n+1], zeros(m+1)), q)
     else:
         p = linalg.toeplitz(an[:n+1], zeros(m+1)) @ q
