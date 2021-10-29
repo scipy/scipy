@@ -7,6 +7,7 @@ import sys
 import pickle
 import os
 import json
+import platform
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
