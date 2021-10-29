@@ -70,7 +70,7 @@ def test_well_conditioned_problems():
             rng = np.random.RandomState(seed + 10)
             beta = rng.rand(n)
             beta[beta == 0] = 0.00001  # ensure that all the betas are not null
-            b = A_sparse * beta[:, np.newaxis]
+            b = A_sparse @ beta[:, np.newaxis]
             output = lsqr(A_sparse, b, show=show)
 
             # Check that the termination condition corresponds to an approximate
