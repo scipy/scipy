@@ -467,3 +467,12 @@ class Test_AdaptiveStepsize:
             self.takestep(x)
             self.takestep.report(False)
         assert_(self.ts.stepsize < self.stepsize)
+
+    def test_result_attributes(self):
+        result = basinhopping(lambda x: x ** 2, x0=1)
+        assert hasattr(result, "x")
+        assert hasattr(result, "success")
+        assert hasattr(result, "message")
+        assert hasattr(result, "fun")
+        assert hasattr(result, "nfev")
+        assert hasattr(result, "nit")

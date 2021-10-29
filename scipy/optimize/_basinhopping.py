@@ -734,6 +734,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     res.fun = res.lowest_optimization_result.fun
     res.message = message
     res.nit = i + 1
+    res.success = res.lowest_optimization_result.success
     return res
 
 
