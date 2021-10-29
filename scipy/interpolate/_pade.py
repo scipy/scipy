@@ -1,4 +1,4 @@
-from numpy import zeros, asarray, eye, polynomial, hstack, r_
+from numpy import zeros, asarray, polynomial, r_
 from scipy import linalg
 
 __all__ = ["pade"]
@@ -54,10 +54,21 @@ def pade(an, m, n=None):
     if N > len(an)-1:
         raise ValueError("Order of q+p <m+n> must be smaller than len(an).")
     an = an[:N+1]
-    Akj = eye(N+1, n+1, dtype=an.dtype)
-    Bkj = linalg.toeplitz(r_[0, -an[:-1]], zeros(m))
-    C = hstack((Akj, Bkj))
-    pq = linalg.solve(C, an)
-    p = pq[:n+1]
-    q = r_[1.0, pq[n+1:]]
+    if m == 0:  # this is just the Taylor series
+        return _Polynomial(an), _Polynomial([1])
+    # first solve the Toeplitz system for q
+    trail_zeros = m - n - 1
+    if trail_zeros > 0:
+        top = r_[an[n+1::-1], zeros(trail_zeros)]
+    else:
+        top = an[n+1::-1][:m]
+    top = r_[an[n+1::-1][:m+1], [0]*(m-n-1)]  # first row might contain tailing zeros
+    an_mat = linalg.toeplitz(an[n+1:], top)
+    # we set q[0] = 1 -> first column is -rhs
+    q = r_[1.0, linalg.solve(an_mat[:, 1:], -an_mat[:, 0])]
+    # substitue `q` to get `p`
+    if m > 100:  # arbitrary threshold when to use dedicated toeplitz function
+        p = linalg.matmul_toeplitz((an[:n+1], zeros(m+1)), q)
+    else:
+        p = linalg.toeplitz(an[:n+1], zeros(m+1)) @ q
     return _Polynomial(p), _Polynomial(q)
