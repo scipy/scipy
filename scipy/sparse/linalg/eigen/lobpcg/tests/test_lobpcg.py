@@ -89,16 +89,16 @@ def test_nonhermitian_warning():
     X = np.arange(n * 2).reshape(n, 2).astype(np.float32)
     A = np.arange(n * n).reshape(n, n).astype(np.float32)
     with pytest.warns(UserWarning, match="Matrix gramA"):
-       _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
-    captured = pytest.capsys.readouterr()  # Capture output
-    assert f"Solving standard eigenvalue" in captured.out  # Test stdout
-    assert f"" in captured.err  # Test stderr
+        _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
+    out, err = pytest.capsys.readouterr()  # Capture output
+    assert out.startswith("Solving standard eigenvalue")  # Test stdout
+    assert err == '' # Test empty stderr
     # Make the matrix symmetric and the UserWarning dissappears.
     A += A.T
     _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
-    captured = pytest.capsys.readouterr()  # Capture output
-    assert f"Solving standard eigenvalue" in captured.out  # Test stdout
-    assert f"" in captured.err  # Test stderr
+    out, err = pytest.capsys.readouterr()  # Capture output
+    assert out.startswith("Solving standard eigenvalue")  # Test stdout
+    assert err == '' # Test empty stderr
 
 
 def test_regression():
