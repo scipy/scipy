@@ -35,7 +35,7 @@ def test_basic():
 
     # Now the same but with damp > 0.
     # This is equivalent to solving the extented system:
-    # ( G      ) * x = ( b )
+    # ( G      ) @ x = ( b )
     # ( damp*I )       ( 0 )
     damp = 1.5
     xo, *_ = lsqr(
