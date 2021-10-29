@@ -12,6 +12,7 @@ import numpy as np
 import scipy.stats, scipy.special
 cimport scipy.special.cython_special as cs
 
+np.import_array()
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
     cdef double s, c, sn, cn, R, V
