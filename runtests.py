@@ -173,8 +173,7 @@ def main(argv):
         site_dir = build_project(args)
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ['PYTHONPATH'])) \
-            if 'PYTHONPATH' in os.environ else site_dir
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -391,8 +390,7 @@ def build_project(args):
     # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):
         os.makedirs(site_dir)
-    env['PYTHONPATH'] = os.pathsep.join((site_dir, env['PYTHONPATH'])) \
-        if 'PYTHONPATH' in env else site_dir
+    env['PYTHONPATH'] = os.pathsep.join((site_dir, env.get('PYTHONPATH', '')))
 
     log_filename = os.path.join(ROOT_DIR, 'build.log')
     start_time = datetime.datetime.now()
