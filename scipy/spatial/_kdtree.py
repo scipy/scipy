@@ -2,7 +2,7 @@
 # Released under the scipy license
 import numpy as np
 import warnings
-from .ckdtree import cKDTree, cKDTreeNode
+from ._ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
