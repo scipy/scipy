@@ -293,14 +293,14 @@ def check_precond_inverse(solver, case):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A, b)
 
     def rinverse(b,which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A.T, b)
 
     matvec_count = [0]
@@ -518,6 +518,25 @@ def test_x0_working(solver):
     x, info = solver(A, b, x0=x0, **kw)
     assert_equal(info, 0)
     assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+
+@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk])
+def test_x0_equals_Mb(solver):
+    for case in params.cases:
+        if solver in case.skip:
+            continue
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            A = case.A
+            b = case.b
+            x0 = 'Mb'
+            tol = 1e-8
+            x, info = solver(A, b, x0=x0, tol=tol)
+
+            assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
+            assert_equal(info, 0)
+            assert_normclose(A.dot(x), b, tol=tol)
 
 
 #------------------------------------------------------------------------------

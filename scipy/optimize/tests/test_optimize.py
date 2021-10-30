@@ -19,6 +19,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
+from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
@@ -42,7 +43,7 @@ def test_check_grad():
 
     r = optimize.check_grad(logit, der_logit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, 
+    r = optimize.check_grad(logit, der_logit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
@@ -1631,6 +1632,17 @@ class TestOptimizeScalar:
             optimize.minimize_scalar(self.fun, options={"disp": disp})
 
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_result_attributes(self, method):
+        result = optimize.minimize_scalar(self.fun, method=method,
+                                          bounds=[-10, 10])
+        assert hasattr(result, "x")
+        assert hasattr(result, "success")
+        assert hasattr(result, "message")
+        assert hasattr(result, "fun")
+        assert hasattr(result, "nfev")
+        assert hasattr(result, "nit")
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -2288,6 +2300,182 @@ def test_gh12696():
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
 
 
+# --- Test minimize with equal upper and lower bounds --- #
+
+def setup_test_equal_bounds():
+
+    np.random.seed(0)
+    x0 = np.random.rand(4)
+    lb = np.array([0, 2, -1, -1.0])
+    ub = np.array([3, 2, 2, -1.0])
+    i_eb = (lb == ub)
+
+    def check_x(x, check_size=True, check_values=True):
+        if check_size:
+            assert x.size == 4
+        if check_values:
+            assert_allclose(x[i_eb], lb[i_eb])
+
+    def func(x):
+        check_x(x)
+        return optimize.rosen(x)
+
+    def grad(x):
+        check_x(x)
+        return optimize.rosen_der(x)
+
+    def callback(x, *args):
+        check_x(x)
+
+    def constraint1(x):
+        check_x(x, check_values=False)
+        return x[0:1] - 1
+
+    def jacobian1(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[0] = 1
+        return dc
+
+    def constraint2(x):
+        check_x(x, check_values=False)
+        return x[2:3] - 0.5
+
+    def jacobian2(x):
+        check_x(x, check_values=False)
+        dc = np.zeros_like(x)
+        dc[2] = 1
+        return dc
+
+    c1a = NonlinearConstraint(constraint1, -np.inf, 0)
+    c1b = NonlinearConstraint(constraint1, -np.inf, 0, jacobian1)
+    c2a = NonlinearConstraint(constraint2, -np.inf, 0)
+    c2b = NonlinearConstraint(constraint2, -np.inf, 0, jacobian2)
+
+    # test using the three methods that accept bounds, use derivatives, and
+    # have some trouble when bounds fix variables
+    methods = ('L-BFGS-B', 'SLSQP', 'TNC')
+
+    # test w/out gradient, w/ gradient, and w/ combined objective/gradient
+    kwds = ({"fun": func, "jac": False},
+            {"fun": func, "jac": grad},
+            {"fun": (lambda x: (func(x), grad(x))),
+             "jac": True})
+
+    # test with both old- and new-style bounds
+    bound_types = (lambda lb, ub: list(zip(lb, ub)),
+                   Bounds)
+
+    # Test for many combinations of constraints w/ and w/out jacobian
+    # Pairs in format: (test constraints, reference constraints)
+    # (always use analytical jacobian in reference)
+    constraints = ((None, None), ([], []),
+                   (c1a, c1b), (c2b, c2b),
+                   ([c1b], [c1b]), ([c2a], [c2b]),
+                   ([c1a, c2a], [c1b, c2b]),
+                   ([c1a, c2b], [c1b, c2b]),
+                   ([c1b, c2b], [c1b, c2b]))
+
+    # test with and without callback function
+    callbacks = (None, callback)
+
+    data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
+            "constraints": constraints, "callbacks": callbacks,
+            "lb": lb, "ub": ub, "x0": x0, "i_eb": i_eb}
+
+    return data
+
+
+eb_data = setup_test_equal_bounds()
+
+
+# This test is about handling fixed variables, not the accuracy of the solvers
+@pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.parametrize('method', eb_data["methods"])
+@pytest.mark.parametrize('kwds', eb_data["kwds"])
+@pytest.mark.parametrize('bound_type', eb_data["bound_types"])
+@pytest.mark.parametrize('constraints', eb_data["constraints"])
+@pytest.mark.parametrize('callback', eb_data["callbacks"])
+def test_equal_bounds(method, kwds, bound_type, constraints, callback):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    lb, ub = eb_data["lb"], eb_data["ub"]
+    x0, i_eb = eb_data["x0"], eb_data["i_eb"]
+
+    test_constraints, reference_constraints = constraints
+    if test_constraints and not method == 'SLSQP':
+        pytest.skip('Only SLSQP supports nonlinear constraints')
+    # reference constraints always have analytical jacobian
+    # if test constraints are not the same, we'll need finite differences
+    fd_needed = (test_constraints != reference_constraints)
+
+    bounds = bound_type(lb, ub)  # old- or new-style
+
+    kwds.update({"x0": x0, "method": method, "bounds": bounds,
+                 "constraints": test_constraints, "callback": callback})
+    res = optimize.minimize(**kwds)
+
+    expected = optimize.minimize(optimize.rosen, x0, method=method,
+                                 jac=optimize.rosen_der, bounds=bounds,
+                                 constraints=reference_constraints)
+
+    # compare the output of a solution with FD vs that of an analytic grad
+    assert res.success
+    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.x, expected.x, rtol=5e-4)
+
+    if fd_needed or kwds['jac'] is False:
+        expected.jac[i_eb] = np.nan
+    assert res.jac.shape[0] == 4
+    assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+
+    if not (kwds['jac'] or test_constraints or isinstance(bounds, Bounds)):
+        # compare the output to an equivalent FD minimization that doesn't
+        # need factorization
+        def fun(x):
+            new_x = np.array([np.nan, 2, np.nan, -1])
+            new_x[[0, 2]] = x
+            return optimize.rosen(new_x)
+
+        fd_res = optimize.minimize(fun,
+                                   x0[[0, 2]],
+                                   method=method,
+                                   bounds=bounds[::2])
+        assert_allclose(res.fun, fd_res.fun)
+        # TODO this test should really be equivalent to factorized version
+        # above, down to res.nfev. However, testing found that when TNC is
+        # called with or without a callback the output is different. The two
+        # should be the same! This indicates that the TNC callback may be
+        # mutating something when it should't.
+        assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
+
+
+def test_eb_constraints():
+    # make sure constraint functions aren't overwritten when equal bounds
+    # are employed, and a parameter is factored out. GH14859
+    def f(x):
+        return x[0]**3 + x[1]**2 + x[2]*x[3]
+
+    def cfun(x):
+        return x[0] + x[1] + x[2] + x[3] - 40
+
+    constraints = [{'type': 'ineq', 'fun': cfun}]
+
+    bounds = [(0, 20)] * 4
+    bounds[1] = (5, 5)
+    optimize.minimize(
+        f,
+        x0=[1, 2, 3, 4],
+        method='SLSQP',
+        bounds=bounds,
+        constraints=constraints,
+    )
+    assert constraints[0]['fun'] == cfun
+
+
 def test_show_options():
     solver_methods = {
         'minimize': MINIMIZE_METHODS,
@@ -2357,3 +2545,26 @@ def test_x_overwritten_user_function():
             hess = fquad_hess
         res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
+
+
+class TestGlobalOptimization:
+
+    def test_optimize_result_attributes(self):
+        def func(x):
+            return x ** 2
+
+        # Note that `brute` solver does not return `OptimizeResult`
+        results = [optimize.basinhopping(func, x0=1),
+                   optimize.differential_evolution(func, [(-4, 4)]),
+                   optimize.shgo(func, [(-4, 4)]),
+                   optimize.dual_annealing(func, [(-4, 4)]),
+                   ]
+
+        for result in results:
+            assert isinstance(result, optimize.OptimizeResult)
+            assert hasattr(result, "x")
+            assert hasattr(result, "success")
+            assert hasattr(result, "message")
+            assert hasattr(result, "fun")
+            assert hasattr(result, "nfev")
+            assert hasattr(result, "nit")

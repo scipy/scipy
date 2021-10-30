@@ -377,6 +377,7 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
+   NaiveRatioUniforms
    NumericalInverseHermite
    NumericalInversePolynomial
    TransformedDensityRejection
@@ -443,12 +444,12 @@ Warnings / Errors used in :mod:`scipy.stats`
 
 """
 
-from .stats import *
+from ._stats_py import *
 from .distributions import *
-from .morestats import *
+from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
-from .kde import gaussian_kde
+from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
 from ._multivariate import *

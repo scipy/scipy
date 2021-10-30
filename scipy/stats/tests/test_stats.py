@@ -28,7 +28,7 @@ from scipy._lib._util import check_random_state
 from scipy import special
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
-import scipy.stats.mstats_basic as mstats_basic
+import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -37,9 +37,10 @@ from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import (_broadcast_concatenate,
-                               AlexanderGovernConstantInputWarning)
-from scipy.stats.stats import _calc_t_stat, _data_partitions
+from scipy.stats._axis_nan_policy import _broadcast_concatenate
+from scipy.stats._stats_py import (_calc_t_stat, _data_partitions,
+                            AlexanderGovernConstantInputWarning)
+
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3930,7 +3931,7 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import (
+        from scipy.stats._stats_py import (
             _count_paths_outside_method,
             _compute_outer_prob_inside_method
         )
@@ -4096,7 +4097,7 @@ def test_ttest_rel_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_relResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4109,7 +4110,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4123,7 +4124,7 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4861,7 +4862,7 @@ def test_ttest_ind_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_indResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4874,7 +4875,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4888,7 +4889,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4902,7 +4903,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
