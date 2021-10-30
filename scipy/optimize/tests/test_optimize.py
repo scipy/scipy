@@ -2545,3 +2545,26 @@ def test_x_overwritten_user_function():
             hess = fquad_hess
         res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
+
+
+class TestGlobalOptimization:
+
+    def test_optimize_result_attributes(self):
+        def func(x):
+            return x ** 2
+
+        # Note that `brute` solver does not return `OptimizeResult`
+        results = [optimize.basinhopping(func, x0=1),
+                   optimize.differential_evolution(func, [(-4, 4)]),
+                   optimize.shgo(func, [(-4, 4)]),
+                   optimize.dual_annealing(func, [(-4, 4)]),
+                   ]
+
+        for result in results:
+            assert isinstance(result, optimize.OptimizeResult)
+            assert hasattr(result, "x")
+            assert hasattr(result, "success")
+            assert hasattr(result, "message")
+            assert hasattr(result, "fun")
+            assert hasattr(result, "nfev")
+            assert hasattr(result, "nit")
