@@ -154,9 +154,9 @@ scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
 scipy/io/_test_fortranmodule.c
-scipy/io/matlab/mio5_utils.c
-scipy/io/matlab/mio_utils.c
-scipy/io/matlab/streams.c
+scipy/io/_matlab/mio5_utils.c
+scipy/io/_matlab/mio_utils.c
+scipy/io/_matlab/streams.c
 scipy/lib/blas/cblas.pyf
 scipy/lib/blas/cblasmodule.c
 scipy/lib/blas/fblas-f2pywrappers.f

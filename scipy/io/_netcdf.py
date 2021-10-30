@@ -178,8 +178,8 @@ class netcdf_file:
     --------
     To create a NetCDF file:
 
-    >>> from scipy.io import netcdf
-    >>> f = netcdf.netcdf_file('simple.nc', 'w')
+    >>> from scipy.io import netcdf_file
+    >>> f = netcdf_file('simple.nc', 'w')
     >>> f.history = 'Created for a test'
     >>> f.createDimension('time', 10)
     >>> time = f.createVariable('time', 'i', ('time',))
@@ -193,8 +193,8 @@ class netcdf_file:
 
     To read the NetCDF file we just created:
 
-    >>> from scipy.io import netcdf
-    >>> f = netcdf.netcdf_file('simple.nc', 'r')
+    >>> from scipy.io import netcdf_file
+    >>> f = netcdf_file('simple.nc', 'r')
     >>> print(f.history)
     b'Created for a test'
     >>> time = f.variables['time']
@@ -222,8 +222,8 @@ class netcdf_file:
 
     A NetCDF file can also be used as context manager:
 
-    >>> from scipy.io import netcdf
-    >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
+    >>> from scipy.io import netcdf_file
+    >>> with netcdf_file('simple.nc', 'r') as f:
     ...     print(f.history)
     b'Created for a test'
 
