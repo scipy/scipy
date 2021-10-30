@@ -753,6 +753,8 @@ def minimum_cost_flow(csgraph, demand, cost):
     Solving a minimum cost flow problem has many practical uses such as 
     in assignment problem, covers and matching in bipartite graphs [2]_.
 
+    We have ported the Python implementation of NetworkX [3]_ to Cython.
+
     References
     ----------
 
@@ -760,6 +762,10 @@ def minimum_cost_flow(csgraph, demand, cost):
            for minimum cost flows. Mathematical Programming 78,
            109-129 (1997).
     .. [2] https://en.wikipedia.org/wiki/Network_simplex_algorithm#Applications
+    .. [3] A Hagberg, D Schult, P Swart, Exploring Network Structure, Dynamics,
+           and Function using NetworkX in Proceedings of the 7th Python in
+           Science conference (SciPy 2008), G Varoquaux, T Vaught, J Millman
+           (Eds.), pp. 11-15
 
     Examples
     --------
@@ -821,6 +827,10 @@ def _network_simplex_checks(
         demand,  # IN
         cost,  # IN
         ):
+    """
+    Performs checks on input parameter to make sure that they
+    comply with the values of the network simplex algorithms.
+    """
     if np.any(demand == INT_MAX) or np.any(demand == INT_MIN):
         raise ValueError("one of the vertices has infinite demand")
 
@@ -850,6 +860,13 @@ cdef void _initialize_spanning_tree(
         ITYPE_t[:] prev_vertex_dft,  # IN/OUT
         ITYPE_t[:] last_descendent_dft  # IN/OUT
         ) nogil:
+    """
+    This function initialises a spanning tree
+    which can be a feasible solution to the input minimum cost
+    flow problem. The _network_simplex function then performs
+    the algorithm to iteratively update this tree until an 
+    optimal solution is achieved.
+    """
     cdef ITYPE_t e, v
 
     # edge_flow initialization
@@ -892,6 +909,16 @@ cdef inline ITYPE_t _reduced_cost(
         ITYPE_t[:] edge_targets,  # IN
         ITYPE_t[:] edge_flow  # IN
         ) nogil:
+    """
+    Utility function to return the reduced
+    cost of an edge computed using
+    potentials of the vertices of the
+    given edge and its weight.
+    Reduced cost is needed to determine
+    whether adding the edge to current
+    spanning tree improves circulation
+    or not.
+    """
     cdef ITYPE_t c
     c = (edge_weights[e]
          - vertex_potentials[edge_sources[e]]
@@ -899,22 +926,49 @@ cdef inline ITYPE_t _reduced_cost(
     return c if edge_flow[e] == 0 else -c
 
 ctypedef struct local_vars:
+    """
+    A structure to store local
+    variables used in _find_entering_edges
+    function.
+    This structure is needed to implement
+    the above function without using yield
+    feature of Python.
+    """
     ITYPE_t B
     ITYPE_t M
     ITYPE_t m
     ITYPE_t f
 
 cdef class network_simplex_result:
+    """
+    Cython class to store the network
+    simplex result.
+    """
     cdef readonly ITYPE_t flow_cost
     cdef readonly ITYPE_t size
     cdef readonly bint is_correct
 
 ctypedef struct edge_result:
+    """
+    A structure to store edges found out
+    by _find_entering_edges function.
+    This structure is needed to implement
+    the above function without using yield
+    feature of Python.
+    """
     ITYPE_t i
     ITYPE_t p
     ITYPE_t q
 
 ctypedef struct return_struct:
+    """
+    A structure to store the return value
+    and current state of _find_entering_edges
+    function.
+    This structure is needed to implement
+    the above function without using yield
+    feature of Python.
+    """
     local_vars B_M_m_f
     edge_result i_p_q
     bint prev_ret_value
@@ -928,6 +982,19 @@ cdef return_struct _find_entering_edges(
         ITYPE_t[:] edge_targets,  # IN
         return_struct r_struct,  # IN
         ) nogil:
+    """
+    This function implements the pivoting strategy
+    of the network simplex algorithm.
+    We have used the NetworkX implementation of this function.
+    However, we don't use yeild and instead manually maintain
+    the state of this function using return_struct defined above.
+    Following is the explanation from NetworkX implementation,
+    
+    Entering edges are found by combining Dantzig's rule and Bland's
+    rule. The edges are cyclically grouped into blocks of size B. Within
+    each block, Dantzig's rule is applied to find an entering edge. The
+    blocks to search is determined following Bland's rule.
+    """
     cdef:
         ITYPE_t l, i = -2, min_r_cost, p, q, c
         ITYPE_t e, r_cost, B
@@ -1003,6 +1070,9 @@ cdef ITYPE_t _find_apex(
         ITYPE_t[:] subtree_size,  # IN
         ITYPE_t[:] parent  # IN
         ) nogil:
+    """
+    Find the lowest common ancestor of nodes p and q in the spanning tree.
+    """
     cdef ITYPE_t size_p, size_q
     size_p = subtree_size[p]
     size_q = subtree_size[q]
@@ -1030,6 +1100,9 @@ cdef ITYPE_t _trace_path(
         ITYPE_t[:] Wn,  # IN/OUT
         ITYPE_t[:] We  # IN/OUT
         ) nogil:
+    """
+    Returns the nodes and edges on the path from node p to its ancestor w.
+    """
     cdef ITYPE_t idx
     Wn[0] = p
     idx = 0
@@ -1055,6 +1128,11 @@ cdef void _find_cycle(
         ITYPE_t[:] We,  # IN/OUT
         ITYPE_t[:] Wne_len  # IN/OUT
         ) nogil:
+    """
+    Returns the nodes and edges on the cycle containing edge i == (p, q)
+    when the latter is added to the spanning tree.
+    The cycle is oriented in the direction from p to q.
+    """
     cdef:
         ITYPE_t num_edges, num_edges_R, idx
         ITYPE_t offset, Wn_len, We_len, tmp
@@ -1091,6 +1169,10 @@ cdef inline ITYPE_t _residual_capacity(
         ITYPE_t[:] edge_capacities,  # IN
         ITYPE_t[:] edge_flow  # IN
         ) nogil:
+    """
+    Returns the residual capacity of an edge i in the direction away
+    from its endpoint p.
+    """
     if edge_sources[i] == p:
         return edge_capacities[i] - edge_flow[i]
     else:
@@ -1106,6 +1188,9 @@ cdef edge_result _find_leaving_edge(
         ITYPE_t[:] edge_flow,  # IN
         edge_result ret_values  # IN/OUT
         ) nogil:
+    """
+    Returns the leaving edge in a cycle represented by Wn and We.
+    """
     cdef:
         ITYPE_t min_res_cap, res_cap
         ITYPE_t i = -2, p, j = -2, s = -2, t, idx_e, idx_n
@@ -1139,6 +1224,9 @@ cdef inline ITYPE_t _index(
         ITYPE_t W_len,  # IN
         ITYPE_t i  # IN
         ) nogil:
+    """
+    Returns the index of value in the given array.
+    """
     cdef ITYPE_t idx
     for idx in range(W_len):
         if W[idx] == i:
@@ -1153,6 +1241,9 @@ cdef inline void _augment_flow(
         ITYPE_t[:] edge_sources,  # IN
         ITYPE_t[:] edge_flow  # IN/OUT
         ) nogil:
+    """
+    Augment f units of flow along a cycle represented by Wn and We.
+    """
     cdef ITYPE_t i, p, idx_e, idx_n
     idx_e = 0
     idx_n = 0
@@ -1178,6 +1269,9 @@ cdef void _remove_edge(
         ITYPE_t[:] parent_edge,  # IN/OUT
         ITYPE_t n_verts  # IN/OUT
         ) nogil:
+    """
+    Remove an edge (s, t) where parent[t] == s from the spanning tree.
+    """
     cdef:
         ITYPE_t size_t, prev_t, last_t
         ITYPE_t next_last_t
@@ -1212,6 +1306,9 @@ cdef void _make_root(
         ITYPE_t[:] parent_edge,  # IN/OUT
         ITYPE_t[:] ancestors,  # IN/OUT
         ) nogil:
+    """
+    Make a node q the root of its containing subtree.
+    """
     cdef:
         ITYPE_t idx, path_len, p
         ITYPE_t size_p, last_p, last_q, prev_q
@@ -1266,6 +1363,9 @@ cdef void _add_edge(
         ITYPE_t[:] parent,  # IN/OUT
         ITYPE_t[:] parent_edge,  # IN/OUT
         ) nogil:
+    """
+    Add an edge (p, q) to the spanning tree where q is the root of a subtree.
+    """
     cdef:
         ITYPE_t last_p, next_last_p
         ITYPE_t size_q, last_q
@@ -1296,6 +1396,9 @@ cdef inline bint _trace_subtree(
         ITYPE_t[:] next_vertex_dft,  # IN
         ITYPE_t[:] subtree  # IN/OUT
         ) nogil:
+    """
+    Returns the nodes in the subtree rooted at a node p.
+    """
     cdef ITYPE_t idx, l
     subtree[0] = p
     idx = 1
@@ -1317,6 +1420,10 @@ cdef void _update_potentials(
         ITYPE_t[:] vertex_potentials,  # IN/OUT
         ITYPE_t[:] subtree,  # IN/OUT
         ) nogil:
+    """
+    Update the potentials of the nodes in the subtree rooted at a node
+    q connected to its parent p by an edge i.
+    """
     cdef ITYPE_t idx, d, path_len
 
     if q == edge_targets[i]:
@@ -1338,6 +1445,10 @@ cdef inline void _add_entry(
         ITYPE_t[:] col,  # IN/OUT
         ITYPE_t[:] flow_data  # IN/OUT
         ) nogil:
+    """
+    Adds the result values as in entry in
+    row, col and flow_data arrays.
+    """
     row[idx] = edge_source - 1
     col[idx] = edge_target - 1
     flow_data[idx] = flow
