@@ -763,6 +763,14 @@ class TestMultivariateNormalQMCEngine(QMCEngineTests):
     def test_bounds(self, *args):
         pytest.skip("Not applicable: normal is not bounded.")
 
+    def test_other_engine(self):
+        for dvalue in (0, 1, 2):
+            base_engine = qmc.Sobol(d=dvalue, scramble=False)
+            engine = qmc.MultivariateNormalQMC(mean=np.zeros(2),
+                                               engine=base_engine,
+                                               inv_transform=True)
+            samples = engine.random()
+            assert_equal(samples.shape, (1, 2))
 
 class TestNormalQMC:
     def test_NormalQMC(self):
