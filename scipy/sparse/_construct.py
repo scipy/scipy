@@ -11,16 +11,16 @@ from functools import partial
 import numpy as np
 
 from scipy._lib._util import check_random_state, rng_integers
-from .sputils import upcast, get_index_dtype, isscalarlike
+from ._sputils import upcast, get_index_dtype, isscalarlike
 
 from ._sparsetools import csr_hstack
-from .csr import csr_matrix
-from .csc import csc_matrix
-from .bsr import bsr_matrix
-from .coo import coo_matrix
-from .dia import dia_matrix
+from ._csr import csr_matrix
+from ._csc import csc_matrix
+from ._bsr import bsr_matrix
+from ._coo import coo_matrix
+from ._dia import dia_matrix
 
-from .base import issparse
+from ._base import issparse
 
 
 def spdiags(data, diags, m, n, format=None):

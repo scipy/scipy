@@ -7,10 +7,10 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from .base import spmatrix, isspmatrix
+from ._base import spmatrix, isspmatrix
 from ._index import IndexMixin
-from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                      upcast, upcast_scalar, get_index_dtype, check_shape)
+from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
+                       upcast, upcast_scalar, get_index_dtype, check_shape)
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -100,7 +100,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             if len(arg1.shape) != 2:
                 raise TypeError('Expected rank <=2 dense array or matrix.')
 
-            from .coo import coo_matrix
+            from ._coo import coo_matrix
             d = coo_matrix(arg1, dtype=dtype).todok()
             dict.update(self, d)
             self._shape = check_shape(arg1.shape)
@@ -387,7 +387,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     copy.__doc__ = spmatrix.copy.__doc__
 
     def tocoo(self, copy=False):
-        from .coo import coo_matrix
+        from ._coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
 

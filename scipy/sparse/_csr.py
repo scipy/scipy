@@ -6,12 +6,12 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from .base import spmatrix
+from ._base import spmatrix
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
-from .sputils import upcast, get_index_dtype
+from ._sputils import upcast, get_index_dtype
 
-from .compressed import _cs_matrix
+from ._compressed import _cs_matrix
 
 
 class csr_matrix(_cs_matrix):
@@ -140,14 +140,14 @@ class csr_matrix(_cs_matrix):
 
         M, N = self.shape
 
-        from .csc import csc_matrix
+        from ._csc import csc_matrix
         return csc_matrix((self.data, self.indices,
                            self.indptr), shape=(N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
-        from .lil import lil_matrix
+        from ._lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
         self.sum_duplicates()
@@ -187,7 +187,7 @@ class csr_matrix(_cs_matrix):
                   indices,
                   data)
 
-        from .csc import csc_matrix
+        from ._csc import csc_matrix
         A = csc_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
@@ -195,10 +195,10 @@ class csr_matrix(_cs_matrix):
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
-        from .bsr import bsr_matrix
+        from ._bsr import bsr_matrix
 
         if blocksize is None:
-            from .spfuncs import estimate_blocksize
+            from ._spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
 
         elif blocksize == (1,1):

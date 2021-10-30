@@ -7,15 +7,15 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array
 
-from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
-from .data import _data_matrix, _minmax_mixin
-from .dia import dia_matrix
+from ._base import spmatrix, isspmatrix, SparseEfficiencyWarning
+from ._data import _data_matrix, _minmax_mixin
+from ._dia import dia_matrix
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_sample_values, csr_row_index, csr_row_slice,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
-from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
+from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, isintlike, get_index_dtype,
                       downcast_intp_index, get_sum_dtype, check_shape,
                       matrix, asmatrix, is_pydata_spmatrix)
@@ -50,7 +50,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    from .coo import coo_matrix
+                    from ._coo import coo_matrix
                     other = self.__class__(coo_matrix(arg1, shape=shape,
                                                       dtype=dtype))
                     self._set_self(other)
@@ -82,7 +82,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError("unrecognized {}_matrix constructor usage"
                                  "".format(self.format)) from e
-            from .coo import coo_matrix
+            from ._coo import coo_matrix
             self._set_self(self.__class__(coo_matrix(arg1, dtype=dtype)))
 
         # Read matrix dimensions given, if any
@@ -420,7 +420,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif self.shape == (1, 1):
             return np.multiply(self.toarray()[0, 0], other)
 
-        from .coo import coo_matrix
+        from ._coo import coo_matrix
         ret = self.tocoo()
         # Matching shapes.
         if self.shape == other.shape:
@@ -1027,7 +1027,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
-        from .coo import coo_matrix
+        from ._coo import coo_matrix
         return coo_matrix((self.data, (row, col)), self.shape, copy=copy,
                           dtype=self.dtype)
 

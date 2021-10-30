@@ -1,9 +1,9 @@
 """Base class for sparse matrices"""
 import numpy as np
 
-from .sputils import (isdense, isscalarlike, isintlike,
-                      get_sum_dtype, validateaxis, check_reshape_kwargs,
-                      check_shape, asmatrix)
+from ._sputils import (isdense, isscalarlike, isintlike,
+                       get_sum_dtype, validateaxis, check_reshape_kwargs,
+                       check_shape, asmatrix)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -655,7 +655,7 @@ class spmatrix:
                 raise ValueError('exponent must be >= 0')
 
             if other == 0:
-                from .construct import eye
+                from ._construct import eye
                 return eye(self.shape[0], dtype=self.dtype)
             elif other == 1:
                 return self.copy()
@@ -784,7 +784,7 @@ class spmatrix:
         # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
-        from .csc import csc_matrix
+        from ._csc import csc_matrix
         n = self.shape[1]
         if j < 0:
             j += n
@@ -801,7 +801,7 @@ class spmatrix:
         # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
         m = self.shape[0]
         if i < 0:
             i += m

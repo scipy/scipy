@@ -10,11 +10,11 @@ import numpy as np
 
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
-from .data import _data_matrix, _minmax_mixin
-from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                      getdata, get_index_dtype, downcast_intp_index,
-                      check_shape, check_reshape_kwargs, matrix)
+from ._base import isspmatrix, SparseEfficiencyWarning, spmatrix
+from ._data import _data_matrix, _minmax_mixin
+from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
+                       getdata, get_index_dtype, downcast_intp_index,
+                       check_shape, check_reshape_kwargs, matrix)
 
 import operator
 
@@ -347,7 +347,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        from .csc import csc_matrix
+        from ._csc import csc_matrix
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
@@ -389,7 +389,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
@@ -420,7 +420,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def todia(self, copy=False):
-        from .dia import dia_matrix
+        from ._dia import dia_matrix
 
         self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
@@ -443,7 +443,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     todia.__doc__ = spmatrix.todia.__doc__
 
     def todok(self, copy=False):
-        from .dok import dok_matrix
+        from ._dok import dok_matrix
 
         self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)

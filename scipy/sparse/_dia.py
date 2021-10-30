@@ -6,10 +6,10 @@ __all__ = ['dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from .base import isspmatrix, _formats, spmatrix
-from .data import _data_matrix
-from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                      get_sum_dtype, validateaxis, check_shape, matrix)
+from ._base import isspmatrix, _formats, spmatrix
+from ._data import _data_matrix
+from ._sputils import (isshape, upcast_char, getdtype, get_index_dtype,
+                       get_sum_dtype, validateaxis, check_shape, matrix)
 from ._sparsetools import dia_matvec
 
 
@@ -132,7 +132,7 @@ class dia_matrix(_data_matrix):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            from .coo import coo_matrix
+            from ._coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
@@ -368,7 +368,7 @@ class dia_matrix(_data_matrix):
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     def tocsc(self, copy=False):
-        from .csc import csc_matrix
+        from ._csc import csc_matrix
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
 
@@ -407,7 +407,7 @@ class dia_matrix(_data_matrix):
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
         data = self.data[mask]
 
-        from .coo import coo_matrix
+        from ._coo import coo_matrix
         A = coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A

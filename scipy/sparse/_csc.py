@@ -6,11 +6,11 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 import numpy as np
 
-from .base import spmatrix
+from ._base import spmatrix
 from ._sparsetools import csc_tocsr, expandptr
-from .sputils import upcast, get_index_dtype
+from ._sputils import upcast, get_index_dtype
 
-from .compressed import _cs_matrix
+from ._compressed import _cs_matrix
 
 
 class csc_matrix(_cs_matrix):
@@ -113,7 +113,7 @@ class csc_matrix(_cs_matrix):
 
         M, N = self.shape
 
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
         return csr_matrix((self.data, self.indices,
                            self.indptr), (N, M), copy=copy)
 
@@ -146,7 +146,7 @@ class csc_matrix(_cs_matrix):
                   indices,
                   data)
 
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
         A = csr_matrix((data, indices, indptr), shape=self.shape, copy=False)
         A.has_sorted_indices = True
         return A

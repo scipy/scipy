@@ -8,11 +8,11 @@ from warnings import warn
 
 import numpy as np
 
-from .data import _data_matrix, _minmax_mixin
-from .compressed import _cs_matrix
-from .base import isspmatrix, _formats, spmatrix
-from .sputils import (isshape, getdtype, getdata, to_native, upcast,
-                      get_index_dtype, check_shape)
+from ._data import _data_matrix, _minmax_mixin
+from ._compressed import _cs_matrix
+from ._base import isspmatrix, _formats, spmatrix
+from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
+                       get_index_dtype, check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,
@@ -153,7 +153,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                from .coo import coo_matrix
+                from ._coo import coo_matrix
                 self._set_self(
                     coo_matrix(arg1, dtype=dtype, shape=shape).tobsr(
                         blocksize=blocksize
@@ -195,7 +195,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            from .coo import coo_matrix
+            from ._coo import coo_matrix
             arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self._set_self(arg1)
 
@@ -387,7 +387,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             C = 1
 
-        from .csr import isspmatrix_csr
+        from ._csr import isspmatrix_csr
 
         if isspmatrix_csr(other) and n == 1:
             other = other.tobsr(blocksize=(n,C), copy=False)  # lightweight conversion
@@ -466,7 +466,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                   indptr,
                   indices,
                   data)
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
@@ -508,7 +508,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         if copy:
             data = data.copy()
 
-        from .coo import coo_matrix
+        from ._coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
     def toarray(self, order=None, out=None):

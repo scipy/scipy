@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['find', 'tril', 'triu']
 
 
-from .coo import coo_matrix
+from ._coo import coo_matrix
 
 
 def find(A):

@@ -9,11 +9,11 @@ from bisect import bisect_left
 
 import numpy as np
 
-from .base import spmatrix, isspmatrix
+from ._base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
-from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                      get_index_dtype, check_shape, check_reshape_kwargs,
-                      asmatrix)
+from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
+                       get_index_dtype, check_shape, check_reshape_kwargs,
+                       asmatrix)
 from . import _csparsetools
 
 
@@ -120,7 +120,7 @@ class lil_matrix(spmatrix, IndexMixin):
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
             else:
-                from .csr import csr_matrix
+                from ._csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
 
                 self._shape = check_shape(A.shape)
@@ -447,7 +447,7 @@ class lil_matrix(spmatrix, IndexMixin):
     tolil.__doc__ = spmatrix.tolil.__doc__
 
     def tocsr(self, copy=False):
-        from .csr import csr_matrix
+        from ._csr import csr_matrix
 
         M, N = self.shape
         if M == 0 or N == 0:
