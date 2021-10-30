@@ -236,7 +236,7 @@ class TestLinsolve:
 
                 x = spsolve(Asp,b)
 
-                assert_(norm(b - Asp*x) < 10 * cond_A * eps)
+                assert_(norm(b - Asp@x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
         Adense = array([[0., 1., 1.],
@@ -245,7 +245,7 @@ class TestLinsolve:
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
-        b = As*x
+        b = As@x
         x2 = spsolve(As, b)
 
         assert_array_almost_equal(x, x2)
@@ -486,7 +486,7 @@ class TestSplu:
         # Check that splu works at all
         def check(A, b, x, msg=""):
             eps = np.finfo(A.dtype).eps
-            r = A * x
+            r = A @ x
             assert_(abs(r - b).max() < 1e3*eps, msg)
 
         self._smoketest(splu, check, np.float32)
@@ -502,7 +502,7 @@ class TestSplu:
         errors = []
 
         def check(A, b, x, msg=""):
-            r = A * x
+            r = A @ x
             err = abs(r - b).max()
             assert_(err < 1e-2, msg)
             if b.dtype in (np.float64, np.complex128):
@@ -681,7 +681,7 @@ class TestSplu:
 
             Ad = A.toarray()
             lhs = Pr.dot(Ad).dot(Pc)
-            rhs = (lu.L * lu.U).toarray()
+            rhs = (lu.L @ lu.U).toarray()
 
             eps = np.finfo(dtype).eps
 
