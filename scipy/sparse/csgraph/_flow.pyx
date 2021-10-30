@@ -712,9 +712,8 @@ def minimum_cost_flow(csgraph, demand, cost):
     -------
     res : MinimumCostFlowResult
         A minimum cost flow represented by a ``MinimumCostFlowResult``
-        which includes the value of the flow in ``flow_value``,
-        the cost of the flow in ``flow_cost`` and the residual
-        graph in ``residual``.
+        which includes the cost of the flow in ``flow_cost`` and
+        the residual graph in ``residual``.
 
     Raises
     ------
@@ -774,8 +773,6 @@ def minimum_cost_flow(csgraph, demand, cost):
     >>> demand = [-5, 0, 0, 5]
     >>> cost = [3, 6, 1, 2]
     >>> result = minimum_cost_flow(A, demand, cost)
-    >>> result.flow_value
-    10
     >>> result.flow_cost
     24
     >>> result.residual.toarray()
