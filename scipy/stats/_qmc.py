@@ -1550,10 +1550,6 @@ class MultivariateNormalQMC(QMCEngine):
                 raise ValueError("Dimension of `engine` must be consistent"
                                  " with dimensions of mean and covariance.")
             self.engine = engine
-            if engine.d == 0:
-              raise ValueError("0 not valid")
-            if engine.d == 1:
-              raise ValueError("1 not valid")
         else:
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
