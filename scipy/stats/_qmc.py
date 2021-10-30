@@ -1545,11 +1545,15 @@ class MultivariateNormalQMC(QMCEngine):
             engine_dim = d
         if engine is None:
             self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
-        elif isinstance(engine, QMCEngine) and engine.d != 1:
+        elif isinstance(engine, QMCEngine):
             if engine.d != d:
                 raise ValueError("Dimension of `engine` must be consistent"
                                  " with dimensions of mean and covariance.")
             self.engine = engine
+            if engine.d == 0:
+              raise ValueError("0 not valid")
+            if engine.d == 1:
+              raise ValueError("1 not valid")
         else:
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
