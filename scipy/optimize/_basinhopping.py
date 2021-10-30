@@ -351,7 +351,7 @@ class Metropolis:
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
-                 seed=None):
+                 seed=None, accept_rate=0.5, factor=0.9):
     """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
@@ -437,6 +437,14 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         `take_step` and `accept_test`, and these functions use random
         number generation, then those functions are responsible for the state
         of their random number generator.
+    accept_rate : float, optional
+        The target acceptance rate that is used to adjust the ``stepsize``.
+        If the current acceptance rate is greater than the target,
+        then the ``stepsize`` is increased. Otherwise, it is decreased.
+        Default is 0.5.
+    factor : float, optional
+        The ``stepsize`` is multiplied or divided by this factor upon each
+        update. Default is 0.9.
 
     Returns
     -------
@@ -673,6 +681,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         # take_step.stepsize
         if hasattr(take_step, "stepsize"):
             take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
+                                                 accept_rate=accept_rate,
+                                                 factor=factor,
                                                  verbose=disp)
         else:
             take_step_wrapped = take_step
@@ -680,6 +690,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         # use default
         displace = RandomDisplacement(stepsize=stepsize, random_gen=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
+                                             accept_rate=accept_rate,
+                                             factor=factor,
                                              verbose=disp)
 
     # set up accept tests
