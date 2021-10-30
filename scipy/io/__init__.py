@@ -94,17 +94,17 @@ Arff files (:mod:`scipy.io.arff`)
 
 """
 # matfile read and write
-from .matlab import loadmat, savemat, whosmat, byteordercodes
+from ._matlab import loadmat, savemat, whosmat, byteordercodes
 
 # netCDF file support
-from .netcdf import netcdf_file, netcdf_variable
+from ._netcdf import netcdf_file, netcdf_variable
 
 # Fortran file support
 from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 
-from .mmio import mminfo, mmread, mmwrite
-from .idl import readsav
-from .harwell_boeing import hb_read, hb_write
+from ._mmio import mminfo, mmread, mmwrite
+from ._idl import readsav
+from ._harwell_boeing import hb_read, hb_write
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

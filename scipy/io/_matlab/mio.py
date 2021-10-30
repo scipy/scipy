@@ -158,7 +158,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     Get the filename for an example .mat file from the tests/data directory.
 
-    >>> data_dir = pjoin(dirname(sio.__file__), 'matlab', 'tests', 'data')
+    >>> data_dir = pjoin(dirname(sio.__file__), '_matlab', 'tests', 'data')
     >>> mat_fname = pjoin(data_dir, 'testdouble_7.4_GLNX86.mat')
 
     Load the .mat file contents.

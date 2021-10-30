@@ -15,10 +15,10 @@ See the `WEKA website <http://weka.wikispaces.com/ARFF>`_
 for more details about the ARFF format and available datasets.
 
 """
-from .arffread import *
-from . import arffread
+from ._arffread import *
+from . import _arffread
 
-__all__ = arffread.__all__
+__all__ = _arffread.__all__
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

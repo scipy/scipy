@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.harwell_boeing._fortran_format_parser import (
+from scipy.io._harwell_boeing import (
         FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat)
 
 
