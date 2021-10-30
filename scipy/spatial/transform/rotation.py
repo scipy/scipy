@@ -3,17 +3,15 @@
 # included below.
 
 import warnings
-from . import _kdtree
+from . import _rotation
 
 
 __all__ = [  # noqa: F822
-    'KDTree',
-    'Rectangle',
-    'cKDTree',
-    'cKDTreeNode',
-    'distance_matrix',
-    'minkowski_distance',
-    'minkowski_distance_p',
+    'Rotation',
+    'Slerp',
+    'check_random_state',
+    'create_group',
+    're',
 ]
 
 
@@ -24,11 +22,11 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            "scipy.spatial.kdtree is deprecated and has no attribute "
+            "scipy.spatial.transform.rotation is deprecated and has no attribute "
             f"{name}. Try looking in scipy.spatial instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.spatial` namespace, "
-                  "the `scipy.spatial.kdtree` namespace is deprecated.",
+                  "the `scipy.spatial.transform.rotation` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_kdtree, name)
+    return getattr(_rotation, name)

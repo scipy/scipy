@@ -14,7 +14,7 @@ import threading
 import numpy as np
 cimport numpy as np
 cimport cython
-from . cimport qhull
+from . cimport _qhull
 from . cimport setlist
 from libc cimport stdlib
 from scipy._lib.messagestream cimport MessageStream
