@@ -16,9 +16,9 @@ import scipy.special
 from scipy._lib._util import float_factorial
 from scipy.linalg._basic import solve, solve_triangular
 
-from scipy.sparse.base import isspmatrix
+from scipy.sparse._base import isspmatrix
 from scipy.sparse.linalg import spsolve
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 import scipy.sparse
 import scipy.sparse.linalg

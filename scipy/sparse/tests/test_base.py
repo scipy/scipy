@@ -42,8 +42,8 @@ import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         eye, isspmatrix, SparseEfficiencyWarning)
-from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
-                                  get_index_dtype, asmatrix, matrix)
+from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
+                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
@@ -144,10 +144,10 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     @decorator
     def deco(func, *a, **kw):
         backup = []
-        modules = [scipy.sparse.bsr, scipy.sparse.coo, scipy.sparse.csc,
-                   scipy.sparse.csr, scipy.sparse.dia, scipy.sparse.dok,
-                   scipy.sparse.lil, scipy.sparse.sputils,
-                   scipy.sparse.compressed, scipy.sparse.construct]
+        modules = [scipy.sparse._bsr, scipy.sparse._coo, scipy.sparse._csc,
+                   scipy.sparse._csr, scipy.sparse._dia, scipy.sparse._dok,
+                   scipy.sparse._lil, scipy.sparse._sputils,
+                   scipy.sparse._compressed, scipy.sparse._construct]
         try:
             for mod in modules:
                 backup.append((mod, 'get_index_dtype',
@@ -3415,7 +3415,7 @@ class _TestMinMax:
     def test_numpy_minmax(self):
         # See gh-5987
         # xref gh-7460 in 'numpy'
-        from scipy.sparse import data
+        from scipy.sparse import _data
 
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -3426,7 +3426,7 @@ class _TestMinMax:
         # implemented 'min' and 'max' because they are
         # the ones with the compatibility issues with
         # the 'numpy' implementation.
-        if isinstance(datsp, data._minmax_mixin):
+        if isinstance(datsp, _data._minmax_mixin):
             assert_array_equal(np.min(datsp), np.min(dat))
             assert_array_equal(np.max(datsp), np.max(dat))
 

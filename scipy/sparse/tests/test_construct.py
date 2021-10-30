@@ -9,9 +9,10 @@ from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import check_random_state
 
-from scipy.sparse import csr_matrix, coo_matrix, construct
-from scipy.sparse.construct import rand as sprand
-from scipy.sparse.sputils import matrix
+from scipy.sparse import (csr_matrix, coo_matrix,
+                          _construct as construct)
+from scipy.sparse._construct import rand as sprand
+from scipy.sparse._sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
