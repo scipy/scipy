@@ -26,6 +26,7 @@ Contents
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_flow -- solve the maximum flow problem for a graph
+   minimum_cost_flow -- solve the minimum cost flow problem for a graph
    maximum_bipartite_matching -- compute a maximum matching of a bipartite graph
    min_weight_full_bipartite_matching - compute a minimum weight full matching of a bipartite graph
    structural_rank -- compute the structural rank of a graph

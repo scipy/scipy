@@ -926,14 +926,12 @@ cdef inline ITYPE_t _reduced_cost(
     return c if edge_flow[e] == 0 else -c
 
 ctypedef struct local_vars:
-    """
-    A structure to store local
-    variables used in _find_entering_edges
-    function.
-    This structure is needed to implement
-    the above function without using yield
-    feature of Python.
-    """
+    # A structure to store local
+    # variables used in _find_entering_edges
+    # function.
+    # This structure is needed to implement
+    # the above function without using yield
+    # feature of Python.
     ITYPE_t B
     ITYPE_t M
     ITYPE_t m
@@ -949,26 +947,22 @@ cdef class network_simplex_result:
     cdef readonly bint is_correct
 
 ctypedef struct edge_result:
-    """
-    A structure to store edges found out
-    by _find_entering_edges function.
-    This structure is needed to implement
-    the above function without using yield
-    feature of Python.
-    """
+    # A structure to store edges found out
+    # by _find_entering_edges function.
+    # This structure is needed to implement
+    # the above function without using yield
+    # feature of Python.
     ITYPE_t i
     ITYPE_t p
     ITYPE_t q
 
 ctypedef struct return_struct:
-    """
-    A structure to store the return value
-    and current state of _find_entering_edges
-    function.
-    This structure is needed to implement
-    the above function without using yield
-    feature of Python.
-    """
+    # A structure to store the return value
+    # and current state of _find_entering_edges
+    # function.
+    # This structure is needed to implement
+    # the above function without using yield
+    # feature of Python.
     local_vars B_M_m_f
     edge_result i_p_q
     bint prev_ret_value
