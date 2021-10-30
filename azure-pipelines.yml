@@ -281,7 +281,7 @@ stages:
         cython==0.29.18
         matplotlib
         mpmath
-        oldest-supported-numpy
+        numpy==1.21.3
         Pillow
         pybind11
         pythran
