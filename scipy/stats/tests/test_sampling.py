@@ -897,6 +897,41 @@ class TestDiscreteGuideTable:
         rng = DiscreteGuideTable(dist, random_state=42)
         check_discr_samples(rng, pv, mv_ex)
 
+    u = [
+        # the correctness of the PPF for equidistant points between 0 and 1.
+        np.linspace(0, 1, num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
+
+    @pytest.mark.parametrize('u', u)
+    def test_ppf(self, u):
+        n, p = 4, 0.1
+        dist = Binomial(n, p)
+        rng = DiscreteGuideTable(dist, random_state=42)
+
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+
+            res = rng.ppf(u)
+            expected = stats.binom.ppf(u, n, p)
+        assert_equal(res.shape, expected.shape)
+        assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
+
     @pytest.mark.parametrize("pv, msg", bad_pv_common)
     def test_bad_pv(self, pv, msg):
         with pytest.raises(ValueError, match=msg):
