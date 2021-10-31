@@ -172,14 +172,17 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     point_size: float, optional
         Specifies the size of points
 
-    .. versionadded:: 1.8.0
+    linestyle_finite_segments : string, optional
+        Line style for polygon boundaries
+        belonging to finite segments. Default is ``solid``.
 
-    linestyle_finite_segments: string, optional
-        Specifies the line style for polygon boundaries
-        belonging to finite segments
-    linestyle_infinite_segments: string, optional
-        Specifies the line style for polygon boundaries
-        belonging to infinite segments
+        .. versionadded:: 1.8.0
+
+    linestyle_infinite_segments : string, optional
+        Line style for polygon boundaries
+        belonging to infinite segments. Default is ``dashed``.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
