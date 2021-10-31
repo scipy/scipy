@@ -35,23 +35,6 @@ class StandardNormal:
         return special.ndtr(x)
 
 
-# A binomial distribution to share between all the discrete methods
-class Binomial:
-    def __init__(self, n, p):
-        self.n = n
-        self.p = p
-
-    def pmf(self, k):
-        return self.p**k * (1-self.p)**(self.n-k)
-
-    def cdf(self, k):
-        k = np.asarray(k)
-        return stats.binom._cdf(k, self.n, self.p)
-
-    def support(self):
-        return 0, self.n
-
-
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
@@ -594,7 +577,7 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteAliasUrn(Binomial(10, 0.2), domain=domain)
+            DiscreteAliasUrn(stats.binom(10, 0.2), domain=domain)
 
     def test_bad_urn_factor(self):
         with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
@@ -914,7 +897,7 @@ class TestDiscreteGuideTable:
     @pytest.mark.parametrize('u', u)
     def test_ppf(self, u):
         n, p = 4, 0.1
-        dist = Binomial(n, p)
+        dist = stats.binom(n, p)
         rng = DiscreteGuideTable(dist, random_state=42)
 
         # Older versions of NumPy throw RuntimeWarnings for comparisons
@@ -945,7 +928,7 @@ class TestDiscreteGuideTable:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteGuideTable(Binomial(10, 0.2), domain=domain)
+            DiscreteGuideTable(stats.binom(10, 0.2), domain=domain)
 
 
 class Gamma:
