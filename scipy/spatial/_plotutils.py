@@ -172,6 +172,14 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     point_size: float, optional
         Specifies the size of points
 
+    .. versionadded:: 1.8.0
+
+    linestyle_finite_segments: string, optional
+        Specifies the line style for polygon boundaries
+        belonging to finite segments
+    linestyle_infinite_segments: string, optional
+        Specifies the line style for polygon boundaries
+        belonging to infinite segments
 
     Returns
     -------
@@ -224,6 +232,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     line_colors = kw.get('line_colors', 'k')
     line_width = kw.get('line_width', 1.0)
     line_alpha = kw.get('line_alpha', 1.0)
+    linestyle_finite_segments = kw.get('linestyle_finite_segments', 'solid')
+    linestyle_infinite_segments = kw.get('linestyle_finite_segments', 'dashed')
 
     center = vor.points.mean(axis=0)
     ptp_bound = vor.points.ptp(axis=0)
@@ -253,13 +263,14 @@ def voronoi_plot_2d(vor, ax=None, **kw):
                                      colors=line_colors,
                                      lw=line_width,
                                      alpha=line_alpha,
-                                     linestyle='solid'))
+                                     linestyle=linestyle_finite_segments))
     ax.add_collection(LineCollection(infinite_segments,
                                      colors=line_colors,
                                      lw=line_width,
                                      alpha=line_alpha,
-                                     linestyle='dashed'))
+                                     linestyle=linestyle_infinite_segments))
 
     _adjust_bounds(ax, vor.points)
 
     return ax.figure
+
