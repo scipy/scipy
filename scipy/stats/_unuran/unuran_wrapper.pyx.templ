@@ -2202,6 +2202,7 @@ cdef class DiscreteGuideTable(Method):
         u = np.asarray(u, dtype='d')
         oshape = u.shape
         u = u.ravel()
+
         # UNU.RAN fills in ends of the support when u < 0 or u > 1 while
         # SciPy fills in nans. Prefer SciPy behaviour.
         cond0 = 0 <= u
@@ -2209,10 +2210,16 @@ cdef class DiscreteGuideTable(Method):
         cond2 = cond0 & cond1
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
+
         cdef double[::1] u_view = np.ascontiguousarray(goodu)
         cdef double[::1] goodout = np.empty_like(u_view)
+
         if cond2.any():
             self._ppf(&u_view[0], &goodout[0], len(goodu))
         np.place(out, cond2, goodout)
         np.place(out, ~cond2, np.nan)
+
+        # UNU.RAN sets boundary at u = 0 to 0
+        # SciPy fills it with -1. Prefer SciPy behaviour
+        np.place(out, u == 0, -1)
         return np.asarray(out).reshape(oshape)[()]
