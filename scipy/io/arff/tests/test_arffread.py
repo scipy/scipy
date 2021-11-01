@@ -157,7 +157,7 @@ class TestHeader:
 
         assert_(rel == 'test7')
 
-        assert_(len(attrs) == 5)
+        assert_(len(attrs) == 6)
 
         assert_(attrs[0].name == 'attr_year')
         assert_(attrs[0].date_format == '%Y')
@@ -173,7 +173,10 @@ class TestHeader:
 
         assert_(attrs[4].name == 'attr_datetime_missing')
         assert_(attrs[4].date_format == '%Y-%m-%d %H:%M')
-
+        
+        assert_(attrs[5].name == 'attr_yeari')
+        assert_(attrs[5].date_format == '%y-%m-%d')
+    
     def test_dateheader_unsupported(self):
         def read_dateheader_unsupported():
             with open(test8) as ofile:
@@ -197,6 +200,18 @@ class TestDateAttribute:
         ], dtype='datetime64[Y]')
 
         assert_array_equal(self.data["attr_year"], expected)
+    
+    def test_yeari_attribute(self):
+        expected = np.array([
+            '99-01-31',
+            '04-12-01',
+            '17-04-28',
+            '00-09-10',
+            '13-11-30',
+            '31-10-15'
+        ], dtype='datetime64[Y]')
+
+        assert_array_equal(self.data["attr_yeari"], expected)
 
     def test_month_attribute(self):
         expected = np.array([
