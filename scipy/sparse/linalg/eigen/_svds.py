@@ -5,6 +5,9 @@ from . import eigsh
 
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg.interface import LinearOperator, aslinearoperator
+from scipy.sparse import isspmatrix
+from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.linalg import svd
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
 
