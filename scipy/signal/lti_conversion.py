@@ -283,7 +283,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation
+    """Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------
@@ -334,11 +334,11 @@ def ss2zpk(A, B, C, D, input=0):
 
 def cont2discrete(system, dt, method="zoh", alpha=None):
     """
-    Transform a continuous to a discrete state-space system.
+    Transform a continuous system to a discrete one.
 
     Parameters
     ----------
-    system : a tuple describing the system or an instance of `lti`
+    system : a tuple describing the continuous system or an instance of `lti`
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -354,7 +354,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
             * gbt: generalized bilinear transformation
             * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * euler: Euler (or forward differencing) method ("gbt" with
+              alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
             * foh: first-order hold (*versionadded: 1.3.0*)
@@ -366,12 +367,15 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     Returns
     -------
-    sysd : tuple containing the discrete system
-        Based on the input type, the output will be of the form
+    sysd : a tuple containing the discrete system or an instance of `dlti`
+        If the input is a bare instance of `lti`, the output will be a bare
+        instance of `dlti`. Otherwise, based on the input tuple type, the
+        output tuple will be of the form:
 
-        * (num, den, dt)   for transfer function input
-        * (zeros, poles, gain, dt)   for zeros-poles-gain input
-        * (A, B, C, D, dt) for state-space system input
+            * (instance of `dlti`) for instance of `lti` input
+            * (num, den, dt) for transfer function input
+            * (zeros, poles, gain, dt) for zeros-poles-gain input
+            * (A, B, C, D, dt) for state-space system input
 
     Notes
     -----
@@ -382,7 +386,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
     approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
-    is based on [4]_.
+    is based on [4]_. All conversion methods take place in the state-space form
+    of a system.
 
     Examples
     --------
@@ -430,21 +435,28 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         pp. 204-206, 1998.
 
     """
-    if len(system) == 1:
-        return system.to_discrete()
-    if len(system) == 2:
+    try:
+        n = len(system)
+    except TypeError:
+        return system.to_discrete(dt, method=method, alpha=alpha)
+
+    if n == 1:
+        # Return a tuple if the input is a tuple
+        return system[0].to_discrete(dt, method=method, alpha=alpha),
+    elif n == 2:
         sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
                              alpha=alpha)
         return ss2tf(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
-    elif len(system) == 3:
+    elif n == 3:
         sysd = cont2discrete(zpk2ss(system[0], system[1], system[2]), dt,
                              method=method, alpha=alpha)
         return ss2zpk(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
-    elif len(system) == 4:
+    elif n == 4:
         a, b, c, d = system
     else:
-        raise ValueError("First argument must either be a tuple of 2 (tf), "
-                         "3 (zpk), or 4 (ss) arrays.")
+        raise ValueError(
+            "First argument must either be a tuple of 1 (lti), 2 (tf), "
+            "3 (zpk), or 4 (ss) arrays.")
 
     if method == 'gbt':
         if alpha is None:
