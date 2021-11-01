@@ -392,7 +392,8 @@ class Verner87(RungeKutta):
            Vol. 15, No. 4, pp. 772-790, 1978.
     """
 
-    order = 7
+    order = 8
+    error_estimator_order = 7
     n_stages = 13
 
     # Coefficients for matrix C
