@@ -79,11 +79,8 @@ def test_values():
 
     def w(x, y):
         return lambertw(x, y.real.astype(int))
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         FuncData(w, data, (0,1), 2, rtol=1e-10, atol=1e-13).check()
-    finally:
-        np.seterr(**olderr)
 
 
 def test_ufunc():

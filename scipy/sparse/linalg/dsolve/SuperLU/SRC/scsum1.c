@@ -58,8 +58,8 @@ double scsum1_slu(int *n, complex *cx, int *incx)
     /* Builtin functions */
     double c_abs(complex *);
     /* Local variables */
-    static int i, nincx;
-    static float stemp;
+    int i, nincx;
+    float stemp;
 
 
 #define CX(I) cx[(I)-1]

@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -247,8 +247,8 @@ def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected):  # allow different types of sparse matrices
         assert_(SP.issparse(actual))
-        assert_array_almost_equal(actual.todense(),
-                                  expected.todense(),
+        assert_array_almost_equal(actual.toarray(),
+                                  expected.toarray(),
                                   err_msg=label,
                                   decimal=5)
         return
@@ -382,8 +382,8 @@ def test_gzip_simple():
     finally:
         shutil.rmtree(tmpdir)
 
-    assert_array_almost_equal(actual['x'].todense(),
-                              expected['x'].todense(),
+    assert_array_almost_equal(actual['x'].toarray(),
+                              expected['x'].toarray(),
                               err_msg=repr(actual))
 
 
@@ -552,25 +552,18 @@ def test_use_small_element():
 
 
 def test_save_dict():
-    # Test that dict can be saved (as recarray), loaded as matstruct
-    dict_types = ((dict, False), (OrderedDict, True),)
+    # Test that both dict and OrderedDict can be saved (as recarray),
+    # loaded as matstruct, and preserve order
     ab_exp = np.array([[(1, 2)]], dtype=[('a', object), ('b', object)])
-    ba_exp = np.array([[(2, 1)]], dtype=[('b', object), ('a', object)])
-    for dict_type, is_ordered in dict_types:
-        # Initialize with tuples to keep order for OrderedDict
+    for dict_type in (dict, OrderedDict):
+        # Initialize with tuples to keep order
         d = dict_type([('a', 1), ('b', 2)])
         stream = BytesIO()
         savemat(stream, {'dict': d})
         stream.seek(0)
         vals = loadmat(stream)['dict']
-        assert_equal(set(vals.dtype.names), set(['a', 'b']))
-        if is_ordered:  # Input was ordered, output in ab order
-            assert_array_equal(vals, ab_exp)
-        else:  # Not ordered input, either order output
-            if vals.dtype.names[0] == 'a':
-                assert_array_equal(vals, ab_exp)
-            else:
-                assert_array_equal(vals, ba_exp)
+        assert_equal(vals.dtype.names, ('a', 'b'))
+        assert_array_equal(vals, ab_exp)
 
 
 def test_1d_shape():
@@ -719,7 +712,7 @@ def test_to_writeable():
     assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
 
-    class klass(object):
+    class klass:
         pass
 
     c = klass
@@ -748,7 +741,7 @@ def test_to_writeable():
     assert_(to_writeable(object()) is None)
     # Custom object does have empty __dict__, returns EmptyStructMarker
 
-    class C(object):
+    class C:
         pass
 
     assert_(to_writeable(c()) is EmptyStructMarker)
@@ -792,7 +785,7 @@ def test_recarray():
 
 
 def test_save_object():
-    class C(object):
+    class C:
         pass
     c = C()
     c.field1 = 1
@@ -948,6 +941,13 @@ def test_logical_out_type():
     assert_equal(var.dtype.type, np.uint8)
 
 
+def test_roundtrip_zero_dimensions():
+    stream = BytesIO()
+    savemat(stream, {'d':np.empty((10, 0))})
+    d = loadmat(stream)
+    assert d['d'].shape == (10, 0)
+
+
 def test_mat4_3d():
     # test behavior when writing 3-D arrays to matlab 4 files
     stream = BytesIO()
@@ -989,7 +989,7 @@ def test_sparse_in_struct():
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
-    assert_array_equal(d['a'][0,0]['sparsefield'].todense(), np.eye(4))
+    assert_array_equal(d['a'][0, 0]['sparsefield'].toarray(), np.eye(4))
 
 
 def test_mat_struct_squeeze():
@@ -1095,7 +1095,7 @@ def test_varmats_from_mat():
                   ('mynum', mlarr(10)))
 
     # Dict like thing to give variables in defined order
-    class C(object):
+    class C:
         def items(self):
             return names_vars
     stream = BytesIO()
@@ -1167,7 +1167,7 @@ def test_empty_sparse():
     sio.seek(0)
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
-    assert_array_equal(res['x'].todense(), 0)
+    assert_array_equal(res['x'].toarray(), 0)
     # Do empty sparse matrices get written with max nnz 1?
     # See https://github.com/scipy/scipy/issues/4208
     sio.seek(0)
@@ -1223,5 +1223,15 @@ def test_save_unicode_field(tmpdir):
 
 def test_filenotfound():
     # Check the correct error is thrown
-    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
-    assert_raises(IOError, loadmat, "NotExistentFile00")
+    assert_raises(OSError, loadmat, "NotExistentFile00.mat")
+    assert_raises(OSError, loadmat, "NotExistentFile00")
+
+
+def test_simplify_cells():
+    # Test output when simplify_cells=True
+    filename = pjoin(test_data_path, 'testsimplecell.mat')
+    res1 = loadmat(filename, simplify_cells=True)
+    res2 = loadmat(filename, simplify_cells=False)
+    assert_(isinstance(res1["s"], dict))
+    assert_(isinstance(res2["s"], np.ndarray))
+    assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))

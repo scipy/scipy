@@ -1,7 +1,7 @@
 # Makefile for Sphinx documentation
 
 # If `python3` doesn't point to the Python you want to use (with Sphinx installed),
-# then you can use, e.g., `make html PYTHON=python3.7` to specify a Python executable
+# then you can use, e.g., `make html PYTHON=python3.9` to specify a Python executable
 PYTHON = python3
 
 # You can set these variables from the command line.
@@ -56,7 +56,7 @@ UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
 GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
-				print(git_version()[:10])")
+				print(git_version()[0][:10])")
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
@@ -81,13 +81,15 @@ dist:
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
-doc-dist: html html-scipyorg
+doc-dist: VERSIONWARNING=-t versionwarning
+
+doc-dist: html-scipyorg html
 	test -d build/latex || make latex
 	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist/reference
+	cp -r build/html-scipyorg build/dist
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy-ref.pdf build/dist
@@ -99,7 +101,7 @@ upload:
 	# SSH must be correctly configured for this to work.
 	# Assumes that ``make dist`` was already run
 	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
-	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org mkdir -p $(UPLOAD_DIR)
 	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
 	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
 	    -zf $(UPLOAD_DIR)/dist.tar.gz
@@ -123,7 +125,7 @@ html-build:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 

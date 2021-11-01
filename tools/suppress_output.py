@@ -182,8 +182,8 @@ def test_suppress_long_ok(tmpdir):
                                            'sys.exit(0)')
     assert returncode == 0
     assert out == b''
-    assert re.match(b'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    b'    \.\.\. ok \([0-9 sminh]* elapsed\)\n$', err,
+    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
+                    rb'    \.\.\. ok \([0-9 sminh]* elapsed\)\n$', err,
                     re.S)
 
 
@@ -197,8 +197,8 @@ def test_suppress_long_failed(tmpdir):
                                            'sys.exit(1)')
     assert returncode == 1
     assert out == b'OUTERR'
-    assert re.match(b'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    b'    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$', err,
+    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
+                    rb'    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$', err,
                     re.S)
 
 

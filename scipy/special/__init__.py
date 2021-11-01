@@ -66,22 +66,31 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv       -- Bessel function of the first kind of real order and complex argument.
-   jve      -- Exponentially scaled Bessel function of order `v`.
-   yn       -- Bessel function of the second kind of integer order and real argument.
-   yv       -- Bessel function of the second kind of real order and complex argument.
-   yve      -- Exponentially scaled Bessel function of the second kind of real order.
-   kn       -- Modified Bessel function of the second kind of integer order `n`
-   kv       -- Modified Bessel function of the second kind of real order `v`
-   kve      -- Exponentially scaled modified Bessel function of the second kind.
-   iv       -- Modified Bessel function of the first kind of real order.
-   ive      -- Exponentially scaled modified Bessel function of the first kind.
-   hankel1  -- Hankel function of the first kind.
-   hankel1e -- Exponentially scaled Hankel function of the first kind.
-   hankel2  -- Hankel function of the second kind.
-   hankel2e -- Exponentially scaled Hankel function of the second kind.
+   jv            -- Bessel function of the first kind of real order and \
+                    complex argument.
+   jve           -- Exponentially scaled Bessel function of order `v`.
+   yn            -- Bessel function of the second kind of integer order and \
+                    real argument.
+   yv            -- Bessel function of the second kind of real order and \
+                    complex argument.
+   yve           -- Exponentially scaled Bessel function of the second kind \
+                    of real order.
+   kn            -- Modified Bessel function of the second kind of integer \
+                    order `n`
+   kv            -- Modified Bessel function of the second kind of real order \
+                    `v`
+   kve           -- Exponentially scaled modified Bessel function of the \
+                    second kind.
+   iv            -- Modified Bessel function of the first kind of real order.
+   ive           -- Exponentially scaled modified Bessel function of the \
+                    first kind.
+   hankel1       -- Hankel function of the first kind.
+   hankel1e      -- Exponentially scaled Hankel function of the first kind.
+   hankel2       -- Hankel function of the second kind.
+   hankel2e      -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel -- Wright's generalized Bessel function.
 
-The following is not an universal function:
+The following is not a universal function:
 
 .. autosummary::
    :toctree: generated/
@@ -241,6 +250,7 @@ Raw statistical functions
    ndtr         -- Gaussian cumulative distribution function.
    log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
    ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
@@ -628,7 +638,7 @@ Convenience functions
 
 """
 
-from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
@@ -638,16 +648,16 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
-from . import orthogonal
-from .orthogonal import *
+from . import _orthogonal
+from ._orthogonal import *
 
-from .spfun_stats import multigammaln
+from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
     ellip_normal
 )
-from .lambertw import lambertw
+from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
@@ -655,10 +665,9 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
     'log_softmax',

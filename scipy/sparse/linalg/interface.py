@@ -15,7 +15,7 @@ represent an all-ones matrix::
     >>> import numpy as np
     >>> class Ones(LinearOperator):
     ...     def __init__(self, shape):
-    ...         super(Ones, self).__init__(dtype=None, shape=shape)
+    ...         super().__init__(dtype=None, shape=shape)
     ...     def _matvec(self, x):
     ...         return np.repeat(x.sum(), self.shape[0])
 
@@ -50,7 +50,7 @@ from scipy.sparse.sputils import isshape, isintlike, asmatrix, is_pydata_spmatri
 __all__ = ['LinearOperator', 'aslinearoperator']
 
 
-class LinearOperator(object):
+class LinearOperator:
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the
@@ -97,6 +97,8 @@ class LinearOperator(object):
     args : tuple
         For linear operators describing products etc. of other linear
         operators, the operands of the binary operation.
+    ndim : int
+        Number of dimensions (this is always 2)
 
     See Also
     --------
@@ -134,6 +136,9 @@ class LinearOperator(object):
     array([ 2.,  3.])
 
     """
+
+    ndim = 2
+
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
@@ -504,7 +509,7 @@ class _CustomLinearOperator(LinearOperator):
 
     def __init__(self, shape, matvec, rmatvec=None, matmat=None,
                  dtype=None, rmatmat=None):
-        super(_CustomLinearOperator, self).__init__(dtype, shape)
+        super().__init__(dtype, shape)
 
         self.args = ()
 
@@ -519,7 +524,7 @@ class _CustomLinearOperator(LinearOperator):
         if self.__matmat_impl is not None:
             return self.__matmat_impl(X)
         else:
-            return super(_CustomLinearOperator, self)._matmat(X)
+            return super()._matmat(X)
 
     def _matvec(self, x):
         return self.__matvec_impl(x)
@@ -534,7 +539,7 @@ class _CustomLinearOperator(LinearOperator):
         if self.__rmatmat_impl is not None:
             return self.__rmatmat_impl(X)
         else:
-            return super(_CustomLinearOperator, self)._rmatmat(X)
+            return super()._rmatmat(X)
 
     def _adjoint(self):
         return _CustomLinearOperator(shape=(self.shape[1], self.shape[0]),
@@ -549,7 +554,7 @@ class _AdjointLinearOperator(LinearOperator):
     """Adjoint of arbitrary Linear Operator"""
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
-        super(_AdjointLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        super().__init__(dtype=A.dtype, shape=shape)
         self.A = A
         self.args = (A,)
 
@@ -569,7 +574,7 @@ class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
-        super(_TransposedLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        super().__init__(dtype=A.dtype, shape=shape)
         self.A = A
         self.args = (A,)
 
@@ -605,7 +610,7 @@ class _SumLinearOperator(LinearOperator):
             raise ValueError('cannot add %r and %r: shape mismatch'
                              % (A, B))
         self.args = (A, B)
-        super(_SumLinearOperator, self).__init__(_get_dtype([A, B]), A.shape)
+        super().__init__(_get_dtype([A, B]), A.shape)
 
     def _matvec(self, x):
         return self.args[0].matvec(x) + self.args[1].matvec(x)
@@ -632,7 +637,7 @@ class _ProductLinearOperator(LinearOperator):
         if A.shape[1] != B.shape[0]:
             raise ValueError('cannot multiply %r and %r: shape mismatch'
                              % (A, B))
-        super(_ProductLinearOperator, self).__init__(_get_dtype([A, B]),
+        super().__init__(_get_dtype([A, B]),
                                                      (A.shape[0], B.shape[1]))
         self.args = (A, B)
 
@@ -660,7 +665,7 @@ class _ScaledLinearOperator(LinearOperator):
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
         dtype = _get_dtype([A], [type(alpha)])
-        super(_ScaledLinearOperator, self).__init__(dtype, A.shape)
+        super().__init__(dtype, A.shape)
         self.args = (A, alpha)
 
     def _matvec(self, x):
@@ -689,7 +694,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 
-        super(_PowerLinearOperator, self).__init__(_get_dtype([A]), A.shape)
+        super().__init__(_get_dtype([A]), A.shape)
         self.args = (A, p)
 
     def _power(self, fun, x):
@@ -717,7 +722,7 @@ class _PowerLinearOperator(LinearOperator):
 
 class MatrixLinearOperator(LinearOperator):
     def __init__(self, A):
-        super(MatrixLinearOperator, self).__init__(A.dtype, A.shape)
+        super().__init__(A.dtype, A.shape)
         self.A = A
         self.__adj = None
         self.args = (A,)
@@ -747,7 +752,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype=None):
-        super(IdentityOperator, self).__init__(dtype, shape)
+        super().__init__(dtype, shape)
 
     def _matvec(self, x):
         return x

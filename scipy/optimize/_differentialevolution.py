@@ -7,14 +7,14 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, MapWrapper
+from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.sparse import issparse
 
-
 __all__ = ['differential_evolution']
+
 
 _MACHEPS = np.finfo(np.float64).eps
 
@@ -24,7 +24,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=()):
+                           workers=1, constraints=(), x0=None):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -41,7 +41,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
+    bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
@@ -74,8 +74,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -97,13 +99,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -123,16 +127,26 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population subset could be used,
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
         for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
@@ -172,6 +186,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         .. versionadded:: 1.4.0
 
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
+
+        .. versionadded:: 1.7.0
+
     Returns
     -------
     res : OptimizeResult
@@ -194,7 +215,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
+    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
     so far:
 
     .. math::
@@ -245,6 +266,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Let's try and do a constrained minimization
+
     >>> from scipy.optimize import NonlinearConstraint, Bounds
     >>> def constr_f(x):
     ...     return np.array(x[0] + x[1])
@@ -302,13 +324,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
                                      workers=workers,
-                                     constraints=constraints) as solver:
+                                     constraints=constraints,
+                                     x0=x0) as solver:
         ret = solver.solve()
 
     return ret
 
 
-class DifferentialEvolutionSolver(object):
+class DifferentialEvolutionSolver:
 
     """This class implements the differential evolution solver
 
@@ -319,7 +342,7 @@ class DifferentialEvolutionSolver(object):
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
+    bounds : sequence or `Bounds`
         Bounds for variables.  There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
@@ -353,8 +376,10 @@ class DifferentialEvolutionSolver(object):
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -376,13 +401,15 @@ class DifferentialEvolutionSolver(object):
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -405,17 +432,27 @@ class DifferentialEvolutionSolver(object):
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population could be used, for
-        example, to create a tight bunch of initial guesses in an location
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
+        for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -445,6 +482,10 @@ class DifferentialEvolutionSolver(object):
     constraints : {NonLinearConstraint, LinearConstraint, Bounds}
         Constraints on the solver, over and above those applied by the `bounds`
         kwd. Uses the approach by Lampinen.
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -470,7 +511,7 @@ class DifferentialEvolutionSolver(object):
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=()):
+                 workers=1, constraints=(), x0=None):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -562,14 +603,23 @@ class DifferentialEvolutionSolver(object):
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
-
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
+        # check first str otherwise will fail to compare str with array
         if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
+            elif init == 'sobol':
+                # must be Ns = 2**m for Sobol'
+                n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
+                self.num_population_members = n_s
+                self.population_shape = (self.num_population_members,
+                                         self.parameter_count)
+                self.init_population_qmc(qmc_engine='sobol')
+            elif init == 'halton':
+                self.init_population_qmc(qmc_engine='halton')
             elif init == 'random':
                 self.init_population_random()
             else:
@@ -577,11 +627,17 @@ class DifferentialEvolutionSolver(object):
         else:
             self.init_population_array(init)
 
-        # infrastructure for constraints
-        # dummy parameter vector for preparing constraints, this is required so
-        # that the number of constraints is known.
-        x0 = self._scale_parameters(self.population[0])
+        if x0 is not None:
+            # scale to within unit interval and
+            # ensure parameters are within bounds.
+            x0_scaled = self._unscale_parameters(np.asarray(x0))
+            if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
+                raise ValueError(
+                    "Some entries in x0 lay outside the specified bounds"
+                )
+            self.population[0] = x0_scaled
 
+        # infrastructure for constraints
         self.constraints = constraints
         self._wrapped_constraints = []
 
@@ -589,9 +645,13 @@ class DifferentialEvolutionSolver(object):
             # sequence of constraints, this will also deal with default
             # keyword parameter
             for c in constraints:
-                self._wrapped_constraints.append(_ConstraintWrapper(c, x0))
+                self._wrapped_constraints.append(
+                    _ConstraintWrapper(c, self.x)
+                )
         else:
-            self._wrapped_constraints = [_ConstraintWrapper(constraints, x0)]
+            self._wrapped_constraints = [
+                _ConstraintWrapper(constraints, self.x)
+            ]
 
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
@@ -628,6 +688,42 @@ class DifferentialEvolutionSolver(object):
         for j in range(self.parameter_count):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
+
+        # reset population energies
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
+    def init_population_qmc(self, qmc_engine):
+        """Initializes the population with a QMC method.
+
+        QMC methods ensures that each parameter is uniformly
+        sampled over its range.
+
+        Parameters
+        ----------
+        qmc_engine : str
+            The QMC method to use for initialization. Can be one of
+            ``latinhypercube``, ``sobol`` or ``halton``.
+
+        """
+        from scipy.stats import qmc
+
+        rng = self.random_number_generator
+
+        # Create an array for population of candidate solutions.
+        if qmc_engine == 'latinhypercube':
+            sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'sobol':
+            sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'halton':
+            sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+        else:
+            raise ValueError(self.__init_error_msg)
+
+        self.population = sampler.random(n=self.num_population_members)
 
         # reset population energies
         self.population_energies = np.full(self.num_population_members,
@@ -708,6 +804,9 @@ class DifferentialEvolutionSolver(object):
         """
         Return True if the solver has converged.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return False
+
         return (np.std(self.population_energies) <=
                 self.atol +
                 self.tol * np.abs(np.mean(self.population_energies)))
@@ -765,25 +864,15 @@ class DifferentialEvolutionSolver(object):
                       % (nit,
                          self.population_energies[0]))
 
+            if self.callback:
+                c = self.tol / (self.convergence + _MACHEPS)
+                warning_flag = bool(self.callback(self.x, convergence=c))
+                if warning_flag:
+                    status_message = ('callback function requested stop early'
+                                      ' by returning True')
+
             # should the solver terminate?
-            convergence = self.convergence
-
-            if (self.callback and
-                    self.callback(self._scale_parameters(self.population[0]),
-                                  convergence=self.tol / convergence) is True):
-
-                warning_flag = True
-                status_message = ('callback function requested stop early '
-                                  'by returning True')
-                break
-
-            if np.any(np.isinf(self.population_energies)):
-                intol = False
-            else:
-                intol = (np.std(self.population_energies) <=
-                         self.atol +
-                         self.tol * np.abs(np.mean(self.population_energies)))
-            if warning_flag or intol:
+            if warning_flag or self.converged():
                 break
 
         else:
@@ -867,8 +956,10 @@ class DifferentialEvolutionSolver(object):
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
+        # these are the number of function evals left to stay under the
+        # maxfun budget
         nfevs = min(num_members,
-                    self.maxfun - num_members)
+                    self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
@@ -876,13 +967,19 @@ class DifferentialEvolutionSolver(object):
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
-            energies[0:nfevs] = calc_energies
-        except (TypeError, ValueError):
+            calc_energies = np.squeeze(calc_energies)
+        except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
-            raise RuntimeError("The map-like callable must be of the"
-                               " form f(func, iterable), returning a sequence"
-                               " of numbers the same length as 'iterable'")
+            raise RuntimeError(
+                "The map-like callable must be of the form f(func, iterable), "
+                "returning a sequence of numbers the same length as 'iterable'"
+            ) from e
+
+        if calc_energies.size != nfevs:
+            raise RuntimeError("func(x, *args) must return a scalar value")
+
+        energies[0:nfevs] = calc_energies
 
         self._nfev += nfevs
 
@@ -965,14 +1062,7 @@ class DifferentialEvolutionSolver(object):
         return self
 
     def __exit__(self, *args):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
-
-    def __del__(self):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
+        return self._mapwrapper.__exit__(*args)
 
     def _accept_trial(self, energy_trial, feasible_trial, cv_trial,
                       energy_orig, feasible_orig, cv_orig):
@@ -1085,7 +1175,7 @@ class DifferentialEvolutionSolver(object):
                                       self.feasible[candidate],
                                       self.constraint_violation[candidate]):
                     self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+                    self.population_energies[candidate] = np.squeeze(energy)
                     self.feasible[candidate] = feasible
                     self.constraint_violation[candidate] = cv
 
@@ -1142,8 +1232,6 @@ class DifferentialEvolutionSolver(object):
             self._promote_lowest_energy()
 
         return self.x, self.population_energies[0]
-
-    next = __next__
 
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
@@ -1253,19 +1341,7 @@ class DifferentialEvolutionSolver(object):
         return idxs
 
 
-class _FunctionWrapper(object):
-    """
-    Object to wrap user cost function, allowing picklability
-    """
-    def __init__(self, f, args):
-        self.f = f
-        self.args = [] if args is None else args
-
-    def __call__(self, x):
-        return self.f(x, *self.args)
-
-
-class _ConstraintWrapper(object):
+class _ConstraintWrapper:
     """Object to wrap/evaluate user defined constraints.
 
     Very similar in practice to `PreparedConstraint`, except that no evaluation

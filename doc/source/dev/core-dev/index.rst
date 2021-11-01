@@ -19,5 +19,3 @@ SciPy Core Developer Guide
 .. include:: distributing.rst.inc
 
 .. include:: releasing.rst.inc
-
-.. include:: modules.rst.inc

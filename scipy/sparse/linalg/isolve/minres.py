@@ -1,5 +1,6 @@
-from numpy import sqrt, inner, zeros, inf, finfo
+from numpy import inner, zeros, inf, finfo
 from numpy.linalg import norm
+from math import sqrt
 
 from .utils import make_system
 
@@ -18,17 +19,17 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real symmetric N-by-N matrix of the linear system
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
     Returns
     -------
-    x : {array, matrix}
+    x : ndarray
         The converged solution.
     info : integer
         Provides convergence information:
@@ -38,7 +39,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     Other Parameters
     ----------------
-    x0  : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution.
     tol : float
         Tolerance to achieve. The algorithm terminates when the relative
@@ -46,7 +47,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}
+    M : {sparse matrix, ndarray, LinearOperator}
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -54,6 +55,20 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import minres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = A + A.T
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = minres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
 
     References
     ----------
@@ -120,6 +135,11 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
+        return (postprocess(x), 0)
+
+    bnorm = norm(b)
+    if bnorm == 0:
+        x = b
         return (postprocess(x), 0)
 
     beta1 = sqrt(beta1)

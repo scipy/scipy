@@ -8,6 +8,8 @@ cimport cython
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
 from scipy.sparse.csgraph._validation import validate_graph
 
+np.import_array()
+
 include 'parameters.pxi'
 
 def minimum_spanning_tree(csgraph, overwrite=False):
@@ -28,8 +30,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
         The N x N matrix representing an undirected graph over N nodes
         (see notes below).
     overwrite : bool, optional
-        if true, then parts of the input graph will be overwritten for
-        efficiency.
+        If true, then parts of the input graph will be overwritten for
+        efficiency. Default is False.
 
     Returns
     -------
@@ -43,6 +45,11 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     graph[i, j] and graph[j, i] are both zero, then nodes i and j do not
     have an edge connecting them.  If either is nonzero, then the two are
     connected by the minimum nonzero value of the two.
+
+    This routine loses precision when users input a dense matrix.
+    Small elements < 1E-8 of the dense matrix are rounded to zero.
+    All users should input sparse matrices if possible to avoid it.
+
 
     Examples
     --------

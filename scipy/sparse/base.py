@@ -55,7 +55,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class spmatrix(object):
+class spmatrix:
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -314,8 +314,8 @@ class spmatrix(object):
         else:
             try:
                 convert_method = getattr(self, 'to' + format)
-            except AttributeError:
-                raise ValueError('Format {} is unknown.'.format(format))
+            except AttributeError as e:
+                raise ValueError('Format {} is unknown.'.format(format)) from e
 
             # Forward the copy kwarg, if it's accepted.
             try:
@@ -549,9 +549,9 @@ class spmatrix(object):
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
 
-    #####################################
-    # matmul (@) operator (Python 3.5+) #
-    #####################################
+    #######################
+    # matmul (@) operator #
+    #######################
 
     def __matmul__(self, other):
         if isscalarlike(other):
@@ -811,8 +811,25 @@ class spmatrix(object):
                                   shape=(1, m), dtype=self.dtype)
         return row_selector * self
 
+    # The following dunder methods cannot be implemented.
+    #
     # def __array__(self):
-    #    return self.toarray()
+    #     # Sparse matrices rely on NumPy wrapping them in object arrays under
+    #     # the hood to make unary ufuncs work on them. So we cannot raise
+    #     # TypeError here - which would be handy to not give users object
+    #     # arrays they probably don't want (they're looking for `.toarray()`).
+    #     #
+    #     # Conversion with `toarray()` would also break things because of the
+    #     # behavior discussed above, plus we want to avoid densification by
+    #     # accident because that can too easily blow up memory.
+    #
+    # def __array_ufunc__(self):
+    #     # We cannot implement __array_ufunc__ due to mismatching semantics.
+    #     # See gh-7707 and gh-7349 for details.
+    #
+    # def __array_function__(self):
+    #     # We cannot implement __array_function__ due to mismatching semantics.
+    #     # See gh-10362 for details.
 
     def todense(self, order=None, out=None):
         """
@@ -823,7 +840,7 @@ class spmatrix(object):
         order : {'C', 'F'}, optional
             Whether to store multi-dimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
-            is 'None', indicating the NumPy default of C-ordered.
+            is 'None', which provides no ordering guarantees.
             Cannot be specified in conjunction with the `out`
             argument.
 
@@ -855,7 +872,7 @@ class spmatrix(object):
         order : {'C', 'F'}, optional
             Whether to store multidimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
-            is 'None', indicating the NumPy default of C-ordered.
+            is 'None', which provides no ordering guarantees.
             Cannot be specified in conjunction with the `out`
             argument.
 
@@ -1119,6 +1136,18 @@ class spmatrix(object):
         """
         return self.tocsr().diagonal(k=k)
 
+    def trace(self, offset=0):
+        """Returns the sum along diagonals of the sparse matrix.
+
+        Parameters
+        ----------
+        offset : int, optional
+            Which diagonal to get, corresponding to elements a[i, i+offset].
+            Default: 0 (the main diagonal).
+
+        """
+        return self.diagonal(k=offset).sum()
+
     def setdiag(self, values, k=0):
         """
         Set diagonal or off-diagonal elements of the array.
@@ -1129,7 +1158,7 @@ class spmatrix(object):
             New values of the diagonal elements.
 
             Values may have any length. If the diagonal is longer than values,
-            then the remaining diagonal entries will not be set. If values if
+            then the remaining diagonal entries will not be set. If values are
             longer than the diagonal, then the remaining values are ignored.
 
             If a scalar value is given, all of the diagonal is set to it.

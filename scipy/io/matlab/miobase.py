@@ -294,11 +294,11 @@ def matdims(arr, oned_as='column'):
     """
     shape = arr.shape
     if shape == ():  # scalar
-        return (1,1)
-    if functools.reduce(operator.mul, shape) == 0:  # zero elememts
-        return (0,) * np.max([arr.ndim, 2])
+        return (1, 1)
     if len(shape) == 1:  # 1D
-        if oned_as == 'column':
+        if shape[0] == 0:
+            return (0, 0)
+        elif oned_as == 'column':
             return shape + (1,)
         elif oned_as == 'row':
             return (1,) + shape
@@ -308,7 +308,7 @@ def matdims(arr, oned_as='column'):
     return shape
 
 
-class MatVarReader(object):
+class MatVarReader:
     ''' Abstract class defining required interface for var readers'''
     def __init__(self, file_reader):
         pass
@@ -322,7 +322,7 @@ class MatVarReader(object):
         pass
 
 
-class MatFileReader(object):
+class MatFileReader:
     """ Base object for reading mat files
 
     To make this class functional, you will need to override the
@@ -340,8 +340,8 @@ class MatFileReader(object):
                  chars_as_strings=True,
                  matlab_compatible=False,
                  struct_as_record=True,
-                 verify_compressed_data_integrity=True
-                 ):
+                 verify_compressed_data_integrity=True,
+                 simplify_cells=False):
         '''
         Initializer for mat file reader
 
@@ -365,6 +365,10 @@ class MatFileReader(object):
             self.chars_as_strings = chars_as_strings
             self.mat_dtype = mat_dtype
         self.verify_compressed_data_integrity = verify_compressed_data_integrity
+        self.simplify_cells = simplify_cells
+        if simplify_cells:
+            self.squeeze_me = True
+            self.struct_as_record = False
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as MATLAB loads them '''

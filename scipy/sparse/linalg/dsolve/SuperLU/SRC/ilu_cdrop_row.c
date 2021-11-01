@@ -28,6 +28,7 @@ extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
 extern void ccopy_(int *, complex [], int *, complex [], int *);
 extern float scasum_(int *, complex *, int *);
 extern float scnrm2_(int *, complex *, int *);
+extern void scopy_(int *, float [], int *, float [], int *);
 extern double dnrm2_(int *, double [], int *);
 extern int icamax_(int *, complex [], int *);
 

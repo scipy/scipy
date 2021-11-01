@@ -7,7 +7,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-import scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
@@ -125,7 +125,7 @@ for name in DATASETS:
         _add_inc_data(name, chunksize)
 
 
-class Test_Qhull(object):
+class Test_Qhull:
     def test_swapping(self):
         # Check that Qhull state swapping works
 
@@ -169,7 +169,7 @@ class Test_Qhull(object):
         Voronoi(points)
 
 
-class TestUtilities(object):
+class TestUtilities:
     """
     Check that utility functions work.
 
@@ -303,11 +303,8 @@ class TestUtilities(object):
         eps = np.finfo(float).eps
 
         c = barycentric_transform(tri.transform, centroids)
-        olderr = np.seterr(invalid="ignore")
-        try:
+        with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
-        finally:
-            np.seterr(**olderr)
 
         assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
@@ -386,7 +383,7 @@ class TestUtilities(object):
                                                unit_cube_tol=2*eps)
 
 
-class TestVertexNeighborVertices(object):
+class TestVertexNeighborVertices:
     def _check(self, tri):
         expected = [set() for j in range(tri.points.shape[0])]
         for s in tri.simplices:
@@ -419,7 +416,7 @@ class TestVertexNeighborVertices(object):
         self._check(tri)
 
 
-class TestDelaunay(object):
+class TestDelaunay:
     """
     Check that triangulation works.
 
@@ -968,9 +965,9 @@ class TestVoronoi:
                     return tuple(set([remap(y) for y in x]))
                 try:
                     return vertex_map[x]
-                except KeyError:
+                except KeyError as e:
                     raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],))
+                                         % (objx.vertices[x],)) from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))
@@ -992,7 +989,7 @@ class TestVoronoi:
             # XXX: compare ridge_points --- not clear exactly how to do this
 
 
-class Test_HalfspaceIntersection(object):
+class Test_HalfspaceIntersection:
     def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):
         """Check that every line in arr1 is only once in arr2"""
         assert_equal(arr1.shape, arr2.shape)

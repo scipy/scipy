@@ -3,6 +3,7 @@
 
 import itertools
 import platform
+import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -12,16 +13,16 @@ from pytest import raises as assert_raises
 
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
-from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
+from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
 
 
-class Case(object):
+class Case:
     def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
@@ -42,10 +43,10 @@ class Case(object):
         return "<%s>" % self.name
 
 
-class IterativeParams(object):
+class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -74,6 +75,15 @@ class IterativeParams(object):
         # note: minres fails for single precision
         self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
                                skip=posdef_solvers + [minres]))
+
+        # 2-dimensional Poisson equations
+        Poisson2D = kronsum(Poisson1D, Poisson1D)
+        self.Poisson2D = Case("poisson2d", Poisson2D)
+        # note: minres fails for 2-d poisson problem, it will be fixed in the future PR
+        self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
+        # note: minres fails for single precision
+        self.cases.append(Case("poisson2d", Poisson2D.astype('f'),
+                               skip=[minres]))
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
@@ -140,9 +150,9 @@ class IterativeParams(object):
         data[1,:] = -1
         A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
-                               skip=sym_solvers+[cgs, qmr, bicg]))
+                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
 
         # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
@@ -160,7 +170,7 @@ class IterativeParams(object):
         assert (A == A.T).all()
         self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+                               nonconvergence=[cgs,bicg,bicgstab,qmr,tfqmr]))
 
 
 params = IterativeParams()
@@ -283,14 +293,14 @@ def check_precond_inverse(solver, case):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A, b)
 
     def rinverse(b,which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A.T, b)
 
     matvec_count = [0]
@@ -411,7 +421,7 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -447,13 +457,17 @@ def test_zero_rhs(solver):
 
 
 @pytest.mark.parametrize("solver", [
-    gmres, qmr,
+    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
+                                                and sys.version_info[1] == 9,
+                                                reason="gh-13019")),
+    qmr,
     pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
                                                  reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),
     pytest.param(bicg, marks=pytest.mark.xfail),
     pytest.param(bicgstab, marks=pytest.mark.xfail),
-    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+    pytest.param(gcrotmk, marks=pytest.mark.xfail),
+    pytest.param(tfqmr, marks=pytest.mark.xfail)])
 def test_maxiter_worsening(solver):
     # Check error does not grow (boundlessly) with increasing maxiter.
     # This can occur due to the solvers hitting close to breakdown,
@@ -482,9 +496,52 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+def test_x0_working(solver):
+    # Easy problem
+    np.random.seed(1)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+    x0 = np.random.rand(n)
+
+    if solver is minres:
+        kw = dict(tol=1e-6)
+    else:
+        kw = dict(atol=0, tol=1e-6)
+
+    x, info = solver(A, b, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+    x, info = solver(A, b, x0=x0, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+
+@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk])
+def test_x0_equals_Mb(solver):
+    for case in params.cases:
+        if solver in case.skip:
+            continue
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            A = case.A
+            b = case.b
+            x0 = 'Mb'
+            tol = 1e-8
+            x, info = solver(A, b, x0=x0, tol=tol)
+
+            assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
+            assert_equal(info, 0)
+            assert_normclose(A.dot(x), b, tol=tol)
+
+
 #------------------------------------------------------------------------------
 
-class TestQMR(object):
+class TestQMR:
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
@@ -528,7 +585,7 @@ class TestQMR(object):
         assert_normclose(A*x, b, tol=1e-8)
 
 
-class TestGMRES(object):
+class TestGMRES:
     def test_callback(self):
 
         def store_residual(r, rvec):

@@ -6,11 +6,14 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
-
+import numbers
+from functools import partial
 import numpy as np
 
+from scipy._lib._util import check_random_state, rng_integers
 from .sputils import upcast, get_index_dtype, isscalarlike
 
+from ._sparsetools import csr_hstack
 from .csr import csr_matrix
 from .csc import csc_matrix
 from .bsr import bsr_matrix
@@ -27,13 +30,15 @@ def spdiags(data, diags, m, n, format=None):
     Parameters
     ----------
     data : array_like
-        matrix diagonals stored row-wise
-    diags : diagonals to set
-        - k = 0  the main diagonal
-        - k > 0  the k-th upper diagonal
-        - k < 0  the k-th lower diagonal
+        Matrix diagonals stored row-wise
+    diags : sequence of int or an int
+        Diagonals to set:
+
+        * k = 0  the main diagonal
+        * k > 0  the kth upper diagonal
+        * k < 0  the kth lower diagonal
     m, n : int
-        shape of the result
+        Shape of the result
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
@@ -173,12 +178,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
-        except ValueError:
+        except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
                     "Diagonal length (index %d: %d at offset %d) does not "
                     "agree with matrix size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n))
+                    j, len(diagonal), offset, m, n)) from e
             raise
 
     return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
@@ -309,12 +314,11 @@ def kron(A, B, format=None):
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         # B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
-
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
@@ -328,12 +332,16 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         # expand entries of a into blocks
         row = A.row.repeat(B.nnz)
         col = A.col.repeat(B.nnz)
         data = A.data.repeat(B.nnz)
+
+        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
+            row = row.astype(np.int64)
+            col = col.astype(np.int64)
 
         row *= B.shape[0]
         col *= B.shape[1]
@@ -411,7 +419,7 @@ def _compressed_sparse_stack(blocks, axis):
     sum_indices = 0
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
-            raise ValueError('incompatible dimensions for axis %d' % other_axis)
+            raise ValueError(f'incompatible dimensions for axis {other_axis}')
         indices[sum_indices:sum_indices+b.indices.size] = b.indices
         sum_indices += b.indices.size
         idxs = slice(sum_dim, sum_dim + b.shape[axis])
@@ -425,6 +433,56 @@ def _compressed_sparse_stack(blocks, axis):
                           shape=(sum_dim, constant_dim))
     else:
         return csc_matrix((data, indices, indptr),
+                          shape=(constant_dim, sum_dim))
+
+
+def _stack_along_minor_axis(blocks, axis):
+    """
+    Stacking fast path for CSR/CSC matrices along the minor axis
+    (i) hstack for CSR, (ii) vstack for CSC.
+    """
+    n_blocks = len(blocks)
+    if n_blocks == 0:
+        raise ValueError('Missing block matrices')
+
+    if n_blocks == 1:
+        return blocks[0]
+
+    # check for incompatible dimensions
+    other_axis = 1 if axis == 0 else 0
+    other_axis_dims = set(b.shape[other_axis] for b in blocks)
+    if len(other_axis_dims) > 1:
+        raise ValueError(f'Mismatching dimensions along axis {other_axis}: '
+                         f'{other_axis_dims}')
+    constant_dim, = other_axis_dims
+
+    # Do the stacking
+    indptr_list = [b.indptr for b in blocks]
+    data_cat = np.concatenate([b.data for b in blocks])
+    idx_dtype = get_index_dtype(arrays=indptr_list,
+                                maxval=max(data_cat.size, constant_dim))
+    stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
+    if data_cat.size > 0:
+        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
+        indices_cat = (np.concatenate([b.indices for b in blocks])
+                       .astype(idx_dtype))
+        indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
+        indices = np.empty_like(indices_cat)
+        data = np.empty_like(data_cat)
+        csr_hstack(n_blocks, constant_dim, stack_dim_cat,
+                   indptr_cat, indices_cat, data_cat,
+                   indptr, indices, data)
+    else:
+        indptr = np.zeros(constant_dim + 1, dtype=idx_dtype)
+        indices = np.empty(0, dtype=idx_dtype)
+        data = np.empty(0, dtype=data_cat.dtype)
+
+    sum_dim = stack_dim_cat.sum()
+    if axis == 0:
+        return csc_matrix((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csr_matrix((data, indices, indptr),
                           shape=(constant_dim, sum_dim))
 
 
@@ -546,15 +604,29 @@ def bmat(blocks, format=None, dtype=None):
     M,N = blocks.shape
 
     # check for fast path cases
-    if (N == 1 and format in (None, 'csr') and all(isinstance(b, csr_matrix)
-                                                   for b in blocks.flat)):
-        A = _compressed_sparse_stack(blocks[:,0], 0)
+    if (format in (None, 'csr') and all(isinstance(b, csr_matrix)
+                                        for b in blocks.flat)):
+        if N > 1:
+            # stack along columns (axis 1):
+            blocks = [[_stack_along_minor_axis(blocks[b, :], 1)]
+                      for b in range(M)]   # must have shape: (M, 1)
+            blocks = np.asarray(blocks, dtype='object')
+
+        # stack along rows (axis 0):
+        A = _compressed_sparse_stack(blocks[:, 0], 0)
         if dtype is not None:
             A = A.astype(dtype)
         return A
-    elif (M == 1 and format in (None, 'csc')
-          and all(isinstance(b, csc_matrix) for b in blocks.flat)):
-        A = _compressed_sparse_stack(blocks[0,:], 1)
+    elif (format in (None, 'csc') and all(isinstance(b, csc_matrix)
+                                          for b in blocks.flat)):
+        if M > 1:
+            # stack along rows (axis 0):
+            blocks = [[_stack_along_minor_axis(blocks[:, b], 0)
+                       for b in range(N)]]   # must have shape: (1, N)
+            blocks = np.asarray(blocks, dtype='object')
+
+        # stack along columns (axis 1):
+        A = _compressed_sparse_stack(blocks[0, :], 1)
         if dtype is not None:
             A = A.astype(dtype)
         return A
@@ -574,21 +646,18 @@ def bmat(blocks, format=None, dtype=None):
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
                 elif brow_lengths[i] != A.shape[0]:
-                    msg = ('blocks[{i},:] has incompatible row dimensions. '
-                           'Got blocks[{i},{j}].shape[0] == {got}, '
-                           'expected {exp}.'.format(i=i, j=j,
-                                                    exp=brow_lengths[i],
-                                                    got=A.shape[0]))
+                    msg = (f'blocks[{i},:] has incompatible row dimensions. '
+                           f'Got blocks[{i},{j}].shape[0] == {A.shape[0]}, '
+                           f'expected {brow_lengths[i]}.')
                     raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 elif bcol_lengths[j] != A.shape[1]:
-                    msg = ('blocks[:,{j}] has incompatible row dimensions. '
-                           'Got blocks[{i},{j}].shape[1] == {got}, '
-                           'expected {exp}.'.format(i=i, j=j,
-                                                    exp=bcol_lengths[j],
-                                                    got=A.shape[1]))
+                    msg = (f'blocks[:,{j}] has incompatible column '
+                           f'dimensions. '
+                           f'Got blocks[{i},{j}].shape[1] == {A.shape[1]}, '
+                           f'expected {bcol_lengths[j]}.')
                     raise ValueError(msg)
 
     nnz = sum(block.nnz for block in blocks[block_mask])
@@ -661,16 +730,33 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 0, 7]])
 
     """
-    nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
+    row = []
+    col = []
+    data = []
+    r_idx = 0
+    c_idx = 0
+    for a in mats:
+        if isinstance(a, (list, numbers.Number)):
+            a = coo_matrix(a)
+        nrows, ncols = a.shape
         if issparse(a):
-            row[ia] = a
+            a = a.tocoo()
+            row.append(a.row + r_idx)
+            col.append(a.col + c_idx)
+            data.append(a.data)
         else:
-            row[ia] = coo_matrix(a)
-        rows.append(row)
-    return bmat(rows, format=format, dtype=dtype)
+            a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
+            row.append(a_row + r_idx)
+            col.append(a_col + c_idx)
+            data.append(a.ravel())
+        r_idx += nrows
+        c_idx += ncols
+    row = np.concatenate(row)
+    col = np.concatenate(col)
+    data = np.concatenate(data)
+    return coo_matrix((data, (row, col)),
+                      shape=(r_idx, c_idx),
+                      dtype=dtype).asformat(format)
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
@@ -689,9 +775,16 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used. This random state will be used
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
     data_rvs : callable, optional
@@ -715,15 +808,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
-
-    >>> class CustomRandomState(np.random.RandomState):
-    ...     def randint(self, k):
-    ...         i = np.random.randint(k)
-    ...         return i - i % 2
-    >>> np.random.seed(12345)
-    >>> rs = CustomRandomState()
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -732,13 +820,13 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.sparse import random
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
-    ...     def _rvs(self, *args, **kwargs):
-    ...         return self._random_state.randn(*self._size)
-    >>> X = CustomDistribution(seed=2906)
+    ...     def _rvs(self,  size=None, random_state=None):
+    ...         return random_state.standard_normal(size)
+    >>> X = CustomDistribution(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A
-    array([[ 0.        ,  0.        ,  0.        ,  0.        ],
+    array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
 
@@ -761,25 +849,24 @@ greater than %d - this is not supported on this machine
         raise ValueError(msg % np.iinfo(tp).max)
 
     # Number of non zero values
-    k = int(density * m * n)
+    k = int(round(density * m * n))
 
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
-        random_state = np.random.RandomState(random_state)
+    random_state = check_random_state(random_state)
 
     if data_rvs is None:
         if np.issubdtype(dtype, np.integer):
-            randint = random_state.randint
-
             def data_rvs(n):
-                return randint(np.iinfo(dtype).min, np.iinfo(dtype).max,
-                               n, dtype=dtype)
+                return rng_integers(random_state,
+                                    np.iinfo(dtype).min,
+                                    np.iinfo(dtype).max,
+                                    n,
+                                    dtype=dtype)
         elif np.issubdtype(dtype, np.complexfloating):
             def data_rvs(n):
-                return random_state.rand(n) + random_state.rand(n) * 1j
+                return (random_state.uniform(size=n) +
+                        random_state.uniform(size=n) * 1j)
         else:
-            data_rvs = random_state.rand
+            data_rvs = partial(random_state.uniform, 0., 1.)
 
     ind = random_state.choice(mn, size=k, replace=False)
 
@@ -805,9 +892,15 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -829,10 +922,10 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> matrix
     <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
-    >>> matrix.todense()
-    matrix([[0.05641158, 0.        , 0.        , 0.65088847],
-            [0.        , 0.        , 0.        , 0.14286682],
-            [0.        , 0.        , 0.        , 0.        ]])
+    >>> matrix.toarray()
+    array([[0.05641158, 0.        , 0.        , 0.65088847],
+           [0.        , 0.        , 0.        , 0.14286682],
+           [0.        , 0.        , 0.        , 0.        ]])
 
     """
     return random(m, n, density, format, dtype, random_state)

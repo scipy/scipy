@@ -68,7 +68,8 @@ script I was working with.
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann
+# Henkelmann; parts of the code for simplify_cells=True adapted from
+# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -80,7 +81,6 @@ from io import BytesIO
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
@@ -98,9 +98,53 @@ from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct)
 
 from .streams import ZlibInputStream
+
+
+def _has_struct(elem):
+    """Determine if elem is an array and if first array item is a struct."""
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+            isinstance(elem[0], mat_struct))
+
+
+def _inspect_cell_array(ndarray):
+    """Construct lists from cell arrays (loaded as numpy ndarrays), recursing
+    into items if they contain mat_struct objects."""
+    elem_list = []
+    for sub_elem in ndarray:
+        if isinstance(sub_elem, mat_struct):
+            elem_list.append(_matstruct_to_dict(sub_elem))
+        elif _has_struct(sub_elem):
+            elem_list.append(_inspect_cell_array(sub_elem))
+        else:
+            elem_list.append(sub_elem)
+    return elem_list
+
+
+def _matstruct_to_dict(matobj):
+    """Construct nested dicts from mat_struct objects."""
+    d = {}
+    for f in matobj._fieldnames:
+        elem = matobj.__dict__[f]
+        if isinstance(elem, mat_struct):
+            d[f] = _matstruct_to_dict(elem)
+        elif _has_struct(elem):
+            d[f] = _inspect_cell_array(elem)
+        else:
+            d[f] = elem
+    return d
+
+
+def _simplify_cells(d):
+    """Convert mat objects in dict to nested dicts."""
+    for key in d:
+        if isinstance(d[key], mat_struct):
+            d[key] = _matstruct_to_dict(d[key])
+        elif _has_struct(d[key]):
+            d[key] = _inspect_cell_array(d[key])
+    return d
 
 
 class MatFile5Reader(MatFileReader):
@@ -133,8 +177,8 @@ class MatFile5Reader(MatFileReader):
                  matlab_compatible=False,
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
-                 uint16_codec=None
-                 ):
+                 uint16_codec=None,
+                 simplify_cells=False):
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
@@ -144,7 +188,7 @@ class MatFile5Reader(MatFileReader):
         Set codec to use for uint16 char arrays (e.g., 'utf-8').
         Use system default codec if None
         '''
-        super(MatFile5Reader, self).__init__(
+        super().__init__(
             mat_stream,
             byte_order,
             mat_dtype,
@@ -152,8 +196,8 @@ class MatFile5Reader(MatFileReader):
             chars_as_strings,
             matlab_compatible,
             struct_as_record,
-            verify_compressed_data_integrity
-            )
+            verify_compressed_data_integrity,
+            simplify_cells)
         # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
@@ -266,7 +310,7 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
                 warnings.warn('Duplicate variable name "%s" in stream'
                               ' - replacing previous with new\n'
@@ -300,7 +344,10 @@ class MatFile5Reader(MatFileReader):
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
-        return mdict
+        if self.simplify_cells:
+            return _simplify_cells(mdict)
+        else:
+            return mdict
 
     def list_variables(self):
         ''' list variables from stream '''
@@ -311,7 +358,7 @@ class MatFile5Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
+            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -382,7 +429,7 @@ def varmats_from_mat(file_obj):
     while not rdr.end_of_stream():
         start_position = next_position
         hdr, next_position = rdr.read_var_header()
-        name = asstr(hdr.name)
+        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
         # Read raw variable string
         file_obj.seek(start_position)
         byte_count = next_position - start_position
@@ -396,7 +443,7 @@ def varmats_from_mat(file_obj):
     return named_mats
 
 
-class EmptyStructMarker(object):
+class EmptyStructMarker:
     """ Class to indicate presence of empty matlab struct on output """
 
 
@@ -458,7 +505,7 @@ NDT_TAG_SMALL = MDTYPES[native_code]['dtypes']['tag_smalldata']
 NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 
-class VarWriter5(object):
+class VarWriter5:
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), NDT_TAG_FULL)
     mat_tag['mdtype'] = miMATRIX
@@ -761,7 +808,7 @@ class VarWriter5(object):
         self._write_items(arr)
 
 
-class MatFile5Writer(object):
+class MatFile5Writer:
     ''' Class for writing mat5 files '''
 
     @docfiller
@@ -834,7 +881,7 @@ class MatFile5Writer(object):
             if self.do_compression:
                 stream = BytesIO()
                 self._matrix_writer.file_stream = stream
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                self._matrix_writer.write_top(var, name.encode('latin1'), is_global)
                 out_str = zlib.compress(stream.getvalue())
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
@@ -842,4 +889,4 @@ class MatFile5Writer(object):
                 self.file_stream.write(tag.tobytes())
                 self.file_stream.write(out_str)
             else:  # not compressing
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                self._matrix_writer.write_top(var, name.encode('latin1'), is_global)

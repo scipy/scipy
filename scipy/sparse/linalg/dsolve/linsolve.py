@@ -6,6 +6,7 @@ from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
+import copy
 
 from . import _superlu
 
@@ -71,13 +72,21 @@ def _get_umf_family(A):
     try:
         family = _families[(f_type, i_type)]
 
-    except KeyError:
+    except KeyError as e:
         msg = 'only float64 or complex128 matrices with int32 or int64' \
             ' indices are supported! (got: matrix: %s, indices: %s)' \
             % (f_type, i_type)
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
-    return family
+    # See gh-8278. Considered converting only if
+    # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
+    # but that didn't always fix the issue.
+    family = family[0] + "l"
+    A_new = copy.copy(A)
+    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
+    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+
+    return family, A_new
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -123,7 +132,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve(A, B)
-    >>> np.allclose(A.dot(x).todense(), B.todense())
+    >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
     """
 
@@ -175,7 +184,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family, A = _get_umf_family(A)
+        umf = umfpack.UmfpackContext(umf_family)
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
     else:
@@ -212,7 +222,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             row_segs = []
             col_segs = []
             for j in range(b.shape[1]):
-                bj = np.asarray(b[:, j].todense()).ravel()
+                bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]
@@ -319,6 +329,11 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
         _options.update(options)
+
+    # Ensure that no column permutations are applied
+    if (_options["ColPerm"] == "NATURAL"):
+        _options["SymmetricMode"] = True
+
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=False, options=_options)
@@ -405,6 +420,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
         _options.update(options)
+
+    # Ensure that no column permutations are applied
+    if (_options["ColPerm"] == "NATURAL"):
+        _options["SymmetricMode"] = True
+
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=True, options=_options)
@@ -454,7 +474,8 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family, A = _get_umf_family(A)
+        umf = umfpack.UmfpackContext(umf_family)
 
         # Make LU decomposition.
         umf.numeric(A)
@@ -470,14 +491,14 @@ def factorized(A):
 def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                        unit_diagonal=False):
     """
-    Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
+    Solve the equation ``A x = b`` for `x`, assuming A is a triangular matrix.
 
     Parameters
     ----------
     A : (M, M) sparse matrix
         A sparse square triangular matrix. Should be in CSR format.
     b : (M,) or (M, N) array_like
-        Right-hand side matrix in `A x = b`
+        Right-hand side matrix in ``A x = b``
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
@@ -499,7 +520,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system `A x = b`. Shape of return matches shape of `b`.
+        Solution to the system ``A x = b``. Shape of return matches shape
+        of `b`.
 
     Raises
     ------
@@ -553,7 +575,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
     # Init x as (a copy of) b.
-    x_dtype = np.result_type(A.data, b, np.float)
+    x_dtype = np.result_type(A.data, b, np.float64)
     if overwrite_b:
         if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
             x = b

@@ -25,6 +25,10 @@
 !
 
 python module _flapack
+    usercode '''
+#define F_INT int
+'''
+
 interface
 
     ! Following classification is due to

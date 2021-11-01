@@ -516,7 +516,7 @@ case _TYPE:                                                              \
         _oo = _offsets[_ii];                                             \
         _tmp = _oo == _mv ? _cv : *(_type *)(_pi + _oo);                 \
         if (_ss != NULL) {                                               \
-            _tmp += _ss[_ii];                                            \
+            _tmp += (_type) _ss[_ii];                                    \
         }                                                                \
         if (_minimum) {                                                  \
             if (_tmp < _res) {                                           \

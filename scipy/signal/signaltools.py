@@ -3,13 +3,13 @@
 
 import operator
 import math
-import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
+from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
@@ -20,7 +20,7 @@ from ._sosfilt import _sosfilt
 import warnings
 
 
-__all__ = ['correlate', 'correlate2d',
+__all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
@@ -39,17 +39,17 @@ _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
 def _valfrommode(mode):
     try:
         return _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
 
 def _bvalfromboundary(boundary):
     try:
         return _boundarydict[boundary] << 2
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
-                         "(or 'wrap'), and 'symmetric' (or 'symm').")
+                         "(or 'wrap'), and 'symmetric' (or 'symm').") from e
 
 
 def _inputs_swap_needed(mode, shape1, shape2, axes=None):
@@ -136,6 +136,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     See Also
     --------
     choose_conv_method : contains more documentation on `method`.
+    correlation_lags : calculates the lag / displacement indices array for 1D
+        cross-correlation.
 
     Notes
     -----
@@ -169,11 +171,13 @@ def correlate(in1, in2, mode='full', method='auto'):
     that has passed through a noisy channel.
 
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
-    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
     >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
 
-    >>> import matplotlib.pyplot as plt
     >>> clock = np.arange(64, len(sig), 128)
     >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
     >>> ax_orig.plot(sig)
@@ -187,7 +191,32 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
     >>> fig.tight_layout()
-    >>> fig.show()
+    >>> plt.show()
+
+    Compute the cross-correlation of a noisy signal with the original signal.
+
+    >>> x = np.arange(128) / 128
+    >>> sig = np.sin(2 * np.pi * x)
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
+    >>> corr = signal.correlate(sig_noise, sig)
+    >>> lags = signal.correlation_lags(len(sig), len(sig_noise))
+    >>> corr /= np.max(corr)
+
+    >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, figsize=(4.8, 4.8))
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.set_title('Original signal')
+    >>> ax_orig.set_xlabel('Sample Number')
+    >>> ax_noise.plot(sig_noise)
+    >>> ax_noise.set_title('Signal with noise')
+    >>> ax_noise.set_xlabel('Sample Number')
+    >>> ax_corr.plot(lags, corr)
+    >>> ax_corr.set_title('Cross-correlated signal')
+    >>> ax_corr.set_xlabel('Lag')
+    >>> ax_orig.margins(0, 0.1)
+    >>> ax_noise.margins(0, 0.1)
+    >>> ax_corr.margins(0, 0.1)
+    >>> fig.tight_layout()
+    >>> plt.show()
 
     """
     in1 = np.asarray(in1)
@@ -201,9 +230,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     # Don't use _valfrommode, since correlate should not accept numeric modes
     try:
         val = _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
@@ -254,6 +283,103 @@ def correlate(in1, in2, mode='full', method='auto'):
     else:
         raise ValueError("Acceptable method flags are 'auto',"
                          " 'direct', or 'fft'.")
+
+
+def correlation_lags(in1_len, in2_len, mode='full'):
+    r"""
+    Calculates the lag / displacement indices array for 1D cross-correlation.
+
+    Parameters
+    ----------
+    in1_size : int
+        First input size.
+    in2_size : int
+        Second input size.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output.
+        See the documentation `correlate` for more information.
+
+    See Also
+    --------
+    correlate : Compute the N-dimensional cross-correlation.
+
+    Returns
+    -------
+    lags : array
+        Returns an array containing cross-correlation lag/displacement indices.
+        Indices can be indexed with the np.argmax of the correlation to return
+        the lag/displacement.
+
+    Notes
+    -----
+    Cross-correlation for continuous functions :math:`f` and :math:`g` is
+    defined as:
+
+    .. math ::
+
+        \left ( f\star g \right )\left ( \tau \right )
+        \triangleq \int_{t_0}^{t_0 +T}
+        \overline{f\left ( t \right )}g\left ( t+\tau \right )dt
+
+    Where :math:`\tau` is defined as the displacement, also known as the lag.
+
+    Cross correlation for discrete functions :math:`f` and :math:`g` is
+    defined as:
+
+    .. math ::
+        \left ( f\star g \right )\left [ n \right ]
+        \triangleq \sum_{-\infty}^{\infty}
+        \overline{f\left [ m \right ]}g\left [ m+n \right ]
+
+    Where :math:`n` is the lag.
+
+    Examples
+    --------
+    Cross-correlation of a signal with its time-delayed self.
+
+    >>> from scipy import signal
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> x = rng.standard_normal(1000)
+    >>> y = np.concatenate([rng.standard_normal(100), x])
+    >>> correlation = signal.correlate(x, y, mode="full")
+    >>> lags = signal.correlation_lags(x.size, y.size, mode="full")
+    >>> lag = lags[np.argmax(correlation)]
+    """
+
+    # calculate lag ranges in different modes of operation
+    if mode == "full":
+        # the output is the full discrete linear convolution
+        # of the inputs. (Default)
+        lags = np.arange(-in2_len + 1, in1_len)
+    elif mode == "same":
+        # the output is the same size as `in1`, centered
+        # with respect to the 'full' output.
+        # calculate the full output
+        lags = np.arange(-in2_len + 1, in1_len)
+        # determine the midpoint in the full output
+        mid = lags.size // 2
+        # determine lag_bound to be used with respect
+        # to the midpoint
+        lag_bound = in1_len // 2
+        # calculate lag ranges for even and odd scenarios
+        if in1_len % 2 == 0:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)]
+        else:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
+    elif mode == "valid":
+        # the output consists only of those elements that do not
+        # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+        # must be at least as large as the other in every dimension.
+
+        # the lag_bound will be either negative or positive
+        # this let's us infer how to present the lag range
+        lag_bound = in1_len - in2_len
+        if lag_bound >= 0:
+            lags = np.arange(lag_bound + 1)
+        else:
+            lags = np.arange(lag_bound, 1)
+    return lags
 
 
 def _centered(arr, newshape):
@@ -480,7 +606,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     Autocorrelation of white noise is an impulse.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(1000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(1000)
     >>> autocorr = signal.fftconvolve(sig, sig[::-1], mode='full')
 
     >>> import matplotlib.pyplot as plt
@@ -499,7 +626,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
     >>> from scipy import misc
     >>> face = misc.face(gray=True)
-    >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
+    >>> kernel = np.outer(signal.windows.gaussian(70, 8),
+    ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
     >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(3, 1,
@@ -707,7 +835,8 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     Convolve a 100,000 sample signal with a 512-sample filter.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(100000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(100000)
     >>> filt = signal.firwin(512, 0.01)
     >>> fsig = signal.oaconvolve(sig, filt)
 
@@ -744,11 +873,12 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=True)
 
-    if not axes:
-        return in1*in2
-
     s1 = in1.shape
     s2 = in2.shape
+
+    if not axes:
+        ret = in1 * in2
+        return _apply_conv_mode(ret, s1, s2, mode, axes)
 
     # Calculate this now since in1 is changed later
     shape_final = [None if i not in axes else
@@ -877,17 +1007,6 @@ def _numeric_arrays(arrays, kinds='buifc'):
     return True
 
 
-def _prod(iterable):
-    """
-    Product of a list of numbers.
-    Faster than np.prod for short lists like array shapes.
-    """
-    product = 1
-    for x in iterable:
-        product *= x
-    return product
-
-
 def _conv_ops(x_shape, h_shape, mode):
     """
     Find the number of operations required for direct/fft methods of
@@ -915,7 +1034,8 @@ def _conv_ops(x_shape, h_shape, mode):
         elif mode == "valid":
             direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
         elif mode == "same":
-            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
+            direct_ops = (s1 * s2 if s1 < s2 else
+                          s1 * s2 - (s2 // 2) * ((s2 + 1) // 2))
     else:
         if mode == "full":
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
@@ -1121,16 +1241,17 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> img = np.random.rand(32, 32)
-    >>> filter = np.random.rand(8, 8)
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((32, 32))
+    >>> filter = rng.random((8, 8))
     >>> method = signal.choose_conv_method(img, filter, mode='same')
     >>> method
     'fft'
 
     This can then be applied to other arrays of the same dtype and shape:
 
-    >>> img2 = np.random.rand(32, 32)
-    >>> filter2 = np.random.rand(8, 8)
+    >>> img2 = rng.random((32, 32))
+    >>> filter2 = rng.random((8, 8))
     >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
     >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
 
@@ -1241,7 +1362,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> win = signal.hann(50)
+    >>> win = signal.windows.hann(50)
     >>> filtered = signal.convolve(sig, win, mode='same') / sum(win)
 
     >>> import matplotlib.pyplot as plt
@@ -1346,11 +1467,10 @@ def order_filter(a, domain, rank):
 
     """
     domain = np.asarray(domain)
-    size = domain.shape
-    for k in range(len(size)):
-        if (size[k] % 2) != 1:
+    for dimsize in domain.shape:
+        if (dimsize % 2) != 1:
             raise ValueError("Each dimension of domain argument "
-                             " should have an odd number of elements.")
+                             "should have an odd number of elements.")
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -1377,19 +1497,24 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
-    Warns 
-    -------
+    Warns
+    -----
     UserWarning
         If array size is smaller than kernel size along any dimension
 
-    See also
+    See Also
     --------
     scipy.ndimage.median_filter
+    scipy.signal.medfilt2d
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
+
+    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
+    the specialised function `scipy.signal.medfilt2d` may be faster.
+
     """
     volume = np.atleast_1d(volume)
     if kernel_size is None:
@@ -1402,9 +1527,10 @@ def medfilt(volume, kernel_size=None):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
     if any(k > s for k, s in zip(kernel_size, volume.shape)):
-        warnings.warn('kernel_size exceeds volume extent: the volume will be zero-padded.')
+        warnings.warn('kernel_size exceeds volume extent: the volume will be '
+                      'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1442,7 +1568,8 @@ def wiener(im, mysize=None, noise=None):
     >>> from scipy.signal.signaltools import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((40, 40))    #Create a random image
     >>> filtered_img = wiener(img, (5, 5))  #Filter the image
     >>> f, (plot1, plot2) = plt.subplots(1, 2)
     >>> plot1.imshow(img)
@@ -1633,10 +1760,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
+    >>> rng = np.random.default_rng()
     >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
-    >>> face = face + np.random.randn(*face.shape) * 50  # add noise
+    >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
     >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
@@ -1706,11 +1834,21 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
+    -----
+    This is faster than `medfilt` when the input dtype is ``uint8``,
+    ``float32``, or ``float64``; for other types, this falls back to
+    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
+    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    faster than this function.
+
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
@@ -1810,11 +1948,12 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> t = np.linspace(-1, 1, 201)
     >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
     ...      0.1*np.sin(2*np.pi*1.25*t + 1) +
     ...      0.18*np.cos(2*np.pi*3.85*t))
-    >>> xn = x + np.random.randn(len(t)) * 0.08
+    >>> xn = x + rng.standard_normal(len(t)) * 0.08
 
     Create an order 3 lowpass butterworth filter:
 
@@ -1961,17 +2100,27 @@ def lfiltic(b, a, y, x=None):
     M = np.size(b) - 1
     K = max(M, N)
     y = np.asarray(y)
-    if y.dtype.kind in 'bui':
-        # ensure calculations are floating point
-        y = y.astype(np.float64)
-    zi = np.zeros(K, y.dtype)
+
     if x is None:
-        x = np.zeros(M, y.dtype)
+        result_type = np.result_type(np.asarray(b), np.asarray(a), y)
+        if result_type.kind in 'bui':
+            result_type = np.float64
+        x = np.zeros(M, dtype=result_type)
     else:
         x = np.asarray(x)
+
+        result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
+        if result_type.kind in 'bui':
+            result_type = np.float64
+        x = x.astype(result_type)
+
         L = np.size(x)
         if L < M:
             x = np.r_[x, np.zeros(M - L)]
+
+    y = y.astype(result_type)
+    zi = np.zeros(K, result_type)
+
     L = np.size(y)
     if L < N:
         y = np.r_[y, np.zeros(N - L)]
@@ -2076,7 +2225,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
@@ -2106,16 +2255,15 @@ def hilbert(x, N=None, axis=-1):
     >>> instantaneous_frequency = (np.diff(instantaneous_phase) /
     ...                            (2.0*np.pi) * fs)
 
-    >>> fig = plt.figure()
-    >>> ax0 = fig.add_subplot(211)
+    >>> fig, (ax0, ax1) = plt.subplots(nrows=2)
     >>> ax0.plot(t, signal, label='signal')
     >>> ax0.plot(t, amplitude_envelope, label='envelope')
     >>> ax0.set_xlabel("time in seconds")
     >>> ax0.legend()
-    >>> ax1 = fig.add_subplot(212)
     >>> ax1.plot(t[1:], instantaneous_frequency)
     >>> ax1.set_xlabel("time in seconds")
     >>> ax1.set_ylim(0.0, 120.0)
+    >>> fig.tight_layout()
 
     References
     ----------
@@ -2781,7 +2929,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return numerator[::-1], denominator
 
 
-def resample(x, num, t=None, axis=0, window=None):
+def resample(x, num, t=None, axis=0, window=None, domain='time'):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
 
@@ -2803,6 +2951,10 @@ def resample(x, num, t=None, axis=0, window=None):
     window : array_like, callable, string, float, or tuple, optional
         Specifies the window applied to the signal in the Fourier
         domain.  See below for details.
+    domain : string, optional
+        A string indicating the domain of the input `x`:
+        ``time`` Consider the input `x` as time-domain (Default),
+        ``freq`` Consider the input `x` as frequency-domain.
 
     Returns
     -------
@@ -2861,17 +3013,25 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
+
+    if domain not in ('time', 'freq'):
+        raise ValueError("Acceptable domain flags are 'time' or"
+                         " 'freq', not domain={}".format(domain))
+
     x = np.asarray(x)
     Nx = x.shape[axis]
 
     # Check if we can use faster real FFT
     real_input = np.isrealobj(x)
 
-    # Forward transform
-    if real_input:
-        X = sp_fft.rfft(x, axis=axis)
-    else:  # Full complex FFT
-        X = sp_fft.fft(x, axis=axis)
+    if domain == 'time':
+        # Forward transform
+        if real_input:
+            X = sp_fft.rfft(x, axis=axis)
+        else:  # Full complex FFT
+            X = sp_fft.fft(x, axis=axis)
+    else:  # domain == 'freq'
+        X = x
 
     # Apply window to spectrum
     if window is not None:
@@ -3117,8 +3277,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
-        half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
-        h = firwin(2 * half_len + 1, f_c, window=window)
+        half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
+        h = firwin(2 * half_len + 1, f_c,
+                   window=window).astype(x.dtype)  # match dtype of x
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -3276,12 +3437,13 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     Examples
     --------
     >>> from scipy import signal
-    >>> randgen = np.random.RandomState(9)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> npoints = 1000
-    >>> noise = randgen.randn(npoints)
+    >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max() < 0.01
-    True
+    >>> (signal.detrend(x) - noise).max()
+    0.06  # random
 
     """
     if type not in ['linear', 'l', 'constant', 'c']:
@@ -3291,7 +3453,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape
@@ -3446,7 +3608,7 @@ def lfilter_zi(b, a):
     elif len(b) < n:
         b = np.r_[b, np.zeros(n - len(b))]
 
-    IminusA = np.eye(n - 1) - linalg.companion(a).T
+    IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
     zi = np.linalg.solve(IminusA, B)
@@ -3523,8 +3685,11 @@ def sosfilt_zi(sos):
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
 
+    if sos.dtype.kind in 'bui':
+        sos = sos.astype(np.float64)
+
     n_sections = sos.shape[0]
-    zi = np.empty((n_sections, 2))
+    zi = np.empty((n_sections, 2), dtype=sos.dtype)
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
@@ -3833,12 +3998,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     First, create a filter.
 
     >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
-    >>> np.random.seed(123456)
 
     `sig` is a random input signal to be filtered.
 
+    >>> rng = np.random.default_rng()
     >>> n = 60
-    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+    >>> sig = rng.standard_normal(n)**3 + 3*rng.standard_normal(n).cumsum()
 
     Apply `filtfilt` to `sig`, once using the Gustafsson method, and
     once using padding, and plot the results for comparison.
@@ -3867,7 +4032,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = np.random.randn(5000)
+    >>> x = rng.standard_normal(5000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
@@ -3936,8 +4101,8 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater than "
-                         "padlen, which is %d." % edge)
+        raise ValueError("The length of the input vector x must be greater "
+                         "than padlen, which is %d." % edge)
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each
@@ -4127,13 +4292,13 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     --------
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Create an interesting signal to filter.
 
     >>> n = 201
     >>> t = np.linspace(0, 1, n)
-    >>> np.random.seed(123)
-    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*rng.standard_normal(n)
 
     Create a lowpass Butterworth filter, and use it to filter `x`.
 
@@ -4253,6 +4418,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
+
+    result_type = x.dtype
+    if result_type.kind in 'bui':
+        result_type = np.float64
+    b = np.asarray(b, dtype=result_type)
+    a = np.asarray(a, dtype=result_type)
 
     sl = [slice(None)] * x.ndim
     a = np.asarray(a)

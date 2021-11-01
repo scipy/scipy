@@ -22,6 +22,8 @@ cimport cython
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
 
+np.import_array()
+
 include 'parameters.pxi'
 
 
@@ -144,7 +146,7 @@ def shortest_path(csgraph, method='auto',
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -164,12 +166,20 @@ def shortest_path(csgraph, method='auto',
         issparse = isspmatrix(csgraph)
         if issparse:
             Nk = csgraph.nnz
+            if csgraph.format in ('csr', 'csc', 'coo'):
+                edges = csgraph.data
+            else:
+                edges = csgraph.tocoo().data
+        elif np.ma.isMaskedArray(csgraph):
+            Nk = csgraph.count()
+            edges = csgraph.compressed()
         else:
-            Nk = np.sum(csgraph > 0)
+            edges = csgraph[np.isfinite(csgraph)]
+            edges = edges[edges != 0]
+            Nk = edges.size
 
         if indices is not None or Nk < N * N / 4:
-            if ((issparse and np.any(csgraph.data < 0))
-                      or (not issparse and np.any(csgraph < 0))):
+            if np.any(edges < 0):
                 method = 'J'
             else:
                 method = 'D'
@@ -261,7 +271,7 @@ def floyd_warshall(csgraph, directed=True,
     >>> from scipy.sparse.csgraph import floyd_warshall
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -277,10 +287,10 @@ def floyd_warshall(csgraph, directed=True,
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
-    array([[ 0.,  1.,  2.,  2.],
-           [ 1.,  0.,  3.,  1.],
-           [ 2.,  3.,  0.,  3.],
-           [ 2.,  1.,  3.,  0.]])
+    array([[0., 1., 2., 2.],
+           [1., 0., 3., 1.],
+           [2., 3., 0., 3.],
+           [2., 1., 3., 0.]])
     >>> predecessors
     array([[-9999,     0,     0,     1],
            [    1, -9999,     0,     1],
@@ -294,7 +304,7 @@ def floyd_warshall(csgraph, directed=True,
     if not isspmatrix(csgraph):
         # for dense array input, zero entries represent non-edge
         dist_matrix[dist_matrix == 0] = INFINITY
-        
+
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
 
@@ -497,7 +507,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -540,8 +550,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         dist_matrix = np.full(N, np.inf, dtype=DTYPE)
         dist_matrix[indices] = 0
     else:
-        dist_matrix = np.zeros((len(indices), N), dtype=DTYPE)
-        dist_matrix.fill(np.inf)
+        dist_matrix = np.full((len(indices), N), np.inf, dtype=DTYPE)
         dist_matrix[np.arange(len(indices)), indices] = 0
 
     #------------------------------
@@ -713,14 +722,14 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                         pred[i, j_current] = v.index
 
 @cython.boundscheck(False)
-cdef _dijkstra_directed(
+cdef int _dijkstra_directed(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -732,6 +741,8 @@ cdef _dijkstra_directed(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_directed")
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -755,9 +766,10 @@ cdef _dijkstra_directed(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_directed_multi(
+cdef int _dijkstra_directed_multi(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
@@ -765,7 +777,7 @@ cdef _dijkstra_directed_multi(
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
@@ -780,6 +792,9 @@ cdef _dijkstra_directed_multi(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_directed_multi")
 
     # initialize the heap with each of the starting
     # nodes on the heap and in a scanned state with 0 values
@@ -800,9 +815,10 @@ cdef _dijkstra_directed_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_undirected(
+cdef int _dijkstra_undirected(
             int[:] source_indices,
             double[:] csr_weights,
             int[:] csr_indices,
@@ -812,7 +828,7 @@ cdef _dijkstra_undirected(
             int[:] csrT_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -824,6 +840,8 @@ cdef _dijkstra_undirected(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_undirected")
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -851,9 +869,10 @@ cdef _dijkstra_undirected(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_undirected_multi(
+cdef int _dijkstra_undirected_multi(
             int[:] source_indices,
             double[:] csr_weights,
             int[:] csr_indices,
@@ -864,7 +883,7 @@ cdef _dijkstra_undirected_multi(
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
@@ -877,6 +896,9 @@ cdef _dijkstra_undirected_multi(
         FibonacciNode *current_node
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_undirected_multi")
 
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
                                sources, dist_matrix, return_pred)
@@ -897,6 +919,7 @@ cdef _dijkstra_undirected_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 
 def bellman_ford(csgraph, directed=True, indices=None,
@@ -981,7 +1004,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1215,7 +1238,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([ 0.,  1.,  2.,  2.])
+    array([0., 1., 2., 2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 

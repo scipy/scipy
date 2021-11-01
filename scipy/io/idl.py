@@ -31,7 +31,6 @@ __all__ = ['readsav']
 
 import struct
 import numpy as np
-from numpy.compat import asstr
 import tempfile
 import zlib
 import warnings
@@ -143,7 +142,7 @@ def _read_float64(f):
     return np.float64(struct.unpack('>d', f.read(8))[0])
 
 
-class Pointer(object):
+class Pointer:
     '''Class used to define pointers'''
 
     def __init__(self, index):
@@ -160,9 +159,8 @@ def _read_string(f):
     '''Read a string'''
     length = _read_long(f)
     if length > 0:
-        chars = _read_bytes(f, length)
+        chars = _read_bytes(f, length).decode('latin1')
         _align_32(f)
-        chars = asstr(chars)
     else:
         chars = ''
     return chars
@@ -650,10 +648,10 @@ class AttrDict(dict):
         dict.__init__(self, init)
 
     def __getitem__(self, name):
-        return super(AttrDict, self).__getitem__(name.lower())
+        return super().__getitem__(name.lower())
 
     def __setitem__(self, key, value):
-        return super(AttrDict, self).__setitem__(key.lower(), value)
+        return super().__setitem__(key.lower(), value)
 
     __getattr__ = __getitem__
     __setattr__ = __setitem__
@@ -696,6 +694,36 @@ def readsav(file_name, idict=None, python_dict=False,
         returns a Python dictionary with all variable names in lowercase.
         If `idict` was specified, then variables are written to the
         dictionary specified, and the updated dictionary is returned.
+
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+    >>> from scipy.io import readsav
+
+    Get the filename for an example .sav file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> sav_fname = pjoin(data_dir, 'array_float32_1d.sav')
+
+    Load the .sav file contents.
+
+    >>> sav_data = readsav(sav_fname)
+
+    Get keys of the .sav file contents.
+
+    >>> print(sav_data.keys())
+    dict_keys(['array1d'])
+
+    Access a content with a key.
+
+    >>> print(sav_data['array1d'])
+    [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0.]
 
     """
 

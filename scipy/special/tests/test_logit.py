@@ -4,15 +4,12 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 from scipy.special import logit, expit
 
 
-class TestLogit(object):
+class TestLogit:
     def check_logit_out(self, dtype, expected):
         a = np.linspace(0,1,10)
         a = np.array(a, dtype=dtype)
-        olderr = np.seterr(divide='ignore')
-        try:
+        with np.errstate(divide='ignore'):
             actual = logit(a)
-        finally:
-            np.seterr(**olderr)
 
         assert_almost_equal(actual, expected)
 
@@ -36,16 +33,13 @@ class TestLogit(object):
 
     def test_nan(self):
         expected = np.array([np.nan]*4)
-        olderr = np.seterr(invalid='ignore')
-        try:
+        with np.errstate(invalid='ignore'):
             actual = logit(np.array([-3., -2., 2., 3.]))
-        finally:
-            np.seterr(**olderr)
 
         assert_equal(expected, actual)
 
 
-class TestExpit(object):
+class TestExpit:
     def check_expit_out(self, dtype, expected):
         a = np.linspace(-4,4,10)
         a = np.array(a, dtype=dtype)

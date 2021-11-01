@@ -12,7 +12,7 @@ from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
 from scipy.signal.spectral import _spectral_helper
 
 
-class TestPeriodogram(object):
+class TestPeriodogram:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -216,7 +216,7 @@ class TestPeriodogram(object):
         assert_(p.dtype == q.dtype)
 
 
-class TestWelch(object):
+class TestWelch:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -329,7 +329,7 @@ class TestWelch(object):
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -669,7 +669,7 @@ class TestCSD:
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = csd(x, x, nperseg=10, axis=0,
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -848,7 +848,7 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-class TestCoherence(object):
+class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
         y = np.copy(x)  # So `y is x` -> False
@@ -872,7 +872,7 @@ class TestCoherence(object):
         assert_allclose(C, C1)
 
 
-class TestSpectrogram(object):
+class TestSpectrogram:
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -924,7 +924,7 @@ class TestSpectrogram(object):
         assert_allclose(f1, f3)
         assert_allclose(p1, p3)
 
-class TestLombscargle(object):
+class TestLombscargle:
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -1071,7 +1071,7 @@ class TestLombscargle(object):
         lombscargle(t, x, f*2*np.pi)
 
 
-class TestSTFT(object):
+class TestSTFT:
     def test_input_validation(self):
         assert_raises(ValueError, check_COLA, 'hann', -10, 0)
         assert_raises(ValueError, check_COLA, 'hann', 10, 20)

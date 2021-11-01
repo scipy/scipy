@@ -27,9 +27,9 @@ def test_convert_temperature():
 
 
 def test_lambda_to_nu():
-    assert_equal(sc.lambda2nu(sc.speed_of_light), 1)
+    assert_equal(sc.lambda2nu([sc.speed_of_light, 1]), [1, sc.speed_of_light])
 
 
 def test_nu_to_lambda():
-    assert_equal(sc.nu2lambda(1), sc.speed_of_light)
+    assert_equal(sc.nu2lambda([sc.speed_of_light, 1]), [1, sc.speed_of_light])
 

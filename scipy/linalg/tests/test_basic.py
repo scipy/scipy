@@ -1,5 +1,6 @@
-import warnings
 import itertools
+import warnings
+
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
@@ -15,12 +16,14 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, LinAlgWarning)
+                          matrix_balance, qr, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
-REAL_DTYPES = [np.float32, np.float64, np.longdouble]
-COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
@@ -34,7 +37,7 @@ def _eps_cast(dtyp):
     return np.finfo(dt).eps
 
 
-class TestSolveBanded(object):
+class TestSolveBanded:
 
     def test_real(self):
         a = array([[1.0, 20, 0, 0],
@@ -173,7 +176,7 @@ class TestSolveBanded(object):
         assert_array_almost_equal(dot(a, x), b)
 
 
-class TestSolveHBanded(object):
+class TestSolveHBanded:
 
     def test_01_upper(self):
         # Solve
@@ -488,7 +491,7 @@ class TestSolveHBanded(object):
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
 
-class TestSolve(object):
+class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -505,36 +508,83 @@ class TestSolve(object):
 
     def test_simple(self):
         a = [[1, 20], [-30, 4]]
-        for b in ([[1, 0], [0, 1]], [1, 0],
-                  [[2, 1], [-30, 4]]):
+        for b in ([[1, 0], [0, 1]],
+                  [1, 0],
+                  [[2, 1], [-30, 4]]
+                  ):
             x = solve(a, b)
-            assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym(self):
-        a = [[2, 3], [3, 5]]
-        for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]], [1, 0]):
-                x = solve(a, b, sym_pos=1, lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym_complex(self):
-        a = [[5, 2], [2, 4]]
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
-                  ]:
-            x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_simple_complex(self):
         a = array([[5, 2], [2j, 4]], 'D')
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
                   [1, 0j],
                   array([1, 0], 'D'),
-                  ]:
+                  ):
             x = solve(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos(self):
+        a = [[2, 3], [3, 5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='pos', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos_complexb(self):
+        a = [[5, 2], [2, 4]]
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
+                  ):
+            x = solve(a, b, assume_a='pos')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='sym', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complexb(self):
+        a = [[5, 2], [2, -4]]
+        for b in ([1j, 0],
+                  [[1j, 1j],[0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complex(self):
+        a = [[5, 2+1j], [2+1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_her_actuallysym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0],
+                      [1j, 0],
+                      ):
+                x = solve(a, b, assume_a='her', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_her(self):
+        a = [[5, 2+1j], [2-1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='her')
             assert_array_almost_equal(dot(a, x), b)
 
     def test_nils_20Feb04(self):
@@ -772,7 +822,7 @@ class TestSolve(object):
                                 err_msg=err_msg)
 
 
-class TestSolveTriangular(object):
+class TestSolveTriangular:
 
     def test_simple(self):
         """
@@ -834,7 +884,7 @@ class TestSolveTriangular(object):
         assert_array_almost_equal(sol, [1, 0])
 
 
-class TestInv(object):
+class TestInv:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -877,7 +927,7 @@ class TestInv(object):
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
 
-class TestDet(object):
+class TestDet:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -924,7 +974,7 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
-class TestLstsq(object):
+class TestLstsq:
 
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
@@ -1211,7 +1261,10 @@ class TestLstsq(object):
             assert_equal(s, np.empty((0,)))
 
 
-class TestPinv(object):
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+class TestPinv:
+    def setup_method(self):
+        np.random.seed(1234)
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1260,8 +1313,39 @@ class TestPinv(object):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv, a_pinv2)
 
+    def test_atol_rtol(self):
+        n = 12
+        # get a random ortho matrix for shuffling
+        q, _ = qr(np.random.rand(n, n))
+        a_m = np.arange(35.0).reshape(7,5)
+        a = a_m.copy()
+        a[0,0] = 0.001
+        atol = 1e-5
+        rtol = 0.05
+        # svds of a_m is ~ [116.906, 4.234, tiny, tiny, tiny]
+        # svds of a is ~ [116.906, 4.234, 4.62959e-04, tiny, tiny]
+        # Just abs cutoff such that we arrive at a_modified
+        a_p = pinv(a_m, atol=atol, rtol=0.)
+        adiff1 = a @ a_p @ a - a
+        adiff2 = a_m @ a_p @ a_m - a_m
+        # Now adiff1 should be around atol value while adiff2 should be
+        # relatively tiny
+        assert_allclose(np.linalg.norm(adiff1), 5e-4, atol=5.e-4)
+        assert_allclose(np.linalg.norm(adiff2), 5e-14, atol=5.e-14)
 
-class TestPinvSymmetric(object):
+        # Now do the same but remove another sv ~4.234 via rtol
+        a_p = pinv(a_m, atol=atol, rtol=rtol)
+        adiff1 = a @ a_p @ a - a
+        adiff2 = a_m @ a_p @ a_m - a_m
+        assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
+        assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+class TestPinvSymmetric:
+
+    def setup_method(self):
+        np.random.seed(1234)
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1293,20 +1377,35 @@ class TestPinvSymmetric(object):
         a_pinv = pinvh(a.tolist())
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+    def test_atol_rtol(self):
+        n = 12
+        # get a random ortho matrix for shuffling
+        q, _ = qr(np.random.rand(n, n))
+        a = np.diag([4, 3, 2, 1, 0.99e-4, 0.99e-5] + [0.99e-6]*(n-6))
+        a = q.T @ a @ q
+        a_m = np.diag([4, 3, 2, 1, 0.99e-4, 0.] + [0.]*(n-6))
+        a_m = q.T @ a_m @ q
+        atol = 1e-5
+        rtol = (4.01e-4 - 4e-5)/4
+        # Just abs cutoff such that we arrive at a_modified
+        a_p = pinvh(a, atol=atol, rtol=0.)
+        adiff1 = a @ a_p @ a - a
+        adiff2 = a_m @ a_p @ a_m - a_m
+        # Now adiff1 should dance around atol value since truncation
+        # while adiff2 should be relatively tiny
+        assert_allclose(norm(adiff1), atol, rtol=0.1)
+        assert_allclose(norm(adiff2), 1e-12, atol=1e-11)
 
-def test_pinv_pinv2_comparison():  # As reported in gh-8861
-    I_6 = np.eye(6)
-    Ts = np.diag([-1] * 4 + [-2], k=-1) + np.diag([-2] + [-1] * 4, k=1)
-    T = I_6 + Ts
-    A = 25 * (np.kron(I_6, T) + np.kron(Ts, I_6))
-
-    Ap, Ap2 = pinv(A), pinv2(A)
-
-    tol = 1e-11
-    assert_allclose(A @ Ap @ A - A, A @ Ap2 @ A - A, rtol=0., atol=tol)
-    assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
+        # Now do the same but through rtol cancelling atol value
+        a_p = pinvh(a, atol=atol, rtol=rtol)
+        adiff1 = a @ a_p @ a - a
+        adiff2 = a_m @ a_p @ a_m - a_m
+        # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
+        assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
+        assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
 @pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
 def test_auto_rcond(scale, pinv_):
@@ -1316,7 +1415,7 @@ def test_auto_rcond(scale, pinv_):
     assert_allclose(x_inv, expected)
 
 
-class TestVectorNorms(object):
+class TestVectorNorms:
 
     def test_types(self):
         for dtype in np.typecodes['AllFloat']:
@@ -1366,8 +1465,17 @@ class TestVectorNorms(object):
         assert_(b.shape == (2, 1, 2))
         assert_allclose(norm(a, 1, axis=2, keepdims=True), [[[3.], [7.]]] * 2)
 
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit BLAS required")
+    def test_large_vector(self):
+        check_free_memory(free_mb=17000)
+        x = np.zeros([2**31], dtype=np.float64)
+        x[-1] = 1
+        res = norm(x)
+        del x
+        assert_allclose(res, 1.0)
 
-class TestMatrixNorms(object):
+
+class TestMatrixNorms:
 
     def test_matrix_norms(self):
         # Not all of these are matrix norms in the most technical sense.
@@ -1414,7 +1522,7 @@ class TestMatrixNorms(object):
         assert_(b.shape == c.shape)
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     def test_solve(self):
         assert_no_overwrite(solve, [(3, 3), (3,)])
 
@@ -1440,6 +1548,7 @@ class TestOverwrite(object):
     def test_pinv(self):
         assert_no_overwrite(pinv, [(3, 3)])
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_pinv2(self):
         assert_no_overwrite(pinv2, [(3, 3)])
 
@@ -1447,7 +1556,7 @@ class TestOverwrite(object):
         assert_no_overwrite(pinvh, [(3, 3)])
 
 
-class TestSolveCirculant(object):
+class TestSolveCirculant:
 
     def test_basic1(self):
         c = np.array([1, 2, 3, 5])
@@ -1516,7 +1625,7 @@ class TestSolveCirculant(object):
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
         assert_equal(x.shape, (2, 3, 4))
-        assert_allclose(np.rollaxis(x, -1), expected)
+        assert_allclose(np.moveaxis(x, -1, 0), expected)
 
         # np.swapaxes(c, 1, 2) has shape (2, 4, 1); b.T has shape (4, 3).
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
@@ -1532,7 +1641,7 @@ class TestSolveCirculant(object):
         assert_allclose(x, y)
 
 
-class TestMatrix_Balance(object):
+class TestMatrix_Balance:
 
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')
@@ -1548,7 +1657,7 @@ class TestMatrix_Balance(object):
         # Pre/post LAPACK 3.5.0 gives the same result up to an offset
         # since in each case col norm is x1000 greater and
         # 1000 / 32 ~= 1 * 32 hence balanced with 2 ** 5.
-        assert_allclose(int(np.diff(np.log2(np.diag(y)))), 5)
+        assert_allclose(np.diff(np.log2(np.diag(y))), [5])
 
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4], [1, 1, 1e-2], [1e4, 1e2, 1]])
@@ -1558,7 +1667,7 @@ class TestMatrix_Balance(object):
     def test_separate(self):
         _, (y, z) = matrix_balance(np.array([[1000, 1], [1000, 0]]),
                                    separate=1)
-        assert_equal(int(np.diff(np.log2(y))), 5)
+        assert_equal(np.diff(np.log2(y)), [5])
         assert_allclose(z, np.arange(2))
 
     def test_permutation(self):

@@ -6,7 +6,7 @@ __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 @_decorator
 def _held_figure(func, obj, ax=None, **kw):
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
 
     if ax is None:
         fig = plt.figure()
@@ -67,7 +67,8 @@ def delaunay_plot_2d(tri, ax=None):
 
     The Delaunay triangulation of a set of random points:
 
-    >>> points = np.random.rand(30, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))
     >>> tri = Delaunay(points)
 
     Plot it:
@@ -122,7 +123,8 @@ def convex_hull_plot_2d(hull, ax=None):
 
     The convex hull of a random set of points:
 
-    >>> points = np.random.rand(30, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))
     >>> hull = ConvexHull(points)
 
     Plot it:
@@ -131,7 +133,7 @@ def convex_hull_plot_2d(hull, ax=None):
     >>> plt.show()
 
     """
-    from matplotlib.collections import LineCollection
+    from matplotlib.collections import LineCollection  # type: ignore[import]
 
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
@@ -189,7 +191,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     Set of point:
 
     >>> import matplotlib.pyplot as plt
-    >>> points = np.random.rand(10,2) #random
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((10,2))
 
     Voronoi diagram of the points:
 

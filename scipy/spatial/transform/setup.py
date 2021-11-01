@@ -6,4 +6,8 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
+    config.add_data_files('_rotation.pyi')
+    config.add_extension('_rotation',
+                         sources=['_rotation.c'])
+
     return config

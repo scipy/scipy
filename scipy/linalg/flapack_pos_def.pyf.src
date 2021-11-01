@@ -11,7 +11,7 @@ subroutine <prefix>pstrf(n,a,lda,piv,rank_c,tol,work,info,lower)
     ! P is stored as vector PIV.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
-    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,<ctypereal>*,<ctypereal>*,F_INT*
     
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -35,7 +35,7 @@ subroutine <prefix>pstf2(n,a,lda,piv,rank_c,tol,work,info,lower)
     ! P is stored as vector PIV.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
-    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,<ctypereal>*,<ctypereal>*,F_INT*
 
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -58,7 +58,7 @@ subroutine <prefix>posv(n,nrhs,a,b,info,lower)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,a,&n,b,&n,&info)
-    callprotoargument char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
@@ -77,7 +77,7 @@ subroutine <prefix>posvx(fact,n,nrhs,a,lda,af,ldaf,equed,s,b,ldb,x,ldx,rcond,fer
     ! "expert" version of the ?POSV routines
     threadsafe
     callstatement (*f2py_func)(fact,(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,equed,s,b,&ldb,x,&ldx,&rcond,ferr,berr,work,irwork,&info)
-    callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,char*,<ctypereal>*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,char*,<ctypereal>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
  
     character optional,intent(in):: fact = "E"
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
@@ -107,7 +107,7 @@ subroutine <prefix>pocon(uplo,n,a,lda,anorm,rcond,work,irwork,info)
     ! for a positive definite symmetric/hermitian matrix.
     threadsafe
     callstatement (*f2py_func)(uplo,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
-    callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
  
     character optional,intent(in):: uplo = 'U'
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -129,8 +129,8 @@ subroutine <prefix2>potrf(n,a,lda,info,lower,clean)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
     ! clean==1 zeros strictly lower or upper parts of U or L, respectively
  
-    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){int i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
-    callprotoargument char*,int*,<ctype2>*,int*,int*
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){F_INT i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
+    callprotoargument char*,F_INT*,<ctype2>*,F_INT*,F_INT*
  
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
@@ -149,8 +149,8 @@ subroutine <prefix2c>potrf(n,a,lda,info,lower,clean)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
     ! clean==1 zeros strictly lower or upper parts of U or L, respectively
  
-    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){int i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
-    callprotoargument char*,int*,<ctype2c>*,int*,int*
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){F_INT i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
+    callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,F_INT*
  
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
@@ -170,7 +170,7 @@ subroutine <prefix>potrs(n,nrhs,c,b,info,lower)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
  
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,c,&n,b,&n,&info)
-    callprotoargument char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
  
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
  
@@ -192,7 +192,7 @@ subroutine <prefix>potri(n,c,info,lower)
     ! C is triangular matrix of the corresponding Cholesky decomposition.
  
     callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
-    callprotoargument char*,int*,<ctype>*,int*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*
  
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
  

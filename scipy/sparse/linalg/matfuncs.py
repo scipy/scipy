@@ -10,12 +10,11 @@ Sparse matrix functions
 
 __all__ = ['expm', 'inv']
 
-import math
-
 import numpy as np
 
 import scipy.special
-from scipy.linalg.basic import solve, solve_triangular
+from scipy._lib._util import float_factorial
+from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.linalg import spsolve
@@ -63,9 +62,9 @@ def inv(A):
     >>> A.dot(Ainv)
     <2x2 sparse matrix of type '<class 'numpy.float64'>'
         with 2 stored elements in Compressed Sparse Column format>
-    >>> A.dot(Ainv).todense()
-    matrix([[ 1.,  0.],
-            [ 0.,  1.]])
+    >>> A.dot(Ainv).toarray()
+    array([[ 1.,  0.],
+           [ 0.,  1.]])
 
     .. versionadded:: 0.12.0
 
@@ -336,7 +335,7 @@ def _onenormest_product(operator_seq,
             ProductOperator(*operator_seq, structure=structure))
 
 
-class _ExpmPadeHelper(object):
+class _ExpmPadeHelper:
     """
     Help lazily evaluate a matrix exponential.
 
@@ -576,18 +575,18 @@ def expm(A):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm
     >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
-    >>> A.todense()
-    matrix([[1, 0, 0],
-            [0, 2, 0],
-            [0, 0, 3]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]], dtype=int64)
     >>> Aexp = expm(A)
     >>> Aexp
     <3x3 sparse matrix of type '<class 'numpy.float64'>'
         with 3 stored elements in Compressed Sparse Column format>
-    >>> Aexp.todense()
-    matrix([[  2.71828183,   0.        ,   0.        ],
-            [  0.        ,   7.3890561 ,   0.        ],
-            [  0.        ,   0.        ,  20.08553692]])
+    >>> Aexp.toarray()
+    array([[  2.71828183,   0.        ,   0.        ],
+           [  0.        ,   7.3890561 ,   0.        ],
+           [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
@@ -714,9 +713,9 @@ def _solve_P_Q(U, V, structure=None):
         raise ValueError('unsupported matrix structure: ' + str(structure))
 
 
-def _sinch(x):
+def _exp_sinch(a, x):
     """
-    Stably evaluate sinch.
+    Stably evaluate exp(a)*sinh(x)/x
 
     Notes
     -----
@@ -738,11 +737,11 @@ def _sinch(x):
     # How small is small? I am using the point where the relative error
     # of the approximation is less than 1e-14.
     # If x is large then directly evaluate sinh(x) / x.
-    x2 = x*x
     if abs(x) < 0.0135:
-        return 1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.)))
+        x2 = x*x
+        return np.exp(a) * (1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.))))
     else:
-        return np.sinh(x) / x
+        return (np.exp(a + x) - np.exp(a - x)) / (2*x)
 
 
 def _eq_10_42(lam_1, lam_2, t_12):
@@ -766,7 +765,7 @@ def _eq_10_42(lam_1, lam_2, t_12):
     # will apparently work around the cancellation.
     a = 0.5 * (lam_1 + lam_2)
     b = 0.5 * (lam_1 - lam_2)
-    return t_12 * np.exp(a) * _sinch(b)
+    return t_12 * _exp_sinch(a, b)
 
 
 def _fragment_2_1(X, T, s):
@@ -841,7 +840,7 @@ def _ell(A, m):
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
     choose_2m_m = scipy.special.comb(2*m, m, exact=True)
-    abs_c_recip = float(choose_2m_m * math.factorial(2*m + 1))
+    abs_c_recip = float(choose_2m_m) * float_factorial(2*m + 1)
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.

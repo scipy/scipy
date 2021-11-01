@@ -17,7 +17,7 @@ from scipy._lib._util import check_random_state
 __all__ = ['dual_annealing']
 
 
-class VisitingDistribution(object):
+class VisitingDistribution:
     """
     Class used to generate new coordinates based on the distorted
     Cauchy-Lorentz distribution. Depending on the steps within the strategy
@@ -36,11 +36,12 @@ class VisitingDistribution(object):
         Parameter for visiting distribution. Default value is 2.62.
         Higher values give the visiting distribution a heavier tail, this
         makes the algorithm jump to a more distant region.
-        The value range is (0, 3]. It's value is fixed for the life of the
+        The value range is (1, 3]. It's value is fixed for the life of the
         object.
     rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
         A `~numpy.random.RandomState`, `~numpy.random.Generator` object
         for using the current state of the created random generator container.
+
     """
     TAIL_LIMIT = 1.e8
     MIN_VISIT_BOUND = 1.e-10
@@ -91,7 +92,7 @@ class VisitingDistribution(object):
             # Changing only one coordinate at a time based on strategy
             # chain step
             x_visit = np.copy(x)
-            visit = self.visit_fn(temperature, 1)
+            visit = self.visit_fn(temperature, 1)[0]
             if visit > self.TAIL_LIMIT:
                 visit = self.TAIL_LIMIT * self.rand_gen.uniform()
             elif visit < -self.TAIL_LIMIT:
@@ -124,7 +125,7 @@ class VisitingDistribution(object):
         return x / den
 
 
-class EnergyState(object):
+class EnergyState:
     """
     Class used to record the energy state. At any time, it knows what is the
     currently used coordinates and the most recent best location.
@@ -208,7 +209,7 @@ class EnergyState(object):
         self.current_location = np.copy(x)
 
 
-class StrategyChain(object):
+class StrategyChain:
     """
     Class that implements within a Markov chain the strategy for location
     acceptance and local search decision making.
@@ -226,12 +227,18 @@ class StrategyChain(object):
         Instance of `ObjectiveFunWrapper` class.
     minimizer_wrapper: LocalSearchWrapper
         Instance of `LocalSearchWrapper` class.
-    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
-        A `~numpy.random.RandomState` or `~numpy.random.Generator`
-        object for using the current state of the created random generator
-        container.
+    rand_gen : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
     energy_state: EnergyState
         Instance of `EnergyState` class.
+
     """
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
                  minimizer_wrapper, rand_gen, energy_state):
@@ -256,14 +263,14 @@ class StrategyChain(object):
 
     def accept_reject(self, j, e, x_visit):
         r = self._rand_gen.uniform()
-        pqv_temp = (self.acceptance_param - 1.0) * (
-            e - self.energy_state.current_energy) / (
-                self.temperature_step + 1.)
+        pqv_temp = 1.0 - ((1.0 - self.acceptance_param) *
+            (e - self.energy_state.current_energy) / self.temperature_step)
         if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
                 1. - self.acceptance_param))
+
         if r <= pqv:
             # We accept the new location and update state
             self.energy_state.update_current(e, x_visit)
@@ -355,7 +362,7 @@ class StrategyChain(object):
                         'during dual annealing')
 
 
-class ObjectiveFunWrapper(object):
+class ObjectiveFunWrapper:
 
     def __init__(self, func, maxfun=1e7, *args):
         self.func = func
@@ -373,7 +380,7 @@ class ObjectiveFunWrapper(object):
         return self.func(x, *self.args)
 
 
-class LocalSearchWrapper(object):
+class LocalSearchWrapper:
     """
     Class used to wrap around the minimizer used for local search
     Default local minimizer is SciPy minimizer L-BFGS-B
@@ -383,11 +390,11 @@ class LocalSearchWrapper(object):
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.minimizer = minimize
-        bounds_list = list(zip(*bounds))
+        bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
         self.upper = np.array(bounds_list[1])
 
@@ -407,9 +414,9 @@ class LocalSearchWrapper(object):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
-        if 'njev' in mres.keys():
+        if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
-        if 'nhev' in mres.keys():
+        if 'nhev' in mres:
             self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
@@ -464,7 +471,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
-        the algorithm jump to a more distant region. The value range is (0, 3].
+        the algorithm jump to a more distant region. The value range is (1, 3].
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
@@ -475,12 +482,14 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int, `~numpy.random.RandomState`, `~numpy.random.Generator`}, optional
-        If `seed` is not specified the `~numpy.random.RandomState` singleton is
-        used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with `seed`.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance, then
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the visiting distribution function
@@ -578,7 +587,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Simulated Annealing for Efficient Global Optimization: the GenSA
         Package for R. The R Journal, Volume 5/1 (2013).
     .. [6] Mullen, K. Continuous Global Optimization in R. Journal of
-        Statistical Software, 60(6), 1 - 45, (2014). DOI:10.18637/jss.v060.i06
+        Statistical Software, 60(6), 1 - 45, (2014).
+        :doi:`10.18637/jss.v060.i06`
 
     Examples
     --------
@@ -590,11 +600,11 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
+    >>> ret = dual_annealing(func, bounds=list(zip(lw, up)))
     >>> ret.x
     array([-4.26437714e-09, -3.91699361e-09, -1.86149218e-09, -3.97165720e-09,
            -6.29151648e-09, -6.53145322e-09, -3.93616815e-09, -6.55623025e-09,
-           -6.05775280e-09, -5.00668935e-09]) # may vary
+           -6.05775280e-09, -5.00668935e-09]) # random
     >>> ret.fun
     0.000000
 
@@ -624,7 +634,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # Wrapper fot the minimizer
     minimizer_wrapper = LocalSearchWrapper(
         bounds, func_wrapper, **local_search_options)
-    # Initialization of RandomState for reproducible runs if seed provided
+    # Initialization of random Generator for reproducible runs if seed provided
     rand_state = check_random_state(seed)
     # Initialization of the energy state
     energy_state = EnergyState(lower, upper, callback)

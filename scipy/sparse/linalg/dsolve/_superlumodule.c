@@ -17,7 +17,6 @@
 #include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 
 
 /*

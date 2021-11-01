@@ -1,6 +1,8 @@
-from multiprocessing import Pool, get_start_method
+from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import os
+import math
+from fractions import Fraction
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
@@ -9,7 +11,8 @@ from pytest import raises as assert_raises, deprecated_call
 
 import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
-                              getfullargspec_no_self, FullArgSpec)
+                              getfullargspec_no_self, FullArgSpec,
+                              rng_integers, _validate_int)
 
 
 def test__aligned_zeros():
@@ -69,17 +72,20 @@ def test_check_random_state():
 def test_getfullargspec_no_self():
     p = MapWrapper(1)
     argspec = getfullargspec_no_self(p.__init__)
-    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [], None, {}))
+    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [],
+                                      None, {}))
     argspec = getfullargspec_no_self(p.__call__)
-    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None, [], None, {}))
+    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None,
+                                      [], None, {}))
 
-    class _rv_generic(object):
+    class _rv_generic:
         def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
             return None
 
     rv_obj = _rv_generic()
     argspec = getfullargspec_no_self(rv_obj._rvs)
-    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs', (2, 3), ['size'], {'size': None}, {}))
+    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs',
+                                      (2, 3), ['size'], {'size': None}, {}))
 
 
 def test_mapwrapper_serial():
@@ -97,9 +103,11 @@ def test_mapwrapper_serial():
         p = MapWrapper(0)
 
 
-@pytest.mark.skipif(get_start_method() != 'fork',
-                    reason=('multiprocessing with spawn method is not'
-                            ' compatible with pytest.'))
+def test_pool():
+    with Pool(2) as p:
+        p.map(math.sin, [1, 2, 3, 4])
+
+
 def test_mapwrapper_parallel():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)
@@ -120,8 +128,7 @@ def test_mapwrapper_parallel():
     assert_(excinfo.type is ValueError)
 
     # can also set a PoolWrapper up with a map-like callable instance
-    try:
-        p = Pool(2)
+    with Pool(2) as p:
         q = MapWrapper(p.map)
 
         assert_(q._own_pool is False)
@@ -131,27 +138,21 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
-    finally:
-        p.close()
 
 
 # get our custom ones and a few from the "import *" cases
 @pytest.mark.parametrize(
-    'key', ('fft', 'ifft', 'diag', 'arccos',
-            'randn', 'rand', 'array'))
+    'key', ('ifft', 'diag', 'arccos', 'randn', 'rand', 'array'))
 def test_numpy_deprecation(key):
     """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('fft', 'ifft', 'diag', 'arccos'):
+    if key in ('ifft', 'diag', 'arccos'):
         arg = [1.0, 0.]
     elif key == 'finfo':
         arg = float
     else:
         arg = 2
     func = getattr(scipy, key)
-    if key == 'fft':
-        match = r'scipy\.fft.*deprecated.*1.5.0.*'
-    else:
-        match = r'scipy\.%s is deprecated.*2\.0\.0' % key
+    match = r'scipy\.%s is deprecated.*2\.0\.0' % key
     with deprecated_call(match=match) as dep:
         func(arg)  # deprecated
     # in case we catch more than one dep warning
@@ -160,7 +161,7 @@ def test_numpy_deprecation(key):
     assert 'test__util' in basenames
     if key in ('rand', 'randn'):
         root = np.random
-    elif key in ('fft', 'ifft'):
+    elif key == 'ifft':
         root = np.fft
     else:
         root = np
@@ -185,3 +186,79 @@ def test_numpy_deprecation_functionality():
 
         assert scipy.float64 == np.float64
         assert issubclass(np.float64, scipy.float64)
+
+
+def test_rng_integers():
+    rng = np.random.RandomState()
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # now try with np.random.Generator
+    try:
+        rng = np.random.default_rng()
+    except AttributeError:
+        return
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+
+class TestValidateInt:
+
+    @pytest.mark.parametrize('n', [4, np.uint8(4), np.int16(4), np.array(4)])
+    def test_validate_int(self, n):
+        n = _validate_int(n, 'n')
+        assert n == 4
+
+    @pytest.mark.parametrize('n', [4.0, np.array([4]), Fraction(4, 1)])
+    def test_validate_int_bad(self, n):
+        with pytest.raises(TypeError, match='n must be an integer'):
+            _validate_int(n, 'n')
+
+    def test_validate_int_below_min(self):
+        with pytest.raises(ValueError, match='n must be an integer not '
+                                             'less than 0'):
+            _validate_int(-1, 'n', 0)

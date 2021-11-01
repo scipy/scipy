@@ -1,9 +1,7 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import gc
 import multiprocessing
-import sys
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
@@ -23,12 +21,7 @@ from pytest import raises as assert_raises, warns
 import pytest
 
 
-knownfail_on_py38 = pytest.mark.xfail(
-    sys.version_info >= (3, 8), run=False,
-    reason='Python 3.8 hangs when cleaning up MapWrapper')
-
-
-class TestDifferentialEvolutionSolver(object):
+class TestDifferentialEvolutionSolver:
 
     def setup_method(self):
         self.old_seterr = np.seterr(invalid='raise')
@@ -202,6 +195,15 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(0.5, solver.scale)
         assert_equal(None, solver.dither)
 
+    def test_invalid_functional(self):
+        def func(x):
+            return np.array([np.sum(x ** 2), np.sum(x)])
+
+        with assert_raises(
+                RuntimeError,
+                match=r"func\(x, \*args\) must return a scalar value"):
+            differential_evolution(func, [(-2, 2), (-2, 2)])
+
     def test__scale_parameters(self):
         trial = np.array([0.3])
         assert_equal(30, self.dummy_solver._scale_parameters(trial))
@@ -241,15 +243,26 @@ class TestDifferentialEvolutionSolver(object):
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
+        expected_msg = 'callback function requested stop early by returning True'
 
-        def callback(param, convergence=0.):
+        def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        assert_string_equal(result.message, expected_msg)
 
-        assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+        def callback_evaluates_true(param, convergence=0.):
+            # DE should stop if bool(self.callback) is True
+            return [10]
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
+        assert_string_equal(result.message, expected_msg)
+
+        def callback_evaluates_false(param, convergence=0.):
+            return []
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        assert result.success
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
@@ -342,23 +355,25 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.nfev, 41)
         assert_equal(result.success, False)
         assert_equal(result.message,
-                         'Maximum number of function evaluations has '
-                              'been exceeded.')
+                     'Maximum number of function evaluations has '
+                     'been exceeded.')
 
         # now repeat for updating='deferred version
+        # 47 function evaluations is not a multiple of the population size,
+        # so maxfun is reached partway through a population evaluation.
         solver = DifferentialEvolutionSolver(rosen,
                                              self.bounds,
                                              popsize=5,
                                              polish=False,
-                                             maxfun=40,
+                                             maxfun=47,
                                              updating='deferred')
         result = solver.solve()
 
-        assert_equal(result.nfev, 40)
+        assert_equal(result.nfev, 47)
         assert_equal(result.success, False)
         assert_equal(result.message,
-                         'Maximum number of function evaluations has '
-                              'been reached.')
+                     'Maximum number of function evaluations has '
+                     'been reached.')
 
     def test_quadratic(self):
         # test the quadratic function from object
@@ -395,7 +410,7 @@ class TestDifferentialEvolutionSolver(object):
         # obtain a np.random.Generator object
         rng = np.random.default_rng()
 
-        inits = ['random', 'latinhypercube']
+        inits = ['random', 'latinhypercube', 'sobol', 'halton']
         for init in inits:
             differential_evolution(self.quadratic,
                                    [(-100, 100)],
@@ -503,6 +518,15 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+        solver.init_population_qmc(qmc_engine='halton')
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, init='sobol')
+        solver.init_population_qmc(qmc_engine='sobol')
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
         # we should be able to initialize with our own array
         population = np.linspace(-1, 3, 10).reshape(5, 2)
         solver = DifferentialEvolutionSolver(rosen, self.bounds,
@@ -532,6 +556,24 @@ class TestDifferentialEvolutionSolver(object):
                       *(rosen, self.bounds),
                       **{'init': population})
 
+        # provide an initial solution
+        # bounds are [(0, 2), (0, 2)]
+        x0 = np.random.uniform(low=0.0, high=2.0, size=2)
+        solver = DifferentialEvolutionSolver(
+            rosen, self.bounds, x0=x0
+        )
+        # parameters are scaled to unit interval
+        assert_allclose(solver.population[0], x0 / 2.0)
+
+    def test_x0(self):
+        # smoke test that checks that x0 is usable.
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        assert res.success
+
+        # check what happens if some of the x0 lay outside the bounds
+        with assert_raises(ValueError):
+            differential_evolution(rosen, self.bounds, x0=[0.2, 2.1])
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs
@@ -550,7 +592,6 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    @knownfail_on_py38
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -560,12 +601,10 @@ class TestDifferentialEvolutionSolver(object):
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+                pass
         assert_(solver._updating == 'deferred')
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
-    @knownfail_on_py38
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -580,8 +619,6 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
@@ -999,12 +1036,12 @@ class TestDifferentialEvolutionSolver(object):
         assert_allclose(f(x_opt), f_opt, atol=0.001)
         assert_allclose(res.fun, f_opt, atol=0.001)
 
-        # selectively use higher tol here for 32-bit
-        # Windows based on gh-11693
+        # use higher tol here for 32-bit Windows, see gh-11693
         if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
             assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
         else:
-            assert_allclose(res.x, x_opt, atol=0.002)
+            # tolerance determined from macOS + MKL failure, see gh-12701
+            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
 
         assert res.success
         assert_(np.all(A @ res.x <= b))
@@ -1035,7 +1072,6 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1.22797135, 4.24537337)
         f_opt = -0.095825
-        print(res)
         assert_allclose(f(x_opt), f_opt, atol=2e-5)
         assert_allclose(res.fun, f_opt, atol=1e-4)
         assert res.success

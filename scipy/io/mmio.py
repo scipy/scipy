@@ -15,7 +15,6 @@ import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
-from numpy.compat import asbytes, asstr
 
 from scipy.sparse import coo_matrix, isspmatrix
 
@@ -23,6 +22,11 @@ __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
 
 # -----------------------------------------------------------------------------
+def asstr(s):
+    if isinstance(s, bytes):
+        return s.decode('latin1')
+    return str(s)
+
 def mminfo(source):
     """
     Return size and storage parameters from Matrix Market file-like 'source'.
@@ -99,7 +103,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
 
 
 ###############################################################################
-class MMFile (object):
+class MMFile:
     __slots__ = ('_rows',
                  '_cols',
                  '_entries',
@@ -248,16 +252,18 @@ class MMFile (object):
             while not line.strip():
                 line = stream.readline()
 
-            line = line.split()
+            split_line = line.split()
             if format == self.FORMAT_ARRAY:
-                if not len(line) == 2:
-                    raise ValueError("Header line not of length 2: " + line)
-                rows, cols = map(int, line)
+                if not len(split_line) == 2:
+                    raise ValueError("Header line not of length 2: " +
+                                     line.decode('ascii'))
+                rows, cols = map(int, split_line)
                 entries = rows * cols
             else:
-                if not len(line) == 3:
-                    raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(int, line)
+                if not len(split_line) == 3:
+                    raise ValueError("Header line not of length 3: " +
+                                     line.decode('ascii'))
+                rows, cols, entries = map(int, split_line)
 
             return (rows, cols, entries, format, field.lower(),
                     symmetry.lower())
@@ -289,40 +295,45 @@ class MMFile (object):
             True if the calling function should close this file when done,
             false otherwise.
         """
-        close_it = False
-        if isinstance(filespec, str):
-            close_it = True
+        # If 'filespec' is path-like (str, pathlib.Path, os.DirEntry, other class
+        # implementing a '__fspath__' method), try to convert it to str. If this
+        # fails by throwing a 'TypeError', assume it's an open file handle and
+        # return it as-is.
+        try:
+            filespec = os.fspath(filespec)
+        except TypeError:
+            return filespec, False
 
-            # open for reading
-            if mode[0] == 'r':
+        # 'filespec' is definitely a str now
 
-                # determine filename plus extension
-                if not os.path.isfile(filespec):
-                    if os.path.isfile(filespec+'.mtx'):
-                        filespec = filespec + '.mtx'
-                    elif os.path.isfile(filespec+'.mtx.gz'):
-                        filespec = filespec + '.mtx.gz'
-                    elif os.path.isfile(filespec+'.mtx.bz2'):
-                        filespec = filespec + '.mtx.bz2'
-                # open filename
-                if filespec.endswith('.gz'):
-                    import gzip
-                    stream = gzip.open(filespec, mode)
-                elif filespec.endswith('.bz2'):
-                    import bz2
-                    stream = bz2.BZ2File(filespec, 'rb')
-                else:
-                    stream = open(filespec, mode)
+        # open for reading
+        if mode[0] == 'r':
 
-            # open for writing
-            else:
-                if filespec[-4:] != '.mtx':
+            # determine filename plus extension
+            if not os.path.isfile(filespec):
+                if os.path.isfile(filespec+'.mtx'):
                     filespec = filespec + '.mtx'
+                elif os.path.isfile(filespec+'.mtx.gz'):
+                    filespec = filespec + '.mtx.gz'
+                elif os.path.isfile(filespec+'.mtx.bz2'):
+                    filespec = filespec + '.mtx.bz2'
+            # open filename
+            if filespec.endswith('.gz'):
+                import gzip
+                stream = gzip.open(filespec, mode)
+            elif filespec.endswith('.bz2'):
+                import bz2
+                stream = bz2.BZ2File(filespec, 'rb')
+            else:
                 stream = open(filespec, mode)
-        else:
-            stream = filespec
 
-        return stream, close_it
+        # open for writing
+        else:
+            if filespec[-4:] != '.mtx':
+                filespec = filespec + '.mtx'
+            stream = open(filespec, mode)
+
+        return stream, True
 
     # -------------------------------------------------------------------------
     @staticmethod
@@ -350,25 +361,31 @@ class MMFile (object):
                 for ((i, j), aij) in a.items():
                     if i > j:
                         aji = a[j, i]
-                        yield (aij, aji)
+                        yield (aij, aji, False)
+                    elif i == j:
+                        yield (aij, aij, True)
 
         # non-sparse input
         else:
             # define iterator over symmetric pair entries
             def symm_iterator():
                 for j in range(n):
-                    for i in range(j+1, n):
+                    for i in range(j, n):
                         aij, aji = a[i][j], a[j][i]
-                        yield (aij, aji)
+                        yield (aij, aji, i == j)
 
         # check for symmetry
-        for (aij, aji) in symm_iterator():
-            if issymm and aij != aji:
-                issymm = False
-            if isskew and aij != -aji:
+        # yields aij, aji, is_diagonal
+        for (aij, aji, is_diagonal) in symm_iterator():
+            if isskew and is_diagonal and aij != 0:
                 isskew = False
-            if isherm and aij != conj(aji):
-                isherm = False
+            else:
+                if issymm and aij != aji:
+                    issymm = False
+                if isskew and aij != -aji:
+                    isskew = False
+                if isherm and aij != conj(aji):
+                    isherm = False
             if not (issymm or isskew or isherm):
                 break
 
@@ -721,34 +738,39 @@ class MMFile (object):
         self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        stream.write(asbytes('%%MatrixMarket matrix {0} {1} {2}\n'.format(rep,
-            field, symmetry)))
+        data = '%%MatrixMarket matrix {0} {1} {2}\n'.format(rep, field, symmetry)
+        stream.write(data.encode('latin1'))
 
         # write comments
         for line in comment.split('\n'):
-            stream.write(asbytes('%%%s\n' % (line)))
+            data = '%%%s\n' % (line)
+            stream.write(data.encode('latin1'))
 
         template = self._field_template(field, precision)
         # write dense format
         if rep == self.FORMAT_ARRAY:
             # write shape spec
-            stream.write(asbytes('%i %i\n' % (rows, cols)))
+            data = '%i %i\n' % (rows, cols)
+            stream.write(data.encode('latin1'))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            data = template % a[i, j]
+                            stream.write(data.encode('latin1'))
 
                 elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
                     for j in range(cols):
                         for i in range(j + 1, rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            data = template % a[i, j]
+                            stream.write(data.encode('latin1'))
 
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            data = template % a[i, j]
+                            stream.write(data.encode('latin1'))
 
             elif field == self.FIELD_COMPLEX:
 
@@ -756,14 +778,14 @@ class MMFile (object):
                     for j in range(cols):
                         for i in range(rows):
                             aij = a[i, j]
-                            stream.write(asbytes(template % (real(aij),
-                                                             imag(aij))))
+                            data = template % (real(aij), imag(aij))
+                            stream.write(data.encode('latin1'))
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
                             aij = a[i, j]
-                            stream.write(asbytes(template % (real(aij),
-                                                             imag(aij))))
+                            data = template % (real(aij), imag(aij))
+                            stream.write(data.encode('latin1'))
 
             elif field == self.FIELD_PATTERN:
                 raise ValueError('pattern type inconsisted with dense format')
@@ -784,21 +806,23 @@ class MMFile (object):
                                  shape=coo.shape)
 
             # write shape spec
-            stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
+            data = '%i %i %i\n' % (rows, cols, coo.nnz)
+            stream.write(data.encode('latin1'))
 
             template = self._field_template(field, precision-1)
 
             if field == self.FIELD_PATTERN:
                 for r, c in zip(coo.row+1, coo.col+1):
-                    stream.write(asbytes("%i %i\n" % (r, c)))
+                    data = "%i %i\n" % (r, c)
+                    stream.write(data.encode('latin1'))
             elif field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    stream.write(asbytes(("%i %i " % (r, c)) +
-                                         (template % d)))
+                    data = ("%i %i " % (r, c)) + (template % d)
+                    stream.write(data.encode('latin1'))
             elif field == self.FIELD_COMPLEX:
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    stream.write(asbytes(("%i %i " % (r, c)) +
-                                         (template % (d.real, d.imag))))
+                    data = ("%i %i " % (r, c)) + (template % (d.real, d.imag))
+                    stream.write(data.encode('latin1'))
             else:
                 raise TypeError('Unknown field type %s' % field)
 

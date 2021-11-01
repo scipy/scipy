@@ -19,14 +19,6 @@ cdef extern from "Python.h":
         pass
     ctypedef struct FILE
 
-cdef extern from "py3k.h":
-    FILE* npy_PyFile_Dup(object file, char *mode) except NULL
-    int npy_PyFile_DupClose(object file, FILE *handle) except -1
-    int npy_PyFile_Check(object file)
-
-
-cdef bint IS_PYPY = ('__pypy__' in sys.modules)
-
 
 DEF _BLOCK_SIZE = 131072
 
@@ -70,7 +62,7 @@ cdef class GenericStream:
             count += read_size
 
         if count != n:
-            raise IOError('could not read bytes')
+            raise OSError('could not read bytes')
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
@@ -78,7 +70,7 @@ cdef class GenericStream:
         if copy != True:
             data = self.fobj.read(n)
             if PyBytes_Size(data) != n:
-                raise IOError('could not read bytes')
+                raise OSError('could not read bytes')
             pp[0] = <void*>PyBytes_AS_STRING(data)
             return data
 
@@ -172,7 +164,7 @@ cdef class ZlibInputStream(GenericStream):
         self._total_position += count
 
         if count != n:
-            raise IOError('could not read bytes')
+            raise OSError('could not read bytes')
 
         return 0
 
@@ -195,7 +187,7 @@ cdef class ZlibInputStream(GenericStream):
 
     cpdef long int tell(self) except -1:
         if self._total_position == -1:
-            raise IOError("Invalid file position.")
+            raise OSError("Invalid file position.")
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
@@ -205,12 +197,12 @@ cdef class ZlibInputStream(GenericStream):
         elif whence == 0:
             new_pos = offset
         elif whence == 2:
-            raise IOError("Zlib stream cannot seek from file end")
+            raise OSError("Zlib stream cannot seek from file end")
         else:
             raise ValueError("Invalid value for whence")
 
         if new_pos < self._total_position:
-            raise IOError("Zlib stream cannot seek backwards")
+            raise OSError("Zlib stream cannot seek backwards")
 
         while self._total_position < new_pos:
             self._fill_buffer()
@@ -225,66 +217,6 @@ cdef class ZlibInputStream(GenericStream):
 
         return 0
 
-
-cdef class FileStream(GenericStream):
-    cdef FILE* file
-
-    def __init__(self, fobj):
-        self.fobj = fobj
-        self.file = npy_PyFile_Dup(fobj, "rb")
-
-    def __del__(self):
-        npy_PyFile_DupClose(self.fobj, self.file)
-
-    cpdef int seek(self, long int offset, int whence=0) except -1:
-        cdef int ret
-        """ move `offset` bytes in stream
-
-        Parameters
-        ----------
-        offset : long int
-           number of bytes to move.  Positive for forward in file,
-           negative for backward
-        whence : int
-           `whence` can be:
-
-           * 0 - from beginning of file (`offset` should be >=0)
-           * 1 - from current file position
-           * 2 - from end of file (`offset` nearly always <=0)
-
-        Returns
-        -------
-        ret : int
-        """
-        ret = fseek(self.file, offset, whence)
-        if ret:
-            raise IOError('Failed seek')
-        return ret
-
-    cpdef long int tell(self) except -1:
-        cdef long int position = ftell(self.file)
-        if position == -1:
-            raise IOError("Invalid file position.")
-        return position
-
-    cdef int read_into(self, void *buf, size_t n) except -1:
-        """ Read n bytes from stream into pre-allocated buffer `buf`
-        """
-        cdef:
-            size_t n_red
-            char* d_ptr
-        n_red = fread(buf, 1, n, self.file)
-        if n_red != n:
-            raise IOError('Could not read bytes')
-        return 0
-
-    cdef object read_string(self, size_t n, void **pp, int copy=True):
-        """ Make new memory, wrap with object """
-        cdef object obj = pyalloc_v(n, pp)
-        cdef size_t n_red = fread(pp[0], 1, n, self.file)
-        if n_red != n:
-            raise IOError('could not read bytes')
-        return obj
 
 def _read_into(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
@@ -310,8 +242,6 @@ def _read_string(GenericStream st, size_t n):
 cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
-    if npy_PyFile_Check(fobj):
-        return GenericStream(fobj)
-    elif isinstance(fobj, GenericStream):
+    if isinstance(fobj, GenericStream):
         return fobj
     return GenericStream(fobj)

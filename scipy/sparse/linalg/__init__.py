@@ -60,6 +60,7 @@ Iterative methods for linear equation systems:
    minres -- Use MINimum RESidual iteration to solve Ax = b
    qmr -- Use Quasi-Minimal Residual iteration to solve A x = b
    gcrotmk -- Solve a matrix equation using the GCROT(m,k) algorithm
+   tfqmr -- Use Transpose-Free Quasi-Minimal Residual iteration to solve A x = b
 
 Iterative methods for least-squares problems:
 
@@ -87,6 +88,14 @@ Singular values problems:
    :toctree: generated/
 
    svds -- Compute k singular values/vectors for a sparse matrix
+
+The `svds` function supports the following solvers:
+
+.. toctree::
+
+    sparse.linalg.svds-arpack
+    sparse.linalg.svds-lobpcg
+    sparse.linalg.svds-propack
 
 Complete or incomplete LU factorizations
 

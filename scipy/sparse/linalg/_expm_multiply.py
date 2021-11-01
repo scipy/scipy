@@ -118,9 +118,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
-    >>> A.todense()
-    matrix([[1, 0],
-            [0, 1]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0],
+           [0, 1]], dtype=int64)
     >>> B = np.array([np.exp(-1.), np.exp(-2.)])
     >>> B
     array([ 0.36787944,  0.13533528])
@@ -172,7 +172,8 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('the matrices A and B have incompatible shapes')
+        raise ValueError('shapes of matrices A {} and B {} are incompatible'
+                         .format(A.shape, B.shape))
     ident = _ident_like(A)
     n = A.shape[0]
     if len(B.shape) == 1:
@@ -556,7 +557,8 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('the matrices A and B have incompatible shapes')
+        raise ValueError('shapes of matrices A {} and B {} are incompatible'
+                         .format(A.shape, B.shape))
     ident = _ident_like(A)
     n = A.shape[0]
     if len(B.shape) == 1:

@@ -29,33 +29,54 @@ To run tests on a particular submodule, such as ``optimize``, use the
 
    python runtests.py -v -s optimize
 
-To run a particular test module, such as
-|test-linprog|_, use the ``--test`` option:
+To run a particular test module, use the ``--test`` option:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py
+   python runtests.py -v -t scipy.<module>.tests.<test_file>
 
-To run a test class, such as ``TestLinprogIPDense`` from
-``test_linprog.py``:
-
-::
-
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::TestLinprogIPDense
-
-To run a particular test, such as ``test_unknown_solver`` from
-``test_linprog.py``:
+Example for |test-linprog|_ file tests, run:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::test_unknown_solver
+   python runtests.py -v -t scipy.optimize.tests.test_linprog
 
-For tests within a class, you need to specify the class name and the
-test name:
+To run a test class:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::TestLinprogIPDense::test_nontrivial_problem
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>
+
+Example for ``TestLinprogRSCommon`` class from ``test_linprog.py``:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
+
+To run a particular test:
+
+::
+
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<test_name>
+
+Example for ``test_unknown_solvers_and_options`` from ``test_linprog.py``:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
+
+For tests within a class, you need to specify the class name and the test name:
+
+::
+
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
+
+Example:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
+
 
 Other useful options include:
 
@@ -66,6 +87,12 @@ Other useful options include:
    docs are built only in the ``html-scipyorg`` format, but you can
    change this by appending the name of the desired format
    (e.g. ``--doc latex``).
+- ``--refguide-check`` to check whether the objects in a Scipy submodule's
+    ``__all__`` dict correspond to the objects included in the reference
+    guide. It also checks the validity of code samples in docstrings.
+- ``--bench`` to run all benchmarks. See :ref:`benchmarking-with-asv`.
+- ``--pep8`` to perform pep8 check.
+- ``--mypy`` to run *mypy* on the codebase.
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;

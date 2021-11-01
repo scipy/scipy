@@ -20,15 +20,15 @@ common_doc1 = \
 """
 Parameters
 ----------
-A : {sparse matrix, dense matrix, LinearOperator}"""
+A : {sparse matrix, ndarray, LinearOperator}"""
 
 common_doc2 = \
-"""b : {array, matrix}
+"""b : ndarray
     Right hand side of the linear system. Has shape (N,) or (N,1).
 
 Returns
 -------
-x : {array, matrix}
+x : ndarray
     The converged solution.
 info : integer
     Provides convergence information:
@@ -38,7 +38,7 @@ info : integer
 
 Other Parameters
 ----------------
-x0  : {array, matrix}
+x0 : ndarray
     Starting guess for the solution.
 tol, atol : float, optional
     Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
@@ -52,7 +52,7 @@ tol, atol : float, optional
 maxiter : integer
     Maximum number of iterations.  Iteration will stop after maxiter
     steps even if the specified tolerance has not been achieved.
-M : {sparse matrix, dense matrix, LinearOperator}
+M : {sparse matrix, ndarray, LinearOperator}
     Preconditioner for A.  The preconditioner should approximate the
     inverse of A.  Effective preconditioning dramatically improves the
     rate of convergence, which implies that fewer iterations are needed
@@ -129,7 +129,23 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                'The real or complex N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
                'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+               '``scipy.sparse.linalg.LinearOperator``.',
+               footer="""
+               
+               Examples
+               --------
+               >>> from scipy.sparse import csc_matrix
+               >>> from scipy.sparse.linalg import bicg
+               >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+               >>> b = np.array([2, 4, -1], dtype=float)
+               >>> x, exitCode = bicg(A, b)
+               >>> print(exitCode)            # 0 indicates successful convergence
+               0
+               >>> np.allclose(A.dot(x), b)
+               True
+               
+               """
+               )
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A,M,x,b,postprocess = make_system(A, M, x0, b)
@@ -420,17 +436,17 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
     Returns
     -------
-    x : {array, matrix}
+    x : ndarray
         The converged solution.
     info : int
         Provides convergence information:
@@ -440,7 +456,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
     Other parameters
     ----------------
-    x0 : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
@@ -459,7 +475,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}
+    M : {sparse matrix, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
@@ -652,17 +668,17 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
     Returns
     -------
-    x : {array, matrix}
+    x : ndarray
         The converged solution.
     info : integer
         Provides convergence information:
@@ -672,7 +688,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
 
     Other Parameters
     ----------------
-    x0  : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution.
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
@@ -686,9 +702,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M1 : {sparse matrix, dense matrix, LinearOperator}
+    M1 : {sparse matrix, ndarray, LinearOperator}
         Left preconditioner for A.
-    M2 : {sparse matrix, dense matrix, LinearOperator}
+    M2 : {sparse matrix, ndarray, LinearOperator}
         Right preconditioner for A. Used together with the left
         preconditioner M1.  The matrix M1*A*M2 should have better
         conditioned than A alone.

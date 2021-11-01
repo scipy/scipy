@@ -66,6 +66,22 @@ master branch and add release notes for that new version.  Send an email to
 scipy-dev to let people know that you've done this.
 
 
+Updating upper bounds of dependencies
+-------------------------------------
+In master we do not set upper bounds, because we want to test new releases or
+development versions of dependencies there. In a maintenance branch however,
+the goal is to be able to create releases that stay working for years. Hence
+correct upper bounds must be set. The following places must be updated after
+creating a maintenance branch:
+
+- ``pyproject.toml``: all build-time dependencies, as well as  supported Python
+                      and NumPy versions
+- ``setup.py``: supported Python and NumPy versions
+- ``scipy/__init__.py``: for NumPy version check
+
+Each file has comments describing how to set the correct upper bounds.
+
+
 Tagging a release
 -----------------
 First ensure that you have set up GPG correctly.  See
@@ -75,6 +91,10 @@ creating a GPG key if you do not have one. Note that on some platforms
 it may be more suitable to use ``gpg2`` instead of ``gpg`` so that
 passwords may be stored by ``gpg-agent`` as discussed in
 https://github.com/scipy/scipy/issues/10189.
+When preparing a release remotely, it may be necessary to set
+``pinentry-mode loopback`` in ``~/.gnupg/gpg-agent.conf`` because
+use of ``gpg2`` will otherwise proceed via an inaccessible graphical
+password prompt.
 
 To make your key more readily identifiable as you, consider sending your key
 to public keyservers, with a command such as::
@@ -142,15 +162,10 @@ Once there are successful wheel builds, it is recommended to create a versioned 
 in the ``scipy-wheels`` repo, which will for example be adjusted to point to different
 maintenance branch commits if there are multiple release candidates.
 
-From there you can download them for uploading to PyPI.  This can be
-done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy>`_
-(note the -n switch which makes it only download the wheels and skip the upload
-to PyPI step - we want to be able to check the wheels and put their checksums
-into README first)::
+From there you can download them for uploading to PyPI. This can be
+done in an automated fashion using ``tools/download-wheels.py``::
 
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t win scipy 0.19.0
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+  $ python tools/download-wheels.py 1.5.0rc1 -w REPO_ROOT/release/installers
 
 The correct URL to use is shown in https://github.com/MacPython/scipy-wheels
 and should agree with the above one.

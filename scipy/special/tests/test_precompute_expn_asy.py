@@ -4,7 +4,7 @@ from scipy.special._testutils import check_version, MissingModule
 from scipy.special._precompute.expn_asy import generate_A
 
 try:
-    import sympy
+    import sympy  # type: ignore[import]
     from sympy import Poly
 except ImportError:
     sympy = MissingModule("sympy")

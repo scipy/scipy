@@ -157,7 +157,7 @@ L40:
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);   /* j */
 #else
-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
 #endif
     --isave[1];  /* --j; */
     isave[2] = 2;  /* iter = 2; */

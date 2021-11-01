@@ -23,7 +23,7 @@ def _load_data(name):
         return dict(f.items())
 
 
-class TestSolveLyapunov(object):
+class TestSolveLyapunov:
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -79,10 +79,10 @@ class TestSolveLyapunov(object):
          np.eye(11)),
         # https://github.com/scipy/scipy/issues/4176
         (matrix([[0, 1], [-1/2, -1]]),
-         (matrix([0, 3]).T * matrix([0, 3]).T.T)),
+         (matrix([0, 3]).T @ matrix([0, 3]).T.T)),
         # https://github.com/scipy/scipy/issues/4176
         (matrix([[0, 1], [-1/2, -1]]),
-         (np.array(matrix([0, 3]).T * matrix([0, 3]).T.T))),
+         (np.array(matrix([0, 3]).T @ matrix([0, 3]).T.T))),
         ]
 
     def test_continuous_squareness_and_shape(self):
@@ -703,7 +703,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(object):
+class TestSolveSylvester:
 
     cases = [
         # a, b, c all real.

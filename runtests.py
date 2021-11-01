@@ -12,6 +12,7 @@ Examples::
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
+    $ python runtests.py --no-build --bench signal.LTI
 
 Run a debugger:
 
@@ -49,6 +50,11 @@ else:
 
 import sys
 import os
+# the following multiprocessing import is necessary to prevent tests that use
+# multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
+# import is enough...
+import multiprocessing
+
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
@@ -124,7 +130,7 @@ def main(argv):
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
-                        help="Perform pep8 check with pycodestyle.")
+                        help="Perform pep8 check with flake8.")
     parser.add_argument("--mypy", action="store_true", default=False,
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
@@ -132,11 +138,12 @@ def main(argv):
     args = parser.parse_args(argv)
 
     if args.pep8:
-        # os.system("flake8 scipy --ignore=F403,F841,F401,F811,F405,E121,E122,"
-        #           "E123,E125,E126,E127,E128,E226,E231,E251,E265,E266,E302,"
-        #           "E402,E501,E712,E721,E731,E741,W291,W293,W391,W503,W504"
-        #           "--exclude=scipy/_lib/six.py")
-        os.system("pycodestyle scipy benchmarks/benchmarks")
+        # Lint the source using the configuration in tox.ini.
+        os.system("flake8 scipy benchmarks/benchmarks")
+        # Lint just the diff since branching off of master using a
+        # stricter configuration.
+        lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
+        os.system(lint_diff)
         sys.exit(0)
 
     if args.mypy:
@@ -165,7 +172,8 @@ def main(argv):
     if not args.no_build:
         site_dir = build_project(args)
         sys.path.insert(0, site_dir)
-        os.environ['PYTHONPATH'] = site_dir
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -235,10 +243,13 @@ def main(argv):
             bench_args.extend(['--bench', a])
 
         if not args.bench_compare:
-            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   'run', '-n', '-e', '--python=same'] + bench_args
-            os.execv(sys.executable, [sys.executable] + cmd)
-            sys.exit(1)
+            import scipy
+            print("Running benchmarks for Scipy version %s at %s"
+                  % (scipy.__version__, scipy.__file__))
+            cmd = ['asv', 'run', '--dry-run', '--show-stderr',
+                   '--python=same'] + bench_args
+            retval = run_asv(cmd)
+            sys.exit(retval)
         else:
             if len(args.bench_compare) == 1:
                 commit_a = args.bench_compare[0]
@@ -270,10 +281,9 @@ def main(argv):
             out, err = p.communicate()
             commit_a = out.strip()
 
-            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   'continuous', '-e', '-f', '1.05',
+            cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            os.execv(sys.executable, [sys.executable] + cmd)
+            run_asv(cmd)
             sys.exit(1)
 
     if args.build_only:
@@ -358,8 +368,8 @@ def build_project(args):
             cvars = distutils.sysconfig.get_config_vars()
             env['OPT'] = '-O0 -ggdb'
             env['FOPT'] = '-O0 -ggdb'
-            env['CC'] = cvars['CC'] + ' --coverage'
-            env['CXX'] = cvars['CXX'] + ' --coverage'
+            env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
+            env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
             env['F77'] = 'gfortran --coverage '
             env['F90'] = 'gfortran --coverage '
             env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
@@ -380,7 +390,7 @@ def build_project(args):
     # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):
         os.makedirs(site_dir)
-    env['PYTHONPATH'] = site_dir
+    env['PYTHONPATH'] = os.pathsep.join((site_dir, env.get('PYTHONPATH', '')))
 
     log_filename = os.path.join(ROOT_DIR, 'build.log')
     start_time = datetime.datetime.now()
@@ -494,11 +504,11 @@ def run_mypy(args):
 
     try:
         import mypy.api
-    except ImportError:
+    except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
             "pip install -r mypy_requirements.txt from the repo root"
-        )
+        ) from e
 
     site_dir = build_project(args)
     config = os.path.join(
@@ -519,6 +529,37 @@ def run_mypy(args):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
     return status
+
+
+def run_asv(cmd):
+    cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                       'benchmarks')
+    # Always use ccache, if installed
+    env = dict(os.environ)
+    env['PATH'] = os.pathsep.join(EXTRA_PATH +
+                                  env.get('PATH', '').split(os.pathsep))
+    # Control BLAS/LAPACK threads
+    env['OPENBLAS_NUM_THREADS'] = '1'
+    env['MKL_NUM_THREADS'] = '1'
+
+    # Limit memory usage
+    sys.path.insert(0, cwd)
+    from benchmarks.common import set_mem_rlimit
+    try:
+        set_mem_rlimit()
+    except (ImportError, RuntimeError):
+        pass
+
+    # Run
+    try:
+        return subprocess.call(cmd, env=env, cwd=cwd)
+    except OSError as err:
+        if err.errno == errno.ENOENT:
+            print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
+            print("You need to install Airspeed Velocity (https://airspeed-velocity.github.io/asv/)")
+            print("to run Scipy benchmarks")
+            return 1
+        raise
 
 
 if __name__ == "__main__":

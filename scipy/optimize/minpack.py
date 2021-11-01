@@ -6,7 +6,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
-from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
+from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
@@ -132,6 +132,21 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Notes
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
+
+    Examples
+    --------
+    Find a solution to the system of equations:
+    ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
+
+    >>> from scipy.optimize import fsolve
+    >>> def func(x):
+    ...     return [x[0] * np.cos(x[1]) - 4,
+    ...             x[1] * x[0] - x[1] - 5]
+    >>> root = fsolve(func, [1, 1])
+    >>> root
+    array([6.50409711, 0.90841421])
+    >>> np.isclose(func(root), [0.0, 0.0])  # func(root) should be almost 0.0.
+    array([ True,  True])
 
     """
     options = {'col_deriv': col_deriv,
@@ -275,9 +290,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        Should take at least one (possibly length N vector) argument and
-        returns M floating point numbers. It must not return NaNs or
-        fitting might fail.
+        Should take at least one (possibly length ``N`` vector) argument and
+        returns ``M`` floating point numbers. It must not return NaNs or
+        fitting might fail. ``M`` must be greater than or equal to ``N``.
     x0 : ndarray
         The starting estimate for the minimization.
     args : tuple, optional
@@ -378,6 +393,15 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     The solution, `x`, is always a 1-D array, regardless of the shape of `x0`,
     or whether `x0` is a scalar.
+
+    Examples
+    --------
+    >>> from scipy.optimize import leastsq
+    >>> def func(x):
+    ...     return 2*(x-3)**2+1
+    >>> leastsq(func, 0)
+    (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
@@ -387,7 +411,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+        raise TypeError(f"Improper input: func input vector length N={n} must"
+                        f" not exceed func output vector length M={m}")
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
@@ -438,7 +463,6 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            from numpy.dual import inv
             perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             R = dot(r, perm)
@@ -551,12 +575,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, `sigma` is used in an absolute sense and the estimated parameter
         covariance `pcov` reflects these absolute values.
 
-        If False, only the relative magnitudes of the `sigma` values matter.
+        If False (default), only the relative magnitudes of the `sigma` values matter.
         The returned parameter covariance matrix `pcov` is based on scaling
         `sigma` by a constant factor. This constant is set by demanding that the
         reduced `chisq` for the optimal parameters `popt` when using the
         *scaled* `sigma` equals unity. In other words, `sigma` is scaled to
-        match the sample variance of the residuals after the fit.
+        match the sample variance of the residuals after the fit. Default is False.
         Mathematically,
         ``pcov(absolute_sigma=False) = pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
     check_finite : bool, optional
@@ -650,8 +674,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> xdata = np.linspace(0, 4, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
-    >>> np.random.seed(1729)
-    >>> y_noise = 0.2 * np.random.normal(size=xdata.size)
+    >>> rng = np.random.default_rng()
+    >>> y_noise = 0.2 * rng.normal(size=xdata.size)
     >>> ydata = y + y_noise
     >>> plt.plot(xdata, ydata, 'b-', label='data')
 
@@ -659,7 +683,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
     >>> popt
-    array([ 2.55423706,  1.35190947,  0.47450618])
+    array([2.56274217, 1.37268521, 0.47427475])
     >>> plt.plot(xdata, func(xdata, *popt), 'r-',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -668,7 +692,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
     >>> popt
-    array([ 2.43708906,  1.        ,  0.35015434])
+    array([2.43736712, 1.        , 0.34463856])
     >>> plt.plot(xdata, func(xdata, *popt), 'g--',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -736,8 +760,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             try:
                 # scipy.linalg.cholesky requires lower=True to return L L^T = A
                 transform = cholesky(sigma, lower=True)
-            except LinAlgError:
-                raise ValueError("`sigma` must be positive definite.")
+            except LinAlgError as e:
+                raise ValueError("`sigma` must be positive definite.") from e
         else:
             raise ValueError("`sigma` has incorrect shape.")
     else:
@@ -756,6 +780,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
+        # if ydata.size == 1, this might be used for broadcast.
+        if ydata.size != 1 and n > ydata.size:
+            raise TypeError(f"The number of func parameters={n} must not"
+                            f" exceed the number of data points={ydata.size}")
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)

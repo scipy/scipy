@@ -251,6 +251,7 @@ extern int     ilu_dQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern void    dreadhb(FILE *, int *, int *, int *, double **, int **, int **);
 extern void    dreadrb(int *, int *, int *, double **, int **, int **);
 extern void    dreadtriple(int *, int *, int *, double **, int **, int **);
+extern void    dreadMM(FILE *, int *, int *, int *, double **, int **, int **);
 extern void    dCompRow_to_CompCol(int, int, int, double*, int*, int*,
 		                   double **, int **, int **);
 extern void    dfill (double *, int, double);

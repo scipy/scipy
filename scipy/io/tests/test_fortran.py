@@ -88,7 +88,7 @@ def test_fortranfile_read_mixed_record():
 
     filename = path.join(DATA_PATH, "fortran-3x3d-2i.dat")
     with FortranFile(filename, 'r', '<u4') as f:
-        record = f.read_record('(3,3)f8', '2i4')
+        record = f.read_record('(3,3)<f8', '2<i4')
 
     ax = np.arange(3*3).reshape(3, 3).astype(np.double)
     bx = np.array([-1, -2], dtype=np.int32)
@@ -221,7 +221,7 @@ def test_fortran_eof_broken_record(tmpdir):
 def test_fortran_eof_multidimensional(tmpdir):
     filename = path.join(str(tmpdir), "scratch")
     n, m, q = 3, 5, 7
-    dt = np.dtype([("field", np.float, (n, m))])
+    dt = np.dtype([("field", np.float64, (n, m))])
     a = np.zeros(q, dtype=dt)
     with FortranFile(filename, 'w') as f:
         f.write_record(a[0])

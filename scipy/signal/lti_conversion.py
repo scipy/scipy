@@ -246,7 +246,7 @@ def ss2tf(A, B, C, D, input=0):
 
     >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
-    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
+    (array([[1., 3., 3.]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
 
@@ -273,8 +273,8 @@ def ss2tf(A, B, C, D, input=0):
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:, 0] + B[:, 0] + C[0, :] + D
-    num = numpy.zeros((nout, num_states + 1), type_test.dtype)
+    type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
+    num = numpy.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
@@ -383,6 +383,36 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
     approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
     is based on [4]_.
+
+    Examples
+    --------
+    We can transform a continuous state-space system to a discrete one:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import cont2discrete, lti, dlti, dstep
+
+    Define a continuous state-space system.
+
+    >>> A = np.array([[0, 1],[-10., -3]])
+    >>> B = np.array([[0],[10.]])
+    >>> C = np.array([[1., 0]])
+    >>> D = np.array([[0.]])
+    >>> l_system = lti(A, B, C, D)
+    >>> t, x = l_system.step(T=np.linspace(0, 5, 100))
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(t, x, label='Continuous', linewidth=3)
+
+    Transform it to a discrete state-space system using several methods.
+
+    >>> dt = 0.1
+    >>> for method in ['zoh', 'bilinear', 'euler', 'backward_diff', 'foh', 'impulse']:
+    ...    d_system = cont2discrete((A, B, C, D), dt, method=method)
+    ...    s, x_d = dstep(d_system)
+    ...    ax.step(s, np.squeeze(x_d), label=method, where='post')
+    >>> ax.axis([t[0], t[-1], x[0], 1.4])
+    >>> ax.legend(loc='best')
+    >>> fig.tight_layout()
+    >>> plt.show()
 
     References
     ----------

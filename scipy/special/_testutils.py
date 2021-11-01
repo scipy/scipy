@@ -16,7 +16,7 @@ __all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
@@ -83,7 +83,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -255,8 +255,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -264,8 +263,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)

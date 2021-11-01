@@ -143,12 +143,11 @@ def compute_jac_indices(n, m, k):
 def stacked_matmul(a, b):
     """Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).
 
-    In our case, a[i, :, :] and b[i, :, :] are always square.
+    Empirical optimization. Use outer Python loop and BLAS for large
+    matrices, otherwise use a single einsum call.
     """
-    # Empirical optimization. Use outer Python loop and BLAS for large
-    # matrices, otherwise use a single einsum call.
     if a.shape[1] > 50:
-        out = np.empty_like(a)
+        out = np.empty((a.shape[0], a.shape[1], b.shape[2]))
         for i in range(a.shape[0]):
             out[i] = np.dot(a[i], b[i])
         return out
@@ -595,7 +594,7 @@ def create_spline(y, yp, x, h):
     c[1] = (slope - yp[:, :-1]) / h - t
     c[2] = yp[:, :-1]
     c[3] = y[:, :-1]
-    c = np.rollaxis(c, 1)
+    c = np.moveaxis(c, 1, 0)
 
     return PPoly(c, x, extrapolate=True, axis=1)
 

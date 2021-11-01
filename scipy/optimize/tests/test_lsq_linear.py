@@ -15,7 +15,7 @@ A = np.array([
 b = np.array([0.074, 1.014, -0.383])
 
 
-class BaseMixin(object):
+class BaseMixin:
     def setup_method(self):
         self.rnd = np.random.RandomState(0)
 
@@ -65,6 +65,14 @@ class BaseMixin(object):
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([0.005236663400791, -4]))
+
+    def test_np_matrix(self):
+        # gh-10711
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(PendingDeprecationWarning)
+            A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
+        k = np.array([20, 15])
+        s_t = lsq_linear(A, k)
 
     def test_dense_rank_deficient(self):
         A = np.array([[-0.307, -0.184]])
@@ -120,8 +128,45 @@ class BaseMixin(object):
         result = lsq_linear(A, b, method=self.method)
         assert_(result.cost < 1.1e-8)
 
+    def test_large_rank_deficient(self):
+        np.random.seed(0)
+        n, m = np.sort(np.random.randint(2, 1000, size=2))
+        m *= 2   # make m >> n
+        A = 1.0 * np.random.randint(-99, 99, size=[m, n])
+        b = 1.0 * np.random.randint(-99, 99, size=[m])
+        bounds = 1.0 * np.sort(np.random.randint(-99, 99, size=(2, n)), axis=0)
+        bounds[1, :] += 1.0  # ensure up > lb
 
-class SparseMixin(object):
+        # Make the A matrix strongly rank deficient by replicating some columns
+        w = np.random.choice(n, n)  # Select random columns with duplicates
+        A = A[:, w]
+
+        x_bvls = lsq_linear(A, b, bounds=bounds, method='bvls').x
+        x_trf = lsq_linear(A, b, bounds=bounds, method='trf').x
+
+        cost_bvls = np.sum((A @ x_bvls - b)**2)
+        cost_trf = np.sum((A @ x_trf - b)**2)
+
+        assert_(abs(cost_bvls - cost_trf) < cost_trf*1e-10)
+
+    def test_convergence_small_matrix(self):
+        A = np.array([[49.0, 41.0, -32.0],
+                      [-19.0, -32.0, -8.0],
+                      [-13.0, 10.0, 69.0]])
+        b = np.array([-41.0, -90.0, 47.0])
+        bounds = np.array([[31.0, -44.0, 26.0],
+                           [54.0, -32.0, 28.0]])
+
+        x_bvls = lsq_linear(A, b, bounds=bounds, method='bvls').x
+        x_trf = lsq_linear(A, b, bounds=bounds, method='trf').x
+
+        cost_bvls = np.sum((A @ x_bvls - b)**2)
+        cost_trf = np.sum((A @ x_trf - b)**2)
+
+        assert_(abs(cost_bvls - cost_trf) < cost_trf*1e-10)
+
+
+class SparseMixin:
     def test_sparse_and_LinearOperator(self):
         m = 5000
         n = 1000
@@ -159,4 +204,3 @@ class TestTRF(BaseMixin, SparseMixin):
 class TestBVLS(BaseMixin):
     method = 'bvls'
     lsq_solvers = ['exact']
-

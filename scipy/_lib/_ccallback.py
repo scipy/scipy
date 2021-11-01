@@ -6,7 +6,7 @@ PyCFuncPtr = ctypes.CFUNCTYPE(ctypes.c_void_p).__bases__[0]
 
 ffi = None
 
-class CData(object):
+class CData:
     pass
 
 def _import_cffi():
@@ -124,10 +124,10 @@ class LowLevelCallable(tuple):
         """
         try:
             function = module.__pyx_capi__[name]
-        except AttributeError:
-            raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute")
-        except KeyError:
-            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name))
+        except AttributeError as e:
+            raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute") from e
+        except KeyError as e:
+            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name)) from e
         return cls(function, user_data, signature)
 
     @classmethod
