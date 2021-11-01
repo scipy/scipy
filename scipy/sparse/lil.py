@@ -36,6 +36,11 @@ class lil_matrix(spmatrix, IndexMixin):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
+        lil_matrix((data, rows), [shape=(M, N)])
+            to construct matrix of shape (M, N) directly with existing data
+            and rows.
+            When shape is not specified, it is inferred from the rows array
+
     Attributes
     ----------
     dtype : dtype
@@ -111,6 +116,29 @@ class lil_matrix(spmatrix, IndexMixin):
                 for i in range(M):
                     self.rows[i] = []
                     self.data[i] = []
+            elif len(arg1) == 2:
+                # (data, rows) format
+                (data, rows) = arg1
+                M = len(rows)
+
+                if len(data) != M:
+                    raise ValueError('data and rows should have same length')
+                
+                if shape is None:
+                    shape = (M, max(max(r) for r in rows) + 1)
+
+                self._shape = check_shape(shape)
+                
+                if self._shape[0] != M:
+                    raise ValueError('shape should match with length of data and rows') 
+
+                self.data = np.empty(M, dtype=object)
+                self.rows = np.empty(M, dtype=object)
+
+                for i in range(M):
+                    self.data[i] = list(data[i])
+                    self.rows[i] = list(rows[i])
+                
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
         else:
