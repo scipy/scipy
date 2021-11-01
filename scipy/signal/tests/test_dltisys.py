@@ -10,7 +10,7 @@ from pytest import raises as assert_raises
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
-
+from scipy.linalg import eig
 
 class TestDLTI:
 
@@ -596,3 +596,32 @@ class TestTransferFunctionZConversion:
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
 
+    def test_complex_dlsim(self):
+        # Example of simulation of diagonalized StateSpace system
+        # In this example the diagonalized system has complex values on the matrices
+
+        A = np.array([[0, 0, 1000], [0.1, 0, 0], [0, 0.5, 0.5]])
+        B = np.array([[0], [0], [1]])
+        C = np.array([[0, 0, 1]])
+        D = np.array([[0]])
+
+        eigenvectors_matrix = eig(A)[1]
+        Aw = np.matmul(np.matmul(np.linalg.inv(eigenvectors_matrix), A), eigenvectors_matrix)
+        Bw = np.matmul(np.linalg.inv(eigenvectors_matrix), B)
+        Cw = np.matmul(C, eigenvectors_matrix)
+        Dw = D
+
+        system_w = dlsim((Aw, Bw, Cw, Dw, 1), np.arange(10))
+
+        your_truth = np.array([[0.00000000e+00+0.00000000e+00j],
+                                 [0.00000000e+00+0.00000000e+00j],
+                                 [1.00000000e+00-4.27227788e-17j],
+                                 [2.50000000e+00+9.23967738e-17j],
+                                 [4.25000000e+00-2.12324961e-15j],
+                                 [5.61250000e+01-1.30680785e-14j],
+                                 [1.58062500e+02+4.34077628e-14j],
+                                 [2.97531250e+02-1.95676440e-13j],
+                                 [2.96201562e+03-1.34606639e-12j],
+                                 [9.39213281e+03+2.38330602e-12j]])
+
+        assert_array_almost_equal(your_truth, system_w[1])
