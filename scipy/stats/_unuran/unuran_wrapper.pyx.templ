@@ -257,6 +257,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     (self.args, self.loc,
                      self.scale) = dist.dist._parse_args(*dist.args,
                                                          **dist.kwds)
+                    self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
                     x = np.asarray((x-self.loc)/self.scale)
@@ -276,6 +277,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths,
                     (self.args, self.loc,
                      _) = dist.dist._parse_args(*dist.args,
                                                 **dist.kwds)
+                    self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
                     x = np.asarray(x-self.loc)

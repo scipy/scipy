@@ -293,6 +293,12 @@ def test_with_scipy_distribution():
     rng = NumericalInverseHermite(dist, random_state=urng)
     check_cont_samples(rng, dist, dist.stats())
     assert_allclose(dist.ppf(u), rng.ppf(u))
+    # check for discrete distributions
+    dist = stats.binom(10, 0.2)
+    rng = DiscreteAliasUrn(dist, random_state=urng)
+    domain = dist.support()
+    pv = dist.pmf(np.arange(domain[0], domain[1]+1))
+    check_discr_samples(rng, pv, dist.stats())
 
 
 def check_cont_samples(rng, dist, mv_ex):
