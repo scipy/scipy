@@ -384,6 +384,12 @@ class RK45(RungeKutta):
 
 class Verner87(RungeKutta):
     """A 'most efficient' Runge--Kutta (13:8(7)) pair.
+
+    References
+    ----------
+    .. [1] J. H. Verner, "Explicit Runge-Kutta methods with estimates
+           of the local truncation error", SIAM Journal on Numerical Analysis,
+           Vol. 15, No. 4, pp. 772-790, 1978.
     """
 
     order = 7
