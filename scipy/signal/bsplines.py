@@ -1,11 +1,16 @@
-from numpy import (logical_and, asarray, pi, zeros_like,
-                   piecewise, array, arctan2, tan, zeros, arange, floor)
-from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
-                              less_equal, greater_equal)
+from numpy import logical_and, asarray, pi, piecewise, array
+from numpy.core.umath import sqrt, exp, less, less_equal, greater_equal
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
 
+from ._bsplines_pythran import (
+        _cubic_smooth_coeff, _cubic_coeff, _quadratic_coeff,
+        cubic as cubic_pythran,
+        quadratic as quadratic_pythran,
+        cspline1d_eval as cspline1d_eval_pythran,
+        qspline1d_eval as qspline1d_eval_pythran
+        )
 from scipy.special import comb
 from scipy._lib._util import float_factorial
 
@@ -280,17 +285,7 @@ def cubic(x):
     True
 
     """
-    ax = abs(asarray(x))
-    res = zeros_like(ax)
-    cond1 = less(ax, 1)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 2.0 / 3 - 1.0 / 2 * ax1 ** 2 * (2 - ax1)
-    cond2 = ~cond1 & less(ax, 2)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = 1.0 / 6 * (2 - ax2) ** 3
-    return res
+    return cubic_pythran(abs(asarray(x)))
 
 
 def quadratic(x):
@@ -332,99 +327,7 @@ def quadratic(x):
     True
 
     """
-    ax = abs(asarray(x))
-    res = zeros_like(ax)
-    cond1 = less(ax, 0.5)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 0.75 - ax1 ** 2
-    cond2 = ~cond1 & less(ax, 1.5)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = (ax2 - 1.5) ** 2 / 2.0
-    return res
-
-
-def _coeff_smooth(lam):
-    xi = 1 - 96 * lam + 24 * lam * sqrt(3 + 144 * lam)
-    omeg = arctan2(sqrt(144 * lam - 1), sqrt(xi))
-    rho = (24 * lam - 1 - sqrt(xi)) / (24 * lam)
-    rho = rho * sqrt((48 * lam + 24 * lam * sqrt(3 + 144 * lam)) / xi)
-    return rho, omeg
-
-
-def _hc(k, cs, rho, omega):
-    return (cs / sin(omega) * (rho ** k) * sin(omega * (k + 1)) *
-            greater(k, -1))
-
-
-def _hs(k, cs, rho, omega):
-    c0 = (cs * cs * (1 + rho * rho) / (1 - rho * rho) /
-          (1 - 2 * rho * rho * cos(2 * omega) + rho ** 4))
-    gamma = (1 - rho * rho) / (1 + rho * rho) / tan(omega)
-    ak = abs(k)
-    return c0 * rho ** ak * (cos(omega * ak) + gamma * sin(omega * ak))
-
-
-def _cubic_smooth_coeff(signal, lamb):
-    rho, omega = _coeff_smooth(lamb)
-    cs = 1 - 2 * rho * cos(omega) + rho * rho
-    K = len(signal)
-    yp = zeros((K,), signal.dtype.char)
-    k = arange(K)
-    yp[0] = (_hc(0, cs, rho, omega) * signal[0] +
-             add.reduce(_hc(k + 1, cs, rho, omega) * signal))
-
-    yp[1] = (_hc(0, cs, rho, omega) * signal[0] +
-             _hc(1, cs, rho, omega) * signal[1] +
-             add.reduce(_hc(k + 2, cs, rho, omega) * signal))
-
-    for n in range(2, K):
-        yp[n] = (cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] -
-                 rho * rho * yp[n - 2])
-
-    y = zeros((K,), signal.dtype.char)
-
-    y[K - 1] = add.reduce((_hs(k, cs, rho, omega) +
-                           _hs(k + 1, cs, rho, omega)) * signal[::-1])
-    y[K - 2] = add.reduce((_hs(k - 1, cs, rho, omega) +
-                           _hs(k + 2, cs, rho, omega)) * signal[::-1])
-
-    for n in range(K - 3, -1, -1):
-        y[n] = (cs * yp[n] + 2 * rho * cos(omega) * y[n + 1] -
-                rho * rho * y[n + 2])
-
-    return y
-
-
-def _cubic_coeff(signal):
-    zi = -2 + sqrt(3)
-    K = len(signal)
-    yplus = zeros((K,), signal.dtype.char)
-    powers = zi ** arange(K)
-    yplus[0] = signal[0] + zi * add.reduce(powers * signal)
-    for k in range(1, K):
-        yplus[k] = signal[k] + zi * yplus[k - 1]
-    output = zeros((K,), signal.dtype)
-    output[K - 1] = zi / (zi - 1) * yplus[K - 1]
-    for k in range(K - 2, -1, -1):
-        output[k] = zi * (output[k + 1] - yplus[k])
-    return output * 6.0
-
-
-def _quadratic_coeff(signal):
-    zi = -3 + 2 * sqrt(2.0)
-    K = len(signal)
-    yplus = zeros((K,), signal.dtype.char)
-    powers = zi ** arange(K)
-    yplus[0] = signal[0] + zi * add.reduce(powers * signal)
-    for k in range(1, K):
-        yplus[k] = signal[k] + zi * yplus[k - 1]
-    output = zeros((K,), signal.dtype.char)
-    output[K - 1] = zi / (zi - 1) * yplus[K - 1]
-    for k in range(K - 2, -1, -1):
-        output[k] = zi * (output[k + 1] - yplus[k])
-    return output * 8.0
+    return quadratic_pythran(abs(asarray(x)))
 
 
 def cspline1d(signal, lamb=0.0):
@@ -575,28 +478,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     >>> plt.show()
 
     """
-    newx = (asarray(newx) - x0) / float(dx)
-    res = zeros_like(newx, dtype=cj.dtype)
-    if res.size == 0:
-        return res
-    N = len(cj)
-    cond1 = newx < 0
-    cond2 = newx > (N - 1)
-    cond3 = ~(cond1 | cond2)
-    # handle general mirror-symmetry
-    res[cond1] = cspline1d_eval(cj, -newx[cond1])
-    res[cond2] = cspline1d_eval(cj, 2 * (N - 1) - newx[cond2])
-    newx = newx[cond3]
-    if newx.size == 0:
-        return res
-    result = zeros_like(newx, dtype=cj.dtype)
-    jlower = floor(newx - 2).astype(int) + 1
-    for i in range(4):
-        thisj = jlower + i
-        indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * cubic(newx - thisj)
-    res[cond3] = result
-    return res
+    return cspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx)
 
 
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
@@ -650,25 +532,4 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     >>> plt.show()
 
     """
-    newx = (asarray(newx) - x0) / dx
-    res = zeros_like(newx)
-    if res.size == 0:
-        return res
-    N = len(cj)
-    cond1 = newx < 0
-    cond2 = newx > (N - 1)
-    cond3 = ~(cond1 | cond2)
-    # handle general mirror-symmetry
-    res[cond1] = qspline1d_eval(cj, -newx[cond1])
-    res[cond2] = qspline1d_eval(cj, 2 * (N - 1) - newx[cond2])
-    newx = newx[cond3]
-    if newx.size == 0:
-        return res
-    result = zeros_like(newx)
-    jlower = floor(newx - 1.5).astype(int) + 1
-    for i in range(3):
-        thisj = jlower + i
-        indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * quadratic(newx - thisj)
-    res[cond3] = result
-    return res
+    return qspline1d_eval_pythran(cj, (asarray(newx) - x0) / dx)
