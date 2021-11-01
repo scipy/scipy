@@ -295,8 +295,114 @@ class lti(LinearTimeInvariant):
         """
         raise NotImplementedError('to_discrete is not implemented for this '
                                   'system class.')
-
-
+    
+    def __add__(self, other):
+        """ Adds two lti together """
+        if isinstance(other, (int, float)):
+            return lti(
+            np.polyadd(
+                np.polymul(self.num, 1), 
+                np.polymul(self.den, other)),  # numerator
+            np.polymul(self.den, 1)  # denominator
+        ) 
+          
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} is not of type {type(self)}")
+        return lti(
+            np.polyadd(
+                np.polymul(self.num, other.den), 
+                np.polymul(self.den, other.num)),  # numerator
+            np.polymul(self.den, other.den)  # denominator
+        ) 
+    
+    __radd__ = __add__
+    
+    def __mul__(self, other):
+        """ Multiplies two lti together """
+        if isinstance(other, (int, float)):
+            return lti(
+            np.polymul(self.num, other),  # numerator
+            np.polymul(self.den, 1)  # denominator
+        ) 
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} is not of type {type(self)}")
+        return lti(
+                np.polymul(self.num, other.num),  # numerator
+                np.polymul(self.den, other.den)  # denominator
+        )
+    
+    __rmul__ = __mul__
+    
+    def __sub__(self, other):
+        """ Subtracts one lti/int/float from another """
+        if isinstance(other, (int, float)):
+            return lti(
+            np.polysub(
+                self.num, 
+                np.polymul(self.den, other)),  # numerator
+            np.polymul(self.den, 1)  # denominator
+        )
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} must be of type {type(self)}")
+        return lti(
+            np.polysub(
+                np.polymul(self.num, other.den), 
+                np.polymul(self.den, other.num)),  # numerator
+            np.polymul(self.den, other.den)  # denominator
+        )
+    
+    def __rsub__(self, other):
+        """ Subtracts one lti/int/float from another """
+        if isinstance(other, (int, float)):
+            return lti(
+            np.polysub(
+                np.polymul(self.den, other),
+                self.num),  # numerator
+            np.polymul(self.den, 1)  # denominator
+        )
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} must be of type {type(self)}")
+        return lti(
+            np.polysub(
+                np.polymul(self.den, other.num),
+                np.polymul(self.num, other.den)),  # numerator
+            np.polymul(self.den, other.den)  # denominator
+        )
+    
+    def __neg__(self):
+        """ Negates (multiplies by -1 the lti itself """
+        return (-1)*self
+    
+    def __truediv__(self, other):
+        """ Divides two lti/int/float together """
+        if isinstance(other, (int, float)):
+            return lti(
+            self.num,  # numerator
+            np.polymul(self.den, other)  # denominator
+        ) 
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} is not of type {type(self)}")
+        return lti(
+                np.polymul(self.num, other.den),  # numerator
+                np.polymul(self.den, other.num)  # denominator
+        ) 
+    
+    def __rtruediv__(self, other):
+        """ Divides two lti/int/float together """
+        if type(self) not in (lti, TransferFunctionContinuous):
+                return NotImplemented
+        if isinstance(other, (int, float)):
+            return lti(
+            np.polymul(other, self.to_tf().den),  # numerator
+            self.to_tf().num  # denominator
+        )
+        elif not isinstance(other, type(self)):
+            raise TypeError(f"{other} is not of type {type(self)}")
+        return lti(
+                np.polymul(self.num, other.den),  # numerator
+                np.polymul(self.den, other.num)  # denominator
+        )
+    
 class dlti(LinearTimeInvariant):
     r"""
     Discrete-time linear time invariant system base class.
