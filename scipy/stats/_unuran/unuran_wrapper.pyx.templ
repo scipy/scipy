@@ -1304,7 +1304,7 @@ cdef class NumericalInversePolynomial(Method):
         Parameters
         ----------
         u : array_like
-            Qunatiles.
+            Quantiles.
 
         Returns
         -------
@@ -1968,7 +1968,7 @@ cdef class DiscreteGuideTable(Method):
     tables that are more than three times larger than the given probability
     vector. If only a few random numbers have to be generated, (much) smaller
     table sizes are better. The size of the guide table relative to the length
-    of the given probability vector can be set by the guide_factor parameter.
+    of the given probability vector can be set by the ``guide_factor`` parameter.
 
     If a probability vector is given, it must be a 1-dimensional array of
     non-negative floats without any ``inf`` or ``nan`` values. Also, there
@@ -2187,12 +2187,12 @@ cdef class DiscreteGuideTable(Method):
         """
         ppf(u)
 
-        Approximated PPF of the given distribution.
+        PPF of the given distribution.
 
         Parameters
         ----------
         u : array_like
-            Qunatiles.
+            Quantiles.
 
         Returns
         -------
