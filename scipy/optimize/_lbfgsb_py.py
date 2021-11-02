@@ -36,7 +36,7 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from .optimize import (MemoizeJac, OptimizeResult,
+from ._optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 

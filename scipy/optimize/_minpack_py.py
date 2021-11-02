@@ -9,7 +9,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
+from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds

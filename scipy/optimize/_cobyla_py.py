@@ -15,7 +15,7 @@ from threading import RLock
 
 import numpy as np
 from scipy.optimize import _cobyla
-from .optimize import OptimizeResult, _check_unknown_options
+from ._optimize import OptimizeResult, _check_unknown_options
 try:
     from itertools import izip
 except ImportError:
