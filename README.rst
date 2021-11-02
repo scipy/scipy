@@ -2,7 +2,7 @@
 
     <p>
       <h1>
-        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/scipyshiny_small.png" height="50" height="50" alt="SciPy logo"/></a>
+        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/logo.svg" height="50" height="50" alt="SciPy logo"/></a>
         SciPy
       </h1>
     </p>
