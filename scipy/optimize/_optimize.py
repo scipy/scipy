@@ -30,7 +30,7 @@ import sys
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
-from .linesearch import (line_search_wolfe1, line_search_wolfe2,
+from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
@@ -3655,16 +3655,16 @@ def show_options(solver=None, method=None, disp=True):
 
     doc_routines = {
         'minimize': (
-            ('bfgs', 'scipy.optimize.optimize._minimize_bfgs'),
-            ('cg', 'scipy.optimize.optimize._minimize_cg'),
-            ('cobyla', 'scipy.optimize.cobyla._minimize_cobyla'),
+            ('bfgs', 'scipy.optimize._optimize._minimize_bfgs'),
+            ('cg', 'scipy.optimize._optimize._minimize_cg'),
+            ('cobyla', 'scipy.optimize._cobyla_py._minimize_cobyla'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
-            ('l-bfgs-b', 'scipy.optimize.lbfgsb._minimize_lbfgsb'),
-            ('nelder-mead', 'scipy.optimize.optimize._minimize_neldermead'),
-            ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
-            ('powell', 'scipy.optimize.optimize._minimize_powell'),
-            ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
-            ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
+            ('l-bfgs-b', 'scipy.optimize._lbfgsb_py._minimize_lbfgsb'),
+            ('nelder-mead', 'scipy.optimize._optimize._minimize_neldermead'),
+            ('newton-cg', 'scipy.optimize._optimize._minimize_newtoncg'),
+            ('powell', 'scipy.optimize._optimize._minimize_powell'),
+            ('slsqp', 'scipy.optimize._slsqp_py._minimize_slsqp'),
+            ('tnc', 'scipy.optimize._tnc._minimize_tnc'),
             ('trust-ncg',
              'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
             ('trust-constr',
@@ -3676,7 +3676,7 @@ def show_options(solver=None, method=None, disp=True):
              'scipy.optimize._trustregion_krylov._minimize_trust_krylov'),
         ),
         'root': (
-            ('hybr', 'scipy.optimize.minpack._root_hybr'),
+            ('hybr', 'scipy.optimize._minpack_py._root_hybr'),
             ('lm', 'scipy.optimize._root._root_leastsq'),
             ('broyden1', 'scipy.optimize._root._root_broyden1_doc'),
             ('broyden2', 'scipy.optimize._root._root_broyden2_doc'),
@@ -3710,9 +3710,9 @@ def show_options(solver=None, method=None, disp=True):
             ('2opt', 'scipy.optimize._qap._quadratic_assignment_2opt'),
         ),
         'minimize_scalar': (
-            ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),
-            ('bounded', 'scipy.optimize.optimize._minimize_scalar_bounded'),
-            ('golden', 'scipy.optimize.optimize._minimize_scalar_golden'),
+            ('brent', 'scipy.optimize._optimize._minimize_scalar_brent'),
+            ('bounded', 'scipy.optimize._optimize._minimize_scalar_bounded'),
+            ('golden', 'scipy.optimize._optimize._minimize_scalar_golden'),
         ),
     }
 
