@@ -15,10 +15,10 @@ ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
 
 from warnings import warn
 
-from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
-from .minpack import _root_hybr, leastsq
+from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
+from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
-from . import nonlin
+from . import _nonlin as nonlin
 
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,

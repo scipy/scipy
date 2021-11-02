@@ -13,7 +13,7 @@ from multiprocessing.pool import ThreadPool
 
 from scipy import optimize
 from scipy.special import lambertw
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
 
 

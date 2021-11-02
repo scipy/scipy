@@ -17,7 +17,7 @@ Functions
 
 import numpy as np
 
-from .optimize import OptimizeResult, OptimizeWarning
+from ._optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
 from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip

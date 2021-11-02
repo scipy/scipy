@@ -16,7 +16,7 @@ import numpy as np
 
 
 # unconstrained minimization
-from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
                        _minimize_scalar_brent, _minimize_scalar_bounded,
                        _minimize_scalar_golden, MemoizeJac)
@@ -27,10 +27,10 @@ from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
 
 # constrained minimization
-from .lbfgsb import _minimize_lbfgsb
-from .tnc import _minimize_tnc
-from .cobyla import _minimize_cobyla
-from .slsqp import _minimize_slsqp
+from ._lbfgsb_py import _minimize_lbfgsb
+from ._tnc import _minimize_tnc
+from ._cobyla_py import _minimize_cobyla
+from ._slsqp_py import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)

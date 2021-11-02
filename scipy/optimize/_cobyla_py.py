@@ -14,7 +14,7 @@ import functools
 from threading import RLock
 
 import numpy as np
-from scipy.optimize import _cobyla
+from scipy.optimize import _cobyla as cobyla
 from ._optimize import OptimizeResult, _check_unknown_options
 try:
     from itertools import izip
@@ -257,7 +257,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         return f
 
     info = np.zeros(4, np.float64)
-    xopt, info = _cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
+    xopt, info = cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
                                   rhoend=rhoend, iprint=iprint, maxfun=maxfun,
                                   dinfo=info)
 

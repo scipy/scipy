@@ -13,7 +13,7 @@ Functions
 """
 from warnings import warn
 
-from scipy.optimize import minpack2
+from scipy.optimize import _minpack2 as minpack2
 import numpy as np
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
