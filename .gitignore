@@ -213,9 +213,9 @@ scipy/signal/_max_len_seq_inner.c
 scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
-scipy/signal/correlate_nd.c
-scipy/signal/lfilter.c
-scipy/signal/bspline_util.c
+scipy/signal/_correlate_nd.c
+scipy/signal/_lfilter.c
+scipy/signal/_bspline_util.c
 scipy/sparse/_csparsetools.c
 scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c

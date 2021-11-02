@@ -6,7 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include "numpy/ndarrayobject.h"
-#include "sigtools.h"
+#include "_sigtools.h"
 
 enum {
     CORR_MODE_VALID=0,
@@ -18,7 +18,7 @@ static int _correlate_nd_imp(PyArrayIterObject* x, PyArrayIterObject *y,
         PyArrayIterObject *z, int typenum, int mode);
 
 PyObject *
-scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
+scipy_signal__sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *x, *y, *out;
     PyArrayObject *ax, *ay, *aout;
@@ -120,7 +120,7 @@ ALL_TYPENUMS = ['UBYTE', 'BYTE', 'USHORT', 'SHORT', 'UINT', 'INT',
                 'ULONG', 'LONG', 'ULONGLONG', 'LONGLONG',
                 'FLOAT', 'DOUBLE', 'LONGDOUBLE',
                 'CFLOAT', 'CDOUBLE', 'CLONGDOUBLE']
-                
+
 CMPLX_FSUFS = ['cfloat', 'cdouble', 'clongdouble']
 
 }}

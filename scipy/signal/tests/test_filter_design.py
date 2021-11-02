@@ -14,12 +14,12 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          gammatone, group_delay, iircomb, iirdesign, iirfilter, 
-                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, 
-                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, 
+                          gammatone, group_delay, iircomb, iirdesign, iirfilter,
+                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
+                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
-from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
+from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
 try:
