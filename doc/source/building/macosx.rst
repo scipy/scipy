@@ -112,7 +112,7 @@ source tree. Change directory first.
 If you have any problems installing SciPy on your Mac
 based on these instructions, please check the `scipy-users and
 scipy-dev mailing list archives
-<https://www.scipy.org/scipylib/mailing-lists.html>`__
+<https://www.scipy.org/mailing-lists>`__
 for possible solutions. If you
 are still stuck, feel free to join scipy-users for further
 assistance. Please have the following information ready:
