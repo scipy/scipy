@@ -7,7 +7,7 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/ndarrayobject.h>
 
-#include "sigtools.h"
+#include "_sigtools.h"
 
 {{py:
 
@@ -36,7 +36,7 @@ typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *,
 static BasicFilterFunction *BasicFilterFunctions[256];
 
 void
-scipy_signal_sigtools_linear_filter_module_init(void)
+scipy_signal__sigtools_linear_filter_module_init(void)
 {
     int k;
     for (k = 0; k < 256; ++k) {
@@ -128,7 +128,7 @@ convert_shape_to_errmsg(npy_intp ndim, npy_intp *Xshape, npy_intp *Vishape,
  * XXX: Error checking not done yet
  */
 PyObject*
-scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
+scipy_signal__sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
 {
     PyObject *b, *a, *X, *Vi;
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;

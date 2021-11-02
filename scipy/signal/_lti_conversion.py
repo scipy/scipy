@@ -8,7 +8,7 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, prod, zeros, array, outer)
 from scipy import linalg
 
-from .filter_design import tf2zpk, zpk2tf, normalize
+from ._filter_design import tf2zpk, zpk2tf, normalize
 
 
 __all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',

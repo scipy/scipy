@@ -11,7 +11,7 @@ from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 
-from . import sigtools
+from . import _sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
@@ -459,7 +459,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         h -= left * sinc(left * m)
 
     # Get and apply the window function.
-    from .signaltools import get_window
+    from ._signaltools import get_window
     win = get_window(window, numtaps, fftbins=False)
     h *= win
 
@@ -667,7 +667,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        from .signaltools import get_window
+        from ._signaltools import get_window
         wind = get_window(window, numtaps, fftbins=False)
     else:
         wind = 1
@@ -850,7 +850,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
         weight = [1] * len(desired)
 
     bands = np.asarray(bands).copy()
-    return sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
+    return _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
                            maxiter, grid_density)
 
 

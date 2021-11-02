@@ -8,7 +8,7 @@ is granted under the SciPy License.
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include "numpy/ndarrayobject.h"
 
-#include "sigtools.h"
+#include "_sigtools.h"
 #include <setjmp.h>
 #include <stdlib.h>
 
@@ -33,9 +33,9 @@ char *check_malloc(size_t size)
  ************************************************************************/
 
 /* Some core routines are written
-in a portable way so that they could be used in other applications.  The 
-order filtering, however uses python-specific constructs in its guts 
-and is therefore Python dependent.  This could be changed in a 
+in a portable way so that they could be used in other applications.  The
+order filtering, however uses python-specific constructs in its guts
+and is therefore Python dependent.  This could be changed in a
 straightforward way but I haven't done it for lack of time.*/
 
 static int index_out_of_bounds(npy_intp *indices, npy_intp *max_indices, int ndims) {
@@ -48,9 +48,9 @@ static int index_out_of_bounds(npy_intp *indices, npy_intp *max_indices, int ndi
   return bad_index;
 }
 
-/* This maybe could be redone with stride information so it could be 
- * called with non-contiguous arrays:  I think offsets is related to 
- * the difference between the strides.  I'm not sure about init_offset 
+/* This maybe could be redone with stride information so it could be
+ * called with non-contiguous arrays:  I think offsets is related to
+ * the difference between the strides.  I'm not sure about init_offset
  * just yet.  I think it needs to be calculated because of mode_dep
  * but probably with dim1 being the size of the "original, unsliced" array
  */
@@ -61,13 +61,13 @@ static npy_intp compute_offsets (npy_uintp *offsets, npy_intp *offsets2, npy_int
   int k,i;
   npy_intp init_offset = 0;
 
-  for (k = 0; k < nd - 1; k++) 
+  for (k = 0; k < nd - 1; k++)
     {
       init_offset += mode_dep[k];
       init_offset *= dim1[k+1];
     }
   init_offset += mode_dep[k] - 2;
-  
+
   k = nd;
   while(k--) {
     offsets[k] = 0;
@@ -91,10 +91,10 @@ static npy_intp compute_offsets (npy_uintp *offsets, npy_intp *offsets2, npy_int
 }
 
 /* increment by 1 the index into an N-D array, doing the necessary
-   carrying when the index reaches the dimension along that axis */ 
-static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {    
+   carrying when the index reaches the dimension along that axis */
+static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {
     int k, incr = 1;
-    
+
     k = nd - 1;
     if (++ret_ind[k] >= max_ind[k]) {
       while (k >= 0 && (ret_ind[k] >= max_ind[k]-1)) {
@@ -108,7 +108,7 @@ static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {
 
 /********************************************************
  *
- *  Code taken from remez.c by Erik Kvaleberg which was 
+ *  Code taken from remez.c by Erik Kvaleberg which was
  *    converted from an original FORTRAN by
  *
  * AUTHORS: JAMES H. MCCLELLAN
@@ -126,8 +126,8 @@ static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {
  *         BELL LABORATORIES
  *         MURRAY HILL, NEW JERSEY 07974
  *
- *  
- *  Adaptation to C by 
+ *
+ *  Adaptation to C by
  *      egil kvaleberg
  *      husebybakken 14a
  *      0379 oslo, norway
@@ -135,7 +135,7 @@ static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {
  *      egil@kvaleberg.no
  *  Web:
  *      http://www.kvaleberg.com/
- * 
+ *
  *
  *********************************************************/
 
@@ -213,7 +213,7 @@ static double freq_eval(int k, int n, double *grid, double *x, double *y, double
  *  THE COEFFICIENTS OF THE BEST APPROXIMATION.
  *-----------------------------------------------------------------------
  */
-static int remez(double *dev, double des[], double grid[], double edge[],  
+static int remez(double *dev, double des[], double grid[], double edge[],
 	   double wt[], int ngrid, int nbands, int iext[], double alpha[],
 	   int nfcns, int itrmax, double *work, int dimsize, int *niter_out)
 		/* dev, iext, alpha                         are output types */
@@ -230,7 +230,7 @@ static int remez(double *dev, double des[], double grid[], double edge[],
     static double *a, *p, *q;
     static double *ad, *x, *y;
 
-    a = work; p = a + dimsize+1; q = p + dimsize+1; 
+    a = work; p = a + dimsize+1; q = p + dimsize+1;
     ad = q + dimsize+1; x = ad + dimsize+1; y = x + dimsize+1;
     devl = -1.0;
     nz  = nfcns+1;
@@ -555,7 +555,7 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 
 /*********************************************************/
 
-/*  This routine accepts basic input information and puts it in 
+/*  This routine accepts basic input information and puts it in
  *  the form expected by remez.
 
  *  Adpated from main() by Travis Oliphant
@@ -564,7 +564,7 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                      double *response, double *weight, int type, int maxiter,
                      int grid_density, int *niter_out) {
-  
+
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
   int j, k, l, lband, dimsize;
@@ -582,7 +582,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
   nfilt = numtaps;
   jtype = type; nbands = numbands;
   /* Note:  code assumes these arrays start at 1 */
-  edge = bands-1; 
+  edge = bands-1;
   h = h2 - 1;
   fx = response - 1;
   wtx = weight - 1;
@@ -596,7 +596,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
      wt   (wrksize+1)
      iext (dimsize+1)   (integer)
      alpha (dimsize+1)
-     work  (dimsize+1)*6 
+     work  (dimsize+1)*6
 
   */
   tempstor = malloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
@@ -642,7 +642,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                 /* too many points, or too dense grid */
                 free(tempstor);
                 return -1;
-            } 
+            }
 	    grid[j] = temp + delf;
 	} while (grid[j] <= fup);
 
@@ -753,7 +753,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 }
 
 /**************************************************************
- * End of remez routines 
+ * End of remez routines
  **************************************************************/
 
 
@@ -767,7 +767,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 
 static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
                         char *sort_buffer, int nels2, int check,
-                        npy_intp *loop_ind, npy_intp *temp_ind, npy_uintp *offset){ 
+                        npy_intp *loop_ind, npy_intp *temp_ind, npy_uintp *offset){
   int i, k, incr = 1;
   int ndims = PyArray_NDIM(ap1);
   npy_intp *dims2 = PyArray_DIMS(ap2);
@@ -781,7 +781,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
   i = nels2;
   ptr = PyArray_Zero(ap2);
   temp_ind[ndims-1]--;
-  while (i--) { 
+  while (i--) {
     /* Adjust index array and move ptr1 to right place */
     k = ndims - 1;
     while(--incr) {
@@ -795,9 +795,9 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
 	memcmp(ip2, ptr, PyArray_ITEMSIZE(ap2))) {
       memcpy(sort_buffer, ip1, elsize);
       sort_buffer += elsize;
-    } 
+    }
     /* Returns number of N-D indices incremented. */
-    incr = increment(loop_ind, ndims, dims2);  
+    incr = increment(loop_ind, ndims, dims2);
     ip2 += is2;
 
   }
@@ -921,9 +921,9 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
 	mode_dep = malloc(bytes_in_array);
 	if (mode_dep == NULL) goto fail;
-	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
+	for (k = 0; k < PyArray_NDIM(ap1); k++) {
 	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
-	}	
+	}
 
 	b_ind = (npy_intp *)malloc(bytes_in_array);  /* loop variables */
 	if (b_ind == NULL) goto fail;
@@ -941,11 +941,11 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
                                   PyArray_DIMS(ap2), PyArray_DIMS(ret),
                                   mode_dep, PyArray_NDIM(ap1));
 	/* The filtering proceeds by looping through the output array
-	   and for each value filling a buffer from the 
+	   and for each value filling a buffer from the
 	   element-by-element product of the two input arrays.  The buffer
 	   is then sorted and the order_th element is kept as output. Index
-	   counters are used for book-keeping in the area so that we 
-	   can tell where we are in all of the arrays and be sure that 
+	   counters are used for book-keeping in the area so that we
+	   can tell where we are in all of the arrays and be sure that
 	   we are not trying to access areas outside the arrays definition.
 
 	   The inner loop is implemented separately but equivalently for each
@@ -954,7 +954,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	*/
 	/* Need to keep track of a ptr to place in big (first) input
 	   array where we start the multiplication (we pass over it in the
-	   inner loop (and not dereferenced) 
+	   inner loop (and not dereferenced)
 	   if it is pointing outside dataspace)
 	*/
 	/* Calculate it once and the just move it around appropriately */
@@ -978,7 +978,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
   	    memcpy(ap2_ptr,zptr,is1);
 	    ap2_ptr += is1;
 	  }
-	    
+
 	  k = PyArray_NDIM(ap1) - 1;
 	  while(--incr) {
 	    a_ind[k] -= PyArray_DIMS(ret)[k] - 1;   /* Return to start */
@@ -990,7 +990,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	  check = 0; k = -1;
 	  while(!check && (++k < PyArray_NDIM(ap1)))
-	    check = (check || (ret_ind[k] < -mode_dep[k]) || 
+	    check = (check || (ret_ind[k] < -mode_dep[k]) ||
                      (ret_ind[k] > check_ind[k]));
 
 	  fill_buffer(ap1_ptr,ap1,ap2,sort_buffer,n2,check,b_ind,temp_ind,offsets);
@@ -1005,7 +1005,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	  copyswap(op, sort_buffer + order*is1, 0, NULL);
 
           /* increment index counter */
-	  incr = increment(ret_ind,PyArray_NDIM(ret),PyArray_DIMS(ret)); 
+	  incr = increment(ret_ind,PyArray_NDIM(ret),PyArray_DIMS(ret));
           /* increment to next output index */
 	  op += os;
 
@@ -1014,7 +1014,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	free(offsets); free(offsets2); free(temp_ind);
 	free(check_ind); free(mode_dep);
 	free(sort_buffer);
-	
+
 	PyDataMem_FREE(zptr);
 	Py_DECREF(ap1);
 	Py_DECREF(ap2);
@@ -1050,7 +1050,7 @@ static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary
 extern int pylab_convolve_2d(char*, npy_intp*, char*, npy_intp*, char*,
                              npy_intp*, npy_intp*, npy_intp*, int, char*);
 
-static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
+static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
@@ -1118,7 +1118,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
-	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
+	for (i = 0; i < PyArray_NDIM(ain1); i++) {
 	    aout_dimens[i] = PyArray_DIMS(ain1)[i] - PyArray_DIMS(ain2)[i] + 1;
 	    if (aout_dimens[i] < 0) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1138,25 +1138,25 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
             aout_dimens[i] = PyArray_DIMS(ain1)[i] + PyArray_DIMS(ain2)[i] - 1;
         }
 	break;
-    default: 
-	PyErr_SetString(PyExc_ValueError, 
+    default:
+	PyErr_SetString(PyExc_ValueError,
 			"mode must be 0 (valid), 1 (same), or 2 (full)");
 	goto fail;
     }
-	
+
     aout = (PyArrayObject *)PyArray_SimpleNew(PyArray_NDIM(ain1), aout_dimens,
                                               typenum);
     if (aout == NULL) goto fail;
 
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
       (flip != 0) * FLIP_MASK;
-    
+
     ret = pylab_convolve_2d (PyArray_DATA(ain1),      /* Input data Ns[0] x Ns[1] */
 		             PyArray_STRIDES(ain1),   /* Input strides */
 		             PyArray_DATA(aout),      /* Output data */
 		             PyArray_STRIDES(aout),   /* Output strides */
 		             PyArray_DATA(ain2),      /* coefficients in filter */
-		             PyArray_STRIDES(ain2),   /* coefficients strides */ 
+		             PyArray_STRIDES(ain2),   /* coefficients strides */
 		             PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */
 			     PyArray_DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
 		             flag,                    /* convolution parameters */
@@ -1202,13 +1202,13 @@ fail:
 
 static char doc_order_filterND[] = "out = _order_filterND(a,domain,order)";
 
-static PyObject *sigtools_order_filterND(PyObject *NPY_UNUSED(dummy), 
+static PyObject *_sigtools_order_filterND(PyObject *NPY_UNUSED(dummy),
                                          PyObject *args) {
 	PyObject *domain, *a0;
 	int order=0;
-	
+
 	if (!PyArg_ParseTuple(args, "OO|i", &a0, &domain, &order)) return NULL;
-	
+
 	return PyArray_OrderFilterND(a0, domain, order);
 }
 
@@ -1221,10 +1221,10 @@ static char doc_remez[] =
     "  vector with band edges given in frequency domain where fs is the sampling\n"
     "  frequency.";
 
-static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
+static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *bands, *des, *weight;
-    int k, numtaps, numbands, type = BANDPASS, err; 
+    int k, numtaps, numbands, type = BANDPASS, err;
     PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
     PyArrayObject *h=NULL;
     npy_intp ret_dimens; int maxiter = 25, grid_density = 16;
@@ -1232,7 +1232,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     char mystr[255];
     int niter = -1;
 
-    if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight, 
+    if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight,
                           &type, &fs, &maxiter, &grid_density)) {
         return NULL;
     }
@@ -1257,7 +1257,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     if (a_weight == NULL) goto fail;
 
     numbands = PyArray_DIMS(a_des)[0];
-    if ((PyArray_DIMS(a_bands)[0] != 2*numbands) || 
+    if ((PyArray_DIMS(a_bands)[0] != 2*numbands) ||
         (PyArray_DIMS(a_weight)[0] != numbands)) {
 	    PyErr_SetString(PyExc_ValueError,
                         "The inputs desired and weight must have same length.\n  "
@@ -1265,10 +1265,10 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
         goto fail;
     }
 
-    /* 
-     * Check the bands input to see if it is monotonic, divide by 
+    /*
+     * Check the bands input to see if it is monotonic, divide by
      * fs to take from range 0 to 0.5 and check to see if in that range
-     */ 
+     */
     dptr = (double *)PyArray_DATA(a_bands);
     oldvalue = 0;
     for (k=0; k < 2*numbands; k++) {
@@ -1291,7 +1291,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
     if (h == NULL) goto fail;
 
-    err = pre_remez((double *)PyArray_DATA(h), numtaps, numbands, 
+    err = pre_remez((double *)PyArray_DATA(h), numtaps, numbands,
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
                     (double *)PyArray_DATA(a_weight),
@@ -1328,7 +1328,7 @@ extern void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
 extern void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
 extern void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
 
-static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
+static PyObject *_sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
     PyObject *image=NULL, *size=NULL;
     int typenum;
@@ -1345,11 +1345,11 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     if (size != NULL) {
 	a_size = (PyArrayObject *)PyArray_ContiguousFromObject(size, NPY_INTP, 1, 1);
 	if (a_size == NULL) goto fail;
-	if ((PyArray_NDIM(a_size) != 1) || (PyArray_DIMS(a_size)[0] < 2)) 
+	if ((PyArray_NDIM(a_size) != 1) || (PyArray_DIMS(a_size)[0] < 2))
 	    PYERR("Size must be a length two sequence");
 	Nwin[0] = ((npy_intp *)PyArray_DATA(a_size))[0];
 	Nwin[1] = ((npy_intp *)PyArray_DATA(a_size))[1];
-    }  
+    }
 
     a_out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), typenum);
     if (a_out == NULL) goto fail;
@@ -1383,7 +1383,7 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     Py_XDECREF(a_size);
 
     return PyArray_Return(a_out);
- 
+
  fail:
     Py_XDECREF(a_image);
     Py_XDECREF(a_size);
@@ -1398,18 +1398,18 @@ static char doc_linear_filter[] =
     "diagram. If Vi is not given, Vf is not returned.";
 
 static struct PyMethodDef toolbox_module_methods[] = {
-	{"_correlateND", scipy_signal_sigtools_correlateND, METH_VARARGS, doc_correlateND},
-	{"_convolve2d", sigtools_convolve2d, METH_VARARGS, doc_convolve2d},
-	{"_order_filterND", sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
-	{"_linear_filter", scipy_signal_sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
-	{"_remez",sigtools_remez, METH_VARARGS, doc_remez},
-	{"_medfilt2d", sigtools_median2d, METH_VARARGS, doc_median2d},
+	{"_correlateND", scipy_signal__sigtools_correlateND, METH_VARARGS, doc_correlateND},
+	{"_convolve2d", _sigtools_convolve2d, METH_VARARGS, doc_convolve2d},
+	{"_order_filterND", _sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
+	{"_linear_filter", scipy_signal__sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
+	{"_remez", _sigtools_remez, METH_VARARGS, doc_remez},
+	{"_medfilt2d", _sigtools_median2d, METH_VARARGS, doc_median2d},
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "sigtools",
+    "_sigtools",
     NULL,
     -1,
     toolbox_module_methods,
@@ -1418,14 +1418,14 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit_sigtools(void)
+PyObject *PyInit__sigtools(void)
 {
     PyObject *m;
 
     m = PyModule_Create(&moduledef);
 	import_array();
 
-    scipy_signal_sigtools_linear_filter_module_init();
+    scipy_signal__sigtools_linear_filter_module_init();
 
     return m;
 }

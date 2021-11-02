@@ -27,9 +27,9 @@ import warnings
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
+from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
-from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
+from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                              cont2discrete)
 
 import numpy

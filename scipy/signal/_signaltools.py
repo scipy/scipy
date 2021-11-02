@@ -5,7 +5,7 @@ import operator
 import math
 import timeit
 from scipy.spatial import cKDTree
-from . import sigtools, dlti
+from . import _sigtools, dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
@@ -14,8 +14,8 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from .filter_design import cheby1, _validate_sos
-from .fir_filter_design import firwin
+from ._filter_design import cheby1, _validate_sos
+from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
 
@@ -257,7 +257,7 @@ def correlate(in1, in2, mode='full', method='auto'):
             ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
             out = np.empty(ps, in1.dtype)
 
-            z = sigtools._correlateND(in1, in2, out, val)
+            z = _sigtools._correlateND(in1, in2, out, val)
 
         else:
             ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
@@ -272,7 +272,7 @@ def correlate(in1, in2, mode='full', method='auto'):
             elif mode == 'same':
                 out = np.empty(in1.shape, in1.dtype)
 
-            z = sigtools._correlateND(in1zpadded, in2, out, val)
+            z = _sigtools._correlateND(in1zpadded, in2, out, val)
 
         if swapped_inputs:
             # Reverse and conjugate to undo the effect of swapping inputs
@@ -1471,7 +1471,7 @@ def order_filter(a, domain, rank):
         if (dimsize % 2) != 1:
             raise ValueError("Each dimension of domain argument "
                              "should have an odd number of elements.")
-    return sigtools._order_filterND(a, domain, rank)
+    return _sigtools._order_filterND(a, domain, rank)
 
 
 def medfilt(volume, kernel_size=None):
@@ -1534,7 +1534,7 @@ def medfilt(volume, kernel_size=None):
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
-    return sigtools._order_filterND(volume, domain, order)
+    return _sigtools._order_filterND(volume, domain, order)
 
 
 def wiener(im, mysize=None, noise=None):
@@ -1565,7 +1565,7 @@ def wiener(im, mysize=None, noise=None):
     --------
 
     >>> from scipy.misc import face
-    >>> from scipy.signal.signaltools import wiener
+    >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
     >>> rng = np.random.default_rng()
@@ -1699,7 +1699,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-    out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
+    out = _sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
     return out
 
 
@@ -1796,7 +1796,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-    out = sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
+    out = _sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
@@ -1859,7 +1859,7 @@ def medfilt2d(input, kernel_size=3):
         if (size % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
-    return sigtools._medfilt2d(image, kernel_size)
+    return _sigtools._medfilt2d(image, kernel_size)
 
 
 def lfilter(b, a, x, axis=-1, zi=None):
@@ -2051,9 +2051,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
             return out, zf
     else:
         if zi is None:
-            return sigtools._linear_filter(b, a, x, axis)
+            return _sigtools._linear_filter(b, a, x, axis)
         else:
-            return sigtools._linear_filter(b, a, x, axis, zi)
+            return _sigtools._linear_filter(b, a, x, axis, zi)
 
 
 def lfiltic(b, a, y, x=None):

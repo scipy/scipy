@@ -3,7 +3,7 @@
 
 import numpy as np
 from scipy import fft as sp_fft
-from . import signaltools
+from . import _signaltools
 from .windows import get_window
 from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
@@ -1786,7 +1786,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             return d
     elif not hasattr(detrend, '__call__'):
         def detrend_func(d):
-            return signaltools.detrend(d, type=detrend, axis=-1)
+            return _signaltools.detrend(d, type=detrend, axis=-1)
     elif axis != -1:
         # Wrap this function so that it receives a shape that it could
         # reasonably expect to receive.
