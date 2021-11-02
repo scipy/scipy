@@ -99,7 +99,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.17.4"
+        numpy_spec: "numpy==1.19.3"
         use_sdist: true
   - job: wheel_optimized_gcc48
     pool:
