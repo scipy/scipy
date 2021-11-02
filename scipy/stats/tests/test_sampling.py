@@ -913,7 +913,7 @@ class TestDiscreteGuideTable:
             res = rng.ppf(u)
             expected = stats.binom.ppf(u, n, p)
         assert_equal(res.shape, expected.shape)
-        assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
+        assert_equal(res, expected)
 
     @pytest.mark.parametrize("pv, msg", bad_pv_common)
     def test_bad_pv(self, pv, msg):
