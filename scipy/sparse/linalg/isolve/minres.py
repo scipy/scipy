@@ -41,6 +41,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
+    shift : float
+        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     tol : float
         Tolerance to achieve. The algorithm terminates when the relative
         residual is below `tol`.
@@ -55,6 +57,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
+    show : bool
+        If ``True``, print out a summary and metrics related to the solution
+        during iterations. Default is ``False``.
+    check : bool
+        If ``True``, run additional input validation to check that `A` and
+        `M` (if specified) are symmetric. Default is ``False``.
 
     Examples
     --------
