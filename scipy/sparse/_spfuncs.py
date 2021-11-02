@@ -3,8 +3,8 @@
 
 __all__ = ['count_blocks','estimate_blocksize']
 
-from .csr import isspmatrix_csr, csr_matrix
-from .csc import isspmatrix_csc
+from ._csr import isspmatrix_csr, csr_matrix
+from ._csc import isspmatrix_csc
 from ._sparsetools import csr_count_blocks
 
 

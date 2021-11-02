@@ -33,7 +33,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion

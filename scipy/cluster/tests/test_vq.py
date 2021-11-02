@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 TESTDATA_2D = np.array([

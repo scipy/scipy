@@ -8,7 +8,7 @@ import numpy as np
 from math import pow
 
 from scipy import optimize
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestTnc:
