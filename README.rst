@@ -38,7 +38,7 @@ ODE solvers, and more.
 
 - **Website:** https://docs.scipy.org/doc/scipy/reference/
 - **Documentation:** https://docs.scipy.org/
-- **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
+- **Mailing list:** https://scipy.org/mailing-lists/
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
