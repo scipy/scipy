@@ -44,7 +44,7 @@ ODE solvers, and more.
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
-- **Citing in your work:** https://www.scipy.org/citing.html
+- **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines,
