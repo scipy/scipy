@@ -238,7 +238,7 @@ struct build_worker {
         maxes_.resize(self->m);
         std::copy_n(maxes, maxes_.size(), maxes_.begin());
 
-        future_ = std::async(std::launch::async, [&]() {
+        future_ = std::async(std::launch::async, [=]() {
                 return build(
                     self, start_idx, end_idx, maxes_.data(), mins_.data(), _median, _compact,
                     &buflist_, subworkers);
