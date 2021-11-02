@@ -36,7 +36,7 @@ science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
-- **Website:** https://docs.scipy.org/doc/scipy/reference/
+- **Website:** https://scipy.org
 - **Documentation:** https://docs.scipy.org/
 - **Mailing list:** https://scipy.org/mailing-lists/
 - **Source code:** https://github.com/scipy/scipy
