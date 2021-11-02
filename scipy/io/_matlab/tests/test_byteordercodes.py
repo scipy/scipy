@@ -5,7 +5,7 @@ import sys
 from numpy.testing import assert_
 from pytest import raises as assert_raises
 
-import scipy.io.matlab.byteordercodes as sibc
+import scipy.io._matlab.byteordercodes as sibc
 
 
 def test_native():

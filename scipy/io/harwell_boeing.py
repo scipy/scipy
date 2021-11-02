@@ -3,10 +3,12 @@
 # included below.
 
 import warnings
-from . import _netcdf
+from . import _harwell_boeing
 
 __all__ = [  # noqa: F822
-    'netcdf_file', 'netcdf_variable'
+    'MalformedHeader', 'hb_read', 'hb_write', 'HBInfo',
+    'HBFile', 'HBMatrixType', 'FortranFormatParser', 'IntFormat',
+    'ExpFormat', 'BadFortranFormat'
 ]
 
 
@@ -17,11 +19,11 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            "scipy.io.netcdf is deprecated and has no attribute "
+            "scipy.io.harwell_boeing is deprecated and has no attribute "
             f"{name}. Try looking in scipy.io instead.")
 
     warnings.warn(f"Please use `{name}` from the `scipy.io` namespace, "
-                  "the `scipy.io.netcdf` namespace is deprecated.",
+                  "the `scipy.io.harwell_boeing` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_netcdf, name)
+    return getattr(_harwell_boeing, name)
