@@ -315,7 +315,7 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Cross-correlation for continuous functions :math:`f` and :math:`g` is
     defined as:
 
-    .. math ::
+    .. math::
 
         \left ( f\star g \right )\left ( \tau \right )
         \triangleq \int_{t_0}^{t_0 +T}
@@ -326,7 +326,7 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Cross correlation for discrete functions :math:`f` and :math:`g` is
     defined as:
 
-    .. math ::
+    .. math::
         \left ( f\star g \right )\left [ n \right ]
         \triangleq \sum_{-\infty}^{\infty}
         \overline{f\left [ m \right ]}g\left [ m+n \right ]
