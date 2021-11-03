@@ -4,13 +4,10 @@ from numpy.testing import assert_allclose
 
 from scipy.spatial.distance import cdist
 from scipy.spatial import lloyd_centroidal_voronoi_tessellation
+from scipy.spatial._lloyd_algorithm import _l1_norm
 
 
 def test_lloyd():
-    def l1_norm(points):
-        l1 = cdist(points, points, 'cityblock')
-        return np.min(l1[l1.nonzero()])
-
     # mindist
     def l2_norm(points):
         l2 = cdist(points, points)
@@ -19,14 +16,14 @@ def test_lloyd():
     # quite sensible seed as it can go up before going further down
     rng = np.random.RandomState(1809831)
     points = rng.uniform(0, 1, size=(128, 2))
-    base_l1 = l1_norm(points)
+    base_l1 = _l1_norm(points)
     base_l2 = l2_norm(points)
 
     for _ in range(4):
         points_lloyd = lloyd_centroidal_voronoi_tessellation(
                 points, maxiter=1,
         )
-        curr_l1 = l1_norm(points_lloyd)
+        curr_l1 = _l1_norm(points_lloyd)
         curr_l2 = l2_norm(points_lloyd)
 
         # higher is better for the distance measures
@@ -35,6 +32,8 @@ def test_lloyd():
 
         base_l1 = curr_l1
         base_l2 = curr_l2
+
+        points = points_lloyd
 
 
 def test_lloyd_non_mutating():
