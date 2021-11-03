@@ -70,7 +70,7 @@ def test_minres_non_default_x0():
     b = np.random.randn(5)
     c = np.random.randn(5)
     x = minres(a, b, x0=c, tol=tol)[0]
-    assert norm(a.dot(x) - b) < tol
+    assert_normclose(a.dot(x), b, tol=tol)
 
 
 def test_minres_precond_non_default_x0():
@@ -83,7 +83,7 @@ def test_minres_precond_non_default_x0():
     m = np.random.randn(5, 5)
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert norm(a.dot(x) - b) < tol
+    assert_normclose(a.dot(x), b, tol=tol)
 
 
 def test_minres_precond_exact_x0():
@@ -95,4 +95,4 @@ def test_minres_precond_exact_x0():
     m = np.random.randn(10, 10)
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert norm(a.dot(x) - b) < tol
+    assert_normclose(a.dot(x), b, tol=tol)

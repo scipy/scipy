@@ -206,8 +206,8 @@ def test_maxiter():
 
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
-    tolerance = tol*norm(b)
-    msg = "residual (%g) not smaller than tolerance %g" % (residual, tolerance)
+    tolerance = tol * norm(b)
+    msg = f"residual ({residual}) not smaller than tolerance ({tolerance})"
     assert_(residual < tolerance, msg=msg)
 
 
