@@ -4,7 +4,7 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
 import copy
 
@@ -132,7 +132,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve(A, B)
-    >>> np.allclose(A.dot(x).todense(), B.todense())
+    >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
     """
 
@@ -222,7 +222,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             row_segs = []
             col_segs = []
             for j in range(b.shape[1]):
-                bj = np.asarray(b[:, j].todense()).ravel()
+                bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]

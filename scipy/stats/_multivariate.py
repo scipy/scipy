@@ -9,11 +9,11 @@ from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
-from scipy.linalg.misc import LinAlgError
+from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 
 from ._discrete_distns import binom
-from . import mvn
+from . import _mvn
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -396,8 +396,8 @@ class multivariate_normal_gen(multi_rv_generic):
         cov = np.asarray(cov, dtype=float)
 
         if dim == 1:
-            mean.shape = (1,)
-            cov.shape = (1, 1)
+            mean = mean.reshape(1)
+            cov = cov.reshape(1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
             raise ValueError("Array 'mean' must be a vector of length %d." %
@@ -545,7 +545,7 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         lower = np.full(mean.shape, -np.inf)
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
+        func1d = lambda x_slice: _mvn.mvnun(lower, x_slice, mean, cov,
                                            maxpts, abseps, releps)[0]
         out = np.apply_along_axis(func1d, -1, x)
         return _squeeze_output(out)
@@ -1039,7 +1039,7 @@ class matrix_normal_gen(multi_rv_generic):
 
         """
         numrows, numcols = dims
-        roll_dev = np.rollaxis(X-mean, axis=-1, start=0)
+        roll_dev = np.moveaxis(X-mean, -1, 0)
         scale_dev = np.tensordot(col_prec_rt.T,
                                  np.dot(roll_dev, row_prec_rt), 1)
         maha = np.sum(np.sum(np.square(scale_dev), axis=-1), axis=0)
@@ -1124,7 +1124,7 @@ class matrix_normal_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
         std_norm = random_state.standard_normal(size=(dims[1], size, dims[0]))
         roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
-        out = np.rollaxis(roll_rvs.T, axis=1, start=0) + mean[np.newaxis, :, :]
+        out = np.moveaxis(roll_rvs.T, 1, 0) + mean[np.newaxis, :, :]
         if size == 1:
             out = out.reshape(mean.shape)
         return out
@@ -4125,8 +4125,8 @@ class multivariate_t_gen(multi_rv_generic):
             dim = loc.size
 
         if dim == 1:
-            loc.shape = (1,)
-            shape.shape = (1, 1)
+            loc = loc.reshape(1)
+            shape = shape.reshape(1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
             raise ValueError("Array 'loc' must be a vector of length %d." %

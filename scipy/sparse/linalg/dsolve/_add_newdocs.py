@@ -6,7 +6,7 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
 
     Factorization is represented as::
 
-        Pr * A * Pc = L * U
+        Pr @ A @ Pc = L @ U
 
     To construct these `SuperLU` objects, call the `splu` and `spilu`
     functions.
@@ -74,7 +74,7 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
 
     We can reassemble the original matrix:
 
-    >>> (Pr.T * (lu.L * lu.U) * Pc.T).A
+    >>> (Pr.T @ (lu.L @ lu.U) @ Pc.T).A
     array([[ 1.,  2.,  0.,  4.],
            [ 1.,  0.,  0.,  1.],
            [ 1.,  0.,  2.,  1.],
@@ -94,9 +94,9 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('solve',
     trans : {'N', 'T', 'H'}, optional
         Type of system to solve::
 
-            'N':   A   * x == rhs  (default)
-            'T':   A^T * x == rhs
-            'H':   A^H * x == rhs
+            'N':   A   @ x == rhs  (default)
+            'T':   A^T @ x == rhs
+            'H':   A^H @ x == rhs
 
         i.e., normal, transposed, and hermitian conjugate.
 

@@ -27,27 +27,27 @@ Example session::
     >>> a = a.astype('F')
     >>> x = spsolve(a, b)
     >>> print(x)
-    >>> print("Error: ", a*x-b)
+    >>> print("Error: ", a@x-b)
     >>>
     >>> print("Solve: double precision complex:")
     >>> use_solver( useUmfpack = True )
     >>> a = a.astype('D')
     >>> x = spsolve(a, b)
     >>> print(x)
-    >>> print("Error: ", a*x-b)
+    >>> print("Error: ", a@x-b)
     >>>
     >>> print("Solve: double precision:")
     >>> a = a.astype('d')
     >>> x = spsolve(a, b)
     >>> print(x)
-    >>> print("Error: ", a*x-b)
+    >>> print("Error: ", a@x-b)
     >>>
     >>> print("Solve: single precision:")
     >>> use_solver( useUmfpack = False )
     >>> a = a.astype('f')
     >>> x = spsolve(a, b.astype('f'))
     >>> print(x)
-    >>> print("Error: ", a*x-b)
+    >>> print("Error: ", a@x-b)
 
 """
 
