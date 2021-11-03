@@ -394,7 +394,6 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
 from ._optimize import *

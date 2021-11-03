@@ -8,7 +8,7 @@ Proper docstrings for scipy.optimize.minimize et al.
 Usage::
 
     .. scipy-optimize:function:: scipy.optimize.minimize
-       :impl: scipy.optimize.optimize._minimize_nelder_mead
+       :impl: scipy.optimize._optimize._minimize_nelder_mead
        :method: Nelder-Mead
 
 Produces output similar to autodoc, except
