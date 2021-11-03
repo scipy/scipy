@@ -438,13 +438,18 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         number generation, then those functions are responsible for the state
         of their random number generator.
     accept_rate : float, optional
-        The target acceptance rate that is used to adjust the ``stepsize``.
+        The target acceptance rate that is used to adjust the `stepsize`.
         If the current acceptance rate is greater than the target,
-        then the ``stepsize`` is increased. Otherwise, it is decreased.
+        then the `stepsize` is increased. Otherwise, it is decreased.
         Default is 0.5.
+
+        .. versionadded:: 1.8.0
+
     factor : float, optional
-        The ``stepsize`` is multiplied or divided by this factor upon each
+        The `stepsize` is multiplied or divided by this factor upon each
         update. Default is 0.9.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
