@@ -440,6 +440,7 @@ Warnings / Errors used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
+   BootstrapDegenerateDistributionWarning
    UNURANError
 
 """
@@ -455,7 +456,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._bootstrap import bootstrap
+from ._bootstrap import bootstrap, BootstrapDegenerateDistributionWarning
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
