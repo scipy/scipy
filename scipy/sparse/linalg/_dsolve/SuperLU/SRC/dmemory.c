@@ -672,22 +672,22 @@ dallocateA(int n, int nnz, double **a, int **asub, int **xa)
 }
 
 
-double *doubleMalloc(int n)
+double *doubleMalloc(size_t n)
 {
     double *buf;
-    buf = (double *) SUPERLU_MALLOC((size_t)n * sizeof(double)); 
+    buf = (double *) SUPERLU_MALLOC(n * (size_t) sizeof(double));
     if ( !buf ) {
 	ABORT("SUPERLU_MALLOC failed for buf in doubleMalloc()\n");
     }
     return (buf);
 }
 
-double *doubleCalloc(int n)
+double *doubleCalloc(size_t n)
 {
     double *buf;
-    register int i;
+    register size_t i;
     double zero = 0.0;
-    buf = (double *) SUPERLU_MALLOC((size_t)n * sizeof(double));
+    buf = (double *) SUPERLU_MALLOC(n * (size_t) sizeof(double));
     if ( !buf ) {
 	ABORT("SUPERLU_MALLOC failed for buf in doubleCalloc()\n");
     }
