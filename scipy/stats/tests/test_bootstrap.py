@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scipy.stats import bootstrap
+from scipy.stats import bootstrap, BootstrapDegenerateDistributionWarning
 from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 from .. import _bootstrap as _bootstrap
@@ -356,11 +356,13 @@ def test_bootstrap_vectorized_1samp(method, axis):
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_bootstrap_degenerate(method):
     data = 35 * [10000.]
-    with np.errstate(invalid='ignore'):
-        res = bootstrap([data,], np.mean, method=method)
     if method == "BCa":
-        assert_equal(res.confidence_interval, (np.nan, np.nan))
+        with np.errstate(invalid='ignore'):
+            with pytest.warns(BootstrapDegenerateDistributionWarning):
+                res = bootstrap([data, ], np.mean, method=method)
+                assert_equal(res.confidence_interval, (np.nan, np.nan))
     else:
+        res = bootstrap([data, ], np.mean, method=method)
         assert_equal(res.confidence_interval, (10000., 10000.))
     assert_equal(res.standard_error, 0)
 
