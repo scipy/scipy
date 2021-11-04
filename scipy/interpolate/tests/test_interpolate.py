@@ -753,13 +753,26 @@ class TestInterp1D:
 
 
 class TestLagrange:
-
-    def test_lagrange(self):
-        p = poly1d([5,2,1,4,3])
+    # To test the case when the number of interpolation points equals
+    # the number of polynomial coefficients
+    def test_complete_coeffs(self):
+        p = poly1d([5, 2, 1, 4, 3])
         xs = np.arange(len(p.coeffs))
         ys = p(xs)
-        pl = lagrange(xs,ys)
-        assert_array_almost_equal(p.coeffs,pl.coeffs)
+        pl = lagrange(xs, ys)
+        assert_allclose(p.coeffs, pl.coeffs, atol=1e-14)
+        assert_allclose(pl.coeffs, pl.coord)
+
+    # To test the case when the number of interpolation points is greater than
+    # the number of polynomial coefficients
+    def test_reduced_coeffs(self):
+        a = np.array([0, 2, 1])
+        p = poly1d(a)
+        x = np.arange(len(a))
+        y = p(x)
+        pl = lagrange(x, y)
+        assert_allclose(p.coeffs, pl.coeffs, atol=1e-14)
+        assert_allclose(a, pl.coord, atol=1e-14)
 
 
 class TestAkima1DInterpolator:
