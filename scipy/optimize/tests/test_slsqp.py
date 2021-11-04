@@ -135,6 +135,14 @@ class TestSLSQP:
                        jac=True, method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
+    
+    def test_minimize_unbounded_con_combined(self):
+        # Minimize, method='SLSQP': unbounded, combined constraint and Jacobian
+        # constraint: 2*x*y + 2*x - x**2 - 2*y**2 >= 0
+        con = {'type': 'ineq', 'fun': self.fun_and_jac, 'jac': True}
+        res = minimize(self.fun_and_jac, [-1.0, 1.0], args=(-1.0, ),
+                       jac=True, constraints=(con,), method='SLSQP', 
+                       options=self.opts)
 
     def test_minimize_equality_approximated(self):
         # Minimize with method='SLSQP': equality constraint, approx. jacobian.
