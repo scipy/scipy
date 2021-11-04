@@ -77,7 +77,7 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran
+        pip install 'setuptools<58.5' wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran
 
     - name: Test SciPy
       run: |
