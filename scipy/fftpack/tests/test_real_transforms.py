@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal, assert_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.fftpack.realtransforms import (
+from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data
@@ -223,9 +223,9 @@ class _TestDCTBase:
 class _TestDCTIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=1)
             y2 = naive_dct1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -234,11 +234,9 @@ class _TestDCTIBase(_TestDCTBase):
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         # Test correspondence with MATLAB (orthornomal mode).
-        for i in range(len(X)):
-            dt = np.result_type(np.float32, self.rdt)
-            x = np.array(X[i], dtype=dt)
-
-            yr = Y[i]
+        dt = np.result_type(np.float32, self.rdt)
+        for xr, yr in zip(X, Y):
+            x = np.array(xr, dtype=dt)
             y = dct(x, norm="ortho", type=2)
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
@@ -247,9 +245,9 @@ class _TestDCTIIBase(_TestDCTBase):
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
             assert_equal(xi.dtype, dt)
@@ -258,9 +256,9 @@ class _TestDCTIIIBase(_TestDCTBase):
 class _TestDCTIVBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=4)
             y2 = naive_dct4(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -478,9 +476,9 @@ class _TestDSTBase:
 class _TestDSTIBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=1)
             y2 = naive_dst1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -489,9 +487,9 @@ class _TestDSTIBase(_TestDSTBase):
 class _TestDSTIVBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=4)
             y2 = naive_dst4(x, norm='ortho')
             assert_equal(y.dtype, dt)

@@ -10,10 +10,10 @@ from contextlib import contextmanager
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+                           break_cycles, suppress_warnings, IS_PYPY)
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file, IS_PYPY
+from scipy.io import netcdf_file
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -131,12 +131,14 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:  # noqa: E722
+    finally:
+        if IS_PYPY:
+            # windows cannot remove a dead file held by a mmap
+            # that has not been collected in PyPy
+            break_cycles()
+            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
-        raise
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
 
 
 def test_read_write_sio():

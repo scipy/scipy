@@ -56,6 +56,6 @@ class QuadraticAssignment(Benchmark):
 
     def track_score(self, method, qap_prob):
         res = quadratic_assignment(self.A, self.B, self.method)
-        score = int(res['score'])
+        score = int(res['fun'])
         percent_diff = (score - self.opt_solution) / self.opt_solution
         return percent_diff

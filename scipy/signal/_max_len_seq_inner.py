@@ -4,6 +4,7 @@
 import numpy as np
 
 #pythran export _max_len_seq_inner(intp[], int8[], int, int, int8[])
+#pythran export _max_len_seq_inner(int[], int8[], int, int, int8[])
 
 # Fast inner loop of max_len_seq.
 def _max_len_seq_inner(taps, state, nbits, length, seq):

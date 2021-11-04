@@ -141,7 +141,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
         # Arnoldi LSQ problem
 
-        # Add new column to H=Q*R, padding other columns with zeros
+        # Add new column to H=Q@R, padding other columns with zeros
         Q2 = np.zeros((j+2, j+2), dtype=Q.dtype, order='F')
         Q2[:j+1,:j+1] = Q
         Q2[j+1,j+1] = 1
@@ -187,14 +187,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
-    b : {array, matrix}
+    b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
-    x0  : {array, matrix}
+    x0 : ndarray
         Starting guess for the solution.
     tol, atol : float, optional
         Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
@@ -207,7 +207,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}, optional
+    M : {sparse matrix, ndarray, LinearOperator}, optional
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
@@ -241,7 +241,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     Returns
     -------
-    x : array or matrix
+    x : ndarray
         The solution found.
     info : int
         Provides convergence information:
@@ -292,6 +292,9 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
+    if b_norm == 0:
+        x = b
+        return (postprocess(x), 0)
 
     if discard_C:
         CU[:] = [(None, u) for c, u in CU]

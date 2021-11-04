@@ -11,8 +11,8 @@ on:
       - maintenance/**
 
 jobs:
-  Python-37-dbg:
-    name: Python 3.7-dbg
+  Python-38-dbg:
+    name: Python 3.8-dbg
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     runs-on: ubuntu-18.04
     steps:
@@ -22,9 +22,9 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.7-dbg python3.7-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
+          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
           free -m
-          python3.7-dbg --version # just to check
+          python3.8-dbg --version # just to check
           export NPY_NUM_BUILD_JOBS=2
           uname -a
           df -h
@@ -34,19 +34,19 @@ jobs:
           cd builds
       - name: Installing packages
         run: |      
-          python3.7-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-          python3.7-dbg -m pip install --upgrade pip setuptools wheel
-          python3.7-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
-          python3.7-dbg -m pip install --upgrade mpmath gmpy2 pythran
-          python3.7-dbg -m pip uninstall -y nose
+          python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+          python3.8-dbg -m pip install --upgrade pip setuptools wheel
+          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran
+          python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
-        run: python3.7-dbg -u runtests.py -g -j2 --build-only
+        run: python3.8-dbg -u runtests.py -g -j2 --build-only
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          python3.7-dbg -u runtests.py -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
-          python3.7-dbg tools/validate_runtests_log.py fast < runtests.log
+          python3.8-dbg -u runtests.py -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
+          python3.8-dbg tools/validate_runtests_log.py fast < runtests.log
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build

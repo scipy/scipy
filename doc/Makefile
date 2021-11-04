@@ -1,7 +1,7 @@
 # Makefile for Sphinx documentation
 
 # If `python3` doesn't point to the Python you want to use (with Sphinx installed),
-# then you can use, e.g., `make html PYTHON=python3.7` to specify a Python executable
+# then you can use, e.g., `make html PYTHON=python3.9` to specify a Python executable
 PYTHON = python3
 
 # You can set these variables from the command line.
@@ -89,7 +89,7 @@ doc-dist: html-scipyorg html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist/reference
+	cp -r build/html-scipyorg build/dist
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy-ref.pdf build/dist

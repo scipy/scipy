@@ -18,8 +18,8 @@ pytestmark = pytest.mark.skipif(sparse is None,
 msg = "pydata/sparse (0.8) does not implement necessary operations"
 
 
-sparse_params = [pytest.param("COO"),
-                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
+sparse_params = (pytest.param("COO"),
+                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
 
 scipy_sparse_classes = [
     sp.bsr_matrix,
@@ -153,7 +153,7 @@ def test_spsolve(matrices):
                        sp.csc_matrix(A_dense))
     x = splin.spsolve(A_sparse, A_sparse)
     assert isinstance(x, type(A_sparse))
-    assert_allclose(x.todense(), x0.todense())
+    assert_allclose(x.toarray(), x0.toarray())
 
 
 def test_splu(matrices):
@@ -170,9 +170,9 @@ def test_splu(matrices):
     Pc = sparse_cls(sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c))))
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
 
-    assert_allclose(A2.todense(), A_sparse.todense())
+    assert_allclose(A2.toarray(), A_sparse.toarray())
 
-    z = lu.solve(A_sparse.todense())
+    z = lu.solve(A_sparse.toarray())
     assert_allclose(z, np.eye(n), atol=1e-10)
 
 
@@ -185,7 +185,7 @@ def test_spilu(matrices):
     assert isinstance(lu.L, sparse_cls)
     assert isinstance(lu.U, sparse_cls)
 
-    z = lu.solve(A_sparse.todense())
+    z = lu.solve(A_sparse.toarray())
     assert_allclose(z, np.eye(len(b)), atol=1e-3)
 
 
@@ -208,14 +208,14 @@ def test_inv(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.inv(sp.csc_matrix(A_dense))
     x = splin.inv(A_sparse)
-    assert_allclose(x.todense(), x0.todense())
+    assert_allclose(x.toarray(), x0.toarray())
 
 
 def test_expm(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.expm(sp.csc_matrix(A_dense))
     x = splin.expm(A_sparse)
-    assert_allclose(x.todense(), x0.todense())
+    assert_allclose(x.toarray(), x0.toarray())
 
 
 def test_expm_multiply(matrices):

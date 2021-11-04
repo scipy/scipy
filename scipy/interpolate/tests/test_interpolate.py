@@ -25,7 +25,7 @@ from scipy.integrate import nquad
 
 from scipy.special import binom
 
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestInterp2D:
@@ -277,6 +277,13 @@ class TestInterp1D:
             yp = interp1d(x, y, kind='linear')(x)
             assert_equal(yp.dtype, dtyp)
             assert_allclose(yp, y, atol=1e-15)
+
+        # regression test for gh-14531, where 1D linear interpolation has been
+        # has been extended to delegate to numpy.interp for integer dtypes
+        x = [0, 1, 2]
+        y = [np.nan, 0, 1]
+        yp = interp1d(x, y)(x)
+        assert_allclose(yp, y, atol=1e-15)
 
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with

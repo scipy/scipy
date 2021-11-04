@@ -37,7 +37,7 @@ To render the documentation on your own machine:
    `git submodules`_.
 #. Enter ``make html-scipyorg``. If you have multiple version of Python on
    your path, you can choose which version to use by appending
-   ``PYTHON=python3.7`` to this command, where ``python3.7`` is to be
+   ``PYTHON=python3.9`` to this command, where ``python3.9`` is to be
    replaced with the name of the Python you use for SciPy development.
    This uses the `Make build automation tool`_
    to execute the documentation build instructions from the ``Makefile``.

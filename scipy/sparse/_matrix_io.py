@@ -38,9 +38,9 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
 
     >>> scipy.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
@@ -48,9 +48,9 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
     """
     arrays_dict = {}
     if matrix.format in ('csc', 'csr', 'bsr'):
@@ -88,7 +88,7 @@ def load_npz(file):
 
     Raises
     ------
-    IOError
+    OSError
         If the input file does not exist or cannot be read.
 
     See Also
@@ -105,9 +105,9 @@ def load_npz(file):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
 
     >>> scipy.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
@@ -115,9 +115,9 @@ def load_npz(file):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
         with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
     """
 
     with np.load(file, **PICKLE_KWARGS) as loaded:

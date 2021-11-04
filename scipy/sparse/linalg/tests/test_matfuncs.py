@@ -14,11 +14,11 @@ from numpy.testing import (
         assert_array_almost_equal_nulp, suppress_warnings)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
-from scipy.sparse.construct import eye as speye
+from scipy.sparse._construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.linalg import logm
 from scipy.special import factorial, binom
 import scipy.sparse

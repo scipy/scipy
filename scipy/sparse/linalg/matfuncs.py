@@ -14,11 +14,11 @@ import numpy as np
 
 import scipy.special
 from scipy._lib._util import float_factorial
-from scipy.linalg.basic import solve, solve_triangular
+from scipy.linalg._basic import solve, solve_triangular
 
-from scipy.sparse.base import isspmatrix
+from scipy.sparse._base import isspmatrix
 from scipy.sparse.linalg import spsolve
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 import scipy.sparse
 import scipy.sparse.linalg
@@ -62,9 +62,9 @@ def inv(A):
     >>> A.dot(Ainv)
     <2x2 sparse matrix of type '<class 'numpy.float64'>'
         with 2 stored elements in Compressed Sparse Column format>
-    >>> A.dot(Ainv).todense()
-    matrix([[ 1.,  0.],
-            [ 0.,  1.]])
+    >>> A.dot(Ainv).toarray()
+    array([[ 1.,  0.],
+           [ 0.,  1.]])
 
     .. versionadded:: 0.12.0
 
@@ -575,18 +575,18 @@ def expm(A):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm
     >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
-    >>> A.todense()
-    matrix([[1, 0, 0],
-            [0, 2, 0],
-            [0, 0, 3]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]], dtype=int64)
     >>> Aexp = expm(A)
     >>> Aexp
     <3x3 sparse matrix of type '<class 'numpy.float64'>'
         with 3 stored elements in Compressed Sparse Column format>
-    >>> Aexp.todense()
-    matrix([[  2.71828183,   0.        ,   0.        ],
-            [  0.        ,   7.3890561 ,   0.        ],
-            [  0.        ,   0.        ,  20.08553692]])
+    >>> Aexp.toarray()
+    array([[  2.71828183,   0.        ,   0.        ],
+           [  0.        ,   7.3890561 ,   0.        ],
+           [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
