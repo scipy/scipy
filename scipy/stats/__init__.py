@@ -371,7 +371,7 @@ Statistical distances
    energy_distance
 
 Random variate generation / CDF Inversion
-=========================================
+-----------------------------------------
 
 .. autosummary::
    :toctree: generated/
