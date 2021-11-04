@@ -133,18 +133,31 @@ def lloyd_centroidal_voronoi_tessellation(
     Lloyd-Max algorithm is an iterative process with the purpose of improving
     the dispersion of points. For given points: (i) compute a Voronoi
     Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
-    points toward the centroid of their respective cell.
+    points toward the centroid of their respective cell. See [1]_, [2]_.
 
     The process converges to equally spaced points. It implies that measures
     like the discrepancy could suffer from too many iterations. On the other
     hand, L1 and L2 distances should improve. This is especially true with
     QMC methods which tend to favor the discrepancy over other criteria.
 
+    .. note::
+
+        The current implementation does not intersect the Voronoi Tessellation
+        with the boundaries. This implies that for a low number of points,
+        empirically below 20, no Voronoi cell is touching the boundaries.
+        Hence points cannot be moved close to the boundaries.
+
+        Further improvements could consider the points at infinity so that
+        all boundaries are segments of some Voronoi cells. This would fix
+        the computation of the centroid position.
+
     .. warning::
 
        The Voronoi Tessellation step is expensive and quickly becomes
        intractable with dimensions as low as 10 even for a sample of points
        of size as low as 1000.
+
+    .. versionadded:: 1.8.0
 
     References
     ----------
