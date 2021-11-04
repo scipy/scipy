@@ -185,7 +185,8 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
+            pip3 install 'setuptools<58.5' wheel --user && \
+            pip3 install numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
