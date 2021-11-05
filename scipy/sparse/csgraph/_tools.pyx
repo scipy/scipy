@@ -219,13 +219,10 @@ def csgraph_from_dense(graph,
                                                          infinity_null))
 
 
-def csgraph_from_adjacency_list(adjacency_list, weighted=True):
-    """
-    csgraph_from_adjacency_list(adjacency_list, weighted=True)
+def csgraph_from_adjacency_list(adjacency_list, *, weighted=True):
+    """Construct a CSR-format sparse graph from an adjacency list.
 
-    Construct a CSR-format sparse graph from an adjacency list.
-
-    .. versionadded:: 1.7.2
+    .. versionadded:: 1.8.0
 
     Parameters
     ----------
