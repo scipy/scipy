@@ -50,11 +50,15 @@ def test_todense(A):
 def test_indexing(A):
     if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr'):
         return
-    assert A[1, :].shape == (4,)
-    assert A[:, 1].shape == (3,)
-    assert isinstance(A[0], np.ndarray), "Expected sparse array, got sparse matrix"
 
-    assert isinstance(A[1, [1, 2]], np.ndarray), "Expected ndarray, got sparse array"
+    with pytest.raises(NotImplementedError):
+        A[1, :]
+
+    with pytest.raises(NotImplementedError):
+        A[:, 1]
+
+    assert A[[0]]._is_array, "Expected sparse array, got sparse matrix"
+    assert A[1, [1, 2]]._is_array, "Expected ndarray, got sparse array"
     assert A[:, [1, 2]]._is_array, "Expected sparse array, got something else"
 
 
