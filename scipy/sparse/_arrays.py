@@ -1,5 +1,3 @@
-from functools import wraps
-
 from ._bsr import bsr_matrix
 from ._coo import coo_matrix
 from ._csc import csc_matrix
@@ -7,8 +5,6 @@ from ._csr import csr_matrix
 from ._dia import dia_matrix
 from ._dok import dok_matrix
 from ._lil import lil_matrix
-
-from . import sputils
 
 
 class sparray:

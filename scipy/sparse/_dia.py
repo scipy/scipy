@@ -403,7 +403,9 @@ class dia_matrix(_data_matrix):
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
         data = self.data[mask]
 
-        A = self._coo_container((data,(row,col)), shape=self.shape, dtype=self.dtype)
+        A = self._coo_container(
+            (data, (row, col)), shape=self.shape, dtype=self.dtype
+        )
         A.has_canonical_format = True
         return A
 
@@ -415,9 +417,13 @@ class dia_matrix(_data_matrix):
         but with different data.  By default the structure arrays are copied.
         """
         if copy:
-            return self._dia_container((data, self.offsets.copy()), shape=self.shape)
+            return self._dia_container(
+                (data, self.offsets.copy()), shape=self.shape
+            )
         else:
-            return self._dia_container((data,self.offsets), shape=self.shape)
+            return self._dia_container(
+                (data, self.offsets), shape=self.shape
+            )
 
     def resize(self, *shape):
         shape = check_shape(shape)

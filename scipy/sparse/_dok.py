@@ -394,7 +394,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         data = np.fromiter(self.values(), dtype=self.dtype, count=self.nnz)
         row = np.fromiter((i for i, _ in self.keys()), dtype=idx_dtype, count=self.nnz)
         col = np.fromiter((j for _, j in self.keys()), dtype=idx_dtype, count=self.nnz)
-        A = self._coo_container((data, (row, col)), shape=self.shape, dtype=self.dtype)
+        A = self._coo_container(
+            (data, (row, col)), shape=self.shape, dtype=self.dtype
+        )
         A.has_canonical_format = True
         return A
 

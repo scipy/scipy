@@ -1,5 +1,3 @@
-import importlib
-
 import pytest
 import numpy as np
 import scipy.sparse
@@ -31,21 +29,25 @@ parametrize_square_sparrays = pytest.mark.parametrize(
     "B", square_sparrays, ids=sparray_types
 )
 
+
 @parametrize_sparrays
 def test_sum(A):
-    assert not isinstance(A.sum(axis=0), np.matrix), "Expected array, got matrix"
+    assert not isinstance(A.sum(axis=0), np.matrix), \
+        "Expected array, got matrix"
     assert A.sum(axis=0).shape == (4,)
     assert A.sum(axis=1).shape == (3,)
 
 
 @parametrize_sparrays
 def test_mean(A):
-    assert not isinstance(A.mean(axis=1), np.matrix), "Expected array, got matrix"
+    assert not isinstance(A.mean(axis=1), np.matrix), \
+        "Expected array, got matrix"
 
 
 @parametrize_sparrays
 def test_todense(A):
-    assert not isinstance(A.todense(), np.matrix), "Expected array, got matrix"
+    assert not isinstance(A.todense(), np.matrix), \
+        "Expected array, got matrix"
 
 
 @parametrize_sparrays
@@ -111,3 +113,9 @@ def test_no_A_attr(A):
 def test_no_H_attr(A):
     with pytest.warns(np.VisibleDeprecationWarning):
         A.H
+
+
+@parametrize_sparrays
+def test_getrow_getcol(A):
+    assert A.getcol(0)._is_array
+    assert A.getrow(0)._is_array

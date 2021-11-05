@@ -49,8 +49,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    other = self.__class__(self._coo_container(arg1, shape=shape,
-                                                               dtype=dtype))
+                    other = self.__class__(
+                        self._coo_container(arg1, shape=shape, dtype=dtype)
+                    )
                     self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
@@ -385,23 +386,31 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return other._mul_sparse_matrix(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                other = self._dia_container((other.toarray().ravel(), [0]),
-                                            shape=(other.shape[1], other.shape[1]))
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[1], other.shape[1])
+                )
                 return self._mul_sparse_matrix(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                copy = self._dia_container((self.toarray().ravel(), [0]),
-                                           shape=(self.shape[1], self.shape[1]))
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[1], self.shape[1])
+                )
                 return other._mul_sparse_matrix(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
-                other = self._dia_container((other.toarray().ravel(), [0]),
-                                            shape=(other.shape[0], other.shape[0]))
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[0], other.shape[0])
+                )
                 return other._mul_sparse_matrix(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
-                copy = self._dia_container((self.toarray().ravel(), [0]),
-                                           shape=(self.shape[0], self.shape[0]))
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[0], self.shape[0])
+                )
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
@@ -433,9 +442,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             row = np.repeat(np.arange(other.shape[0]), len(ret.row))
             col = np.tile(ret.col, other.shape[0])
-            return self._coo_container((data.view(np.ndarray).ravel(), (row, col)),
-                                       shape=(other.shape[0], self.shape[1]),
-                                       copy=False)
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(other.shape[0], self.shape[1]),
+                copy=False
+            )
         # Sparse column vector times...
         elif self.shape[1] == 1:
             if other.shape[0] == 1:  # Dense row vector.
@@ -446,9 +457,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             row = np.repeat(ret.row, other.shape[1])
             col = np.tile(np.arange(other.shape[1]), len(ret.col))
-            return self._coo_container((data.view(np.ndarray).ravel(), (row, col)),
-                                       shape=(self.shape[0], other.shape[1]),
-                                       copy=False)
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(self.shape[0], other.shape[1]),
+                copy=False
+            )
         # Sparse matrix times dense row vector.
         elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
             data = np.multiply(ret.data, other[:, ret.col].ravel())
@@ -1025,8 +1038,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
-        return self._coo_container((self.data, (row, col)), self.shape, copy=copy,
-                                   dtype=self.dtype)
+        return self._coo_container(
+            (self.data, (row, col)), self.shape, copy=copy,
+            dtype=self.dtype
+        )
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 

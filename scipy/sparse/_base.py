@@ -716,7 +716,9 @@ class spmatrix:
 
             if other == 0:
                 from ._construct import eye
-                return eye(self.shape[0], dtype=self.dtype, _array=self._is_array)
+                return eye(
+                    self.shape[0], dtype=self.dtype, _array=self._is_array
+                )
             elif other == 1:
                 return self.copy()
             else:
@@ -733,13 +735,17 @@ class spmatrix:
     def __getattr__(self, attr):
         if attr == 'A':
             if self._is_array:
-                warn(np.VisibleDeprecationWarning("Please use `.todense()` instead"))
+                warn(np.VisibleDeprecationWarning(
+                    "Please use `.todense()` instead"
+                ))
             return self.toarray()
         elif attr == 'T':
             return self.transpose()
         elif attr == 'H':
             if self._is_array:
-                warn(np.VisibleDeprecationWarning("Please use `.conj().T` instead"))
+                warn(np.VisibleDeprecationWarning(
+                    "Please use `.conj().T` instead"
+                ))
             return self.getH()
         elif attr == 'real':
             return self._real()

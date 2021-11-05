@@ -63,9 +63,9 @@ def spdiags(data, diags, m, n, format=None, _array=False):
 
     """
     if _array:
-        return dia_array((data, diags), shape=(m,n)).asformat(format)
+        return dia_array((data, diags), shape=(m, n)).asformat(format)
     else:
-        return dia_matrix((data, diags), shape=(m,n)).asformat(format)
+        return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
@@ -277,9 +277,9 @@ def eye(m, n=None, k=0, dtype=float, format=None, _array=False):
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             if _array:
-                return coo_array((data,(row,col)),(n,n))
+                return coo_array((data, (row, col)), (n, n))
             else:
-                return coo_matrix((data,(row,col)),(n,n))
+                return coo_matrix((data, (row, col)), (n, n))
 
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return spdiags(diags, k, m, n, _array=_array).asformat(format)

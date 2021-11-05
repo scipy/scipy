@@ -428,7 +428,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         # TODO eliminate zeros
 
         return self._bsr_container(
-            (data,indices,indptr), shape=(M,N), blocksize=(R,C)
+            (data, indices, indptr), shape=(M, N), blocksize=(R, C)
         )
 
     ######################
@@ -511,7 +511,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         if copy:
             data = data.copy()
 
-        return self._coo_container((data,(row,col)), shape=self.shape)
+        return self._coo_container(
+            (data, (row, col)), shape=self.shape
+        )
 
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)

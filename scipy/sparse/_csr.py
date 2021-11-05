@@ -145,7 +145,7 @@ class csr_matrix(_cs_matrix):
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
-        lil = self._lil_container(self.shape,dtype=self.dtype)
+        lil = self._lil_container(self.shape, dtype=self.dtype)
 
         self.sum_duplicates()
         ptr,ind,dat = self.indptr,self.indices,self.data
@@ -220,7 +220,9 @@ class csr_matrix(_cs_matrix):
                       self.data,
                       indptr, indices, data.ravel())
 
-            return self._bsr_container((data,indices,indptr), shape=self.shape)
+            return self._bsr_container(
+                (data, indices, indptr), shape=self.shape
+            )
 
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
@@ -239,7 +241,9 @@ class csr_matrix(_cs_matrix):
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield self.__class__((data, indices, indptr), shape=shape, copy=True)
+            yield self.__class__(
+                (data, indices, indptr), shape=shape, copy=True
+            )
             i0 = i1
 
     def getrow(self, i):

@@ -434,7 +434,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
             data[diag_idx, self.col] = self.data
 
-        return self._dia_container((data,diags), shape=self.shape)
+        return self._dia_container((data, diags), shape=self.shape)
 
     todia.__doc__ = spmatrix.todia.__doc__
 
