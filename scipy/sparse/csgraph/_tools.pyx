@@ -482,8 +482,8 @@ def csgraph_to_adjacency_list(csgraph):
         2: {3: 3},
         3: {},
     }
-    """
 
+    """
     adjacency_list = {}
 
     for row_idx in range(len(csgraph.indptr) - 1):
