@@ -279,14 +279,14 @@ stages:
       condition: and(succeeded(), eq(variables['BITS'], 32))
     - script: >-
         python -m pip install
-        cython==0.29.18
+        cython==0.29.24
         matplotlib
         mpmath
-        numpy==1.21.3
+        numpy==1.21.4
         Pillow
         pybind11
         pythran
-        pytest==5.4.3
+        pytest
         pytest-cov
         pytest-env
         pytest-timeout
