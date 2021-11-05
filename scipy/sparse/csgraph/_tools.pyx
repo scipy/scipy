@@ -442,7 +442,44 @@ def csgraph_to_masked(csgraph):
 
 def csgraph_to_adjacency_list(csgraph):
     """
-    TODO
+    csgraph_to_adjacency_list(csgraph)
+
+    Convert a sparse graph representation to an adjacency list
+
+    .. versionadded:: 1.7.2
+
+    Parameters
+    ----------
+    csgraph : csr_matrix
+        Sparse representation of a graph.
+
+    Returns
+    -------
+    graph : dict
+        An adjacency list of the sparse graph (dict of dicts).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_adjacency_list
+
+    >>> graph = csr_matrix([
+    ... [0, 1, 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_adjacency_list(graph)
+    {
+        0: {1: 1, 2: 2},
+        1: {3: 1},
+        2: {3: 3},
+        3: {},
+    }
     """
 
     adjacency_list = {}
