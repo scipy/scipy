@@ -22,23 +22,62 @@ def test_csgraph_adjacency_list():
         [0, 0, 0, 0],
     ])
 
-    assert_equal(
-        csgraph_from_adjacency_list(graph_adjacency_list).toarray(),
-        graph_matrix,
-    )
-    assert_equal(
-        csgraph_from_adjacency_list(graph_adjacency_list).toarray(),
-        csgraph_from_dense(graph_matrix).toarray(),
-    )
-    assert_equal(
-        csgraph_to_adjacency_list(
-            csgraph_from_adjacency_list(graph_adjacency_list)
-        ),
-        graph_adjacency_list,
-    )
+    unweighted_graph_adjacency_list = {
+        0: {1: 1, 2: 1},
+        1: {3: 1},
+        2: {3: 1},
+        3: {},
+    }
+
+    unweighted_graph_matrix = np.array([
+        [0, 1, 1, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0],
+    ])
+
+    # test csgraph_from_adjacency_list
+    for weighted in [True, False]:
+        expected = graph_matrix if weighted else unweighted_graph_matrix
+
+        assert_equal(
+            csgraph_from_adjacency_list(
+                graph_adjacency_list, weighted=weighted
+            ).toarray(),
+            expected,
+        )
+
+        assert_equal(
+            csgraph_from_adjacency_list(
+                graph_adjacency_list, weighted=weighted
+            ).toarray(),
+            csgraph_from_dense(expected).toarray(),
+        )
+
+    # test csgraph_to_adjacency_list
+    for weighted in [True, False]:
+        expected = graph_adjacency_list if weighted else unweighted_graph_adjacency_list
+
+        assert_equal(
+            csgraph_to_adjacency_list(
+                csgraph_from_adjacency_list(
+                    graph_adjacency_list, weighted=weighted
+                )
+            ),
+            expected,
+        )
+
+    # test csgraph_to_adjacency_list with csgraph_from_dense
     assert_equal(
         csgraph_to_adjacency_list(
             csgraph_from_dense(graph_matrix)
         ),
         graph_adjacency_list,
+    )
+
+    assert_equal(
+        csgraph_to_adjacency_list(
+            csgraph_from_dense(unweighted_graph_matrix)
+        ),
+        unweighted_graph_adjacency_list,
     )
