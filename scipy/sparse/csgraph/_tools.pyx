@@ -230,8 +230,8 @@ def csgraph_from_adjacency_list(adjacency_list, weighted=True):
     Parameters
     ----------
     adjacency_list : dict
-        Input adjacency list.  Could be either a dict of lists (for unweighted graph) or
-        a dict of dicts (for weighted graph). Dict lenght should be n_nodes.
+        Input adjacency list. Could be either a dict of lists (for unweighted graph) or
+        a dict of dicts (for weighted graph). Dict length should be ``n_nodes``.
     weighted : bool
         If True (default), then constract a weighted graph.
 
