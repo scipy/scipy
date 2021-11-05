@@ -217,6 +217,32 @@ def csgraph_from_dense(graph,
                                                          infinity_null))
 
 
+def csgraph_from_adjacency_list(adjacency_list, weighted=False):
+    """
+    TODO
+    """
+
+    N = len(adjacency_list)
+
+    row = []
+    col = []
+    data = []
+
+    for row_idx in adjacency_list:
+        for col_idx in adjacency_list[row_idx]:
+            row.append(row_idx)
+            col.append(col_idx)
+
+            if weighted:
+                if not isinstance(adjacency_list[row_idx], dict):
+                    raise ValueError("if 'weighted=True', adjacency_list should be a dict of dicts.")
+                data.append(adjacency_list[row_idx][col_idx])
+            else:
+                data.append(1)
+
+    return csr_matrix((data, (row, col)), shape=(N, N))
+
+
 def csgraph_to_dense(csgraph, null_value=0):
     """
     csgraph_to_dense(csgraph, null_value=0)
