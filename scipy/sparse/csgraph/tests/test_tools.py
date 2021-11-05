@@ -83,14 +83,65 @@ def test_csgraph_weighted_adjacency_list():
         unweighted_graph_adjacency_list,
     )
 
+
+def test_csgraph_unweighted_adjacency_list():
+    graph_adjacency_list = {
+        0: [1, 2],
+        1: [3],
+        2: [3],
+        3: [],
+    }
+
+    graph_adjacency_list_dict = {
+        0: {1: 1, 2: 1},
+        1: {3: 1},
+        2: {3: 1},
+        3: {},
+    }
+
+    graph_matrix = np.array([
+        [0, 1, 1, 0],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 0],
+    ])
+
+    # test csgraph_from_adjacency_list
+    assert_equal(
+        csgraph_from_adjacency_list(
+            graph_adjacency_list, weighted=False
+        ).toarray(),
+        graph_matrix,
+    )
+
+    assert_equal(
+        csgraph_from_adjacency_list(
+            graph_adjacency_list, weighted=False
+        ).toarray(),
+        csgraph_from_dense(graph_matrix).toarray(),
+    )
+
     assert_raises(
         ValueError,
         csgraph_from_adjacency_list,
-        {
-            0: [1, 2],
-            1: [3],
-            2: [3],
-            3: [],
-        },
+        graph_adjacency_list,
         weighted=True,
+    )
+
+    # test csgraph_to_adjacency_list
+    assert_equal(
+        csgraph_to_adjacency_list(
+            csgraph_from_adjacency_list(
+                graph_adjacency_list, weighted=False
+            )
+        ),
+        graph_adjacency_list_dict,
+    )
+
+    # test csgraph_to_adjacency_list with csgraph_from_dense
+    assert_equal(
+        csgraph_to_adjacency_list(
+            csgraph_from_dense(graph_matrix)
+        ),
+        graph_adjacency_list_dict,
     )
