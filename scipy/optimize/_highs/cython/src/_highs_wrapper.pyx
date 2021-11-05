@@ -64,6 +64,8 @@ from .HighsOptions cimport (
 )
 from .HighsModelUtils cimport utilPrimalDualStatusToString
 
+np.import_array()
+
 # options to reference for default values and bounds;
 # make a map to quickly lookup
 cdef HighsOptions _ref_opts

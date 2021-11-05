@@ -69,7 +69,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         to pass "guess" vectors in and out of the algorithm when solving
         similar problems.
     store_outer_Av : bool, optional
-        Whether LGMRES should store also A*v in addition to vectors `v`
+        Whether LGMRES should store also A@v in addition to vectors `v`
         in the `outer_v` list. Default is True.
     prepend_outer_v : bool, optional
         Whether to put outer_v augmentation vectors before Krylov iterates.

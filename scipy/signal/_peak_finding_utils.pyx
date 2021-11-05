@@ -11,6 +11,7 @@ import numpy as np
 cimport numpy as np
 from libc.math cimport ceil
 
+np.import_array()
 
 __all__ = ['_local_maxima_1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']

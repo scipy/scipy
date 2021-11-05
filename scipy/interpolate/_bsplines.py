@@ -224,7 +224,7 @@ class BSpline:
             # and axis !=0 means that we have c.shape (..., n, ...)
             #                                               ^
             #                                              axis
-            self.c = np.rollaxis(self.c, axis)
+            self.c = np.moveaxis(self.c, axis, 0)
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
@@ -347,7 +347,7 @@ class BSpline:
         -------
         design_matrix : `csr_matrix` object
             Sparse matrix in CSR format where in each row all the basis
-            elemets are evaluated at the certain point (first row - x[0],
+            elements are evaluated at the certain point (first row - x[0],
             ..., last row - x[-1]).
 
         Examples
@@ -389,7 +389,7 @@ class BSpline:
         -----
         .. versionadded:: 1.8.0
 
-        In each row of the design matrix all the basis elemets are evaluated
+        In each row of the design matrix all the basis elements are evaluated
         at the certain point (first row - x[0], ..., last row - x[-1]).
 
         `nt` is a lenght of the vector of knots: as far as there are
@@ -404,7 +404,7 @@ class BSpline:
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
             raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
                              f"got t={t}.")
-        # There are `nt - k - 1` basis elemets in a BSpline built on the
+        # There are `nt - k - 1` basis elements in a BSpline built on the
         # vector of knots with length `nt`, so to have at least `k + 1` basis
         # element we need to have at least `2 * k + 2` elements in the vector
         # of knots.
@@ -1236,7 +1236,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
         raise ValueError("First and last points does not match while "
@@ -1475,7 +1475,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     axis = normalize_axis_index(axis, y.ndim)
 
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+    y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")

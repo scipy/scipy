@@ -294,6 +294,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     `expand_binnumbers` argument. If 'False' (default): The returned
     `binnumber` is a shape (N,) array of linearized indices mapping each
     element of `sample` to its corresponding bin (using row-major ordering).
+    Note that the returned linearized bin indices are used for an array with
+    extra bins on the outer binedges to capture values outside of the defined
+    bin bounds.
     If 'True': The returned `binnumber` is a shape (2,N) ndarray where
     each row indicates bin placements for each dimension respectively.  In each
     dimension, a binnumber of `i` means the corresponding value is between

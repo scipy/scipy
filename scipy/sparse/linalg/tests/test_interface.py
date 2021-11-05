@@ -12,7 +12,7 @@ import numpy as np
 import scipy.sparse as sparse
 
 from scipy.sparse.linalg import interface
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestLinearOperator:

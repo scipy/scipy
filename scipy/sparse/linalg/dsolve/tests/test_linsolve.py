@@ -225,7 +225,7 @@ class TestLinsolve:
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
-        cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
+        cond_A = norm(A.toarray(), 2) * norm(inv(A.toarray()), 2)
 
         for t in ['f','d','F','D']:
             eps = finfo(t).eps  # floating point epsilon
@@ -236,7 +236,7 @@ class TestLinsolve:
 
                 x = spsolve(Asp,b)
 
-                assert_(norm(b - Asp*x) < 10 * cond_A * eps)
+                assert_(norm(b - Asp@x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
         Adense = array([[0., 1., 1.],
@@ -245,7 +245,7 @@ class TestLinsolve:
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
-        b = As*x
+        b = As@x
         x2 = spsolve(As, b)
 
         assert_array_almost_equal(x, x2)
@@ -260,7 +260,7 @@ class TestLinsolve:
         Bdense = As.dot(x)
         Bs = csc_matrix(Bdense)
         x2 = spsolve(As, Bs)
-        assert_array_almost_equal(x, x2.todense())
+        assert_array_almost_equal(x, x2.toarray())
 
     @sup_sparse_efficiency
     def test_non_square(self):
@@ -279,18 +279,18 @@ class TestLinsolve:
         col = array([0,2,2,0,1,2])
         data = array([1,2,3,-4,5,6])
         sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-        M = sM.todense()
+        M = sM.toarray()
 
         row = array([0,0,1,1,0,0])
         col = array([0,2,1,1,0,0])
         data = array([1,1,1,1,1,1])
         sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-        N = sN.todense()
+        N = sN.toarray()
 
         sX = spsolve(sM, sN)
         X = scipy.linalg.solve(M, N)
 
-        assert_array_almost_equal(X, sX.todense())
+        assert_array_almost_equal(X, sX.toarray())
 
     @sup_sparse_efficiency
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -486,7 +486,7 @@ class TestSplu:
         # Check that splu works at all
         def check(A, b, x, msg=""):
             eps = np.finfo(A.dtype).eps
-            r = A * x
+            r = A @ x
             assert_(abs(r - b).max() < 1e3*eps, msg)
 
         self._smoketest(splu, check, np.float32)
@@ -502,7 +502,7 @@ class TestSplu:
         errors = []
 
         def check(A, b, x, msg=""):
-            r = A * x
+            r = A @ x
             err = abs(r - b).max()
             assert_(err < 1e-2, msg)
             if b.dtype in (np.float64, np.complex128):
@@ -681,7 +681,7 @@ class TestSplu:
 
             Ad = A.toarray()
             lhs = Pr.dot(Ad).dot(Pc)
-            rhs = (lu.L * lu.U).toarray()
+            rhs = (lu.L @ lu.U).toarray()
 
             eps = np.finfo(dtype).eps
 

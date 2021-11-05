@@ -47,7 +47,7 @@ import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse.sputils import isdense, is_pydata_spmatrix
+from scipy.sparse._sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
@@ -1099,10 +1099,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     """
     Find k eigenvalues and eigenvectors of the square matrix A.
 
-    Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem
+    Solves ``A @ x[i] = w[i] * x[i]``, the standard eigenvalue problem
     for w[i] eigenvalues with corresponding eigenvectors x[i].
 
-    If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the
+    If M is specified, solves ``A @ x[i] = w[i] * M @ x[i]``, the
     generalized eigenvalue problem for w[i] eigenvalues
     with corresponding eigenvectors x[i]
 
@@ -1110,16 +1110,16 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ----------
     A : ndarray, sparse matrix or LinearOperator
         An array, sparse matrix, or LinearOperator representing
-        the operation ``A * x``, where A is a real or complex square matrix.
+        the operation ``A @ x``, where A is a real or complex square matrix.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N-1. It is not possible to compute all
         eigenvectors of a matrix.
     M : ndarray, sparse matrix or LinearOperator, optional
         An array, sparse matrix, or LinearOperator representing
-        the operation M*x for the generalized eigenvalue problem
+        the operation M@x for the generalized eigenvalue problem
 
-            A * x = w * M * x.
+            A @ x = w * M @ x.
 
         M must represent a real symmetric matrix if A is real, and must
         represent a complex Hermitian matrix if A is complex. For best
@@ -1131,20 +1131,20 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             If sigma is specified, M is positive semi-definite
 
         If sigma is None, eigs requires an operator to compute the solution
-        of the linear equation ``M * x = b``.  This is done internally via a
+        of the linear equation ``M @ x = b``.  This is done internally via a
         (sparse) LU decomposition for an explicit matrix M, or via an
         iterative solver for a general linear operator.  Alternatively,
         the user can supply the matrix or operator Minv, which gives
-        ``x = Minv * b = M^-1 * b``.
+        ``x = Minv @ b = M^-1 @ b``.
     sigma : real or complex, optional
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system
-        ``[A - sigma * M] * x = b``, where M is the identity matrix if
+        ``[A - sigma * M] @ x = b``, where M is the identity matrix if
         unspecified. This is computed internally via a (sparse) LU
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
-        which gives ``x = OPinv * b = [A - sigma * M]^-1 * b``.
+        which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
         For a real matrix A, shift-invert can either be done in imaginary
         mode or real mode, specified by the parameter OPpart ('r' or 'i').
         Note that when sigma is specified, the keyword 'which' (below)
@@ -1354,10 +1354,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Find k eigenvalues and eigenvectors of the real symmetric square matrix
     or complex Hermitian matrix A.
 
-    Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem for
+    Solves ``A @ x[i] = w[i] * x[i]``, the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
 
-    If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the
+    If M is specified, solves ``A @ x[i] = w[i] * M @ x[i]``, the
     generalized eigenvalue problem for w[i] eigenvalues
     with corresponding eigenvectors x[i].
 
@@ -1368,7 +1368,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Parameters
     ----------
     A : ndarray, sparse matrix or LinearOperator
-        A square operator representing the operation ``A * x``, where ``A`` is
+        A square operator representing the operation ``A @ x``, where ``A`` is
         real symmetric or complex Hermitian. For buckling mode (see below)
         ``A`` must additionally be positive-definite.
     k : int, optional
@@ -1489,10 +1489,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
         ARPACK internally solves the eigenvalue problem
-        ``OP * x'[i] = w'[i] * B * x'[i]``
+        ``OP @ x'[i] = w'[i] * B @ x'[i]``
         and transforms the resulting Ritz vectors x'[i] and Ritz values w'[i]
         into the desired eigenvectors and eigenvalues of the problem
-        ``A * x[i] = w[i] * M * x[i]``.
+        ``A @ x[i] = w[i] * M @ x[i]``.
         The modes are as follows:
 
             'normal' :

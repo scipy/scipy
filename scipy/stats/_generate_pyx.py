@@ -16,7 +16,7 @@ def isNPY_OLD():
 
 def make_biasedurn():
     '''Substitute True/False values for NPY_OLD Cython build variable.'''
-    biasedurn_base = (pathlib.Path(__file__).parent / 'biasedurn').absolute()
+    biasedurn_base = (pathlib.Path(__file__).parent / '_biasedurn').absolute()
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
     with open(biasedurn_base.with_suffix('.pyx'), 'w') as dest:

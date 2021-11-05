@@ -582,7 +582,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ...               options={'maxiter': 4})
     >>> print(res)
         con: array([], dtype=float64)
-        fun: -21.35207150630407
+        fun: -21.35207150630407 # may vary
     message: 'The iteration limit was reached before the algorithm converged.'
         nit: 4
       slack: array([37.19406046,  0.5727398 ])

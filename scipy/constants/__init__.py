@@ -317,9 +317,9 @@ References
 
 """
 # Modules contributed by BasSw (wegwerp@gmail.com)
-from .codata import *
-from .constants import *
-from .codata import _obsolete_constants
+from ._codata import *
+from ._constants import *
+from ._codata import _obsolete_constants
 
 _constant_names = [(_k.lower(), _k, _v)
                    for _k, _v in physical_constants.items()

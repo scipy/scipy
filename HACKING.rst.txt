@@ -252,7 +252,7 @@ improvements, and submit your first PR!
 
 .. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
-.. _bug report: https://scipy.org/bug-report.html
+.. _bug report: https://scipy.org/bug-report/
 
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
@@ -286,7 +286,7 @@ improvements, and submit your first PR!
 
 .. _Pytest: https://pytest.org/
 
-.. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+.. _mailing lists: https://www.scipy.org/mailing-lists/
 
 .. _Spyder: https://www.spyder-ide.org/
 

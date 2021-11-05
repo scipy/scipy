@@ -1,7 +1,7 @@
 """Indexing mixin for sparse matrix classes.
 """
 import numpy as np
-from .sputils import isintlike
+from ._sputils import isintlike
 
 try:
     INT_TYPES = (int, long, np.integer)
@@ -98,7 +98,7 @@ class IndexMixin:
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
-        from .base import isspmatrix
+        from ._base import isspmatrix
         if isspmatrix(x):
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
@@ -248,7 +248,7 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from .base import spmatrix, isspmatrix
+    from ._base import spmatrix, isspmatrix
     if (isinstance(index, (spmatrix, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()

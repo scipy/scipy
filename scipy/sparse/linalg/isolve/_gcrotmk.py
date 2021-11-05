@@ -141,7 +141,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
         # Arnoldi LSQ problem
 
-        # Add new column to H=Q*R, padding other columns with zeros
+        # Add new column to H=Q@R, padding other columns with zeros
         Q2 = np.zeros((j+2, j+2), dtype=Q.dtype, order='F')
         Q2[:j+1,:j+1] = Q
         Q2[j+1,j+1] = 1
