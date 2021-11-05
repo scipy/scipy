@@ -443,12 +443,9 @@ def csgraph_to_masked(csgraph):
 
 
 def csgraph_to_adjacency_list(csgraph):
-    """
-    csgraph_to_adjacency_list(csgraph)
+    """Convert a sparse graph representation to an adjacency list
 
-    Convert a sparse graph representation to an adjacency list
-
-    .. versionadded:: 1.7.2
+    .. versionadded:: 1.8.0
 
     Parameters
     ----------
