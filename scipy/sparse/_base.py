@@ -1101,7 +1101,7 @@ class spmatrix:
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
 
-        return ret.sum(axis=(), dtype=dtype, out=out)
+        return ret.sum(axis=(axis), dtype=dtype, out=out)
 
     def mean(self, axis=None, dtype=None, out=None):
         """

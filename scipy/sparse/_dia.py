@@ -214,7 +214,7 @@ class dia_matrix(_data_matrix):
             ret = self._ascontainer(res, dtype=res_dtype)
 
         else:
-            row_sums = np.zeros(num_rows, dtype=res_dtype)
+            row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
                        self.data.shape[1], self.offsets, self.data, one, row_sums)
@@ -223,9 +223,6 @@ class dia_matrix(_data_matrix):
 
             if axis is None:
                 return row_sums.sum(dtype=dtype, out=out)
-
-            if axis is not None:
-                row_sums = row_sums.T
 
             ret = self._ascontainer(row_sums.sum(axis=axis))
 
