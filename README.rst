@@ -2,7 +2,7 @@
 
     <p>
       <h1>
-        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/scipyshiny_small.png" height="50" height="50" alt="SciPy logo"/></a>
+        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/logo.svg" height="50" height="50" alt="SciPy logo"/></a>
         SciPy
       </h1>
     </p>
@@ -36,15 +36,15 @@ science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
-- **Website:** https://docs.scipy.org/doc/scipy/reference/
+- **Website:** https://scipy.org
 - **Documentation:** https://docs.scipy.org/
-- **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
+- **Mailing list:** https://scipy.org/mailing-lists/
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
-- **Citing in your work:** https://www.scipy.org/citing.html
+- **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines,

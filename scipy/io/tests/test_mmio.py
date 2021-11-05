@@ -12,7 +12,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from scipy.io.mmio import mminfo, mmread, mmwrite
+from scipy.io import mminfo, mmread, mmwrite
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
@@ -153,13 +153,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_array_almost_equal(a.todense(), b.todense())
+        assert_array_almost_equal(a.toarray(), b.toarray())
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_equal(a.todense(), b.todense())
+        assert_equal(a.toarray(), b.toarray())
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
@@ -252,13 +252,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
 
     def test_simple_pattern(self):
         a = scipy.sparse.csr_matrix([[0, 1.5], [3.0, 2.5]])
-        p = np.zeros_like(a.todense())
-        p[a.todense() > 0] = 1
+        p = np.zeros_like(a.toarray())
+        p[a.toarray() > 0] = 1
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_array_almost_equal(p, b.todense())
+        assert_array_almost_equal(p, b.toarray())
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
@@ -352,7 +352,7 @@ class TestMMIOReadLargeIntegers:
         else:
             b = mmread(self.fn)
             if not dense:
-                b = b.todense()
+                b = b.toarray()
             assert_equal(a, b)
 
     def test_read_32bit_integer_dense(self):
@@ -546,7 +546,7 @@ class TestMMIOCoordinate:
         f.write(example)
         f.close()
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn).todense()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_read_general(self):
@@ -611,8 +611,8 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (10, 10, 0, 'coordinate', 'real', 'symmetric'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_bzip2_py3(self):
@@ -636,8 +636,8 @@ class TestMMIOCoordinate:
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_bzip2).todense()
-        assert_array_almost_equal(a, b.todense())
+        a = mmread(fn_bzip2).toarray()
+        assert_array_almost_equal(a, b.toarray())
 
     def test_gzip_py3(self):
         # test if fix for #2152 works
@@ -660,8 +660,8 @@ class TestMMIOCoordinate:
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_gzip).todense()
-        assert_array_almost_equal(a, b.todense())
+        a = mmread(fn_gzip).toarray()
+        assert_array_almost_equal(a, b.toarray())
 
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
@@ -674,8 +674,8 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'real', 'general'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_complex_write_read(self):
@@ -690,8 +690,8 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'complex', 'general'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_sparse_formats(self):
@@ -708,12 +708,12 @@ class TestMMIOCoordinate:
         mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
 
         for mat in mats:
-            expected = mat.todense()
+            expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
                 fn = mktemp(dir=self.tmpdir)  # safe, we own tmpdir
                 mmwrite(fn, mat.asformat(fmt))
 
-                result = mmread(fn).todense()
+                result = mmread(fn).toarray()
                 assert_array_almost_equal(result, expected)
 
     def test_precision(self):

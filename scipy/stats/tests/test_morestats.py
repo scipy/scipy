@@ -13,7 +13,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy import optimize
 from scipy import stats
-from scipy.stats.morestats import _abw_state
+from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -2115,7 +2115,7 @@ class TestCircFuncs:
         x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(x)
         normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=1e-8)
+        assert_allclose(circstat, normal, atol=2e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],

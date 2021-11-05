@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
-from scipy.sparse.sputils import supported_dtypes, matrix
+from scipy.sparse._sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
 import pytest
@@ -53,17 +53,17 @@ def test_regression_std_vector_dtypes():
     # Regression test for gh-3780, checking the std::vector typemaps
     # in sparsetools.cxx are complete.
     for dtype in supported_dtypes:
-        ad = matrix([[1, 2], [3, 4]]).astype(dtype)
+        ad = np.array([[1, 2], [3, 4]]).astype(dtype)
         a = csr_matrix(ad, dtype=dtype)
 
         # getcol is one function using std::vector typemaps, and should not fail
-        assert_equal(a.getcol(0).todense(), ad[:,0])
+        assert_equal(a.getcol(0).toarray(), ad[:, :1])
 
 
 @pytest.mark.slow
 @pytest.mark.xfail_on_32bit("Can't create large array for test")
 def test_nnz_overflow():
-    # Regression test for gh-7230 / gh-7871, checking that coo_todense
+    # Regression test for gh-7230 / gh-7871, checking that coo_toarray
     # with nnz > int32max doesn't overflow.
     nnz = np.iinfo(np.int32).max + 1
     # Ensure ~20 GB of RAM is free to run this test.

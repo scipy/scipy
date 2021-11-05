@@ -11,6 +11,8 @@ cimport numpy as np
 from scipy.sparse import csr_matrix, isspmatrix,\
     isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
 
+np.import_array()
+
 include 'parameters.pxi'
 
 def csgraph_from_masked(graph):

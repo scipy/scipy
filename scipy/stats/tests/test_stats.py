@@ -16,7 +16,8 @@ from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
-                           assert_string_equal)
+                           assert_string_equal,
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
@@ -27,18 +28,19 @@ from scipy._lib._util import check_random_state
 from scipy import special
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
-import scipy.stats.mstats_basic as mstats_basic
+import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import (_broadcast_concatenate,
-                               AlexanderGovernConstantInputWarning)
-from scipy.stats.stats import _calc_t_stat, _data_partitions
+from scipy.stats._axis_nan_policy import _broadcast_concatenate
+from scipy.stats._stats_py import (_calc_t_stat, _data_partitions,
+                            AlexanderGovernConstantInputWarning)
+
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -1862,6 +1864,12 @@ class TestRegression:
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)
 
+    def test_identical_x(self):
+        x = np.zeros(10)
+        y = np.random.random(10)
+        msg = "Cannot calculate a linear regression"
+        with assert_raises(ValueError, match=msg):
+            stats.linregress(x, y)
 
 def test_theilslopes():
     # Basic slope test.
@@ -2663,7 +2671,7 @@ class TestIQR:
         q = stats.iqr(o)
 
         assert_equal(stats.iqr(x, axis=(0, 1)), q)
-        x = np.rollaxis(x, -1, 0)               # x.shape = (10, 71, 23)
+        x = np.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
         assert_equal(stats.iqr(x, axis=(2, 1)), q)
         x = x.swapaxes(0, 1)                    # x.shape = (71, 10, 23)
         assert_equal(stats.iqr(x, axis=(0, 2)), q)
@@ -3885,6 +3893,17 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
+    def test_gh12999(self):
+        np.random.seed(123456)
+        for x in range(1000, 12000, 1000):
+            vals1 = np.random.normal(size=(x))
+            vals2 = np.random.normal(size=(x + 10), loc=0.5)
+            exact = stats.ks_2samp(vals1, vals2, mode='exact').pvalue
+            asymp = stats.ks_2samp(vals1, vals2, mode='asymp').pvalue
+            # these two p-values should be in line with each other
+            assert_array_less(exact, 3 * asymp)
+            assert_array_less(asymp, 3 * exact)
+
     @pytest.mark.slow
     def testLargeBoth(self):
         # 10000, 11000
@@ -3912,9 +3931,12 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
+        from scipy.stats._stats_py import (
+            _count_paths_outside_method,
+            _compute_outer_prob_inside_method
+        )
 
-        _compute_prob_inside_method(1, 1, 1, 1)
+        _compute_outer_prob_inside_method(1, 1, 1, 1)
         _count_paths_outside_method(1000, 1, 1, 1001)
 
         assert_raises(FloatingPointError, _count_paths_outside_method, 1100, 1099, 1, 1)
@@ -3977,7 +3999,8 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_rel(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_rel(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
@@ -4074,7 +4097,7 @@ def test_ttest_rel_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_relResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4087,7 +4110,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4101,7 +4124,7 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4159,7 +4182,8 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_ind(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -4786,13 +4810,14 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
-                                   axis=2, equal_var=False)
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
+                           axis=2, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
-    args = _desc_stats(np.rollaxis(rvs1_3D, 2),
-                       np.rollaxis(rvs2_3D, 2), axis=2)
+    args = _desc_stats(np.moveaxis(rvs1_3D, 2, 0),
+                       np.moveaxis(rvs2_3D, 2, 0), axis=2)
     t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -4837,7 +4862,7 @@ def test_ttest_ind_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_indResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4850,7 +4875,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4864,7 +4889,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4878,7 +4903,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -5946,7 +5971,7 @@ class TestTrim:
         a = np.random.randint(20, size=(5, 6, 4, 7))
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
-            res2 = stats.trim_mean(np.rollaxis(a, axis), 2/6.)
+            res2 = stats.trim_mean(np.moveaxis(a, axis, 0), 2/6.)
             assert_equal(res1, res2)
 
         res1 = stats.trim_mean(a, 2/6., axis=None)

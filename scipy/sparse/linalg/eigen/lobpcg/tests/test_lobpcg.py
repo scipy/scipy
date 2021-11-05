@@ -5,12 +5,12 @@ import platform
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less)
+                           assert_allclose, assert_array_less,
+                           suppress_warnings)
 
 import pytest
 
 from numpy import ones, r_, diag
-from numpy.random import rand
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye
 from scipy.sparse.linalg import eigs, LinearOperator
@@ -49,10 +49,10 @@ def compare_solutions(A, B, m):
     """Check eig vs. lobpcg consistency.
     """
     n = A.shape[0]
-    np.random.seed(0)
-    V = rand(n, m)
+    rnd = np.random.RandomState(0)
+    V = rnd.random((n, m))
     X = orth(V)
-    eigvals, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False)
+    eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eig(A, b=B)
     w.sort()
@@ -61,19 +61,44 @@ def compare_solutions(A, B, m):
 
 def test_Small():
     A, B = ElasticRod(10)
-    compare_solutions(A, B, 10)
+    with pytest.warns(UserWarning, match="The problem size"):
+        compare_solutions(A, B, 10)
     A, B = MikotaPair(10)
-    compare_solutions(A, B, 10)
+    with pytest.warns(UserWarning, match="The problem size"):
+        compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
-    A, B = ElasticRod(100)
-    compare_solutions(A, B, 20)
+    A, B = ElasticRod(20)
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        compare_solutions(A, B, 2)
 
 
 def test_MikotaPair():
-    A, B = MikotaPair(100)
-    compare_solutions(A, B, 20)
+    A, B = MikotaPair(20)
+    compare_solutions(A, B, 2)
+
+
+@pytest.mark.filterwarnings("ignore:Exited at iteration 0")
+def test_nonhermitian_warning(capsys):
+    """Check the warning of a Ritz matrix being not Hermitian
+    by feeding a non-Hermitian input matrix.
+    Also check stdout since verbosityLevel=1 and lack of stderr.
+    """
+    n = 10
+    X = np.arange(n * 2).reshape(n, 2).astype(np.float32)
+    A = np.arange(n * n).reshape(n, n).astype(np.float32)
+    with pytest.warns(UserWarning, match="Matrix gramA"):
+        _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
+    out, err = capsys.readouterr()  # Capture output
+    assert out.startswith("Solving standard eigenvalue")  # Test stdout
+    assert err == ''  # Test empty stderr
+    # Make the matrix symmetric and the UserWarning dissappears.
+    A += A.T
+    _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
+    out, err = capsys.readouterr()  # Capture output
+    assert out.startswith("Solving standard eigenvalue")  # Test stdout
+    assert err == ''  # Test empty stderr
 
 
 def test_regression():
@@ -90,18 +115,8 @@ def test_regression():
 def test_diagonal():
     """Check for diagonal matrices.
     """
-    # This test was moved from '__main__' in lobpcg.py.
-    # Coincidentally or not, this is the same eigensystem
-    # required to reproduce arpack bug
-    # https://forge.scilab.org/p/arpack-ng/issues/1397/
-    # even using the same n=100.
-
-    np.random.seed(1234)
-
-    # The system of interest is of size n x n.
+    rnd = np.random.RandomState(0)
     n = 100
-
-    # We care about only m eigenpairs.
     m = 4
 
     # Define the generalized eigenvalue problem Av = cBv
@@ -116,7 +131,7 @@ def test_diagonal():
     M = diags([1./vals], [0], (n, n))
 
     # Pick random initial vectors.
-    X = np.random.rand(n, m)
+    X = rnd.random((n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -141,7 +156,6 @@ def _check_fiedler(n, p):
     """Check the Fiedler vector computation.
     """
     # This is not necessarily the recommended way to find the Fiedler vector.
-    np.random.seed(1234)
     col = np.zeros(n)
     col[1] = 1
     A = toeplitz(col)
@@ -191,7 +205,8 @@ def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
     # This triggers the dense path because 8 < 2*5.
-    _check_fiedler(8, 2)
+    with pytest.warns(UserWarning, match="The problem size"):
+        _check_fiedler(8, 2)
 
 
 def test_fiedler_large_12():
@@ -201,31 +216,44 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
+def test_failure_to_run_iterations():
+    """Check that the code exists gracefully without breaking. Issue #10974.
+    """
+    rnd = np.random.RandomState(0)
+    X = rnd.standard_normal((100, 10))
+    A = X @ X.T
+    Q = rnd.standard_normal((X.shape[0], 4))
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        eigenvalues, _ = lobpcg(A, Q, maxiter=20)
+    assert(np.max(eigenvalues) > 0)
+
+
+@pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
 
     sizes = [3, 10, 50]
     ks = [1, 3, 10, 50]
     gens = [True, False]
 
-    for size, k, gen in itertools.product(sizes, ks, gens):
-        if k > size:
+    for s, k, gen in itertools.product(sizes, ks, gens):
+        if k > s:
             continue
 
-        H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-        H = 10 * np.eye(size) + H + H.T.conj()
+        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+        H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = np.random.rand(size, k)
+        X = rnd.random((s, k))
 
         if not gen:
-            B = np.eye(size)
+            B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
-            B = 10 * np.eye(size) + B.dot(B.T.conj())
+            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
+            B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
@@ -241,14 +269,15 @@ def test_hermitian():
 
 
 # The n=5 case tests the alternative small matrix code path that uses eigh().
+@pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
 def test_eigs_consistency(n, atol):
     """Check eigs vs. lobpcg consistency.
     """
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
-    np.random.seed(345678)
-    X = np.random.rand(n, 2)
+    rnd = np.random.RandomState(0)
+    X = rnd.random((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, _ = eigs(A, k=2)
 
@@ -259,14 +288,12 @@ def test_eigs_consistency(n, atol):
 def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
-    A, B = ElasticRod(100)
-    n = A.shape[0]
-    m = 20
-    np.random.seed(0)
-    V = rand(n, m)
-    X = orth(V)
-    _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                  verbosityLevel=9)
+    rnd = np.random.RandomState(0)
+    X = rnd.standard_normal((10, 10))
+    A = X @ X.T
+    Q = rnd.standard_normal((X.shape[0], 1))
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        _, _ = lobpcg(A, Q, maxiter=3, verbosityLevel=9)
 
 
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
@@ -274,55 +301,59 @@ def test_verbosity(tmpdir):
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 3
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.randn(n, m)
+    X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-9, maxiter=50, verbosityLevel=0)
+    eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
 
 
 def test_random_initial_float32():
     """Check lobpcg in float32 for specific initial.
     """
-    np.random.seed(3)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.rand(n, m)
+    X = rnd.random((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
-def test_maxit_None():
-    """Check lobpcg if maxit=None runs 20 iterations (the default)
+def test_maxit():
+    """Check lobpcg if maxit=10 runs 10 iterations
+    if maxit=None runs 20 iterations (the default)
     by checking the size of the iteration history output, which should
     be the number of iterations plus 2 (initial and final values).
     """
-    np.random.seed(1566950023)
+    rnd = np.random.RandomState(0)
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = np.random.randn(n, m)
+    X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
-    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 10+2)
+    with pytest.warns(UserWarning, match="Exited at iteration"):
+        _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+2)
-
 
 @pytest.mark.slow
 def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
     """
-    np.random.seed(1234)
+    rnd = np.random.RandomState(0)
     n = 40
     m = 4
     # Define the generalized eigenvalue problem Av = cBv
@@ -378,7 +409,7 @@ def test_diagonal_data_types():
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
-        Xf64 = np.random.rand(n, m)
+        Xf64 = rnd.random((n, m))
         Xf32 = Xf64.astype(np.float32)
         listX = [Xf64, Xf32]
 

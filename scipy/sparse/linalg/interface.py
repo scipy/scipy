@@ -45,7 +45,7 @@ import warnings
 import numpy as np
 
 from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
+from scipy.sparse._sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 

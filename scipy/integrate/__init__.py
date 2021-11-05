@@ -87,9 +87,11 @@ Solving boundary value problems for ODE systems
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
 """  # noqa: E501
+
+
 from ._quadrature import *
-from .odepack import *
-from .quadpack import *
+from ._odepack_py import *
+from ._quadpack_py import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,

@@ -12,8 +12,8 @@ from numpy.testing import (assert_array_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.io.arff.arffread import loadarff
-from scipy.io.arff.arffread import read_header, ParseArffError
+from scipy.io.arff import loadarff
+from scipy.io.arff._arffread import read_header, ParseArffError
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
@@ -57,7 +57,7 @@ class TestData:
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
-        
+
     def test4(self):
         # Parsing trivial file with trailing spaces in attribute declaration.
         self._test(test11)

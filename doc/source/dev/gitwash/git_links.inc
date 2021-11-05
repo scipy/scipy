@@ -61,8 +61,8 @@
 .. _python: https://www.python.org
 .. _NumPy: https://www.numpy.org
 .. _`NumPy github`: https://github.com/numpy/numpy
-.. _`NumPy mailing list`: https://scipy.org/scipylib/mailing-lists.html
-.. _SciPy: https://www.scipy.org/scipylib/index.html
+.. _`NumPy mailing list`: https://numpy.org/community/
+.. _SciPy: https://www.scipy.org
 .. _`SciPy github`: https://github.com/scipy/scipy
-.. _`SciPy mailing list`: https://scipy.org/scipylib/mailing-lists.html
+.. _`SciPy mailing list`: https://scipy.org/mailing-lists/
 .. _`SciPy repository`: https://github.com/scipy/scipy

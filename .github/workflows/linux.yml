@@ -35,7 +35,7 @@ jobs:
       - name: Installing packages
         run: |      
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-          python3.8-dbg -m pip install --upgrade pip setuptools wheel
+          python3.8-dbg -m pip install --upgrade pip 'setuptools<58.5' wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
           python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran
           python3.8-dbg -m pip uninstall -y nose
@@ -72,7 +72,7 @@ jobs:
         sudo apt install -y --no-install-recommends python3.10-dev python3.10-distutils python3.10-venv
         # GitHub doesn't provide a pip interface with py3.10 yet. Therefore, install it manually :
         curl -O https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py && rm get-pip.py
-        python3.10 -m pip install --upgrade pip setuptools
+        python3.10 -m pip install --upgrade pip 'setuptools<58.5'
 
     - name: Install other build dependencies
       run: |
@@ -81,7 +81,7 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
+        python3.10 -m pip install --user 'setuptools<58.5' wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python3.10 -m pip install -r mypy_requirements.txt
 

@@ -4,7 +4,7 @@ __all__ = []
 
 
 from numpy import asanyarray, asarray, array, matrix, zeros
-from scipy.sparse.sputils import asmatrix
+from scipy.sparse._sputils import asmatrix
 
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator, \
      IdentityOperator
@@ -39,8 +39,10 @@ def make_system(A, M, x0, b):
     M : {LinearOperator, Nones}
         preconditioner
         sparse or dense matrix (or any valid input to aslinearoperator)
-    x0 : {array_like, None}
-        initial guess to iterative method
+    x0 : {array_like, str, None}
+        initial guess to iterative method.
+        ``x0 = 'Mb'`` means using the nonzero initial guess ``M @ b``.
+        Default is `None`, which means using the zero initial guess.
     b : array_like
         right hand side
 
@@ -91,15 +93,6 @@ def make_system(A, M, x0, b):
     b = asarray(b,dtype=xtype)  # make b the same type as x
     b = b.ravel()
 
-    if x0 is None:
-        x = zeros(N, dtype=xtype)
-    else:
-        x = array(x0, dtype=xtype)
-        if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError('shapes of A {} and x0 {} are incompatible'
-                            .format(A.shape, x.shape))
-        x = x.ravel()
-
     # process preconditioner
     if M is None:
         if hasattr(A_,'psolve'):
@@ -119,5 +112,19 @@ def make_system(A, M, x0, b):
         M = aslinearoperator(M)
         if A.shape != M.shape:
             raise ValueError('matrix and preconditioner have different shapes')
+
+    # set initial guess
+    if x0 is None:
+        x = zeros(N, dtype=xtype)
+    elif isinstance(x0, str):
+        if x0 == 'Mb':  # use nonzero initial guess ``M @ b``
+            bCopy = b.copy()
+            x = M.matvec(bCopy)
+    else:
+        x = array(x0, dtype=xtype)
+        if not (x.shape == (N, 1) or x.shape == (N,)):
+            raise ValueError(f'shapes of A {A.shape} and '
+                             f'x0 {x.shape} are incompatible')
+        x = x.ravel()
 
     return A, M, x, b, postprocess
