@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_equal
+from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (
     csgraph_from_adjacency_list,
     csgraph_to_adjacency_list,
@@ -7,7 +8,7 @@ from scipy.sparse.csgraph import (
 )
 
 
-def test_csgraph_adjacency_list():
+def test_csgraph_weighted_adjacency_list():
     graph_adjacency_list = {
         0: {1: 1, 2: 2},
         1: {3: 1},
@@ -80,4 +81,16 @@ def test_csgraph_adjacency_list():
             csgraph_from_dense(unweighted_graph_matrix)
         ),
         unweighted_graph_adjacency_list,
+    )
+
+    assert_raises(
+        ValueError,
+        csgraph_from_adjacency_list,
+        {
+            0: [1, 2],
+            1: [3],
+            2: [3],
+            3: [],
+        },
+        weighted=True,
     )
