@@ -371,12 +371,13 @@ Statistical distances
    energy_distance
 
 Random variate generation / CDF Inversion
-=========================================
+-----------------------------------------
 
 .. autosummary::
    :toctree: generated/
 
    rvs_ratio_uniforms
+   NaiveRatioUniforms
    NumericalInverseHermite
    NumericalInversePolynomial
    TransformedDensityRejection
@@ -439,22 +440,23 @@ Warnings / Errors used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
+   BootstrapDegenerateDistributionWarning
    UNURANError
 
 """
 
-from .stats import *
+from ._stats_py import *
 from .distributions import *
-from .morestats import *
+from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
-from .kde import gaussian_kde
+from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._bootstrap import bootstrap
+from ._bootstrap import bootstrap, BootstrapDegenerateDistributionWarning
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite

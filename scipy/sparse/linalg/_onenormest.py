@@ -70,13 +70,13 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import onenormest
     >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
-    >>> A.todense()
-    matrix([[ 1.,  0.,  0.],
-            [ 5.,  8.,  2.],
-            [ 0., -1.,  0.]])
+    >>> A.toarray()
+    array([[ 1.,  0.,  0.],
+           [ 5.,  8.,  2.],
+           [ 0., -1.,  0.]])
     >>> onenormest(A)
     9.0
-    >>> np.linalg.norm(A.todense(), ord=1)
+    >>> np.linalg.norm(A.toarray(), ord=1)
     9.0
     """
 

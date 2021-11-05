@@ -6,7 +6,7 @@ import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 __all__ = ['expm_multiply']
 
@@ -44,7 +44,7 @@ def _trace(A):
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
     elif is_pydata_spmatrix(A):
         import sparse
@@ -118,9 +118,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
-    >>> A.todense()
-    matrix([[1, 0],
-            [0, 1]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0],
+           [0, 1]], dtype=int64)
     >>> B = np.array([np.exp(-1.), np.exp(-2.)])
     >>> B
     array([ 0.36787944,  0.13533528])

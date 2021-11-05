@@ -176,7 +176,8 @@ for key in (
 
 html_theme = 'pydata_sphinx_theme'
 
-html_logo = '_static/scipyshiny_small.png'
+html_logo = '_static/logo.svg'
+html_favicon = '_static/favicon.ico'
 
 html_theme_options = {
   "logo_link": "index",

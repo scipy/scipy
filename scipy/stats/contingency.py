@@ -23,7 +23,7 @@ Functions for creating and analyzing contingency tables.
 from functools import reduce
 import math
 import numpy as np
-from .stats import power_divergence
+from ._stats_py import power_divergence
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 

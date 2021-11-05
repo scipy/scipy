@@ -337,7 +337,7 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
 
 def directed_hausdorff(u, v, seed=0):
     """
-    Compute the directed Hausdorff distance between two N-D arrays.
+    Compute the directed Hausdorff distance between two 2-D arrays.
 
     Distances between pairs are calculated using a Euclidean metric.
 

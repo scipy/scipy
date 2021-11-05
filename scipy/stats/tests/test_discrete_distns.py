@@ -256,11 +256,14 @@ class TestZipfian:
         alt1, agt1 = 0.99999999, 1.00000001
         N = 30
         k = np.arange(1, N + 1)
-        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
-        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
-        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N),
+                        rtol=5e-7)
         assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
-                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=5e-7)
 
     def test_zipfian_R(self):
         # test against R VGAM package

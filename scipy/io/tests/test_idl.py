@@ -6,7 +6,7 @@ DATA_PATH = path.join(path.dirname(__file__), 'data')
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
     assert_, suppress_warnings)
-from scipy.io.idl import readsav
+from scipy.io import readsav
 
 
 def object_array(*args):
@@ -435,4 +435,3 @@ def test_invalid_pointer():
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "
                                   "heap: variable will be set to None"))
     assert_identical(s['a'], np.array([None, None]))
-
