@@ -440,6 +440,25 @@ def csgraph_to_masked(csgraph):
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
 
 
+def csgraph_to_adjacency_list(csgraph):
+    """
+    TODO
+    """
+
+    adjacency_list = {}
+
+    for row_idx in range(len(csgraph.indptr) - 1):
+        adjacency_list[row_idx] = {}
+
+        for i in range(csgraph.indptr[row_idx], csgraph.indptr[row_idx+1]):
+            col_idx = csgraph.indices[i]
+            weight = csgraph.data[i]
+            
+            adjacency_list[row_idx][col_idx] = weight
+
+    return adjacency_list
+
+
 cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
