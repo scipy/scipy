@@ -1,6 +1,7 @@
+import pytest
 import numpy as np
 from numpy.testing import assert_equal
-from pytest import raises as assert_raises
+
 from scipy.sparse.csgraph import (
     csgraph_from_adjacency_list,
     csgraph_to_adjacency_list,
@@ -121,12 +122,8 @@ def test_csgraph_unweighted_adjacency_list():
         csgraph_from_dense(graph_matrix).toarray(),
     )
 
-    assert_raises(
-        ValueError,
-        csgraph_from_adjacency_list,
-        graph_adjacency_list,
-        weighted=True,
-    )
+    with pytest.raises(ValueError, match="adjacency_list should"):
+        csgraph_from_adjacency_list(graph_adjacency_list, weighted=True)
 
     # test csgraph_to_adjacency_list
     assert_equal(
