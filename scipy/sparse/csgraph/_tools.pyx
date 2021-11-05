@@ -217,9 +217,41 @@ def csgraph_from_dense(graph,
                                                          infinity_null))
 
 
-def csgraph_from_adjacency_list(adjacency_list, weighted=False):
+def csgraph_from_adjacency_list(adjacency_list, weighted=True):
     """
-    TODO
+    csgraph_from_adjacency_list(adjacency_list, weighted=True)
+
+    Construct a CSR-format sparse graph from an adjacency list.
+
+    .. versionadded:: 1.7.2
+
+    Parameters
+    ----------
+    adjacency_list : dict
+        Input adjacency list.  Could be either a dict of lists (for unweighted graph) or
+        a dict of dicts (for weighted graph). Dict lenght should be n_nodes.
+    weighted : bool
+        If True (default), then constract a weighted graph.
+
+    Returns
+    -------
+    csgraph : csr_matrix
+        Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_from_adjacency_list
+
+    >>> graph = {
+    ...     0: {1: 1, 2: 2},
+    ...     1: {3: 1},
+    ...     2: {3: 3},
+    ...     3: {},
+    ... }
+
+    >>> csgraph_from_adjacency_list(graph)
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+	    with 4 stored elements in Compressed Sparse Row format>
     """
 
     N = len(adjacency_list)
