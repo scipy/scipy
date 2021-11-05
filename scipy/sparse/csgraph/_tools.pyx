@@ -254,8 +254,8 @@ def csgraph_from_adjacency_list(adjacency_list, weighted=True):
     >>> csgraph_from_adjacency_list(graph)
     <4x4 sparse matrix of type '<class 'numpy.int64'>'
 	    with 4 stored elements in Compressed Sparse Row format>
-    """
 
+    """
     N = len(adjacency_list)
 
     row = []
