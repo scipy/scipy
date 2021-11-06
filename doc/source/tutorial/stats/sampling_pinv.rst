@@ -209,7 +209,7 @@ more intervals compared to `NumericalInversePolynomial`:
     >>> # u-resolution of the generator.
     >>> rng_hermite = NumericalInverseHermite(norm(), tol=1e-12)
     >>> rng_hermite.intervals
-    3340
+    3000
     >>> rng_poly = NumericalInversePolynomial(norm(), u_resolution=1e-12)
     >>> rng_poly.intervals
     252
