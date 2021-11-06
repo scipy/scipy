@@ -394,20 +394,19 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
-from .optimize import *
+from ._optimize import *
 from ._minimize import *
 from ._root import *
 from ._root_scalar import *
-from .minpack import *
-from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
-from .tnc import fmin_tnc
-from .cobyla import fmin_cobyla
-from .nonlin import *
-from .slsqp import fmin_slsqp
+from ._minpack_py import *
+from ._zeros_py import *
+from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
+from ._tnc import fmin_tnc
+from ._cobyla_py import fmin_cobyla
+from ._nonlin import *
+from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
