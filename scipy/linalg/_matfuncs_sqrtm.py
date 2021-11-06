@@ -84,7 +84,10 @@ def _sqrtm_triu(T, blocksize=64):
             start += size
 
     # Within-block interactions (Cythonized)
-    within_block_loop(R, T, start_stop_pairs, nblocks)
+    try:
+        within_block_loop(R, T, start_stop_pairs, nblocks)
+    except RuntimeError as e:
+        raise SqrtmError(*e.args) from e
 
     # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):
