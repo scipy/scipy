@@ -30,13 +30,14 @@ requires = [
     "numpy==1.16.5; python_version=='3.7' and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.3; python_version=='3.10' and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
 
     # First PyPy versions for which there are numpy wheels
     "numpy==1.20.0; python_version=='3.7' and platform_python_implementation=='PyPy'",
     # Unpinned NumPy version in case PyPy catches up with supported Python versions
     "numpy; python_version=='3.8' and platform_python_implementation=='PyPy'",
     "numpy; python_version=='3.9' and platform_python_implementation=='PyPy'",
+    "numpy; python_version=='3.10' and platform_python_implementation=='PyPy'",
 ]
 
 [project]
@@ -65,6 +66,7 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -101,7 +103,7 @@ dev = [
 
 [project.urls]
 homepage = "https://scipy.org/"
-documentation = "https://docs.scipy.org/doc/scipy/reference/"
+documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
