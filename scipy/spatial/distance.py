@@ -295,7 +295,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 
 def _validate_vector(u, dtype=None):
-
     # XXX Is order='c' really necessary?
     u = np.asarray(u, dtype=dtype, order='c')
     if u.ndim == 1:
