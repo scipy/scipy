@@ -48,6 +48,9 @@ class _sparray:
 
 
 def _matrix_doc_to_array(docstr):
+    # For opimized builds with stripped docstrings
+    if docstr is None:
+        return None
     return docstr.replace('matrix', 'array').replace('matrices', 'arrays')
 
 
