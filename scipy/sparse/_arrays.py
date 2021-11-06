@@ -53,34 +53,36 @@ def _matrix_doc_to_array(docstr):
 
 class bsr_array(_sparray, bsr_matrix):
     pass
-bsr_array.__doc__ = _matrix_doc_to_array(bsr_matrix.__doc__)
 
 
 class coo_array(_sparray, coo_matrix):
     pass
-coo_array.__doc__ = _matrix_doc_to_array(coo_matrix.__doc__)
 
 
 class csc_array(_sparray, csc_matrix):
     pass
-csc_array.__doc__ = _matrix_doc_to_array(csc_matrix.__doc__)
 
 
 class csr_array(_sparray, csr_matrix):
     pass
-csr_array.__doc__ = _matrix_doc_to_array(csr_matrix.__doc__)
 
 
 class dia_array(_sparray, dia_matrix):
     pass
-dia_array.__doc__ = _matrix_doc_to_array(dia_matrix.__doc__)
 
 
 class dok_array(_sparray, dok_matrix):
     pass
-dok_array.__doc__ = _matrix_doc_to_array(dok_matrix.__doc__)
 
 
 class lil_array(_sparray, lil_matrix):
     pass
+
+
+bsr_array.__doc__ = _matrix_doc_to_array(bsr_matrix.__doc__)
+coo_array.__doc__ = _matrix_doc_to_array(coo_matrix.__doc__)
+csc_array.__doc__ = _matrix_doc_to_array(csc_matrix.__doc__)
+csr_array.__doc__ = _matrix_doc_to_array(csr_matrix.__doc__)
+dia_array.__doc__ = _matrix_doc_to_array(dia_matrix.__doc__)
+dok_array.__doc__ = _matrix_doc_to_array(dok_matrix.__doc__)
 lil_array.__doc__ = _matrix_doc_to_array(lil_matrix.__doc__)
