@@ -16,6 +16,14 @@ Sparse matrix classes
 .. autosummary::
    :toctree: generated/
 
+   bsr_array - Block Sparse Row array
+   coo_array - A sparse array in COOrdinate format
+   csc_array - Compressed Sparse Column array
+   csr_array - Compressed Sparse Row array
+   dia_array - Sparse array with DIAgonal storage
+   dok_array - Dictionary Of Keys based sparse array
+   lil_array - Row-based list of lists sparse array
+
    bsr_matrix - Block Sparse Row matrix
    coo_matrix - A sparse matrix in COOrdinate format
    csc_matrix - Compressed Sparse Column matrix

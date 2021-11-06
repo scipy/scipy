@@ -7,7 +7,11 @@ from ._dok import dok_matrix
 from ._lil import lil_matrix
 
 
-class sparray:
+class _sparray:
+    """This class provides a base class for all sparse arrays.
+
+    It cannot be instantiated.  Most of the work is provided by subclasses.
+    """
     _is_array = True
 
     @property
@@ -43,29 +47,40 @@ class sparray:
         return self.multiply(*args, **kwargs)
 
 
-class bsr_array(sparray, bsr_matrix):
+def _matrix_doc_to_array(docstr):
+    return docstr.replace('matrix', 'array').replace('matrices', 'arrays')
+
+
+class bsr_array(_sparray, bsr_matrix):
     pass
+bsr_array.__doc__ = _matrix_doc_to_array(bsr_matrix.__doc__)
 
 
-class coo_array(sparray, coo_matrix):
+class coo_array(_sparray, coo_matrix):
     pass
+coo_array.__doc__ = _matrix_doc_to_array(coo_matrix.__doc__)
 
 
-class csc_array(sparray, csc_matrix):
+class csc_array(_sparray, csc_matrix):
     pass
+csc_array.__doc__ = _matrix_doc_to_array(csc_matrix.__doc__)
 
 
-class csr_array(sparray, csr_matrix):
+class csr_array(_sparray, csr_matrix):
     pass
+csr_array.__doc__ = _matrix_doc_to_array(csr_matrix.__doc__)
 
 
-class dia_array(sparray, dia_matrix):
+class dia_array(_sparray, dia_matrix):
     pass
+dia_array.__doc__ = _matrix_doc_to_array(dia_matrix.__doc__)
 
 
-class dok_array(sparray, dok_matrix):
+class dok_array(_sparray, dok_matrix):
     pass
+dok_array.__doc__ = _matrix_doc_to_array(dok_matrix.__doc__)
 
 
-class lil_array(sparray, lil_matrix):
+class lil_array(_sparray, lil_matrix):
     pass
+lil_array.__doc__ = _matrix_doc_to_array(lil_matrix.__doc__)

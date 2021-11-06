@@ -119,3 +119,10 @@ def test_no_H_attr(A):
 def test_getrow_getcol(A):
     assert A.getcol(0)._is_array
     assert A.getrow(0)._is_array
+
+
+@parametrize_sparrays
+def test_docstr(A):
+    docstr = A.__doc__.lower()
+    for phrase in ('matrix', 'matrices'):
+        assert phrase not in docstr
