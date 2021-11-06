@@ -40,7 +40,8 @@ def test_csgraph_weighted_adjacency_list():
 
     # test csgraph_from_adjacency_list
     for weighted in [True, False]:
-        expected = graph_matrix if weighted else unweighted_graph_matrix
+        expected = graph_matrix if weighted else \
+            unweighted_graph_matrix
 
         assert_equal(
             csgraph_from_adjacency_list(
@@ -58,7 +59,8 @@ def test_csgraph_weighted_adjacency_list():
 
     # test csgraph_to_adjacency_list
     for weighted in [True, False]:
-        expected = graph_adjacency_list if weighted else unweighted_graph_adjacency_list
+        expected = graph_adjacency_list if weighted \
+            else unweighted_graph_adjacency_list
 
         assert_equal(
             csgraph_to_adjacency_list(
@@ -123,7 +125,9 @@ def test_csgraph_unweighted_adjacency_list():
     )
 
     with pytest.raises(ValueError, match="adjacency_list should"):
-        csgraph_from_adjacency_list(graph_adjacency_list, weighted=True)
+        csgraph_from_adjacency_list(
+            graph_adjacency_list, weighted=True
+        )
 
     # test csgraph_to_adjacency_list
     assert_equal(
