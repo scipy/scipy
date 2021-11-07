@@ -16,7 +16,9 @@ def _delaunay_to_euclidean_graph(tri):
     edge_to_weight = {}
     for simplex in tri.simplices:
         for i in range(-1, ndim):
-            node_from, node_to = sorted([simplex[i], simplex[i+1]])  # for undirected graph
+            node_from, node_to = sorted(
+                [simplex[i], simplex[i+1]]
+            )  # for undirected graph
             if (node_from, node_to) in edge_to_weight:
                 continue
 
