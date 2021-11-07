@@ -24,7 +24,7 @@ def _delaunay_to_euclidean_graph(tri):
 
             weight = norm(tri.points[node_from] - tri.points[node_to])
             edge_to_weight[(node_from, node_to)] = weight
-    
+
     # edge_to_weight to csgraph (csr_matrix)
     n_edges = len(edge_to_weight)
 
@@ -36,9 +36,9 @@ def _delaunay_to_euclidean_graph(tri):
         row[i] = node_from
         col[i] = node_to
         data[i] = weight
-    
+
     return csr_matrix((data, (row, col)), shape=(npoints, npoints))
-    
+
 
 def euclidean_minimum_spanning_tree(points, method="delaunay"):
     """TODO"""
@@ -55,7 +55,7 @@ def euclidean_minimum_spanning_tree(points, method="delaunay"):
     elif method == "delaunay":
         tri = Delaunay(points)
         graph = _delaunay_to_euclidean_graph(tri)
-        
+
     else:
         raise ValueError("unrecognized method '%s'" % method)
 
