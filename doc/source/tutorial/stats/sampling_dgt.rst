@@ -33,7 +33,7 @@ reduce the speed of the algorithm. So we do not recommend to use guide
 tables that are more than three times larger than the given probability
 vector. If only a few random numbers have to be generated, (much) smaller
 table sizes are better. The size of the guide table relative to the length
-of the given probability vector can be set by the guide_factor parameter:
+of the given probability vector can be set by the `guide_factor` parameter:
 
     >>> import numpy as np
     >>> from scipy.stats import DiscreteGuideTable

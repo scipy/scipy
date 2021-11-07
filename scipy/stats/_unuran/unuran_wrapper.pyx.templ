@@ -2088,6 +2088,7 @@ cdef class DiscreteGuideTable(Method):
     0.0
     """
     cdef double[::1] pv_view
+    cdef object domain
 
     def __cinit__(self,
                   dist,
@@ -2099,6 +2100,7 @@ cdef class DiscreteGuideTable(Method):
         cdef double[::1] pv_view
 
         (pv_view, domain) = self._validate_args(dist, domain, guide_factor)
+        self.domain = domain
 
         # increment ref count of pv_view to make sure it doesn't get garbage collected.
         self.pv_view = pv_view
@@ -2226,7 +2228,7 @@ cdef class DiscreteGuideTable(Method):
         np.place(out, cond2, goodout)
         np.place(out, ~cond2, np.nan)
 
-        # UNU.RAN sets boundary at u = 0 to 0
-        # SciPy fills it with -1. Prefer SciPy behaviour
-        np.place(out, u == 0, -1)
+        # UNU.RAN sets boundary at u = 0 to domain[0]
+        # SciPy fills it with domain[0] - 1. Prefer SciPy behaviour
+        np.place(out, u == 0, self.domain[0] - 1)
         return np.asarray(out).reshape(oshape)[()]
