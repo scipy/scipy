@@ -165,6 +165,7 @@ __all__ = ['connected_components',
            'breadth_first_tree',
            'depth_first_tree',
            'minimum_spanning_tree',
+           'euclidean_minimum_spanning_tree',
            'reverse_cuthill_mckee',
            'maximum_flow',
            'maximum_bipartite_matching',
@@ -189,6 +190,9 @@ from ._traversal import (
     depth_first_tree, connected_components
 )
 from ._min_spanning_tree import minimum_spanning_tree
+from ._euclidean_min_spanning_tree import (
+    euclidean_minimum_spanning_tree
+)
 from ._flow import maximum_flow
 from ._matching import (
     maximum_bipartite_matching, min_weight_full_bipartite_matching
