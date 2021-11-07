@@ -2073,12 +2073,19 @@ cdef class DiscreteGuideTable(Method):
     >>> plt.legend()
     >>> plt.show()
 
-
     To set the size of the guide table use the `guide_factor` keyword argument.
     This sets the size of the guide table relative to the probability vector
 
     >>> rng = DiscreteGuideTable(pv, guide_factor=1, random_state=urng)
 
+    To calculate the PPF of a binomial distribution with :math:`n=4` and
+    :math:`p=0.1`: we can set up a guide table as follows:
+
+    >>> n, p = 4, 0.1
+    >>> dist = stats.binom(n, p)
+    >>> rng = DiscreteGuideTable(dist, random_state=42)
+    >>> rng.ppf(0.5)
+    0.0
     """
     cdef double[::1] pv_view
 
