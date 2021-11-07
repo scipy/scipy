@@ -24,22 +24,20 @@ import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
 
-from scipy._lib._util import check_random_state
-from scipy import special
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
-import scipy.stats.mstats_basic as mstats_basic
+import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
-from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import (_broadcast_concatenate,
-                               AlexanderGovernConstantInputWarning)
-from scipy.stats.stats import _calc_t_stat, _data_partitions
+from scipy.stats._axis_nan_policy import _broadcast_concatenate
+from scipy.stats._stats_py import (_calc_t_stat, _data_partitions,
+                            AlexanderGovernConstantInputWarning)
+
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3892,6 +3890,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
+    @pytest.mark.slow
     def test_gh12999(self):
         np.random.seed(123456)
         for x in range(1000, 12000, 1000):
@@ -3930,7 +3929,7 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import (
+        from scipy.stats._stats_py import (
             _count_paths_outside_method,
             _compute_outer_prob_inside_method
         )
@@ -4096,7 +4095,7 @@ def test_ttest_rel_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_relResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4109,7 +4108,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4123,7 +4122,7 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4861,7 +4860,7 @@ def test_ttest_ind_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_indResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4874,7 +4873,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4888,7 +4887,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4902,7 +4901,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -7196,188 +7195,6 @@ class TestMGCStat:
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
-
-
-class TestNumericalInverseHermite:
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic(self, distname, shapes):
-        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
-        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
-
-        if distname in slow_dists:
-            pytest.skip("Distribution is too slow")
-        if distname in fail_dists:
-            # specific reasons documented in gh-13319
-            # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
-            pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
-
-        np.random.seed(0)
-
-        dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = stats.NumericalInverseHermite(dist)
-
-        x = np.random.rand(10)
-        p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
-        u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
-
-        assert p_tol < 1e-8
-        assert u_tol < 1e-12
-
-    def test_input_validation(self):
-        match = "`dist` must have methods `pdf`, `cdf`, and `ppf`"
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite("norm")
-
-        match = "could not convert string to float"
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.norm(), tol='ekki')
-
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.norm(), max_intervals=-1)
-
-        match = "`qmc_engine` must be an instance of..."
-        with pytest.raises(ValueError, match=match):
-            fni = stats.NumericalInverseHermite(stats.norm())
-            fni.qrvs(qmc_engine=0)
-
-        if NumpyVersion(np.__version__) >= '1.18.0':
-            # issues with QMCEngines and old NumPy
-            fni = stats.NumericalInverseHermite(stats.norm())
-
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
-
-    rngs = [None, 0, np.random.RandomState(0)]
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))  # type: ignore
-    sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
-
-    @pytest.mark.parametrize('rng', rngs)
-    @pytest.mark.parametrize('size_in, size_out', sizes)
-    def test_RVS(self, rng, size_in, size_out):
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        rng2 = deepcopy(rng)
-        rvs = fni.rvs(size=size_in, random_state=rng)
-        assert(rvs.shape == size_out)
-
-        if rng2 is not None:
-            rng2 = check_random_state(rng2)
-            uniform = rng2.uniform(size=size_in)
-            rvs2 = stats.norm.ppf(uniform)
-            assert_allclose(rvs, rvs2)
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
-    else:
-        qrngs = []
-    # `size=None` should not add anything to the shape, `size=1` should
-    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
-             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
-    # Neither `d=None` nor `d=1` should add anything to the shape
-    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
-
-    @pytest.mark.parametrize('qrng', qrngs)
-    @pytest.mark.parametrize('size_in, size_out', sizes)
-    @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        # If d and qrng.d are inconsistent, an error is raised
-        if d_in is not None and qrng is not None and qrng.d != d_in:
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
-            return
-
-        # Sometimes d is really determined by qrng
-        if d_in is None and qrng is not None and qrng.d != 1:
-            d_out = (qrng.d,)
-
-        shape_expected = size_out + d_out
-
-        qrng2 = deepcopy(qrng)
-        qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
-        assert(qrvs.shape == shape_expected)
-
-        if qrng2 is not None:
-            uniform = qrng2.random(np.prod(size_in) or 1)
-            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
-            assert_allclose(qrvs, qrvs2, atol=1e-12)
-
-    def test_QRVS_size_tuple(self):
-        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
-        # we set `n = prod(size)` in the call to qmc_engine.random, transform
-        # the sample, and reshape it to the final dimensions. When we reshape,
-        # we need to be careful, because the _columns_ of the sample returned
-        # by a QMCEngine are "independent"-ish, but the elements within the
-        # columns are not. We need to make sure that this doesn't get mixed up
-        # by reshaping: qrvs[..., i] should remain "independent"-ish of
-        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
-        # transformed from the same low-discrepancy sequence.
-        if NumpyVersion(np.__version__) <= '1.18.0':
-            pytest.skip("QMC doesn't play well with old NumPy")
-
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        size = (3, 4)
-        d = 5
-        qrng = stats.qmc.Halton(d, seed=0)
-        qrng2 = stats.qmc.Halton(d, seed=0)
-
-        uniform = qrng2.random(np.prod(size))
-
-        qrvs = fni.qrvs(size=size, d=d, qmc_engine=qrng)
-        qrvs2 = stats.norm.ppf(uniform)
-
-        for i in range(d):
-            sample = qrvs[..., i]
-            sample2 = qrvs2[:, i].reshape(size)
-            assert_allclose(sample, sample2, atol=1e-12)
-
-    def test_inaccurate_CDF(self):
-        # CDF function with inaccurate tail cannot be inverted; see gh-13319
-        # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
-        shapes = (2.3098496451481823, 0.6268795430096368)
-        match = "The interpolating spline could not be created."
-
-        # fails with default tol
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.beta(*shapes))
-
-        # no error with coarser tol
-        stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-10)
-
-    def test_custom_distribution(self):
-        class MyNormal:
-
-            def pdf(self, x):
-                return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
-
-            def cdf(self, x):
-                return special.ndtr(x)
-
-            def ppf(self, x):
-                return special.ndtri(x)
-
-        dist1 = MyNormal()
-        fni1 = stats.NumericalInverseHermite(dist1)
-
-        dist2 = stats.norm()
-        fni2 = stats.NumericalInverseHermite(dist2)
-
-        assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
 
 
 class TestPageTrendTest:

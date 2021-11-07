@@ -3,6 +3,7 @@ from .unuran_wrapper import (  # noqa: F401
     DiscreteAliasUrn,
     DiscreteGuideTable,
     NumericalInversePolynomial,
+    NumericalInverseHermite,
     NaiveRatioUniforms,
     UNURANError
 )

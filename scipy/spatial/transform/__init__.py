@@ -16,7 +16,7 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from .rotation import Rotation, Slerp
+from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
 
 __all__ = ['Rotation', 'Slerp', 'RotationSpline']

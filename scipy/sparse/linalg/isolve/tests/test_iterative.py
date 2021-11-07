@@ -206,8 +206,8 @@ def test_maxiter():
 
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
-    tolerance = tol*norm(b)
-    msg = "residual (%g) not smaller than tolerance %g" % (residual, tolerance)
+    tolerance = tol * norm(b)
+    msg = f"residual ({residual}) not smaller than tolerance ({tolerance})"
     assert_(residual < tolerance, msg=msg)
 
 
@@ -273,7 +273,7 @@ def check_precond_dummy(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol)
     assert_equal(info,0)
-    assert_normclose(A*x, b, tol=tol)
+    assert_normclose(A@x, b, tol=tol)
 
 
 def test_precond_dummy():
@@ -293,14 +293,14 @@ def check_precond_inverse(solver, case):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A, b)
 
     def rinverse(b,which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
-            A = A.todense()
+            A = A.toarray()
         return np.linalg.solve(A.T, b)
 
     matvec_count = [0]
@@ -520,6 +520,25 @@ def test_x0_working(solver):
     assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
 
 
+@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk])
+def test_x0_equals_Mb(solver):
+    for case in params.cases:
+        if solver in case.skip:
+            continue
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            A = case.A
+            b = case.b
+            x0 = 'Mb'
+            tol = 1e-8
+            x, info = solver(A, b, x0=x0, tol=tol)
+
+            assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
+            assert_equal(info, 0)
+            assert_normclose(A.dot(x), b, tol=tol)
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR:
@@ -563,7 +582,7 @@ class TestQMR:
             x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info,0)
-        assert_normclose(A*x, b, tol=1e-8)
+        assert_normclose(A@x, b, tol=1e-8)
 
 
 class TestGMRES:

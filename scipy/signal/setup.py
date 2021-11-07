@@ -14,17 +14,17 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('windows')
 
-    # convert the *.c.in files : `lfilter.c.in -> lfilter.c` etc
+    # convert the *.c.in files : `_lfilter.c.in -> _lfilter.c` etc
     srcdir = os.path.join(os.getcwd(), 'scipy', 'signal')
-    tempita.process_tempita(os.path.join(srcdir, 'lfilter.c.in'))
-    tempita.process_tempita(os.path.join(srcdir, 'correlate_nd.c.in'))
-    tempita.process_tempita(os.path.join(srcdir, 'bspline_util.c.in'))
+    tempita.process_tempita(os.path.join(srcdir, '_lfilter.c.in'))
+    tempita.process_tempita(os.path.join(srcdir, '_correlate_nd.c.in'))
+    tempita.process_tempita(os.path.join(srcdir, '_bspline_util.c.in'))
 
-    sigtools = config.add_extension('sigtools',
-                         sources=['sigtoolsmodule.c', 'firfilter.c',
-                                  'medianfilter.c', 'lfilter.c',
-                                  'correlate_nd.c'],
-                         depends=['sigtools.h'],
+    sigtools = config.add_extension('_sigtools',
+                         sources=['_sigtoolsmodule.c', '_firfilter.c',
+                                  '_medianfilter.c', '_lfilter.c',
+                                  '_correlate_nd.c'],
+                         depends=['_sigtools.h'],
                          include_dirs=['.'],
                          **numpy_nodepr_api)
     sigtools._pre_build_hook = set_c_flags_hook
@@ -55,7 +55,7 @@ def configuration(parent_package='', top_path=None):
         '_sosfilt', sources=['_sosfilt.c'])
     config.add_extension(
         '_upfirdn_apply', sources=['_upfirdn_apply.c'])
-    spline_src = ['splinemodule.c', 'bspline_util.c']
+    spline_src = ['_splinemodule.c', '_bspline_util.c']
     config.add_extension('_spline', sources=spline_src, **numpy_nodepr_api)
 
     return config

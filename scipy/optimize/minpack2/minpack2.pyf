@@ -1,5 +1,5 @@
 !    -*- f90 -*-
-python module minpack2 ! in 
+python module _minpack2 ! in 
     interface  ! in :minpack2
         subroutine dcsrch(stp,f,g,ftol,gtol,xtol,task,stpmin,stpmax,isave,dsave) ! in :minpack2:dcsrch.f
             double precision, intent(in,out) :: stp

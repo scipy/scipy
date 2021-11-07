@@ -13,7 +13,7 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            break_cycles, suppress_warnings, IS_PYPY)
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file
+from scipy.io import netcdf_file
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')

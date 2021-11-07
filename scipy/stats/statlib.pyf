@@ -1,7 +1,7 @@
 !%f90 -*- f90 -*-
-python module statlib ! in 
-    interface  ! in :statlib
-        subroutine swilk(init,x,n,n1,n2,a,w,pw,ifault) ! in :statlib:swilk.f
+python module _statlib ! in
+    interface  ! in :_statlib
+        subroutine swilk(init,x,n,n1,n2,a,w,pw,ifault) ! in :_statlib:swilk.f
             logical intent(optional), intent(in) :: init=0
             real dimension(n),intent(in) :: x
             integer depend(x),intent(hide) :: n = shape(x,0)
@@ -29,10 +29,10 @@ python module statlib ! in
            integer intent(in) :: is
            integer intent(out) :: ifault
            double precision intent(out) :: prho
-         end function prho         
-         
-    end interface 
-end python module statlib
+         end function prho
+
+    end interface
+end python module _statlib
 
 ! This file was auto-generated with f2py (version:2.21.184-1308).
 ! See http://cens.ioc.ee/projects/f2py2e/

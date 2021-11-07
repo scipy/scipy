@@ -219,6 +219,20 @@ class BlockDiagSparseConstruction(Benchmark):
         sparse.block_diag(self.matrices)
 
 
+class CsrHstack(Benchmark):
+    param_names = ['num_rows']
+    params = [10000, 25000, 50000, 100000, 250000]
+
+    def setup(self, num_rows):
+        num_cols = int(1e5)
+        density = 2e-3
+        nnz_per_row = int(density*num_cols)
+        self.mat = random_sparse(num_rows, num_cols, nnz_per_row)
+
+    def time_csr_hstack(self, num_rows):
+        sparse.hstack([self.mat, self.mat])
+
+
 class Conversion(Benchmark):
     params = [
         ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
