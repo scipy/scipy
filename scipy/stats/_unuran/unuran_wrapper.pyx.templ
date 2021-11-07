@@ -2846,7 +2846,7 @@ cdef class DiscreteGuideTable(Method):
 
         # UNU.RAN sets boundary at u = 0 to domain[0]
         # SciPy fills it with domain[0] - 1. Prefer SciPy behaviour
-        if domain is not None:
+        if self.domain is not None:
             np.place(out, u == 0, self.domain[0] - 1)
         else:
             # domain starts at 0. So, fill in -1.
