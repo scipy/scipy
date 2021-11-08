@@ -4,11 +4,17 @@
 
 import warnings
 from . import _matlab
+from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
+                      get_matfile_version, MatReadError, MatReadWarning,
+                      MatWriteError, MatlabOpaque, MatlabFunction)
 
 
 __all__ = [  # noqa: F822
-    'loadmat', 'savemat', 'whosmat', 'byteordercodes'
+    'loadmat', 'savemat', 'whosmat', 'byteordercodes', 'get_matfile_version',
+    'MatReadError', 'MatReadWarning', 'MatWriteError', 'MatlabOpaque',
+    'MatlabFunction',
 ]
+
 
 def __dir__():
     return __all__

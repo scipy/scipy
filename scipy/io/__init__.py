@@ -20,10 +20,24 @@ MATLAB® files
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
    whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
+
+There are also utilities for lower-level access and triage:
+
+.. module:: scipy.io.matlab
+
+.. autosummary::
+   :toctree: generated/
+
    get_matfile_version - Get the MATLAB file version
+   MatReadError - Exception indicating a read issue
+   MatWriteError - Exception indicating a write issue
+   MatlabOpaque - Class for MATLAB opaque matrices
+   MatlabFunction - Class for MATLAB function objects
 
 IDL® files
 ==========
+
+.. module:: scipy.io
 
 .. autosummary::
    :toctree: generated/
@@ -96,7 +110,8 @@ Arff files (:mod:`scipy.io.arff`)
 """
 # matfile read and write
 from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
-                      get_matfile_version)
+                      get_matfile_version, MatReadError, MatlabOpaque,
+                      MatlabFunction, MatWriteError)
 
 # netCDF file support
 from ._netcdf import netcdf_file, netcdf_variable

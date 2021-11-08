@@ -26,8 +26,8 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io._matlab.byteordercodes as boc
-from scipy.io._matlab.miobase (import matdims, MatWriteError, MatReadError,
-                               get_matfile_version)
+from scipy.io._matlab.miobase import (
+    matdims, MatWriteError, MatReadError, get_matfile_version)
 from scipy.io._matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io._matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat,
