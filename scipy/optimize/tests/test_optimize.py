@@ -26,7 +26,7 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
-from scipy.optimize.optimize import MemoizeJac, show_options
+from scipy.optimize._optimize import MemoizeJac, show_options
 
 
 def test_check_grad():
@@ -547,7 +547,7 @@ def test_wrap_scalar_function_with_validation():
     def func_(x):
         return x
 
-    fcalls, func = optimize.optimize.\
+    fcalls, func = optimize._optimize.\
         _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
@@ -555,10 +555,10 @@ def test_wrap_scalar_function_with_validation():
         assert fcalls[0] == i+1
 
     msg = "Too many function calls"
-    with assert_raises(optimize.optimize._MaxFuncCallError, match=msg):
+    with assert_raises(optimize._optimize._MaxFuncCallError, match=msg):
         func(np.asarray(i))  # exceeded maximum function call
 
-    fcalls, func = optimize.optimize.\
+    fcalls, func = optimize._optimize.\
         _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     msg = "The user-provided objective function must return a scalar value."
@@ -1704,7 +1704,7 @@ def test_line_for_search():
     # tested below. Thus there are more tests of _line_for_search in the
     # test_linesearch_powell_bounded function.
 
-    line_for_search = optimize.optimize._line_for_search
+    line_for_search = optimize._optimize._line_for_search
     # args are x0, alpha, lower_bound, upper_bound
     # returns lmin, lmax
 
@@ -1764,7 +1764,7 @@ def test_line_for_search():
 
 def test_linesearch_powell():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p + direction, direction
     func = lambda x: np.sum((x - np.array([-1., 2., 1.5, -.4]))**2)
@@ -1801,7 +1801,7 @@ def test_linesearch_powell():
 
 def test_linesearch_powell_bounded():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p+direction, direction
     func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)

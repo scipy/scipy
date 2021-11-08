@@ -441,16 +441,17 @@ def _make_design_matrix(const double[::1] x,
         ..., last row - x[-1]).
     """
     cdef:
-        cnp.npy_intp i
+        cnp.npy_intp i, ind
         cnp.npy_intp n = x.shape[0]
         cnp.npy_intp nt = t.shape[0]
         double[::1] wrk = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
         cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
         cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+    ind = k
     for i in range(n):
-        ind = find_interval(t, k, x[i], k - 1, 0)
         
+        ind = find_interval(t, k, x[i], ind, 0)
         _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
 
         data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]

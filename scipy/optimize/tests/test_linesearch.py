@@ -4,8 +4,8 @@ Tests for line search routines
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_warns,
                            suppress_warnings)
-import scipy.optimize.linesearch as ls
-from scipy.optimize.linesearch import LineSearchWarning
+import scipy.optimize._linesearch as ls
+from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
 
 
