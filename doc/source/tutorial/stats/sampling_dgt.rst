@@ -100,10 +100,9 @@ time but require a more expensive setup.
     2
 
 Unfortunately, the PPF is rarely available in closed form or too slow when
-available. For many distributions, the CDF is also not easy to obtain. This
-method addresses both the shortcomings. The user only has to provide the
-probability vector and the PPF (inverse CDF) may be generated using ``ppf``
-method. This method calculates the PPF exactly.
+available. The user only has to provide the probability vector and the 
+PPF (inverse CDF) can be evaluated using ``ppf`` method. This 
+method calculates the (exact) PPF of the given distribution.
 
 For example to calculate the PPF of a binomial distribution with :math:`n=4` and
 :math:`p=0.1`: we can set up a guide table as follows:
