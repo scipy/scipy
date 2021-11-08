@@ -303,14 +303,14 @@ def check_precond_inverse(solver, case):
             A = A.toarray()
         return np.linalg.solve(A.T, b)
 
-    matvec_count = [0]
+    matvec_count = 0
 
     def matvec(b):
-        matvec_count[0] += 1
+        matvec_count += 1
         return case.A.dot(b)
 
     def rmatvec(b):
-        matvec_count[0] += 1
+        matvec_count += 1
         return case.A.T.dot(b)
 
     b = case.b
@@ -320,14 +320,14 @@ def check_precond_inverse(solver, case):
     precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
 
     # Solve with preconditioner
-    matvec_count = [0]
+    matvec_count = 0
     x, info = solver(A, b, M=precond, x0=x0, tol=tol)
 
     assert_equal(info, 0)
     assert_normclose(case.A.dot(x), b, tol)
 
     # Solution should be nearly instant
-    assert_(matvec_count[0] <= 3, repr(matvec_count))
+    assert_(matvec_count <= 3, repr(matvec_count))
 
 
 def test_precond_inverse():
@@ -698,44 +698,44 @@ class TestGMRES:
         A = np.random.rand(20, 20)
         b = np.random.rand(20)
 
-        cb_count = [0]
+        cb_count = 0
 
         def pr_norm_cb(r):
-            cb_count[0] += 1
+            cb_count += 1
             assert_(isinstance(r, float))
 
         def x_cb(x):
-            cb_count[0] += 1
+            cb_count += 1
             assert_(isinstance(x, np.ndarray))
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             # 2 iterations is not enough to solve the problem
-            cb_count = [0]
+            cb_count = 0
             x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
             assert info == 2
-            assert cb_count[0] == 2
+            assert cb_count == 2
 
         # With `callback_type` specified, no warning should be raised
-        cb_count = [0]
+        cb_count = 0
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
                         callback_type='legacy')
         assert info == 2
-        assert cb_count[0] == 2
+        assert cb_count == 2
 
         # 2 restart cycles is enough to solve the problem
-        cb_count = [0]
+        cb_count = 0
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
                         callback_type='pr_norm')
         assert info == 0
-        assert cb_count[0] > 2
+        assert cb_count > 2
 
         # 2 restart cycles is enough to solve the problem
-        cb_count = [0]
+        cb_count = 0
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
                         callback_type='x')
         assert info == 0
-        assert cb_count[0] == 2
+        assert cb_count == 2
 
     def test_callback_x_monotonic(self):
         # Check that callback_type='x' gives monotonic norm decrease
@@ -744,16 +744,16 @@ class TestGMRES:
         b = np.random.rand(20)
 
         prev_r = [np.inf]
-        count = [0]
+        count = 0
 
         def x_cb(x):
             r = np.linalg.norm(A.dot(x) - b)
             assert r <= prev_r[0]
             prev_r[0] = r
-            count[0] += 1
+            count += 1
 
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
                         callback_type='x')
         assert info == 20
-        assert count[0] == 21
+        assert count == 21
         x_cb(x)
