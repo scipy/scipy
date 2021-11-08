@@ -15,15 +15,15 @@ from . import byteordercodes as boc
 
 
 class MatReadError(Exception):
-    pass
+    """Exception indicating a read issue."""
 
 
 class MatWriteError(Exception):
-    pass
+    """Exception indicating a write issue."""
 
 
 class MatReadWarning(UserWarning):
-    pass
+    """Warning class for read issues."""
 
 
 doc_dict = \
@@ -34,7 +34,7 @@ doc_dict = \
      'append_arg':
          '''appendmat : bool, optional
    True to append the .mat extension to the end of the given
-   filename, if not already present.''',
+   filename, if not already present. Default is True.''',
      'load_args':
          '''byte_order : str or None, optional
    None by default, implying byte order guessed from mat
@@ -174,7 +174,7 @@ def read_dtype(mat_stream, a_dtype):
     return arr
 
 
-def get_matfile_version(file_name, appendmat=True):
+def matfile_version(file_name, *, appendmat=True):
     """
     Return major, minor tuple depending on apparent mat file type
 
@@ -191,7 +191,7 @@ def get_matfile_version(file_name, appendmat=True):
        appendmat==True). Can also pass open file-like object.
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
-       filename, if not already present.
+       filename, if not already present. Default is True.
 
     Returns
     -------

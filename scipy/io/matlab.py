@@ -1,18 +1,17 @@
-# This file is not meant for public use and will be removed in SciPy v2.0.0.
-# Use the `scipy.io` namespace for importing the functions
-# included below.
+"""
+Module to read / write MATLAB .mat files.
+"""
 
 import warnings
-from . import _matlab
 from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
-                      get_matfile_version, MatReadError, MatReadWarning,
-                      MatWriteError, MatlabOpaque, MatlabFunction)
+                      matfile_version, MatReadError, MatReadWarning,
+                      MatWriteError, MatlabOpaque, MatlabFunction, mat_struct)
 
 
 __all__ = [  # noqa: F822
-    'loadmat', 'savemat', 'whosmat', 'byteordercodes', 'get_matfile_version',
+    'loadmat', 'savemat', 'whosmat', 'byteordercodes', 'matfile_version',
     'MatReadError', 'MatReadWarning', 'MatWriteError', 'MatlabOpaque',
-    'MatlabFunction',
+    'MatlabFunction', 'mat_struct',
 ]
 
 

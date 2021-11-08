@@ -10,13 +10,14 @@ Drive, Natick, MA 01760-2098, USA.
 # Matlab file read and write utilities
 from .mio import loadmat, savemat, whosmat
 from .mio5 import MatlabFunction
-from .mio5_params import MatlabOpaque
-from .miobase import (get_matfile_version, MatReadError, MatReadWarning,
+from .mio5_params import MatlabOpaque, mat_struct
+from .miobase import (matfile_version, MatReadError, MatReadWarning,
                       MatWriteError)
 from . import byteordercodes
 
 __all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes',
-           'get_matfile_version']
+           'matfile_version', 'MatReadError', 'MatReadWarning',
+           'MatWriteError', 'mat_struct', 'MatlabOpaque', 'MatlabFunction']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

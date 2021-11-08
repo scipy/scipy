@@ -37,7 +37,7 @@ help:
 	@echo "  show      to show the html-scipyorg output"
 
 clean:
-	-rm -rf build/* source/generated
+	-rm -rf build/* source/reference/generated
 
 
 #------------------------------------------------------------------------------
@@ -159,4 +159,3 @@ linkcheck: version-check
 
 show:
 	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
-

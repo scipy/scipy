@@ -27,7 +27,7 @@ import scipy.sparse as SP
 
 import scipy.io._matlab.byteordercodes as boc
 from scipy.io._matlab.miobase import (
-    matdims, MatWriteError, MatReadError, get_matfile_version)
+    matdims, MatWriteError, MatReadError, matfile_version)
 from scipy.io._matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io._matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat,
@@ -1259,7 +1259,7 @@ def test_simplify_cells():
     (2, '_7*_*', '.*hdf5.*'),
     (1, '8*_*', None),
 ])
-def test_get_matfile_version(version, filt, regex):
+def test_matfile_version(version, filt, regex):
     use_filt = pjoin(test_data_path, 'test*%s.mat' % filt)
     files = glob(use_filt)
     if regex is not None:
@@ -1267,5 +1267,5 @@ def test_get_matfile_version(version, filt, regex):
     assert len(files) > 0, \
         "No files for version %s using filter %s" % (version, filt)
     for file in files:
-        got_version = get_matfile_version(file)
+        got_version = matfile_version(file)
         assert got_version[0] == version
