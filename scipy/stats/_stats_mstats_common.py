@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.stats.stats
+import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 
@@ -146,6 +146,10 @@ def linregress(x, y=None, alternative='two-sided'):
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
@@ -183,7 +187,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 

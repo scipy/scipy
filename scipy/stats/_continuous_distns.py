@@ -8060,7 +8060,7 @@ def _truncnorm_ppf_scalar(q, a, b):
                 if C:
                     one_minus_q = (1 - q)[cond_inner]
                     values += np.log1p(one_minus_q * C / q[cond_inner])
-                x = [optimize.zeros.brentq(_f_cdf, a, b, args=(c,),
+                x = [optimize._zeros_py.brentq(_f_cdf, a, b, args=(c,),
                                            maxiter=TRUNCNORM_MAX_BRENT_ITERS)
                      for c in values]
                 np.place(out, cond_inner, x)
@@ -8080,7 +8080,7 @@ def _truncnorm_ppf_scalar(q, a, b):
                 C = np.exp(slb - sla)
                 if C:
                     values += np.log1p(q[cond_inner] * C / one_minus_q)
-                x = [optimize.zeros.brentq(_f_sf, a, b, args=(c,),
+                x = [optimize._zeros_py.brentq(_f_sf, a, b, args=(c,),
                                            maxiter=TRUNCNORM_MAX_BRENT_ITERS)
                      for c in values]
                 np.place(out, cond_inner, x)

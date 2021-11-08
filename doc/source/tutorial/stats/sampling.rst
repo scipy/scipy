@@ -83,8 +83,9 @@ different methods is shown in the table below.
 Methods for continuous distributions   Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
 =====================================  ===============  ===============  ===========  ==============
 :class:`~TransformedDensityRejection`  pdf, dpdf        None             slow         fast
-:class:`~NumericalInverseHermite`      cdf              None             (very) slow  (very) fast
+:class:`~NumericalInverseHermite`      cdf              pdf, dpdf        (very) slow  (very) fast
 :class:`~NumericalInversePolynomial`   pdf              cdf              (very) slow  (very) fast
+:class:`~NaiveRatioUniforms`           pdf              various          slow/fast    moderate
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -286,6 +287,8 @@ Generators in :mod:`scipy.stats`
    sampling_tdr
    sampling_dau
    sampling_pinv
+   sampling_hinv
+   sampling_nrou
 
 
 References

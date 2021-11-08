@@ -225,8 +225,18 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {
+        if (arr_shape[i] <= 1) {
+            // Under NumPy's relaxed stride checking, dimensions with
+            // 1 or fewer elements are ignored.
+            desc.strides[i] = 0;
+            continue;
+        }
+
         if (desc.strides[i] % desc.element_size != 0) {
-            throw std::runtime_error("Arrays must be aligned");
+            std::stringstream msg;
+            msg << "Arrays must be aligned to element size, but found stride of ";
+            msg << desc.strides[i] << " bytes for elements of size " << desc.element_size;
+            throw std::runtime_error(msg.str());
         }
         desc.strides[i] /= desc.element_size;
     }

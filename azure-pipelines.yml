@@ -55,21 +55,6 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: pre_release_deps_source_dist
-    condition: eq(variables['System.PullRequest.TargetBranch'], 'master')
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "--pre --upgrade --timeout=60 -i $(PRE_WHEELS) numpy"
-        other_spec: "--pre --upgrade --timeout=60"
   - job: coverage_full_tests
     pool:
       vmImage: 'ubuntu-18.04'
@@ -200,7 +185,8 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
+            pip3 install 'setuptools<58.5' wheel --user && \
+            pip3 install numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \

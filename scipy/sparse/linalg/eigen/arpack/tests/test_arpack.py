@@ -28,7 +28,7 @@ from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
 
 
-def _get_test_tolerance(type_char, mattype=None):
+def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
     """
     Return tolerance values suitable for a given test:
 
@@ -66,6 +66,18 @@ def _get_test_tolerance(type_char, mattype=None):
     if mattype is csr_matrix and type_char in ('f', 'F'):
         # sparse in single precision: worse errors
         rtol *= 5
+
+    if (
+        which in ('LM', 'SM', 'LA')
+        and D_type.name == "gen-hermitian-Mc"
+    ):
+        if type_char == 'F':
+            # missing case 1, 2, and more, from PR 14798
+            rtol *= 5
+
+        if type_char == 'D':
+            # missing more cases, from PR 14798
+            rtol *= 7
 
     return tol, rtol, atol
 
@@ -223,8 +235,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         kwargs['OPpart'] = OPpart
 
     # compute suitable tolerances
-    kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype)
-
+    kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype, d, which)
     # on rare occasions, ARPACK routines return results that are proper
     # eigenvalues and -vectors, but not necessarily the ones requested in
     # the parameter which. This is inherent to the Krylov methods, and
@@ -251,22 +262,25 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         eigenvalues = eigenvalues[ind]
         evec = evec[:, ind]
 
-        # check eigenvectors
-        LHS = np.dot(a, evec)
-        if general:
-            RHS = eigenvalues * np.dot(b, evec)
-        else:
-            RHS = eigenvalues * evec
-
-            assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
-
         try:
             # check eigenvalues
             assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol,
                                err_msg=err)
-            break
+            check_evecs = True
         except AssertionError:
+            check_evecs = False
             ntries += 1
+
+        if check_evecs:
+            # check eigenvectors
+            LHS = np.dot(a, evec)
+            if general:
+                RHS = eigenvalues * np.dot(b, evec)
+            else:
+                RHS = eigenvalues * evec
+
+            assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
+            break
 
     # check eigenvalues
     assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol, err_msg=err)

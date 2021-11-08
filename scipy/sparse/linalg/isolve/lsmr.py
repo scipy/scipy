@@ -101,7 +101,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
           istop   = 0 means x=0 is a solution.  If x0 was given, then x=x0 is a
                       solution.
-                  = 1 means x is an approximate solution to A*x = B,
+                  = 1 means x is an approximate solution to A@x = B,
                       according to atol and btol.
                   = 2 means x approximately solves the least-squares problem
                       according to atol.
@@ -321,8 +321,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
         # Perform the next step of the bidiagonalization to obtain the
         # next  beta, u, alpha, v.  These satisfy the relations
-        #         beta*u  =  a*v   -  alpha*u,
-        #        alpha*v  =  A'*u  -  beta*v.
+        #         beta*u  =  A@v   -  alpha*u,
+        #        alpha*v  =  A'@u  -  beta*v.
 
         u *= -alpha
         u += A.matvec(v)

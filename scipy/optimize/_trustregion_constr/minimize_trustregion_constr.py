@@ -5,7 +5,7 @@ from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
 from .._hessian_update_strategy import BFGS
-from ..optimize import OptimizeResult
+from .._optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
 from .canonical_constraint import (CanonicalConstraint,

@@ -12,7 +12,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     """
     Use MINimum RESidual iteration to solve Ax=b
 
-    MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
+    MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
 
     If shift != 0 then the method solves (A - shift*I)x = b
@@ -41,6 +41,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
+    shift : float
+        Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     tol : float
         Tolerance to achieve. The algorithm terminates when the relative
         residual is below `tol`.
@@ -55,6 +57,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
+    show : bool
+        If ``True``, print out a summary and metrics related to the solution
+        during iterations. Default is ``False``.
+    check : bool
+        If ``True``, run additional input validation to check that `A` and
+        `M` (if specified) are symmetric. Default is ``False``.
 
     Examples
     --------
@@ -127,7 +135,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    r1 = b - A*x
+    r1 = b - A@x
     y = psolve(r1)
 
     beta1 = inner(r1, y)
@@ -279,7 +287,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
-        # factorization of the lower Hessenberg matrix,  Q * H = R,
+        # factorization of the lower Hessenberg matrix,  Q @ H = R,
         # where H is the tridiagonal matrix from Lanczos with one
         # extra row, beta(k+1) e_k^T.
 
@@ -370,7 +378,7 @@ if __name__ == '__main__':
     residuals = []
 
     def cb(x):
-        residuals.append(norm(b - A*x))
+        residuals.append(norm(b - A@x))
 
     # A = poisson((10,),format='csr')
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')

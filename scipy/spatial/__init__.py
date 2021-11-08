@@ -93,9 +93,9 @@ Functions
 
 """
 
-from .kdtree import *
-from .ckdtree import *
-from .qhull import *
+from ._kdtree import *
+from ._ckdtree import *
+from ._qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes

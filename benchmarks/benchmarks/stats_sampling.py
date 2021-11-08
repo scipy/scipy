@@ -10,21 +10,16 @@ with safe_import():
 # Beta distribution with a = 2, b = 3
 class contdist1:
     def pdf(self, x):
-        if 0 < x < 1:
-            return x * (1-x)**2
-        return 0
+        return 12 * x * (1-x)**2
 
     def dpdf(self, x):
-        if 0 < x < 1:
-            return (1-x)**2 - 2*x*(1-x)
-        return 0
+        return 12 * ((1-x)**2 - 2*x*(1-x))
 
     def cdf(self, x):
-        if x < 0:
-            return 0
-        if x > 1:
-            return 1
-        return stats.beta._cdf(x, 2, 3)
+        return 12 * (x**2/2 - x**3/3 + x**4/4)
+
+    def support(self):
+        return 0, 1
 
     def __repr__(self):
         # asv prints this.
@@ -34,10 +29,10 @@ class contdist1:
 # Standard Normal Distribution
 class contdist2:
     def pdf(self, x):
-        return np.exp(-0.5 * x*x)
+        return 1./np.sqrt(2*np.pi) * np.exp(-0.5 * x*x)
 
     def dpdf(self, x):
-        return -x * np.exp(-0.5 * x*x)
+        return 1./np.sqrt(2*np.pi) * -x * np.exp(-0.5 * x*x)
 
     def cdf(self, x):
         return special.ndtr(x)
@@ -178,6 +173,57 @@ class NumericalInversePolynomial(Benchmark):
             )
 
     def time_pinv_rvs(self, dist):
+        self.rng.rvs(100000)
+
+
+class NumericalInverseHermite(Benchmark):
+
+    param_names = ['dist', 'order']
+    params = [allcontdists, [3, 5]]
+
+    def setup(self, dist, order):
+        self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            try:
+                self.rng = stats.NumericalInverseHermite(
+                    dist, order=order, random_state=self.urng
+                )
+            except stats.UNURANError:
+                raise NotImplementedError(f"setup failed for {dist}")
+
+    def time_hinv_setup(self, dist, order):
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            stats.NumericalInverseHermite(
+                dist, order=order, random_state=self.urng
+            )
+
+    def time_hinv_rvs(self, dist, order):
+        self.rng.rvs(100000)
+
+
+class NaiveRatioUniforms(Benchmark):
+
+    param_names = ['dist']
+    # only benchmark a few distributions since NROU is quite slow
+    params = [contdist2(), contdist3(), contdist5()]
+
+    def setup(self, dist):
+        self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            try:
+                self.rng = stats.NaiveRatioUniforms(
+                    dist, random_state=self.urng
+                )
+            except stats.UNURANError:
+                raise NotImplementedError(f"setup failed for {dist}")
+
+    def time_nrou_setup(self, dist):
+        self.rng = stats.NaiveRatioUniforms(dist, random_state=self.urng)
+
+    def time_nrou_rvs(self, dist):
         self.rng.rvs(100000)
 
 

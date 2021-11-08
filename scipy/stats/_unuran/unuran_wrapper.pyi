@@ -3,6 +3,7 @@ from typing import Union, Any, Tuple, List, overload, Callable, NamedTuple
 from typing_extensions import Protocol
 import numpy.typing as npt
 from scipy._lib._util import SeedType
+import scipy.stats as stats
 
 
 ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
@@ -90,6 +91,59 @@ class NumericalInversePolynomial(Method):
     @overload
     def cdf(self, x: npt.ArrayLike) -> np.ndarray: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
+
+
+class HINVDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def cdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class NumericalInverseHermite(Method):
+    def __init__(self,
+                 dist: HINVDist,
+                 *,
+                 domain: None | Tuple[float, float] = ...,
+                 order: int= ...,
+                 u_resolution: float = ...,
+                 construction_points: None | npt.ArrayLike = ...,
+                 max_intervals: int = ...,
+                 guide_factor: float = ...,
+                 random_state: SeedType = ...) -> None: ...
+    @property
+    def intervals(self) -> int: ...
+    @overload
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    @overload
+    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
+    def qrvs(self,
+             size: None | int | Tuple[int, ...] = ...,
+             d: None | int = ...,
+             qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
+    def u_error(self, sample_size: int = ...) -> UError: ...
+
+
+class NROUDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class NaiveRatioUniforms(Method):
+    def __init__(self,
+                 dist: NROUDist,
+                 *,
+                 center: float = ...,
+                 domain: None | Tuple[float, float] = ...,
+                 r: float = ...,
+                 u_min: None | float = ...,
+                 u_max: None | float = ...,
+                 v_max: None | float = ...,
+                 random_state: SeedType = ...) -> None: ...
 
 
 class DAUDist(Protocol):

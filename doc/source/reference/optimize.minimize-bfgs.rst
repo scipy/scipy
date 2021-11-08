@@ -4,5 +4,5 @@ minimize(method='BFGS')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.minimize
-   :impl: scipy.optimize.optimize._minimize_bfgs
+   :impl: scipy.optimize._optimize._minimize_bfgs
    :method: BFGS
