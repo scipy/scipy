@@ -177,4 +177,4 @@ class DiscreteGuideTable(Method):
     @overload
     def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
     @overload
-    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...  # type: ignore[misc]
+    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
