@@ -5,13 +5,38 @@ Sparse matrices (:mod:`scipy.sparse`)
 
 .. currentmodule:: scipy.sparse
 
-SciPy 2-D sparse matrix package for numeric data.
+SciPy 2-D sparse array package for numeric data.
+
+.. note::
+
+   This package is switching to an array interface, compatible with
+   NumPy arrays, from the older matrix interface.  We recommend that
+   you use the array objects (`bsr_array`, `coo_array`, etc.) for
+   all new work.
+
+   When using the array interface, please note that:
+
+   - ``x * y`` no longer performs matrix multiplication, but
+     element-wise multiplication (just like with NumPy arrays).  To
+     make code work with both arrays and matrices, use ``x @ y`` for
+     matrix multiplication.
+   - Operations such as `sum`, that used to produce dense matrices, now
+     produce arrays, whose multiplication behavior differs similarly.
+   - Sparse arrays currently must be two-dimensional.  This also means
+     that all *slicing* operations on these objects must produce
+     two-dimensional results, or they will result in an error. This
+     will be addressed in a future version.
+
+   The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
+   have not yet been ported, but their results can be wrapped into arrays::
+
+     A = csr_array(eye(3))
 
 Contents
 ========
 
-Sparse matrix classes
----------------------
+Sparse array classes
+--------------------
 
 .. autosummary::
    :toctree: generated/
@@ -23,6 +48,12 @@ Sparse matrix classes
    dia_array - Sparse array with DIAgonal storage
    dok_array - Dictionary Of Keys based sparse array
    lil_array - Row-based list of lists sparse array
+
+Sparse matrix classes
+---------------------
+
+.. autosummary::
+   :toctree: generated/
 
    bsr_matrix - Block Sparse Row matrix
    coo_matrix - A sparse matrix in COOrdinate format
