@@ -91,6 +91,12 @@ Functions
    procrustes
    geometric_slerp
 
+Warnings / Errors used in :mod:`scipy.spatial`
+----------------------------------------------
+.. autosummary::
+   :toctree: generated/
+   QhullError
+
 """
 
 from ._kdtree import *
