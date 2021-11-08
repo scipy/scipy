@@ -90,6 +90,12 @@ Functions
    minkowski_distance_p
    procrustes
    geometric_slerp
+   
+Warnings / Errors used in :mod:`scipy.spatial`
+--------------------------------------------
+.. autosummary::
+   :toctree: generated/
+   QhullError
 
 """
 
