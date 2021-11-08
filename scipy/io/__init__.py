@@ -109,9 +109,7 @@ Arff files (:mod:`scipy.io.arff`)
 
 """
 # matfile read and write
-from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
-                      get_matfile_version, MatReadError, MatlabOpaque,
-                      MatlabFunction, MatWriteError)
+from ._matlab import loadmat, savemat, whosmat, byteordercodes
 
 # netCDF file support
 from ._netcdf import netcdf_file, netcdf_variable
