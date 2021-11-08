@@ -6,6 +6,7 @@ import warnings
 from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
                       matfile_version, MatReadError, MatReadWarning,
                       MatWriteError, MatlabOpaque, MatlabFunction, mat_struct)
+from . import _matlab
 
 
 __all__ = [  # noqa: F822
