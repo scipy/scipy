@@ -2642,18 +2642,9 @@ cdef class DiscreteGuideTable(Method):
     finite domain can also be passed.
 
     >>> urng = np.random.default_rng()
-    >>> class Binomial:
-    ...     def __init__(self, n, p):
-    ...         self.n = n
-    ...         self.p = p
-    ...     def pmf(self, x):
-    ...         # note that the pmf doesn't need to be normalized.
-    ...         return self.p**x * (1-self.p)**(self.n-x)
-    ...     def support(self):
-    ...         return (0, self.n)
-    ...
+    >>> from scipy.stats import binom
     >>> n, p = 10, 0.2
-    >>> dist = Binomial(n, p)
+    >>> dist = binom(n, p)
     >>> rng = DiscreteGuideTable(dist, random_state=urng)
 
     Now, we can sample from the distribution using the `rvs` method
@@ -2698,7 +2689,7 @@ cdef class DiscreteGuideTable(Method):
     :math:`p=0.1`: we can set up a guide table as follows:
 
     >>> n, p = 4, 0.1
-    >>> dist = stats.binom(n, p)
+    >>> dist = binom(n, p)
     >>> rng = DiscreteGuideTable(dist, random_state=42)
     >>> rng.ppf(0.5)
     0.0
