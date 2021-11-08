@@ -95,8 +95,8 @@ Warnings / Errors used in :mod:`scipy.spatial`
 ----------------------------------------------
 .. autosummary::
    :toctree: generated/
-   QhullError
 
+   QhullError
 """
 
 from ._kdtree import *
