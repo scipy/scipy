@@ -9,9 +9,11 @@ Drive, Natick, MA 01760-2098, USA.
 """
 # Matlab file read and write utilities
 from .mio import loadmat, savemat, whosmat
+from .miobase import get_matfile_version
 from . import byteordercodes
 
-__all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes']
+__all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes',
+           'get_matfile_version']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

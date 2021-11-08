@@ -20,6 +20,7 @@ MATLAB® files
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
    whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
+   get_matfile_version - Get the MATLAB file version
 
 IDL® files
 ==========
@@ -94,7 +95,8 @@ Arff files (:mod:`scipy.io.arff`)
 
 """
 # matfile read and write
-from ._matlab import loadmat, savemat, whosmat, byteordercodes
+from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
+                      get_matfile_version)
 
 # netCDF file support
 from ._netcdf import netcdf_file, netcdf_variable

@@ -9,6 +9,7 @@ from collections import OrderedDict
 from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
+import re
 from tempfile import mkdtemp
 
 import warnings
@@ -17,6 +18,7 @@ import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_)
+import pytest
 from pytest import raises as assert_raises
 
 import numpy as np
@@ -24,7 +26,8 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io._matlab.byteordercodes as boc
-from scipy.io._matlab.miobase import matdims, MatWriteError, MatReadError
+from scipy.io._matlab.miobase (import matdims, MatWriteError, MatReadError,
+                               get_matfile_version)
 from scipy.io._matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io._matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat,
@@ -324,39 +327,50 @@ def _rt_check_case(name, expected, format):
     _load_check_case(name, [mat_stream], expected)
 
 
-# generator for load tests
-def test_load():
-    for case in case_table4 + case_table5:
+# generator for tests
+def _cases(version, filt='test%(name)s_*.mat'):
+    if version == '4':
+        cases = case_table4
+    elif version == '5':
+        cases = case_table5
+    else:
+        assert version == '5_rt'
+        cases = case_table5_rt
+    for case in cases:
         name = case['name']
         expected = case['expected']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
-        files = glob(filt)
-        assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
-        _load_check_case(name, files, expected)
-
-
-# generator for whos tests
-def test_whos():
-    for case in case_table4 + case_table5:
-        name = case['name']
-        expected = case['expected']
+        if filt is None:
+            files = None
+        else:
+            use_filt = pjoin(test_data_path, filt % dict(name=name))
+            files = glob(use_filt)
+            assert len(files) > 0, \
+                "No files for test %s using filter %s" % (name, filt)
         classes = case['classes']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
-        files = glob(filt)
-        assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
-        _whos_check_case(name, files, expected, classes)
+        yield name, files, expected, classes
+
+
+@pytest.mark.parametrize('version', ('4', '5'))
+def test_load(version):
+    for case in _cases(version):
+        _load_check_case(*case[:3])
+
+
+@pytest.mark.parametrize('version', ('4', '5'))
+def test_whos(version):
+    for case in _cases(version):
+        _whos_check_case(*case)
 
 
 # generator for round trip tests
-def test_round_trip():
-    for case in case_table4 + case_table5_rt:
-        case_table4_names = [case['name'] for case in case_table4]
-        name = case['name'] + '_round_trip'
-        expected = case['expected']
-        for format in (['4', '5'] if case['name'] in case_table4_names else ['5']):
-            _rt_check_case(name, expected, format)
+@pytest.mark.parametrize('version, fmts', [
+    ('4', ['4', '5']),
+    ('5_rt', ['5']),
+])
+def test_round_trip(version, fmts):
+    for case in _cases(version, filt=None):
+        for fmt in fmts:
+            _rt_check_case(case[0], case[2], fmt)
 
 
 def test_gzip_simple():
@@ -1235,3 +1249,23 @@ def test_simplify_cells():
     assert_(isinstance(res1["s"], dict))
     assert_(isinstance(res2["s"], np.ndarray))
     assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))
+
+
+@pytest.mark.parametrize('version, filt, regex', [
+    (0, '_4*_*', None),
+    (1, '_5*_*', None),
+    (1, '_6*_*', None),
+    (1, '_7*_*', '^((?!hdf5).)*$'),  # not containing hdf5
+    (2, '_7*_*', '.*hdf5.*'),
+    (1, '8*_*', None),
+])
+def test_get_matfile_version(version, filt, regex):
+    use_filt = pjoin(test_data_path, 'test*%s.mat' % filt)
+    files = glob(use_filt)
+    if regex is not None:
+        files = [file for file in files if re.match(regex, file) is not None]
+    assert len(files) > 0, \
+        "No files for version %s using filter %s" % (version, filt)
+    for file in files:
+        got_version = get_matfile_version(file)
+        assert got_version[0] == version

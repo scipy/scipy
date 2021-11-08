@@ -174,7 +174,7 @@ def read_dtype(mat_stream, a_dtype):
     return arr
 
 
-def get_matfile_version(fileobj):
+def get_matfile_version(file_name, appendmat=True):
     """
     Return major, minor tuple depending on apparent mat file type
 
@@ -186,8 +186,12 @@ def get_matfile_version(fileobj):
 
     Parameters
     ----------
-    fileobj : file_like
-        object implementing seek() and read()
+    file_name : str
+       Name of the mat file (do not need .mat extension if
+       appendmat==True). Can also pass open file-like object.
+    appendmat : bool, optional
+       True to append the .mat extension to the end of the given
+       filename, if not already present.
 
     Returns
     -------
@@ -207,6 +211,12 @@ def get_matfile_version(fileobj):
     -----
     Has the side effect of setting the file read pointer to 0
     """
+    from .mio import _open_file_context
+    with _open_file_context(file_name, appendmat=appendmat) as fileobj:
+        return _get_matfile_version(fileobj)
+
+
+def _get_matfile_version(fileobj):
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
     mopt_bytes = fileobj.read(4)
