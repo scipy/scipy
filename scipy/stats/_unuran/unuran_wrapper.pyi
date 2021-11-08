@@ -159,3 +159,22 @@ class DiscreteAliasUrn(Method):
                  domain: None | Tuple[float, float] = ...,
                  urn_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
+
+
+class DGTDist(Protocol):
+    @property
+    def pmf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+class DiscreteGuideTable(Method):
+    def __init__(self,
+                 dist: npt.ArrayLike | DGTDist,
+                 *,
+                 domain: None | Tuple[float, float] = ...,
+                 guide_factor: float = ...,
+                 random_state: SeedType = ...) -> None: ...
+    @overload
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    @overload
+    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...

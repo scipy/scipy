@@ -10,6 +10,7 @@ from numpy.lib import NumpyVersion
 from scipy.stats import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
+    DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
     NaiveRatioUniforms
@@ -38,26 +39,10 @@ class StandardNormal:
         return special.ndtr(x)
 
 
-# A binomial distribution to share between all the discrete methods
-class Binomial:
-    def __init__(self, n, p):
-        self.n = n
-        self.p = p
-
-    def pmf(self, k):
-        return self.p**k * (1-self.p)**(self.n-k)
-
-    def cdf(self, k):
-        k = np.asarray(k)
-        return stats.binom._cdf(k, self.n, self.p)
-
-    def support(self):
-        return 0, self.n
-
-
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
+    ("DiscreteGuideTable", {"dist": [0.02, 0.18, 0.8]}),
     ("NumericalInversePolynomial", {"dist": StandardNormal()}),
     ("NumericalInverseHermite", {"dist": StandardNormal()}),
     ("NaiveRatioUniforms", {"dist": StandardNormal(),
@@ -618,7 +603,7 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteAliasUrn(Binomial(10, 0.2), domain=domain)
+            DiscreteAliasUrn(stats.binom(10, 0.2), domain=domain)
 
     def test_bad_urn_factor(self):
         with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
@@ -1169,6 +1154,111 @@ class TestNumericalInverseHermite:
                "It will be completely removed in a future release.")
         with pytest.warns(DeprecationWarning, match=msg):
             NumericalInverseHermite(StandardNormal(), tol=1e-12)
+
+
+class TestDiscreteGuideTable:
+    basic_fail_dists = {
+        'nchypergeom_fisher',  # numerical errors on tails
+        'nchypergeom_wallenius',  # numerical errors on tails
+        'randint'  # fails on 32-bit ubuntu
+    }
+
+    def test_guide_factor_gt3_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=7)
+
+    def test_guide_factor_zero_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=0)
+
+    def test_negative_guide_factor_raises_warning(self):
+        # This occurs from the UNU.RAN wrapper automatically.
+        # however it already gives a useful warning
+        # Here we just test that a warning is raised.
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=-1)
+
+    @pytest.mark.parametrize("distname, params", distdiscrete)
+    def test_basic(self, distname, params):
+        if distname in self.basic_fail_dists:
+            msg = ("DGT fails on these probably because of large domains "
+                   "and small computation errors in PMF.")
+            pytest.skip(msg)
+
+        if not isinstance(distname, str):
+            dist = distname
+        else:
+            dist = getattr(stats, distname)
+
+        dist = dist(*params)
+        domain = dist.support()
+
+        if not np.isfinite(domain[1] - domain[0]):
+            # DGT only works with finite domain. So, skip the distributions
+            # with infinite tails.
+            pytest.skip("DGT only works with a finite domain.")
+
+        k = np.arange(domain[0], domain[1]+1)
+        pv = dist.pmf(k)
+        mv_ex = dist.stats('mv')
+        rng = DiscreteGuideTable(dist, random_state=42)
+        check_discr_samples(rng, pv, mv_ex)
+
+    u = [
+        # the correctness of the PPF for equidistant points between 0 and 1.
+        np.linspace(0, 1, num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
+
+    @pytest.mark.parametrize('u', u)
+    def test_ppf(self, u):
+        n, p = 4, 0.1
+        dist = stats.binom(n, p)
+        rng = DiscreteGuideTable(dist, random_state=42)
+
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+
+            res = rng.ppf(u)
+            expected = stats.binom.ppf(u, n, p)
+        assert_equal(res.shape, expected.shape)
+        assert_equal(res, expected)
+
+    @pytest.mark.parametrize("pv, msg", bad_pv_common)
+    def test_bad_pv(self, pv, msg):
+        with pytest.raises(ValueError, match=msg):
+            DiscreteGuideTable(pv)
+
+    # DGT doesn't support infinite tails. So, it should throw an error when
+    # inf is present in the domain.
+    inf_domain = [(-np.inf, np.inf), (np.inf, np.inf), (-np.inf, -np.inf),
+                  (0, np.inf), (-np.inf, 0)]
+
+    @pytest.mark.parametrize("domain", inf_domain)
+    def test_inf_domain(self, domain):
+        with pytest.raises(ValueError, match=r"must be finite"):
+            DiscreteGuideTable(stats.binom(10, 0.2), domain=domain)
 
 
 class Gamma:
