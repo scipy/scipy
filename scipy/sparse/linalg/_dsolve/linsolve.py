@@ -222,7 +222,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             row_segs = []
             col_segs = []
             for j in range(b.shape[1]):
-                bj = b[:, j].toarray().ravel()
+                bj = b[:, [j]].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]

@@ -1,6 +1,8 @@
 import pytest
 import numpy as np
+import numpy.testing as npt
 import scipy.sparse
+import scipy.sparse.linalg as spla
 
 sparray_types = ('bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil')
 
@@ -19,14 +21,26 @@ B = np.array([
     [2, 0]
 ])
 
+X = np.array([
+    [1, 0, 0, 1],
+    [2, 1, 2, 0],
+    [0, 2, 1, 0],
+    [0, 0, 1, 2]
+], dtype=float)
+
+
 sparrays = [sparray(A) for sparray in sparray_classes]
 square_sparrays = [sparray(B) for sparray in sparray_classes]
+eig_sparrays = [sparray(X) for sparray in sparray_classes]
 
 parametrize_sparrays = pytest.mark.parametrize(
     "A", sparrays, ids=sparray_types
 )
 parametrize_square_sparrays = pytest.mark.parametrize(
     "B", square_sparrays, ids=sparray_types
+)
+parametrize_eig_sparrays = pytest.mark.parametrize(
+    "X", eig_sparrays, ids=sparray_types
 )
 
 
@@ -129,3 +143,171 @@ def test_docstr(A):
     docstr = A.__doc__.lower()
     for phrase in ('matrix', 'matrices'):
         assert phrase not in docstr
+
+
+# -- linalg --
+
+@parametrize_sparrays
+def test_as_linearoperator(A):
+    L = spla.aslinearoperator(A)
+    npt.assert_allclose(L * [1, 2, 3, 4], A @ [1, 2, 3, 4])
+
+
+@parametrize_square_sparrays
+def test_inv(B):
+    if B.__class__.__name__[:3] != 'csc':
+        return
+
+    C = spla.inv(B)
+
+    assert C._is_array
+    npt.assert_allclose(C.todense(), np.linalg.inv(B.todense()))
+
+
+@parametrize_square_sparrays
+def test_expm(B):
+    if B.__class__.__name__[:3] != 'csc':
+        return
+
+    Bmat = scipy.sparse.csc_matrix(B)
+
+    C = spla.expm(B)
+
+    assert C._is_array
+    npt.assert_allclose(
+        C.todense(),
+        spla.expm(Bmat).todense()
+    )
+
+
+@parametrize_square_sparrays
+def test_expm_multiply(B):
+    if B.__class__.__name__[:3] != 'csc':
+        return
+
+    npt.assert_allclose(
+        spla.expm_multiply(B, np.array([1, 2])),
+        spla.expm(B) @ [1, 2]
+    )
+
+
+@parametrize_sparrays
+def test_norm(A):
+    C = spla.norm(A)
+    npt.assert_allclose(C, np.linalg.norm(A.todense()))
+
+
+@parametrize_square_sparrays
+def test_onenormest(B):
+    C = spla.onenormest(B)
+    npt.assert_allclose(C, np.linalg.norm(B.todense(), 1))
+
+
+@parametrize_square_sparrays
+def test_spsolve(B):
+    if B.__class__.__name__[:3] not in ('csc', 'csr'):
+        return
+
+    npt.assert_allclose(
+        spla.spsolve(B, [1, 2]),
+        np.linalg.solve(B.todense(), [1, 2])
+    )
+
+
+def test_spsolve_triangular():
+    X = scipy.sparse.csr_array([
+        [1, 0, 0, 0],
+        [2, 1, 0, 0],
+        [3, 2, 1, 0],
+        [4, 3, 2, 1],
+    ])
+    spla.spsolve_triangular(X, [1, 2, 3, 4])
+
+
+@parametrize_square_sparrays
+def test_factorized(B):
+    if B.__class__.__name__[:3] != 'csc':
+        return
+
+    LU = spla.factorized(B)
+    npt.assert_allclose(
+        LU(np.array([1, 2])),
+        np.linalg.solve(B.todense(), [1, 2])
+    )
+
+
+@parametrize_square_sparrays
+@pytest.mark.parametrize(
+    "solver",
+    ["bicg", "bicgstab", "cg", "cgs", "gmres", "lgmres", "minres", "qmr",
+     "gcrotmk", "tfqmr"]
+)
+def test_solvers(B, solver):
+    if solver == "minres":
+        kwargs = {}
+    else:
+        kwargs = {'atol': 1e-5}
+
+    x, info = getattr(spla, solver)(B, np.array([1, 2]), **kwargs)
+    assert info >= 0  # no errors, even if perhaps did not converge fully
+    npt.assert_allclose(x, [1, 1], atol=1e-1)
+
+
+@parametrize_sparrays
+@pytest.mark.parametrize(
+    "solver",
+    ["lsqr", "lsmr"]
+)
+def test_lstsqr(A, solver):
+    x, *_ = getattr(spla, solver)(A, [1, 2, 3])
+    npt.assert_allclose(A @ x, [1, 2, 3])
+
+
+@parametrize_eig_sparrays
+def test_eigs(X):
+    e, v = spla.eigs(X, k=1)
+    npt.assert_allclose(
+        X @ v,
+        e[0] * v
+    )
+
+
+@parametrize_eig_sparrays
+def test_eigsh(X):
+    X = X + X.T
+    e, v = spla.eigsh(X, k=1)
+    npt.assert_allclose(
+        X @ v,
+        e[0] * v
+    )
+
+
+@parametrize_eig_sparrays
+def test_svds(X):
+    u, s, vh = spla.svds(X, k=3)
+    u2, s2, vh2 = np.linalg.svd(X.todense())
+    s = np.sort(s)
+    s2 = np.sort(s2[:3])
+    npt.assert_allclose(s, s2, atol=1e-3)
+
+
+def test_splu():
+    X = scipy.sparse.csc_array([
+        [1, 0, 0, 0],
+        [2, 1, 0, 0],
+        [3, 2, 1, 0],
+        [4, 3, 2, 1],
+    ])
+    LU = spla.splu(X)
+    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+
+
+def test_spilu():
+    X = scipy.sparse.csc_array([
+        [1, 0, 0, 0],
+        [2, 1, 0, 0],
+        [3, 2, 1, 0],
+        [4, 3, 2, 1],
+    ])
+    LU = spla.spilu(X)
+    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
