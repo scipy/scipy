@@ -98,6 +98,9 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 from ._quad_vec import quad_vec
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import dop, lsoda, vode
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from scipy._lib._testutils import PytestTester

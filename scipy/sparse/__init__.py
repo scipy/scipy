@@ -239,6 +239,12 @@ from ._matrix_io import *
 # For backward compatibility with v0.19.
 from . import csgraph
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    base, bsr, compressed, construct, coo, csc, csr, data, dia, dok, extract,
+    lil, sparsetools, sputils
+)
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15

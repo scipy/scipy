@@ -665,6 +665,9 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+
 __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',

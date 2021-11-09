@@ -454,6 +454,11 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+)
+
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from scipy._lib._testutils import PytestTester
