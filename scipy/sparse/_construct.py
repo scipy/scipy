@@ -20,12 +20,10 @@ from ._bsr import bsr_matrix
 from ._coo import coo_matrix
 from ._dia import dia_matrix
 
-from ._arrays import coo_array, csr_array, csc_array, dia_array
-
 from ._base import issparse
 
 
-def spdiags(data, diags, m, n, format=None, _array=False):
+def spdiags(data, diags, m, n, format=None):
     """
     Return a sparse matrix from diagonals.
 
@@ -62,10 +60,7 @@ def spdiags(data, diags, m, n, format=None, _array=False):
            [0, 0, 3, 4]])
 
     """
-    if _array:
-        return dia_array((data, diags), shape=(m, n)).asformat(format)
-    else:
-        return dia_matrix((data, diags), shape=(m, n)).asformat(format)
+    return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
@@ -224,7 +219,7 @@ def identity(n, dtype='d', format=None):
     return eye(n, n, dtype=dtype, format=format)
 
 
-def eye(m, n=None, k=0, dtype=float, format=None, _array=False):
+def eye(m, n=None, k=0, dtype=float, format=None):
     """Sparse matrix with ones on diagonal
 
     Returns a sparse (m x n) matrix where the kth diagonal
@@ -266,23 +261,17 @@ def eye(m, n=None, k=0, dtype=float, format=None, _array=False):
             indptr = np.arange(n+1, dtype=idx_dtype)
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            if _array:
-                cls = {'csr': csr_array, 'csc': csc_array}[format]
-            else:
-                cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
+            cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
             idx_dtype = get_index_dtype(maxval=n)
             row = np.arange(n, dtype=idx_dtype)
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            if _array:
-                return coo_array((data, (row, col)), (n, n))
-            else:
-                return coo_matrix((data, (row, col)), (n, n))
+            return coo_matrix((data, (row, col)), (n, n))
 
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return spdiags(diags, k, m, n, _array=_array).asformat(format)
+    return spdiags(diags, k, m, n).asformat(format)
 
 
 def kron(A, B, format=None):

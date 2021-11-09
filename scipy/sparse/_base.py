@@ -706,7 +706,8 @@ class spmatrix:
         return NotImplemented
 
     def __pow__(self, other):
-        if self.shape[0] != self.shape[1]:
+        M, N = self.shape[0], self.shape[1]
+        if M != N:
             raise TypeError('matrix is not square')
 
         if isintlike(other):
@@ -716,9 +717,13 @@ class spmatrix:
 
             if other == 0:
                 from ._construct import eye
-                return eye(
-                    self.shape[0], dtype=self.dtype, _array=self._is_array
-                )
+                E = np.ones(self.shape[0])
+                if self._is_array:
+                    from ._arrays import dia_array
+                    return dia_array((E, 0), shape=(M, M))
+                else:
+                    from ._dia import dia_matrix
+                    return dia_matrix((E, 0), shape=(M, M))
             elif other == 1:
                 return self.copy()
             else:
