@@ -314,6 +314,11 @@ from ._wavelets import *
 from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
+    spectral, signaltools, waveforms, wavelets,
+)
 
 # deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
@@ -359,7 +364,6 @@ for name in deprecated_windows:
     locals()[name] = deco(name)
 
 del deprecated_windows, name, deco
-
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
