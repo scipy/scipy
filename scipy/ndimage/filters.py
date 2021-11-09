@@ -3,7 +3,7 @@
 # included below.
 
 import warnings
-from . import _filters
+from . import _multimethods
 
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d',  # noqa: F822
@@ -30,4 +30,4 @@ def __getattr__(name):
                   "the `scipy.ndimage.filters` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_filters, name)
+    return getattr(_multimethods, name)

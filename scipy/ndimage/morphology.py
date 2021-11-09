@@ -3,7 +3,7 @@
 # included below.
 
 import warnings
-from . import _morphology
+from . import _multimethods
 
 
 __all__ = ['iterate_structure', 'generate_binary_structure',  # noqa: F822
@@ -30,4 +30,4 @@ def __getattr__(name):
                   "the `scipy.ndimage.morphology` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_morphology, name)
+    return getattr(_multimethods, name)

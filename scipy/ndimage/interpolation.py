@@ -3,7 +3,7 @@
 # included below.
 
 import warnings
-from . import _interpolation
+from . import _multimethods
 
 
 __all__ = ['spline_filter1d', 'spline_filter',  # noqa: F822
@@ -25,4 +25,4 @@ def __getattr__(name):
                   "the `scipy.ndimage.interpolation` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_interpolation, name)
+    return getattr(_multimethods, name)

@@ -3,7 +3,7 @@
 # included below.
 
 import warnings
-from . import _measurements
+from . import _multimethods
 
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension',  # noqa: F822
@@ -27,4 +27,4 @@ def __getattr__(name):
                   "the `scipy.ndimage.measurements` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_measurements, name)
+    return getattr(_multimethods, name)

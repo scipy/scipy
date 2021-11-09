@@ -3,7 +3,7 @@
 # included below.
 
 import warnings
-from . import _fourier
+from . import _multimethods
 
 
 __all__ = ['fourier_gaussian', 'fourier_uniform',  # noqa: F822
@@ -24,4 +24,4 @@ def __getattr__(name):
                   "the `scipy.ndimage.fourier` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_fourier, name)
+    return getattr(_multimethods, name)
