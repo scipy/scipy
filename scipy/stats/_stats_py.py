@@ -3761,7 +3761,7 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     We use `alexandergovern` to test the null hypothesis that all cities
     have the same mean APR against the alternative that the cities do not
-    all have the same mean APR. We decide that a sigificance level of 5%
+    all have the same mean APR. We decide that a significance level of 5%
     is required to reject the null hypothesis in favor of the alternative.
 
     >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
@@ -5181,7 +5181,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         Requires that `func` be pickleable. The default is ``1``.
     is_twosamp : bool, optional
         If `True`, a two sample test will be run. If ``x`` and ``y`` have
-        shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
+        shapes ``(n, p)`` and ``(m, p)``, this optional will be overridden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
         Note that this will not run if inputs are distance matrices.
@@ -5491,7 +5491,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
     # the global scale at is the statistic calculated at maximial nearest
-    # neighbors. Threshold is the maximium on the global and local scales
+    # neighbors. Threshold is the maximum on the global and local scales
     threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
 
     # find the largest connected component of significant correlations
@@ -6061,7 +6061,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     called Yuen's t-test, this is an extension of Welch's t-test, with the
     difference being the use of winsorized means in calculation of the variance
     and the trimmed sample size in calculation of the statistic. Trimming is
-    reccomended if the underlying distribution is long-tailed or contaminated
+    recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
     References
