@@ -90,9 +90,9 @@ Other useful options include:
 -  ``--refguide-check`` to check whether the objects in a Scipy submodule's
    ``__all__`` dict correspond to the objects included in the reference
    guide. It also checks the validity of code samples in docstrings.
-- ``--bench`` to run all benchmarks. See :ref:`benchmarking-with-asv`.
-- ``--pep8`` to perform pep8 check.
-- ``--mypy`` to run *mypy* on the codebase.
+-  ``--bench`` to run all benchmarks. See :ref:`benchmarking-with-asv`.
+-  ``--pep8`` to perform pep8 check.
+-  ``--mypy`` to run *mypy* on the codebase.
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
