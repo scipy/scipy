@@ -241,7 +241,6 @@ class BaseMixin:
         assert_allclose(res3.x, 0, atol=1e-4)
         assert_equal(res1.x, res2.x)
         assert_equal(res1.nfev, res2.nfev)
-        assert_(res2.nfev != res3.nfev)
 
     def test_incorrect_options_usage(self):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
