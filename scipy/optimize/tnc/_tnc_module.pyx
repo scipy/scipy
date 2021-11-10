@@ -61,7 +61,7 @@ cdef int function(double x[], double *f, double g[], void *state) except 1:
 
     # ensures we're working on a copy of the data, just in case user function
     # mutates it
-    xcopy = np.empty(n, dtype=float)
+    xcopy = np.empty(n, dtype=np.float64)
     x_data = <float64_t *>np.PyArray_DATA(xcopy)
     memcpy(x_data, x, sizeof(double) * n)
 
@@ -103,16 +103,15 @@ cdef void callback_function(double x[], void *state) except *:
     # ensures we're working on a copy of the data, just in case user function
     # mutates it
     try:
-        xcopy = np.empty(n, dtype=float)
+        xcopy = np.empty(n, dtype=np.float64)
         x_data = <float64_t *>np.PyArray_DATA(xcopy)
         memcpy(x_data, x, sizeof(double) * n)
-    except MemoryError as exc:
-        # couldn't allocate memory
+
+        # TODO examine val to see if we should halt?
+        val = (<object>py_state.py_callback)(xcopy)
+    except BaseException as exc:
         py_state.failed = 1
         raise exc
-
-    val = (<object>py_state.py_callback)(xcopy)
-    # TODO examine val to see if we should halt?
 
 
 def tnc_minimize(func_and_grad,
@@ -188,7 +187,7 @@ def tnc_minimize(func_and_grad,
         raise ValueError("tnc: vector sizes must be equal")
 
     x = np.copy(x0, order="C")
-    g = np.zeros_like(x, dtype=float)
+    g = np.zeros_like(x, dtype= np.float64)
     x_data = <float64_t *>np.PyArray_DATA(x)
     g_data = <float64_t *>np.PyArray_DATA(g)
 
