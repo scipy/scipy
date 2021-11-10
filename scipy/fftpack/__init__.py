@@ -96,6 +96,9 @@ from ._pseudo_diffs import *
 from ._helper import *
 from ._realtransforms import *
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import basic, helper, pseudo_diffs, realtransforms
+
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
