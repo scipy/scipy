@@ -777,9 +777,11 @@ def test__compute_absolute_step():
     x0 = np.array([1e-5, 0, 1, 1e5])
 
     EPS = np.finfo(np.float64).eps
-    relative_step = {"2-point": EPS**0.5,
-                    "3-point": EPS**(1/3),
-                     "cs": EPS**0.5}
+    relative_step = {
+        "2-point": EPS**0.5,
+        "3-point": EPS**(1/3),
+        "cs": EPS**0.5
+    }
     f0 = np.array(1.0)
 
     for method in methods:
