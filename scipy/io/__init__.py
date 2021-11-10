@@ -111,7 +111,7 @@ from ._idl import readsav
 from ._harwell_boeing import hb_read, hb_write
 
 # Deprecated namespaces, to be removed in v2.0.0
-from . import arff, harwell_boeing, idl, matlab, mmio, netcdf, wavfile
+from . import arff, harwell_boeing, idl, mmio, netcdf, wavfile
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
