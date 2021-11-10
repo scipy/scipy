@@ -1286,7 +1286,7 @@ def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
     with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
-        scipy.io.matlab.mio5_params.MatlabOpaque
+        scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
     # these should be importable but warn as well
     with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
-        from scipy.io.matlab.miobase import MatReadError
+        from scipy.io.matlab.miobase import MatReadError  # noqa
