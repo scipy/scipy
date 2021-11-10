@@ -1284,6 +1284,9 @@ def test_opaque():
 @pytest.mark.xfail
 def test_deprecation():
     """Test that access to previous attributes still works."""
+    # The mypy.ini [mypy-scipy.io._matlab.tests.test_mio] can be removed
+    # once these are fixed.
+
     # This should be accessible immediately from scipy.io import
     with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
         scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
