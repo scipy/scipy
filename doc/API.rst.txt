@@ -106,6 +106,7 @@ change is made.
 * `scipy.io`
 
   - `scipy.io.arff`
+  - `scipy.io.matlab`
   - `scipy.io.wavfile`
 
 * `scipy.linalg`

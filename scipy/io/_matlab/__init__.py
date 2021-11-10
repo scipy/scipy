@@ -10,12 +10,12 @@ Drive, Natick, MA 01760-2098, USA.
 # Matlab file read and write utilities
 from .mio import loadmat, savemat, whosmat
 from .mio5 import MatlabFunction
-from .mio5_params import MatlabOpaque, mat_struct
+from .mio5_params import MatlabObject, MatlabOpaque, mat_struct
 from .miobase import (matfile_version, MatReadError, MatReadWarning,
                       MatWriteError)
 from . import byteordercodes
 
-__all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes',
+__all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes', 'MatlabObject',
            'matfile_version', 'MatReadError', 'MatReadWarning',
            'MatWriteError', 'mat_struct', 'MatlabOpaque', 'MatlabFunction']
 

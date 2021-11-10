@@ -25,13 +25,15 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
+import scipy.io
+from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
 import scipy.io._matlab.byteordercodes as boc
 from scipy.io._matlab.miobase import (
     matdims, MatWriteError, MatReadError, matfile_version)
-from scipy.io._matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
-from scipy.io._matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
-                                  MatlabFunction, varmats_from_mat,
-                                  to_writeable, EmptyStructMarker)
+from scipy.io._matlab.mio import mat_reader_factory, loadmat, savemat, whosmat
+from scipy.io._matlab.mio5 import (
+    MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
+    EmptyStructMarker)
 from scipy.io._matlab import mio5_params as mio5p
 
 test_data_path = pjoin(dirname(__file__), 'data')
@@ -975,7 +977,7 @@ def test_func_read():
     rdr = MatFile5Reader(fp)
     d = rdr.get_variables()
     fp.close()
-    assert_(isinstance(d['testfunc'], MatlabFunction))
+    assert isinstance(d['testfunc'], MatlabFunction)
     stream = BytesIO()
     wtr = MatFile5Writer(stream)
     assert_raises(MatWriteError, wtr.put_variables, d)
@@ -1269,3 +1271,22 @@ def test_matfile_version(version, filt, regex):
     for file in files:
         got_version = matfile_version(file)
         assert got_version[0] == version
+
+
+def test_opaque():
+    """Test that we can read a MatlabOpaque object."""
+    data = loadmat(pjoin(test_data_path, 'parabola.mat'))
+    assert isinstance(data['parabola'], MatlabFunction)
+    assert isinstance(data['parabola'].item()[3].item()[3], MatlabOpaque)
+
+
+# TODO: This should work but emit a deprecation warning
+@pytest.mark.xfail
+def test_deprecation():
+    """Test that access to previous attributes still works."""
+    # This should be accessible immediately from scipy.io import
+    with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
+        scipy.io.matlab.mio5_params.MatlabOpaque
+    # these should be importable but warn as well
+    with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
+        from scipy.io.matlab.miobase import MatReadError

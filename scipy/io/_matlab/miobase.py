@@ -216,6 +216,9 @@ def matfile_version(file_name, *, appendmat=True):
         return _get_matfile_version(fileobj)
 
 
+get_matfile_version = matfile_version
+
+
 def _get_matfile_version(fileobj):
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
