@@ -55,7 +55,7 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: coverage_full_tests
+  - job: prerelease_deps_coverage_64bit_blas
     pool:
       vmImage: 'ubuntu-18.04'
     steps:
@@ -68,29 +68,16 @@ stages:
       parameters:
         test_mode: full
         coverage: true
-        numpy_spec: "numpy==1.18.5"
-  - job: prerelease_deps_64bit_blas
-    pool:
-      vmImage: 'ubuntu-18.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.8'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
         numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         other_spec: "--pre --upgrade --timeout=60"
         use_64bit_blas: true
   - job: refguide_asv_check
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -106,13 +93,13 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.17.4"
+        numpy_spec: "numpy==1.19.3"
         use_sdist: true
   - job: wheel_optimized_gcc48
     pool:
@@ -148,7 +135,7 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - script: >-
@@ -212,7 +199,7 @@ stages:
   - job: Windows
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
     pool:
-      vmImage: 'VS2017-Win2016'
+      vmImage: 'windows-latest'
     variables:
       # OPENBLAS64_ variable has same value
       # but only needed for ILP64 build below
@@ -232,16 +219,16 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python38-64bit-full-ilp64:
-            PYTHON_VERSION: '3.8'
+          Python39-64bit-full-ilp64:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-full:
-            PYTHON_VERSION: '3.9'
+          Python310-64bit-full:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             BITS: 64
@@ -292,14 +279,14 @@ stages:
       condition: and(succeeded(), eq(variables['BITS'], 32))
     - script: >-
         python -m pip install
-        cython==0.29.18
+        cython==0.29.24
         matplotlib
         mpmath
-        numpy==1.19.5
+        numpy==1.21.4
         Pillow
         pybind11
         pythran
-        pytest==5.4.3
+        pytest
         pytest-cov
         pytest-env
         pytest-timeout

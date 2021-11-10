@@ -37,7 +37,7 @@ jobs:
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip 'setuptools<58.5' wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2==2.1.0rc1 pythran
           python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -57,22 +57,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10]
+        python-version: ["3.10"]
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
 
-    - name: Install Python 3.10
-      if: matrix.python-version == '3.10'
-      run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo apt-get update
-        sudo apt install -y --no-install-recommends python3.10-dev python3.10-distutils python3.10-venv
-        # GitHub doesn't provide a pip interface with py3.10 yet. Therefore, install it manually :
-        curl -O https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py && rm get-pip.py
-        python3.10 -m pip install --upgrade pip 'setuptools<58.5'
+# Keeping this for later 3.11
+#    - name: Install Python 3.11
+#      if: matrix.python-version == '3.11'
+#      run: |
+#        sudo add-apt-repository ppa:deadsnakes/ppa
+#        sudo apt-get update
+#        sudo apt install -y --no-install-recommends python3.11-dev python3.11-distutils python3.11-venv
+#        # GitHub doesn't provide a pip interface with py3.11 yet. Therefore, install it manually :
+#        curl -O https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py && rm get-pip.py
+#        python3.11 -m pip install --upgrade pip setuptools
 
     - name: Install other build dependencies
       run: |
@@ -80,15 +81,16 @@ jobs:
 
     - name: Install packages
       run: |
+        which python
         pip install --user git+https://github.com/numpy/numpy.git
-        python3.10 -m pip install --user 'setuptools<58.5' wheel cython pytest pybind11 pytest-xdist
+        python -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
-        python3.10 -m pip install -r mypy_requirements.txt
+        python -m pip install -r mypy_requirements.txt
 
     - name: Mypy
       run: |
-        python3.10 -u runtests.py --mypy
+        python -u runtests.py --mypy
 
     - name: Test SciPy
       run: |
-        python3.10 -u runtests.py -m fast
+        python -u runtests.py -m fast

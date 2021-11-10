@@ -67,7 +67,7 @@ steps:
     pip install --upgrade pip==20.2.4 'setuptools<58.5' wheel &&
     pip install ${{parameters.other_spec}}
     cython
-    gmpy2
+    gmpy2==2.1.0rc1
     mpmath
     pythran
     pybind11
