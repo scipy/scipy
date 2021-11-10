@@ -62,7 +62,7 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
     Z0 : ndarray, shape (3, n)
         Initial guess for the solution. It determines new values of `y` at
         ``t + h * C`` as ``y + Z0``, where ``C`` is the Radau method constants.
-    scale : float
+    scale : ndarray, shape (n)
         Problem tolerance scale, i.e. ``rtol * abs(y) + atol``.
     tol : float
         Tolerance to which solve the system. This value is compared with
