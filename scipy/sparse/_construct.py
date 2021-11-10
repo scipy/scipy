@@ -682,7 +682,7 @@ def bmat(blocks, format=None, dtype=None):
         idx = slice(nnz, nnz + B.nnz)
         data[idx] = B.data
         np.add(B.row, row_offsets[i], out=row[idx], dtype=idx_dtype)
-        np.add(B.col, col_offsets[i], out=col[idx], dtype=idx_dtype)
+        np.add(B.col, col_offsets[j], out=col[idx], dtype=idx_dtype)
         nnz += B.nnz
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
