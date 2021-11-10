@@ -1049,7 +1049,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
         rank of a. Singular values smaller than
-        ``rcond * largest_singular_value`` are considered zero.
+        ``cond * largest_singular_value`` are considered zero.
     overwrite_a : bool, optional
         Discard data in `a` (may enhance performance). Default is False.
     overwrite_b : bool, optional
@@ -1070,16 +1070,16 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     Returns
     -------
     x : (N,) or (N, K) ndarray
-        Least-squares solution.  Return shape matches shape of `b`.
+        Least-squares solution.
     residues : (K,) ndarray or float
         Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
-        ``ndim(A) == n`` (returns a scalar if b is 1-D). Otherwise a
+        ``ndim(A) == n`` (returns a scalar if ``b`` is 1-D). Otherwise a
         (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
-        Singular values of `a`. The condition number of a is
-        ``abs(s[0] / s[-1])``.
+        Singular values of `a`. The condition number of ``a`` is
+        ``s[0] / s[-1]``.
 
     Raises
     ------
