@@ -1873,6 +1873,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     if (hess in FD_METHODS or isinstance(_h, LinearOperator)):
         fhess = None
+
         def _hessp(x, p, *args):
             return sf.hess(x).dot(p)
 
