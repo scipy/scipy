@@ -1859,7 +1859,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     x0 = asarray(x0).flatten()
     # TODO: add hessp (callable or FD) to ScalarFunction?
-    sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps, hess=hess)
+    sf = _prepare_scalar_function(
+        fun, x0, jac, args=args, epsilon=eps, hess=hess
+    )
     f = sf.fun
     fprime = sf.grad
     _h = sf.hess(x0)
