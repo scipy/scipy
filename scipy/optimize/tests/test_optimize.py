@@ -1718,15 +1718,6 @@ class TestNewtonCg:
         assert sol.success, sol.message
         assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
 
-    def test_silly_hess(self):
-        x0 = np.array([-1.2, 1.0])
-        with pytest.raises(RuntimeError):
-            sol = optimize.minimize(optimize.rosen, x0,
-                                    jac=optimize.rosen_der,
-                                    hess='wibble',
-                                    tol=1e-5,
-                                    method='Newton-CG')
-
 
 def test_line_for_search():
     # _line_for_search is only used in _linesearch_powell, which is also
