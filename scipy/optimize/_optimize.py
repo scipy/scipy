@@ -30,10 +30,12 @@ import sys
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
+from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
+from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state, rng_integers
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
@@ -1856,11 +1858,25 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     retall = return_all
 
     x0 = asarray(x0).flatten()
-    # TODO: allow hess to be approximated by FD?
     # TODO: add hessp (callable or FD) to ScalarFunction?
-    sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps, hess=fhess)
+    sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps, hess=hess)
     f = sf.fun
     fprime = sf.grad
+    _h = sf.hess(x0)
+
+    # Logic for hess/hessp
+    # - If a callable(hess) is provided, then use that
+    # - If hess is a FD_METHOD, or the output fom hess(x) is a LinearOperator
+    #   then create a hessp function using those.
+    # - If hess is None but you have callable(hessp) then use the hessp.
+    # - If hess and hessp are None then approximate hessp using the grad/jac.
+
+    if (hess in FD_METHODS or isinstance(_h, LinearOperator)):
+        fhess = None
+        def _hessp(x, p, *args):
+            return sf.hess(x).dot(p)
+
+        fhess_p = _hessp
 
     def terminate(warnflag, msg):
         if disp:
@@ -1924,7 +1940,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     Ap = fhess_p(xk, psupi, *args)
                     hcalls = hcalls + 1
             else:
-                Ap = np.dot(A, psupi)
+                if isinstance(A, HessianUpdateStrategy):
+                    # if hess was supplied as a HessianUpdateStrategy
+                    Ap = A.dot(psupi)
+                else:
+                    Ap = np.dot(A, psupi)
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = np.dot(psupi, Ap)
