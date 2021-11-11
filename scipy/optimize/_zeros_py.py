@@ -251,7 +251,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     The above is the equivalent of solving for each value in ``(x, a)``
     separately in a for-loop, just faster:
 
-    >>> loop_res = [optimize.newton(f, x0, fprime=fder, args=(a0,))
+    >>> loop_res = [optimize.newton(f, x0, fprime=fder, args=(a0,),
+    ...                             maxiter=200)
     ...             for x0, a0 in zip(x, a)]
     >>> np.allclose(vec_res, loop_res)
     True
@@ -259,8 +260,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Plot the results found for all values of ``a``:
 
     >>> analytical_result = np.sign(a) * np.abs(a)**(1/3)
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> fig, ax = plt.subplots()
     >>> ax.plot(a, analytical_result, 'o')
     >>> ax.plot(a, vec_res, '.')
     >>> ax.set_xlabel('$a$')
