@@ -134,6 +134,19 @@ class TestBasinHopping:
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                       accept_test=1)
 
+    def test_input_validation(self):
+        msg = 'target_accept_rate has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], target_accept_rate=1.)
+
+        msg = 'stepwise_factor has to be in range \\(0, 1\\)'
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=0.)
+        with assert_raises(ValueError, match=msg):
+            basinhopping(func1d, self.x0[0], stepwise_factor=1.)
+
     def test_1d_grad(self):
         # test 1-D minimizations with gradient
         i = 0
