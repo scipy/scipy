@@ -59,6 +59,11 @@ cdef int function(double x[], double *f, double g[], void *state) except 1:
     py_state = <pytnc_state *>state
     n = py_state.n
 
+    if py_state.failed:
+        # perhaps the callback code had an exception?
+        # this will cause the tnc code to have an LS_USERABORT
+        return 1
+
     # ensures we're working on a copy of the data, just in case user function
     # mutates it
     xcopy = np.empty(n, dtype=np.float64)
