@@ -239,7 +239,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         x = zeros(n, dtype)
         beta = normb.copy()
     else:
-        x = atleast_1d(x0)
+        x = atleast_1d(x0.copy())
         u = u - A.matvec(x)
         beta = norm(u)
 

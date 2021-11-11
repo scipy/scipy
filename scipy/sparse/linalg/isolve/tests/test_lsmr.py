@@ -128,11 +128,18 @@ class TestLSMR:
 class TestLSMRReturns:
     def setup_method(self):
         self.n = 10
-        self.A = lowerBidiagonalMatrix(20,self.n)
-        self.xtrue = transpose(arange(self.n,0,-1))
+        self.A = lowerBidiagonalMatrix(20, self.n)
+        self.xtrue = transpose(arange(self.n, 0, -1))
         self.Afun = aslinearoperator(self.A)
         self.b = self.Afun.matvec(self.xtrue)
-        self.returnValues = lsmr(self.A,self.b)
+        self.x0 = ones(self.n)
+        self.x00 = self.x0.copy()
+        self.returnValues = lsmr(self.A, self.b)
+        self.returnValuesX0 = lsmr(self.A, self.b, x0=self.x0)
+
+    def test_unchanged_x0(self):
+        x, istop, itn, normr, normar, normA, condA, normx = self.returnValuesX0
+        assert_allclose(self.x00, self.x0)
 
     def testNormr(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
