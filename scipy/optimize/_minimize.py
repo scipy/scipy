@@ -119,6 +119,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         for the trust-constr method.
         dogleg and trust-exact can only be used with a callable returning
         an (n, n) array.
+        It is not mandatory to supply this keyword for trust-constr or
+        Newton-CG.
         For the Newton-CG, trust-krylov, trust-ncg, and trust-constr methods
         the keywords {'2-point', '3-point', 'cs'} can be used to select a
         finite difference scheme for numerical estimation. Or, objects
