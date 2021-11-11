@@ -208,17 +208,21 @@ for _bytecode in '<>':
 
 
 class mat_struct:
-    ''' Placeholder for holding read data from structs
+    """Placeholder for holding read data from structs.
 
     We use instances of this class when the user passes False as a value to the
-    ``struct_as_record`` parameter of the :func:`scipy.io._matlab.loadmat`
-    function.
-    '''
+    ``struct_as_record`` parameter of the :func:`scipy.io.loadmat` function.
+    """
     pass
 
 
 class MatlabObject(np.ndarray):
-    ''' ndarray Subclass to contain matlab object '''
+    """Subclass of ndarray to signal this is a matlab object.
+
+    This is a simple subclass of :class:`numpy.ndarray` meant to be used
+    by :func:`scipy.io.loadmat` and should not be instantiated directly.
+    """
+
     def __new__(cls, input_array, classname=None):
         # Input array is an already formed ndarray instance
         # We first cast to be our class type
@@ -235,14 +239,24 @@ class MatlabObject(np.ndarray):
 
 
 class MatlabFunction(np.ndarray):
-    ''' Subclass to signal this is a matlab function '''
+    """Subclass for a MATLAB function.
+
+    This is a simple subclass of :class:`numpy.ndarray` meant to be used
+    by :func:`scipy.io.loadmat` and should not be directly instantiated.
+    """
+
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls)
         return obj
 
 
 class MatlabOpaque(np.ndarray):
-    ''' Subclass to signal this is a matlab opaque matrix '''
+    """Subclass for a MATLAB opaque matrix.
+
+    This is a simple subclass of :class:`numpy.ndarray` meant to be used
+    by :func:`scipy.io.loadmat` and should not be directly instantiated.
+    """
+
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls)
         return obj

@@ -5,7 +5,7 @@ Module for reading and writing matlab (TM) .mat files
 
 from contextlib import contextmanager
 
-from .miobase import get_matfile_version, docfiller
+from .miobase import _get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
 from .mio5 import MatFile5Reader, MatFile5Writer
 
@@ -71,7 +71,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
     """
     byte_stream, file_opened = _open_file(file_name, appendmat)
-    mjv, mnv = get_matfile_version(byte_stream)
+    mjv, mnv = _get_matfile_version(byte_stream)
     if mjv == 0:
         return MatFile4Reader(byte_stream, **kwargs), file_opened
     elif mjv == 1:
@@ -96,7 +96,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         Dictionary in which to insert matfile variables.
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
-       filename, if not already present.
+       filename, if not already present. Default is True.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
        file. Otherwise can be one of ('native', '=', 'little', '<',
