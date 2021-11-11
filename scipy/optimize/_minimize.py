@@ -109,34 +109,35 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         obey any specified `bounds`.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg, trust-krylov, trust-exact and trust-constr. If it is
-        callable, it should return the Hessian matrix:
+        trust-ncg, trust-krylov, trust-exact and trust-constr.
+        If it is callable, it should return the Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
         where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
         parameters. LinearOperator and sparse matrix returns are only allowed
-        for 'trust-constr' method. Alternatively (not available for Newton-CG
-        or dogleg), the keywords {'2-point', '3-point', 'cs'} select a finite
-        difference scheme for numerical estimation. Or, objects implementing
-        the `HessianUpdateStrategy` interface can be used to approximate the
-        Hessian. Available quasi-Newton methods implementing this interface
-        are:
+        for the trust-constr method.
+        dogleg and trust-exact can only be used with a callable returning
+        an (n, n) array.
+        For the Newton-CG, trust-krylov, trust-ncg, and trust-constr methods
+        the keywords {'2-point', '3-point', 'cs'} can be used to select a
+        finite difference scheme for numerical estimation. Or, objects
+        implementing the `HessianUpdateStrategy` interface can be
+        used to approximate the Hessian. Available quasi-Newton methods
+        implementing this interface are:
 
             - `BFGS`;
             - `SR1`.
 
-        Whenever the gradient is estimated via finite-differences,
-        the Hessian cannot be estimated with options
-        {'2-point', '3-point', 'cs'} and needs to be
-        estimated using one of the quasi-Newton strategies.
-        'trust-exact' cannot use a finite-difference scheme, and must be used
-        with a callable returning an (n, n) array.
+        The trust-constr method permits the gradient to be estimated via
+        finite-differences. If this is the case then the Hessian cannot be
+        estimated with options {'2-point', '3-point', 'cs'} and needs
+        to be estimated using one of the quasi-Newton strategies.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
-        Only one of `hessp` or `hess` needs to be given.  If `hess` is
-        provided, then `hessp` will be ignored.  `hessp` must compute the
+        Only one of `hessp` or `hess` needs to be given. If `hess` is
+        provided, then `hessp` will be ignored. `hessp` must compute the
         Hessian times an arbitrary vector:
 
             ``hessp(x, p, *args) ->  ndarray shape (n,)``
@@ -274,7 +275,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
     *not* required to be positive definite). It is, in many
-    situations, the Newton method to converge in fewer iteraction
+    situations, the Newton method to converge in fewer iterations
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
@@ -339,8 +340,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
-    inequality constraints  are imposed as well, it swiches to the trust-region
-    interior point  method described in [16]_. This interior point algorithm,
+    inequality constraints are imposed as well, it swiches to the trust-region
+    interior point method described in [16]_. This interior point algorithm,
     in turn, solves inequality constraints by introducing slack variables
     and solving a sequence of equality-constrained barrier problems
     for progressively smaller values of the barrier parameter.
@@ -354,7 +355,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the gradient and the Hessian may be approximated using
     three finite-difference schemes: {'2-point', '3-point', 'cs'}.
     The scheme 'cs' is, potentially, the most accurate but it
-    requires the function to correctly handles complex inputs and to
+    requires the function to correctly handle complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
     accurate than '2-point' but requires twice as many operations.
 
