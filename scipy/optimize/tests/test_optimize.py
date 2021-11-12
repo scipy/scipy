@@ -81,10 +81,6 @@ def test_check_grad():
                             direction='all', seed=1234)
     assert r < 5e-7
 
-    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
-                            direction='random', seed=1234)
-    assert r < 5e-7
-
 
 class CheckOptimize:
     """ Base test case for a simple constrained entropy maximization problem

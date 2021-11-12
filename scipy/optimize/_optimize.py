@@ -1047,8 +1047,11 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
 
     if direction == 'random':
         _grad = grad(x0, *args)
+        if _grad.ndim > 1:
+            raise ValueError("'random' can only be used with scalar valued"
+                             " func")
         random_state = check_random_state(seed)
-        v = random_state.normal(0, 1, size=(_grad.shape))
+        v = random_state.normal(0, 1, size=(x0.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
@@ -1062,8 +1065,9 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         raise ValueError("{} is not a valid string for "
                          "``direction`` argument".format(direction))
 
-    return np.sqrt(np.sum((analytical_grad
-                           - approx_fprime(vars, _func, step, *_args))**2))
+    return np.sqrt(np.sum(np.abs(
+        (analytical_grad - approx_fprime(vars, _func, step, *_args))**2
+    )))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
