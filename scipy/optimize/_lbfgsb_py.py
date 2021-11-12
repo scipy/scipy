@@ -105,7 +105,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         If zero, then no output. If a positive number, then this over-rides
         `iprint` (i.e., `iprint` gets the value of `disp`).
     maxfun : int, optional
-        Maximum number of function evaluations.
+        Maximum number of function evaluations. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     maxiter : int, optional
         Maximum number of iterations.
     callback : callable, optional

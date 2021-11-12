@@ -147,7 +147,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         max(1,min(50,n/2)). Defaults to -1.
     maxfun : int, optional
         Maximum number of function evaluation. If None, maxfun is
-        set to max(100, 10*len(x0)). Defaults to None.
+        set to max(100, 10*len(x0)). Defaults to None. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     eta : float, optional
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
