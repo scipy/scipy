@@ -115,26 +115,18 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
         where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
-        parameters. LinearOperator and sparse matrix returns are only allowed
-        for the trust-constr method.
-        dogleg and trust-exact can only be used with a callable returning
-        an (n, n) array.
-        It is not mandatory to supply this keyword for trust-constr or
-        Newton-CG.
-        For the Newton-CG, trust-krylov, trust-ncg, and trust-constr methods
-        the keywords {'2-point', '3-point', 'cs'} can be used to select a
-        finite difference scheme for numerical estimation. Or, objects
-        implementing the `HessianUpdateStrategy` interface can be
-        used to approximate the Hessian. Available quasi-Newton methods
+        parameters.
+        The keywords {'2-point', '3-point', 'cs'} can also be used to select
+        a finite difference scheme for numerical estimation of the hessian.
+        Alternatively, objects implementing the `HessianUpdateStrategy` interface
+        can be used to approximate the Hessian. Available quasi-Newton methods
         implementing this interface are:
 
             - `BFGS`;
             - `SR1`.
 
-        The trust-constr method permits the gradient to be estimated via
-        finite-differences. If this is the case then the Hessian cannot be
-        estimated with options {'2-point', '3-point', 'cs'} and needs
-        to be estimated using one of the quasi-Newton strategies.
+        Not all of the options are available for each of the methods; for
+        availability refer to the notes.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
@@ -359,7 +351,29 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     The scheme 'cs' is, potentially, the most accurate but it
     requires the function to correctly handle complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
-    accurate than '2-point' but requires twice as many operations.
+    accurate than '2-point' but requires twice as many operations. If the
+    gradient is estimated via finite-differences the Hessian must be
+    estimated using one of the quasi-Newton strategies.
+
+    **Method specific options for the `hess` keyword**
+
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | hess/Method           | Newton-CG   | dogleg | trust-ncg | trust-krylov | trust-exact | trust-constr   |
+    +=======================+=============+========+===========+==============+=============|================+
+    | None                  | x           |        |           |              |             | x              |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | callable              | (n, n), LO  | (n, n) | (n, n)    | (n, n)       | (n, n)      | (n, n), LO, sp |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | '2-point'             | x           |        | x         | x            |             | x              |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | '3-point'             | x           |        | x         | x            |             | x              |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | 'cs'                  | x           |        | x         | x            |             | x              |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+    | HessianUpdateStrategy | x           |        | x         | x            |             | x              |
+    +-----------------------+-------------+--------+-----------+--------------+-------------+----------------+
+
+    where LO=LinearOperator, sp=Sparse matrrix
 
     **Custom minimizers**
 
