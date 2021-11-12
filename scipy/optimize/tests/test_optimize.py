@@ -76,6 +76,15 @@ def test_check_grad():
                   x_sinx, der_x_sinx, x0,
                   direction='random_projection', seed=1234)
 
+    # checking can be done for derivatives of vector valued functions
+    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
+                            direction='all', seed=1234)
+    assert r < 5e-7
+
+    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
+                            direction='random', seed=1234)
+    assert r < 5e-7
+
 
 class CheckOptimize:
     """ Base test case for a simple constrained entropy maximization problem
@@ -2568,3 +2577,13 @@ class TestGlobalOptimization:
             assert hasattr(result, "fun")
             assert hasattr(result, "nfev")
             assert hasattr(result, "nit")
+
+
+def test_approx_fprime():
+    # check that approx_fprime (serviced by approx_derivative) works for
+    # jac and hess
+    g = optimize.approx_fprime(himmelblau_x0, himmelblau)
+    assert_allclose(g, himmelblau_grad(himmelblau_x0), rtol=5e-6)
+
+    h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
+    assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)

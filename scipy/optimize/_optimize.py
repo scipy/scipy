@@ -908,17 +908,24 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
 
 def approx_fprime(xk, f, epsilon=_epsilon, *args):
-    """Finite-difference approximation of the gradient of a scalar function.
+    """Compute finite difference approximation of the derivatives of a
+    scalar or vector-valued function
+
+    If a function maps from R^n to R^m, its derivatives form m-by-n matrix
+    called the Jacobian, where an element (i, j) is a partial derivative of
+    f[i] with respect to x[j].
 
     Parameters
     ----------
     xk : array_like
         The coordinate vector at which to determine the gradient of `f`.
     f : callable
-        The function of which to determine the gradient (partial derivatives).
-        Should take `xk` as first argument, other arguments to `f` can be
-        supplied in ``*args``. Should return a scalar, the value of the
-        function at `xk`.
+        Function of which to estimate the derivatives of. Has the signature
+        ``f(xk, *args)`` where `xk` is the argument in the form of a 1-D array
+        and `args` is a  tuple of any additional fixed parameters needed to
+        completely specify the function. The argument xk passed to this
+        function is ndarray of shape (n,) (never a scalar even if n=1).
+        It must return 1-D array_like of shape (m,) or a scalar.
     epsilon : {float, array_like}, optional
         Increment to `xk` to use for determining the function gradient.
         If a scalar, uses the same finite difference delta for all partial
@@ -930,7 +937,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
     Returns
     -------
-    grad : ndarray
+    jac : ndarray
         The partial derivatives of `f` to `xk`.
 
     See Also
@@ -945,9 +952,6 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
                  f(xk[i] + epsilon[i]) - f(xk[i])
         f'[i] = ---------------------------------
                             epsilon[i]
-
-    The main use of `approx_fprime` is in scalar function optimizers like
-    `fmin_bfgs`, to determine numerically the Jacobian of a function.
 
     Examples
     --------
@@ -964,15 +968,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
     """
     xk = np.asarray(xk, float)
-
     f0 = f(xk, *args)
-    if not np.isscalar(f0):
-        try:
-            f0 = f0.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
 
     return approx_derivative(f, xk, method='2-point', abs_step=epsilon,
                              args=args, f0=f0)
@@ -988,7 +984,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     func : callable ``func(x0, *args)``
         Function whose derivative is to be checked.
     grad : callable ``grad(x0, *args)``
-        Gradient of `func`.
+        Jacobian of `func`.
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
@@ -1002,6 +998,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         are used to check `grad` against forward difference approximation
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
+        If `func` is a vector valued function then only ``'all'`` can be used.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -1049,12 +1046,13 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         return func(x0 + w*v, *args)
 
     if direction == 'random':
+        _grad = grad(x0, *args)
         random_state = check_random_state(seed)
-        v = random_state.normal(0, 1, size=(x0.shape))
+        v = random_state.normal(0, 1, size=(_grad.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
-        analytical_grad = np.dot(grad(x0, *args), v)
+        analytical_grad = np.dot(_grad, v)
     elif direction == 'all':
         _args = args
         _func = func
@@ -1064,8 +1062,8 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         raise ValueError("{} is not a valid string for "
                          "``direction`` argument".format(direction))
 
-    return sqrt(sum((analytical_grad -
-                     approx_fprime(vars, _func, step, *_args))**2))
+    return np.sqrt(np.sum((analytical_grad
+                           - approx_fprime(vars, _func, step, *_args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
