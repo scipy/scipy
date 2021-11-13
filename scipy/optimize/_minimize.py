@@ -355,7 +355,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     gradient is estimated via finite-differences the Hessian must be
     estimated using one of the quasi-Newton strategies.
 
-    **Method specific options for the `hess` keyword**
+    **Method specific options for the** `hess` **keyword**
 
     +--------------+------+----------+-------------------------+-----+
     | method/Hess  | None | callable | '2-point/'3-point'/'cs' | HUS |
