@@ -9,7 +9,7 @@ from scipy.linalg import hilbert, svd
 from scipy.sparse import csc_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
-from scipy.sparse.linalg.eigen.arpack import ArpackNoConvergence
+from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
 
 
 # --- Helper Functions / Classes ---

@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from numpy.testing import assert_allclose
 import pytest
 from scipy.sparse import coo_matrix
-from scipy.sparse.linalg.interface import aslinearoperator
+from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
 from .test_lsqr import G, b
 

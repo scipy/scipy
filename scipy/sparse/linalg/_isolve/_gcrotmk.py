@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
-from scipy.sparse.linalg.isolve.utils import make_system
+from scipy.sparse.linalg._isolve.utils import make_system
 
 
 __all__ = ['gcrotmk']
@@ -35,7 +35,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     outer_v : list of ndarrays
         Augmentation vectors in LGMRES
     prepend_outer_v : bool, optional
-        Whether augmentation vectors come before or after 
+        Whether augmentation vectors come before or after
         Krylov iterates
 
     Raises

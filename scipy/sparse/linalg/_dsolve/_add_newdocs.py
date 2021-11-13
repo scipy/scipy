@@ -1,6 +1,6 @@
 from numpy.lib import add_newdoc
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU',
     """
     LU factorization of a sparse matrix.
 
@@ -81,7 +81,7 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
            [ 2.,  2.,  1.,  0.]])
     """)
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('solve',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('solve',
     """
     solve(rhs[, trans])
 
@@ -106,7 +106,7 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('solve',
         Solution vector(s)
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('L',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('L',
     """
     Lower triangular factor with unit diagonal as a
     `scipy.sparse.csc_matrix`.
@@ -114,24 +114,24 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('L',
     .. versionadded:: 0.14.0
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('U',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('U',
     """
     Upper triangular factor as a `scipy.sparse.csc_matrix`.
 
     .. versionadded:: 0.14.0
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('shape',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('shape',
     """
     Shape of the original matrix as a tuple of ints.
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('nnz',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('nnz',
     """
     Number of nonzero elements in the matrix.
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('perm_c',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_c',
     """
     Permutation Pc represented as an array of indices.
 
@@ -141,7 +141,7 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('perm_c',
     >>> Pc[np.arange(n), perm_c] = 1
     """))
 
-add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('perm_r',
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_r',
     """
     Permutation Pr represented as an array of indices.
 

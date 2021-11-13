@@ -17,7 +17,7 @@ from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_matrix, csr_matrix, diags, rand
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.eigen.arpack import (eigs, eigsh, arpack,
+from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
 
 

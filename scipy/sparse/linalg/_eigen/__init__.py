@@ -2,7 +2,7 @@
 Sparse Eigenvalue Solvers
 -------------------------
 
-The submodules of sparse.linalg.eigen:
+The submodules of sparse.linalg._eigen:
     1. lobpcg: Locally Optimal Block Preconditioned Conjugate Gradient Method
 
 """

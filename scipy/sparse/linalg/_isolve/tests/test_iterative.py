@@ -1,4 +1,4 @@
-""" Test functions for the sparse.linalg.isolve module
+""" Test functions for the sparse.linalg._isolve module
 """
 
 import itertools
@@ -16,7 +16,7 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -545,8 +545,8 @@ class TestQMR:
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
-        from scipy.sparse.linalg.dsolve import splu
-        from scipy.sparse.linalg.interface import LinearOperator
+        from scipy.sparse.linalg._dsolve import splu
+        from scipy.sparse.linalg._interface import LinearOperator
 
         n = 100
 

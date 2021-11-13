@@ -29,7 +29,7 @@ static SuperLUGlobalObject *get_tls_global(void)
 #else
     PyObject *thread_dict;
     SuperLUGlobalObject *obj;
-    const char *key = "scipy.sparse.linalg.dsolve._superlu.__global_object";
+    const char *key = "scipy.sparse.linalg._dsolve._superlu.__global_object";
 
     thread_dict = PyThreadState_GetDict();
     if (thread_dict == NULL) {

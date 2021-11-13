@@ -1,4 +1,4 @@
-""" Test functions for the sparse.linalg.eigen.lobpcg module
+""" Test functions for the sparse.linalg._eigen.lobpcg module
 """
 import itertools
 import platform
@@ -14,7 +14,7 @@ from numpy import ones, r_, diag
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye
 from scipy.sparse.linalg import eigs, LinearOperator
-from scipy.sparse.linalg.eigen.lobpcg import lobpcg
+from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the

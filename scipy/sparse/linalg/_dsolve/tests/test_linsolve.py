@@ -16,7 +16,7 @@ from scipy.linalg import norm, inv
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
         csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 from scipy.sparse.linalg import SuperLU
-from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
+from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
 import scipy.sparse
 

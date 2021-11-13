@@ -53,7 +53,7 @@ __all__ = ['lsqr']
 
 import numpy as np
 from math import sqrt
-from scipy.sparse.linalg.interface import aslinearoperator
+from scipy.sparse.linalg._interface import aslinearoperator
 
 eps = np.finfo(np.float64).eps
 

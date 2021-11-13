@@ -7,7 +7,7 @@ def configuration(parent_package='',top_path=None):
     from scipy._build_utils import (get_g77_abi_wrappers, uses_blas64,
                                     blas_ilp64_pre_build_hook, get_f2py_int64_options)
 
-    config = Configuration('isolve',parent_package,top_path)
+    config = Configuration('_isolve',parent_package,top_path)
 
     if uses_blas64():
         lapack_opt = get_info('lapack_ilp64_opt')

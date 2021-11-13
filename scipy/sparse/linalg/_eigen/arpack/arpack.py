@@ -44,7 +44,7 @@ arpack_int = _arpack.timing.nbx.dtype
 
 import numpy as np
 import warnings
-from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
+from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse._sputils import isdense, is_pydata_spmatrix

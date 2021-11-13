@@ -127,7 +127,7 @@ with smallest magnitude:
    >>> evals_small, evecs_small = eigsh(X, 3, which='SM')
    Traceback (most recent call last):       # may vary (convergence)
    ...
-   scipy.sparse.linalg.eigen.arpack.arpack.ArpackNoConvergence:
+   scipy.sparse.linalg._eigen.arpack.arpack.ArpackNoConvergence:
    ARPACK error -1: No convergence (1001 iterations, 0/3 eigenvectors converged)
 
 Oops. We see that, as mentioned above, ``ARPACK`` is not quite as adept at

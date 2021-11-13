@@ -7,7 +7,7 @@ import numpy as np
 
 from . import _iterative
 
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
@@ -131,7 +131,7 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
                '``scipy.sparse.linalg.LinearOperator``.',
                footer="""
-               
+
                Examples
                --------
                >>> from scipy.sparse import csc_matrix
@@ -143,7 +143,7 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                0
                >>> np.allclose(A.dot(x), b)
                True
-               
+
                """
                )
 @non_reentrant()
@@ -657,7 +657,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     if info >= 0 and not (resid <= atol):
         # info isn't set appropriately otherwise
         info = maxiter
-        
+
     return postprocess(x), info
 
 

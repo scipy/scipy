@@ -22,7 +22,7 @@ from scipy.sparse._sputils import is_pydata_spmatrix
 
 import scipy.sparse
 import scipy.sparse.linalg
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 
 from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 

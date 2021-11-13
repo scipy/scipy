@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Tests for the linalg.isolve.gcrotmk module
+"""Tests for the linalg._isolve.gcrotmk module
 """
 
 from numpy.testing import (assert_, assert_allclose, assert_equal,
@@ -10,9 +10,9 @@ from numpy import zeros, array, allclose
 from scipy.linalg import norm
 from scipy.sparse import csr_matrix, eye, rand
 
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import splu
-from scipy.sparse.linalg.isolve import gcrotmk, gmres
+from scipy.sparse.linalg._isolve import gcrotmk, gmres
 
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],

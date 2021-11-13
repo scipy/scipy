@@ -6,7 +6,7 @@ __all__ = []
 from numpy import asanyarray, asarray, array, matrix, zeros
 from scipy.sparse._sputils import asmatrix
 
-from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator, \
+from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator, \
      IdentityOperator
 
 _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',

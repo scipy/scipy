@@ -21,9 +21,9 @@ __all__ = ['lsmr']
 from numpy import zeros, infty, atleast_1d, result_type
 from numpy.linalg import norm
 from math import sqrt
-from scipy.sparse.linalg.interface import aslinearoperator
+from scipy.sparse.linalg._interface import aslinearoperator
 
-from scipy.sparse.linalg.isolve.lsqr import _sym_ortho
+from scipy.sparse.linalg._isolve.lsqr import _sym_ortho
 
 
 def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
@@ -91,7 +91,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         Initial guess of ``x``, if None zeros are used. Default is None.
 
         .. versionadded:: 1.0.0
-        
+
     Returns
     -------
     x : ndarray of float
