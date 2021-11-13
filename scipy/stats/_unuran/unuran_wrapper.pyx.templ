@@ -632,7 +632,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
+    TransformedDensityRejection(dist, *, mode=None, center=None, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -792,9 +792,9 @@ cdef class TransformedDensityRejection(Method):
 
     def __cinit__(self,
                   dist,
+                  *,
                   mode=None,
                   center=None,
-                  *,
                   domain=None,
                   c=-0.5,
                   construction_points=30,
@@ -974,7 +974,7 @@ UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 cdef class NumericalInversePolynomial(Method):
     """
-    NumericalInversePolynomial(dist, mode=None, center=None, *, domain=None, order=5, u_resolution=1e-10, keep_cdf=False, random_state=None)
+    NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, keep_cdf=False, random_state=None)
 
     Polynomial interpolation based INVersion of CDF (PINV).
 
@@ -1187,9 +1187,9 @@ cdef class NumericalInversePolynomial(Method):
 
     def __cinit__(self,
                   dist,
+                  *,
                   mode=None,
                   center=None,
-                  *,
                   domain=None,
                   order=5,
                   u_resolution=1e-10,

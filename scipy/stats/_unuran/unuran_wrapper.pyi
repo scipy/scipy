@@ -36,9 +36,9 @@ class TDRDist(Protocol):
 class TransformedDensityRejection(Method):
     def __init__(self,
                  dist: TDRDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  c: float = ...,
                  construction_points: int | npt.ArrayLike = ...,
@@ -68,9 +68,9 @@ class PINVDist(Protocol):
 class NumericalInversePolynomial(Method):
     def __init__(self,
                  dist: PINVDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
