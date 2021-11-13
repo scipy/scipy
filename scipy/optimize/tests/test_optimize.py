@@ -25,7 +25,7 @@ from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
-from scipy.optimize._differentiable_functions import ScalarFunction
+from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options
 
 
@@ -818,7 +818,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
-    def test_finite_differences(self):
+    def test_finite_differences_jac(self):
         methods = ['BFGS', 'CG', 'TNC']
         jacs = ['2-point', '3-point', None]
         for method, jac in itertools.product(methods, jacs):
@@ -826,6 +826,32 @@ class TestOptimizeSimple(CheckOptimize):
                                        method=method, jac=jac)
             assert_allclose(self.func(result.x), self.func(self.solution),
                             atol=1e-6)
+
+    def test_finite_differences_hess(self):
+        # test that all the methods that require hess can use finite-difference
+        # For Newton-CG, trust-ncg, trust-krylov the FD estimated hessian is
+        # wrapped in a hessp function
+        # dogleg, trust-exact actually require true hessians at the moment, so
+        # they're excluded.
+        methods = ['trust-constr', 'Newton-CG', 'trust-ncg', 'trust-krylov']
+        hesses = FD_METHODS + (optimize.BFGS,)
+        for method, hess in itertools.product(methods, hesses):
+            if hess is optimize.BFGS:
+                hess = hess()
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method, jac=self.grad,
+                                       hess=hess)
+            assert result.success
+
+        # check that the methods demand some sort of Hessian specification
+        # Newton-CG creates its own hessp, and trust-constr doesn't need a hess
+        # specified either
+        methods = ['trust-ncg', 'trust-krylov', 'dogleg', 'trust-exact']
+        for method in methods:
+            with pytest.raises(ValueError):
+                optimize.minimize(self.func, self.startparams,
+                                  method=method, jac=self.grad,
+                                  hess=None)
 
     def test_bfgs_gh_2169(self):
         def f(x):
@@ -1699,6 +1725,26 @@ class TestNewtonCg:
         assert sol.success, sol.message
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
+
+    def test_finite_difference(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess='2-point',
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
+    def test_hessian_update_strategy(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess=optimize.BFGS(),
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
 
 
 def test_line_for_search():
