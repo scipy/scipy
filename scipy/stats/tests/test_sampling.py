@@ -800,7 +800,6 @@ class TestNumericalInversePolynomial:
 
     bad_orders = [1, 4.5, 20, np.inf, np.nan]
     bad_u_resolution = [1e-20, 1e-1, np.inf, np.nan]
-    bad_max_intervals = [10, 10000000, 1000.5, np.inf, np.nan]
 
     @pytest.mark.parametrize("order", bad_orders)
     def test_bad_orders(self, order):
@@ -816,14 +815,6 @@ class TestNumericalInversePolynomial:
         with pytest.raises(ValueError, match=msg):
             NumericalInversePolynomial(StandardNormal(),
                                        u_resolution=u_resolution)
-
-    @pytest.mark.parametrize("max_intervals", bad_max_intervals)
-    def test_bad_max_intervals(self, max_intervals):
-        msg = (r"`max_intervals` must be an integer in the range "
-               r"\[100, 1000000\].")
-        with pytest.raises(ValueError, match=msg):
-            NumericalInversePolynomial(StandardNormal(),
-                                       max_intervals=max_intervals)
 
     def test_bad_args(self):
         dist = StandardNormal()
@@ -962,10 +953,6 @@ class TestNumericalInverseHermite:
         with pytest.raises(ValueError, match=match):
             stats.NumericalInverseHermite(StandardNormal(),
                                           u_resolution='ekki')
-
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(StandardNormal(), max_intervals=-1)
 
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):

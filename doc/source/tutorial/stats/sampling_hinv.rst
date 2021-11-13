@@ -55,7 +55,7 @@ so the mesh of quantiles is refined as needed to reduce the maximum
 
 below the specified tolerance `u_resolution`. Refinement stops when the required
 tolerance is achieved or when the number of mesh intervals after the next
-refinement could exceed the maximum allowed number `max_intervals`.
+refinement could exceed the maximum allowed number of intervals (1000000).
 
     >>> from scipy.stats import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon

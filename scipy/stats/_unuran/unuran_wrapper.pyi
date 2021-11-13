@@ -74,7 +74,6 @@ class NumericalInversePolynomial(Method):
                  domain: None | Tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
-                 max_intervals: int = ...,
                  keep_cdf: bool = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
@@ -107,7 +106,6 @@ class NumericalInverseHermite(Method):
                  order: int= ...,
                  u_resolution: float = ...,
                  construction_points: None | npt.ArrayLike = ...,
-                 max_intervals: int = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...
