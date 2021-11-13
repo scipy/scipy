@@ -3,6 +3,7 @@
 """
 import numpy as np
 from scipy.sparse import issparse
+from scipy.sparse.linalg.eigen import svds
 
 from numpy import Inf, sqrt, abs
 
@@ -15,6 +16,17 @@ def _sparse_frobenius_norm(x):
     else:
         sqnorm = x.power(2).sum()
     return sqrt(sqnorm)
+
+
+# More suitable for larger-scale sparse matrics
+def _sparse_spectral_norm(x, ord):
+    # Check the date type of 'x'
+    if np.issubdtype(x.dtype, np.integer):
+        x = x.astype(float)
+    which = 'LM' if ord == 2 else 'SM'
+
+    # Use LOBPCG to obtain the largest/smallest sing. value of 'x' efficiently
+    return svds(x, k=1, which=which, solver='lobpcg')[1][0]
 
 
 def norm(x, ord=None, axis=None):
@@ -44,9 +56,6 @@ def norm(x, ord=None, axis=None):
 
     Notes
     -----
-    Some of the ord are not implemented because some associated functions like,
-    _multi_svd_norm, are not yet available for sparse matrix.
-
     This docstring is modified based on numpy.linalg.norm.
     https://github.com/numpy/numpy/blob/master/numpy/linalg/linalg.py
 
@@ -62,19 +71,23 @@ def norm(x, ord=None, axis=None):
     0      abs(x).sum(axis=axis)
     1      max(sum(abs(x), axis=0))
     -1     min(sum(abs(x), axis=0))
-    2      Not implemented
-    -2     Not implemented
+    2      Spectral norm (largest singular value)
+    -2     Smallest singular value
     other  Not implemented
     =====  ============================
 
-    The Frobenius norm is given by [1]_:
+    The Frobenius norm is given by [1]_, pg. 71:
 
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+
+    The Spectral norm is given by [1]_, pg. 73:
+
+        :math:`||A||_2 = \\sqrt(\\lambda_{\\max}(A^HA))`
 
     References
     ----------
     .. [1] G. H. Golub and C. F. Van Loan, *Matrix Computations*,
-        Baltimore, MD, Johns Hopkins University Press, 1985, pg. 15
+        4th Edition, Baltimore, Johns Hopkins University Press, 2013.
 
     Examples
     --------
@@ -103,6 +116,10 @@ def norm(x, ord=None, axis=None):
     7
     >>> norm(b, -1)
     6
+    >>> norm(b, 2)
+    7.3484692283495345
+    >>> norm(b, -2)
+    0.
 
     """
     if not issparse(x):
@@ -136,11 +153,9 @@ def norm(x, ord=None, axis=None):
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amax)
+            return _sparse_spectral_norm(x, ord)
         elif ord == -2:
-            raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amin)
+            return _sparse_spectral_norm(x, ord)
         elif ord == 1:
             return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
         elif ord == Inf:
