@@ -1707,6 +1707,8 @@ cdef class NumericalInverseHermite(Method):
 
             self._check_errorcode(unur_hinv_set_order(self.par, order))
             self._check_errorcode(unur_hinv_set_u_resolution(self.par, u_resolution))
+            # max_intervals is not part of the API, set it to 1e6
+            # this is the default in UNU.RAN
             self._check_errorcode(unur_hinv_set_max_intervals(self.par, 1000000))
             self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
                                                         len(self.construction_points_array)))
