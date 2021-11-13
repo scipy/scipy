@@ -42,11 +42,8 @@ class TransformedDensityRejection(Method):
                  domain: None | Tuple[float, float] = ...,
                  c: float = ...,
                  construction_points: int | npt.ArrayLike = ...,
-                 variant: str = ...,
                  use_dars: bool = ...,
                  max_squeeze_hat_ratio: float = ...,
-                 max_intervals: int = ...,
-                 guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def squeeze_hat_ratio(self) -> float: ...
@@ -111,7 +108,6 @@ class NumericalInverseHermite(Method):
                  u_resolution: float = ...,
                  construction_points: None | npt.ArrayLike = ...,
                  max_intervals: int = ...,
-                 guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...

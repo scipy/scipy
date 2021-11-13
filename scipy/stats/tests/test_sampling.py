@@ -463,11 +463,6 @@ class TestTransformedDensityRejection:
         with pytest.raises(ValueError, match=msg):
             TransformedDensityRejection(StandardNormal(), c=-1.)
 
-    def test_bad_variant(self):
-        msg = r"Invalid option for the `variant`"
-        with pytest.raises(ValueError, match=msg):
-            TransformedDensityRejection(StandardNormal(), variant='foo')
-
     u = [np.linspace(0, 1, num=1000), [], [[]], [np.nan],
          [-np.inf, np.nan, np.inf], 0,
          [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]]
@@ -477,8 +472,7 @@ class TestTransformedDensityRejection:
         # Increase the `max_squeeze_hat_ratio` so the ppf_hat is more
         # accurate.
         rng = TransformedDensityRejection(StandardNormal(),
-                                          max_squeeze_hat_ratio=0.9999,
-                                          max_intervals=10000)
+                                          max_squeeze_hat_ratio=0.9999)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:

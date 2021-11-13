@@ -632,7 +632,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
+    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -688,15 +688,6 @@ cdef class TransformedDensityRejection(Method):
         If an integer, it defines the number of construction points. If it
         is array-like, the elements of the array are used as construction
         points. Default is 30.
-    variant : {'ps', 'gw', 'ia'}, optional
-        The variant to use. The default is 'ps'.
-        Three variants of this method are available:
-
-        * GW: squeezes between construction points, see [3]_.
-        * PS: squeezes proportional to hat function. (Default)
-        * IA: same as variant PS but uses a composition method with
-          "immediate acceptance" in the region below the squeeze.
-
     use_dars : bool, optional
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
@@ -704,12 +695,6 @@ cdef class TransformedDensityRejection(Method):
     max_squeeze_hat_ratio : float, optional
         Set upper bound for the ratio (area below squeeze) / (area below hat).
         It must be a number between 0 and 1. Default is 0.99.
-    max_intervals : int, optional
-        Set maximum number of intervals. Default is 100.
-    guide_factor : float, optional
-        Set factor for relative size of the guide table for indexed search.
-        It must be greater than or equal to 0. When set to 0, then sequential
-        search is used. Default is 2.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -802,13 +787,6 @@ cdef class TransformedDensityRejection(Method):
     >>> plt.title('Transformed Density Rejection Samples')
     >>> plt.legend()
     >>> plt.show()
-
-    To use the log transformation with 10 construction points and the
-    immediate acceptance variant of the method, do:
-
-    >>> rng = TransformedDensityRejection(dist, c=0., construction_points=10,
-    ...                                   variant='ia', random_state=urng)
-    >>> rvs = rng.rvs(1000)
     """
     cdef double[::1] construction_points_array
 
@@ -820,13 +798,10 @@ cdef class TransformedDensityRejection(Method):
                   domain=None,
                   c=-0.5,
                   construction_points=30,
-                  variant="ps",
                   use_dars=True,
                   max_squeeze_hat_ratio=0.99,
-                  max_intervals=100,
-                  guide_factor=2,
                   random_state=None):
-        (domain, c, construction_points, variant) = self._validate_args(dist, domain, c, construction_points, variant)
+        (domain, c, construction_points) = self._validate_args(dist, domain, c, construction_points)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -836,11 +811,8 @@ cdef class TransformedDensityRejection(Method):
             'domain': domain,
             'c': c,
             'construction_points': construction_points,
-            'variant': variant,
             'use_dars': use_dars,
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
-            'max_intervals': max_intervals,
-            'guide_factor': guide_factor,
             'random_state': random_state
         }
 
@@ -882,28 +854,24 @@ cdef class TransformedDensityRejection(Method):
                 self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.construction_points_array),
                                                            &self.construction_points_array[0]))
 
-            if variant == "ps":
-                self._check_errorcode(unur_tdr_set_variant_ps(self.par))
-            elif variant == "ia":
-                self._check_errorcode(unur_tdr_set_variant_ia(self.par))
-            elif variant == "gw":
-                self._check_errorcode(unur_tdr_set_variant_gw(self.par))
+            # PS variant is the default in UNU.RAN
+            self._check_errorcode(unur_tdr_set_variant_ps(self.par))
 
             self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
             self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_squeeze_hat_ratio))
-            self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
-            self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
+            # the parameter max_intervals is not part of the SciPy API
+            # UNU.RAN default is 100, we use a higher value to avoid problems
+            # if max_squeeze_hat_ratio is increased
+            self._check_errorcode(unur_tdr_set_max_intervals(self.par, 10000))
 
             self._set_rng(random_state)
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, dist, domain, c, construction_points, variant):
+    cdef object _validate_args(self, dist, domain, c, construction_points):
         domain = _validate_domain(domain, dist)
         if c not in {-0.5, 0.}:
             raise ValueError("`c` must either be -0.5 or 0.")
-        if variant not in {"ps", "gw", "ia"}:
-            raise ValueError("Invalid option for the `variant`.")
         if not np.isscalar(construction_points):
             self.construction_points_array = np.ascontiguousarray(construction_points,
                                                                   dtype=np.float64)
@@ -916,7 +884,7 @@ cdef class TransformedDensityRejection(Method):
                 construction_points != int(construction_points)):
                 raise ValueError("`construction_points` must be a positive integer.")
 
-        return domain, c, construction_points, variant
+        return domain, c, construction_points
 
     @property
     def squeeze_hat_ratio(self):
@@ -949,9 +917,6 @@ cdef class TransformedDensityRejection(Method):
         ppf_hat(u)
 
         Evaluate the inverse of the CDF of the hat distribution at `u`.
-
-        This call does not work for variant IA (immediate acceptance).
-        In this case the hat CDF is evaluated as if variant PS is used.
 
         Parameters
         ----------
@@ -1452,7 +1417,7 @@ cdef class NumericalInversePolynomial(Method):
 
 cdef class NumericalInverseHermite(Method):
     """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, random_state=None)
 
     Hermite interpolation based INVersion of CDF (HINV).
 
@@ -1520,10 +1485,6 @@ cdef class NumericalInverseHermite(Method):
     max_intervals : int, default: ``100000``
         Maximum number of intervals in the Hermite spline used to
         approximate the percent point function. The default is 100000.
-    guide_factor : float, default: ``1``
-        Set factor for relative size of the guide table for indexed search.
-        It must be greater than or equal to 0. When set to 0, then sequential
-        search is used. Default is 1.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -1712,7 +1673,6 @@ cdef class NumericalInverseHermite(Method):
                   tol=None,
                   construction_points=None,
                   max_intervals=100000,
-                  guide_factor=1,
                   random_state=None):
         domain, order, u_resolution = self._validate_args(dist, domain, order, max_intervals,
                                                           u_resolution, tol, construction_points)
@@ -1725,7 +1685,6 @@ cdef class NumericalInverseHermite(Method):
             'u_resolution': u_resolution,
             'tol': tol,
             'max_intervals': max_intervals,
-            'guide_factor': guide_factor,
             'construction_points': construction_points,
             'random_state': random_state
         }
@@ -1761,8 +1720,6 @@ cdef class NumericalInverseHermite(Method):
             self._check_errorcode(unur_hinv_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
                                                         len(self.construction_points_array)))
-            self._check_errorcode(unur_hinv_set_guidefactor(self.par, guide_factor))
-
             self._set_rng(random_state)
         finally:
             _lock.release()
