@@ -1245,8 +1245,8 @@ cdef class NumericalInversePolynomial(Method):
 
             self._check_errorcode(unur_pinv_set_order(self.par, order))
             self._check_errorcode(unur_pinv_set_u_resolution(self.par, u_resolution))
-            # max_intervals is not part of the API in SciPy
-            # set it to the highest allowed value in UNU.RAN (1e6)
+            # max_intervals is not part of the API. set it to the maximum
+            # allowed value in UNU.RAN which is 1_000_000
             self._check_errorcode(unur_pinv_set_max_intervals(self.par, 1000000))
             self._check_errorcode(unur_pinv_set_keepcdf(self.par, keep_cdf))
 
@@ -1513,7 +1513,7 @@ cdef class NumericalInverseHermite(Method):
     below the specified tolerance `u_resolution`. Refinement stops when the required
     tolerance is achieved or when the number of mesh intervals after the next
     refinement could exceed the maximum allowed number of intervals, which is
-    one million.
+    100000.
 
     This method accepted a `tol` parameter to specify the maximum tolerable u-error
     but it has now been deprecated in the favor of `u_resolution`. `tol` will be
@@ -1664,8 +1664,9 @@ cdef class NumericalInverseHermite(Method):
                   u_resolution=1e-12,
                   tol=None,
                   construction_points=None,
+                  max_intervals=100000,
                   random_state=None):
-        domain, order, u_resolution = self._validate_args(dist, domain, order,
+        domain, order, u_resolution = self._validate_args(dist, domain, order, max_intervals,
                                                           u_resolution, tol, construction_points)
 
         # save all the arguments for pickling support
@@ -1675,6 +1676,7 @@ cdef class NumericalInverseHermite(Method):
             'order': order,
             'u_resolution': u_resolution,
             'tol': tol,
+            'max_intervals': max_intervals,
             'construction_points': construction_points,
             'random_state': random_state
         }
@@ -1707,21 +1709,25 @@ cdef class NumericalInverseHermite(Method):
 
             self._check_errorcode(unur_hinv_set_order(self.par, order))
             self._check_errorcode(unur_hinv_set_u_resolution(self.par, u_resolution))
-            # max_intervals is not part of the API, set it to 1e6
-            # this is the default in UNU.RAN
-            self._check_errorcode(unur_hinv_set_max_intervals(self.par, 1000000))
+            self._check_errorcode(unur_hinv_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
                                                         len(self.construction_points_array)))
             self._set_rng(random_state)
         finally:
             _lock.release()
 
-    def _validate_args(self, dist, domain, order, u_resolution, tol,
+    def _validate_args(self, dist, domain, order, max_intervals, u_resolution, tol,
                        construction_points):
         domain = _validate_domain(domain, dist)
         # UNU.RAN raises warning and sets a default value. Prefer an error instead.
         if order not in {1, 3, 5}:
             raise ValueError("`order` must be either 1, 3, or 5.")
+        if int(max_intervals) != max_intervals or max_intervals <= 1:
+            raise ValueError("`max_intervals' must be an integer greater than 1.")
+        if max_intervals != 100000:
+            warnings.warn("`max_intervals` has been deprecated. "
+                          "It will be completely removed in a future release.",
+                          DeprecationWarning)
         if tol is not None:
             warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
                           "It will be completely removed in a future release.",

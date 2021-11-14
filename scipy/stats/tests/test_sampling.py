@@ -954,6 +954,10 @@ class TestNumericalInverseHermite:
             stats.NumericalInverseHermite(StandardNormal(),
                                           u_resolution='ekki')
 
+        match = "`max_intervals' must be..."
+        with pytest.raises(ValueError, match=match):
+            stats.NumericalInverseHermite(StandardNormal(), max_intervals=-1)
+
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):
             fni = stats.NumericalInverseHermite(StandardNormal())

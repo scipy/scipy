@@ -106,6 +106,7 @@ class NumericalInverseHermite(Method):
                  order: int= ...,
                  u_resolution: float = ...,
                  construction_points: None | npt.ArrayLike = ...,
+                 max_intervals: int = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...
