@@ -696,7 +696,7 @@ class levy_stable_gen(rv_continuous):
     calculated that sufficiently covers the input range).
 
     Further control over FFT calculation is available by setting
-    ``pdf_fft_interpolation_kind`` (defaults to 3) for spline order and
+    ``pdf_fft_interpolation_degree`` (defaults to 3) for spline order and
     ``pdf_fft_interpolation_level`` for determine number of points for
     Newton-Cote formula when approximating the characteristic function
     (considered experimental).
@@ -758,7 +758,12 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_grid_spacing = 0.001
     pdf_fft_n_points_two_power = None
     pdf_fft_interpolation_level = 3
-    pdf_fft_interpolation_kind = 3
+    pdf_fft_interpolation_degree = 3
+    cdf_fft_min_points_threshold = None
+    cdf_fft_grid_spacing = 0.001
+    cdf_fft_n_points_two_power = None
+    cdf_fft_interpolation_level = 3
+    cdf_fft_interpolation_degree = 3
 
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
@@ -870,7 +875,7 @@ class levy_stable_gen(rv_continuous):
         fft_grid_spacing = self.pdf_fft_grid_spacing
         fft_n_points_two_power = self.pdf_fft_n_points_two_power
         fft_interpolation_level = self.pdf_fft_interpolation_level
-        fft_interpolation_kind = self.pdf_fft_interpolation_kind
+        fft_interpolation_degree = self.pdf_fft_interpolation_degree
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -934,8 +939,8 @@ class levy_stable_gen(rv_continuous):
                     q=q,
                     level=fft_interpolation_level,
                 )
-                f = interpolate.interp1d(
-                    density_x, np.real(density), kind=fft_interpolation_kind
+                f = interpolate.InterpolatedUnivariateSpline(
+                    density_x, np.real(density), k=fft_interpolation_degree
                 )  # patch FFT to use cubic
                 data_out[data_mask] = f(_x)
 
@@ -1006,13 +1011,10 @@ class levy_stable_gen(rv_continuous):
             "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
-        fft_grid_spacing = self.pdf_fft_grid_spacing
-        fft_n_points_two_power = self.pdf_fft_n_points_two_power
-        fft_interpolation_level = self.pdf_fft_interpolation_level
-        # TODO: CDF handling does not use fft_interpolation_kind.
-        #  This variable is assigned, but never used.
-        #  Is this intended?
-        # fft_interpolation_kind = self.pdf_fft_interpolation_kind
+        fft_grid_spacing = self.cdf_fft_grid_spacing
+        fft_n_points_two_power = self.cdf_fft_n_points_two_power
+        fft_interpolation_level = self.cdf_fft_interpolation_level
+        fft_interpolation_degree = self.cdf_fft_interpolation_degree
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -1062,7 +1064,7 @@ class levy_stable_gen(rv_continuous):
                     level=fft_interpolation_level,
                 )
                 f = interpolate.InterpolatedUnivariateSpline(
-                    density_x, np.real(density)
+                    density_x, np.real(density), k=fft_interpolation_degree
                 )
                 data_out[data_mask] = np.array(
                     [f.integral(self.a, x_1) for x_1 in _x]
