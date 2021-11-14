@@ -271,27 +271,34 @@ static char gstrf_doc[] = "gstrf(A, ...)\n\
 performs a factorization of the sparse matrix A=*(N,nnz,nzvals,rowind,colptr) and \n\
 returns a factored_lu object.\n\
 \n\
-arguments\n\
----------\n\
+Parameters\n\
+----------\n\
 \n\
 Matrix to be factorized is represented as N,nnz,nzvals,rowind,colptr\n\
   as separate arguments.  This is compressed sparse column representation.\n\
 \n\
-N         number of rows and columns \n\
-nnz       number of non-zero elements\n\
-nzvals    non-zero values \n\
-rowind    row-index for this column (same size as nzvals)\n\
-colptr    index into rowind for first non-zero value in this column\n\
-          size is (N+1).  Last value should be nnz. \n\
+N : int \n\
+    number of rows and columns\n\
+nnz : int\n\
+    number of non-zero elements\n\
+nzvals : array\n\
+    non-zero values \n\
+rowind : array \n\
+    row-index for this column (same size as nzvals)\n\
+colptr : array \n\
+    index into rowind for first non-zero value in this column\n\
+    size is (N+1).  Last value should be nnz. \n\
 \n\
-additional keyword arguments:\n\
------------------------------\n\
-options             specifies additional options for SuperLU\n\
-                    (same keys and values as in superlu_options_t C structure,\n\
-                    and additionally 'Relax' and 'PanelSize')\n\
+Other Parameters\n\
+----------------\n\
+options\n\
+    specifies additional options for SuperLU\n\
+    (same keys and values as in superlu_options_t C structure,\n\
+    and additionally 'Relax' and 'PanelSize')\n\
 \n\
-ilu                 whether to perform an incomplete LU decomposition\n\
-                    (default: false)\n\
+ilu : bool\n\
+    whether to perform an incomplete LU decomposition\n\
+    (default: false)\n\
 ";
 
 
