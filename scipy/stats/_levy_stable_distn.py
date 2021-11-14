@@ -187,7 +187,8 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return _norm_pdf(x0 / np.sqrt(2)) / np.sqrt(2)
     elif alpha == 0.5 and beta == 1.0:
         # levy
-        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        # since S(1/2, 1, gamma, delta; <x>) ==
+        # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
         if _x < 0:
             return 0
@@ -310,7 +311,8 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return _norm_cdf(x0 / np.sqrt(2))
     elif alpha == 0.5 and beta == 1.0:
         # levy
-        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        # since S(1/2, 1, gamma, delta; <x>) ==
+        # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
         if _x < 0:
             return 0
