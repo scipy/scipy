@@ -163,7 +163,7 @@ which requires a PDF and its derivative w.r.t. ``x`` (i.e. the variate).
           required by some generators like the derivative of PDF for the
           TDR method. Relying on SciPy distributions might also reduce
           performance due to the vectorization of the methods like
-          ``pdf`` and ``cdf``. In both case, one can implement a
+          ``pdf`` and ``cdf``. In both cases, one can implement a
           custom distribution object that contains all the required
           methods and that is not vectorized as shown in the example
           above.
