@@ -214,7 +214,13 @@ Smoothing filters
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
   or 3 corresponds to convolution with the first, second, or third
   derivatives of a Gaussian. Higher-order derivatives are not
-  implemented.
+  implemented. Here is an example:
+
+  .. plot:: tutorial/examples/gaussian_filter_plot1.py
+      :align: center
+      :include-source: 0
+
+
 
 - The :func:`gaussian_filter` function implements a multidimensional
   Gaussian filter. The standard deviations of the Gaussian filter
