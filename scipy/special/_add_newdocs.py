@@ -4049,10 +4049,8 @@ add_newdoc("gammainc",
     See also
     --------
     gammaincc : regularized upper incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
-    gammainccinv : inverse of the regularized upper incomplete gamma
-        function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
@@ -4118,10 +4116,8 @@ add_newdoc("gammaincc",
     See also
     --------
     gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
-    gammainccinv : inverse to of the regularized upper incomplete
-        gamma function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
@@ -4155,13 +4151,13 @@ add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse of the upper incomplete gamma function with respect to `x`
+    Inverse of the regularized upper incomplete gamma function.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
-    that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
-    gamma function; see `gammaincc`. This is well-defined because the
-    upper incomplete gamma function is monotonic as can be seen from
-    its definition in [dlmf]_.
+    that :math:`y = Q(a, x)`. Here :math:`Q` is the regularized upper
+    incomplete gamma function; see `gammaincc`. This is well-defined
+    because the upper incomplete gamma function is monotonic as can
+    be seen from its definition in [dlmf]_.
 
     Parameters
     ----------
@@ -4179,8 +4175,7 @@ add_newdoc("gammainccinv",
     --------
     gammaincc : regularized upper incomplete gamma function
     gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
 
     References
     ----------
@@ -4212,7 +4207,7 @@ add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to the lower incomplete gamma function with respect to `x`.
+    Inverse to the regularized lower incomplete gamma function.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
@@ -4236,8 +4231,7 @@ add_newdoc("gammaincinv",
     --------
     gammainc : regularized lower incomplete gamma function
     gammaincc : regularized upper incomplete gamma function
-    gammainccinv : inverse of the regualizred upper incomplete gamma
-        function with respect to `x`
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
