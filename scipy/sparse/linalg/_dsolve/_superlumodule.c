@@ -271,8 +271,8 @@ static char gstrf_doc[] = "gstrf(A, ...)\n\
 performs a factorization of the sparse matrix A=*(N,nnz,nzvals,rowind,colptr) and \n\
 returns a factored_lu object.\n\
 \n\
-Paramerters\n\
------------\n\
+Parameters\n\
+----------\n\
 \n\
 Matrix to be factorized is represented as N,nnz,nzvals,rowind,colptr\n\
   as separate arguments.  This is compressed sparse column representation.\n\
