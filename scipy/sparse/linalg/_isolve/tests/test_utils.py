@@ -1,7 +1,7 @@
 import numpy as np
 from pytest import raises as assert_raises
 
-from scipy.sparse.linalg import utils
+import scipy.sparse.linalg._isolve.utils as utils
 
 
 def test_make_system_bad_shape():

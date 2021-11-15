@@ -525,12 +525,12 @@ def interp_decomp(A, eps_or_k, rand=True):
 
     ..  This function automatically detects the form of the input parameters
         and passes them to the appropriate backend. For details, see
-        :func:`backend.iddp_id`, :func:`backend.iddp_aid`,
-        :func:`backend.iddp_rid`, :func:`backend.iddr_id`,
-        :func:`backend.iddr_aid`, :func:`backend.iddr_rid`,
-        :func:`backend.idzp_id`, :func:`backend.idzp_aid`,
-        :func:`backend.idzp_rid`, :func:`backend.idzr_id`,
-        :func:`backend.idzr_aid`, and :func:`backend.idzr_rid`.
+        :func:`_backend.iddp_id`, :func:`_backend.iddp_aid`,
+        :func:`_backend.iddp_rid`, :func:`_backend.iddr_id`,
+        :func:`_backend.iddr_aid`, :func:`_backend.iddr_rid`,
+        :func:`_backend.idzp_id`, :func:`_backend.idzp_aid`,
+        :func:`_backend.idzp_rid`, :func:`_backend.idzr_id`,
+        :func:`_backend.idzr_aid`, and :func:`_backend.idzr_rid`.
 
     Parameters
     ----------
@@ -563,31 +563,31 @@ def interp_decomp(A, eps_or_k, rand=True):
             eps = eps_or_k
             if rand:
                 if real:
-                    k, idx, proj = backend.iddp_aid(eps, A)
+                    k, idx, proj = _backend.iddp_aid(eps, A)
                 else:
                     if _IS_32BIT:
                         raise _32BIT_ERROR
-                    k, idx, proj = backend.idzp_aid(eps, A)
+                    k, idx, proj = _backend.idzp_aid(eps, A)
             else:
                 if real:
-                    k, idx, proj = backend.iddp_id(eps, A)
+                    k, idx, proj = _backend.iddp_id(eps, A)
                 else:
-                    k, idx, proj = backend.idzp_id(eps, A)
+                    k, idx, proj = _backend.idzp_id(eps, A)
             return k, idx - 1, proj
         else:
             k = int(eps_or_k)
             if rand:
                 if real:
-                    idx, proj = backend.iddr_aid(A, k)
+                    idx, proj = _backend.iddr_aid(A, k)
                 else:
                     if _IS_32BIT:
                         raise _32BIT_ERROR
-                    idx, proj = backend.idzr_aid(A, k)
+                    idx, proj = _backend.idzr_aid(A, k)
             else:
                 if real:
-                    idx, proj = backend.iddr_id(A, k)
+                    idx, proj = _backend.iddr_id(A, k)
                 else:
-                    idx, proj = backend.idzr_id(A, k)
+                    idx, proj = _backend.idzr_id(A, k)
             return idx - 1, proj
     elif isinstance(A, LinearOperator):
         m, n = A.shape
@@ -595,20 +595,20 @@ def interp_decomp(A, eps_or_k, rand=True):
         if eps_or_k < 1:
             eps = eps_or_k
             if real:
-                k, idx, proj = backend.iddp_rid(eps, m, n, matveca)
+                k, idx, proj = _backend.iddp_rid(eps, m, n, matveca)
             else:
                 if _IS_32BIT:
                     raise _32BIT_ERROR
-                k, idx, proj = backend.idzp_rid(eps, m, n, matveca)
+                k, idx, proj = _backend.idzp_rid(eps, m, n, matveca)
             return k, idx - 1, proj
         else:
             k = int(eps_or_k)
             if real:
-                idx, proj = backend.iddr_rid(m, n, matveca, k)
+                idx, proj = _backend.iddr_rid(m, n, matveca, k)
             else:
                 if _IS_32BIT:
                     raise _32BIT_ERROR
-                idx, proj = backend.idzr_rid(m, n, matveca, k)
+                idx, proj = _backend.idzr_rid(m, n, matveca, k)
             return idx - 1, proj
     else:
         raise _TYPE_ERROR
@@ -627,8 +627,8 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :func:`reconstruct_skel_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_reconid` and
-        :func:`backend.idz_reconid`.
+        appropriate backend. For details, see :func:`_backend.idd_reconid` and
+        :func:`_backend.idz_reconid`.
 
     Parameters
     ----------
@@ -645,9 +645,9 @@ def reconstruct_matrix_from_id(B, idx, proj):
         Reconstructed matrix.
     """
     if _is_real(B):
-        return backend.idd_reconid(B, idx + 1, proj)
+        return _backend.idd_reconid(B, idx + 1, proj)
     else:
-        return backend.idz_reconid(B, idx + 1, proj)
+        return _backend.idz_reconid(B, idx + 1, proj)
 
 
 def reconstruct_interp_matrix(idx, proj):
@@ -668,8 +668,8 @@ def reconstruct_interp_matrix(idx, proj):
     :func:`reconstruct_skel_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_reconint` and
-        :func:`backend.idz_reconint`.
+        appropriate backend. For details, see :func:`_backend.idd_reconint` and
+        :func:`_backend.idz_reconint`.
 
     Parameters
     ----------
@@ -684,9 +684,9 @@ def reconstruct_interp_matrix(idx, proj):
         Interpolation matrix.
     """
     if _is_real(proj):
-        return backend.idd_reconint(idx + 1, proj)
+        return _backend.idd_reconint(idx + 1, proj)
     else:
-        return backend.idz_reconint(idx + 1, proj)
+        return _backend.idz_reconint(idx + 1, proj)
 
 
 def reconstruct_skel_matrix(A, k, idx):
@@ -706,8 +706,8 @@ def reconstruct_skel_matrix(A, k, idx):
     :func:`reconstruct_interp_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_copycols` and
-        :func:`backend.idz_copycols`.
+        appropriate backend. For details, see :func:`_backend.idd_copycols` and
+        :func:`_backend.idz_copycols`.
 
     Parameters
     ----------
@@ -724,9 +724,9 @@ def reconstruct_skel_matrix(A, k, idx):
         Skeleton matrix.
     """
     if _is_real(A):
-        return backend.idd_copycols(A, k, idx + 1)
+        return _backend.idd_copycols(A, k, idx + 1)
     else:
-        return backend.idz_copycols(A, k, idx + 1)
+        return _backend.idz_copycols(A, k, idx + 1)
 
 
 def id_to_svd(B, idx, proj):
@@ -742,8 +742,8 @@ def id_to_svd(B, idx, proj):
     See also :func:`svd`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_id2svd` and
-        :func:`backend.idz_id2svd`.
+        appropriate backend. For details, see :func:`_backend.idd_id2svd` and
+        :func:`_backend.idz_id2svd`.
 
     Parameters
     ----------
@@ -764,9 +764,9 @@ def id_to_svd(B, idx, proj):
         Right singular vectors.
     """
     if _is_real(B):
-        U, V, S = backend.idd_id2svd(B, idx + 1, proj)
+        U, V, S = _backend.idd_id2svd(B, idx + 1, proj)
     else:
-        U, V, S = backend.idz_id2svd(B, idx + 1, proj)
+        U, V, S = _backend.idz_id2svd(B, idx + 1, proj)
     return U, S, V
 
 
@@ -775,8 +775,8 @@ def estimate_spectral_norm(A, its=20):
     Estimate spectral norm of a matrix by the randomized power method.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_snorm` and
-        :func:`backend.idz_snorm`.
+        appropriate backend. For details, see :func:`_backend.idd_snorm` and
+        :func:`_backend.idz_snorm`.
 
     Parameters
     ----------
@@ -797,9 +797,9 @@ def estimate_spectral_norm(A, its=20):
     matvec = lambda x: A. matvec(x)
     matveca = lambda x: A.rmatvec(x)
     if _is_real(A):
-        return backend.idd_snorm(m, n, matveca, matvec, its=its)
+        return _backend.idd_snorm(m, n, matveca, matvec, its=its)
     else:
-        return backend.idz_snorm(m, n, matveca, matvec, its=its)
+        return _backend.idz_snorm(m, n, matveca, matvec, its=its)
 
 
 def estimate_spectral_norm_diff(A, B, its=20):
@@ -808,8 +808,8 @@ def estimate_spectral_norm_diff(A, B, its=20):
     power method.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_diffsnorm` and
-        :func:`backend.idz_diffsnorm`.
+        appropriate backend. For details, see :func:`_backend.idd_diffsnorm` and
+        :func:`_backend.idz_diffsnorm`.
 
     Parameters
     ----------
@@ -836,10 +836,10 @@ def estimate_spectral_norm_diff(A, B, its=20):
     matvec2 = lambda x: B. matvec(x)
     matveca2 = lambda x: B.rmatvec(x)
     if _is_real(A):
-        return backend.idd_diffsnorm(
+        return _backend.idd_diffsnorm(
             m, n, matveca1, matveca2, matvec1, matvec2, its=its)
     else:
-        return backend.idz_diffsnorm(
+        return _backend.idz_diffsnorm(
             m, n, matveca1, matveca2, matvec1, matvec2, its=its)
 
 
@@ -860,12 +860,12 @@ def svd(A, eps_or_k, rand=True):
 
     ..  This function automatically detects the form of the input parameters and
         passes them to the appropriate backend. For details, see
-        :func:`backend.iddp_svd`, :func:`backend.iddp_asvd`,
-        :func:`backend.iddp_rsvd`, :func:`backend.iddr_svd`,
-        :func:`backend.iddr_asvd`, :func:`backend.iddr_rsvd`,
-        :func:`backend.idzp_svd`, :func:`backend.idzp_asvd`,
-        :func:`backend.idzp_rsvd`, :func:`backend.idzr_svd`,
-        :func:`backend.idzr_asvd`, and :func:`backend.idzr_rsvd`.
+        :func:`_backend.iddp_svd`, :func:`_backend.iddp_asvd`,
+        :func:`_backend.iddp_rsvd`, :func:`_backend.iddr_svd`,
+        :func:`_backend.iddr_asvd`, :func:`_backend.iddr_rsvd`,
+        :func:`_backend.idzp_svd`, :func:`_backend.idzp_asvd`,
+        :func:`_backend.idzp_rsvd`, :func:`_backend.idzr_svd`,
+        :func:`_backend.idzr_asvd`, and :func:`_backend.idzr_rsvd`.
 
     Parameters
     ----------
@@ -899,16 +899,16 @@ def svd(A, eps_or_k, rand=True):
             eps = eps_or_k
             if rand:
                 if real:
-                    U, V, S = backend.iddp_asvd(eps, A)
+                    U, V, S = _backend.iddp_asvd(eps, A)
                 else:
                     if _IS_32BIT:
                         raise _32BIT_ERROR
-                    U, V, S = backend.idzp_asvd(eps, A)
+                    U, V, S = _backend.idzp_asvd(eps, A)
             else:
                 if real:
-                    U, V, S = backend.iddp_svd(eps, A)
+                    U, V, S = _backend.iddp_svd(eps, A)
                 else:
-                    U, V, S = backend.idzp_svd(eps, A)
+                    U, V, S = _backend.idzp_svd(eps, A)
         else:
             k = int(eps_or_k)
             if k > min(A.shape):
@@ -916,16 +916,16 @@ def svd(A, eps_or_k, rand=True):
                                  " %s " % (k, min(A.shape)))
             if rand:
                 if real:
-                    U, V, S = backend.iddr_asvd(A, k)
+                    U, V, S = _backend.iddr_asvd(A, k)
                 else:
                     if _IS_32BIT:
                         raise _32BIT_ERROR
-                    U, V, S = backend.idzr_asvd(A, k)
+                    U, V, S = _backend.idzr_asvd(A, k)
             else:
                 if real:
-                    U, V, S = backend.iddr_svd(A, k)
+                    U, V, S = _backend.iddr_svd(A, k)
                 else:
-                    U, V, S = backend.idzr_svd(A, k)
+                    U, V, S = _backend.idzr_svd(A, k)
     elif isinstance(A, LinearOperator):
         m, n = A.shape
         matvec = lambda x: A.matvec(x)
@@ -933,19 +933,19 @@ def svd(A, eps_or_k, rand=True):
         if eps_or_k < 1:
             eps = eps_or_k
             if real:
-                U, V, S = backend.iddp_rsvd(eps, m, n, matveca, matvec)
+                U, V, S = _backend.iddp_rsvd(eps, m, n, matveca, matvec)
             else:
                 if _IS_32BIT:
                     raise _32BIT_ERROR
-                U, V, S = backend.idzp_rsvd(eps, m, n, matveca, matvec)
+                U, V, S = _backend.idzp_rsvd(eps, m, n, matveca, matvec)
         else:
             k = int(eps_or_k)
             if real:
-                U, V, S = backend.iddr_rsvd(m, n, matveca, matvec, k)
+                U, V, S = _backend.iddr_rsvd(m, n, matveca, matvec, k)
             else:
                 if _IS_32BIT:
                     raise _32BIT_ERROR
-                U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
+                U, V, S = _backend.idzr_rsvd(m, n, matveca, matvec, k)
     else:
         raise _TYPE_ERROR
     return U, S, V
@@ -963,8 +963,8 @@ def estimate_rank(A, eps):
 
     ..  This function automatically detects the form of the input parameters and
         passes them to the appropriate backend. For details,
-        see :func:`backend.idd_estrank`, :func:`backend.idd_findrank`,
-        :func:`backend.idz_estrank`, and :func:`backend.idz_findrank`.
+        see :func:`_backend.idd_estrank`, :func:`_backend.idd_findrank`,
+        :func:`_backend.idz_estrank`, and :func:`_backend.idz_findrank`.
 
     Parameters
     ----------
@@ -986,9 +986,9 @@ def estimate_rank(A, eps):
 
     if isinstance(A, np.ndarray):
         if real:
-            rank = backend.idd_estrank(eps, A)
+            rank = _backend.idd_estrank(eps, A)
         else:
-            rank = backend.idz_estrank(eps, A)
+            rank = _backend.idz_estrank(eps, A)
         if rank == 0:
             # special return value for nearly full rank
             rank = min(A.shape)
@@ -997,8 +997,8 @@ def estimate_rank(A, eps):
         m, n = A.shape
         matveca = A.rmatvec
         if real:
-            return backend.idd_findrank(eps, m, n, matveca)
+            return _backend.idd_findrank(eps, m, n, matveca)
         else:
-            return backend.idz_findrank(eps, m, n, matveca)
+            return _backend.idz_findrank(eps, m, n, matveca)
     else:
         raise _TYPE_ERROR
