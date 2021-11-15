@@ -360,6 +360,7 @@ Transformations
    trim1
    zmap
    zscore
+   gzscore
 
 Statistical distances
 ---------------------
