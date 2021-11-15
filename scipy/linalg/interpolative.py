@@ -382,9 +382,23 @@ backend routine.
 
 """
 
-import scipy.linalg._interpolative_backend as backend
+import scipy.linalg._interpolative_backend as _backend
 import numpy as np
 import sys
+
+__all__ = [
+    'estimate_rank',
+    'estimate_spectral_norm',
+    'estimate_spectral_norm_diff',
+    'id_to_svd',
+    'interp_decomp',
+    'rand',
+    'reconstruct_interp_matrix',
+    'reconstruct_matrix_from_id',
+    'reconstruct_skel_matrix',
+    'seed',
+    'svd',
+]
 
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
@@ -428,23 +442,23 @@ def seed(seed=None):
         initialize the generator.
 
     """
-    # For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
-    # and :func:`backend.id_srando`.
+    # For details, see :func:`_backend.id_srand`, :func:`_backend.id_srandi`,
+    # and :func:`_backend.id_srando`.
 
     if isinstance(seed, str) and seed == 'default':
-        backend.id_srando()
+        _backend.id_srando()
     elif hasattr(seed, '__len__'):
         state = np.asfortranarray(seed, dtype=float)
         if state.shape != (55,):
             raise ValueError("invalid input size")
         elif state.min() < 0 or state.max() > 1:
             raise ValueError("values not in range [0,1]")
-        backend.id_srandi(state)
+        _backend.id_srandi(state)
     elif seed is None:
-        backend.id_srandi(np.random.rand(55))
+        _backend.id_srandi(np.random.rand(55))
     else:
         rnd = np.random.RandomState(seed)
-        backend.id_srandi(rnd.rand(55))
+        _backend.id_srandi(rnd.rand(55))
 
 
 def rand(*shape):
@@ -461,8 +475,8 @@ def rand(*shape):
         Shape of output array
 
     """
-    # For details, see :func:`backend.id_srand`, and :func:`backend.id_srando`.
-    return backend.id_srand(np.prod(shape)).reshape(shape)
+    # For details, see :func:`_backend.id_srand`, and :func:`_backend.id_srando`.
+    return _backend.id_srand(np.prod(shape)).reshape(shape)
 
 
 def interp_decomp(A, eps_or_k, rand=True):

@@ -95,7 +95,7 @@ Arff files (:mod:`scipy.io.arff`)
    ParseArffError
 """
 # matfile read and write
-from ._matlab import loadmat, savemat, whosmat, byteordercodes
+from ._matlab import loadmat, savemat, whosmat
 
 # lower-level MATLAB utilities
 from . import matlab

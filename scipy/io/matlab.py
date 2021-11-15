@@ -45,7 +45,7 @@ from . import _matlab
 
 
 __all__ = [  # noqa: F822
-    'loadmat', 'savemat', 'whosmat', 'byteordercodes', 'matfile_version',
+    'loadmat', 'savemat', 'whosmat', 'matfile_version',
     'MatReadError', 'MatReadWarning', 'MatWriteError', 'MatlabOpaque',
     'MatlabFunction', 'mat_struct', 'MatlabObject',
 ]

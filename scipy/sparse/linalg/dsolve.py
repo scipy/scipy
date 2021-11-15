@@ -8,7 +8,7 @@ from . import _dsolve
 
 __all__ = [  # noqa: F822
     'MatrixRankWarning', 'SuperLU', 'factorized',
-    'linsolve', 'spilu', 'splu', 'spsolve',
+    'spilu', 'splu', 'spsolve',
     'spsolve_triangular', 'use_solver'
 ]
 
