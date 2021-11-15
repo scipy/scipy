@@ -229,7 +229,9 @@ Smoothing filters
   first, second, or third derivatives of a Gaussian. Higher-order
   derivatives are not implemented. The *order* parameter must be a
   number, to specify the same order for all axes, or a sequence of
-  numbers to specify a different order for each axis. Here is an example:
+  numbers to specify a different order for each axis. The below example 
+  shows the filter applied on test data with different sigma values. 
+  The order parameter is kept at 0. 
 
   .. plot:: tutorial/examples/gaussian_filter_plot1.py
       :align: center

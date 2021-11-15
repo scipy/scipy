@@ -28,7 +28,7 @@ def plot_voxels(varray, ax, title):
     ax.view_init(30, 200)
     ax.axis("off")
     ax.voxels(varray, facecolors=colors, edgecolor="#000000", linewidth=0.1)
-    ax.set_title(title)
+    ax.set_title(title, fontsize=30)
 
 
 fig = plt.figure(figsize=(16, 9))
