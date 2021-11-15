@@ -34,19 +34,21 @@ voxelarray = np.uint8(voxelarray * 255 / 8)
 cmap = plt.get_cmap("YlGnBu")
 
 
-def plot_voxels(varray, fig, subp, title):
+def plot_voxels(varray, ax, title):
     colors = cmap(varray)
-    ax = fig.add_subplot(*subp, projection="3d")
     ax.view_init(30, 200)
-    plt.axis("off")
+    ax.axis("off")
     ax.voxels(varray, facecolors=colors, edgecolor="#000000", linewidth=0.1)
     ax.set_title(title)
 
 
-plt.rcParams["figure.dpi"] = 250
-fig = plt.figure(figsize=plt.figaspect(0.5))
-plot_voxels(voxelarray, fig, subp=(1, 3, 1), title="Original")
+fig = plt.figure(figsize=(12, 4))
+ax1 = fig.add_subplot(1, 3, 1, projection="3d")
+ax2 = fig.add_subplot(1, 3, 2, projection="3d")
+ax3 = fig.add_subplot(1, 3, 3, projection="3d")
+
+plot_voxels(voxelarray, ax1, title="Original")
 voxelarray2 = gaussian_filter(voxelarray, sigma=1)
-plot_voxels(voxelarray2, fig, subp=(1, 3, 2), title="gaussian_filter \n sigma=1")
-voxelarray2 = gaussian_filter(voxelarray, sigma=3)
-plot_voxels(voxelarray2, fig, subp=(1, 3, 3), title="gaussian_filter \n sigma=3")
+plot_voxels(voxelarray2, ax2, title="gaussian_filter \n sigma=1")
+voxelarray3 = gaussian_filter(voxelarray, sigma=3)
+plot_voxels(voxelarray3, ax3, title="gaussian_filter \n sigma=3")
