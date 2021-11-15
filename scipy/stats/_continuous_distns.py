@@ -9123,7 +9123,7 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None, random_state=None):
-        # if chi <= 1.825:
+        # if chi <= 1.8:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
         # write: self.pdf = c * g(x) * h(x), where
@@ -9139,10 +9139,10 @@ class argus_gen(rv_continuous):
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
         #
         # In both cases, the cdf G of g can be easily computed to apply the
-        # rejection method. We use case 1 for chi < 1.15,
-        # case 2 for 1.15 <= chi <= 1.825
+        # rejection method. We use case 1 for chi <= 0.5,
+        # case 2 for 0.5 < chi <= 1.8
         #
-        # if chi > 1.825:
+        # if chi > 1.8:
         # use relation to the Gamma distribution: if X is ARGUS with parameter
         # chi), then Y = chi**2 * (1 - X**2) / 2 has density proportional to
         # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
@@ -9159,7 +9159,7 @@ class argus_gen(rv_continuous):
         x = np.zeros(N)
         simulated = 0
         chi2 = chi * chi
-        if chi <= 1.15:
+        if chi <= 0.5:
             d = -chi2 / 2
             while simulated < N:
                 k = N - simulated
@@ -9172,7 +9172,7 @@ class argus_gen(rv_continuous):
                     rvs = np.sqrt(1 - z[accept])
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
-        elif chi <= 1.825:
+        elif chi <= 1.8:
             echi = np.exp(-chi2 / 2)
             while simulated < N:
                 k = N - simulated

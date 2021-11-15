@@ -5781,13 +5781,22 @@ class TestArgus:
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
     @pytest.mark.parametrize('chi, random_state', [
-            [0.1, 325],   # chi < 1.15: rejection method case 1
-            [1.3, 155],   # 1 <= chi <= 1.825: rejection method case 2
-            [3.5, 135]    # chi > 1.825: transform conditional Gamma distr.
+            [0.1, 325],   # chi <= 0.5: rejection method case 1
+            [1.3, 155],   # 1 <= chi <= 1.8: rejection method case 2
+            [3.5, 135]    # chi > 1.8: transform conditional Gamma distribution
         ])
-    def test_rvs_randomstate(self, chi, random_state):
+    def test_rvs(self, chi, random_state):
         x = stats.argus.rvs(chi, size=500, random_state=random_state)
         _, p = stats.kstest(x, "argus", (chi, ))
+        assert_(p > 0.05)
+
+    @pytest.mark.parametrize('chi', [1e-9, 1e-6])
+    def test_rvs_small_chi(self, chi):
+        # test for gh-11699 => rejection method case 1 can even handle chi=0
+        # the CDF of the distribution for chi=0 is 1 - (1 - x**2)**(3/2)
+        # test rvs against distribution of limit chi=0
+        r = stats.argus.rvs(chi, size=500, random_state=890981)
+        _, p = stats.kstest(r, lambda x: 1 - (1 - x**2)**(3/2))
         assert_(p > 0.05)
 
     # Expected values were computed with mpmath.
