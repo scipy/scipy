@@ -41,3 +41,6 @@ voxelarray2 = gaussian_filter(voxelarray, sigma=1)
 plot_voxels(voxelarray2, ax2, title="gaussian_filter \n sigma=1")
 voxelarray3 = gaussian_filter(voxelarray, sigma=3)
 plot_voxels(voxelarray3, ax3, title="gaussian_filter \n sigma=3")
+
+plt.tight_layout()
+plt.show()
