@@ -4,20 +4,6 @@ from scipy.ndimage import gaussian_filter
 
 grids = 2
 boxs = 5
-x, y, z = np.indices((boxs * grids, boxs * grids, boxs * grids))
-
-
-def make_cube(pos=(0, 0, 0)):  # make a boolean mask
-    cube = (
-        (pos[0] <= x)
-        & (x < pos[0] + boxs)
-        & (pos[1] <= y)
-        & (y < pos[1] + boxs)
-        & (pos[2] <= z)
-        & (z < pos[2] + boxs)
-    )
-    return cube
-
 
 voxelarray = np.zeros((boxs * grids, boxs * grids, boxs * grids))
 
@@ -25,8 +11,11 @@ i = 1
 for xi in range(0, 2):
     for yi in range(0, 2):
         for zi in range(0, 2):
-            cube = make_cube((xi * boxs, yi * boxs, zi * boxs))
-            voxelarray[cube] = i
+            voxelarray[
+                xi * boxs : xi * boxs + boxs,
+                yi * boxs : yi * boxs + boxs,
+                zi * boxs : zi * boxs + boxs,
+            ] = i
             i += 1
 
 voxelarray = np.uint8(voxelarray * 255 / 8)
@@ -42,7 +31,7 @@ def plot_voxels(varray, ax, title):
     ax.set_title(title)
 
 
-fig = plt.figure(figsize=(12, 4))
+fig = plt.figure(figsize=(16, 9))
 ax1 = fig.add_subplot(1, 3, 1, projection="3d")
 ax2 = fig.add_subplot(1, 3, 2, projection="3d")
 ax3 = fig.add_subplot(1, 3, 3, projection="3d")
