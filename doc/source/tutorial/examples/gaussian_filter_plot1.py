@@ -12,9 +12,9 @@ for xi in range(0, 2):
     for yi in range(0, 2):
         for zi in range(0, 2):
             voxelarray[
-                xi * boxs : xi * boxs + boxs,
-                yi * boxs : yi * boxs + boxs,
-                zi * boxs : zi * boxs + boxs,
+                xi * boxs: xi * boxs + boxs,
+                yi * boxs: yi * boxs + boxs,
+                zi * boxs: zi * boxs + boxs,
             ] = i
             i += 1
 
