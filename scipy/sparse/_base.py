@@ -717,13 +717,12 @@ class spmatrix:
 
             if other == 0:
                 from ._construct import eye
-                E = np.ones(self.shape[0])
+                E = eye(M)
                 if self._is_array:
                     from ._arrays import dia_array
-                    return dia_array((E, 0), shape=(M, M))
-                else:
-                    from ._dia import dia_matrix
-                    return dia_matrix((E, 0), shape=(M, M))
+                    E = dia_array(E)
+                return E
+
             elif other == 1:
                 return self.copy()
             else:
