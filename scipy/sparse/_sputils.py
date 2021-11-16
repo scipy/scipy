@@ -292,7 +292,7 @@ def check_shape(args, current_shape=None):
     if current_shape is None:
         if len(new_shape) != 2:
             raise ValueError('shape must be a 2-tuple of positive integers')
-        elif not all(d >= 0 for d in new_shape):
+        elif any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
 
     else:

@@ -29,30 +29,40 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
+    def _raise_on_1d_array_slice(self):
+        """We do not currently support 1D sparse arrays.
+
+        This function is called each time that a 1D array would
+        result, raising an error instead.
+
+        Once 1D sparse arrays are implemented, it should be removed.
+        """
+        if self._is_array:
+            raise NotImplementedError(
+                'We have not yet implemented 1D sparse slices; '
+                'please index using explicit indices, e.g. `x[:, [0]]`'
+            )
+
     def __getitem__(self, key):
         row, col = self._validate_indices(key)
-
-        def vector(data):
-            if self._is_array:
-                raise NotImplementedError(
-                    'We have not yet implemented 1D sparse slices; '
-                    'please index using explicit indices, e.g. `x[:, [0]]`'
-                )
-            else:
-                return data
 
         # Dispatch to specialized methods.
         if isinstance(row, INT_TYPES):
             if isinstance(col, INT_TYPES):
                 return self._get_intXint(row, col)
             elif isinstance(col, slice):
-                return vector(self._get_intXslice(row, col))
+                self._raise_on_1d_array_slice()
+                return self._get_intXslice(row, col)
             elif col.ndim == 1:
+                self._raise_on_1d_array_slice()
+                return self._get_intXarray(row, col)
+            elif col.ndim == 2:
                 return self._get_intXarray(row, col)
             raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
             if isinstance(col, INT_TYPES):
-                return vector(self._get_sliceXint(row, col))
+                self._raise_on_1d_array_slice()
+                return self._get_sliceXint(row, col)
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
                     return self.copy()
@@ -62,6 +72,7 @@ class IndexMixin:
             raise IndexError('index results in >2 dimensions')
         elif row.ndim == 1:
             if isinstance(col, INT_TYPES):
+                self._raise_on_1d_array_slice()
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 return self._get_arrayXslice(row, col)
@@ -159,6 +170,7 @@ class IndexMixin:
         return row, col
 
     def _asindices(self, idx, length):
+
         """Convert `idx` to a valid index for an axis with a given length.
 
         Subclasses that need special validation can override this method.

@@ -231,6 +231,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
+        row = row.squeeze()
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_intXslice(self, row, col):

@@ -186,9 +186,11 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return newdok
 
     def _get_intXarray(self, row, col):
+        col = col.squeeze()
         return self._get_columnXarray([row], col)
 
     def _get_arrayXint(self, row, col):
+        row = row.squeeze()
         return self._get_columnXarray(row, [col])
 
     def _get_sliceXarray(self, row, col):

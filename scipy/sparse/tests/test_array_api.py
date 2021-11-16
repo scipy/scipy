@@ -75,8 +75,15 @@ def test_indexing(A):
     with pytest.raises(NotImplementedError):
         A[:, 1]
 
+    with pytest.raises(NotImplementedError):
+        A[1, [1, 2]]
+
+    with pytest.raises(NotImplementedError):
+        A[[1, 2], 1]
+
     assert A[[0]]._is_array, "Expected sparse array, got sparse matrix"
-    assert A[1, [1, 2]]._is_array, "Expected ndarray, got sparse array"
+    assert A[1, [[1, 2]]]._is_array, "Expected ndarray, got sparse array"
+    assert A[[[1, 2]], 1]._is_array, "Expected ndarray, got sparse array"
     assert A[:, [1, 2]]._is_array, "Expected sparse array, got something else"
 
 
