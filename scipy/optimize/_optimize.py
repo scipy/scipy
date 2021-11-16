@@ -926,6 +926,11 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
         completely specify the function. The argument xk passed to this
         function is ndarray of shape (n,) (never a scalar even if n=1).
         It must return 1-D array_like of shape (m,) or a scalar.
+
+        .. versionchanged:: 1.8.0
+            `f` is now able to return a 1-D array-like, with the (m, n)
+            Jacobian being estimated.
+
     epsilon : {float, array_like}, optional
         Increment to `xk` to use for determining the function gradient.
         If a scalar, uses the same finite difference delta for all partial
@@ -1046,7 +1051,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         return func(x0 + w*v, *args)
 
     if direction == 'random':
-        _grad = grad(x0, *args)
+        _grad = np.asanyarray(grad(x0, *args))
         if _grad.ndim > 1:
             raise ValueError("'random' can only be used with scalar valued"
                              " func")
