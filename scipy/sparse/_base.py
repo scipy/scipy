@@ -595,7 +595,7 @@ class spmatrix:
     def _mul_sparse_matrix(self, other):
         return self.tocsr()._mul_sparse_matrix(other)
 
-    def _rmul_dispatcher(self, other):
+    def _rmul_dispatch(self, other):
         if isscalarlike(other):
             return self._mul_dispatch(other)
         else:
@@ -607,7 +607,7 @@ class spmatrix:
             return (self.transpose() @ tr).transpose()
 
     def __rmul__(self, other):  # other * self
-        return self._rmul_dispatcher(other)
+        return self._rmul_dispatch(other)
 
     #######################
     # matmul (@) operator #
@@ -623,7 +623,7 @@ class spmatrix:
         if isscalarlike(other):
             raise ValueError("Scalar operands are not allowed, "
                              "use '*' instead")
-        return self._rmul_dispatcher(other)
+        return self._rmul_dispatch(other)
 
     ####################
     # Other Arithmetic #
