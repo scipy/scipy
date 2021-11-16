@@ -57,6 +57,7 @@ available in release 1.2.x, which is a long-term support release [1]_, [2]_.
  2019              Py3.5+ (but Py2.7-specific code not removed)
  2020              Py3.6+ (removal of Py2.7-specific code permitted)
  2021              Py3.7+
+ 2022              Py3.8+
 ================  =======================================================================
 
 NumPy
@@ -91,7 +92,7 @@ Compilers
 
 Building SciPy requires compilers for C, C++, Fortran, as well as the
 python transpilers Cython and Pythran (the latter is an opt-out dependency
-as of version 1.7.0).
+starting from version 1.7.0).
 
 To maintain compatibility with a large number of platforms & setups, especially
 where using the official wheels (or other distribution channels like Anaconda
@@ -107,11 +108,12 @@ Currently, SciPy wheels are being built as follows:
 ================  ========================  ===========================  ==============================
 Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
-OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [15]_
-Windows            ``VS2017-Win2016``        Visual Studio 2017 (15.9)    See ``azure-pipelines.yml``
+OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [15]_
+Windows            ``windows-latest``        Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
 ================  ========================  ===========================  ==============================
 
-Note that the OSX wheels additionally vendor gfortran 4.8, see [15]_.
+Note that the OSX wheels additionally vendor gfortran 4.9,
+see submodule ``gfortran-install`` in [15]_.
 
 
 C Compilers
@@ -223,17 +225,11 @@ flang     A recent version
 ======== ==================
 
 
-Cython Compiler
-~~~~~~~~~~~~~~~
+Cython & Pythran
+~~~~~~~~~~~~~~~~
 
-SciPy always requires a recent Cython compiler.
-
-======== ============ ===============
- Tool    Tool Version  SciPy version
-======== ============ ===============
-Cython     >= 0.29.13  1.4.1
-Cython     >= 0.29.18  1.5.0
-======== ============ ===============
+SciPy always requires a recent Cython compiler. Since 1.7, pythran
+is a build dependency (currently with the possibility to opt out).
 
 
 OpenMP support
