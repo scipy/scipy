@@ -15,9 +15,9 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                      getdtype, isscalarlike, isintlike, get_index_dtype,
-                      downcast_intp_index, get_sum_dtype, check_shape,
-                      matrix, asmatrix, is_pydata_spmatrix)
+                       getdtype, isscalarlike, isintlike, get_index_dtype,
+                       downcast_intp_index, get_sum_dtype, check_shape,
+                       is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):

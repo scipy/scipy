@@ -858,7 +858,6 @@ class spmatrix:
         # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
-        from ._csc import csc_matrix
         n = self.shape[1]
         if j < 0:
             j += n
@@ -875,7 +874,6 @@ class spmatrix:
         # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
-        from ._csr import csr_matrix
         m = self.shape[0]
         if i < 0:
             i += m

@@ -388,7 +388,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     copy.__doc__ = spmatrix.copy.__doc__
 
     def tocoo(self, copy=False):
-        from ._coo import coo_matrix
         if self.nnz == 0:
             return self._coo_container(self.shape, dtype=self.dtype)
 

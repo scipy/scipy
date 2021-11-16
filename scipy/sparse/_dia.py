@@ -9,7 +9,7 @@ import numpy as np
 from ._base import isspmatrix, _formats, spmatrix
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                       get_sum_dtype, validateaxis, check_shape, matrix)
+                       get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
 
 
@@ -364,7 +364,6 @@ class dia_matrix(_data_matrix):
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     def tocsc(self, copy=False):
-        from ._csc import csc_matrix
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
 

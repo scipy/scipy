@@ -177,7 +177,6 @@ class _minmax_mixin:
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
 
-        from . import coo_matrix
         if axis == 0:
             return self._coo_container(
                 (value, (np.zeros(len(value)), major_index)),

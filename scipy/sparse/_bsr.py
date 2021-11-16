@@ -153,7 +153,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                from ._coo import coo_matrix
                 self._set_self(
                     self._coo_container(arg1, dtype=dtype, shape=shape).tobsr(
                         blocksize=blocksize
@@ -195,7 +194,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            from ._coo import coo_matrix
             arg1 = self._coo_container(
                 arg1, dtype=dtype
             ).tobsr(blocksize=blocksize)

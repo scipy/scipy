@@ -14,7 +14,7 @@ from ._base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, get_index_dtype, downcast_intp_index,
-                       check_shape, check_reshape_kwargs, matrix)
+                       check_shape, check_reshape_kwargs)
 
 import operator
 

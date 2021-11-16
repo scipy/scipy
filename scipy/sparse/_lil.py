@@ -12,8 +12,7 @@ import numpy as np
 from ._base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       get_index_dtype, check_shape, check_reshape_kwargs,
-                       asmatrix)
+                       get_index_dtype, check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
