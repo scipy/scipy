@@ -250,7 +250,6 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
 LAPACK           3.4.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
-                 The Accelerate BLAS is no longer supported.
 =============== =====================================================
 
 
