@@ -130,7 +130,7 @@ Visual Studio 2015, this restriction has been lifted. For more context, see the
 explanations by Steve Dower (member of the CPython-on-Windows core developers)
 on this topic [17]_.
 
-The use of MS Visual Studio 9.0 (which doesn't have support C99)
+The use of MS Visual Studio 9.0 (which doesn't have support for C99)
 to build Python 2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
@@ -146,69 +146,49 @@ SciPy has been restricted in the use of more advanced language features by the
 available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
 C11/C17 is supported [11]_ (though without the C11 optional features).
+C99 ``<complex.h>`` would be particularly interesting for scipy;
+MSVC conformance for this is being tracked here [5]_.
 
-Therefore, using C features beyond C90 is contingent upon updating the windows
-toolchain for SciPy, as well as checking compiler support for the desired feature
-across all minimally supported compiler versions. In short:
+Therefore, using C features beyond C90 was only possible insofar there was support on
+windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
+This is because GCC & LLVM support all relevant C11 features with the oldest currently
+used versions, and C17 is just a bugfix for C11, as mentioned above. In short:
 
-===================   ==============   =============================================
-CPython               MS Visual C++    C Standard
-===================   ==============   =============================================
-2.7, 3.0, 3.1, 3.2       9.0           C90
-3.3, 3.4                10.0           C90 & some of C99
-3.5, 3.6                14.0           C90 & most of C99
-3.7, 3.8, 3.9           15.7           Dependent on MSVC version used to build SciPy
-===================   ==============   =============================================
+================  =======================================================================
+ Date              C Standard
+================  =======================================================================
+ <= 2018           C90
+ 2019              C90 for old code, may consider C99 for new
+ 2020              C99 (no ``<complex.h>``, ``<stdatomic.h>``, ``<threads.h>`` & VLAs)
+ 2021              C17 (no ``<complex.h>``, ``<stdatomic.h>``, ``<threads.h>`` & VLAs)
+ ?                 C23, ``<complex.h>``, ``<stdatomic.h>``, ...
+================  =======================================================================
 
 
-C and C++ Language Standards
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C++ Language Standards
+~~~~~~~~~~~~~~~~~~~~~~
 
-C and C++ language standards for SciPy are generally guidelines
+C++ language standards for SciPy are generally guidelines
 rather than official decisions. This is particularly true of
 attempting to predict adoption timelines for newer standards.
 
 ================  =======================================================================
- Date              C/C++ Standard
+ Date              C++ Standard
 ================  =======================================================================
- <= 2018           C90
- 2019              C90 for old code, may consider C99 for new
- 2020              C99
+ <= 2019           C++03
  2020              C++11
  2021              C++14
- ?                 C11, C17, C++17, C++20
+ ?                 C++17, C++20, C++23
 ================  =======================================================================
 
-For C, C11/C17 support will be available as soon as the ``vmImage`` for
-building SciPy is upgraded to ``windows-2019`` (which is compatible with
-currently supported CPython versions and "just" needs to be executed). This is
-because GCC & LLVM support all relevant C11 features with the oldest currently
-used versions, and C17 is just a bugfix for C11, as mentioned above.
-
-On the C++ side, since dropping support for Python 2.7, C++11 can be used
+Since dropping support for Python 2.7, C++11 can be used
 universally. For C++14, Windows is not a restriction anymore since Visual
 Studio 15.9 (<-> _MSC_VER 19.16, see [8]_), has full support (same for C++17),
-see [4]_. However, using C++14 still requires bumping the GCC minimal
-requirement to 5.x and C++17 will require GCC >= 7 [4]_.
-Compiler support for C++20 is still under heavy development.
-
-.. note::
-
-    Developer Note: Some C99 features would be useful for scientific
-    programming, in particular better support of IEEE 754 [5]_.
-    SciPy has a small include file ``scipy/_lib/_c99compat.h`` which
-    provides access to a few functions. Use in conjunction
-    with ``<numpy/npy_math.h>``.
-
-    ========================================= ========================================================
-     Feature                                  Workaround
-    ========================================= ========================================================
-    ``isnan()``, ``isinf()``, ``isfinite()``  Use ``sc_isnan()``, ``sc_isinf()``, ``sc_isfinite()``
-    ``NAN``                                   Use ``NPY_NAN`` (it is *almost* equivalent)
-    inline functions                          Make static functions and place in an include .h file
-    mid-block variable declarations           Declare variables at the top of the block
-    ========================================= ========================================================
-
+see [4]_. Using C++14 requires bumping the GCC minimal requirement to 5.x
+(released April 2015), whereas C++17 _language_ support will require
+GCC >= 7 [4]_. As of the end of 2021, support for the entirety of the
+C++17 standard library has not yet been completed across all compilers;
+similarly, support for C++20 and C++23 is still under heavy development.
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -337,7 +317,7 @@ References
 .. [2] https://python3statement.org
 .. [3] https://docs.scipy.org/doc/numpy/release.html
 .. [4] https://en.cppreference.com/w/cpp/compiler_support
-.. [5] https://en.wikipedia.org/wiki/IEEE_754-1985
+.. [5] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
 .. [6] https://blogs.msdn.microsoft.com/vcblog/2013/07/19/c99-library-support-in-visual-studio-2013/
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
