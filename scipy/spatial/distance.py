@@ -255,8 +255,8 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     else:
-        if kwargs['p'] < 1:
-            raise ValueError("p must be at least 1")
+        if kwargs['p'] <= 0:
+            raise ValueError("p must be greater than 0")
 
     return kwargs
 
@@ -440,7 +440,9 @@ def minkowski(u, v, p=2, w=None):
     v : (N,) array_like
         Input array.
     p : scalar
-        The order of the norm of the difference :math:`{||u-v||}_p`.
+        The order of the norm of the difference :math:`{||u-v||}_p`. Note that
+        for 0 < p < 1, the triangle inequality only holds with an additional
+        multiplicative factor, i.e. it is only a quasi-metric.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -469,8 +471,8 @@ def minkowski(u, v, p=2, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if p < 1:
-        raise ValueError("p must be at least 1")
+    if p <= 0:
+        raise ValueError("p must be greater than 0")
     u_v = u - v
     if w is not None:
         w = _validate_weights(w)
@@ -2031,7 +2033,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = pdist(X, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (p-norm) where :math:`p \\geq 1`.
+       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p > 0` (note
+       that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = pdist(X, 'cityblock')``
 
@@ -2688,7 +2691,8 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = cdist(XA, XB, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \\geq 1`.
+       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p > 0` (note
+       that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = cdist(XA, XB, 'cityblock')``
 
