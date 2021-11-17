@@ -170,7 +170,6 @@ class IndexMixin:
         return row, col
 
     def _asindices(self, idx, length):
-
         """Convert `idx` to a valid index for an axis with a given length.
 
         Subclasses that need special validation can override this method.
