@@ -85,6 +85,7 @@ Functions
    :toctree: generated/
 
    tsearch
+   discrete_frechet
    distance_matrix
    minkowski_distance
    minkowski_distance_p
