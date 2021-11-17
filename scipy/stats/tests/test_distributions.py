@@ -5782,7 +5782,7 @@ class TestArgus:
 
     @pytest.mark.parametrize('chi, random_state', [
             [0.1, 325],   # chi <= 0.5: rejection method case 1
-            [1.3, 155],   # 1 <= chi <= 1.8: rejection method case 2
+            [1.3, 155],   # 0.5 < chi <= 1.8: rejection method case 2
             [3.5, 135]    # chi > 1.8: transform conditional Gamma distribution
         ])
     def test_rvs(self, chi, random_state):

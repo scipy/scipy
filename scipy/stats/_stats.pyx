@@ -1,5 +1,4 @@
 from cpython cimport bool
-from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
 from libc cimport math
 cimport cython
 cimport numpy as np
