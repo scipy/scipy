@@ -401,12 +401,10 @@ class TestCdist:
 
     def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
-        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
-            return arg + kwarg + kwarg2
 
         X1 = [[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]]
         X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
-        kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
         args = [3.14] * 200
 
         assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
@@ -419,6 +417,17 @@ class TestCdist:
                       *args)
         assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
                       *args)
+
+    def test_cdist_extra_args_custom(self):
+        # Tests that args and kwargs are correctly handled
+        # also for custom metric
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]]
+        X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
+        args = [3.14] * 200
 
         assert_raises(TypeError, cdist, X1, X2, _my_metric)
         assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
@@ -669,11 +678,8 @@ class TestPdist:
 
     def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
-        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
-            return arg + kwarg + kwarg2
-
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
-        kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
         args = [3.14] * 200
 
         assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
@@ -684,6 +690,16 @@ class TestPdist:
         assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
         assert_raises(TypeError, pdist, X1, metric="test_" + metric,
                       *args)
+
+    def test_pdist_extra_args_custom(self):
+        # Tests that args and kwargs are correctly handled
+        # also for custom metric
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
+        args = [3.14] * 200
 
         assert_raises(TypeError, pdist, X1, _my_metric)
         assert_raises(TypeError, pdist, X1, _my_metric, *args)
