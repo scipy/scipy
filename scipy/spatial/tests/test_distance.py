@@ -446,7 +446,8 @@ class TestCdist:
         Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
-    @pytest.mark.parametrize("p", [1.0, 1.23, 2.0, 3.8, 4.6, np.inf])
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 1.23,
+                                   2.0, 3.8, 4.6, np.inf])
     def test_cdist_minkowski_random(self, p):
         eps = 1e-07
         X1 = eo['cdist-X1']
@@ -957,7 +958,7 @@ class TestPdist:
         Y_test2 = wpdist(X, 'test_correlation')
         _assert_within_tol(Y_test2, Y_right, eps)
 
-    @pytest.mark.parametrize("p", [1.0, 2.0, 3.2, np.inf])
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
     def test_pdist_minkowski_random_p(self, p):
         eps = 1e-05
         X = eo['pdist-double-inp']
@@ -1533,7 +1534,10 @@ class TestSomeDistanceFunctions:
             assert_almost_equal(dist1, 3.0)
             dist1p5 = minkowski(x, y, p=1.5)
             assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-            minkowski(x, y, p=2)
+            dist2 = minkowski(x, y, p=2)
+            assert_almost_equal(dist2, 5.0 ** 0.5)
+            dist0p25 = minkowski(x, y, p=0.25)
+            assert_almost_equal(dist0p25, (1.0 + 2.0 ** 0.25) ** 4)
 
         # Check that casting input to minimum scalar type doesn't affect result
         # (issue #10262). This could be extended to more test inputs with
@@ -1903,9 +1907,9 @@ class TestIsValidY:
         return y
 
 
-def test_bad_p():
-    # Raise ValueError if p < 1.
-    p = 0.5
+@pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
+def test_bad_p(p):
+    # Raise ValueError if p <=0.
     assert_raises(ValueError, minkowski, [1, 2], [3, 4], p)
     assert_raises(ValueError, minkowski, [1, 2], [3, 4], p, [1, 1])
 
