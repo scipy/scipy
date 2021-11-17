@@ -62,6 +62,15 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 
+
+@pytest.fixture(params=_METRICS_NAMES)
+def metric(request):
+    """
+    Fixture for all metrics in scipy.spatial.distance
+    """
+    return request.param
+
+
 _filenames = [
               "cdist-X1.txt",
               "cdist-X2.txt",
@@ -390,7 +399,7 @@ class TestCdist:
                               'int': [np.float32, np.double],
                               'float32': [np.double]}
 
-    def test_cdist_extra_args(self):
+    def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
         def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
             return arg + kwarg + kwarg2
@@ -399,17 +408,17 @@ class TestCdist:
         X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
         args = [3.14] * 200
-        for metric in _METRICS_NAMES:
-            assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
-                          **kwargs)
-            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
-                          **kwargs)
-            assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
-            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
-                          *args)
-            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
-                          *args)
+
+        assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
+        assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                      **kwargs)
+        assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                      **kwargs)
+        assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
+        assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
+                      *args)
+        assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
+                      *args)
 
         assert_raises(TypeError, cdist, X1, X2, _my_metric)
         assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
@@ -509,7 +518,7 @@ class TestCdist:
             assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
             assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
 
-    def test_cdist_calling_conventions(self):
+    def test_cdist_calling_conventions(self, metric):
         # Ensures that specifying the metric with a str or scipy function
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
@@ -518,93 +527,90 @@ class TestCdist:
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X1 = eo[eo_name][::5, ::-2]
             X2 = eo[eo_name][1::5, ::2]
-            for metric in _METRICS_NAMES:
-                if verbose > 2:
-                    print("testing: ", metric, " with: ", eo_name)
-                if metric in {'dice', 'yule',
-                              'rogerstanimoto',
-                              'russellrao', 'sokalmichener',
-                              'sokalsneath',
-                              'kulczynski1'} and 'bool' not in eo_name:
-                    # python version permits non-bools e.g. for fuzzy logic
-                    continue
-                self._check_calling_conventions(X1, X2, metric)
+            if verbose > 2:
+                print("testing: ", metric, " with: ", eo_name)
+            if metric in {'dice', 'yule',
+                          'rogerstanimoto',
+                          'russellrao', 'sokalmichener',
+                          'sokalsneath',
+                          'kulczynski1'} and 'bool' not in eo_name:
+                # python version permits non-bools e.g. for fuzzy logic
+                continue
+            self._check_calling_conventions(X1, X2, metric)
 
-                # Testing built-in metrics with extra args
-                if metric == "seuclidean":
-                    X12 = np.vstack([X1, X2]).astype(np.double)
-                    V = np.var(X12, axis=0, ddof=1)
-                    self._check_calling_conventions(X1, X2, metric, V=V)
-                elif metric == "mahalanobis":
-                    X12 = np.vstack([X1, X2]).astype(np.double)
-                    V = np.atleast_2d(np.cov(X12.T))
-                    VI = np.array(np.linalg.inv(V).T)
-                    self._check_calling_conventions(X1, X2, metric, VI=VI)
+            # Testing built-in metrics with extra args
+            if metric == "seuclidean":
+                X12 = np.vstack([X1, X2]).astype(np.double)
+                V = np.var(X12, axis=0, ddof=1)
+                self._check_calling_conventions(X1, X2, metric, V=V)
+            elif metric == "mahalanobis":
+                X12 = np.vstack([X1, X2]).astype(np.double)
+                V = np.atleast_2d(np.cov(X12.T))
+                VI = np.array(np.linalg.inv(V).T)
+                self._check_calling_conventions(X1, X2, metric, VI=VI)
 
-    def test_cdist_dtype_equivalence(self):
+    def test_cdist_dtype_equivalence(self, metric):
         # Tests that the result is not affected by type up-casting
         eps = 1e-07
         tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
                  (eo['random-uint-data'], self.valid_upcasts['uint']),
                  (eo['random-int-data'], self.valid_upcasts['int']),
                  (eo['random-float32-data'], self.valid_upcasts['float32'])]
-        for metric in _METRICS_NAMES:
-            for test in tests:
-                X1 = test[0][::5, ::-2]
-                X2 = test[0][1::5, ::2]
-                try:
-                    y1 = cdist(X1, X2, metric=metric)
-                except Exception as e:
-                    e_cls = e.__class__
-                    if verbose > 2:
-                        print(e_cls.__name__)
-                        print(e)
-                    for new_type in test[1]:
-                        X1new = new_type(X1)
-                        X2new = new_type(X2)
-                        assert_raises(e_cls, cdist, X1new, X2new, metric=metric)
-                else:
-                    for new_type in test[1]:
-                        y2 = cdist(new_type(X1), new_type(X2), metric=metric)
-                        assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
+        for test in tests:
+            X1 = test[0][::5, ::-2]
+            X2 = test[0][1::5, ::2]
+            try:
+                y1 = cdist(X1, X2, metric=metric)
+            except Exception as e:
+                e_cls = e.__class__
+                if verbose > 2:
+                    print(e_cls.__name__)
+                    print(e)
+                for new_type in test[1]:
+                    X1new = new_type(X1)
+                    X2new = new_type(X2)
+                    assert_raises(e_cls, cdist, X1new, X2new, metric=metric)
+            else:
+                for new_type in test[1]:
+                    y2 = cdist(new_type(X1), new_type(X2), metric=metric)
+                    assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    def test_cdist_out(self):
+    def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         out_r, out_c = X1.shape[0], X2.shape[0]
 
-        for metric in _METRICS_NAMES:
-            kwargs = dict()
-            if metric == 'minkowski':
-                kwargs['p'] = 1.23
-            out1 = np.empty((out_r, out_c), dtype=np.double)
-            Y1 = cdist(X1, X2, metric, **kwargs)
-            Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
-            # test that output is numerically equivalent
-            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
-            # test that Y_test1 and out1 are the same object
-            assert_(Y2 is out1)
-            # test for incorrect shape
-            out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
-            assert_raises(ValueError,
-                          cdist, X1, X2, metric, out=out2, **kwargs)
-            # test for C-contiguous order
-            out3 = np.empty(
-                (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
-            out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-            assert_raises(ValueError,
-                          cdist, X1, X2, metric, out=out3, **kwargs)
-            assert_raises(ValueError,
-                          cdist, X1, X2, metric, out=out4, **kwargs)
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        out1 = np.empty((out_r, out_c), dtype=np.double)
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+        # test that output is numerically equivalent
+        assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
+        # test that Y_test1 and out1 are the same object
+        assert_(Y2 is out1)
+        # test for incorrect shape
+        out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
+        assert_raises(ValueError,
+                      cdist, X1, X2, metric, out=out2, **kwargs)
+        # test for C-contiguous order
+        out3 = np.empty(
+            (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+        out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
+        assert_raises(ValueError,
+                      cdist, X1, X2, metric, out=out3, **kwargs)
+        assert_raises(ValueError,
+                      cdist, X1, X2, metric, out=out4, **kwargs)
 
-            # test for incorrect dtype
-            out5 = np.empty((out_r, out_c), dtype=np.int64)
-            assert_raises(ValueError,
-                          cdist, X1, X2, metric, out=out5, **kwargs)
+        # test for incorrect dtype
+        out5 = np.empty((out_r, out_c), dtype=np.int64)
+        assert_raises(ValueError,
+                      cdist, X1, X2, metric, out=out5, **kwargs)
 
-    def test_striding(self):
+    def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
         eps = 1e-15
@@ -622,34 +628,32 @@ class TestCdist:
         assert_(X1_copy.flags.c_contiguous)
         assert_(X2_copy.flags.c_contiguous)
 
-        for metric in _METRICS_NAMES:
-            kwargs = dict()
-            if metric == 'minkowski':
-                kwargs['p'] = 1.23
-            Y1 = cdist(X1, X2, metric, **kwargs)
-            Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
-            # test that output is numerically equivalent
-            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+        # test that output is numerically equivalent
+        assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
-    def test_cdist_refcount(self):
-        for metric in _METRICS_NAMES:
-            x1 = np.random.rand(10, 10)
-            x2 = np.random.rand(10, 10)
+    def test_cdist_refcount(self, metric):
+        x1 = np.random.rand(10, 10)
+        x2 = np.random.rand(10, 10)
 
-            kwargs = dict()
-            if metric == 'minkowski':
-                kwargs['p'] = 1.23
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
 
-            out = cdist(x1, x2, metric=metric, **kwargs)
+        out = cdist(x1, x2, metric=metric, **kwargs)
 
-            # Check reference counts aren't messed up. If we only hold weak
-            # references, the arrays should be deallocated.
-            weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
-            del x1, x2, out
+        # Check reference counts aren't messed up. If we only hold weak
+        # references, the arrays should be deallocated.
+        weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+        del x1, x2, out
 
-            if IS_PYPY:
-                break_cycles()
-            assert all(weak_ref() is None for weak_ref in weak_refs)
+        if IS_PYPY:
+            break_cycles()
+        assert all(weak_ref() is None for weak_ref in weak_refs)
 
 
 class TestPdist:
@@ -663,7 +667,7 @@ class TestPdist:
                               'int': [np.float32, np.double],
                               'float32': [np.double]}
 
-    def test_pdist_extra_args(self):
+    def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
         def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
             return arg + kwarg + kwarg2
@@ -671,15 +675,15 @@ class TestPdist:
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
         args = [3.14] * 200
-        for metric in _METRICS_NAMES:
-            assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-            assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
-            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
-                          **kwargs)
-            assert_raises(TypeError, pdist, X1, metric=metric, *args)
-            assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-            assert_raises(TypeError, pdist, X1, metric="test_" + metric,
-                          *args)
+
+        assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
+        assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
+        assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                      **kwargs)
+        assert_raises(TypeError, pdist, X1, metric=metric, *args)
+        assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
+        assert_raises(TypeError, pdist, X1, metric="test_" + metric,
+                      *args)
 
         assert_raises(TypeError, pdist, X1, _my_metric)
         assert_raises(TypeError, pdist, X1, _my_metric, *args)
@@ -1414,7 +1418,7 @@ class TestPdist:
             assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
             assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
 
-    def test_pdist_calling_conventions(self):
+    def test_pdist_calling_conventions(self, metric):
         # Ensures that specifying the metric with a str or scipy function
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
@@ -1423,78 +1427,76 @@ class TestPdist:
             # subsampling input data to speed-up tests
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X = eo[eo_name][::5, ::2]
-            for metric in _METRICS_NAMES:
-                if verbose > 2:
-                    print("testing: ", metric, " with: ", eo_name)
-                if metric in {'dice', 'yule', 'matching',
-                              'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath',
-                              'kulczynski1'} and 'bool' not in eo_name:
-                    # python version permits non-bools e.g. for fuzzy logic
-                    continue
-                self._check_calling_conventions(X, metric)
+            if verbose > 2:
+                print("testing: ", metric, " with: ", eo_name)
+            if metric in {'dice', 'yule', 'matching',
+                          'rogerstanimoto', 'russellrao', 'sokalmichener',
+                          'sokalsneath',
+                          'kulczynski1'} and 'bool' not in eo_name:
+                # python version permits non-bools e.g. for fuzzy logic
+                continue
+            self._check_calling_conventions(X, metric)
 
-                # Testing built-in metrics with extra args
-                if metric == "seuclidean":
-                    V = np.var(X.astype(np.double), axis=0, ddof=1)
-                    self._check_calling_conventions(X, metric, V=V)
-                elif metric == "mahalanobis":
-                    V = np.atleast_2d(np.cov(X.astype(np.double).T))
-                    VI = np.array(np.linalg.inv(V).T)
-                    self._check_calling_conventions(X, metric, VI=VI)
+            # Testing built-in metrics with extra args
+            if metric == "seuclidean":
+                V = np.var(X.astype(np.double), axis=0, ddof=1)
+                self._check_calling_conventions(X, metric, V=V)
+            elif metric == "mahalanobis":
+                V = np.atleast_2d(np.cov(X.astype(np.double).T))
+                VI = np.array(np.linalg.inv(V).T)
+                self._check_calling_conventions(X, metric, VI=VI)
 
-    def test_pdist_dtype_equivalence(self):
+    def test_pdist_dtype_equivalence(self, metric):
         # Tests that the result is not affected by type up-casting
         eps = 1e-07
         tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
                  (eo['random-uint-data'], self.valid_upcasts['uint']),
                  (eo['random-int-data'], self.valid_upcasts['int']),
                  (eo['random-float32-data'], self.valid_upcasts['float32'])]
-        for metric in _METRICS_NAMES:
-            for test in tests:
-                X1 = test[0][::5, ::2]
-                try:
-                    y1 = pdist(X1, metric=metric)
-                except Exception as e:
-                    e_cls = e.__class__
-                    if verbose > 2:
-                        print(e_cls.__name__)
-                        print(e)
-                    for new_type in test[1]:
-                        X2 = new_type(X1)
-                        assert_raises(e_cls, pdist, X2, metric=metric)
-                else:
-                    for new_type in test[1]:
-                        y2 = pdist(new_type(X1), metric=metric)
-                        assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
+        for test in tests:
+            X1 = test[0][::5, ::2]
+            try:
+                y1 = pdist(X1, metric=metric)
+            except Exception as e:
+                e_cls = e.__class__
+                if verbose > 2:
+                    print(e_cls.__name__)
+                    print(e)
+                for new_type in test[1]:
+                    X2 = new_type(X1)
+                    assert_raises(e_cls, pdist, X2, metric=metric)
+            else:
+                for new_type in test[1]:
+                    y2 = pdist(new_type(X1), metric=metric)
+                    assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    def test_pdist_out(self):
+    def test_pdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
         X = eo['random-float32-data'][::5, ::2]
         out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
-        for metric in _METRICS_NAMES:
-            kwargs = dict()
-            if metric == 'minkowski':
-                kwargs['p'] = 1.23
-            out1 = np.empty(out_size, dtype=np.double)
-            Y_right = pdist(X, metric, **kwargs)
-            Y_test1 = pdist(X, metric, out=out1, **kwargs)
-            # test that output is numerically equivalent
-            assert_allclose(Y_test1, Y_right, rtol=eps)
-            # test that Y_test1 and out1 are the same object
-            assert_(Y_test1 is out1)
-            # test for incorrect shape
-            out2 = np.empty(out_size + 3, dtype=np.double)
-            assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
-            # test for (C-)contiguous output
-            out3 = np.empty(2 * out_size, dtype=np.double)[::2]
-            assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
-            # test for incorrect dtype
-            out5 = np.empty(out_size, dtype=np.int64)
-            assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
 
-    def test_striding(self):
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        out1 = np.empty(out_size, dtype=np.double)
+        Y_right = pdist(X, metric, **kwargs)
+        Y_test1 = pdist(X, metric, out=out1, **kwargs)
+        # test that output is numerically equivalent
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+        # test that Y_test1 and out1 are the same object
+        assert_(Y_test1 is out1)
+        # test for incorrect shape
+        out2 = np.empty(out_size + 3, dtype=np.double)
+        assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
+        # test for (C-)contiguous output
+        out3 = np.empty(2 * out_size, dtype=np.double)[::2]
+        assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+        # test for incorrect dtype
+        out5 = np.empty(out_size, dtype=np.int64)
+        assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
+
+    def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
         eps = 1e-15
@@ -1505,14 +1507,13 @@ class TestPdist:
         assert_(not X.flags.c_contiguous)
         assert_(X_copy.flags.c_contiguous)
 
-        for metric in _METRICS_NAMES:
-            kwargs = dict()
-            if metric == 'minkowski':
-                kwargs['p'] = 1.23
-            Y1 = pdist(X, metric, **kwargs)
-            Y2 = pdist(X_copy, metric, **kwargs)
-            # test that output is numerically equivalent
-            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        Y1 = pdist(X, metric, **kwargs)
+        Y2 = pdist(X_copy, metric, **kwargs)
+        # test that output is numerically equivalent
+        assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
 class TestSomeDistanceFunctions:
 
@@ -2038,58 +2039,57 @@ def test_sokalmichener_with_weight():
         assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
 
 
-def test_modifies_input():
+def test_modifies_input(metric):
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
                      [1.2, 2.3, 3.4],
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
     X1_copy = X1.copy()
-    for metric in _METRICS_NAMES:
-        cdist(X1, X1, metric)
-        pdist(X1, metric)
-        assert_array_equal(X1, X1_copy)
+    cdist(X1, X1, metric)
+    pdist(X1, metric)
+    assert_array_equal(X1, X1_copy)
 
 
-def test_Xdist_deprecated_args():
+def test_Xdist_deprecated_args(metric):
     # testing both cdist and pdist deprecated warnings
     X1 = np.asarray([[1., 2., 3.],
                      [1.2, 2.3, 3.4],
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
-    np.arange(3)
-    for metric in _METRICS_NAMES:
-        with pytest.raises(TypeError):
-            cdist(X1, X1, metric, 2.)
+
+    with pytest.raises(TypeError):
+        cdist(X1, X1, metric, 2.)
+
+    with pytest.raises(TypeError):
+        pdist(X1, metric, 2.)
+
+    for arg in ["p", "V", "VI"]:
+        kwargs = {arg: "foo"}
+
+        if ((arg == "V" and metric == "seuclidean")
+                or (arg == "VI" and metric == "mahalanobis")
+                or (arg == "p" and metric == "minkowski")):
+            continue
 
         with pytest.raises(TypeError):
-            pdist(X1, metric, 2.)
+            cdist(X1, X1, metric, **kwargs)
 
-        for arg in ["p", "V", "VI"]:
-            kwargs = {arg:"foo"}
-
-            if ((arg == "V" and metric == "seuclidean") or
-            (arg == "VI" and metric == "mahalanobis") or
-            (arg == "p" and metric == "minkowski")):
-                continue
-
-            with pytest.raises(TypeError):
-                cdist(X1, X1, metric, **kwargs)
-
-            with pytest.raises(TypeError):
-                pdist(X1, metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric, **kwargs)
 
 
-def test_Xdist_non_negative_weights():
+def test_Xdist_non_negative_weights(metric):
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
     w[::5] = -w[::5]
-    for metric in _METRICS_NAMES:
-        if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
-            continue
-        for m in [metric, eval(metric), "test_" + metric]:
-            assert_raises(ValueError, pdist, X, m, w=w)
-            assert_raises(ValueError, cdist, X, X, m, w=w)
+
+    if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
+        pytest.skip("not applicable")
+
+    for m in [metric, eval(metric), "test_" + metric]:
+        assert_raises(ValueError, pdist, X, m, w=w)
+        assert_raises(ValueError, cdist, X, X, m, w=w)
 
 
 def test__validate_vector():
