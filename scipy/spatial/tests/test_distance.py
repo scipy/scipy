@@ -449,12 +449,12 @@ class TestCdist:
     @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 1.23,
                                    2.0, 3.8, 4.6, np.inf])
     def test_cdist_minkowski_random(self, p):
-        eps = 1e-07
+        eps = 1e-13
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
         Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        _assert_within_tol(Y1, Y2, atol=0, rtol=eps, verbose_=verbose > 2)
 
     def test_cdist_cosine_random(self):
         eps = 1e-07
@@ -960,11 +960,11 @@ class TestPdist:
 
     @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
     def test_pdist_minkowski_random_p(self, p):
-        eps = 1e-05
+        eps = 1e-13
         X = eo['pdist-double-inp']
         Y1 = wpdist_no_const(X, 'minkowski', p=p)
         Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, eps)
+        _assert_within_tol(Y1, Y2, atol=0, rtol=eps)
 
     def test_pdist_minkowski_random(self):
         eps = 1e-05
