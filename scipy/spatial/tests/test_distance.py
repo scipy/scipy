@@ -62,7 +62,6 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     matching, minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule)
-from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
               "cdist-X1.txt",
@@ -378,7 +377,6 @@ wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wkulsinski = _weight_checked(kulsinski)
 wkulczynski1 = _weight_checked(kulczynski1)
-wminkowski = _weight_checked(minkowski, const_test=False)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
 wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
@@ -534,8 +532,6 @@ class TestCdist:
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'wminkowski':
-                    continue
                 if metric in {'dice', 'yule', 'kulsinski',
                               'matching', 'rogerstanimoto',
                               'russellrao', 'sokalmichener',
@@ -594,10 +590,8 @@ class TestCdist:
                        message="'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
+                if metric == 'minkowski':
                     kwargs['p'] = 1.23
-                    if metric == 'wminkowski':
-                        kwargs['w'] = 1.0 / X1.std(axis=0)
                 out1 = np.empty((out_r, out_c), dtype=np.double)
                 Y1 = cdist(X1, X2, metric, **kwargs)
                 Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
@@ -645,10 +639,8 @@ class TestCdist:
             sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
+                if metric == 'minkowski':
                     kwargs['p'] = 1.23
-                    if metric == 'wminkowski':
-                        kwargs['w'] = 1.0 / X1.std(axis=0)
                 Y1 = cdist(X1, X2, metric, **kwargs)
                 Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
                 # test that output is numerically equivalent
@@ -662,10 +654,8 @@ class TestCdist:
                 x2 = np.random.rand(10, 10)
 
                 kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
+                if metric == 'minkowski':
                     kwargs['p'] = 1.23
-                    if metric == 'wminkowski':
-                        kwargs['w'] = 1.0 / x1.std(axis=0)
 
                 out = cdist(x1, x2, metric=metric, **kwargs)
 
@@ -1448,8 +1438,6 @@ class TestPdist:
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X = eo[eo_name][::5, ::2]
             for metric in _METRICS_NAMES:
-                if metric == 'wminkowski':
-                    continue
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
@@ -1503,10 +1491,8 @@ class TestPdist:
             sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
+                if metric == 'minkowski':
                     kwargs['p'] = 1.23
-                if metric == 'wminkowski':
-                    kwargs['w'] = 1.0 / X.std(axis=0)
                 out1 = np.empty(out_size, dtype=np.double)
                 Y_right = pdist(X, metric, **kwargs)
                 Y_test1 = pdist(X, metric, out=out1, **kwargs)
@@ -1540,10 +1526,8 @@ class TestPdist:
                        message="'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
+                if metric == 'minkowski':
                     kwargs['p'] = 1.23
-                if metric == 'wminkowski':
-                    kwargs['w'] = 1.0 / X.std(axis=0)
                 Y1 = pdist(X, metric, **kwargs)
                 Y2 = pdist(X_copy, metric, **kwargs)
                 # test that output is numerically equivalent
@@ -1560,11 +1544,11 @@ class TestSomeDistanceFunctions:
 
     def test_minkowski(self):
         for x, y in self.cases:
-            dist1 = wminkowski(x, y, p=1)
+            dist1 = minkowski(x, y, p=1)
             assert_almost_equal(dist1, 3.0)
-            dist1p5 = wminkowski(x, y, p=1.5)
+            dist1p5 = minkowski(x, y, p=1.5)
             assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-            wminkowski(x, y, p=2)
+            minkowski(x, y, p=2)
 
         # Check that casting input to minimum scalar type doesn't affect result
         # (issue #10262). This could be extended to more test inputs with
@@ -1573,25 +1557,6 @@ class TestSomeDistanceFunctions:
         b = np.array([350, 660])
         assert_equal(minkowski(a, b),
                      minkowski(a.astype('uint16'), b.astype('uint16')))
-
-    def test_old_wminkowski(self):
-        with suppress_warnings() as wrn:
-            wrn.filter(DeprecationWarning,
-                       message=".*wminkowski is deprecated")
-            w = np.array([1.0, 2.0, 0.5])
-            for x, y in self.cases:
-                dist1 = old_wminkowski(x, y, p=1, w=w)
-                assert_almost_equal(dist1, 3.0)
-                dist1p5 = old_wminkowski(x, y, p=1.5, w=w)
-                assert_almost_equal(dist1p5, (2.0**1.5+1.0)**(2./3))
-                dist2 = old_wminkowski(x, y, p=2, w=w)
-                assert_almost_equal(dist2, np.sqrt(5))
-
-            # test weights Issue #7893
-            arr = np.arange(4)
-            w = np.full_like(arr, 4)
-            assert_almost_equal(old_wminkowski(arr, arr + 1, p=2, w=w), 8.0)
-            assert_almost_equal(wminkowski(arr, arr + 1, p=2, w=w), 4.0)
 
     def test_euclidean(self):
         for x, y in self.cases:
@@ -1956,8 +1921,8 @@ class TestIsValidY:
 def test_bad_p():
     # Raise ValueError if p < 1.
     p = 0.5
-    assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p)
-    assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p, [1, 1])
+    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p)
+    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p, [1, 1])
 
 
 def test_sokalsneath_all_false():
@@ -2125,9 +2090,8 @@ def test_modifies_input():
     with suppress_warnings() as w:
         w.filter(message="'wminkowski' metric is deprecated")
         for metric in _METRICS_NAMES:
-            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" else {}
-            cdist(X1, X1, metric, **kwargs)
-            pdist(X1, metric, **kwargs)
+            cdist(X1, X1, metric)
+            pdist(X1, metric)
             assert_array_equal(X1, X1_copy)
 
 
@@ -2139,23 +2103,17 @@ def test_Xdist_deprecated_args():
                      [22.2, 23.3, 44.4]])
     weights = np.arange(3)
     for metric in _METRICS_NAMES:
-        kwargs = {"w": weights} if metric == "wminkowski" else dict()
         with suppress_warnings() as w:
             w.filter(DeprecationWarning,
                     message="'wminkowski' metric is deprecated")
             with pytest.raises(TypeError):
-                cdist(X1, X1, metric, 2., **kwargs)
+                cdist(X1, X1, metric, 2.)
 
             with pytest.raises(TypeError):
-                pdist(X1, metric, 2., **kwargs)
+                pdist(X1, metric, 2.)
 
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
-
-            if metric == "wminkowski":
-                if "p" in kwargs or "w" in kwargs:
-                    continue
-                kwargs["w"] = weights
 
             if((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
