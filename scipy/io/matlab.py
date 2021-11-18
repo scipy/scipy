@@ -50,13 +50,14 @@ __all__ = [  # noqa: F822
     'MatlabFunction', 'mat_struct', 'MatlabObject',
 ]
 
+matlab_modules = ['byteordercodes']
 
 def __dir__():
     return __all__
 
 
 def __getattr__(name):
-    if name not in __all__:
+    if name not in __all__ and name not in matlab_modules:
         raise AttributeError(
             "scipy.io.matlab is deprecated and has no attribute "
             f"{name}. Try looking in scipy.io instead.")

@@ -58,6 +58,7 @@ Example session::
 from .linsolve import *
 from ._superlu import SuperLU
 from . import _add_newdocs
+from . import linsolve
 
 __all__ = [
     'MatrixRankWarning', 'SuperLU', 'factorized',

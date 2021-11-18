@@ -1,3 +1,8 @@
+"""
+This test script is adopted from:
+    https://github.com/numpy/numpy/blob/main/numpy/tests/test_public_api.py
+"""
+
 import pkgutil
 import types
 import importlib
@@ -46,12 +51,6 @@ def test_dir_testing():
 # modules that are either public because they were meant to be, or because they
 # contain public functions/objects that aren't present in any other namespace
 # for whatever reason and therefore should be treated as public.
-#
-# The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
-# of underscores) but should not be used.  For many of those modules the
-# current status is fine.  For others it may make sense to work on making them
-# private, to clean up our public API and avoid confusion.
-
 PUBLIC_MODULES = ["scipy." + s for s in [
     "cluster",
     "cluster.vq",
@@ -90,7 +89,11 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "stats.qmc",
 ]]
 
-
+# The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
+# of underscores) but should not be used.  For many of those modules the
+# current status is fine.  For others it may make sense to work on making them
+# private, to clean up our public API and avoid confusion.
+# These private modules support will be removed in SciPy v2.0.0
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.constants.codata',
     'scipy.constants.constants',
