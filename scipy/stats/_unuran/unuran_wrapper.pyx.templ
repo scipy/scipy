@@ -974,7 +974,7 @@ UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 cdef class NumericalInversePolynomial(Method):
     """
-    NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, keep_cdf=False, random_state=None)
+    NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, random_state=None)
 
     Polynomial interpolation based INVersion of CDF (PINV).
 
@@ -1057,12 +1057,6 @@ cdef class NumericalInversePolynomial(Method):
         is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion algorithm that
         could be called exact. For most simulations slightly bigger values for the
         maximal error are enough as well. Default is 1e-10.
-    keep_cdf : bool, optional
-        If the PDF is given, then the CDF is computed numerically from the given PDF using
-        adaptive Gauss-Lobatto integration. Thus a table of CDF points is stored to keep
-        the number of evaluations of the PDF minimal. Usually this table is discarded when
-        the setup is completed. If ``keep_cdf`` is TRUE, then this table is kept and the
-        approximated CDF can be evaluated by calling the `cdf` method. Default is ``False``.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -1183,7 +1177,6 @@ cdef class NumericalInversePolynomial(Method):
     >>> plt.title('Error between exact and approximated PPF (x-error)')
     >>> plt.show()
     """
-    cdef bint keep_cdf
 
     def __cinit__(self,
                   dist,
@@ -1193,7 +1186,6 @@ cdef class NumericalInversePolynomial(Method):
                   domain=None,
                   order=5,
                   u_resolution=1e-10,
-                  keep_cdf=False,
                   random_state=None):
         (domain, order, u_resolution) = self._validate_args(
             dist, domain, order, u_resolution
@@ -1206,10 +1198,8 @@ cdef class NumericalInversePolynomial(Method):
             'domain': domain,
             'order': order,
             'u_resolution': u_resolution,
-            'keep_cdf': keep_cdf,
             'random_state': random_state
         }
-        self.keep_cdf = keep_cdf
 
         cdef:
             unur_distr *distr
@@ -1248,7 +1238,8 @@ cdef class NumericalInversePolynomial(Method):
             # max_intervals is not part of the API. set it to the maximum
             # allowed value in UNU.RAN which is 1_000_000
             self._check_errorcode(unur_pinv_set_max_intervals(self.par, 1000000))
-            self._check_errorcode(unur_pinv_set_keepcdf(self.par, keep_cdf))
+            # always keep CDF in SciPy while UNU.RAN default is False
+            self._check_errorcode(unur_pinv_set_keepcdf(self.par, 1))
 
             self._set_rng(random_state)
         finally:
@@ -1297,8 +1288,6 @@ cdef class NumericalInversePolynomial(Method):
         cdf(x)
 
         Approximated cumulative distribution function of the given distribution.
-        Only available if ``keep_cdf`` was set to ``True`` when the instance was
-        created.
 
         Parameters
         ----------
@@ -1310,10 +1299,6 @@ cdef class NumericalInversePolynomial(Method):
         cdf : array_like
             Approximated cumulative distribution function evaluated at `x`.
         """
-        if not self.keep_cdf:
-            raise ValueError("CDF is not available. Initialize the generator "
-                             "again with `keep_cdf=True` to enable "
-                             "evaluation of (approximate) CDF.")
         x = np.asarray(x, dtype='d')
         oshape = x.shape
         x = x.ravel()

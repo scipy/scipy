@@ -74,7 +74,6 @@ class NumericalInversePolynomial(Method):
                  domain: None | Tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
-                 keep_cdf: bool = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...

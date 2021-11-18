@@ -771,8 +771,7 @@ class TestNumericalInversePolynomial:
     @pytest.mark.parametrize("x", x)
     def test_cdf(self, x):
         dist = StandardNormal()
-        rng = NumericalInversePolynomial(dist, keep_cdf=True,
-                                         u_resolution=1e-14)
+        rng = NumericalInversePolynomial(dist, u_resolution=1e-14)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:
@@ -819,9 +818,6 @@ class TestNumericalInversePolynomial:
     def test_bad_args(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
-        msg = r"CDF is not available."
-        with pytest.raises(ValueError, match=msg):
-            rng.cdf([1, 2, 3])
         msg = r"`sample_size` must be greater than or equal to 1000."
         with pytest.raises(ValueError, match=msg):
             rng.u_error(10)
