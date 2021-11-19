@@ -106,7 +106,7 @@ Currently, SciPy wheels are being built as follows:
 ================  ========================  ===========================  ==============================
  Platform          Azure Base Image [14]_    Compilers                    Comment
 ================  ========================  ===========================  ==============================
-Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``azure-pipelines.yml``
+Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [15]_
 Windows            ``windows-latest``        Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
@@ -134,8 +134,7 @@ The use of MS Visual Studio 9.0 (which doesn't have support for C99)
 to build Python 2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
-longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
-may have to be added by the user if C99 features are used in SciPy code.
+longer imposed by compilers.
 
 In terms of C language standards, it's relevant to note that C11 has optional
 features [12]_ (e.g. atomics, threading), some of which (VLAs & complex types)
@@ -182,13 +181,27 @@ attempting to predict adoption timelines for newer standards.
 ================  =======================================================================
 
 Since dropping support for Python 2.7, C++11 can be used
-universally. For C++14, Windows is not a restriction anymore since Visual
-Studio 15.9 (<-> _MSC_VER 19.16, see [8]_), has full support (same for C++17),
-see [4]_. Using C++14 requires bumping the GCC minimal requirement to 5.x
-(released April 2015), whereas C++17 _language_ support will require
-GCC >= 7 [4]_. As of the end of 2021, support for the entirety of the
-C++17 standard library has not yet been completed across all compilers;
-similarly, support for C++20 and C++23 is still under heavy development.
+universally, and since dropping Python 3.6, the Visual Studio version
+(that had previously been stuck with 14.0 due to ABI compatibility with
+CPython) has been recent enough to support even C++17.
+
+Since the official builds (see above) use a pretty recent version of LLVM,
+the bottleneck for C++ support is therefore the oldest supported GCC version,
+where scipy has been constrained mainly by the version in the oldest supported
+manylinx versions & images [20]_.
+
+At the end of 2021 (with the final removal of ``manylinux1`` wheels), scipy
+now has a minimum GCC requirement of GCC 6.3, which has full C++14 support
+[4]_. This corresponds to the lowest present GCC version in relevant manylinux
+versions - somewhat surprisingly, it is not the oldest remaining
+``manylinux2010`` that is the most restrictive (due to the ABI-compatible
+"RHEL Dev Toolset" backports, it has GCC 8.3), but actually ``manylinux_2_24``
+that only comes with GCC 6.3 [21]_.
+
+C++17 _language_ support will require GCC >= 7 (released May 2017). As of the
+end of 2021, support for the entirety of the C++17 standard library has not yet
+been completed across all compilers; similarly, support for C++20 and C++23
+is still under heavy development. [4]_
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -332,3 +345,5 @@ References
 .. [17] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4
 .. [18] https://scipy.github.io/devdocs/release.html
 .. [19] https://github.com/scipy/oldest-supported-numpy
+.. [20] https://github.com/mayeut/pep600_compliance
+.. [21] https://github.com/pypa/manylinux/issues/1012
