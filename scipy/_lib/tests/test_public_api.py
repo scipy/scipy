@@ -276,7 +276,7 @@ def test_all_modules_are_expected_2():
                 fullobjname = mod_name + '.' + objname
                 if isinstance(getattr(module, objname), types.ModuleType):
                     if is_unexpected(fullobjname) and fullobjname not in SKIP_LIST_2:
-                            members.append(fullobjname)
+                        members.append(fullobjname)
 
         return members
 
@@ -312,7 +312,6 @@ def test_api_importable():
     if module_names:
         raise AssertionError("Modules in the public API that cannot be "
                              "imported: {}".format(module_names))
-
 
     with warnings.catch_warnings(record=True) as w:
         warnings.filterwarnings('always', category=DeprecationWarning)
