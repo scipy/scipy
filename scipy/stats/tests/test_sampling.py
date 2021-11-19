@@ -7,15 +7,15 @@ from copy import deepcopy
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
-from scipy.stats import (
+from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
-    NaiveRatioUniforms
+    NaiveRatioUniforms,
+    UNURANError
 )
-from scipy.stats import UNURANError
 from scipy import stats
 from scipy import special
 from scipy.stats import chisquare, cramervonmises
@@ -135,14 +135,14 @@ nan_domains = [
                          nan_domains)  # type: ignore[operator]
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
     with pytest.raises(err, match=msg):
         Method(**kwargs, domain=domain)
 
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_random_state(method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
 
     # simple seed that works for any version of NumPy
     seed = 123
@@ -244,7 +244,7 @@ def test_threading_behaviour():
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_pickle(method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
     rng1 = Method(**kwargs, random_state=123)
     obj = pickle.dumps(rng1)
     rng2 = pickle.loads(obj)
@@ -927,7 +927,7 @@ class TestNumericalInverseHermite:
             sup.filter(RuntimeWarning, "overflow encountered")
             sup.filter(RuntimeWarning, "divide by zero")
             sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = stats.NumericalInverseHermite(dist)
+            fni = NumericalInverseHermite(dist)
 
         x = np.random.rand(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -943,25 +943,25 @@ class TestNumericalInverseHermite:
 
         match = "`cdf` required but not found"
         with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite("norm")
+            NumericalInverseHermite("norm")
 
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(StandardNormal(),
-                                          u_resolution='ekki')
+            NumericalInverseHermite(StandardNormal(),
+                                    u_resolution='ekki')
 
         match = "`max_intervals' must be..."
         with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(StandardNormal(), max_intervals=-1)
+            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
 
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):
-            fni = stats.NumericalInverseHermite(StandardNormal())
+            fni = NumericalInverseHermite(StandardNormal())
             fni.qrvs(qmc_engine=0)
 
         if NumpyVersion(np.__version__) >= '1.18.0':
             # issues with QMCEngines and old NumPy
-            fni = stats.NumericalInverseHermite(StandardNormal())
+            fni = NumericalInverseHermite(StandardNormal())
 
             match = "`d` must be consistent with dimension of `qmc_engine`."
             with pytest.raises(ValueError, match=match):
@@ -976,7 +976,7 @@ class TestNumericalInverseHermite:
     @pytest.mark.parametrize('size_in, size_out', sizes)
     def test_RVS(self, rng, size_in, size_out):
         dist = StandardNormal()
-        fni = stats.NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         rng2 = deepcopy(rng)
         rvs = fni.rvs(size=size_in, random_state=rng)
@@ -1004,7 +1004,7 @@ class TestNumericalInverseHermite:
     @pytest.mark.parametrize('d_in, d_out', ds)
     def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
         dist = StandardNormal()
-        fni = stats.NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         # If d and qrng.d are inconsistent, an error is raised
         if d_in is not None and qrng is not None and qrng.d != d_in:
@@ -1043,7 +1043,7 @@ class TestNumericalInverseHermite:
             pytest.skip("QMC doesn't play well with old NumPy")
 
         dist = StandardNormal()
-        fni = stats.NumericalInverseHermite(dist)
+        fni = NumericalInverseHermite(dist)
 
         size = (3, 4)
         d = 5
@@ -1069,17 +1069,17 @@ class TestNumericalInverseHermite:
 
         # fails with default tol
         with pytest.warns(RuntimeWarning, match=match):
-            stats.NumericalInverseHermite(stats.beta(*shapes))
+            NumericalInverseHermite(stats.beta(*shapes))
 
         # no error with coarser tol
-        stats.NumericalInverseHermite(stats.beta(*shapes), u_resolution=1e-8)
+        NumericalInverseHermite(stats.beta(*shapes), u_resolution=1e-8)
 
     def test_custom_distribution(self):
         dist1 = StandardNormal()
-        fni1 = stats.NumericalInverseHermite(dist1)
+        fni1 = NumericalInverseHermite(dist1)
 
         dist2 = stats.norm()
-        fni2 = stats.NumericalInverseHermite(dist2)
+        fni2 = NumericalInverseHermite(dist2)
 
         assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
 

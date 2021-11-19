@@ -4,7 +4,7 @@
 Universal Non-Uniform Random Number Sampling in SciPy
 =====================================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 SciPy provides an interface to many universal non-uniform random number
 generators to sample random variates from a wide variety of univariate
@@ -134,7 +134,7 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -188,7 +188,8 @@ by visualizing the histogram of the samples:
 .. plot::
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import norm, TransformedDensityRejection
+    >>> from scipy.stats import norm
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -214,11 +215,11 @@ by visualizing the histogram of the samples:
     >>> plt.show()
 
 .. note:: Please note the difference between the `rvs` method of the
-          distributions present in :mod:`scipy.stats` and the one provided
+          distributions present in :mod:`scipy.stats.sampling` and the one provided
           by these generators. UNU.RAN generators must be considered
           independent in a sense that they will generally produce a different
           stream of random numbers than the one produced by the equivalent
-          distribution in :mod:`scipy.stats` for any seed. The implementation
+          distribution in :mod:`scipy.stats.sampling` for any seed. The implementation
           of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
@@ -232,7 +233,7 @@ by visualizing the histogram of the samples:
           :class:`~TransformedDensityRejection` would not be the same even for
           the same ``random_state``:
 
-          >>> from scipy.stats import norm, TransformedDensityRejection
+          >>> from scipy.stats.sampling import norm, TransformedDensityRejection
           >>> from copy import copy
           >>> dist = StandardNormal()
           >>> urng1 = np.random.default_rng()
@@ -283,8 +284,8 @@ because the PDF was < 0. i.e. negative. This falls under the type
 Warnings thrown by UNU.RAN also follow the same format.
 
 
-Generators in :mod:`scipy.stats`
---------------------------------
+Generators in :mod:`scipy.stats.sampling`
+-----------------------------------------
 .. toctree::
    :maxdepth: 1
 

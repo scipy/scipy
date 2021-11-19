@@ -720,7 +720,7 @@ cdef class TransformedDensityRejection(Method):
 
     Examples
     --------
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
 
     Suppose we have a density:
 
@@ -930,7 +930,7 @@ cdef class TransformedDensityRejection(Method):
 
         Examples
         --------
-        >>> from scipy.stats import TransformedDensityRejection
+        >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
         >>> from math import exp
         >>> 
@@ -1087,7 +1087,7 @@ cdef class NumericalInversePolynomial(Method):
 
     Examples
     --------
-    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> from scipy.stats import norm
 
     To create a generator to sample from the standard normal distribution, do:
@@ -1515,7 +1515,7 @@ cdef class NumericalInverseHermite(Method):
 
     Examples
     --------
-    >>> from scipy.stats import NumericalInverseHermite
+    >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
 
@@ -2010,7 +2010,7 @@ cdef class DiscreteAliasUrn(Method):
 
     Examples
     --------
-    >>> from scipy.stats import DiscreteAliasUrn
+    >>> from scipy.stats.sampling import DiscreteAliasUrn
 
     To create a random number generator using a probability vector, use:
 
@@ -2327,7 +2327,7 @@ cdef class NaiveRatioUniforms(Method):
 
     Examples
     --------
-    >>> from scipy.stats import NaiveRatioUniforms
+    >>> from scipy.stats.sampling import NaiveRatioUniforms
 
     Suppose we want to generate normally distributed random variables.
     It is easy to compute the bounding rectangle explicitly in that case.
@@ -2546,7 +2546,7 @@ cdef class DiscreteGuideTable(Method):
 
     Examples
     --------
-    >>> from scipy.stats import DiscreteGuideTable
+    >>> from scipy.stats.sampling import DiscreteGuideTable
 
     To create a random number generator using a probability vector, use:
 

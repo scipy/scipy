@@ -4,7 +4,7 @@
 Naive Ratio-Of-Uniforms (NROU) Method
 =====================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: PDF
 * Optional: mode, center, bounding rectangle for acceptance region
@@ -75,7 +75,7 @@ then works as follows:
 An example of using this method is shown below:
 
     >>> import numpy as np
-    >>> from scipy.stats import NaiveRatioUniforms
+    >>> from scipy.stats.sampling import NaiveRatioUniforms
     >>>
     >>> class StandardNormal:
     ...     def pdf(self, x):

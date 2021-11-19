@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import NumericalInverseHermite
+from scipy.stats.sampling import NumericalInverseHermite
 from scipy.stats import norm
 from scipy.special import ndtr
 import matplotlib.pyplot as plt

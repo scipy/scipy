@@ -4,7 +4,7 @@
 Discrete Alias Urn (DAU)
 ========================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: probability vector (PV) or the PMF along with a finite domain
 * Speed:
@@ -20,7 +20,7 @@ and only one comparison for each generated random variate. The setup time for
 constructing the tables is O(N).
 
     >>> import numpy as np
-    >>> from scipy.stats import DiscreteAliasUrn
+    >>> from scipy.stats.sampling import DiscreteAliasUrn
     >>> 
     >>> pv = [0.18, 0.02, 0.8]
     >>> urng = np.random.default_rng()
@@ -59,7 +59,7 @@ method in the distribution object:
 .. plot::
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import DiscreteAliasUrn
+    >>> from scipy.stats.sampling import DiscreteAliasUrn
     >>> class Distribution:
     ...     def __init__(self, c):
     ...         self.c = c
@@ -96,7 +96,8 @@ method in the distribution object:
           For example, ``pmf`` methods of SciPy's discrete distributions
           are vectorized and a PV can be obtained by doing:
 
-          >>> from scipy.stats import binom, DiscreteAliasUrn
+          >>> from scipy.stats import binom
+          >>> from scipy.stats.sampling import DiscreteAliasUrn
           >>> dist = binom(10, 0.2)  # distribution object
           >>> domain = dist.support()  # the domain of your distribution
           >>> x = np.arange(domain[0], domain[1] + 1)

@@ -3,7 +3,7 @@
 
 Discrete Guide Table (DGT)
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: probability vector (PV) or the PMF along with a finite domain
 * Speed:
@@ -36,7 +36,7 @@ table sizes are better. The size of the guide table relative to the length
 of the given probability vector can be set by the `guide_factor` parameter:
 
     >>> import numpy as np
-    >>> from scipy.stats import DiscreteGuideTable
+    >>> from scipy.stats.sampling import DiscreteGuideTable
     >>>
     >>> pv = [0.18, 0.02, 0.8]
     >>> urng = np.random.default_rng()
@@ -81,7 +81,8 @@ method in the distribution object:
           For example, ``pmf`` methods of SciPy's discrete distributions
           are vectorized and a PV can be obtained by doing:
 
-          >>> from scipy.stats import binom, DiscreteGuideTable
+          >>> from scipy.stats import binom
+          >>> from scipy.stats.sampling import DiscreteGuideTable
           >>> dist = binom(10, 0.2)  # distribution object
           >>> domain = dist.support()  # the domain of your distribution
           >>> x = np.arange(domain[0], domain[1] + 1)

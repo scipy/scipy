@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import stats
+from scipy.stats import sampling
 import matplotlib.pyplot as plt
 import math
 
@@ -37,8 +38,8 @@ urng = np.random.default_rng()
 p = 2.2
 dist = Gamma(p)
 u_min, u_max, v_max = rectangle(p, p-1)
-rng = stats.NaiveRatioUniforms(dist, center=p-1, v_max=v_max,
-                               u_min=u_min, u_max=u_max, random_state=urng)
+rng = sampling.NaiveRatioUniforms(dist, center=p-1, v_max=v_max,
+                                  u_min=u_min, u_max=u_max, random_state=urng)
 rvs = rng.rvs(1000)
 x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=500)
 fx = stats.gamma.pdf(x, p)

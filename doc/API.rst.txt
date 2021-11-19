@@ -146,6 +146,7 @@ change is made.
   - ``scipy.stats.distributions``
   - `scipy.stats.mstats`
   - `scipy.stats.qmc`
+  - `scipy.stats.sampling`
 
 .. toctree::
    :maxdepth: 1
