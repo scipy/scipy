@@ -50,7 +50,10 @@ __all__ = [  # noqa: F822
     'MatlabFunction', 'mat_struct', 'MatlabObject',
 ]
 
-matlab_modules = ['byteordercodes']
+matlab_modules = [
+    'byteordercodes', 'mio', 'mio4', 'mio5', 'mio5_params', 'mio5_utils',
+    'miobase', 'mio_utils', 'streams'
+]
 
 def __dir__():
     return __all__
@@ -59,11 +62,10 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__ and name not in matlab_modules:
         raise AttributeError(
-            "scipy.io.matlab is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.io instead.")
+            f"scipy.io.matlab has no attribute {name}")
 
-    warnings.warn(f"Please use `{name}` from the `scipy.io` namespace, "
-                  "the `scipy.io.matlab` namespace is deprecated.",
+    warnings.warn(f"Please use the `scipy.io.matlab` namespace instead, "
+                  f"the `scipy.io.matlab.{name}` namespace is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
     return getattr(_matlab, name)
