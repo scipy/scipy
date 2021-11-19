@@ -46,7 +46,7 @@ Python Versions
 ^^^^^^^^^^^^^^^
 
 SciPy is compatible with several versions of Python.  When dropping support for
-older Python versions, SciPy takes guidance from NEP 29 [10]_.  Python 2.7
+older Python versions, SciPy takes guidance from NEP 29 [1]_.  Python 2.7
 support was dropped starting from SciPy 1.3.
 
 ================  =======================================================================
@@ -65,7 +65,7 @@ NumPy
 SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
 SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
 In particular, SciPy cannot rely on features of just the latest NumPy, but
-needs to be written using what is common in all of those 4 releases [3]_.
+needs to be written using what is common in all of those 4 releases [2]_.
 
 The table shows the NumPy versions suitable for each major Python version.
 
@@ -82,8 +82,8 @@ The table shows the NumPy versions suitable for each major Python version.
 =================  ========================    =======================
 
 In specific cases, such as a particular architecture, these requirements
-could vary. Please check the release notes and the meta-package
-``oldest-supported-numpy`` for more info. [18]_, [19]_.
+could vary. Please check the release notes [3]_ and the meta-package
+``oldest-supported-numpy`` for more info [4]_.
 
 
 Compilers
@@ -103,16 +103,16 @@ Official Builds
 Currently, SciPy wheels are being built as follows:
 
 ================  ========================  ===========================  ==============================
- Platform          Azure Base Image [14]_    Compilers                    Comment
+ Platform          Azure Base Image [5]_     Compilers                    Comment
 ================  ========================  ===========================  ==============================
 Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
-Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
-OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [15]_
+Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
+OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
 Windows            ``windows-latest``        Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.9,
-see submodule ``gfortran-install`` in [15]_.
+see submodule ``gfortran-install`` in [6]_.
 
 
 C Compilers
@@ -124,10 +124,10 @@ there was a long-standing restriction that Windows builds of SciPy had to use
 the same version of the Microsoft Visual C++ compiler as were used for CPython
 itself, for reasons of ABI-compatibility [7]_, [8]_.
 
-With the introduction of the "Universal C Runtime" [16]_ since the release of
+With the introduction of the "Universal C Runtime" [9]_ since the release of
 Visual Studio 2015, this restriction has been lifted. For more context, see the
 explanations by Steve Dower (member of the CPython-on-Windows core developers)
-on this topic [17]_.
+on this topic [10]_.
 
 The use of MS Visual Studio 9.0 (which doesn't have support for C99)
 to build Python 2.7 has meant that C code in SciPy has had to conform
@@ -136,16 +136,16 @@ With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
 longer imposed by compilers.
 
 In terms of C language standards, it's relevant to note that C11 has optional
-features [12]_ (e.g. atomics, threading), some of which (VLAs & complex types)
+features [11]_ (e.g. atomics, threading), some of which (VLAs & complex types)
 were mandatory in the C99 standard. C17 (occasionally called C18) can be
 considered a bug fix for C11, so generally, C11 may be skipped entirely.
 
 SciPy has been restricted in the use of more advanced language features by the
 available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
-C11/C17 is supported [11]_ (though without the C11 optional features).
+C11/C17 is supported [12]_ (though without the C11 optional features).
 C99 ``<complex.h>`` would be particularly interesting for scipy;
-MSVC conformance for this is being tracked here [5]_.
+MSVC conformance for this is being tracked here [13]_.
 
 Therefore, using C features beyond C90 was only possible insofar there was support on
 windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
@@ -187,20 +187,20 @@ CPython) has been recent enough to support even C++17.
 Since the official builds (see above) use a pretty recent version of LLVM,
 the bottleneck for C++ support is therefore the oldest supported GCC version,
 where scipy has been constrained mainly by the version in the oldest supported
-manylinx versions & images [20]_.
+manylinx versions & images [14]_.
 
 At the end of 2021 (with the final removal of ``manylinux1`` wheels), scipy
 now has a minimum GCC requirement of GCC 6.3, which has full C++14 support
-[4]_. This corresponds to the lowest present GCC version in relevant manylinux
+[15]_. This corresponds to the lowest present GCC version in relevant manylinux
 versions - somewhat surprisingly, it is not the oldest remaining
 ``manylinux2010`` that is the most restrictive (due to the ABI-compatible
 "RHEL Dev Toolset" backports, it has GCC 8.3), but actually ``manylinux_2_24``
-that only comes with GCC 6.3 [21]_.
+that only comes with GCC 6.3 [16]_.
 
 C++17 _language_ support will require GCC >= 7 (released May 2017). As of the
 end of 2021, support for the entirety of the C++17 standard library has not yet
 been completed across all compilers; similarly, support for C++20 and C++23
-is still under heavy development. [4]_
+is still under heavy development. [15]_
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -227,7 +227,7 @@ is a build dependency (currently with the possibility to opt out).
 OpenMP support
 ^^^^^^^^^^^^^^
 
-For various reasons [13]_, SciPy cannot be distributed with built-in OpenMP support.
+For various reasons [17]_, SciPy cannot be distributed with built-in OpenMP support.
 When using the optional Pythran support, OpenMP-enabled parallel code can be
 generated when building from source.
 
@@ -325,20 +325,20 @@ making and distributing a SciPy release.
 References
 ----------
 
-.. [3] https://numpy.org/doc/stable/release.html
-.. [4] https://en.cppreference.com/w/cpp/compiler_support
-.. [5] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
+.. [1] https://numpy.org/neps/nep-0029-deprecation_policy.html
+.. [2] https://numpy.org/doc/stable/release.html
+.. [3] https://scipy.github.io/devdocs/release.html
+.. [4] https://github.com/scipy/oldest-supported-numpy
+.. [5] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
+.. [6] https://github.com/MacPython/scipy-wheels
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
-.. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
-.. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
-.. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
-.. [13] https://github.com/scipy/scipy/issues/10239
-.. [14] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
-.. [15] https://github.com/MacPython/scipy-wheels
-.. [16] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
-.. [17] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4
-.. [18] https://scipy.github.io/devdocs/release.html
-.. [19] https://github.com/scipy/oldest-supported-numpy
-.. [20] https://github.com/mayeut/pep600_compliance
-.. [21] https://github.com/pypa/manylinux/issues/1012
+.. [9] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
+.. [10] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4
+.. [11] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
+.. [12] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
+.. [13] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
+.. [14] https://github.com/mayeut/pep600_compliance
+.. [15] https://en.cppreference.com/w/cpp/compiler_support
+.. [16] https://github.com/pypa/manylinux/issues/1012
+.. [17] https://github.com/scipy/scipy/issues/10239
