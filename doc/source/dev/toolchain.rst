@@ -47,8 +47,7 @@ Python Versions
 
 SciPy is compatible with several versions of Python.  When dropping support for
 older Python versions, SciPy takes guidance from NEP 29 [10]_.  Python 2.7
-support was dropped for SciPy releases numbered 1.3 and above but is still
-available in release 1.2.x, which is a long-term support release [1]_, [2]_.
+support was dropped starting from SciPy 1.3.
 
 ================  =======================================================================
  Date             Pythons supported
@@ -66,7 +65,7 @@ NumPy
 SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
 SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
 In particular, SciPy cannot rely on features of just the latest NumPy, but
-needs to be written using what is common in all of those 4 releases. [1]_, [3]_.
+needs to be written using what is common in all of those 4 releases [3]_.
 
 The table shows the NumPy versions suitable for each major Python version.
 
@@ -123,7 +122,7 @@ SciPy is compatible with most modern C compilers (in particular ``clang``).
 In addition to concerns about compatibility with non-standard platforms,
 there was a long-standing restriction that Windows builds of SciPy had to use
 the same version of the Microsoft Visual C++ compiler as were used for CPython
-itself, for reasons of ABI-compatibility [6]_, [7]_, [8]_, [9]_.
+itself, for reasons of ABI-compatibility [7]_, [8]_.
 
 With the introduction of the "Universal C Runtime" [16]_ since the release of
 Visual Studio 2015, this restriction has been lifted. For more context, see the
@@ -326,15 +325,11 @@ making and distributing a SciPy release.
 References
 ----------
 
-.. [1] https://docs.scipy.org/doc/scipy/reference/release.1.2.0.html
-.. [2] https://python3statement.org
-.. [3] https://docs.scipy.org/doc/numpy/release.html
+.. [3] https://numpy.org/doc/stable/release.html
 .. [4] https://en.cppreference.com/w/cpp/compiler_support
 .. [5] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
-.. [6] https://blogs.msdn.microsoft.com/vcblog/2013/07/19/c99-library-support-in-visual-studio-2013/
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
-.. [9] https://wiki.python.org/moin/WindowsCompilers
 .. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
 .. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
 .. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
