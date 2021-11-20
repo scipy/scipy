@@ -133,10 +133,9 @@ cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, ::1] A):
-    cdef Py_ssize_t n = A.shape[0], i, j, k
+cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
+    cdef Py_ssize_t n = Am.shape[1], i, j, k
     cdef int lm = 0, s = 0, intn = <int>n, n2= intn*intn, int_one = 1
-    cdef cnp.ndarray[cnp.{{ dt }}_t, ndim=3] Am = np.empty((5, n, n), dtype='{{ dchar }}')
     cdef {{ tname }}[:, :, ::1] Amv = Am
     cdef:
         {{ tname }} one = 1.0, zero = 0.0
@@ -169,10 +168,10 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, ::1] A):
         for j in range(n):
             work[j] = 1.
 
-        {{ pfx }}copy(&n2, &A[0, 0], &int_one, &Amv[0, 0, 0], &int_one)
+        # {{ pfx }}copy(&n2, &A[0, 0], &int_one, &Amv[0, 0, 0], &int_one)
         for i in range(n):
             for j in range(n):
-                absA[i*n + j] = abs(A[i, j])
+                absA[i*n + j] = abs(Am[0, i, j])
 
         # First spin = normest(|A|, 1), increase m when spun more
         normA = kth_power_norm_d(absA, work, work2, n, 1)
@@ -188,13 +187,13 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, ::1] A):
         temp = kth_power_norm_d(absA, work, work2, n, 6)
         lm = max(<int>ceil(log2(temp/normA/coeff[0])/6), 0)
         if eta0 < theta[0] and lm == 0:
-            return Am, 3, s
+            return 3, s
 
         # m = 5
         temp = kth_power_norm_d(absA, work, work2, n, 4)
         lm = max(<int>ceil(log2(temp/normA/coeff[1])/10), 0)
         if eta1 < theta[1] and lm == 0:
-            return Am, 5, s
+            return 5, s
 
         # m = 7
         if n < 360:
@@ -207,13 +206,13 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, ::1] A):
         temp = kth_power_norm_d(absA, work, work2, n, 4)
         lm = max(<int>ceil(log2(temp/normA/coeff[2])/14), 0)
         if eta2 < theta[2] and lm == 0:
-            return Am, 7, s
+            return 7, s
 
         # m = 9
         temp = kth_power_norm_d(absA, work, work2, n, 4)
         lm = max(<int>ceil(log2(temp/normA/coeff[3])/18), 0)
         if eta2 < theta[3] and lm == 0:
-            return Am, 9, s
+            return 9, s
 
         # m = 13
         # Scale-square
@@ -236,7 +235,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, ::1] A):
             normA *= 2.**(-s)
         temp = kth_power_norm_d(absA, work, work2, n, 8)
         s += max(<int>ceil(log2(temp/normA/coeff[4])/26), 0)
-        return Am, 13, s
+        return 13, s
     finally:
         free(work)
         free(work2)
@@ -710,7 +709,7 @@ def pade_UV_calc(lapack_t[:, :, ::1]Am, int n, int m):
 
 
 @cython.initializedcheck(False)
-def pick_pade_structure(lapack_t[:, ::1]A):
+def pick_pade_structure(lapack_t[:, :, ::1]A):
     """Helper functions for expm to choose Pade approximation order"""
     if lapack_t is float:
         return pick_pade_structure_s(A)
