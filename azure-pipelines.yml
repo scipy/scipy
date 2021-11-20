@@ -101,7 +101,7 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.19.3"
         use_sdist: true
-  - job: wheel_optimized_gcc48
+  - job: wheel_optimized_gcc6
     pool:
       vmImage: 'ubuntu-18.04'
     variables:
@@ -109,15 +109,15 @@ stages:
       # pytest-xdist plugin for load scheduling its workers don't pick up the
       # flag. This environment variable starts all Py instances in -OO mode.
       PYTHONOPTIMIZE: 2
-      # Use gcc version 4.8
-      CC: gcc-4.8
-      CXX: g++-4.8
+      # Use gcc version 6
+      CC: gcc-6
+      CXX: g++-6
     steps:
     - script: |
         set -euo pipefail
         sudo apt update -y
-        sudo apt install -y g++-4.8 gcc-4.8
-      displayName: 'Install GCC 4.8'
+        sudo apt install -y g++-6 gcc-6
+      displayName: 'Install GCC 6'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.8'
