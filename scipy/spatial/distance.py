@@ -428,7 +428,7 @@ def minkowski(u, v, p=2, w=None):
 
     .. math::
 
-       {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
+       {\\|u-v\\|}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
 
 
        \\left(\\sum{w_i(|(u_i - v_i)|^p)}\\right)^{1/p}.
@@ -440,9 +440,9 @@ def minkowski(u, v, p=2, w=None):
     v : (N,) array_like
         Input array.
     p : scalar
-        The order of the norm of the difference :math:`{||u-v||}_p`. Note that
-        for 0 < p < 1, the triangle inequality only holds with an additional
-        multiplicative factor, i.e. it is only a quasi-metric.
+        The order of the norm of the difference :math:`{\\|u-v\\|}_p`. Note
+        that for :math:`0 < p < 1`, the triangle inequality only holds with
+        an additional multiplicative factor, i.e. it is only a quasi-metric.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -498,7 +498,7 @@ def euclidean(u, v, w=None):
 
     .. math::
 
-       {||u-v||}_2
+       {\\|u-v\\|}_2
 
        \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)^{1/2}
 
@@ -537,7 +537,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {||u-v||}_2^2
+       {\\|u-v\\|}_2^2
 
        \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
 
@@ -593,7 +593,7 @@ def correlation(u, v, w=None, centered=True):
     .. math::
 
         1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                  {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                  {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
     where :math:`\\bar{u}` is the mean of the elements of `u`
     and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
@@ -642,7 +642,7 @@ def cosine(u, v, w=None):
     .. math::
 
         1 - \\frac{u \\cdot v}
-                  {||u||_2 ||v||_2}.
+                  {\\|u\\|_2 \\|v\\|_2}.
 
     where :math:`u \\cdot v` is the dot product of :math:`u` and
     :math:`v`.
@@ -2033,7 +2033,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = pdist(X, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p > 0` (note
+       :math:`\\|u-v\\|_p` (:math:`p`-norm) where :math:`p > 0` (note
        that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = pdist(X, 'cityblock')``
@@ -2057,7 +2057,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     5. ``Y = pdist(X, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
+       Computes the squared Euclidean distance :math:`\\|u-v\\|_2^2` between
        the vectors.
 
     6. ``Y = pdist(X, 'cosine')``
@@ -2067,9 +2067,9 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{u \\cdot v}
-                   {{||u||}_2 {||v||}_2}
+                   {{\\|u\\|}_2 {\\|v\\|}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       where :math:`\\|*\\|_2` is the 2-norm of its argument ``*``, and
        :math:`u \\cdot v` is the dot product of ``u`` and ``v``.
 
     7. ``Y = pdist(X, 'correlation')``
@@ -2079,7 +2079,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                   {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
        where :math:`\\bar{v}` is the mean of the elements of vector v,
        and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
@@ -2691,7 +2691,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = cdist(XA, XB, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p > 0` (note
+       :math:`\\|u-v\\|_p` (:math:`p`-norm) where :math:`p > 0` (note
        that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = cdist(XA, XB, 'cityblock')``
@@ -2714,7 +2714,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
 
     5. ``Y = cdist(XA, XB, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
+       Computes the squared Euclidean distance :math:`\\|u-v\\|_2^2` between
        the vectors.
 
     6. ``Y = cdist(XA, XB, 'cosine')``
@@ -2724,9 +2724,9 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{u \\cdot v}
-                   {{||u||}_2 {||v||}_2}
+                   {{\\|u\\|}_2 {\\|v\\|}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       where :math:`\\|*\\|_2` is the 2-norm of its argument ``*``, and
        :math:`u \\cdot v` is the dot product of :math:`u` and :math:`v`.
 
     7. ``Y = cdist(XA, XB, 'correlation')``
@@ -2736,7 +2736,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                   {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
        where :math:`\\bar{v}` is the mean of the elements of vector v,
        and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
