@@ -17,7 +17,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_)
+                           assert_equal, assert_, assert_warns)
 import pytest
 from pytest import raises as assert_raises
 
@@ -1280,16 +1280,19 @@ def test_opaque():
     assert isinstance(data['parabola'].item()[3].item()[3], MatlabOpaque)
 
 
-# TODO: This should work but emit a deprecation warning
-@pytest.mark.xfail
 def test_deprecation():
     """Test that access to previous attributes still works."""
     # The mypy.ini [mypy-scipy.io._matlab.tests.test_mio] can be removed
     # once these are fixed.
 
     # This should be accessible immediately from scipy.io import
-    with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
+    with assert_warns(DeprecationWarning):
         scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
+
+
+# TODO: This should work but emit a deprecation warning
+@pytest.mark.xfail
+def test_deprecation2():
     # these should be importable but warn as well
-    with pytest.deprecated_call(match=r'scipy\.io\.matlab instead'):
+    with assert_warns(DeprecationWarning):
         from scipy.io.matlab.miobase import MatReadError  # noqa

@@ -58,8 +58,13 @@ Example session::
 from .linsolve import *
 from ._superlu import SuperLU
 from . import _add_newdocs
+from . import linsolve
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [
+    'MatrixRankWarning', 'SuperLU', 'factorized',
+    'spilu', 'splu', 'spsolve',
+    'spsolve_triangular', 'use_solver'
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

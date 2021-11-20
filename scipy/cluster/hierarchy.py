@@ -148,7 +148,7 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
            'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
            'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
-           'ward', 'weighted', 'distance']
+           'ward', 'weighted']
 
 
 class ClusterWarning(UserWarning):
@@ -1482,7 +1482,7 @@ def to_tree(Z, rd=False):
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
-        
+
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:

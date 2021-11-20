@@ -7,3 +7,13 @@ from .unuran_wrapper import (  # noqa: F401
     NaiveRatioUniforms,
     UNURANError
 )
+
+__all__ = [
+    'TransformedDensityRejection',
+    'DiscreteAliasUrn',
+    'DiscreteGuideTable',
+    'NumericalInversePolynomial',
+    'NumericalInverseHermite',
+    'NaiveRatioUniforms',
+    'UNURANError'
+]
