@@ -445,7 +445,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
                  correspondence with the inverse direct Fourier transform.
 
-    For ``norm="ortho"```` both the `dct` and `idct` are made orthogonal
+    For ``norm="ortho"`` both the `dct` and `idct` are made orthogonal
     through scaling by the same overall factor in both directions and for types
     1, 2 and 3 the transform definition is modified to give orthogonality of
     the IDCT matrix (see `dct` for the full definitions).
@@ -512,7 +512,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     .. warning:: For ``type in {2, 3}``, ``norm="ortho"`` breaks the direct
                  correspondence with the inverse direct Fourier transform.
 
-    For ``norm="ortho"```` both the `dst` and `idst` are made orthogonal through
+    For ``norm="ortho"`` both the `dst` and `idst` are made orthogonal through
     scaling by the same overall factor in both directions and for types 2 and
     3 the transform definition is modified to give orthogonality of the DST
     matrix (see below).
