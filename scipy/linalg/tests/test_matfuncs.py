@@ -9,10 +9,8 @@ import functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt
-from numpy.testing import (
-        assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal,
-        assert_allclose, assert_, assert_warns)
+from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
+                           assert_array_less, assert_array_equal, assert_warns)
 import pytest
 
 import scipy.linalg
@@ -108,7 +106,7 @@ class TestLogM:
         A = _get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
+        assert_allclose(A_round_trip, A, rtol=5e-5, atol=1e-14)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
@@ -604,25 +602,8 @@ class TestExpM:
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_single_elt(self):
-        # See gh-5853
-        from scipy.sparse import csc_matrix
-
-        vOne = -2.02683397006j
-        vTwo = -2.12817566856j
-
-        mOne = csc_matrix([[vOne]], dtype='complex')
-        mTwo = csc_matrix([[vTwo]], dtype='complex')
-
-        outOne = expm(mOne)
-        outTwo = expm(mTwo)
-
-        assert_equal(type(outOne), type(mOne))
-        assert_equal(type(outTwo), type(mTwo))
-
-        assert_allclose(outOne[0, 0], complex(-0.44039415155949196,
-                                              -0.8978045395698304))
-        assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
-                                              -0.84864425749518878))
+        elt = expm(1)
+        assert_allclose(elt, np.array([[np.e]]))
 
     def test_empty_matrix_input(self):
         # handle gh-11082
@@ -713,8 +694,8 @@ class TestExpmFrechet:
             expected_expm = scipy.linalg.expm(A)
             expected_frechet = scipy.linalg.expm(M)[:n, n:]
             observed_expm, observed_frechet = expm_frechet(A, E)
-            assert_allclose(expected_expm, observed_expm)
-            assert_allclose(expected_frechet, observed_frechet)
+            assert_allclose(expected_expm, observed_expm, atol=5e-8)
+            assert_allclose(expected_frechet, observed_frechet, atol=1e-7)
 
     def test_problematic_matrix(self):
         # this test case uncovered a bug which has since been fixed
