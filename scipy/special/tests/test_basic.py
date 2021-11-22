@@ -1844,14 +1844,22 @@ class TestFresnel:
     @pytest.mark.parametrize("z, s, c", [
         # some positive value
         (.5, 0.064732432859999287, 0.49234422587144644),
+        (.5 + .0j, 0.064732432859999287, 0.49234422587144644),
         # negative half annulus
         # https://github.com/scipy/scipy/issues/12309
         # Reference values can be reproduced with
-        #
         # https://www.wolframalpha.com/input/?i=FresnelS%5B-2.0+%2B+0.1i%5D
         # https://www.wolframalpha.com/input/?i=FresnelC%5B-2.0+%2B+0.1i%5D
-        (-2.0 + 0.1j, -0.3109538687728942-0.0005870728836383176j, -0.4879956866358554+0.10670801832903172j),
-        (-0.1 - 1.5j, -0.03918309471866977+0.7197508454568574j, 0.09605692502968956-0.43625191013617465j),
+        (
+            -2.0 + 0.1j,
+            -0.3109538687728942-0.0005870728836383176j,
+            -0.4879956866358554+0.10670801832903172j
+        ),
+        (
+            -0.1 - 1.5j,
+            -0.03918309471866977+0.7197508454568574j,
+            0.09605692502968956-0.43625191013617465j
+        ),
         # a different algorithm kicks in for "large" values, i.e., |z| >= 4.5,
         # make sure to test both float and complex values; a different
         # algorithm is used
