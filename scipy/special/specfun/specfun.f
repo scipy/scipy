@@ -131,7 +131,6 @@ C
 15            CF0=CF
            S=2.0D0/(PI*Z)*SIN(ZP)/CF*S
         ELSE
-C          nschloe, Oct 2021:
 C          Auxiliary functions f(z) and g(z) can be computed using an
 C          asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
 C          as sometimes suggested. Use the symmetry S(z) = -iS(-iz).
