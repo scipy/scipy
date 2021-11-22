@@ -46,7 +46,6 @@ from numpy.testing import (verbose, assert_,
                            assert_almost_equal, assert_allclose,
                            break_cycles, IS_PYPY)
 import pytest
-from pytest import raises as assert_raises
 
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
@@ -407,16 +406,18 @@ class TestCdist:
         kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
         args = [3.14] * 200
 
-        assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
-        assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
-                      **kwargs)
-        assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
-                      **kwargs)
-        assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
-        assert_raises(TypeError, cdist, X1, X2, metric=eval(metric),
-                      *args)
-        assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric,
-                      *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=eval(metric), **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric="test_" + metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=metric, *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=eval(metric), *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric="test_" + metric, *args)
 
     def test_cdist_extra_args_custom(self):
         # Tests that args and kwargs are correctly handled
@@ -429,18 +430,26 @@ class TestCdist:
         kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
         args = [3.14] * 200
 
-        assert_raises(TypeError, cdist, X1, X2, _my_metric)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, **kwargs)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric,
-                      kwarg=2.2, kwarg2=3.3)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1, 2, kwarg=2.2)
-
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2, 3.3)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1)
-        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1,
-                      kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, 2.2, 3.3)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, 2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
 
         # this should work
         assert_allclose(cdist(X1, X2, metric=_my_metric,
@@ -493,8 +502,8 @@ class TestCdist:
         assert_allclose(dist, [[rt2, rt2, rt2], [2, 2 * rt2, 2]])
 
         # Too few observations
-        assert_raises(ValueError,
-                      cdist, [[0, 1]], [[2, 3]], metric='mahalanobis')
+        with pytest.raises(ValueError):
+            cdist([[0, 1]], [[2, 3]], metric='mahalanobis')
 
     def test_cdist_custom_notdouble(self):
         class myclass:
@@ -520,9 +529,12 @@ class TestCdist:
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(e_cls, cdist, X1, X2, metric=metric, **kwargs)
-            assert_raises(e_cls, cdist, X1, X2, metric=eval(metric), **kwargs)
-            assert_raises(e_cls, cdist, X1, X2, metric="test_" + metric, **kwargs)
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric=metric, **kwargs)
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric=eval(metric), **kwargs)
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric="test_" + metric, **kwargs)
         else:
             assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
             assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
@@ -578,7 +590,8 @@ class TestCdist:
                 for new_type in test[1]:
                     X1new = new_type(X1)
                     X2new = new_type(X2)
-                    assert_raises(e_cls, cdist, X1new, X2new, metric=metric)
+                    with pytest.raises(e_cls):
+                        cdist(X1new, X2new, metric=metric)
             else:
                 for new_type in test[1]:
                     y2 = cdist(new_type(X1), new_type(X2), metric=metric)
@@ -597,27 +610,31 @@ class TestCdist:
         out1 = np.empty((out_r, out_c), dtype=np.double)
         Y1 = cdist(X1, X2, metric, **kwargs)
         Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
+
         # test that Y_test1 and out1 are the same object
         assert_(Y2 is out1)
+
         # test for incorrect shape
         out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
-        assert_raises(ValueError,
-                      cdist, X1, X2, metric, out=out2, **kwargs)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out2, **kwargs)
+
         # test for C-contiguous order
         out3 = np.empty(
             (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
         out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-        assert_raises(ValueError,
-                      cdist, X1, X2, metric, out=out3, **kwargs)
-        assert_raises(ValueError,
-                      cdist, X1, X2, metric, out=out4, **kwargs)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out3, **kwargs)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out4, **kwargs)
 
         # test for incorrect dtype
         out5 = np.empty((out_r, out_c), dtype=np.int64)
-        assert_raises(ValueError,
-                      cdist, X1, X2, metric, out=out5, **kwargs)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out5, **kwargs)
 
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
@@ -682,14 +699,18 @@ class TestPdist:
         kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
         args = [3.14] * 200
 
-        assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-        assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
-        assert_raises(TypeError, pdist, X1, metric="test_" + metric,
-                      **kwargs)
-        assert_raises(TypeError, pdist, X1, metric=metric, *args)
-        assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-        assert_raises(TypeError, pdist, X1, metric="test_" + metric,
-                      *args)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=eval(metric), **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric="test_" + metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=metric, *args)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=eval(metric), *args)
+        with pytest.raises(TypeError):
+            pdist(X1, metric="test_" + metric, *args)
 
     def test_pdist_extra_args_custom(self):
         # Tests that args and kwargs are correctly handled
@@ -701,18 +722,26 @@ class TestPdist:
         kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
         args = [3.14] * 200
 
-        assert_raises(TypeError, pdist, X1, _my_metric)
-        assert_raises(TypeError, pdist, X1, _my_metric, *args)
-        assert_raises(TypeError, pdist, X1, _my_metric, **kwargs)
-        assert_raises(TypeError, pdist, X1, _my_metric,
-                      kwarg=2.2, kwarg2=3.3)
-        assert_raises(TypeError, pdist, X1, _my_metric, 1, 2, kwarg=2.2)
-
-        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2, 3.3)
-        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2)
-        assert_raises(TypeError, pdist, X1, _my_metric, 1.1)
-        assert_raises(TypeError, pdist, X1, _my_metric, 1.1,
-                      kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, *args)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, 2.2, 3.3)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, 2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
 
         # these should work
         assert_allclose(pdist(X1, metric=_my_metric,
@@ -1064,8 +1093,8 @@ class TestPdist:
         assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2 * rt2, 2, 2, 2 * rt2, 2])
 
         # Too few observations
-        assert_raises(ValueError,
-                      wpdist, [[0, 1], [2, 3]], metric='mahalanobis')
+        with pytest.raises(ValueError):
+            wpdist([[0, 1], [2, 3]], metric='mahalanobis')
 
     def test_pdist_hamming_random(self):
         eps = 1e-15
@@ -1427,9 +1456,12 @@ class TestPdist:
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(e_cls, pdist, X, metric=metric, **kwargs)
-            assert_raises(e_cls, pdist, X, metric=eval(metric), **kwargs)
-            assert_raises(e_cls, pdist, X, metric="test_" + metric, **kwargs)
+            with pytest.raises(e_cls):
+                pdist(X, metric=metric, **kwargs)
+            with pytest.raises(e_cls):
+                pdist(X, metric=eval(metric), **kwargs)
+            with pytest.raises(e_cls):
+                pdist(X, metric="test_" + metric, **kwargs)
         else:
             assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
             assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
@@ -1480,7 +1512,8 @@ class TestPdist:
                     print(e)
                 for new_type in test[1]:
                     X2 = new_type(X1)
-                    assert_raises(e_cls, pdist, X2, metric=metric)
+                    with pytest.raises(e_cls):
+                        pdist(X2, metric=metric)
             else:
                 for new_type in test[1]:
                     y2 = pdist(new_type(X1), metric=metric)
@@ -1498,19 +1531,27 @@ class TestPdist:
         out1 = np.empty(out_size, dtype=np.double)
         Y_right = pdist(X, metric, **kwargs)
         Y_test1 = pdist(X, metric, out=out1, **kwargs)
+
         # test that output is numerically equivalent
         assert_allclose(Y_test1, Y_right, rtol=eps)
+
         # test that Y_test1 and out1 are the same object
         assert_(Y_test1 is out1)
+
         # test for incorrect shape
         out2 = np.empty(out_size + 3, dtype=np.double)
-        assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out2, **kwargs)
+
         # test for (C-)contiguous output
         out3 = np.empty(2 * out_size, dtype=np.double)[::2]
-        assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out3, **kwargs)
+
         # test for incorrect dtype
         out5 = np.empty(out_size, dtype=np.int64)
-        assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out5, **kwargs)
 
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
@@ -1679,7 +1720,8 @@ class TestNumObsY:
     def test_num_obs_y_1(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 1
         # observations. Expecting exception.
-        assert_raises(ValueError, self.check_y, 1)
+        with pytest.raises(ValueError):
+            self.check_y(1)
 
     def test_num_obs_y_2(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 2
@@ -1704,7 +1746,8 @@ class TestNumObsY:
             a.add(n * (n - 1) / 2)
         for i in range(5, 105):
             if i not in a:
-                assert_raises(ValueError, self.bad_y, i)
+                with pytest.raises(ValueError):
+                    self.bad_y(i)
 
     def minit(self, n):
         assert_(self.check_y(n))
@@ -1763,7 +1806,8 @@ class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.double)
-        assert_raises(ValueError, is_valid_dm_throw, (D))
+        with pytest.raises(ValueError):
+            is_valid_dm_throw((D))
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.double)
@@ -1771,7 +1815,8 @@ class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3, 3, 3), dtype=np.double)
-        assert_raises(ValueError, is_valid_dm_throw, (D))
+        with pytest.raises(ValueError):
+            is_valid_dm_throw((D))
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3, 3, 3), dtype=np.double)
@@ -1782,7 +1827,8 @@ class TestIsValidDM:
         D = squareform(y)
         for i in range(0, 5):
             D[i, i] = 2.0
-        assert_raises(ValueError, is_valid_dm_throw, (D))
+        with pytest.raises(ValueError):
+            is_valid_dm_throw((D))
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
@@ -1795,7 +1841,8 @@ class TestIsValidDM:
         y = np.random.rand(10)
         D = squareform(y)
         D[1, 3] = D[3, 1] + 1
-        assert_raises(ValueError, is_valid_dm_throw, (D))
+        with pytest.raises(ValueError):
+            is_valid_dm_throw((D))
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
@@ -1839,7 +1886,8 @@ class TestIsValidY:
 
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3, 3,), dtype=np.double)
-        assert_raises(ValueError, is_valid_y_throw, (y))
+        with pytest.raises(ValueError):
+            is_valid_y_throw((y))
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3, 3,), dtype=np.double)
@@ -1847,7 +1895,8 @@ class TestIsValidY:
 
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3, 3, 3), dtype=np.double)
-        assert_raises(ValueError, is_valid_y_throw, (y))
+        with pytest.raises(ValueError):
+            is_valid_y_throw((y))
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3, 3, 3), dtype=np.double)
@@ -1875,7 +1924,8 @@ class TestIsValidY:
             a.add(n * (n - 1) / 2)
         for i in range(5, 105):
             if i not in a:
-                assert_raises(ValueError, self.bad_y, i)
+                with pytest.raises(ValueError):
+                    self.bad_y(i)
 
     def bad_y(self, n):
         y = np.random.rand(n)
@@ -1889,13 +1939,16 @@ class TestIsValidY:
 @pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
 def test_bad_p(p):
     # Raise ValueError if p <=0.
-    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p)
-    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p, [1, 1])
+    with pytest.raises(ValueError):
+        minkowski([1, 2], [3, 4], p)
+    with pytest.raises(ValueError):
+        minkowski([1, 2], [3, 4], p, [1, 1])
 
 
 def test_sokalsneath_all_false():
     # Regression test for ticket #876
-    assert_raises(ValueError, sokalsneath, [False, False, False], [False, False, False])
+    with pytest.raises(ValueError):
+        sokalsneath([False, False, False], [False, False, False])
 
 
 def test_canberra():
@@ -1920,20 +1973,19 @@ def test_euclideans():
     assert_almost_equal(weuclidean(x1, x2), np.sqrt(3), decimal=14)
 
     # Check flattening for (1, N) or (N, 1) inputs
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]), np.sqrt(3)
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :])
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis])
 
     # Distance metrics only defined for vectors (= 1-D)
     x = np.arange(4).reshape(2, 2)
-    assert_raises(ValueError, weuclidean, x, x)
-    assert_raises(ValueError, wsqeuclidean, x, x)
+    with pytest.raises(ValueError):
+        weuclidean(x, x)
+    with pytest.raises(ValueError):
+        wsqeuclidean(x, x)
 
     # Another check, with random data.
     rs = np.random.RandomState(1234567890)
@@ -1949,7 +2001,8 @@ def test_hamming_unequal_length():
     x = [0, 0, 1]
     y = [1, 0, 1, 0]
     # Used to give an AttributeError from ndarray.mean called on bool
-    assert_raises(ValueError, whamming, x, y)
+    with pytest.raises(ValueError):
+        whamming(x, y)
 
 
 def test_hamming_unequal_length_with_w():
@@ -1957,7 +2010,7 @@ def test_hamming_unequal_length_with_w():
     v = [0, 0, 1]
     w = [1, 0, 1, 0]
     msg = "'w' should have the same length as 'u' and 'v'."
-    with assert_raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=msg):
         whamming(u, v, w)
 
 
@@ -2104,8 +2157,10 @@ def test_Xdist_non_negative_weights(metric):
         pytest.skip("not applicable")
 
     for m in [metric, eval(metric), "test_" + metric]:
-        assert_raises(ValueError, pdist, X, m, w=w)
-        assert_raises(ValueError, cdist, X, X, m, w=w)
+        with pytest.raises(ValueError):
+            pdist(X, m, w=w)
+        with pytest.raises(ValueError):
+            cdist(X, X, m, w=w)
 
 
 def test__validate_vector():
@@ -2123,18 +2178,15 @@ def test__validate_vector():
     assert_equal(y, x)
 
     x = 1
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
 
     x = np.arange(5).reshape(1, -1, 1)
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
 
     x = [[1, 2], [3, 4]]
-    with assert_raises(ValueError,
-                       match="Input vector should be 1-D"):
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
         _validate_vector(x)
 
 def test_yule_all_same():
