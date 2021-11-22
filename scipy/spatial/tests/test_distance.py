@@ -63,7 +63,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 
 
-@pytest.fixture(params=_METRICS_NAMES)
+@pytest.fixture(params=_METRICS_NAMES, scope="session")
 def metric(request):
     """
     Fixture for all metrics in scipy.spatial.distance
