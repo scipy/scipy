@@ -99,7 +99,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     of equations.
 
     The function solves ``Ax = b``  or  ``min ||Ax - b||^2`` or
-    ``min ||Ax - b||^2 + d^2 ||x||^2``.
+    ``min ||Ax - b||^2 + d^2 ||x - x0||^2``.
 
     The matrix A may be square or rectangular (over-determined or
     under-determined), and may have any rank.
@@ -111,8 +111,8 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
       2. Linear least squares  --    solve  Ax = b
                                      in the least-squares sense
 
-      3. Damped least squares  --    solve  (   A    )x = ( b )
-                                            ( damp*I )    ( 0 )
+      3. Damped least squares  --    solve  (   A    )*x = (    b    )
+                                            ( damp*I )     ( damp*x0 )
                                      in the least-squares sense
 
     Parameters
@@ -176,14 +176,14 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     r1norm : float
         ``norm(r)``, where ``r = b - Ax``.
     r2norm : float
-        ``sqrt( norm(r)^2  +  damp^2 * norm(x)^2 )``.  Equal to `r1norm` if
-        ``damp == 0``.
+        ``sqrt( norm(r)^2  +  damp^2 * norm(x - x0)^2 )``.  Equal to `r1norm`
+        if ``damp == 0``.
     anorm : float
         Estimate of Frobenius norm of ``Abar = [[A]; [damp*I]]``.
     acond : float
         Estimate of ``cond(Abar)``.
     arnorm : float
-        Estimate of ``norm(A'@r - damp^2*x)``.
+        Estimate of ``norm(A'@r - damp^2*(x - x0))``.
     xnorm : float
         ``norm(x)``
     var : ndarray of float
@@ -496,9 +496,9 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # Distinguish between
         #    r1norm = ||b - Ax|| and
         #    r2norm = rnorm in current code
-        #           = sqrt(r1norm^2 + damp^2*||x||^2).
+        #           = sqrt(r1norm^2 + damp^2*||x - x0||^2).
         #    Estimate r1norm from
-        #    r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
+        #    r1norm = sqrt(r2norm^2 - damp^2*||x - x0||^2).
         # Although there is cancellation, it might be accurate enough.
         if damp > 0:
             r1sq = rnorm**2 - dampsq * xxnorm
