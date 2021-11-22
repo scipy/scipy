@@ -5082,7 +5082,14 @@ add_newdoc("hyp2f1",
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    The implementation for complex values of ``z`` is described in [2]_.
+    The implementation for complex values of ``z`` is described in [2]_,
+    except for ``z`` in the region defined by
+
+    .. math::
+
+         0.9 <= \left|z\right| < 1.1,\:\left|1 - z\right| >= 0.9,\:\mathrm{real}(z) >= 0
+
+    in which the implementation follows [4]_.
 
     References
     ----------
@@ -5091,6 +5098,9 @@ add_newdoc("hyp2f1",
     .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [4] J.L. Lopez and N.M. Temme, "New series expansions of the Gauss
+           hypergeometric function", Adv Comput Math 39, 349-365 (2013).
+           https://doi.org/10.1007/s10444-012-9283-y
 
     Examples
     --------
