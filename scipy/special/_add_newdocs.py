@@ -5087,7 +5087,9 @@ add_newdoc("hyp2f1",
 
     .. math::
 
-         0.9 <= \left|z\right| < 1.1,\:\left|1 - z\right| >= 0.9,\:\mathrm{real}(z) >= 0
+         0.9 <= \left|z\right| < 1.1,
+         \left|1 - z\right| >= 0.9,
+         \mathrm{real}(z) >= 0
 
     in which the implementation follows [4]_.
 
