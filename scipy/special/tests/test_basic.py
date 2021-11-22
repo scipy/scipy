@@ -1841,48 +1841,25 @@ class TestFactorialFunctions:
 
 
 class TestFresnel:
-    def test_fresnel(self):
-        frs = array(special.fresnel(.5))
-        assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
-
-    def test_fresnel_negative_half_annulus(self):
+    @pytest.mark.parametrize("z, s, c", [
+        # some positive value
+        (.5, 0.064732432859999287, 0.49234422587144644),
+        # negative half annulus
         # https://github.com/scipy/scipy/issues/12309
-        frs = array(special.fresnel(-2.0 + 0.1j))
-        assert_array_almost_equal(
-            frs,
-            array([
-                -0.3109538687728942-0.0005870728836383176j,
-                -0.4879956866358554+0.10670801832903172j,
-            ]), 8)
-        frs = array(special.fresnel(-0.1 - 1.5j))
-        assert_array_almost_equal(
-            frs,
-            array([
-                -0.03918309471866977+0.7197508454568574j,
-                0.09605692502968956-0.43625191013617465j,
-            ]), 8)
-
-    def test_fresnel_negative_large_values(self):
+        (-2.0 + 0.1j, -0.3109538687728942-0.0005870728836383176j, -0.4879956866358554+0.10670801832903172j),
+        (-0.1 - 1.5j, -0.03918309471866977+0.7197508454568574j, 0.09605692502968956-0.43625191013617465j),
         # a different algorithm kicks in for "large" values, i.e., |z| >= 4.5
-        frs = array(special.fresnel(6.0))
-        assert_array_almost_equal(frs, array([0.44696076, 0.49953147]), 8)
-
-        frs = array(special.fresnel(6.0j))
-        assert_array_almost_equal(frs, array([-0.44696076j, 0.49953147j]), 8)
-
-        frs = array(special.fresnel(-6.0))
-        assert_array_almost_equal(frs, array([-0.44696076, -0.49953147]), 8)
-
-        frs = array(special.fresnel(-6.0j))
-        assert_array_almost_equal(frs, array([0.44696076j, -0.49953147j]), 8)
-
-    def test_fresnel_inf1(self):
-        frs = special.fresnel(np.inf)
-        assert_equal(frs, (0.5, 0.5))
-
-    def test_fresnel_inf2(self):
-        frs = special.fresnel(-np.inf)
-        assert_equal(frs, (-0.5, -0.5))
+        (6.0, 0.44696076, 0.49953147),
+        (6.0j, -0.44696076j, 0.49953147j),
+        (-6.0, -0.44696076, -0.49953147),
+        (-6.0j, 0.44696076j, -0.49953147j),
+        # inf
+        (np.inf, 0.5, 0.5),
+        (-np.inf, -0.5, -0.5),
+    ])
+    def test_fresnel_values(self, z, s, c):
+        frs = array(special.fresnel(z))
+        assert_array_almost_equal(frs, array([s, c]), 8)
 
     # values from pg 329  Table 7.11 of A & S
     #  slightly corrected in 4th decimal place
