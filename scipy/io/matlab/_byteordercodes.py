@@ -7,6 +7,11 @@ codes - one of '<' (little endian) or '>' (big endian)
 '''
 import sys
 
+__all__ = [
+    'aliases', 'native_code', 'swapped_code',
+    'sys_is_le', 'to_numpy_code'
+]
+
 sys_is_le = sys.byteorder == 'little'
 native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'

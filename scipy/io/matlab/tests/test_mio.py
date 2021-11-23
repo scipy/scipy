@@ -27,14 +27,14 @@ import scipy.sparse as SP
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
-import scipy.io._matlab.byteordercodes as boc
-from scipy.io._matlab.miobase import (
+import scipy.io.matlab._byteordercodes as boc
+from scipy.io.matlab._miobase import (
     matdims, MatWriteError, MatReadError, matfile_version)
-from scipy.io._matlab.mio import mat_reader_factory, loadmat, savemat, whosmat
-from scipy.io._matlab.mio5 import (
+from scipy.io.matlab._mio import mat_reader_factory, loadmat, savemat, whosmat
+from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
     EmptyStructMarker)
-from scipy.io._matlab import mio5_params as mio5p
+import scipy.io.matlab._mio5_params as mio5p
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -1282,17 +1282,10 @@ def test_opaque():
 
 def test_deprecation():
     """Test that access to previous attributes still works."""
-    # The mypy.ini [mypy-scipy.io._matlab.tests.test_mio] can be removed
-    # once these are fixed.
-
     # This should be accessible immediately from scipy.io import
     with assert_warns(DeprecationWarning):
         scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
 
-
-# TODO: This should work but emit a deprecation warning
-@pytest.mark.xfail
-def test_deprecation2():
-    # these should be importable but warn as well
+    # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
         from scipy.io.matlab.miobase import MatReadError  # noqa

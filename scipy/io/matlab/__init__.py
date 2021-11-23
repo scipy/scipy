@@ -34,38 +34,29 @@ namespace also exist in this namespace:
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
    whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
+
+Notes
+-----
+MATLAB(R) is a registered trademark of The MathWorks, Inc., 3 Apple Hill
+Drive, Natick, MA 01760-2098, USA.
+
 """
+# Matlab file read and write utilities
+from ._mio import loadmat, savemat, whosmat
+from ._mio5 import MatlabFunction
+from ._mio5_params import MatlabObject, MatlabOpaque, mat_struct
+from ._miobase import (matfile_version, MatReadError, MatReadWarning,
+                      MatWriteError)
 
-import warnings
-from ._matlab import (loadmat, savemat, whosmat, byteordercodes,
-                      matfile_version, MatReadError, MatReadWarning,
-                      MatWriteError, MatlabOpaque, MatlabFunction, mat_struct,
-                      MatlabObject)
-from . import _matlab
+# Deprecated namespaces, to be removed in v2.0.0
+from .import mio, mio5, mio5_params, mio4, byteordercodes, miobase
 
-
-__all__ = [  # noqa: F822
-    'loadmat', 'savemat', 'whosmat', 'matfile_version',
-    'MatReadError', 'MatReadWarning', 'MatWriteError', 'MatlabOpaque',
-    'MatlabFunction', 'mat_struct', 'MatlabObject',
+__all__ = [
+    'loadmat', 'savemat', 'whosmat', 'MatlabObject',
+    'matfile_version', 'MatReadError', 'MatReadWarning',
+    'MatWriteError', 'mat_struct', 'MatlabOpaque', 'MatlabFunction'
 ]
 
-matlab_modules = [
-    'byteordercodes', 'mio', 'mio4', 'mio5', 'mio5_params', 'mio5_utils',
-    'miobase', 'mio_utils', 'streams'
-]
-
-def __dir__():
-    return __all__
-
-
-def __getattr__(name):
-    if name not in __all__ and name not in matlab_modules:
-        raise AttributeError(
-            f"scipy.io.matlab has no attribute {name}")
-
-    warnings.warn(f"Please use the `scipy.io.matlab` namespace instead, "
-                  f"the `scipy.io.matlab.{name}` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_matlab, name)
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
