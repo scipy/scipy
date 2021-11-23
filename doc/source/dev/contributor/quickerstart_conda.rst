@@ -21,7 +21,4 @@ your `SciPy <https://github.com/scipy/scipy>`_ clone::
     python setup.py build_ext --inplace
     python runtests.py    # Alternatively, it's fine to use `python setup.py develop`
 
-    # Install SciPy in develop mode in conda
-    conda develop .
-
 For more detailed instructions, see the other :ref:`dev-env` guides.
