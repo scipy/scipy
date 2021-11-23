@@ -463,11 +463,6 @@ class TestTransformedDensityRejection:
         with pytest.raises(ValueError, match=msg):
             TransformedDensityRejection(StandardNormal(), c=-1.)
 
-    def test_bad_variant(self):
-        msg = r"Invalid option for the `variant`"
-        with pytest.raises(ValueError, match=msg):
-            TransformedDensityRejection(StandardNormal(), variant='foo')
-
     u = [np.linspace(0, 1, num=1000), [], [[]], [np.nan],
          [-np.inf, np.nan, np.inf], 0,
          [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]]
@@ -477,8 +472,7 @@ class TestTransformedDensityRejection:
         # Increase the `max_squeeze_hat_ratio` so the ppf_hat is more
         # accurate.
         rng = TransformedDensityRejection(StandardNormal(),
-                                          max_squeeze_hat_ratio=0.9999,
-                                          max_intervals=10000)
+                                          max_squeeze_hat_ratio=0.9999)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:
@@ -777,8 +771,7 @@ class TestNumericalInversePolynomial:
     @pytest.mark.parametrize("x", x)
     def test_cdf(self, x):
         dist = StandardNormal()
-        rng = NumericalInversePolynomial(dist, keep_cdf=True,
-                                         u_resolution=1e-14)
+        rng = NumericalInversePolynomial(dist, u_resolution=1e-14)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:
@@ -806,7 +799,6 @@ class TestNumericalInversePolynomial:
 
     bad_orders = [1, 4.5, 20, np.inf, np.nan]
     bad_u_resolution = [1e-20, 1e-1, np.inf, np.nan]
-    bad_max_intervals = [10, 10000000, 1000.5, np.inf, np.nan]
 
     @pytest.mark.parametrize("order", bad_orders)
     def test_bad_orders(self, order):
@@ -823,20 +815,9 @@ class TestNumericalInversePolynomial:
             NumericalInversePolynomial(StandardNormal(),
                                        u_resolution=u_resolution)
 
-    @pytest.mark.parametrize("max_intervals", bad_max_intervals)
-    def test_bad_max_intervals(self, max_intervals):
-        msg = (r"`max_intervals` must be an integer in the range "
-               r"\[100, 1000000\].")
-        with pytest.raises(ValueError, match=msg):
-            NumericalInversePolynomial(StandardNormal(),
-                                       max_intervals=max_intervals)
-
     def test_bad_args(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
-        msg = r"CDF is not available."
-        with pytest.raises(ValueError, match=msg):
-            rng.cdf([1, 2, 3])
         msg = r"`sample_size` must be greater than or equal to 1000."
         with pytest.raises(ValueError, match=msg):
             rng.u_error(10)

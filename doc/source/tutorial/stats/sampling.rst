@@ -82,10 +82,10 @@ different methods is shown in the table below.
 =====================================  ===============  ===============  ===========  ==============
 Methods for continuous distributions   Required Inputs  Optional Inputs  Setup Speed  Sampling Speed
 =====================================  ===============  ===============  ===========  ==============
-:class:`~TransformedDensityRejection`  pdf, dpdf        None             slow         fast
+:class:`~TransformedDensityRejection`  pdf, dpdf        none             slow         fast
 :class:`~NumericalInverseHermite`      cdf              pdf, dpdf        (very) slow  (very) fast
 :class:`~NumericalInversePolynomial`   pdf              cdf              (very) slow  (very) fast
-:class:`~NaiveRatioUniforms`           pdf              various          slow/fast    moderate
+:class:`~NaiveRatioUniforms`           pdf              none             slow/fast    moderate
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -158,12 +158,15 @@ which requires a PDF and its derivative w.r.t. ``x`` (i.e. the variate).
           ``dpdf``, etc) need not be vectorized. They should
           accept and return floats.
 
-.. note:: One can also pass the SciPy distributions as arguments but it can
-          be slow due to validations and expensive NumPy operations.
-          Moreover, it doesn't always have all the information required
-          by some generators like derivative of PDF for TDR method. Also,
-          most of the distributions in SciPy provide a ``rvs`` method which
-          can be used instead.
+.. note:: One can also pass the SciPy distributions as arguments. However,
+          note that the object doesn't always have all the information
+          required by some generators like the derivative of PDF for the
+          TDR method. Relying on SciPy distributions might also reduce
+          performance due to the vectorization of the methods like
+          ``pdf`` and ``cdf``. In both cases, one can implement a
+          custom distribution object that contains all the required
+          methods and that is not vectorized as shown in the example
+          above.
 
 In the above example, we have set up an object of the
 :class:`~TransformedDensityRejection` method to sample from a
