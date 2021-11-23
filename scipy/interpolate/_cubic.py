@@ -3,7 +3,7 @@
 import numpy as np
 
 from . import PPoly
-from .polyint import _isscalar
+from ._polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
 

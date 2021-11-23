@@ -47,7 +47,7 @@ numpy directly.
 
 Everything in the namespaces of scipy submodules is public.  In general, it is
 recommended to import functions from submodule namespaces.  For example, the
-function ``curve_fit`` (defined in scipy/optimize/minpack.py) should be
+function ``curve_fit`` (defined in scipy/optimize/_minpack_py.py) should be
 imported like this::
 
   from scipy import optimize
@@ -106,10 +106,7 @@ change is made.
 * `scipy.io`
 
   - `scipy.io.arff`
-  - ``scipy.io.harwell_boeing``
-  - ``scipy.io.idl``
-  - ``scipy.io.matlab``
-  - ``scipy.io.netcdf``
+  - `scipy.io.matlab`
   - `scipy.io.wavfile`
 
 * `scipy.linalg`

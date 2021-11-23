@@ -18,14 +18,16 @@ Various utilities that don't have another home.
 
 """
 
-from . import doccer
-from .common import *
 
-__all__ = ['doccer']
+from ._common import *
+from . import _common
 
-from . import common
-__all__ += common.__all__
-del common
+# Deprecated namespaces, to be removed in v2.0.0
+from . import common, doccer
+
+__all__ = _common.__all__
+
+del _common
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

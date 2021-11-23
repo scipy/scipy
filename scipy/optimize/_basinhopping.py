@@ -351,7 +351,7 @@ class Metropolis:
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
-                 seed=None):
+                 seed=None, *, target_accept_rate=0.5, stepwise_factor=0.9):
     """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
@@ -437,6 +437,19 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         `take_step` and `accept_test`, and these functions use random
         number generation, then those functions are responsible for the state
         of their random number generator.
+    target_accept_rate : float, optional
+        The target acceptance rate that is used to adjust the `stepsize`.
+        If the current acceptance rate is greater than the target,
+        then the `stepsize` is increased. Otherwise, it is decreased.
+        Range is (0, 1). Default is 0.5.
+
+        .. versionadded:: 1.8.0
+
+    stepwise_factor : float, optional
+        The `stepsize` is multiplied or divided by this stepwise factor upon
+        each update. Range is (0, 1). Default is 0.9.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -654,6 +667,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...                    niter=10, accept_test=mybounds)
 
     """
+    if target_accept_rate <= 0. or target_accept_rate >= 1.:
+        raise ValueError('target_accept_rate has to be in range (0, 1)')
+    if stepwise_factor <= 0. or stepwise_factor >= 1.:
+        raise ValueError('stepwise_factor has to be in range (0, 1)')
+
     x0 = np.array(x0)
 
     # set up the np.random generator
@@ -672,14 +690,19 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         # if take_step.stepsize exists then use AdaptiveStepsize to control
         # take_step.stepsize
         if hasattr(take_step, "stepsize"):
-            take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
-                                                 verbose=disp)
+            take_step_wrapped = AdaptiveStepsize(
+                take_step, interval=interval,
+                accept_rate=target_accept_rate,
+                factor=stepwise_factor,
+                verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         # use default
         displace = RandomDisplacement(stepsize=stepsize, random_gen=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
+                                             accept_rate=target_accept_rate,
+                                             factor=stepwise_factor,
                                              verbose=disp)
 
     # set up accept tests
@@ -734,6 +757,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     res.fun = res.lowest_optimization_result.fun
     res.message = message
     res.nit = i + 1
+    res.success = res.lowest_optimization_result.success
     return res
 
 

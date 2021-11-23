@@ -35,4 +35,4 @@ dependencies:
   - flake8
   # Some optional test dependencies
   - mpmath
-  - gmpy2
+  - gmpy2=2.1.0rc1

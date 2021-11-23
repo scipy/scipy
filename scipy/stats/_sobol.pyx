@@ -79,7 +79,7 @@ def initialize_direction_numbers():
         # read in as dataframe, explicitly use zero values
         df = pd.DataFrame(rows).fillna(0).astype(int)
 
-        # peform conversion
+        # perform conversion
         df["poly"] = 2 * df["a"] + 2 ** df["s"] + 1
 
         # ensure columns are properly ordered

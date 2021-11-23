@@ -76,6 +76,7 @@ PUBLIC_SUBMODULES = [
     'interpolate',
     'io',
     'io.arff',
+    'io.matlab',
     'io.wavfile',
     'linalg',
     'linalg.blas',

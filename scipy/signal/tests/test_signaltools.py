@@ -29,7 +29,7 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
@@ -834,7 +834,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -863,7 +863,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -884,7 +884,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -916,7 +916,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -2326,7 +2326,7 @@ def filtfilt_gust_opt(b, a, x):
     An alternative implementation of filtfilt with Gustafsson edges.
 
     This function computes the same result as
-    `scipy.signal.signaltools._filtfilt_gust`, but only 1-d arrays
+    `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
     `_filtfilt_gust` is significanly faster than this implementation.
     """

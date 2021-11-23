@@ -8,7 +8,7 @@ import logging
 import warnings
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize
-from .optimize import _wrap_scalar_function
+from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
 
 

@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize.optimize import _status_message
+from scipy.optimize._optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
@@ -113,7 +113,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
+        the best solution found so far. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).

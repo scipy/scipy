@@ -166,10 +166,28 @@ def _compute_absolute_step(rel_step, x0, f0, method):
     smaller floating point dtypes (e.g. np.float32), then the absolute
     step size will be calculated from the smallest floating point size.
     """
-    if rel_step is None:
-        rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
+    # this is used instead of np.sign(x0) because we need
+    # sign_x0 to be 1 when x0 == 0.
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
-    return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
+
+    rstep = _eps_for_method(x0.dtype, f0.dtype, method)
+
+    if rel_step is None:
+        abs_step = rstep * sign_x0 * np.maximum(1.0, np.abs(x0))
+    else:
+        # User has requested specific relative steps.
+        # Don't multiply by max(1, abs(x0) because if x0 < 1 then their
+        # requested step is not used.
+        abs_step = rel_step * sign_x0 * np.abs(x0)
+
+        # however we don't want an abs_step of 0, which can happen if
+        # rel_step is 0, or x0 is 0. Instead, substitute a realistic step
+        dx = ((x0 + abs_step) - x0)
+        abs_step = np.where(dx == 0,
+                            rstep * sign_x0 * np.maximum(1.0, np.abs(x0)),
+                            abs_step)
+
+    return abs_step
 
 
 def _prepare_bounds(bounds, x0):
@@ -285,18 +303,19 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                      analytically continued to the complex plane. Otherwise,
                      produces bogus results.
     rel_step : None or array_like, optional
-        Relative step size to use. The absolute step size is computed as
-        ``h = rel_step * sign(x0) * max(1, abs(x0))``, possibly adjusted to
-        fit into the bounds. For ``method='3-point'`` the sign of `h` is
-        ignored. If None (default) then step is selected automatically,
-        see Notes.
+        Relative step size to use. If None (default) the absolute step size is
+        computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
+        `rel_step` being selected automatically, see Notes. Otherwise
+        ``h = rel_step * sign(x0) * abs(x0)``. For ``method='3-point'`` the
+        sign of `h` is ignored. The calculated step size is possibly adjusted
+        to fit into the bounds.
     abs_step : array_like, optional
         Absolute step size to use, possibly adjusted to fit into the bounds.
         For ``method='3-point'`` the sign of `abs_step` is ignored. By default
         relative steps are used, only if ``abs_step is not None`` are absolute
         steps used.
     f0 : None or array_like, optional
-        If not None it is assumed to be equal to ``fun(x0)``, in  this case
+        If not None it is assumed to be equal to ``fun(x0)``, in this case
         the ``fun(x0)`` is not called. Default is None.
     bounds : tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
@@ -360,9 +379,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     s=3 for '3-point' method. Such relative step approximately minimizes a sum
     of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
-    If any of the absolute steps produces an indistinguishable difference from
-    the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
-    substituted for that particular entry.
+    If any of the absolute or relative steps produces an indistinguishable
+    difference from the original `x0`, ``(x0 + dx) - x0 == 0``, then a
+    automatic step size is substituted for that particular entry.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
