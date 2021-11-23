@@ -51,7 +51,7 @@ Some methods to do that are:
   :class:`~TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
   method which is uses minimal bounding rectangles to construct the hat
-  function. See :func:`~rvs_ratio_uniforms`.
+  function. See `scipy.stats.rvs_ratio_uniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that :math:`F` is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -220,12 +220,12 @@ by visualizing the histogram of the samples:
           independent in a sense that they will generally produce a different
           stream of random numbers than the one produced by the equivalent
           distribution in :mod:`scipy.stats.sampling` for any seed. The implementation
-          of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
+          of `rvs` in `scipy.stats.rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
           distributions (e.g., normal inverse Gaussian `norminvgauss` and the
           lognormal `lognorm` distribution). If no specific method is implemented,
-          `rv_continuous` defaults to a numerical inversion method of the CDF
+          `scipy.stats.rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is
           different even for the same stream of uniform random numbers. For

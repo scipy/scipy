@@ -173,6 +173,7 @@ change is made.
    stats
    stats.mstats
    stats.qmc
+   stats.sampling
    ccallback
 
 SciPy structure

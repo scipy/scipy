@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 import numpy as np
 from ._unuran import unuran_wrapper
 from scipy._lib.deprecation import _deprecated
