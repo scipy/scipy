@@ -272,7 +272,7 @@ def expm(A):
     """
     a = np.asarray(A)
     if a.size == 1 and a.ndim < 2:
-        return np.array([[np.exp(a.ravel()[0])]])
+        return np.array([[np.exp(a.item())]])
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
@@ -295,48 +295,31 @@ def expm(A):
     # Explicit formula for 2x2 case, formula (2.2) in [1]
     # without Kahan's method numerical instabilities can occur.
     if a.shape[-2:] == (2, 2):
-        if a.ndim == 2:
+        a1, a2, a3, a4 = (a[..., 0, 0],
+                          a[..., 0, 1],
+                          a[..., 1, 0],
+                          a[..., 1, 1])
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.
+        eApD2 = np.exp((a1+a4)/2.)
+        AmD2 = (a1 - a4)/2.
+        coshMu = np.cosh(mu)
+        sinchMu = _sinch(mu)
+        eA = np.empty((a.shape), dtype=mu.dtype)
+        eA[..., 0, 0] = eApD2 * (coshMu + AmD2*sinchMu)
+        eA[..., 0, 1] = eApD2 * a2 * sinchMu
+        eA[..., 1, 0] = eApD2 * a3 * sinchMu
+        eA[..., 1, 1] = eApD2 * (coshMu - AmD2*sinchMu)
+        if np.isrealobj(a):
+            return eA.real
+        return eA
 
-            p, r, s, t = a[0, 0], a[0, 1], a[1, 0], a[1, 1]
-            mu = csqrt((p-t)**2 + 4*r*s)/2
-            coshMu, sinchMu = np.cosh(mu), np.sinh(mu)/mu if mu != 0. else 1.
-            eA = np.empty([2, 2], dtype=mu.dtype)
-            eA[0, 0] = coshMu + 0.5*(p-t)*sinchMu
-            eA[0, 1] = r*sinchMu
-            eA[1, 0] = s*sinchMu
-            eA[1, 1] = coshMu - 0.5*(p-t)*sinchMu
-            eA *= np.exp((p + t)/2.)
-            if np.isrealobj(a):
-                return eA.real
-            return eA
-
-        else:
-            a1, a2, a3, a4 = (a[..., 0, 0],
-                              a[..., 0, 1],
-                              a[..., 1, 0],
-                              a[..., 1, 1])
-            mu = (a[..., 0, 0]-a[..., 1, 1])**2 + 4*a[..., 0, 1]*a[..., 1, 0]
-            mu = csqrt(mu)/2.
-            eApD2 = np.exp((a[..., 0, 0]+a[..., 1, 1])/2.)
-            AmD2 = (a1 - a4)/2.
-            coshMu = np.cosh(mu),
-            sinchMu = _sinch(mu)
-            eA = np.empty((a.shape), dtype=mu.dtype)
-            eA[..., 0, 0] = eApD2 * (coshMu + AmD2*sinchMu)
-            eA[..., 0, 1] = eApD2 * a2 * sinchMu
-            eA[..., 1, 0] = eApD2 * a3 * sinchMu
-            eA[..., 1, 1] = eApD2 * (coshMu - AmD2*sinchMu)
-            if np.isrealobj(a):
-                return eA.real
-            return eA
-
-    # Generic case with unspecified stacked dimensions.
-    # array to hold the result
+    # larger problem with unspecified stacked dimensions.
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
     # working memory to hold intermediate arrays
     Am = np.empty((5, n, n), dtype=a.dtype)
 
+    # Main loop to go through the slices of an ndarray and passing to expm
     for ind in product(*[range(x) for x in a.shape[:-2]]):
         aw = a[ind]
 
@@ -345,7 +328,8 @@ def expm(A):
             eA[ind] = np.diag(np.exp(np.diag(aw)))
             continue
 
-        # # Generic/triangular case; copy the slice into scratch and send
+        # Generic/triangular case; copy the slice into scratch and send.
+        # Am will be mutated by pick_pade_structure
         Am[0, :, :] = aw
         m, s = pick_pade_structure(Am)
 
@@ -357,35 +341,25 @@ def expm(A):
 
         if s != 0:  # squaring needed
 
-            if lu[1] == 0:  # lower triangular
+            if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
                 diag_aw = np.diag(aw)
                 # einsum returns a writable view
                 np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
                 for i in range(s-1, -1, -1):
                     eAw = eAw @ eAw
-                    # diagonal
-                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-i))
-                    # superdiagonal
-                    sd = np.diag(aw, k=-1) * 2**(-i)
-                    l1_plus_l2 = (diag_aw[:-1] + diag_aw[1:]) * 2**(-i-1)
-                    l1_minus_l2 = (diag_aw[:-1] - diag_aw[1:]) * 2**(-i-1)
-                    esd = sd*np.exp(l1_plus_l2)*_sinch(l1_minus_l2)
-                    np.einsum('ii->i', eAw[1:, :-1])[:] = esd
 
-            elif lu[0] == 0:  # upper triangular
-                diag_aw = np.diag(aw)
-                # einsum returns a writable view
-                np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
-                for i in range(s-1, -1, -1):
-                    eAw = eAw @ eAw
                     # diagonal
                     np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-i))
-                    # superdiagonal
-                    sd = np.diag(aw, k=1) * 2**(-i)
+                    # super/sub diagonal
+                    sd = np.diag(aw, k=-1 if lu[1] == 0 else 1) * 2**(-i)
+
                     l1_plus_l2 = (diag_aw[:-1] + diag_aw[1:]) * 2**(-i-1)
                     l1_minus_l2 = (diag_aw[:-1] - diag_aw[1:]) * 2**(-i-1)
                     esd = sd*np.exp(l1_plus_l2)*_sinch(l1_minus_l2)
-                    np.einsum('ii->i', eAw[:-1, 1:])[:] = esd
+                    if lu[1] == 0:  # lower
+                        np.einsum('ii->i', eAw[1:, :-1])[:] = esd
+                    else:  # upper
+                        np.einsum('ii->i', eAw[:-1, 1:])[:] = esd
 
             else:  # generic
                 for _ in range(s):
