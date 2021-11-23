@@ -5,8 +5,9 @@ SciPy 1.7.3 Release Notes
 .. contents::
 
 SciPy 1.7.3 is a bug-fix release that provides binary wheels
-for MacOS arm64 with Python 3.8, 3.9, and 3.10. Note that a small
-number of test failures have been skipped for these new wheels.
+for MacOS arm64 with Python 3.8, 3.9, and 3.10. The MacOS arm64 wheels
+are only available for MacOS version 12.0 and greater, as explained
+in Issue 14688, linked below.
 
 Authors
 =======
@@ -16,8 +17,9 @@ Authors
 * Tyler Reddy
 * Pamphile Roy
 * Olivier Grisel
+* Isuru Fernando
 
-A total of 5 people contributed to this release.
+A total of 6 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 

@@ -12,6 +12,7 @@ from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy, QMCEngine)
+from scipy._lib._pep440 import Version
 
 
 class TestUtils:
@@ -177,6 +178,8 @@ class TestUtils:
         with pytest.raises(ValueError, match="Invalid number of workers..."):
             qmc.discrepancy(sample, workers=-2)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='default_rng not available for numpy, < 1.17')
     def test_update_discrepancy(self):
         # From Fang et al. Design and modeling for computer experiments, 2006
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
