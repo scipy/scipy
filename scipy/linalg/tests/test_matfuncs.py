@@ -611,6 +611,38 @@ class TestExpM:
         result = expm(A)
         assert result.size == 0
 
+    def test_2x2_input(self):
+        E = np.e
+        a = array([[1, 4], [1, 1]])
+        aa = (E**4 + 1)/(2*E)
+        bb = (E**4 - 1)/E
+        assert_allclose(expm(a), array([[aa, bb], [bb/4, aa]]))
+        assert expm(a.astype(np.complex64)).dtype.char == 'F'
+        assert expm(a.astype(np.float32)).dtype.char == 'f'
+
+    def test_nx2x2_input(self):
+        E = np.e
+        # These are integer matrices with integer eigenvalues
+        a = np.array([[[1, 4], [1, 1]],
+                      [[1, 3], [1, -1]],
+                      [[1, 3], [4, 5]],
+                      [[1, 3], [5, 3]],
+                      [[4, 5], [-3, -4]]], order='F')
+        # Exact results are computed symbolically
+        a_res = np.array([
+                          [[(E**4+1)/(2*E), (E**4-1)/E],
+                           [(E**4-1)/4/E, (E**4+1)/(2*E)]],
+                          [[1/(4*E**2)+(3*E**2)/4, (3*E**2)/4-3/(4*E**2)],
+                           [E**2/4-1/(4*E**2), 3/(4*E**2)+E**2/4]],
+                          [[3/(4*E)+E**7/4, -3/(8*E)+(3*E**7)/8],
+                           [-1/(2*E)+E**7/2, 1/(4*E)+(3*E**7)/4]],
+                          [[5/(8*E**2)+(3*E**6)/8, -3/(8*E**2)+(3*E**6)/8],
+                           [-5/(8*E**2)+(5*E**6)/8, 3/(8*E**2)+(5*E**6)/8]],
+                          [[-3/(2*E)+(5*E)/2, -5/(2*E)+(5*E)/2],
+                           [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
+                         ])
+        assert_allclose(expm(a), a_res)
+
 
 class TestExpmFrechet:
 
