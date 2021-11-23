@@ -7,11 +7,20 @@ import numpy as np
 
 import scipy.sparse
 
-from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
+from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)
 
-from .mio_utils import squeeze_element, chars_to_strings
+from ._mio_utils import squeeze_element, chars_to_strings
 from functools import reduce
+
+
+__all__ = [
+    'MatFile4Reader', 'MatFile4Writer', 'SYS_LITTLE_ENDIAN',
+    'VarHeader4', 'VarReader4', 'VarWriter4', 'arr_to_2d', 'mclass_info',
+    'mdtypes_template', 'miDOUBLE', 'miINT16', 'miINT32', 'miSINGLE',
+    'miUINT16', 'miUINT8', 'mxCHAR_CLASS', 'mxFULL_CLASS', 'mxSPARSE_CLASS',
+    'np_to_mtypes', 'order_codes'
+]
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'

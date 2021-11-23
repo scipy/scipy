@@ -59,10 +59,10 @@ DEF _N_MIS = 20
 # max number of integer indices of matlab class types (mxINT8_CLASS etc)
 DEF _N_MXS = 20
 
-from . cimport streams
-import scipy.io._matlab.miobase as miob
-from scipy.io._matlab.mio_utils import squeeze_element, chars_to_strings
-import scipy.io._matlab.mio5_params as mio5p
+from . cimport _streams
+import scipy.io.matlab._miobase as miob
+from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
+import scipy.io.matlab._mio5_params as mio5p
 from scipy.sparse import csc_matrix
 
 
@@ -145,7 +145,7 @@ cdef class VarReader5:
     cdef int struct_as_record
     cdef object codecs, uint16_codec
     # c-optimized version of reading stream
-    cdef streams.GenericStream cstream
+    cdef _streams.GenericStream cstream
     # pointers to stuff in preader.dtypes
     cdef PyObject* dtypes[_N_MIS]
     # pointers to stuff in preader.class_dtypes
@@ -186,7 +186,7 @@ cdef class VarReader5:
                 - len(" ".encode(uint16_codec))
         self.codecs['uint16_codec'] = uint16_codec
         # set c-optimized stream object from python file-like object
-        self.cstream = streams.make_stream(preader.mat_stream)
+        self.cstream = _streams.make_stream(preader.mat_stream)
         # options for element processing
         self.mat_dtype = preader.mat_dtype
         self.chars_as_strings = preader.chars_as_strings
@@ -208,7 +208,7 @@ cdef class VarReader5:
 
         Called from Python when initiating a variable read
         '''
-        self.cstream = streams.make_stream(fobj)
+        self.cstream = _streams.make_stream(fobj)
 
     def read_tag(self):
         ''' Read tag mdtype and byte_count
