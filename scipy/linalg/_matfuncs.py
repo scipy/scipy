@@ -375,6 +375,8 @@ def expm(A):
 
 
 def _sinch(x):
+    if np.isscalar(x):
+        return 1. if x == 0. else np.sinh(x)/x
     m = x == 0.
     x[m] = 1.
     x[~m] = np.sinh(x[~m])/x[~m]
