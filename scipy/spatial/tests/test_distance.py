@@ -575,7 +575,7 @@ class TestCdist:
                 else:
                     for new_type in test[1]:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
-                        _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose>2)
+                        _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
 
     def test_cdist_out(self):
         # Test that out parameter works properly
@@ -1470,7 +1470,7 @@ class TestPdist:
                 else:
                     for new_type in test[1]:
                         y2 = pdist(new_type(X1), metric=metric)
-                        _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose>2)
+                        _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
 
     def test_pdist_out(self):
         # Test that out parameter works properly
