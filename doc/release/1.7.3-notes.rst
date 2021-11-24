@@ -29,6 +29,7 @@ Issues closed for 1.7.3
 * `#13364 <https://github.com/scipy/scipy/issues/13364>`__: Segmentation fault on import of scipy.integrate on Apple M1 ARM...
 * `#14688 <https://github.com/scipy/scipy/issues/14688>`__: BUG: ARPACK's eigsh & OpenBLAS from Apple Silicon M1 (arm64)...
 * `#14991 <https://github.com/scipy/scipy/issues/14991>`__: four CI failures on pre-release job
+* `#15077 <https://github.com/scipy/scipy/issues/15077>`__: Remaining test failures for macOS arm64 wheel
 * `#15081 <https://github.com/scipy/scipy/issues/15081>`__: BUG: Segmentation fault caused by scipy.stats.qmc.qmc.update_discrepancy
 
 
@@ -37,3 +38,4 @@ Pull requests for 1.7.3
 
 * `#14990 <https://github.com/scipy/scipy/pull/14990>`__: BLD: update pyproject.toml for Python 3.10 changes
 * `#15086 <https://github.com/scipy/scipy/pull/15086>`__: BUG: out of bounds indexing in stats.qmc.update_discrepancy
+* `#15090 <https://github.com/scipy/scipy/pull/15090>`__: MAINT: skip a few failing tests in \`1.7.x\` for macOS arm64
