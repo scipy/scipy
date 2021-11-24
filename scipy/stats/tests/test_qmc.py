@@ -12,6 +12,7 @@ from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy, QMCEngine)
+from scipy._lib._pep440 import Version
 
 
 class TestUtils:
@@ -177,15 +178,27 @@ class TestUtils:
         with pytest.raises(ValueError, match="Invalid number of workers..."):
             qmc.discrepancy(sample, workers=-2)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='default_rng not available for numpy, < 1.17')
     def test_update_discrepancy(self):
+        # From Fang et al. Design and modeling for computer experiments, 2006
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
         disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = update_discrepancy(space_1[-1], space_1[:-1],
-                                       disc_init)
+        disc_iter = update_discrepancy(space_1[-1], space_1[:-1], disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
+
+        # n<d
+        rng = np.random.default_rng(241557431858162136881731220526394276199)
+        space_1 = rng.random((4, 10))
+
+        disc_ref = qmc.discrepancy(space_1)
+        disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
+        disc_iter = update_discrepancy(space_1[-1], space_1[:-1], disc_init)
+
+        assert_allclose(disc_iter, disc_ref, atol=1e-4)
 
         # errors
         with pytest.raises(ValueError, match=r"Sample is not in unit "
