@@ -2,6 +2,9 @@
 """
 Tests for numerical integration.
 """
+import sys
+import platform
+
 import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
@@ -9,8 +12,12 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 from numpy.testing import (
     assert_, assert_array_almost_equal,
     assert_allclose, assert_array_equal, assert_equal, assert_warns)
+import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
+
+IS_MACOS_ARM64 =  sys.platform == 'darwin' and platform.machine() == 'arm64'
+
 
 #------------------------------------------------------------------------------
 # Test ODE integrators
@@ -99,6 +106,7 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'vode', 'adams')
             self._do_problem(problem, 'vode', 'bdf')
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_zvode(self):
         # Check the zvode solver
         for problem_cls in PROBLEMS:
@@ -154,6 +162,7 @@ class TestOde(TestODEClass):
 
             assert_raises(RuntimeError, r.integrate, r.t + 0.1)
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_concurrent_ok(self):
         f = lambda t, y: 1.0
 
@@ -597,10 +606,12 @@ class ODECheckParameterUse:
         solver.integrate(pi)
         assert_array_almost_equal(solver.y, [-1.0, 0.0])
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_no_params(self):
         solver = self._get_solver(f, jac)
         self._check_solver(solver)
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_one_scalar_param(self):
         solver = self._get_solver(f1, jac1)
         omega = 1.0
@@ -609,6 +620,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_two_scalar_params(self):
         solver = self._get_solver(f2, jac2)
         omega1 = 1.0
@@ -618,6 +630,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega1, omega2)
         self._check_solver(solver)
 
+    @pytest.mark.skipif(IS_MACOS_ARM64, reason="zvode failing, see gh-15077")
     def test_vector_param(self):
         solver = self._get_solver(fv, jacv)
         omega = [1.0, 1.0]

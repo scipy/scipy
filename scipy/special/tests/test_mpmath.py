@@ -1419,6 +1419,7 @@ class TestSystematic:
                             exception_to_nan(lambda a, b, c, x: mpmath.jacobi(a, b, c, x, **HYPERKW)),
                             [IntArg(), Arg(), Arg(), Arg()])
 
+    @pytest.mark.xslow
     def test_jacobi_int(self):
         # Redefine functions to deal with numerical + mpmath issues
         def jacobi(n, a, b, x):

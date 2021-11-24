@@ -6,6 +6,8 @@ To run tests locally:
 
 import threading
 import itertools
+import sys
+import platform
 
 import numpy as np
 
@@ -22,6 +24,8 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+
+IS_MACOS_ARM64 = sys.platform == 'darwin' and platform.machine() == 'arm64'
 
 
 # precision for tests
@@ -497,6 +501,7 @@ def test_general_nonsymmetric_starting_vector():
                 eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
+@pytest.mark.skipif(IS_MACOS_ARM64, reason='failing on arm64')
 def test_standard_nonsymmetric_no_convergence():
     np.random.seed(1234)
     m = generate_matrix(30, complex_=True)

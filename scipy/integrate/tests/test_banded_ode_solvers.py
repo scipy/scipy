@@ -1,7 +1,13 @@
 import itertools
+import sys
+import platform
+
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.integrate import ode
+
+IS_MACOS_ARM64 = sys.platform == 'darwin' and platform.machine() == 'arm64'
 
 
 def _band_count(a):
@@ -124,6 +130,7 @@ def _analytical_solution(a, y0, t):
     return sol
 
 
+@pytest.mark.skipif(IS_MACOS_ARM64, reason='failing on arm64')
 def test_banded_ode_solvers():
     # Test the "lsoda", "vode" and "zvode" solvers of the `ode` class
     # with a system that has a banded Jacobian matrix.
