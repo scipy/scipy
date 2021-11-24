@@ -1,20 +1,15 @@
 #
 # Author: Travis Oliphant, March 2002
 #
-
-__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'khatri_rao']
-
-from numpy import (Inf, dot, diag, prod, logical_not, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, single)
-from numpy.lib.scimath import sqrt as csqrt
-import numpy as np
 from itertools import product
-from scipy.linalg import LinAlgError, bandwidth
+
+import numpy as np
+from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
+                   conjugate, absolute, amax, sign, isfinite)
+from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
+from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
 from ._special_matrices import triu
@@ -23,8 +18,14 @@ from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
-eps = np.finfo(float).eps
-feps = np.finfo(single).eps
+
+__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
+           'tanhm','logm','funm','signm','sqrtm',
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'khatri_rao']
+
+eps = np.finfo('d').eps
+feps = np.finfo('f').eps
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
@@ -221,21 +222,21 @@ def expm(A):
     Returns
     -------
     eA : ndarray
-        The resulting matrix exponential with the same shape of A
+        The resulting matrix exponential with the same shape of ``A``
 
     Notes
     -----
-    Implements the algorithm given in [1], which is essentially a careful Pade
-    approximation and thus higher powers (up to eight) of the input are
-    computed. This has to be taken into account as it is not difficult to have
-    exponential growth leading to floating point overflows. For input with size
-    ``n``, the memory usage is in the worst case in the order of ``8*(n**2)``.
-    If the input data is not of single and double precision of real and complex
-    dtypes, it is copied to a new array. Same applies for noncontiguous inputs.
+    Implements the algorithm given in [1], which is essentially a Pade
+    approximation with a variable order that is decided based on the array
+    data.
+
+    For input with size ``n``, the memory usage is in the worst case in the
+    order of ``8*(n**2)``. If the input data is not of single and double
+    precision of real and complex dtypes, it is copied to a new array.
 
     For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
     1-norm estimation and from that point on the estimation scheme given in
-    [2] is used.
+    [2] is used to decide on the approximation order.
 
     References
     ----------
@@ -254,9 +255,15 @@ def expm(A):
 
     Matrix version of the formula exp(0) = 1:
 
-    >>> expm(np.zeros((2,2)))
-    array([[ 1.,  0.],
-           [ 0.,  1.]])
+    >>> expm(np.zeros((3, 2, 2)))
+    array([[[1., 0.],
+            [0., 1.]],
+
+           [[1., 0.],
+            [0., 1.]],
+
+           [[1., 0.],
+            [0., 1.]]])
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
     applied to a matrix:

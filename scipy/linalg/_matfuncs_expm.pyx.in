@@ -1,9 +1,9 @@
 # cython: language_level=3
 cimport cython
+import math
+import random
 cimport numpy as cnp
 import numpy as np
-import random
-import math
 from libc.stdlib cimport malloc, free
 from libc.math cimport fabs, ceil, log2, pow
 from scipy.linalg.cython_lapack cimport (sgetrf, sgetrs, dgetrf, dgetrs,
@@ -200,7 +200,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
             {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[2, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
             d8 = norm1(Amv[4, :, :]) ** (1./8.)
         else:
-            d8  = _norm1est(Am[0], m=8) ** (1./8.)
+            d8  = _norm1est(np.asarray(Am[0]), m=8) ** (1./8.)
 
         eta2 = max(d6, d8)
         temp = kth_power_norm_d(absA, work, work2, n, 4)
@@ -220,7 +220,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
             {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[3, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
             d10 = norm1(Amv[4, :, :]) ** (1./10.)
         else:
-            d10  = _norm1est(Am[0], m=10) ** (1./10.)
+            d10  = _norm1est(np.asarray(Am[0]), m=10) ** (1./10.)
 
         eta3 = max(d8, d10)
         eta4 = min(eta2, eta3)
@@ -500,8 +500,23 @@ cdef void pade_13_UV_calc_{{ pfx }}({{ tname }}[:, :, ::1]Am, int n) nogil:
 # ============================================================================
 
 # ====================== norm1est ============================================
+
 def _norm1est(A, m=1, t=2, max_iter=5):
-    """Compute a lower bound for the 1-norm of 2D matrix A or its powers
+    """Compute a lower bound for the 1-norm of 2D matrix A or its powers.
+
+    Computing the 1-norm of 8th or 10th power of a very large array is a very
+    wasteful computation if we explicitly compute the actual power. The
+    estimation exploits (in a nutshell) the following:
+
+        (A @ A @ ... A) @ <thin array> = (A @ (A @ (... @ (A @ <thin array>)))
+
+    And in fact all the rest is practically Ward's power method with ``t``
+    starting vectors, hence, thin array and smarter selection of those vectors.
+
+    Thus at some point ``expm`` which uses this function to scale-square, will
+    switch to estimating when ``np.abs(A).sum(axis=0).max()`` becomes slower
+    than the estimate (``linalg.norm`` is even slower). Currently the switch
+    is chosen to be ``n=400``.
 
     Parameters
     ----------
@@ -527,21 +542,21 @@ def _norm1est(A, m=1, t=2, max_iter=5):
     Fortran code given in [2].
 
     The algorithm involves randomized elements and hence if needed, the seed
-    of the Python built-in random module can be set for reproducible results.
+    of the Python built-in "random" module can be set for reproducible results.
 
     References
     ----------
-    .. [1] Nicholas J. Higham and Françoise Tisseur (2000),
-           "A Block Algorithm for Matrix 1-Norm Estimation,
-           with an Application to 1-Norm Pseudospectra."
-           SIAM J. Matrix Anal. Appl. Vol. 21, No. 4, pp. 1185-1201.
+    .. [1] Nicholas J. Higham and Francoise Tisseur (2000), "A Block Algorithm
+           for Matrix 1-Norm Estimation, with an Application to 1-Norm
+           Pseudospectra." SIAM J. Matrix Anal. Appl. 21(4):1185-1201,
+           :doi:`10.1137/S0895479899356080`
 
     .. [2] Sheung Hun Cheng, Nicholas J. Higham (2001), "Implementation for
            LAPACK of a Block Algorithm for Matrix 1-Norm Estimation",
            NA Report 393
 
     """
-    # Ref [1] skips parallel col test for complex inputs
+    # We skip parallel col test for complex inputs
     real_A = np.isrealobj(A)
     n = A.shape[0]
     est_old = 0
@@ -573,14 +588,27 @@ def _norm1est(A, m=1, t=2, max_iter=5):
             # w = Y[:, best_j]
         est_old = est
         S[:, :t] = S[:, t:]
-        _custom_signum(Y, S[:, t:], not real_A)
+        if real_A:
+            S[:, t:] = np.signbit(Y)
+        else:
+            S[:, t:].fill(1)
+            mask = Y != 0.
+            S[:, t:][mask] = Y[mask] / np.abs(Y[mask])
+
         if t > 1 and real_A:
             # (2)
             if ((S[:, t:].T @ S[:, :t]).max(axis=1) == n).all() and k > 0:
                 break
             else:
-                # replaces S in-place
-                _replace_parallel_cols(S)
+                max_spin = math.ceil(n / t)
+                for col in range(t):
+                    curr_col = t + col
+                    n_it = 0
+                    while round(np.abs(S[:, col] @ S[:, :curr_col]).max()) == n:
+                        S[:, col] = random.choices([1, -1], k=n)
+                        n_it += 1
+                        if n_it > max_spin:
+                            break
 
         # (3)
         Z = A.conj().T @ S
@@ -607,70 +635,6 @@ def _norm1est(A, m=1, t=2, max_iter=5):
     # v[best_j] = 1
 
     return est  # , v, w
-
-
-def _replace_parallel_cols(S):
-    """Helper function for 1-norm condition number estimator.
-
-    This function is akin to ?LARPC function given in Cheng, Higham (see Ref
-    section of expm, [2]).
-
-    Parameters
-    ----------
-    S : ndarray
-        Working array of the current iteration
-    S_old : ndarray
-        Working array of the previous iteration. Pass None if only S exists.
-    rng : Generator
-        The random generator used inside the body of condition estimator
-
-    Returns
-    -------
-    None
-
-    """
-    n, t = S.shape
-    max_spin = math.ceil(n / t)
-
-    for col in range(t):
-        curr_col = t + col
-        n_it = 0
-        while round(np.abs(S[:, col] @ S[:, :curr_col]).max()) == n:
-            S[:, col] = random.choices([1, -1], k=n)
-            n_it += 1
-            if n_it > max_spin:
-                break
-
-    return
-
-
-def _custom_signum(M, sgnM, is_complex=False):
-    """Helper function for 1-norm condition number estimator.
-
-    This function is defined to comply with ref. [1] of condest. For reals,
-    nonnegative inputs are mapped to 1 and to -1 otherwise. For complex inputs
-    sgn(x) = x / ||x|| and sgn(0 + 0j) := 1.
-
-    Parameters
-    ----------
-    M : ndarray
-        Input array
-
-    sgnM : ndarray
-        Output array that will be overwritten
-
-    Returns
-    -------
-    sgnM : ndarray
-        The resulting sign(M) array.
-
-    """
-    if is_complex:
-        sgnM.fill(1.)
-        mask = M != 0.
-        sgnM[mask] = M[mask] / np.abs(M[mask])
-    else:
-        np.signbit(M, out=sgnM)
 
 
 @cython.initializedcheck(False)
