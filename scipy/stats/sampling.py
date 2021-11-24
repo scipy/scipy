@@ -38,7 +38,7 @@ Warnings / Errors used in :mod:`scipy.stats.sampling`
 .. autosummary::
    :toctree: generated/
 
-    UNURANError
+   UNURANError
 """
 from ._unuran.unuran_wrapper import (  # noqa: F401
     TransformedDensityRejection,
