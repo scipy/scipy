@@ -209,7 +209,7 @@ def _gaussian_kernel1d(sigma, order, radius):
 
 @_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
-                      mode="reflect", cval=0.0, truncate=4.0):
+                      mode="reflect", cval=0.0, truncate=4.0, radius=None):
     """1-D Gaussian filter.
 
     Parameters
@@ -228,6 +228,10 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int, optional
+        Radius of the Gaussian kernel. If specified, the size of
+        the kernel will be ``2*radius+1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
@@ -257,6 +261,10 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     sd = float(sigma)
     # make the radius of the filter equal to truncate standard deviations
     lw = int(truncate * sd + 0.5)
+    if radius is not None:
+        lw = radius
+        if not isinstance(lw, int) or lw < 0:
+            raise ValueError('Radius must be a nonnegative integer.')
     # Since we are calling correlate, not convolve, revert the kernel
     weights = _gaussian_kernel1d(sigma, order, lw)[::-1]
     return correlate1d(input, weights, axis, output, mode, cval, 0)
@@ -264,7 +272,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                    mode="reflect", cval=0.0, truncate=4.0):
+                    mode="reflect", cval=0.0, truncate=4.0, radius=None):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -286,6 +294,10 @@ def gaussian_filter(input, sigma, order=0, output=None,
     truncate : float
         Truncate the filter at this many standard deviations.
         Default is 4.0.
+    radius : None or int, optional
+        Radius of the Gaussian kernel. If specified, the size of the kernel
+        for each axis will be ``2*radius+1``, and `truncate` is ignored.
+        Default is None.
 
     Returns
     -------
@@ -342,7 +354,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     if len(axes) > 0:
         for axis, sigma, order, mode in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval, truncate)
+                              mode, cval, truncate, radius)
             input = output
     else:
         output[...] = input[...]
