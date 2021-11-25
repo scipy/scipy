@@ -99,6 +99,7 @@ PUBLIC_SUBMODULES = [
     'stats.mstats',
     'stats.contingency',
     'stats.qmc',
+    'stats.sampling'
 ]
 
 # Docs for these modules are included in the parent module

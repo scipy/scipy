@@ -4,7 +4,7 @@
 Universal Non-Uniform Random Number Sampling in SciPy
 =====================================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 SciPy provides an interface to many universal non-uniform random number
 generators to sample random variates from a wide variety of univariate
@@ -51,7 +51,7 @@ Some methods to do that are:
   :class:`~TransformedDensityRejection`.
 * The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
   method which is uses minimal bounding rectangles to construct the hat
-  function. See :func:`~rvs_ratio_uniforms`.
+  function. See `scipy.stats.rvs_ratio_uniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that :math:`F` is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -134,7 +134,7 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -188,7 +188,8 @@ by visualizing the histogram of the samples:
 .. plot::
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import norm, TransformedDensityRejection
+    >>> from scipy.stats import norm
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
     >>> 
     >>> class StandardNormal:
@@ -219,20 +220,20 @@ by visualizing the histogram of the samples:
           independent in a sense that they will generally produce a different
           stream of random numbers than the one produced by the equivalent
           distribution in :mod:`scipy.stats` for any seed. The implementation
-          of `rvs` in :class:`~rv_continuous` usually relies on the NumPy
+          of `rvs` in `scipy.stats.rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
-          distributions (e.g., normal inverse Gaussian `norminvgauss` and the
-          lognormal `lognorm` distribution). If no specific method is implemented,
-          `rv_continuous` defaults to a numerical inversion method of the CDF
+          distributions (e.g., normal inverse Gaussian `scipy.stats.norminvgauss` and the
+          lognormal `scipy.stats.lognorm` distribution). If no specific method is implemented,
+          `scipy.stats.rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is
           different even for the same stream of uniform random numbers. For
-          example, the random number stream of SciPy's ``~norm`` and UNU.RAN's
+          example, the random number stream of SciPy's ``scipy.stats.norm`` and UNU.RAN's
           :class:`~TransformedDensityRejection` would not be the same even for
           the same ``random_state``:
 
-          >>> from scipy.stats import norm, TransformedDensityRejection
+          >>> from scipy.stats.sampling import norm, TransformedDensityRejection
           >>> from copy import copy
           >>> dist = StandardNormal()
           >>> urng1 = np.random.default_rng()
@@ -283,8 +284,8 @@ because the PDF was < 0. i.e. negative. This falls under the type
 Warnings thrown by UNU.RAN also follow the same format.
 
 
-Generators in :mod:`scipy.stats`
---------------------------------
+Generators in :mod:`scipy.stats.sampling`
+-----------------------------------------
 .. toctree::
    :maxdepth: 1
 

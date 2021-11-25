@@ -87,6 +87,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "stats.distributions",
     "stats.mstats",
     "stats.qmc",
+    "stats.sampling"
 ]]
 
 # The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
