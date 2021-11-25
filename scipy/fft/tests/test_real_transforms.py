@@ -77,7 +77,8 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
                          ])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("orthogonalize", [False, True])
-def test_identity_nd(forward, backward, type, shape, axes, norm, orthogonalize):
+def test_identity_nd(forward, backward, type, shape, axes, norm,
+                     orthogonalize):
     # Test the identity f^-1(f(x)) == x
 
     x = np.random.random(shape)
@@ -164,15 +165,17 @@ def test_orthogonalize_default(func, type):
         b = func(x, type=type, norm=norm)
         assert_allclose(a, b)
 
+
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
-@pytest.mark.parametrize("func, type",[
-    (dct, 4), (dst, 1), (dst, 4),])
+@pytest.mark.parametrize("func, type", [
+    (dct, 4), (dst, 1), (dst, 4)])
 def test_orthogonalize_noop(func, type, norm):
     # Transforms where orthogonalize is a no-op
     x = np.random.rand(100)
     y1 = func(x, type=type, norm=norm, orthogonalize=True)
     y2 = func(x, type=type, norm=norm, orthogonalize=False)
     assert_allclose(y1, y2)
+
 
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm):
@@ -189,6 +192,7 @@ def test_orthogonalize_dct1(norm):
     y2[-1] /= SQRT_2
     assert_allclose(y1, y2)
 
+
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm):
@@ -198,6 +202,7 @@ def test_orthogonalize_dcst2(func, norm):
 
     y2[0] /= SQRT_2
     assert_allclose(y1, y2)
+
 
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])

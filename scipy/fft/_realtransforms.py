@@ -264,8 +264,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 @_dispatch
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         orthogonalize=None):
-    r"""
-    Return the Discrete Cosine Transform of arbitrary type sequence x.
+    r"""Return the Discrete Cosine Transform of arbitrary type sequence x.
 
     Parameters
     ----------
@@ -366,9 +365,9 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
        y_k = x_0 + 2 \sum_{n=1}^{N-1} x_n \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
-    If ``orthogonalize=True``, ``x[0]`` terms are multiplied by :math:`\sqrt{2}`
-    which, when combined with ``norm="ortho"``, makes the corresponding matrix
-    of coefficients orthonormal (``O @ O.T = np.eye(N)``).
+    If ``orthogonalize=True``, ``x[0]`` terms are multiplied by
+    :math:`\sqrt{2}` which, when combined with ``norm="ortho"``, makes the
+    corresponding matrix of coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
@@ -383,8 +382,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
        y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi(2k+1)(2n+1)}{4N} \right)
 
-    ``orthogonalize`` has no effect here, as the DCT-IV matrix is already orthogonal
-    up to a scale factor of ``2N``.
+    ``orthogonalize`` has no effect here, as the DCT-IV matrix is already
+    orthogonal up to a scale factor of ``2N``.
 
     References
     ----------
