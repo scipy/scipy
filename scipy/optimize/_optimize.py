@@ -908,12 +908,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
 
 def approx_fprime(xk, f, epsilon=_epsilon, *args):
-    """Compute finite difference approximation of the derivatives of a
-    scalar or vector-valued function
+    """Finite difference approximation of the derivatives of a
+    scalar or vector-valued function.
 
-    If a function maps from R^n to R^m, its derivatives form m-by-n matrix
-    called the Jacobian, where an element (i, j) is a partial derivative of
-    f[i] with respect to x[j].
+    If a function maps from :math:`R^n` to :math:`R^m`, its derivatives form
+    an m-by-n matrix
+    called the Jacobian, where an element :math:`(i, j)` is a partial
+    derivative of f[i] with respect to ``xk[j]``.
 
     Parameters
     ----------
@@ -922,13 +923,13 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     f : callable
         Function of which to estimate the derivatives of. Has the signature
         ``f(xk, *args)`` where `xk` is the argument in the form of a 1-D array
-        and `args` is a  tuple of any additional fixed parameters needed to
-        completely specify the function. The argument xk passed to this
-        function is ndarray of shape (n,) (never a scalar even if n=1).
-        It must return 1-D array_like of shape (m,) or a scalar.
+        and `args` is a tuple of any additional fixed parameters needed to
+        completely specify the function. The argument `xk` passed to this
+        function is an ndarray of shape (n,) (never a scalar even if n=1).
+        It must return a 1-D array_like of shape (m,) or a scalar.
 
         .. versionchanged:: 1.8.0
-            `f` is now able to return a 1-D array-like, with the (m, n)
+            `f` is now able to return a 1-D array-like, with the :math:`(m, n)`
             Jacobian being estimated.
 
     epsilon : {float, array_like}, optional
