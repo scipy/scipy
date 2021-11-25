@@ -215,21 +215,21 @@ by visualizing the histogram of the samples:
     >>> plt.show()
 
 .. note:: Please note the difference between the `rvs` method of the
-          distributions present in :mod:`scipy.stats.sampling` and the one provided
+          distributions present in :mod:`scipy.stats` and the one provided
           by these generators. UNU.RAN generators must be considered
           independent in a sense that they will generally produce a different
           stream of random numbers than the one produced by the equivalent
-          distribution in :mod:`scipy.stats.sampling` for any seed. The implementation
+          distribution in :mod:`scipy.stats` for any seed. The implementation
           of `rvs` in `scipy.stats.rv_continuous` usually relies on the NumPy
           module `np.random` for well-known distributions (e.g., for the normal
           distribution, the beta distribution) and transformations of other
-          distributions (e.g., normal inverse Gaussian `norminvgauss` and the
-          lognormal `lognorm` distribution). If no specific method is implemented,
+          distributions (e.g., normal inverse Gaussian `scipy.stats.norminvgauss` and the
+          lognormal `scipy.stats.lognorm` distribution). If no specific method is implemented,
           `scipy.stats.rv_continuous` defaults to a numerical inversion method of the CDF
           that is very slow. As UNU.RAN transforms uniform random numbers
           differently than SciPy or NumPy, the resulting stream of RVs is
           different even for the same stream of uniform random numbers. For
-          example, the random number stream of SciPy's ``~norm`` and UNU.RAN's
+          example, the random number stream of SciPy's ``scipy.stats.norm`` and UNU.RAN's
           :class:`~TransformedDensityRejection` would not be the same even for
           the same ``random_state``:
 
