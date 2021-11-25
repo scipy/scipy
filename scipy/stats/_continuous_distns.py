@@ -9126,21 +9126,28 @@ class argus_gen(rv_continuous):
         # if chi <= 1.8:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
-        # write: self.pdf = c * g(x) * h(x), where
+        # write: PDF f(x) = c * g(x) * h(x), where
         # h is [0,1]-valued and g is a density
         # we use two ways to write f
         #
         # Case 1:
-        # note that the pdf of ARGUS converges to 3*x*sqrt(1-x**2)
         # write g(x) = 3*x*sqrt(1-x**2), h(x) = exp(-chi**2 (1-x**2) / 2)
         #
         # Case 2:
-        # g(x) = chi**2 * x * exp(-chi**2 * (1-x**2)/2) / (1 - exp(chi**2 /2))
+        # g(x) = chi**2 * x * exp(-chi**2 * (1-x**2)/2) / (1 - exp(-chi**2 /2))
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
         #
-        # In both cases, the cdf G of g can be easily computed to apply the
-        # rejection method. We use case 1 for chi <= 0.5,
-        # case 2 for 0.5 < chi <= 1.8
+        # In both cases, the inverse cdf of g can be written analytically, and
+        # we can apply the rejection method:
+        #
+        # REPEAT
+        #    Generate U uniformly distributed on [0, 1]
+        #    Generate X with density g (e.g. via inverse transform sampling)
+        # UNTIL X <= h(X)
+        # RETURN X 
+        #
+        # We use case 1 for chi <= 0.5 as it maintains precision for small chi
+        # and case 2 for 0.5 < chi <= 1.8 due to its speed for moderate chi.
         #
         # if chi > 1.8:
         # use relation to the Gamma distribution: if X is ARGUS with parameter
