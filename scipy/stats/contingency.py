@@ -156,7 +156,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
-        `power_divergence` for details.
+        `scipy.stats.power_divergence` for details.
 
     Returns
     -------
@@ -171,12 +171,12 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     See Also
     --------
-    contingency.expected_freq
-    fisher_exact
-    chisquare
-    power_divergence
-    barnard_exact
-    boschloo_exact
+    scipy.stats.contingency.expected_freq
+    scipy.stats.fisher_exact
+    scipy.stats.chisquare
+    scipy.stats.power_divergence
+    scipy.stats.barnard_exact
+    scipy.stats.boschloo_exact
 
     Notes
     -----
