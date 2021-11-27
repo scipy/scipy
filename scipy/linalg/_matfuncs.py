@@ -19,10 +19,9 @@ from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
-__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'khatri_rao']
+__all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
+           'funm', 'signm', 'sqrtm', 'fractional_matrix_power','expm_frechet',
+           'expm_cond', 'khatri_rao']
 
 eps = np.finfo('d').eps
 feps = np.finfo('f').eps
@@ -258,10 +257,10 @@ def expm(A):
     >>> expm(np.zeros((3, 2, 2)))
     array([[[1., 0.],
             [0., 1.]],
-
+    <BLANKLINE>
            [[1., 0.],
             [0., 1.]],
-
+    <BLANKLINE>
            [[1., 0.],
             [0., 1.]]])
 
