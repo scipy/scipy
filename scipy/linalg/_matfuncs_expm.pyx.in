@@ -249,6 +249,10 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
 # Note: MSVC does not accept "Memview[i, j, k] += 1.+0.j" as a valid operation
 # and results with error "C2088: '+=': illegal for struct".
 # OCD is unbearable but we do explicit addition for that reason.
+
+# Note: gemm calls for A @ B is done via dgemm(.., B, .., A, ..) because arrays
+# are in C-contiguous memory layout. This also the reason why getrs has 'T' as
+# the argument for TRANSA.
 {{for tname, pfx, prec, sc in zip(typenames, prefixes, precision, ['s', 'd', 'cs', 'zd'])}}
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -288,7 +292,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
         if m == 3:
             # U = Am[0] @ Am[1] + 60.*Am[0]
             {{ pfx }}copy(&n2, &Am[0, 0, 0], &int_one, &Am[3, 0, 0], &int_one)
-            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[0, 0, 0], &n, &Am[1, 0, 0], &n, &b[1], &Am[3, 0, 0], &n)
+            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[1, 0, 0], &n, &Am[0, 0, 0], &n, &b[1], &Am[3, 0, 0], &n)
             # V = 12.*Am[1] + 120*I_n
             {{ pfx }}scal(&n2, &b[2], &Am[1, 0, 0], &int_one)
             for i in range(n):
@@ -301,7 +305,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
             {{ pfx }}axpy(&n2, &b[5], &Am[2, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
             for i in range(n):
                 Am[4, i, i] = Am[4, i, i] + b[1]
-            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[0, 0, 0], &n, &Am[4, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
+            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[4, 0, 0], &n, &Am[0, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
             # V = b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
             {{ pfx }}scal(&n2, &b[2], &Am[1, 0, 0], &int_one)
             {{ pfx }}axpy(&n2, &b[4], &Am[2, 0, 0], &int_one, &Am[1, 0, 0], &int_one)
@@ -324,7 +328,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
             for i in range(n):
                 Am[1, i, i] = Am[1, i, i] + b[0]
             # Now we can scratch A[2] or A[3]
-            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[0, 0, 0], &n, &Am[4, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
+            {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[4, 0, 0], &n, &Am[0, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
 
         # inv(V-U) (V+U) = inv(V-U) (V-U+2V) = I + 2 inv(V-U) U
         {{ pfx }}axpy(&n2, &neg_one, &Am[3, 0, 0], &int_one, &Am[1, 0, 0], &int_one)
@@ -388,7 +392,7 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) nogil:
         for i in range(n):
             Am[1, i, i] = Am[1, i, i] + b[0]
         # Now we can scratch A[2] or A[3]
-        {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[0, 0, 0], &n, &work[0], &n, &zero, &Am[3, 0, 0], &n)
+        {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &work[0], &n, &Am[0, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
 
         # inv(V-U) (V+U) = inv(V-U) (V-U+2V) = I + 2 inv(V-U) U
         {{ pfx }}axpy(&n2, &neg_one, &Am[3, 0, 0], &int_one, &Am[1, 0, 0], &int_one)
