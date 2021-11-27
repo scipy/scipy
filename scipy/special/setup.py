@@ -92,7 +92,7 @@ def configuration(parent_package='',top_path=None):
     _ufuncs._pre_build_hook = set_c_flags_hook
 
     # Extension _ufuncs_cxx
-    ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.c',
+    ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.cc',
                       '_faddeeva.cxx', 'Faddeeva.cc',
                       '_wright.cxx', 'wright.cc']
     ufuncs_cxx_dep = (headers + ufuncs_cxx_src + cephes_src
