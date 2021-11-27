@@ -6,7 +6,13 @@ import warnings
 from . import _netcdf
 
 __all__ = [  # noqa: F822
-    'netcdf_file', 'netcdf_variable'
+    'netcdf_file', 'netcdf_variable',
+    'array', 'LITTLE_ENDIAN', 'IS_PYPY', 'ABSENT', 'ZERO',
+    'NC_BYTE', 'NC_CHAR', 'NC_SHORT', 'NC_INT', 'NC_FLOAT',
+    'NC_DOUBLE', 'NC_DIMENSION', 'NC_VARIABLE', 'NC_ATTRIBUTE',
+    'FILL_BYTE', 'FILL_CHAR', 'FILL_SHORT', 'FILL_INT', 'FILL_FLOAT',
+    'FILL_DOUBLE', 'TYPEMAP', 'FILLMAP', 'REVERSE', 'NetCDFFile',
+    'NetCDFVariable'
 ]
 
 

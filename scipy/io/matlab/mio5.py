@@ -11,7 +11,16 @@ __all__ = [  # noqa: F822
     'VarHeader4', 'VarReader4', 'VarWriter4', 'arr_to_2d', 'mclass_info',
     'mdtypes_template', 'miDOUBLE', 'miINT16', 'miINT32', 'miSINGLE',
     'miUINT16', 'miUINT8', 'mxCHAR_CLASS', 'mxFULL_CLASS', 'mxSPARSE_CLASS',
-    'np_to_mtypes', 'order_codes'
+    'np_to_mtypes', 'order_codes', 'BytesIO', 'native_code',
+    'swapped_code', 'MatFileReader', 'docfiller', 'matdims',
+    'read_dtype', 'arr_to_chars', 'arr_dtype_number', 'MatWriteError',
+    'MatReadError', 'MatReadWarning', 'VarReader5', 'MatlabObject',
+    'MatlabFunction', 'MDTYPES', 'NP_TO_MTYPES', 'NP_TO_MXTYPES',
+    'miCOMPRESSED', 'miMATRIX', 'miINT8', 'miUTF8', 'miUINT32',
+    'mxCELL_CLASS', 'mxSTRUCT_CLASS', 'mxOBJECT_CLASS', 'mxDOUBLE_CLASS',
+    'mat_struct', 'ZlibInputStream', 'MatFile5Reader', 'varmats_from_mat',
+    'EmptyStructMarker', 'to_writeable', 'NDT_FILE_HDR', 'NDT_TAG_FULL',
+    'NDT_TAG_SMALL', 'NDT_ARRAY_FLAGS', 'VarWriter5', 'MatFile5Writer'
 ]
 
 def __dir__():

@@ -11,7 +11,9 @@ __all__ = [  # noqa: F822
     'VarHeader4', 'VarReader4', 'VarWriter4', 'arr_to_2d', 'mclass_info',
     'mdtypes_template', 'miDOUBLE', 'miINT16', 'miINT32', 'miSINGLE',
     'miUINT16', 'miUINT8', 'mxCHAR_CLASS', 'mxFULL_CLASS', 'mxSPARSE_CLASS',
-    'np_to_mtypes', 'order_codes'
+    'np_to_mtypes', 'order_codes', 'MatFileReader', 'docfiller',
+    'matdims', 'read_dtype', 'convert_dtypes', 'arr_to_chars',
+    'arr_dtype_number', 'squeeze_element', 'chars_to_strings'
 ]
 
 def __dir__():

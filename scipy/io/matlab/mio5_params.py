@@ -17,7 +17,7 @@ __all__ = [  # noqa: F822
     'mxINT64_CLASS', 'mxINT8_CLASS', 'mxOBJECT_CLASS',
     'mxOBJECT_CLASS_FROM_MATRIX_H', 'mxOPAQUE_CLASS', 'mxSINGLE_CLASS',
     'mxSPARSE_CLASS', 'mxSTRUCT_CLASS', 'mxUINT16_CLASS', 'mxUINT32_CLASS',
-    'mxUINT64_CLASS', 'mxUINT8_CLASS'
+    'mxUINT64_CLASS', 'mxUINT8_CLASS', 'convert_dtypes'
 ]
 
 def __dir__():

@@ -6,8 +6,11 @@ import warnings
 from . import _mio
 
 
-__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']  # noqa: F822
-
+__all__ = [  # noqa: F822
+    'mat_reader_factory', 'loadmat', 'savemat', 'whosmat',
+    'contextmanager', 'get_matfile_version', 'docfiller',
+    'MatFile4Reader', 'MatFile4Writer', 'MatFile5Reader', 'MatFile5Writer'
+]
 
 def __dir__():
     return __all__
