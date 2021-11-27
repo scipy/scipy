@@ -6,7 +6,8 @@ import warnings
 from . import _decomp_svd
 
 __all__ = [  # noqa: F822
-    'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space'
+    'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space',
+    'LinAlgError', 'get_lapack_funcs'
 ]
 
 

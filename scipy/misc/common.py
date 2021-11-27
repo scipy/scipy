@@ -8,7 +8,7 @@ from . import _common
 
 __all__ = [  # noqa: F822
     'central_diff_weights', 'derivative', 'ascent', 'face',
-    'electrocardiogram'
+    'electrocardiogram', 'arange', 'newaxis', 'hstack', 'prod', 'array', 'load'
 ]
 
 

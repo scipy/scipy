@@ -10,7 +10,8 @@ __all__ = [  # noqa: F822
     'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
     'hamming', 'kaiser', 'gaussian', 'general_cosine',
     'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
-    'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window'
+    'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window',
+    'linalg', 'sp_fft', 'k', 'v', 'key'
 ]
 
 

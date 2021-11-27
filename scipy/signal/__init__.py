@@ -317,7 +317,7 @@ from .windows import get_window  # keep this one in signal namespace
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
-    spectral, signaltools, waveforms, wavelets,
+    spectral, signaltools, waveforms, wavelets, spline
 )
 
 # deal with * -> windows.* doc-only soft-deprecation
