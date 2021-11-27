@@ -5176,11 +5176,17 @@ class logistic_gen(rv_continuous):
     def _cdf(self, x):
         return sc.expit(x)
 
+    def _logcdf(self, x):
+        return sc.log_expit(x)
+
     def _ppf(self, q):
         return sc.logit(q)
 
     def _sf(self, x):
         return sc.expit(-x)
+
+    def _logsf(self, x):
+        return sc.log_expit(-x)
 
     def _isf(self, q):
         return -sc.logit(q)
