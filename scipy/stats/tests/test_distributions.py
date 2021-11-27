@@ -1249,6 +1249,19 @@ class TestLogistic:
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
 
+    @pytest.mark.parametrize('testlogcdf', [True, False])
+    def test_logcdfsf_tails(self, testlogcdf):
+        # Test either logcdf or logsf.  By symmetry, we can use the same
+        # expected values for both by switching the sign of x for logsf.
+        x = np.array([-10000, -800, 17, 50, 500])
+        if testlogcdf:
+            y = stats.logistic.logcdf(x)
+        else:
+            y = stats.logistic.logsf(-x)
+        # The expected values were computed with mpmath.
+        expected = [-10000.0, -800.0, -4.139937633089748e-08,
+                    -1.9287498479639178e-22, -7.124576406741286e-218]
+        assert_allclose(y, expected, rtol=2e-15)
 
 class TestLogser:
     def setup_method(self):
