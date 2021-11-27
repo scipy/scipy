@@ -18,7 +18,6 @@ For continuous distributions
 .. autosummary::
    :toctree: generated/
 
-   NaiveRatioUniforms
    NumericalInverseHermite
    NumericalInversePolynomial
    TransformedDensityRejection
@@ -46,6 +45,5 @@ from ._unuran.unuran_wrapper import (  # noqa: F401
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
-    NaiveRatioUniforms,
     UNURANError
 )
