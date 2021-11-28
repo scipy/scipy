@@ -71,6 +71,7 @@ Continuous distributions
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)
    fatiguelife       -- Fatigue Life (Birnbaum-Saunders)
+   fermi_dirac       -- Fermi-Dirac
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal

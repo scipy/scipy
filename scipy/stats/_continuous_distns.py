@@ -5230,6 +5230,42 @@ class logistic_gen(rv_continuous):
 logistic = logistic_gen(name='logistic')
 
 
+class fermi_dirac_gen(logistic_gen):
+    r"""Fermi-Dirac continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `fermi_dirac` is:
+
+    .. math::
+
+        f(x) = \frac{\exp(-x)}
+                    {(1+\exp(-x))^2}
+
+    In physics it is better known through the survival function used as:
+
+    .. math::
+
+        S(x) = n_F(x) = \frac{1}{exp(x) + 1}
+
+    To use the physicists Fermi-Dirac distribution one should
+    use `fermi_dirac.sf`.
+
+    `fermi_dirac` is a special case of `genlogistic` with ``c=1``.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    pass
+
+
+fermi_dirac = fermi_dirac_gen(name='fermi_dirac')
+
+
 class loggamma_gen(rv_continuous):
     r"""A log gamma continuous random variable.
 

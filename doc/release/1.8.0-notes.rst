@@ -82,6 +82,10 @@ Sample statistics
 Statistical Distributions
 -------------------------
 
+Added the `fermi_dirac` distribution which is equivalent to the `logistic`.
+For physicists this is clearer since it belongs here. The Fermi-Dirac distribution
+is obtaining through the survival-function: `fermi_dirac.sf(x)`.
+
 
 Other
 -----

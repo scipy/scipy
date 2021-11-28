@@ -1,0 +1,34 @@
+
+.. _continuous-fermi-dirac:
+
+Fermi-Dirac Distribution
+========================
+
+Commonly used in physics for the relative occupation of spin-half particles. Physicist
+may recognize the Fermi-Dirac distribution as the survival function of this distribution.
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*} f\left(x\right) & = & \frac{\exp\left(-x\right)}{\left(1+\exp\left(-x\right)\right)^{2}}\\
+    F\left(x\right) & = & \frac{1}{1+\exp\left(-x\right)}\\
+    G\left(q\right) & = & -\log\left(1/q-1\right)\\
+    S\left(x\right) & = & n_F = \frac{1}{1+\exp\left(x\right)}\end{eqnarray*}
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*} \mu & = & \gamma+\psi_{0}\left(1\right)=0\\
+    \mu_{2} & = & \frac{\pi^{2}}{6}+\psi_{1}\left(1\right)=\frac{\pi^{2}}{3}\\
+    \gamma_{1} & = & \frac{\psi_{2}\left(1\right)+2\zeta\left(3\right)}{\mu_{2}^{3/2}}=0\\
+    \gamma_{2} & = & \frac{\left(\frac{\pi^{4}}{15}+\psi_{3}\left(1\right)\right)}{\mu_{2}^{2}}=\frac{6}{5}\\
+    m_{d} & = & \log1=0\\
+    m_{n} & = & -\log\left(2-1\right)=0\end{eqnarray*}
+
+where :math:`\psi_m` is the polygamma function :math:`\psi_m(z) = \frac{d^{m+1}}{dz^{m+1}} \log(\Gamma(z))`.
+
+.. math::
+
+     h\left[X\right]=1.
+
+Implementation: `scipy.stats.fermi_dirac`

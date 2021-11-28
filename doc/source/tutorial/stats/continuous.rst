@@ -228,6 +228,7 @@ Continuous Distributions in `scipy.stats`
    continuous_exponweib
    continuous_exponpow
    continuous_fatiguelife
+   continuous_fermi_dirac
    continuous_fisk
    continuous_foldcauchy
    continuous_foldnorm

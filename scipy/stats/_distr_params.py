@@ -27,6 +27,7 @@ distcont = [
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
     ['f', (29, 18)],
     ['fatiguelife', (29,)],   # correction numargs = 1
+    ['fermi_dirac', ()],
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
@@ -191,6 +192,7 @@ invdistcont = [
     ['exponpow', (-1, )],
     ['f', (10, -10)],
     ['fatiguelife', (-1, )],
+    ['fermi_dirac', ()],
     ['fisk', (-1, )],
     ['foldcauchy', (-1, )],
     ['foldnorm', (-1, )],
