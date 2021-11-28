@@ -191,6 +191,7 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.sparse.linalg.isolve',
     'scipy.sparse.linalg.matfuncs',
     'scipy.sparse.sparsetools',
+    'scipy.sparse.spfuncs',
     'scipy.sparse.sputils',
     'scipy.spatial.ckdtree',
     'scipy.spatial.kdtree',

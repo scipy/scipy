@@ -9,7 +9,8 @@ from . import _mvn  # type: ignore
 __all__ = [  # noqa: F822
     'mvnun',
     'mvnun_weighted',
-    'mvndst'
+    'mvndst',
+    'dkblck'
 ]
 
 

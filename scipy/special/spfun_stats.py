@@ -5,7 +5,7 @@
 import warnings
 from . import _spfun_stats
 
-__all__ = ['multigammaln']  # noqa: F822
+__all__ = ['multigammaln', 'loggam']  # noqa: F822
 
 
 def __dir__():

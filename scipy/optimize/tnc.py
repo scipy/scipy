@@ -36,6 +36,10 @@ __all__ = [  # noqa: F822
 ]
 
 
+def __dir__():
+    return __all__
+
+
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
