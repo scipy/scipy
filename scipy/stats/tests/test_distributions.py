@@ -317,7 +317,6 @@ class TestChi:
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
     #     1 - CDF[ChiDistribution[4], 10]
     CHI_SF_10_4 = 9.83662422461598e-21
-    
     # "Exact" value of chi.mean(df=1000) as computed by Wolfram Alpha with
     #       Mean[ChiDistribution[1000]]
     CHI_MEAN_1000 = 31.614871896980
