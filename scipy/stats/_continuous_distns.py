@@ -5160,6 +5160,9 @@ class logistic_gen(rv_continuous):
 
     `logistic` is a special case of `genlogistic` with ``c=1``.
 
+    Remark that the survival function (`sf`) is equal to the Fermi-Dirac
+    distribution describing fermionic statistics.
+
     %(after_notes)s
 
     %(example)s
