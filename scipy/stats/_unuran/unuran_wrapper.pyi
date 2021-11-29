@@ -36,17 +36,14 @@ class TDRDist(Protocol):
 class TransformedDensityRejection(Method):
     def __init__(self,
                  dist: TDRDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  c: float = ...,
                  construction_points: int | npt.ArrayLike = ...,
-                 variant: str = ...,
                  use_dars: bool = ...,
                  max_squeeze_hat_ratio: float = ...,
-                 max_intervals: int = ...,
-                 guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def squeeze_hat_ratio(self) -> float: ...
@@ -71,14 +68,12 @@ class PINVDist(Protocol):
 class NumericalInversePolynomial(Method):
     def __init__(self,
                  dist: PINVDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
-                 max_intervals: int = ...,
-                 keep_cdf: bool = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...
@@ -111,7 +106,6 @@ class NumericalInverseHermite(Method):
                  u_resolution: float = ...,
                  construction_points: None | npt.ArrayLike = ...,
                  max_intervals: int = ...,
-                 guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...
@@ -124,26 +118,6 @@ class NumericalInverseHermite(Method):
              d: None | int = ...,
              qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
-
-
-class NROUDist(Protocol):
-    @property
-    def pdf(self) -> Callable[..., float]: ...
-    @property
-    def support(self) -> Tuple[float, float]: ...
-
-
-class NaiveRatioUniforms(Method):
-    def __init__(self,
-                 dist: NROUDist,
-                 *,
-                 center: float = ...,
-                 domain: None | Tuple[float, float] = ...,
-                 r: float = ...,
-                 u_min: None | float = ...,
-                 u_max: None | float = ...,
-                 v_max: None | float = ...,
-                 random_state: SeedType = ...) -> None: ...
 
 
 class DAUDist(Protocol):

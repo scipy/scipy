@@ -2752,6 +2752,14 @@ class TestIQR:
         assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
         assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
 
+        # Check all method= values new in numpy 1.22.0 are accepted
+        if NumpyVersion(np.__version__) >= '1.22.0':
+            for method in ('inverted_cdf', 'averaged_inverted_cdf',
+                           'closest_observation', 'interpolated_inverted_cdf',
+                           'hazen', 'weibull', 'median_unbiased',
+                           'normal_unbiased'):
+                stats.iqr(y, interpolation=method)
+
         assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 
     def test_keepdims(self):

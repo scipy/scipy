@@ -9,7 +9,11 @@ from .lsmr import lsmr
 from ._gcrotmk import gcrotmk
 from .tfqmr import tfqmr
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [
+    'bicg', 'bicgstab', 'cg', 'cgs', 'gcrotmk', 'gmres',
+    'lgmres', 'lsmr', 'lsqr',
+    'minres', 'qmr', 'tfqmr'
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

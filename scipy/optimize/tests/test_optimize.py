@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
@@ -2450,6 +2451,11 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     gh12502 - Divide by zero in Jacobian numerical differentiation when
     equality bounds constraints are used
     """
+    # GH-15051; slightly more skips than necessary; hopefully fixed by GH-14882
+    if (platform.machine() == 'aarch64' and method == "TNC"
+            and kwds["jac"] is False and callback is not None):
+        pytest.skip('Tolerance violation on aarch')
+
     lb, ub = eb_data["lb"], eb_data["ub"]
     x0, i_eb = eb_data["x0"], eb_data["i_eb"]
 

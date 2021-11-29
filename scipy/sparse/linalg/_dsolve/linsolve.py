@@ -290,7 +290,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     References
     ----------
-    .. [1] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
+    .. [1] SuperLU https://portal.nersc.gov/project/sparse/superlu/
 
     Examples
     --------

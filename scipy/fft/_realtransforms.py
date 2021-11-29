@@ -281,11 +281,18 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
     MATLAB ``dct(x)``.
 
+    .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the direct Fourier transform.
+
+    For ``norm="ortho"`` both the `dct` and `idct` are made orthogonal through
+    scaling by the same overall factor in both directions and for types 1, 2
+    and 3 the transform definition is modified to give orthogonality of the DCT
+    matrix (see below).
+
     For ``norm="backward"``, there is no scaling on `dct` and the `idct` is
     scaled by ``1/N`` where ``N`` is the "logical" size of the DCT. For
     ``norm="forward"`` the ``1/N`` normalization is applied to the forward
-    `dct` instead and the `idct` is unnormalized. For ``norm='ortho'`` both
-    directions are scaled by the same factor of ``1/sqrt(N)``.
+    `dct` instead and the `idct` is unnormalized.
 
     There are, theoretically, 8 types of the DCT, only the first 4 types are
     implemented in SciPy.'The' DCT generally refers to DCT type 2, and 'the'
@@ -435,6 +442,14 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     For a single dimension array `x`, ``idct(x, norm='ortho')`` is equal to
     MATLAB ``idct(x)``.
 
+    .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the inverse direct Fourier transform.
+
+    For ``norm="ortho"`` both the `dct` and `idct` are made orthogonal
+    through scaling by the same overall factor in both directions and for types
+    1, 2 and 3 the transform definition is modified to give orthogonality of
+    the IDCT matrix (see `dct` for the full definitions).
+
     'The' IDCT is the IDCT-II, which is the same as the normalized DCT-III.
 
     The IDCT is equivalent to a normal DCT except for the normalization and
@@ -494,12 +509,16 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
 
     Notes
     -----
-    For a single dimension array ``x``.
+    .. warning:: For ``type in {2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the inverse direct Fourier transform.
+
+    For ``norm="ortho"`` both the `dst` and `idst` are made orthogonal through
+    scaling by the same overall factor in both directions and for types 2 and
+    3 the transform definition is modified to give orthogonality of the DST
+    matrix (see below).
 
     For ``norm="backward"``, there is no scaling on the `dst` and the `idst` is
-    scaled by ``1/N`` where ``N`` is the "logical" size of the DST. For
-    ``norm='ortho'`` both directions are scaled by the same factor
-    ``1/sqrt(N)``.
+    scaled by ``1/N`` where ``N`` is the "logical" size of the DST.
 
     There are, theoretically, 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
@@ -613,6 +632,13 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
 
     Notes
     -----
+    .. warning:: For ``type in {2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the inverse direct Fourier transform.
+
+    For ``norm="ortho"`` both the `dst` and `idst` are made orthogonal through
+    scaling by the same overall factor in both directions and for types 2 and
+    3 the transform definition is modified to give orthogonality of the IDST
+    matrix (see below).
 
     'The' IDST is the IDST-II, which is the same as the normalized DST-III.
 

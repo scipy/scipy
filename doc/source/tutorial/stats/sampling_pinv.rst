@@ -3,7 +3,7 @@
 Polynomial interpolation based INVersion of CDF (PINV)
 ======================================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: PDF
 * Optional: CDF, mode, center
@@ -104,7 +104,7 @@ Following four steps are carried out by the algorithm during setup:
 
 To initialize the generator to sample from a standard normal distribution, do:
 
-    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> class StandardNormal:
     ...     def pdf(self, x):
     ...         return np.exp(-0.5 * x*x)
@@ -129,7 +129,7 @@ our distribution:
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
-    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> class StandardNormal:
     ...     def pdf(self, x):
     ...         return np.exp(-0.5 * x*x)
@@ -163,7 +163,7 @@ It is more costly for PDFs that are difficult to evaluate. Note that we can
 ignore the normalization constant to speed up the evaluations of the PDF.
 PDF evaluations increase during setup for small values of ``u_resolution``.
 
-    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> class StandardNormal:
     ...     def __init__(self):
     ...         self.callbacks = 0
@@ -204,7 +204,7 @@ that inverts the CDF based on Hermite interpolation and provides control
 over the maximum tolerated error via u-resolution. But it makes use of a lot
 more intervals compared to `NumericalInversePolynomial`:
 
-    >>> from scipy.stats import NumericalInverseHermite
+    >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> # NumericalInverseHermite accepts a `tol` parameter to set the
     >>> # u-resolution of the generator.
     >>> rng_hermite = NumericalInverseHermite(norm(), tol=1e-12)
@@ -258,14 +258,8 @@ We can use this, for example, to check the maximum and mean absolute u-error:
 The approximate PPF method provided by the generator is much faster to
 evaluate than the exact PPF of the distribution.
 
-During setup, the CDF of the distribution is computed numerically but it is
-discarded once the setup is complete. To keep the approximated CDF, pass
-``keep_cdf=True`` during initialization:
-
-    >>> rng = NumericalInversePolynomial(dist, keep_cdf=True, random_state=urng)
-
-Now, the CDF can be evaluated by calling the
-:func:`~NumericalInversePolynomial.cdf` method:
+During setup, a table of CDF points is stored that can be used to approximate the
+CDF once the generator has been created:
 
     >>> rng.cdf(1.959963984540054)
     0.9750000000042454
@@ -286,7 +280,7 @@ distribution):
     >>> x_error.max() <= max_integration_error
     True
 
-A CDF table computed during setup is used to evaluate the CDF and only some
+The CDF table computed during setup is used to evaluate the CDF and only some
 further fine-tuning is required. This reduces the calls to the PDF but as the
 fine-tuning step uses the simple Gauss-Lobatto quadrature, the PDF is called
 several times, slowing down the computation.

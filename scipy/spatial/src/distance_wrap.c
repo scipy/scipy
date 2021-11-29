@@ -315,43 +315,6 @@ static PyObject *cdist_weighted_chebyshev_double_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_old_weighted_minkowski_double_wrap(
-  PyObject *self, PyObject *args, PyObject *kwargs)
-{
-  PyArrayObject *XA_, *XB_, *dm_, *w_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB, *w;
-  double p;
-  static char *kwlist[] = {"XA", "XB", "dm", "p", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                   "O!O!O!dO!:cdist_old_weighted_minkowski_double_wrap", kwlist,
-                                   &PyArray_Type, &XA_, &PyArray_Type, &XB_,
-                                   &PyArray_Type, &dm_,
-                                   &p,
-                                   &PyArray_Type, &w_)) {
-    return 0;
-  }
-  else {
-    int res;
-    NPY_BEGIN_ALLOW_THREADS;
-    XA = (const double*)PyArray_DATA(XA_);
-    XB = (const double*)PyArray_DATA(XB_);
-    w = (const double*)PyArray_DATA(w_);
-    dm = (double*)PyArray_DATA(dm_);
-    mA = PyArray_DIMS(XA_)[0];
-    mB = PyArray_DIMS(XB_)[0];
-    n = PyArray_DIMS(XA_)[1];
-    res = cdist_old_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
-    NPY_END_ALLOW_THREADS;
-
-    if (res) {
-      return PyErr_NoMemory();
-    }
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *cdist_weighted_minkowski_double_wrap(
                             PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -635,40 +598,6 @@ static PyObject *pdist_weighted_chebyshev_double_wrap(
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_old_weighted_minkowski_double_wrap(
-  PyObject *self, PyObject *args, PyObject *kwargs)
-{
-  PyArrayObject *X_, *dm_, *w_;
-  int m, n;
-  double *dm, *X, *w;
-  double p;
-  static char *kwlist[] = {"X", "dm", "p", "w", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                   "O!O!dO!:pdist_weighted_minkowski_double_wrap", kwlist,
-                                   &PyArray_Type, &X_,
-                                   &PyArray_Type, &dm_,
-                                   &p,
-                                   &PyArray_Type, &w_)) {
-    return 0;
-  }
-  else {
-    int res;
-    NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)PyArray_DATA(X_);
-    dm = (double*)PyArray_DATA(dm_);
-    w = (double*)PyArray_DATA(w_);
-    m = PyArray_DIMS(X_)[0];
-    n = PyArray_DIMS(X_)[1];
-
-    res = pdist_old_weighted_minkowski(X, dm, m, n, p, w);
-    NPY_END_ALLOW_THREADS;
-    if (res) {
-      return PyErr_NoMemory();
-    }
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *pdist_weighted_minkowski_double_wrap(
                             PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -802,9 +731,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_weighted_chebyshev_double_wrap",
    (PyCFunction) cdist_weighted_chebyshev_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
-  {"cdist_old_weighted_minkowski_double_wrap",
-   (PyCFunction) cdist_old_weighted_minkowski_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
   {"cdist_weighted_minkowski_double_wrap",
    (PyCFunction) cdist_weighted_minkowski_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -879,9 +805,6 @@ static PyMethodDef _distanceWrapMethods[] = {
    METH_VARARGS | METH_KEYWORDS},
   {"pdist_weighted_chebyshev_double_wrap",
    (PyCFunction) pdist_weighted_chebyshev_double_wrap,
-   METH_VARARGS | METH_KEYWORDS},
-  {"pdist_old_weighted_minkowski_double_wrap",
-   (PyCFunction) pdist_old_weighted_minkowski_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
   {"pdist_weighted_minkowski_double_wrap",
    (PyCFunction) pdist_weighted_minkowski_double_wrap,
