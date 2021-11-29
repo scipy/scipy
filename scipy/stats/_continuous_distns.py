@@ -9132,19 +9132,26 @@ class argus_gen(rv_continuous):
         #
         # Case 1:
         # write g(x) = 3*x*sqrt(1-x**2), h(x) = exp(-chi**2 (1-x**2) / 2)
+        # If X has a distribution with density g its ppf G_inv is given by:
+        # G_inv(u) = np.sqrt(1 - u**(2/3))
         #
         # Case 2:
         # g(x) = chi**2 * x * exp(-chi**2 * (1-x**2)/2) / (1 - exp(-chi**2 /2))
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
+        # one can show that
+        # G_inv(u) = np.sqrt(2*np.log(u*(np.exp(chi**2/2)-1)+1))/chi
+        #          = np.sqrt(1 + 2*np.log(np.exp(-chi**2/2)*(1-u)+u)/chi**2)
+        # the latter expression is used for precision with small chi
         #
         # In both cases, the inverse cdf of g can be written analytically, and
         # we can apply the rejection method:
         #
         # REPEAT
         #    Generate U uniformly distributed on [0, 1]
-        #    Generate X with density g (e.g. via inverse transform sampling)
+        #    Generate X with density g (e.g. via inverse transform sampling:
+        #    X = G_inv(V) with V uniformly distributed on [0, 1])
         # UNTIL X <= h(X)
-        # RETURN X 
+        # RETURN X
         #
         # We use case 1 for chi <= 0.5 as it maintains precision for small chi
         # and case 2 for 0.5 < chi <= 1.8 due to its speed for moderate chi.
@@ -9153,7 +9160,13 @@ class argus_gen(rv_continuous):
         # use relation to the Gamma distribution: if X is ARGUS with parameter
         # chi), then Y = chi**2 * (1 - X**2) / 2 has density proportional to
         # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
-        # conditioned on [0, chi**2 / 2]).
+        # conditioned on [0, chi**2 / 2]). Therefore, to sample X from the
+        # ARGUS distribution, we sample Y from the gamma distribution, keeping
+        # only samples on [0, chi**2 / 2], and apply the inverse
+        # transformation X = (1 - 2*Y/chi**2)**(1/2). Since we only
+        # look at chi > 1.8, gamma(1.5).cdf(chi**2/2) is large enough such
+        # Y falls in the inteval [0, chi**2 / 2] with a high probability:
+        # stats.gamma(1.5).cdf(1.8**2/2) = 0.644...
         #
         # The points to switch between the different methods are determined
         # by a comparison of the runtime of the different methods. However,
@@ -9173,9 +9186,11 @@ class argus_gen(rv_continuous):
                 u = random_state.uniform(size=k)
                 v = random_state.uniform(size=k)
                 z = v**(2/3)
+                # acceptance condition: u <= h(G_inv(v)). This simplifies to
                 accept = (np.log(u) <= d * z)
                 num_accept = np.sum(accept)
                 if num_accept > 0:
+                    # we still need to transform z=v**(2/3) to X = G_inv(v)
                     rvs = np.sqrt(1 - z[accept])
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
@@ -9186,6 +9201,8 @@ class argus_gen(rv_continuous):
                 u = random_state.uniform(size=k)
                 v = random_state.uniform(size=k)
                 z = 2 * np.log(echi * (1 - v) + v) / chi2
+                # as in case one, simplify u <= h(G_inv(v)) and then transform
+                # z to the target distribution X = G_inv(v)
                 accept = (u**2 + z <= 0)
                 num_accept = np.sum(accept)
                 if num_accept > 0:
@@ -9193,7 +9210,7 @@ class argus_gen(rv_continuous):
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
         else:
-            # conditional Gamma
+            # conditional Gamma for chi > 1.8
             while simulated < N:
                 k = N - simulated
                 g = random_state.standard_gamma(1.5, size=k)
