@@ -286,7 +286,7 @@ class ZoomFFT(CZT):
         The sampling frequency. (Default=2)
     endpoint : bool, optional
         If True, `f2` is the last sample. Otherwise, it is not included.
-        Default is True.
+        Default is False.
 
     Returns
     -------
@@ -339,7 +339,7 @@ class ZoomFFT(CZT):
     >>> plt.show()
     """
 
-    def __init__(self, n, fn, m=None, fs=2, endpoint=True):
+    def __init__(self, n, fn, m=None, fs=2, endpoint=False):
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -482,7 +482,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
+def zoomfft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.
 
@@ -503,7 +503,7 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
         frequency.
     endpoint : bool, optional
         If True, `f2` is the last sample. Otherwise, it is not included.
-        Default is True.
+        Default is False.
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last axis is
         used.
@@ -520,7 +520,7 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
 
     Notes
     -----
-    ``zoomfft(x, 2, endpoint=False)`` is equivalent to ``fft(x)``.
+    ``zoomfft(x)`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
