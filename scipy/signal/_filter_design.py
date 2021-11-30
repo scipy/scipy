@@ -2862,10 +2862,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 
-        For digital filters, `Wn` are in the same units as `fs`.  By default,
-        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
-        where 1 is the Nyquist frequency. (`Wn` is thus in
-        half-cycles / sample.)
+        For digital filters, if `fs` is not specified, `Wn` units are
+        normalized from 0 to 1, where 1 is the Nyquist frequency (`Wn` is
+        thus in half cycles / sample and defined as 2*critical frequencies
+        / `fs`). If `fs` is specified, `Wn` is in the same units as `fs`.
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
