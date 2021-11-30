@@ -8,7 +8,8 @@ from . import _statlib  # type: ignore
 
 __all__ = [  # noqa: F822
     'swilk',
-    'gscale'
+    'gscale',
+    'prho'
 ]
 
 

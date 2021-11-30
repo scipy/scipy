@@ -6,7 +6,11 @@ import warnings
 from . import _interface
 
 
-__all__ = ['LinearOperator', 'aslinearoperator']  # noqa: F822
+__all__ = [  # noqa: F822
+    'LinearOperator', 'aslinearoperator',
+    'isspmatrix', 'isshape', 'isintlike', 'asmatrix',
+    'is_pydata_spmatrix', 'MatrixLinearOperator', 'IdentityOperator'
+]
 
 
 def __dir__():

@@ -7,7 +7,8 @@ from . import _decomp_cholesky
 
 __all__ = [  # noqa: F822
     'cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
-    'cho_solve_banded'
+    'cho_solve_banded', 'asarray_chkfinite', 'atleast_2d',
+    'LinAlgError', 'get_lapack_funcs'
 ]
 
 

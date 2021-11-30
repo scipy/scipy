@@ -9,7 +9,10 @@ from . import _fir_filter_design
 
 __all__ = [  # noqa: F822
     'kaiser_beta', 'kaiser_atten', 'kaiserord',
-    'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase'
+    'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase',
+    'ceil', 'log', 'irfft', 'fft', 'ifft', 'sinc', 'toeplitz',
+    'hankel', 'solve', 'LinAlgError', 'LinAlgWarning', 'lstsq'
+
 ]
 
 

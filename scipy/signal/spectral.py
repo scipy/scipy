@@ -9,7 +9,9 @@ from . import _spectral_py
 
 __all__ = [  # noqa: F822
     'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA'
+    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
+    'sp_fft', 'signaltools', 'get_window', 'const_ext', 'even_ext',
+    'odd_ext', 'zero_ext'
 ]
 
 

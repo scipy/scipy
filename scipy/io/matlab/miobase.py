@@ -11,7 +11,7 @@ __all__ = [  # noqa: F822
     'MatVarReader', 'MatWriteError', 'arr_dtype_number',
     'arr_to_chars', 'convert_dtypes', 'doc_dict',
     'docfiller', 'get_matfile_version',
-    'matdims', 'read_dtype'
+    'matdims', 'read_dtype', 'doccer', 'boc'
 ]
 
 def __dir__():

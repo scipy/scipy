@@ -7,7 +7,11 @@ from . import _bsplines
 
 __all__ = [  # noqa: F822
     'spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
-    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval'
+    'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval',
+    'logical_and', 'zeros_like', 'piecewise', 'array', 'arctan2',
+    'tan', 'arange', 'floor', 'exp', 'greater', 'less', 'add',
+    'less_equal', 'greater_equal', 'cspline2d', 'sepfir2d', 'comb',
+    'float_factorial'
 ]
 
 

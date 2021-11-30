@@ -6,11 +6,13 @@ import warnings
 from . import _measurements
 
 
-__all__ = ['label', 'find_objects', 'labeled_comprehension',  # noqa: F822
-           'sum', 'mean', 'variance', 'standard_deviation',
-           'minimum', 'maximum', 'median', 'minimum_position',
-           'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift', 'sum_labels']
+__all__ = [  # noqa: F822
+    'label', 'find_objects', 'labeled_comprehension',
+    'sum', 'mean', 'variance', 'standard_deviation',
+    'minimum', 'maximum', 'median', 'minimum_position',
+    'maximum_position', 'extrema', 'center_of_mass',
+    'histogram', 'watershed_ift', 'sum_labels', 'morphology'
+]
 
 
 def __dir__():

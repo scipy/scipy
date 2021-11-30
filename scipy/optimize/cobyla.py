@@ -15,6 +15,8 @@ __all__ = [  # noqa: F822
     'synchronized',
 ]
 
+def __dir__():
+    return __all__
 
 def __getattr__(name):
     if name not in __all__:

@@ -14,7 +14,14 @@ __all__ = [  # noqa: F822
     'fligner', 'mood', 'wilcoxon', 'median_test',
     'circmean', 'circvar', 'circstd', 'anderson_ksamp',
     'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-    'yeojohnson_normplot'
+    'yeojohnson_normplot', 'annotations', 'namedtuple', 'isscalar', 'log',
+    'around', 'unique', 'arange', 'sort', 'amin', 'amax', 'atleast_1d',
+    'array', 'compress', 'exp', 'ravel', 'count_nonzero', 'arctan2',
+    'hypot', 'optimize', 'statlib', 'stats', 'find_repeats',
+    'chi2_contingency', 'distributions', 'rv_generic', 'Mean',
+    'Variance', 'Std_dev', 'ShapiroResult', 'AndersonResult',
+    'Anderson_ksampResult', 'AnsariResult', 'BartlettResult',
+    'LeveneResult', 'FlignerResult', 'WilcoxonResult'
 ]
 
 
