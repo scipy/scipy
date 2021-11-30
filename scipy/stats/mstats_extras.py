@@ -12,7 +12,8 @@ __all__ = [  # noqa: F822
     'idealfourths',
     'median_cihs','mjci','mquantiles_cimj',
     'rsh',
-    'trimmed_mean_ci'
+    'trimmed_mean_ci', 'float_', 'int_', 'ma', 'MaskedArray', 'mstats',
+    'norm', 'beta', 't', 'binom'
 ]
 
 

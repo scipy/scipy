@@ -11,8 +11,15 @@ import functools
 import numpy as np
 from scipy._lib import doccer
 
-from . import byteordercodes as boc
+from . import _byteordercodes as boc
 
+__all__ = [
+    'MatFileReader', 'MatReadError', 'MatReadWarning',
+    'MatVarReader', 'MatWriteError', 'arr_dtype_number',
+    'arr_to_chars', 'convert_dtypes', 'doc_dict',
+    'docfiller', 'get_matfile_version',
+    'matdims', 'read_dtype'
+]
 
 class MatReadError(Exception):
     """Exception indicating a read issue."""
@@ -211,7 +218,7 @@ def matfile_version(file_name, *, appendmat=True):
     -----
     Has the side effect of setting the file read pointer to 0
     """
-    from .mio import _open_file_context
+    from ._mio import _open_file_context
     with _open_file_context(file_name, appendmat=appendmat) as fileobj:
         return _get_matfile_version(fileobj)
 

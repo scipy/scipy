@@ -184,7 +184,7 @@ from ._bsplines import *
 from ._pade import *
 
 # Deprecated namespaces, to be removed in v2.0.0
-from . import fitpack, fitpack2, interpolate, ndgriddata, polyint
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

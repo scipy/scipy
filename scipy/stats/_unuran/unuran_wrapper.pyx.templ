@@ -632,7 +632,7 @@ cdef class Method:
 
 cdef class TransformedDensityRejection(Method):
     r"""
-    TransformedDensityRejection(dist, mode=None, center=None, *, domain=None, c=-0.5, construction_points=30, variant="ps", use_dars=True, max_squeeze_hat_ratio=0.99, max_intervals=100, guide_factor=2, random_state=None)
+    TransformedDensityRejection(dist, *, mode=None, center=None, domain=None, c=-0.5, construction_points=30, use_dars=True, max_squeeze_hat_ratio=0.99, random_state=None)
 
     Transformed Density Rejection (TDR) Method.
 
@@ -688,15 +688,6 @@ cdef class TransformedDensityRejection(Method):
         If an integer, it defines the number of construction points. If it
         is array-like, the elements of the array are used as construction
         points. Default is 30.
-    variant : {'ps', 'gw', 'ia'}, optional
-        The variant to use. The default is 'ps'.
-        Three variants of this method are available:
-
-        * GW: squeezes between construction points, see [3]_.
-        * PS: squeezes proportional to hat function. (Default)
-        * IA: same as variant PS but uses a composition method with
-          "immediate acceptance" in the region below the squeeze.
-
     use_dars : bool, optional
         If True, "derandomized adaptive rejection sampling" (DARS) is used
         in setup. See [1]_ for the details of the DARS algorithm. Default
@@ -704,12 +695,6 @@ cdef class TransformedDensityRejection(Method):
     max_squeeze_hat_ratio : float, optional
         Set upper bound for the ratio (area below squeeze) / (area below hat).
         It must be a number between 0 and 1. Default is 0.99.
-    max_intervals : int, optional
-        Set maximum number of intervals. Default is 100.
-    guide_factor : float, optional
-        Set factor for relative size of the guide table for indexed search.
-        It must be greater than or equal to 0. When set to 0, then sequential
-        search is used. Default is 2.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -735,7 +720,7 @@ cdef class TransformedDensityRejection(Method):
 
     Examples
     --------
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
 
     Suppose we have a density:
 
@@ -802,31 +787,21 @@ cdef class TransformedDensityRejection(Method):
     >>> plt.title('Transformed Density Rejection Samples')
     >>> plt.legend()
     >>> plt.show()
-
-    To use the log transformation with 10 construction points and the
-    immediate acceptance variant of the method, do:
-
-    >>> rng = TransformedDensityRejection(dist, c=0., construction_points=10,
-    ...                                   variant='ia', random_state=urng)
-    >>> rvs = rng.rvs(1000)
     """
     cdef double[::1] construction_points_array
 
     def __cinit__(self,
                   dist,
+                  *,
                   mode=None,
                   center=None,
-                  *,
                   domain=None,
                   c=-0.5,
                   construction_points=30,
-                  variant="ps",
                   use_dars=True,
                   max_squeeze_hat_ratio=0.99,
-                  max_intervals=100,
-                  guide_factor=2,
                   random_state=None):
-        (domain, c, construction_points, variant) = self._validate_args(dist, domain, c, construction_points, variant)
+        (domain, c, construction_points) = self._validate_args(dist, domain, c, construction_points)
 
         # save all the arguments for pickling support
         self._kwargs = {
@@ -836,11 +811,8 @@ cdef class TransformedDensityRejection(Method):
             'domain': domain,
             'c': c,
             'construction_points': construction_points,
-            'variant': variant,
             'use_dars': use_dars,
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
-            'max_intervals': max_intervals,
-            'guide_factor': guide_factor,
             'random_state': random_state
         }
 
@@ -882,28 +854,24 @@ cdef class TransformedDensityRejection(Method):
                 self._check_errorcode(unur_tdr_set_cpoints(self.par, len(self.construction_points_array),
                                                            &self.construction_points_array[0]))
 
-            if variant == "ps":
-                self._check_errorcode(unur_tdr_set_variant_ps(self.par))
-            elif variant == "ia":
-                self._check_errorcode(unur_tdr_set_variant_ia(self.par))
-            elif variant == "gw":
-                self._check_errorcode(unur_tdr_set_variant_gw(self.par))
+            # PS variant is the default in UNU.RAN
+            self._check_errorcode(unur_tdr_set_variant_ps(self.par))
 
             self._check_errorcode(unur_tdr_set_usedars(self.par, use_dars))
             self._check_errorcode(unur_tdr_set_max_sqhratio(self.par, max_squeeze_hat_ratio))
-            self._check_errorcode(unur_tdr_set_max_intervals(self.par, max_intervals))
-            self._check_errorcode(unur_tdr_set_guidefactor(self.par, guide_factor))
+            # the parameter max_intervals is not part of the SciPy API
+            # UNU.RAN default is 100, we use a higher value to avoid problems
+            # if max_squeeze_hat_ratio is increased
+            self._check_errorcode(unur_tdr_set_max_intervals(self.par, 10000))
 
             self._set_rng(random_state)
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, dist, domain, c, construction_points, variant):
+    cdef object _validate_args(self, dist, domain, c, construction_points):
         domain = _validate_domain(domain, dist)
         if c not in {-0.5, 0.}:
             raise ValueError("`c` must either be -0.5 or 0.")
-        if variant not in {"ps", "gw", "ia"}:
-            raise ValueError("Invalid option for the `variant`.")
         if not np.isscalar(construction_points):
             self.construction_points_array = np.ascontiguousarray(construction_points,
                                                                   dtype=np.float64)
@@ -916,7 +884,7 @@ cdef class TransformedDensityRejection(Method):
                 construction_points != int(construction_points)):
                 raise ValueError("`construction_points` must be a positive integer.")
 
-        return domain, c, construction_points, variant
+        return domain, c, construction_points
 
     @property
     def squeeze_hat_ratio(self):
@@ -950,9 +918,6 @@ cdef class TransformedDensityRejection(Method):
 
         Evaluate the inverse of the CDF of the hat distribution at `u`.
 
-        This call does not work for variant IA (immediate acceptance).
-        In this case the hat CDF is evaluated as if variant PS is used.
-
         Parameters
         ----------
         u : array_like
@@ -965,7 +930,7 @@ cdef class TransformedDensityRejection(Method):
 
         Examples
         --------
-        >>> from scipy.stats import TransformedDensityRejection
+        >>> from scipy.stats.sampling import TransformedDensityRejection
         >>> from scipy.stats import norm
         >>> from math import exp
         >>> 
@@ -1009,7 +974,7 @@ UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 cdef class NumericalInversePolynomial(Method):
     """
-    NumericalInversePolynomial(dist, mode=None, center=None, *, domain=None, order=5, u_resolution=1e-10, max_intervals=10000, keep_cdf=False, random_state=None)
+    NumericalInversePolynomial(dist, *, mode=None, center=None, domain=None, order=5, u_resolution=1e-10, random_state=None)
 
     Polynomial interpolation based INVersion of CDF (PINV).
 
@@ -1092,15 +1057,6 @@ cdef class NumericalInversePolynomial(Method):
         is 2-32= 2.3e-10. Thus a value of 1.e-10 leads to an inversion algorithm that
         could be called exact. For most simulations slightly bigger values for the
         maximal error are enough as well. Default is 1e-10.
-    max_intervals : int, optional
-        Set maximum number of intervals. Must be in the range [100, 1000000].
-        Default is 10000.
-    keep_cdf : bool, optional
-        If the PDF is given, then the CDF is computed numerically from the given PDF using
-        adaptive Gauss-Lobatto integration. Thus a table of CDF points is stored to keep
-        the number of evaluations of the PDF minimal. Usually this table is discarded when
-        the setup is completed. If ``keep_cdf`` is TRUE, then this table is kept and the
-        approximated CDF can be evaluated by calling the `cdf` method. Default is ``False``.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -1131,7 +1087,7 @@ cdef class NumericalInversePolynomial(Method):
 
     Examples
     --------
-    >>> from scipy.stats import NumericalInversePolynomial
+    >>> from scipy.stats.sampling import NumericalInversePolynomial
     >>> from scipy.stats import norm
 
     To create a generator to sample from the standard normal distribution, do:
@@ -1221,21 +1177,18 @@ cdef class NumericalInversePolynomial(Method):
     >>> plt.title('Error between exact and approximated PPF (x-error)')
     >>> plt.show()
     """
-    cdef bint keep_cdf
 
     def __cinit__(self,
                   dist,
+                  *,
                   mode=None,
                   center=None,
-                  *,
                   domain=None,
                   order=5,
                   u_resolution=1e-10,
-                  max_intervals=10000,
-                  keep_cdf=False,
                   random_state=None):
-        (domain, order, u_resolution, max_intervals) = self._validate_args(
-            dist, domain, order, u_resolution, max_intervals
+        (domain, order, u_resolution) = self._validate_args(
+            dist, domain, order, u_resolution
         )
 
         # save all the arguments for pickling support
@@ -1245,11 +1198,8 @@ cdef class NumericalInversePolynomial(Method):
             'domain': domain,
             'order': order,
             'u_resolution': u_resolution,
-            'max_intervals': max_intervals,
-            'keep_cdf': keep_cdf,
             'random_state': random_state
         }
-        self.keep_cdf = keep_cdf
 
         cdef:
             unur_distr *distr
@@ -1285,14 +1235,17 @@ cdef class NumericalInversePolynomial(Method):
 
             self._check_errorcode(unur_pinv_set_order(self.par, order))
             self._check_errorcode(unur_pinv_set_u_resolution(self.par, u_resolution))
-            self._check_errorcode(unur_pinv_set_max_intervals(self.par, max_intervals))
-            self._check_errorcode(unur_pinv_set_keepcdf(self.par, keep_cdf))
+            # max_intervals is not part of the API. set it to the maximum
+            # allowed value in UNU.RAN which is 1_000_000
+            self._check_errorcode(unur_pinv_set_max_intervals(self.par, 1000000))
+            # always keep CDF in SciPy while UNU.RAN default is False
+            self._check_errorcode(unur_pinv_set_keepcdf(self.par, 1))
 
             self._set_rng(random_state)
         finally:
             _lock.release()
 
-    cdef object _validate_args(self, dist, domain, order, u_resolution, max_intervals):
+    cdef object _validate_args(self, dist, domain, order, u_resolution):
         domain = _validate_domain(domain, dist)
         # UNU.RAN raises warning and sets a default value. Prefer an error instead.
         if not (3 <= order <= 17 and int(order) == order):
@@ -1301,10 +1254,7 @@ cdef class NumericalInversePolynomial(Method):
         # it is not in the range [1.e-15, 1.e-5]. Prefer an error instead.
         if not (1e-15 <= u_resolution <= 1e-5):
             raise ValueError("`u_resolution` must be between 1e-15 and 1e-5.")
-        # UNU.RAN raises warning and sets a default value. Prefer an error instead.
-        if not (100 <= max_intervals <= 1000000 and int(max_intervals) == max_intervals):
-            raise ValueError("`max_intervals` must be an integer in the range [100, 1000000].")
-        return (domain, order, u_resolution, max_intervals)
+        return (domain, order, u_resolution)
 
     @property
     def intervals(self):
@@ -1338,8 +1288,6 @@ cdef class NumericalInversePolynomial(Method):
         cdf(x)
 
         Approximated cumulative distribution function of the given distribution.
-        Only available if ``keep_cdf`` was set to ``True`` when the instance was
-        created.
 
         Parameters
         ----------
@@ -1351,10 +1299,6 @@ cdef class NumericalInversePolynomial(Method):
         cdf : array_like
             Approximated cumulative distribution function evaluated at `x`.
         """
-        if not self.keep_cdf:
-            raise ValueError("CDF is not available. Initialize the generator "
-                             "again with `keep_cdf=True` to enable "
-                             "evaluation of (approximate) CDF.")
         x = np.asarray(x, dtype='d')
         oshape = x.shape
         x = x.ravel()
@@ -1452,7 +1396,7 @@ cdef class NumericalInversePolynomial(Method):
 
 cdef class NumericalInverseHermite(Method):
     """
-    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, max_intervals=100000, guide_factor=1, random_state=None)
+    NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)
 
     Hermite interpolation based INVersion of CDF (HINV).
 
@@ -1517,13 +1461,6 @@ cdef class NumericalInverseHermite(Method):
         special design points for computing the Hermite interpolation to guarantee that the
         maximal u-error can not be bigger than desired. Such points are points where the
         density is not differentiable or has a local extremum.
-    max_intervals : int, default: ``100000``
-        Maximum number of intervals in the Hermite spline used to
-        approximate the percent point function. The default is 100000.
-    guide_factor : float, default: ``1``
-        Set factor for relative size of the guide table for indexed search.
-        It must be greater than or equal to 0. When set to 0, then sequential
-        search is used. Default is 1.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -1560,7 +1497,8 @@ cdef class NumericalInverseHermite(Method):
 
     below the specified tolerance `u_resolution`. Refinement stops when the required
     tolerance is achieved or when the number of mesh intervals after the next
-    refinement could exceed the maximum allowed number `max_intervals`.
+    refinement could exceed the maximum allowed number of intervals, which is
+    100000.
 
     This method accepted a `tol` parameter to specify the maximum tolerable u-error
     but it has now been deprecated in the favor of `u_resolution`. `tol` will be
@@ -1577,7 +1515,7 @@ cdef class NumericalInverseHermite(Method):
 
     Examples
     --------
-    >>> from scipy.stats import NumericalInverseHermite
+    >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
 
@@ -1712,7 +1650,6 @@ cdef class NumericalInverseHermite(Method):
                   tol=None,
                   construction_points=None,
                   max_intervals=100000,
-                  guide_factor=1,
                   random_state=None):
         domain, order, u_resolution = self._validate_args(dist, domain, order, max_intervals,
                                                           u_resolution, tol, construction_points)
@@ -1725,7 +1662,6 @@ cdef class NumericalInverseHermite(Method):
             'u_resolution': u_resolution,
             'tol': tol,
             'max_intervals': max_intervals,
-            'guide_factor': guide_factor,
             'construction_points': construction_points,
             'random_state': random_state
         }
@@ -1761,8 +1697,6 @@ cdef class NumericalInverseHermite(Method):
             self._check_errorcode(unur_hinv_set_max_intervals(self.par, max_intervals))
             self._check_errorcode(unur_hinv_set_cpoints(self.par, &self.construction_points_array[0],
                                                         len(self.construction_points_array)))
-            self._check_errorcode(unur_hinv_set_guidefactor(self.par, guide_factor))
-
             self._set_rng(random_state)
         finally:
             _lock.release()
@@ -1775,6 +1709,10 @@ cdef class NumericalInverseHermite(Method):
             raise ValueError("`order` must be either 1, 3, or 5.")
         if int(max_intervals) != max_intervals or max_intervals <= 1:
             raise ValueError("`max_intervals' must be an integer greater than 1.")
+        if max_intervals != 100000:
+            warnings.warn("`max_intervals` has been deprecated. "
+                          "It will be completely removed in a future release.",
+                          DeprecationWarning)
         if tol is not None:
             warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
                           "It will be completely removed in a future release.",
@@ -2072,7 +2010,7 @@ cdef class DiscreteAliasUrn(Method):
 
     Examples
     --------
-    >>> from scipy.stats import DiscreteAliasUrn
+    >>> from scipy.stats.sampling import DiscreteAliasUrn
 
     To create a random number generator using a probability vector, use:
 
@@ -2233,279 +2171,6 @@ cdef class DiscreteAliasUrn(Method):
         return pv_view, domain
 
 
-cdef class NaiveRatioUniforms(Method):
-    r"""
-    NaiveRatioUniforms(dist, *, center=0, domain=None, r=1.0, u_min=None, u_max=None, v_max=None, random_state=None)
-
-    Naive Ratio-Of-Uniforms (NROU) Method.
-
-    NROU is an implementation of the (generalized) ratio-of-uniforms method
-    which uses (minimal) bounding rectangles ([3]_, [5]_). It uses a positive
-    control parameter `r` for adjusting the algorithm to the given distribution
-    to improve performance and/or to make this method applicable. Larger values
-    of `r` increase the class of distributions for which the method works at
-    the expense of a higher rejection constant. For computational reasons,
-    ``r=1`` should be used if possible.
-
-    Parameters
-    ----------
-    dist : object
-        An instance of a class with ``pdf`` method.
-
-        * ``pdf``: PDF of the distribution. The signature of the PDF is
-          expected to be: ``def pdf(self, x: float) -> float``, i.e.,
-          the PDF should accept a Python float and return a Python float.
-          It doesn't need to integrate to 1, i.e.,
-          the PDF doesn't need to be normalized.
-
-    center : float, optional
-        Approximate location of the mode or the mean of the distribution.
-        This location provides some information about the main part of the
-        PDF and is used to avoid numerical problems. Default is ``None``.
-
-    domain : list or tuple of length 2, optional
-        The support of the distribution.
-        Default is ``None``. When ``None``:
-
-        * If a ``support`` method is provided by the distribution object
-          `dist`, it is used to set the domain of the distribution.
-        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
-
-    r : float, optional
-        Set parameter ``r > 0`` for generalized Ratio-Of-Uniforms method.
-        The default is 1.0.
-
-    u_min: float, optional
-        Sets the left boundary of the bounding rectangle, see details under
-        Notes. If necessary, consider computing the bound numerically using
-        methods in `scipy.optimize`. Important: The bound has to be
-        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
-        routine will be used to find the bound. This routine can fail,
-        especially when the rectangle is not bounded. Note: If either `u_min`
-        or `u_max` is ``None``, both values are computed numerically.
-        The default is ``None``.
-
-    u_max: float, optional
-        Sets the right boundary of the bounding rectangle. Sets the left
-        boundary of the bounding rectangle, see details under
-        Notes. If necessary, consider computing the bound numerically using
-        methods in `scipy.optimize`. Important: The bound has to be
-        provided for ``dist.pdf(x - center)``. If ``None``, a numerical
-        routine will be used to find the bound. This routine can fail,
-        especially when the rectangle is not bounded. Note: If either `u_min`
-        or `u_max` is ``None``, both values are computed numerically.
-        The default is ``None``.
-
-    v_max: float, optional
-        Sets the upper boundary of the bounding rectangle. If the mode of the
-        pdf is known, it can be easily computed, see Notes for details.
-        Otherwise consider computing the bound numerically using
-        methods in `scipy.optimize`. If ``None``, a numerical routine will be
-        used to find the bound. This routine can fail, especially when the
-        rectangle is not bounded. The default is ``None``.
-
-    random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
-
-        A NumPy random number generator or seed for the underlying NumPy random
-        number generator used to generate the stream of uniform random numbers.
-        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState`` instance
-        then that instance is used.
-
-    Notes
-    -----
-
-    If ``r==1``, the method works as follows: for a given pdf and a constant
-    `center`, define the set
-    ``A = {(u, v) : 0 < v <= sqrt(pdf(u/v + center))}``.
-    If (U, V) is a random vector uniformly distributed over A,
-    then ``U/V + center`` follows a distribution according to ``dist.pdf``.
-
-    Typical choices of `center` are zero or the mode of pdf. The set A is a
-    subset of the rectangle ``R = [u_min, u_max] x [0, v_max]`` where
-
-    - ``v_max = sup_x sqrt(pdf(x))``
-    - ``u_min = inf_x (x - center) sqrt(pdf(x))``
-    - ``u_max = sup_x (x - center) sqrt(pdf(x))``
-
-    In particular, these values are finite if the pdf is bounded and
-    ``x**2 * pdf(x)`` is bounded (i.e. subquadratic tails).
-    One can generate (U, V) uniformly on R and return
-    ``U/V + center`` if (U, V) are also in A which can be directly
-    verified.
-
-    The algorithm is not changed if one replaces the pdf by a function
-    that is proportional to it, e.g., by dropping
-    unnecessary normalization factors.
-
-    Intuitively, the method works well if A fills up most of the
-    enclosing rectangle such that the probability is high that (U, V)
-    lies in A whenever it lies in R as the number of required
-    iterations become too large otherwise. To be more precise, note that
-    the expected number of iterations to draw (U, V) uniformly
-    distributed on R such that (U, V) is also in A is given by
-    the ratio ``area(R) / area(A) = 2 * v_max * (u_max - u_min) / area(pdf)``,
-    where ``area(pdf)`` is the integral of the pdf (which is equal to one if
-    the true pdf is used but can take on other values if a
-    function proportional to the true pdf is used). The equality holds since
-    the area of A is equal to ``0.5 * area(pdf)`` (Theorem 7.1 in [4]_).
-
-    In the general case, the acceptance region is defined as
-    ``A = {(u, v) : 0 < v <= (pdf(u/v**r + center))**(1/(r+1))}`` and the
-    bounding rectangle is given by
-
-    - ``v_max = sup_x pdf(x)**(1/(r+1))``
-    - ``u_min = inf_x (x - center) (pdf(x))**(r/(r+1))``
-    - ``u_max = sup_x (x - center) (pdf(x))**(r/(r+1))``
-
-    The rejection constant is given by
-    ``(r+1) * v_max * (u_max - u_min) / area(pdf)`` in the general case.
-
-    Note that in the current implementation, the speed of this generation
-    method is reduced by the fact that the pdf of `dist` needs to be called
-    from C for each random variate that is simulated even if the pdf is
-    vectorized (to simulate N random variates, the average number of
-    evaluations of the pdf is N times the rejection constant).
-
-    References
-    ----------
-    .. [1] UNU.RAN reference manual, Section 5.3.11,
-           "NROU - Naive Ratio-Of-Uniforms method",
-           http://statmath.wu.ac.at/software/unuran/doc/unuran.html#NROU
-    .. [2] W. Hörmann, J. Leydold and G. Derflinger (2004). Automatic
-           Nonuniform Random Variate Generation, Springer, Berlin.
-    .. [3] A.J. Kinderman and J.F. Monahan, "Computer Generation of Random
-           Variables Using the Ratio of Uniform Deviates",
-           ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
-    .. [4] L. Devroye, "Non-Uniform Random Variate Generation",
-           Springer-Verlag, 1986.
-    .. [5] J. C. Wakefield, A. E. Gelfand, and A. F. M. Smith. "Efficient
-           generation of random variates via the ratio-of-uniforms method."
-           Statistics and Computing 1.2, p. 129--133, 1991.
-
-    Examples
-    --------
-    >>> from scipy.stats import NaiveRatioUniforms
-
-    Suppose we want to generate normally distributed random variables.
-    It is easy to compute the bounding rectangle explicitly in that case.
-    Note that we drop the normalization factor of the density. Since the mode
-    of the distribution is located at zero, there is no need to change the
-    default value of the parameter `center`.
-
-    >>> urng = np.random.default_rng()
-    >>> class MyDist:
-    ...     def pdf(self, x):
-    ...         return np.exp(-0.5*x*x)
-    >>> dist = MyDist()
-    >>> u_bound = np.sqrt(dist.pdf(np.sqrt(2))) * np.sqrt(2)
-    >>> v_max = np.sqrt(dist.pdf(0))
-    >>> rng = NaiveRatioUniforms(dist, u_min=-u_bound, u_max=u_bound,
-    ...                          v_max=v_max, random_state=urng)
-
-    Once we have created the generator, we can draw samples of the normal
-    distribution:
-
-    >>> import matplotlib.pyplot as plt
-    >>> rvs = rng.rvs(1000)
-    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 100)
-    >>> fx = dist.pdf(x) / np.sqrt(2*np.pi)
-    >>> plt.plot(x, fx, 'r-', lw=2, label='normal pdf')
-    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
-    >>> plt.xlabel('x')
-    >>> plt.legend()
-    >>> plt.show()
-
-    """
-
-    def __cinit__(self,
-                  dist,
-                  *,
-                  center=0.0,
-                  domain=None,
-                  r=1.0,
-                  u_min=None,
-                  u_max=None,
-                  v_max=None,
-                  random_state=None):
-        (domain, r, u_min, u_max, v_max) = self._validate_args(dist, domain, r, u_min, u_max, v_max)
-
-        # save all the arguments for pickling support
-        self._kwargs = {
-            'dist': dist,
-            'center': center,
-            'domain': domain,
-            'r': r,
-            'u_min': u_min,
-            'u_max': u_max,
-            'v_max': v_max,
-            'random_state': random_state
-        }
-
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
-        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
-        def _callback_wrapper(x, name):
-            return self.callbacks[name](x)
-        self._callback_wrapper = _callback_wrapper
-        self._messages = MessageStream()
-        _lock.acquire()
-        try:
-            unur_set_stream(self._messages.handle)
-
-            self.distr = unur_distr_cont_new()
-            if self.distr == NULL:
-                raise UNURANError(self._messages.get())
-            _pack_distr(self.distr, self.callbacks)
-
-            self._check_errorcode(unur_distr_cont_set_center(self.distr, center))
-            if domain is not None:
-                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
-                                                                 domain[1]))
-
-            self.par = unur_nrou_new(self.distr)
-            if self.par == NULL:
-                raise UNURANError(self._messages.get())
-            self._check_errorcode(unur_nrou_set_r(self.par, r))
-
-            if (u_min is not None) and (u_max is not None):
-                self._check_errorcode(unur_nrou_set_u(self.par, u_min, u_max))
-            if v_max is not None:
-                self._check_errorcode(unur_nrou_set_v(self.par, v_max))
-
-            self._set_rng(random_state)
-        finally:
-            _lock.release()
-
-    cdef object _validate_args(self, dist, domain, r, u_min, u_max, v_max):
-        domain = _validate_domain(domain, dist)
-        # if one of u_min / u_max is None, set the other to None as well
-        # the reason is that the numerical routine to find the bounds can only
-        # be used for both bounds at the same time
-        if (u_min is None) ^ (u_max is None):
-            u_min, u_max = None, None
-            msg = ("Only one of the values of u_min and u_max is None. "
-                   "The value that is not None is ignored and both values "
-                   "will be computed numerically.")
-            warnings.warn(msg, RuntimeWarning)
-
-        if r <= 0:
-            raise ValueError("`r` must be positive.")
-        if (v_max is not None) and (v_max <= 0):
-            raise ValueError("`v_max` must be positive.")
-        if (u_min is not None) and (u_max is not None) and (u_min >= u_max):
-            raise ValueError("`u_min` must be smaller than `u_max`.")
-
-        return domain, r, u_min, u_max, v_max
-
-
 cdef class DiscreteGuideTable(Method):
     r"""
     DiscreteGuideTable(dist, *, domain=None, guide_factor=1, random_state=None)
@@ -2608,7 +2273,7 @@ cdef class DiscreteGuideTable(Method):
 
     Examples
     --------
-    >>> from scipy.stats import DiscreteGuideTable
+    >>> from scipy.stats.sampling import DiscreteGuideTable
 
     To create a random number generator using a probability vector, use:
 

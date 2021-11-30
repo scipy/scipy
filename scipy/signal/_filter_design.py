@@ -2281,13 +2281,21 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         raise ValueError("wp and ws must have one or two elements each, and"
                          "the same shape, got %s and %s"
                          % (wp.shape, ws.shape))
+
+    if any(wp <= 0) or any(ws <= 0):
+        raise ValueError("Values for wp, ws must be greater than 0")
+
+    if not analog:
+        if fs is None:
+            if any(wp >= 1) or any(ws >= 1):
+                raise ValueError("Values for wp, ws must be less than 1")
+        elif any(wp >= fs/2) or any(ws >= fs/2):
+            raise ValueError("Values for wp, ws must be less than fs/2"
+                             " (fs={} -> fs/2={})".format(fs, fs/2))
+
     if wp.shape[0] == 2:
-        if wp[0] < 0 or ws[0] < 0:
-            raise ValueError("Values for wp, ws can't be negative")
-        elif 1 < wp[1] or 1 < ws[1]:
-            raise ValueError("Values for wp, ws can't be larger than 1")
-        elif not((ws[0] < wp[0] and wp[1] < ws[1]) or
-            (wp[0] < ws[0] and ws[1] < wp[1])):
+        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+               (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                          " or vice versa")
 
@@ -2441,6 +2449,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
         Wn = 2*Wn/fs
+
+    if numpy.any(Wn <= 0):
+        raise ValueError("filter critical frequencies must be greater than 0")
 
     try:
         btype = band_dict[btype]
@@ -2931,10 +2942,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 
-        For digital filters, `Wn` are in the same units as `fs`.  By default,
-        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
-        where 1 is the Nyquist frequency. (`Wn` is thus in
-        half-cycles / sample.)
+        For digital filters, if `fs` is not specified, `Wn` units are
+        normalized from 0 to 1, where 1 is the Nyquist frequency (`Wn` is
+        thus in half cycles / sample and defined as 2*critical frequencies
+        / `fs`). If `fs` is specified, `Wn` is in the same units as `fs`.
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional

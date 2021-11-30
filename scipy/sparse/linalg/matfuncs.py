@@ -6,7 +6,11 @@ import warnings
 from . import _matfuncs
 
 
-__all__ = ['expm', 'inv']  # noqa: F822
+__all__ = [  # noqa: F822
+    'expm', 'inv', 'float_factorial', 'solve', 'solve_triangular',
+    'isspmatrix', 'spsolve', 'is_pydata_spmatrix', 'LinearOperator',
+    'UPPER_TRIANGULAR', 'MatrixPowerOperator', 'ProductOperator'
+]
 
 
 def __dir__():

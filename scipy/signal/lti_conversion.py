@@ -8,7 +8,8 @@ from . import _lti_conversion
 
 __all__ = [  # noqa: F822
     'tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
-    'cont2discrete'
+    'cont2discrete','eye', 'atleast_2d',
+    'poly', 'prod', 'array', 'outer', 'linalg', 'tf2zpk', 'zpk2tf', 'normalize'
 ]
 
 

@@ -8,7 +8,7 @@ from . import _eigen
 
 __all__ = [  # noqa: F822
     'ArpackError', 'ArpackNoConvergence',
-    'eigs', 'eigsh', 'lobpcg', 'svds'
+    'eigs', 'eigsh', 'lobpcg', 'svds', 'arpack', 'test'
 ]
 
 eigen_modules = ['arpack']

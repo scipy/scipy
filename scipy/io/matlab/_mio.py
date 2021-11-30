@@ -5,9 +5,9 @@ Module for reading and writing matlab (TM) .mat files
 
 from contextlib import contextmanager
 
-from .miobase import _get_matfile_version, docfiller
-from .mio4 import MatFile4Reader, MatFile4Writer
-from .mio5 import MatFile5Reader, MatFile5Writer
+from ._miobase import _get_matfile_version, docfiller
+from ._mio4 import MatFile4Reader, MatFile4Writer
+from ._mio5 import MatFile5Reader, MatFile5Writer
 
 __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
@@ -158,7 +158,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     Get the filename for an example .mat file from the tests/data directory.
 
-    >>> data_dir = pjoin(dirname(sio.__file__), '_matlab', 'tests', 'data')
+    >>> data_dir = pjoin(dirname(sio.__file__), 'matlab', 'tests', 'data')
     >>> mat_fname = pjoin(data_dir, 'testdouble_7.4_GLNX86.mat')
 
     Load the .mat file contents.
