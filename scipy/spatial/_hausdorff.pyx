@@ -15,6 +15,8 @@ cimport numpy as np
 cimport cython
 from libc.math cimport sqrt
 
+np.import_array()
+
 __all__ = ['directed_hausdorff']
 
 @cython.boundscheck(False)

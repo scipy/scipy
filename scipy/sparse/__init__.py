@@ -224,20 +224,26 @@ sorted indices are required (e.g., when passing data to other libraries).
 
 import warnings as _warnings
 
-from .base import *
-from .csr import *
-from .csc import *
-from .lil import *
-from .dok import *
-from .coo import *
-from .dia import *
-from .bsr import *
-from .construct import *
-from .extract import *
+from ._base import *
+from ._csr import *
+from ._csc import *
+from ._lil import *
+from ._dok import *
+from ._coo import *
+from ._dia import *
+from ._bsr import *
+from ._construct import *
+from ._extract import *
 from ._matrix_io import *
 
 # For backward compatibility with v0.19.
 from . import csgraph
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    base, bsr, compressed, construct, coo, csc, csr, data, dia, dok, extract,
+    lil, sparsetools, sputils
+)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

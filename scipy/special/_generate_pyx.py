@@ -235,7 +235,7 @@ import numpy
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-add_newdocs = __import__('add_newdocs')
+add_newdocs = __import__('_add_newdocs')
 
 CY_TYPES = {
     'f': 'float',
@@ -1454,7 +1454,7 @@ def main():
     pwd = os.path.dirname(__file__)
     src_files = (os.path.abspath(__file__),
                  os.path.abspath(os.path.join(pwd, 'functions.json')),
-                 os.path.abspath(os.path.join(pwd, 'add_newdocs.py')))
+                 os.path.abspath(os.path.join(pwd, '_add_newdocs.py')))
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',

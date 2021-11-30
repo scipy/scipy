@@ -7,6 +7,7 @@ import sys
 import pickle
 import os
 import json
+import platform
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -36,6 +37,10 @@ from itertools import product
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
+
+# Failing on macOS 11, Intel CPUs. See gh-14901
+MACOS_INTEL = (sys.platform == 'darwin') and (platform.machine() == 'x86_64')
+
 
 # distributions to skip while testing the fix for the support method
 # introduced in gh-13294. These distributions are skipped as they
@@ -312,6 +317,9 @@ class TestChi:
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
     #     1 - CDF[ChiDistribution[4], 10]
     CHI_SF_10_4 = 9.83662422461598e-21
+    # "Exact" value of chi.mean(df=1000) as computed by Wolfram Alpha with
+    #       Mean[ChiDistribution[1000]]
+    CHI_MEAN_1000 = 31.614871896980
 
     def test_sf(self):
         s = stats.chi.sf(10, 4)
@@ -320,6 +328,10 @@ class TestChi:
     def test_isf(self):
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
+
+    def test_mean(self):
+        x = stats.chi.mean(df=1000)
+        assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
 
 
 class TestNBinom:
@@ -2840,6 +2852,7 @@ class TestBeta:
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12635(self):
         # Confirm that Boost's beta distribution resolves gh-12635.
         # Check against R:
@@ -2851,6 +2864,7 @@ class TestBeta:
         p, a, b = 0.9999999999997369, 75.0, 66334470.0
         assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12794(self):
         # Confirm that Boost's beta distribution resolves gh-12794.
         # Check against R.
@@ -2868,6 +2882,7 @@ class TestBeta:
         res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
         assert_allclose(res, p)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12796(self):
         # Confirm that Boost's beta distribution succeeds in the case
         # of gh-12796
@@ -2889,6 +2904,11 @@ class TestBeta:
         # when a<1
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
+
+    def test_boost_eval_issue_14606(self):
+        q, a, b = 0.995, 1.0e11, 1.0e13
+        with pytest.warns(RuntimeWarning):
+            stats.beta.ppf(q, a, b)
 
 
 class TestBetaPrime:
@@ -5615,7 +5635,7 @@ def test_invweibull():
     def optimizer(func, x0, args=(), disp=0):
         return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
 
-    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    x = np.array([1, 1.25, 2, 2.5, 2.8, 3, 3.8, 4, 5, 8, 10, 12, 64, 99])
     c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0
@@ -6047,6 +6067,17 @@ def test_support_broadcasting_gh13294_regression():
     assert_equal(b2, ex_b2)
     assert a2.shape == ex_a2.shape
     assert b2.shape == ex_b2.shape
+
+
+def test_stats_broadcasting_gh14953_regression():
+    # test case in gh14953
+    loc = [0., 0.]
+    scale = [[1.], [2.], [3.]]
+    assert_equal(stats.norm.var(loc, scale), [[1., 1.], [4., 4.], [9., 9.]])
+    # test some edge cases
+    loc = np.empty((0, ))
+    scale = np.empty((1, 0))
+    assert stats.norm.var(loc, scale).shape == (1, 0)
 
 
 # Check a few values of the cosine distribution's cdf, sf, ppf and

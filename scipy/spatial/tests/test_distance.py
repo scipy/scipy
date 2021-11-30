@@ -35,6 +35,7 @@
 import os.path
 
 from functools import wraps, partial
+import weakref
 
 import numpy as np
 import warnings
@@ -57,11 +58,10 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
-                                    kulsinski, mahalanobis, matching,
-                                    minkowski, rogerstanimoto, russellrao,
-                                    seuclidean, sokalmichener, sokalsneath,
-                                    sqeuclidean, yule)
-from scipy.spatial.distance import wminkowski as old_wminkowski
+                                    kulsinski, kulczynski1, mahalanobis,
+                                    matching, minkowski, rogerstanimoto,
+                                    russellrao, seuclidean, sokalmichener,
+                                    sokalsneath, sqeuclidean, yule)
 
 _filenames = [
               "cdist-X1.txt",
@@ -376,7 +376,7 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wkulsinski = _weight_checked(kulsinski)
-wminkowski = _weight_checked(minkowski, const_test=False)
+wkulczynski1 = _weight_checked(kulczynski1)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
 wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
@@ -407,38 +407,36 @@ class TestCdist:
         X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
         args = [3.14] * 200
-        with suppress_warnings() as w:
-            w.filter(DeprecationWarning)
-            for metric in _METRICS_NAMES:
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=metric, **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=eval(metric), **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric="test_" + metric, **kwargs)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=metric, *args)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric=eval(metric), *args)
-                assert_raises(TypeError, cdist, X1, X2,
-                              metric="test_" + metric, *args)
+        for metric in _METRICS_NAMES:
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric=metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric=eval(metric), **kwargs)
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric="test_" + metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric=metric, *args)
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric=eval(metric), *args)
+            assert_raises(TypeError, cdist, X1, X2,
+                          metric="test_" + metric, *args)
 
-            assert_raises(TypeError, cdist, X1, X2, _my_metric)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, **kwargs)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric,
-                          kwarg=2.2, kwarg2=3.3)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, 1, 2, kwarg=2.2)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, **kwargs)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric,
+                      kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1, 2, kwarg=2.2)
 
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2, 3.3)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1)
-            assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1,
-                          kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2, 3.3)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1,
+                      kwarg=2.2, kwarg2=3.3)
 
-            # this should work
-            assert_allclose(cdist(X1, X2, metric=_my_metric,
-                                  arg=1.1, kwarg2=3.3), 5.4)
+        # this should work
+        assert_allclose(cdist(X1, X2, metric=_my_metric,
+                              arg=1.1, kwarg2=3.3), 5.4)
 
     def test_cdist_euclidean_random_unicode(self):
         eps = 1e-07
@@ -448,14 +446,15 @@ class TestCdist:
         Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
-    @pytest.mark.parametrize("p", [1.0, 1.23, 2.0, 3.8, 4.6, np.inf])
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 1.23,
+                                   2.0, 3.8, 4.6, np.inf])
     def test_cdist_minkowski_random(self, p):
-        eps = 1e-07
+        eps = 1e-13
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
         Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        _assert_within_tol(Y1, Y2, atol=0, rtol=eps, verbose_=verbose > 2)
 
     def test_cdist_cosine_random(self):
         eps = 1e-07
@@ -532,11 +531,11 @@ class TestCdist:
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'wminkowski':
-                    continue
-                if metric in {'dice', 'yule', 'kulsinski', 'matching',
-                              'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                if metric in {'dice', 'yule', 'kulsinski',
+                              'matching', 'rogerstanimoto',
+                              'russellrao', 'sokalmichener',
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X1, X2, metric)
@@ -585,39 +584,35 @@ class TestCdist:
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         out_r, out_c = X1.shape[0], X2.shape[0]
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message="'wminkowski' metric is deprecated")
-            for metric in _METRICS_NAMES:
-                kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
-                    kwargs['p'] = 1.23
-                    if metric == 'wminkowski':
-                        kwargs['w'] = 1.0 / X1.std(axis=0)
-                out1 = np.empty((out_r, out_c), dtype=np.double)
-                Y1 = cdist(X1, X2, metric, **kwargs)
-                Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
-                # test that output is numerically equivalent
-                _assert_within_tol(Y1, Y2, eps, verbose > 2)
-                # test that Y_test1 and out1 are the same object
-                assert_(Y2 is out1)
-                # test for incorrect shape
-                out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out2, **kwargs)
-                # test for C-contiguous order
-                out3 = np.empty(
-                    (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
-                out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out3, **kwargs)
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out4, **kwargs)
 
-                # test for incorrect dtype
-                out5 = np.empty((out_r, out_c), dtype=np.int64)
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out5, **kwargs)
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric == 'minkowski':
+                kwargs['p'] = 1.23
+            out1 = np.empty((out_r, out_c), dtype=np.double)
+            Y1 = cdist(X1, X2, metric, **kwargs)
+            Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            # test that Y_test1 and out1 are the same object
+            assert_(Y2 is out1)
+            # test for incorrect shape
+            out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
+            assert_raises(ValueError,
+                          cdist, X1, X2, metric, out=out2, **kwargs)
+            # test for C-contiguous order
+            out3 = np.empty(
+                (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+            out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
+            assert_raises(ValueError,
+                          cdist, X1, X2, metric, out=out3, **kwargs)
+            assert_raises(ValueError,
+                          cdist, X1, X2, metric, out=out4, **kwargs)
+
+            # test for incorrect dtype
+            out5 = np.empty((out_r, out_c), dtype=np.int64)
+            assert_raises(ValueError,
+                          cdist, X1, X2, metric, out=out5, **kwargs)
 
     def test_striding(self):
         # test that striding is handled correct with calls to
@@ -637,18 +632,32 @@ class TestCdist:
         assert_(X1_copy.flags.c_contiguous)
         assert_(X2_copy.flags.c_contiguous)
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
-            for metric in _METRICS_NAMES:
-                kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
-                    kwargs['p'] = 1.23
-                    if metric == 'wminkowski':
-                        kwargs['w'] = 1.0 / X1.std(axis=0)
-                Y1 = cdist(X1, X2, metric, **kwargs)
-                Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
-                # test that output is numerically equivalent
-                _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric == 'minkowski':
+                kwargs['p'] = 1.23
+            Y1 = cdist(X1, X2, metric, **kwargs)
+            Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+    def test_cdist_refcount(self):
+        for metric in _METRICS_NAMES:
+            x1 = np.random.rand(10, 10)
+            x2 = np.random.rand(10, 10)
+
+            kwargs = dict()
+            if metric == 'minkowski':
+                kwargs['p'] = 1.23
+
+            out = cdist(x1, x2, metric=metric, **kwargs)
+
+            # Check reference counts aren't messed up. If we only hold weak
+            # references, the arrays should be deallocated.
+            weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+            del x1, x2, out
+            assert all(weak_ref() is None for weak_ref in weak_refs)
+
 
 class TestPdist:
 
@@ -669,35 +678,33 @@ class TestPdist:
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
         kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
         args = [3.14] * 200
-        with suppress_warnings() as w:
-            w.filter(DeprecationWarning)
-            for metric in _METRICS_NAMES:
-                assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
-                assert_raises(TypeError, pdist, X1,
-                              metric=eval(metric), **kwargs)
-                assert_raises(TypeError, pdist, X1,
-                              metric="test_" + metric, **kwargs)
-                assert_raises(TypeError, pdist, X1, metric=metric, *args)
-                assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
-                assert_raises(TypeError, pdist, X1,
-                              metric="test_" + metric, *args)
+        for metric in _METRICS_NAMES:
+            assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
+            assert_raises(TypeError, pdist, X1,
+                          metric=eval(metric), **kwargs)
+            assert_raises(TypeError, pdist, X1,
+                          metric="test_" + metric, **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=metric, *args)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
+            assert_raises(TypeError, pdist, X1,
+                          metric="test_" + metric, *args)
 
-            assert_raises(TypeError, pdist, X1, _my_metric)
-            assert_raises(TypeError, pdist, X1, _my_metric, *args)
-            assert_raises(TypeError, pdist, X1, _my_metric, **kwargs)
-            assert_raises(TypeError, pdist, X1, _my_metric,
-                          kwarg=2.2, kwarg2=3.3)
-            assert_raises(TypeError, pdist, X1, _my_metric, 1, 2, kwarg=2.2)
+        assert_raises(TypeError, pdist, X1, _my_metric)
+        assert_raises(TypeError, pdist, X1, _my_metric, *args)
+        assert_raises(TypeError, pdist, X1, _my_metric, **kwargs)
+        assert_raises(TypeError, pdist, X1, _my_metric,
+                      kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1, 2, kwarg=2.2)
 
-            assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2, 3.3)
-            assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2)
-            assert_raises(TypeError, pdist, X1, _my_metric, 1.1)
-            assert_raises(TypeError, pdist, X1, _my_metric, 1.1,
-                          kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2, 3.3)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1,
+                      kwarg=2.2, kwarg2=3.3)
 
-            # these should work
-            assert_allclose(pdist(X1, metric=_my_metric,
-                                  arg=1.1, kwarg2=3.3), 5.4)
+        # these should work
+        assert_allclose(pdist(X1, metric=_my_metric,
+                              arg=1.1, kwarg2=3.3), 5.4)
 
     def test_pdist_euclidean_random(self):
         eps = 1e-07
@@ -951,13 +958,13 @@ class TestPdist:
         Y_test2 = wpdist(X, 'test_correlation')
         _assert_within_tol(Y_test2, Y_right, eps)
 
-    @pytest.mark.parametrize("p", [1.0, 2.0, 3.2, np.inf])
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
     def test_pdist_minkowski_random_p(self, p):
-        eps = 1e-05
+        eps = 1e-13
         X = eo['pdist-double-inp']
         Y1 = wpdist_no_const(X, 'minkowski', p=p)
         Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, eps)
+        _assert_within_tol(Y1, Y2, atol=0, rtol=eps)
 
     def test_pdist_minkowski_random(self):
         eps = 1e-05
@@ -1422,13 +1429,12 @@ class TestPdist:
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X = eo[eo_name][::5, ::2]
             for metric in _METRICS_NAMES:
-                if metric == 'wminkowski':
-                    continue
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
-                              'sokalsneath'} and 'bool' not in eo_name:
+                              'sokalsneath',
+                              'kulczynski1'} and 'bool' not in eo_name:
                     # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X, metric)
@@ -1472,30 +1478,26 @@ class TestPdist:
         eps = 1e-07
         X = eo['random-float32-data'][::5, ::2]
         out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'wminkowski' metric is deprecated")
-            for metric in _METRICS_NAMES:
-                kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
-                    kwargs['p'] = 1.23
-                if metric == 'wminkowski':
-                    kwargs['w'] = 1.0 / X.std(axis=0)
-                out1 = np.empty(out_size, dtype=np.double)
-                Y_right = pdist(X, metric, **kwargs)
-                Y_test1 = pdist(X, metric, out=out1, **kwargs)
-                # test that output is numerically equivalent
-                _assert_within_tol(Y_test1, Y_right, eps)
-                # test that Y_test1 and out1 are the same object
-                assert_(Y_test1 is out1)
-                # test for incorrect shape
-                out2 = np.empty(out_size + 3, dtype=np.double)
-                assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
-                # test for (C-)contiguous output
-                out3 = np.empty(2 * out_size, dtype=np.double)[::2]
-                assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
-                # test for incorrect dtype
-                out5 = np.empty(out_size, dtype=np.int64)
-                assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric == 'minkowski':
+                kwargs['p'] = 1.23
+            out1 = np.empty(out_size, dtype=np.double)
+            Y_right = pdist(X, metric, **kwargs)
+            Y_test1 = pdist(X, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y_test1, Y_right, eps)
+            # test that Y_test1 and out1 are the same object
+            assert_(Y_test1 is out1)
+            # test for incorrect shape
+            out2 = np.empty(out_size + 3, dtype=np.double)
+            assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
+            # test for (C-)contiguous output
+            out3 = np.empty(2 * out_size, dtype=np.double)[::2]
+            assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+            # test for incorrect dtype
+            out5 = np.empty(out_size, dtype=np.int64)
+            assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
 
     def test_striding(self):
         # test that striding is handled correct with calls to
@@ -1508,19 +1510,14 @@ class TestPdist:
         assert_(not X.flags.c_contiguous)
         assert_(X_copy.flags.c_contiguous)
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message="'wminkowski' metric is deprecated")
-            for metric in _METRICS_NAMES:
-                kwargs = dict()
-                if metric in ['minkowski', 'wminkowski']:
-                    kwargs['p'] = 1.23
-                if metric == 'wminkowski':
-                    kwargs['w'] = 1.0 / X.std(axis=0)
-                Y1 = pdist(X, metric, **kwargs)
-                Y2 = pdist(X_copy, metric, **kwargs)
-                # test that output is numerically equivalent
-                _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric == 'minkowski':
+                kwargs['p'] = 1.23
+            Y1 = pdist(X, metric, **kwargs)
+            Y2 = pdist(X_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestSomeDistanceFunctions:
 
@@ -1533,11 +1530,14 @@ class TestSomeDistanceFunctions:
 
     def test_minkowski(self):
         for x, y in self.cases:
-            dist1 = wminkowski(x, y, p=1)
+            dist1 = minkowski(x, y, p=1)
             assert_almost_equal(dist1, 3.0)
-            dist1p5 = wminkowski(x, y, p=1.5)
+            dist1p5 = minkowski(x, y, p=1.5)
             assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-            wminkowski(x, y, p=2)
+            dist2 = minkowski(x, y, p=2)
+            assert_almost_equal(dist2, 5.0 ** 0.5)
+            dist0p25 = minkowski(x, y, p=0.25)
+            assert_almost_equal(dist0p25, (1.0 + 2.0 ** 0.25) ** 4)
 
         # Check that casting input to minimum scalar type doesn't affect result
         # (issue #10262). This could be extended to more test inputs with
@@ -1546,25 +1546,6 @@ class TestSomeDistanceFunctions:
         b = np.array([350, 660])
         assert_equal(minkowski(a, b),
                      minkowski(a.astype('uint16'), b.astype('uint16')))
-
-    def test_old_wminkowski(self):
-        with suppress_warnings() as wrn:
-            wrn.filter(DeprecationWarning,
-                       message=".*wminkowski is deprecated")
-            w = np.array([1.0, 2.0, 0.5])
-            for x, y in self.cases:
-                dist1 = old_wminkowski(x, y, p=1, w=w)
-                assert_almost_equal(dist1, 3.0)
-                dist1p5 = old_wminkowski(x, y, p=1.5, w=w)
-                assert_almost_equal(dist1p5, (2.0**1.5+1.0)**(2./3))
-                dist2 = old_wminkowski(x, y, p=2, w=w)
-                assert_almost_equal(dist2, np.sqrt(5))
-
-            # test weights Issue #7893
-            arr = np.arange(4)
-            w = np.full_like(arr, 4)
-            assert_almost_equal(old_wminkowski(arr, arr + 1, p=2, w=w), 8.0)
-            assert_almost_equal(wminkowski(arr, arr + 1, p=2, w=w), 4.0)
 
     def test_euclidean(self):
         for x, y in self.cases:
@@ -1926,11 +1907,11 @@ class TestIsValidY:
         return y
 
 
-def test_bad_p():
-    # Raise ValueError if p < 1.
-    p = 0.5
-    assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p)
-    assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p, [1, 1])
+@pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
+def test_bad_p(p):
+    # Raise ValueError if p <=0.
+    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p)
+    assert_raises(ValueError, minkowski, [1, 2], [3, 4], p, [1, 1])
 
 
 def test_sokalsneath_all_false():
@@ -2095,13 +2076,10 @@ def test_modifies_input():
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
     X1_copy = X1.copy()
-    with suppress_warnings() as w:
-        w.filter(message="'wminkowski' metric is deprecated")
-        for metric in _METRICS_NAMES:
-            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" else {}
-            cdist(X1, X1, metric, **kwargs)
-            pdist(X1, metric, **kwargs)
-            assert_array_equal(X1, X1_copy)
+    for metric in _METRICS_NAMES:
+        cdist(X1, X1, metric)
+        pdist(X1, metric)
+        assert_array_equal(X1, X1_copy)
 
 
 def test_Xdist_deprecated_args():
@@ -2112,53 +2090,38 @@ def test_Xdist_deprecated_args():
                      [22.2, 23.3, 44.4]])
     weights = np.arange(3)
     for metric in _METRICS_NAMES:
-        kwargs = {"w": weights} if metric == "wminkowski" else dict()
-        with suppress_warnings() as w:
-            w.filter(DeprecationWarning,
-                    message="'wminkowski' metric is deprecated")
-            with pytest.raises(TypeError):
-                cdist(X1, X1, metric, 2., **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X1, metric, 2.)
 
-            with pytest.raises(TypeError):
-                pdist(X1, metric, 2., **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric, 2.)
 
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
-
-            if metric == "wminkowski":
-                if "p" in kwargs or "w" in kwargs:
-                    continue
-                kwargs["w"] = weights
 
             if((arg == "V" and metric == "seuclidean") or
             (arg == "VI" and metric == "mahalanobis") or
             (arg == "p" and metric == "minkowski")):
                 continue
 
-            with suppress_warnings() as w:
-                w.filter(DeprecationWarning,
-                        message="'wminkowski' metric is deprecated")
-                with pytest.raises(TypeError):
-                    cdist(X1, X1, metric, **kwargs)
+            with pytest.raises(TypeError):
+                cdist(X1, X1, metric, **kwargs)
 
-                with pytest.raises(TypeError):
-                    pdist(X1, metric, **kwargs)
+            with pytest.raises(TypeError):
+                pdist(X1, metric, **kwargs)
 
 
 def test_Xdist_non_negative_weights():
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
     w[::5] = -w[::5]
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning,
-                   message="'wminkowski' metric is deprecated")
-        for metric in _METRICS_NAMES:
-            if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
-                continue
+    for metric in _METRICS_NAMES:
+        if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
+            continue
 
-            for m in [metric, eval(metric), "test_" + metric]:
-                assert_raises(ValueError, pdist, X, m, w=w)
-                assert_raises(ValueError, cdist, X, X, m, w=w)
+        for m in [metric, eval(metric), "test_" + metric]:
+            assert_raises(ValueError, pdist, X, m, w=w)
+            assert_raises(ValueError, cdist, X, X, m, w=w)
 
 
 def test__validate_vector():

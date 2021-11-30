@@ -6,6 +6,8 @@ cimport numpy as cnp
 import os
 import numpy as np
 
+cnp.import_array()
+
 # Parameters are linked to the direction numbers list.
 # See `initialize_direction_numbers` for more details.
 # Declared using DEF to be known at compilation time for ``poly`` et ``vinit``
@@ -77,7 +79,7 @@ def initialize_direction_numbers():
         # read in as dataframe, explicitly use zero values
         df = pd.DataFrame(rows).fillna(0).astype(int)
 
-        # peform conversion
+        # perform conversion
         df["poly"] = 2 * df["a"] + 2 ** df["s"] + 1
 
         # ensure columns are properly ordered

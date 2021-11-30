@@ -5,6 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
+from functools import wraps
 import ctypes
 
 import numpy as np
@@ -54,6 +55,7 @@ def _remove_optimizer_parameters(kwds):
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm', this decorator calls generic implementation
+    @wraps(fun)
     def wrapper(self, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
         if method == 'mm':
@@ -1246,7 +1248,7 @@ class chi_gen(rv_continuous):
         return np.sqrt(2*sc.gammainccinv(.5*df, q))
 
     def _stats(self, df):
-        mu = np.sqrt(2)*sc.gamma(df/2.0+0.5)/sc.gamma(df/2.0)
+        mu = np.sqrt(2)*np.exp(sc.gammaln(df/2.0+0.5)-sc.gammaln(df/2.0))
         mu2 = df - mu*mu
         g1 = (2*mu**3.0 + mu*(1-2*df))/np.asarray(np.power(mu2, 1.5))
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
@@ -4131,15 +4133,28 @@ class norminvgauss_gen(rv_continuous):
     `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
     to generate random variates.
 
+    Another common parametrization of the distribution (see Equation 2.1 in
+    [2]_) is given by the following expression of the pdf:
+
+    .. math::
+
+        g(x, \alpha, \beta, \delta, \mu) =
+        \frac{\alpha\delta K_1\left(\alpha\sqrt{\delta^2 + (x - \mu)^2}\right)}
+        {\pi \sqrt{\delta^2 + (x - \mu)^2}} \,
+        e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
+
+    In SciPy, this corresponds to
+    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+
     References
     ----------
-    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
-    pp. 151-157, 1978.
+    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+           Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+           pp. 151-157, 1978.
 
-    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
-    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
-    pp. 1-13, 1997.
+    .. [2] O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and
+           Stochastic Volatility Modelling", Scandinavian Journal of
+           Statistics, Vol. 24, pp. 1-13, 1997.
 
     %(example)s
 
@@ -5144,6 +5159,9 @@ class logistic_gen(rv_continuous):
                     {(1+\exp(-x))^2}
 
     `logistic` is a special case of `genlogistic` with ``c=1``.
+
+    Remark that the survival function (``logistic.sf``) is equal to the
+    Fermi-Dirac distribution describing fermionic statistics.
 
     %(after_notes)s
 
@@ -6653,7 +6671,7 @@ class pearson3_gen(rv_continuous):
         # close to this small.
         norm2pearson_transition = 0.000016
 
-        ans, x, skew = np.broadcast_arrays([1.0], x, skew)
+        ans, x, skew = np.broadcast_arrays(1.0, x, skew)
         ans = ans.copy()
 
         # mask is True where skew is small enough to use the normal approx.
@@ -8045,7 +8063,7 @@ def _truncnorm_ppf_scalar(q, a, b):
                 if C:
                     one_minus_q = (1 - q)[cond_inner]
                     values += np.log1p(one_minus_q * C / q[cond_inner])
-                x = [optimize.zeros.brentq(_f_cdf, a, b, args=(c,),
+                x = [optimize._zeros_py.brentq(_f_cdf, a, b, args=(c,),
                                            maxiter=TRUNCNORM_MAX_BRENT_ITERS)
                      for c in values]
                 np.place(out, cond_inner, x)
@@ -8065,7 +8083,7 @@ def _truncnorm_ppf_scalar(q, a, b):
                 C = np.exp(slb - sla)
                 if C:
                     values += np.log1p(q[cond_inner] * C / one_minus_q)
-                x = [optimize.zeros.brentq(_f_sf, a, b, args=(c,),
+                x = [optimize._zeros_py.brentq(_f_sf, a, b, args=(c,),
                                            maxiter=TRUNCNORM_MAX_BRENT_ITERS)
                      for c in values]
                 np.place(out, cond_inner, x)
@@ -8222,31 +8240,37 @@ class truncnorm_gen(rv_continuous):
                           np.nan)
 
     def _stats(self, a, b, moments='mv'):
-        pA, pB = self._pdf(np.array([a, b]), a, b)
-        m1 = pA - pB
-        mu = m1
-        # use _lazywhere to avoid nan (See detailed comment in _munp)
-        probs = [pA, -pB]
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
-                          fillvalue=0)
-        m2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
-                          fillvalue=0)
-        # mu2 = m2 - mu**2, but not as numerically stable as:
-        # mu2 = (a-mu)*pA - (b-mu)*pB + 1
-        mu2 = 1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
-                          fillvalue=0)
-        m3 = 2*m1 + np.sum(vals)
-        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
-                          fillvalue=0)
-        m4 = 3*m2 + np.sum(vals)
+        pA, pB = self.pdf(np.array([a, b]), a, b)
 
-        mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
-        g1 = mu3 / np.power(mu2, 1.5)
-        mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
-        g2 = mu4 / mu2**2 - 3
-        return mu, mu2, g1, g2
+        def _truncnorm_stats_scalar(a, b, pA, pB, moments):
+            m1 = pA - pB
+            mu = m1
+            # use _lazywhere to avoid nan (See detailed comment in _munp)
+            probs = [pA, -pB]
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
+                              fillvalue=0)
+            m2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
+                              fillvalue=0)
+            # mu2 = m2 - mu**2, but not as numerically stable as:
+            # mu2 = (a-mu)*pA - (b-mu)*pB + 1
+            mu2 = 1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
+                              fillvalue=0)
+            m3 = 2*m1 + np.sum(vals)
+            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
+                              fillvalue=0)
+            m4 = 3*m2 + np.sum(vals)
+
+            mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
+            g1 = mu3 / np.power(mu2, 1.5)
+            mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
+            g2 = mu4 / mu2**2 - 3
+            return mu, mu2, g1, g2
+
+        _truncnorm_stats = np.vectorize(_truncnorm_stats_scalar,
+                                        excluded=('moments',))
+        return _truncnorm_stats(a, b, pA, pB, moments)
 
     def _rvs(self, a, b, size=None, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create

@@ -3,6 +3,7 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 import warnings
+import sys
 
 import numpy as np
 from numpy.random import RandomState
@@ -13,7 +14,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy import optimize
 from scipy import stats
-from scipy.stats.morestats import _abw_state
+from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -533,8 +534,8 @@ class TestAnsari:
             stats.ansari(x1, x2, alternative='foo')
 
     def test_alternative_exact(self):
-        x1 = [-5, 1, 5, 10, 15, 20, 25] # high scale, loc=10
-        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5] # low scale, loc=10
+        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
@@ -542,7 +543,7 @@ class TestAnsari:
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
-        assert pval_g < 0.05 # level of significance.
+        assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the the probability
         # mass under the calculated statistic.
         prob = _abw_state.pmf(statistic, len(x1), len(x2))
@@ -747,6 +748,11 @@ class TestBinomP:
 
         res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
+    def test_boost_overflow_raises(self):
+        # Boost.Math error policy should raise exceptions in Python
+        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
 
 
 class TestBinomTestP(TestBinomP):
@@ -2115,7 +2121,7 @@ class TestCircFuncs:
         x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(x)
         normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=1e-8)
+        assert_allclose(circstat, normal, atol=2e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],

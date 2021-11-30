@@ -12,9 +12,9 @@ from scipy._lib._util import _asarray_validated
 
 
 # Local imports
-from .misc import norm
+from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .decomp_schur import schur, rsf2csf
+from ._decomp_schur import schur, rsf2csf
 
 
 class SqrtmError(np.linalg.LinAlgError):

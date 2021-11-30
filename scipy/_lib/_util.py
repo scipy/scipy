@@ -62,7 +62,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -104,8 +104,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
-    for index in range(len(condlist)):
-        func, cond = choicelist[index], condlist[index]
+    for func, cond in zip(choicelist, condlist):
         if np.all(cond is False):
             continue
         cond, _ = np.broadcast_arrays(cond, arrays[0])
@@ -232,14 +231,9 @@ def check_random_state(seed):
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
+    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
-    try:
-        # Generator is only available in numpy >= 1.17
-        if isinstance(seed, np.random.Generator):
-            return seed
-    except AttributeError:
-        pass
+
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
@@ -399,6 +393,18 @@ def getfullargspec_no_self(func):
                    if p.annotation is not p.empty}
     return FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
                        kwdefaults or None, annotations)
+
+
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
 
 
 class MapWrapper:

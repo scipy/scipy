@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     # workaround for mypy function attributes see:
     # https://github.com/python/mypy/issues/2087#issuecomment-462726600
     from typing_extensions import Protocol
+
     class CacheAttributes(Protocol):
         cache: Dict[int, Tuple[Any, Any]]
 else:
