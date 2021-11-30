@@ -5,10 +5,10 @@ Logistic (Sech-squared) Distribution
 ====================================
 
 A special case of the Generalized Logistic distribution with :math:`c=1`.
-The support is :math:`x \in \mathcal{R}`.
+The support is :math:`x \in \mathbb{R}`.
 
 This distribution function has a direct connection with the Fermi-Dirac
-distribution via its survival function. I.e. `scipy.stats.logistic.sf` is
+distribution via its survival function. I.e. ``scipy.stats.logistic.sf`` is
 equivalent to the Fermi-Dirac distribution.
 
 .. math::
