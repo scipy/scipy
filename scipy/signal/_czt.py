@@ -21,7 +21,7 @@ Functions
 
 czt : array
    Compute the chirp z-transform for a signal.
-zoomfft : array
+zoom_fft : array
    Compute the Fourier transform on a range of frequencies.
 """
 
@@ -31,7 +31,7 @@ import numpy as np
 from numpy import pi, arange
 from scipy.fft import fft, ifft, next_fast_len
 
-__all__ = ['czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
+__all__ = ['czt', 'zoom_fft', 'CZT', 'ZoomFFT', 'czt_points']
 
 
 def _validate_sizes(n, m):
@@ -295,7 +295,7 @@ class ZoomFFT(CZT):
 
     See Also
     --------
-    zoomfft : Convenience function for calculating a zoom FFT.
+    zoom_fft : Convenience function for calculating a zoom FFT.
 
     Notes
     -----
@@ -403,7 +403,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     See Also
     --------
     CZT : Class that creates a callable chirp z-transform function.
-    zoomfft : Convenience function for partial FFT calculations.
+    zoom_fft : Convenience function for partial FFT calculations.
 
     Notes
     -----
@@ -482,7 +482,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoomfft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
+def zoom_fft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.
 
@@ -520,11 +520,11 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
 
     Notes
     -----
-    ``zoomfft(x)`` is equivalent to ``fft(x)``.
+    ``zoom_fft(x)`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
-        plot(linspace(f1, f2, m), abs(zoomfft(x, [f1, f2], m)))
+        plot(linspace(f1, f2, m), abs(zoom_fft(x, [f1, f2], m)))
 
     If the transform needs to be repeated, use `ZoomFFT` to construct
     a specialized transform function which can be reused without
@@ -534,11 +534,11 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
     --------
     To plot the transform results use something like the following:
 
-    >>> from scipy.signal import zoomfft
+    >>> from scipy.signal import zoom_fft
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
-    >>> X = zoomfft(x, [f1, f2], len(x), 1021)
+    >>> X = zoom_fft(x, [f1, f2], len(x), 1021)
     >>> f = np.linspace(f1, f2, len(x))
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(f, 20*np.log10(np.abs(X)))
