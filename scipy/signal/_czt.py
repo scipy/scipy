@@ -227,7 +227,7 @@ class CZT:
         self._wk2 = wk2[:m]
         self._yidx = slice(n-1, n+m-1)
 
-    def __call__(self, x, axis=-1):
+    def __call__(self, x, *, axis=-1):
         """
         Calculate the chirp z-transform of a signal.
 
@@ -331,7 +331,7 @@ class ZoomFFT(CZT):
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
-    >>> transform = ZoomFFT(len(x), [f1, f2], len(x), 1021)
+    >>> transform = ZoomFFT(len(x), [f1, f2], len(x), fs=1021)
     >>> X = transform(x)
     >>> f = np.linspace(f1, f2, len(x))
     >>> import matplotlib.pyplot as plt
@@ -339,7 +339,7 @@ class ZoomFFT(CZT):
     >>> plt.show()
     """
 
-    def __init__(self, n, fn, m=None, fs=2, endpoint=False):
+    def __init__(self, n, fn, m=None, *, fs=2, endpoint=False):
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -374,7 +374,7 @@ class ZoomFFT(CZT):
         self._yidx = slice(n-1, n+m-1)
 
 
-def czt(x, m=None, w=None, a=1+0j, axis=-1):
+def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     """
     Compute the frequency response around a spiral in the Z plane.
 
@@ -482,7 +482,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoom_fft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
+def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.
 
@@ -538,7 +538,7 @@ def zoom_fft(x, fn, m=None, fs=2, endpoint=False, axis=-1):
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
-    >>> X = zoom_fft(x, [f1, f2], len(x), 1021)
+    >>> X = zoom_fft(x, [f1, f2], len(x), fs=1021)
     >>> f = np.linspace(f1, f2, len(x))
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(f, 20*np.log10(np.abs(X)))
