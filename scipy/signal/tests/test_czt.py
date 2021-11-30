@@ -5,7 +5,8 @@ A unit test module for czt.py
 '''
 import pytest
 from numpy.testing import assert_allclose
-from scipy.fft import (fft, czt, zoomfft, czt_points, CZT, ZoomFFT)
+from scipy.fft import fft
+from scipy.signal import (czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
 

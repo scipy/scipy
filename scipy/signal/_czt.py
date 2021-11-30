@@ -78,7 +78,7 @@ def czt_points(m, w=None, a=1+0j):
     --------
     Plot the points of a 16-point FFT:
 
-    >>> from scipy.fft import czt_points
+    >>> from scipy.signal import czt_points
     >>> points = czt_points(16)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(points.real, points.imag, 'o')
@@ -179,7 +179,7 @@ class CZT:
     --------
     Compute multiple prime-length FFTs:
 
-    >>> from scipy.fft import CZT
+    >>> from scipy.signal import CZT
     >>> a = np.random.rand(7)
     >>> b = np.random.rand(7)
     >>> c = np.random.rand(7)
@@ -327,7 +327,7 @@ class ZoomFFT(CZT):
     --------
     To plot the transform results use something like the following:
 
-    >>> from scipy.fft import ZoomFFT
+    >>> from scipy.signal import ZoomFFT
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
@@ -436,7 +436,8 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     Its discrete Fourier transform has all of its energy in a single frequency
     bin:
 
-    >>> from scipy.fft import rfft, rfftfreq, czt, czt_points
+    >>> from scipy.fft import rfft, rfftfreq
+    >>> from scipy.signal import czt, czt_points
     >>> plt.plot(rfftfreq(fs, 1/fs), abs(rfft(x)))
     >>> plt.margins(0, 0.1)
     >>> plt.show()
@@ -533,7 +534,7 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     --------
     To plot the transform results use something like the following:
 
-    >>> from scipy.fft import zoomfft
+    >>> from scipy.signal import zoomfft
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27

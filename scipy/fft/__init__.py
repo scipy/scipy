@@ -54,23 +54,6 @@ Fast Hankel Transforms
    fht - Fast Hankel transform
    ifht - Inverse of fht
 
-Chirp Z-transform and Zoom FFT
-============================================
-
-.. autosummary::
-   :toctree: generated/
-
-   czt - Chirp z-transform convenience function
-   zoomfft - Zoom FFT convenience function
-   CZT - Chirp z-transform function generator
-   ZoomFFT - Zoom FFT function generator
-   czt_points - Output the z-plane points sampled by a chirp z-transform
-
-The functions are simpler to use, but less efficient, because they internally
-generate the same chirp signals with every call.  When using the same
-transform on many arrays of the same length, use the function-generating
-classes instead.
-
 Helper functions
 ================
 
@@ -110,7 +93,6 @@ from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 from ._pocketfft.helper import set_workers, get_workers
-from .czt import czt, zoomfft, CZT, ZoomFFT, czt_points
 
 __all__ = [
     'fft', 'ifft', 'fft2', 'ifft2', 'fftn', 'ifftn',
@@ -122,8 +104,7 @@ __all__ = [
     'fht', 'ifht',
     'fhtoffset',
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
-    'get_workers', 'set_workers',
-    'czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
+    'get_workers', 'set_workers']
 
 
 from scipy._lib._testutils import PytestTester
