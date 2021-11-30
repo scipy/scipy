@@ -3699,10 +3699,105 @@ class TestIIRDesign:
         with pytest.raises(ValueError, match="the same shape"):
             iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
                       np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
-        with pytest.raises(ValueError, match="can't be negative"):
+
+        # discrete filter with non-positive frequency
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(-0.1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, 0, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, -0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([-0.1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, -0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
             iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
-        with pytest.raises(ValueError, match="can't be larger than 1"):
-            iirdesign([0.1, 1.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, 0], 1, 40)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, -0.5], 1, 40)
+
+        # analog filter with negative frequency
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(-0.1, 0.5, 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign(0.1, -0.5, 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([-0.1, 0.3], [0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, -0.3], [0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40, analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirdesign([0.1, 0.3], [0.1, -0.5], 1, 40, analog=True)
+
+        # discrete filter with fs=None, freq > 1
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(1.1, 0.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(0.1, 1, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign(0.1, 1.5, 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([1.1, 0.3], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 1], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 1.1], [0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [1.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [0.1, 1], 1, 40)
+        with pytest.raises(ValueError, match="must be less than 1"):
+            iirdesign([0.1, 0.3], [0.1, 1.5], 1, 40)
+
+        # discrete filter with fs>2, wp, ws < fs/2 must pass
+        iirdesign(100, 500, 1, 40, fs=2000)
+        iirdesign(500, 100, 1, 40, fs=2000)
+        iirdesign([200, 400], [100, 500], 1, 40, fs=2000)
+        iirdesign([100, 500], [200, 400], 1, 40, fs=2000)
+
+        # discrete filter with fs>2, freq > fs/2: this must raise
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(1000, 400, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(1100, 500, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(100, 1000, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign(100, 1100, 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([1000, 400], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([1100, 400], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 1000], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 1100], [100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [1000, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [1100, 500], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [100, 1000], 1, 40, fs=2000)
+        with pytest.raises(ValueError, match="must be less than fs/2"):
+            iirdesign([200, 400], [100, 1100], 1, 40, fs=2000)
+
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
@@ -3756,6 +3851,20 @@ class TestIIRFilter:
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+
+        # analog=True with non-positive critical frequencies
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, 0, btype='low', analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, -1, btype='low', analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [0, 100], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [-1, 100], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [10, 0], analog=True)
+        with pytest.raises(ValueError, match="must be greater than 0"):
+            iirfilter(2, [10, -1], analog=True)
 
 
 class TestGroupDelay:
