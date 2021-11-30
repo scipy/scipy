@@ -144,7 +144,7 @@ SciPy has been restricted in the use of more advanced language features by the
 available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
 C11/C17 is supported [12]_ (though without the C11 optional features).
-C99 ``<complex.h>`` would be particularly interesting for scipy;
+C99 ``<complex.h>`` would be particularly interesting for SciPy;
 MSVC conformance for this is being tracked here [13]_.
 
 Therefore, using C features beyond C90 was only possible insofar there was support on
@@ -186,10 +186,10 @@ CPython) has been recent enough to support even C++17.
 
 Since the official builds (see above) use a pretty recent version of LLVM,
 the bottleneck for C++ support is therefore the oldest supported GCC version,
-where scipy has been constrained mainly by the version in the oldest supported
-manylinx versions & images [14]_.
+where SciPy has been constrained mainly by the version in the oldest supported
+manylinux versions & images [14]_.
 
-At the end of 2021 (with the final removal of ``manylinux1`` wheels), scipy
+At the end of 2021 (with the final removal of ``manylinux1`` wheels), SciPy
 now has a minimum GCC requirement of GCC 6.3, which has full C++14 support
 [15]_. This corresponds to the lowest present GCC version in relevant manylinux
 versions - somewhat surprisingly, it is not the oldest remaining
@@ -220,7 +220,7 @@ flang     A recent version
 Cython & Pythran
 ~~~~~~~~~~~~~~~~
 
-SciPy always requires a recent Cython compiler. Since 1.7, pythran
+SciPy always requires a recent Cython compiler. Since 1.7, Pythran
 is a build dependency (currently with the possibility to opt out).
 
 
@@ -242,6 +242,7 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
 LAPACK           3.4.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
+                 The Accelerate BLAS library is no longer supported.
 =============== =====================================================
 
 
