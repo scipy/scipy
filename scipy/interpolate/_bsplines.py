@@ -10,6 +10,7 @@ from . import _fitpack_impl
 from . import _fitpack as _dierckx
 from scipy._lib._util import prod
 from scipy.special import poch
+from scipy.sparse import csr_matrix
 from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
@@ -414,7 +415,9 @@ class BSpline:
         if (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1]):
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        return _bspl._make_design_matrix(x, t, k)
+        n, nt = x.shape[0], t.shape[0]
+        data, idx = _bspl._make_design_matrix(x, t, k)
+        return csr_matrix((data, idx), (n, nt - k - 1))
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
