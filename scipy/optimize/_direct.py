@@ -59,9 +59,13 @@ def direct(func, bounds, *, args=(), disp=False,
         ``fun(x, \*args) -> float``
         where ``x`` is an 1-D array with shape (n,) and args is a tuple of
         the fixed parameters needed to completely specify the function.
-    bounds : Bounds
-        lower bounds and upper bounds for each element in ``x``, defining
-        the bounds on that parameter.
+    bounds : sequence or `Bounds`
+        Bounds for variables. There are two ways to specify the bounds:
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
+        lower and upper bounds for the optimizing argument of `func`. It is
+        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
+        to determine the number of parameters in ``x``.
     args : tuple, optional
         Extra arguments passed to the objective function.
     iatol : float, optional

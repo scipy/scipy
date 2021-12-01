@@ -1,6 +1,6 @@
 from __future__ import annotations
 from _typeshed import NoneType
-from typing import Any, TYPE_CHECKING, Callable, Tuple
+from typing import Any, Callable, Iterable, Tuple, TYPE_CHECKING, Union
 from scipy.optimize import OptimizeResult
 from ._constraints import Bounds
 
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 def direct(
         func: Callable[[npt.ArrayLike, Tuple[Any]], float],
-        bounds: Bounds,
+        bounds: Union[Iterable, Bounds],
         args: tuple,
         disp: bool,
         iatol: float,
