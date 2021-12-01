@@ -153,9 +153,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                from ._coo import coo_matrix
                 self._set_self(
-                    coo_matrix(arg1, dtype=dtype, shape=shape).tobsr(
+                    self._coo_container(arg1, dtype=dtype, shape=shape).tobsr(
                         blocksize=blocksize
                     )
                 )
@@ -195,8 +194,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            from ._coo import coo_matrix
-            arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
+            arg1 = self._coo_container(
+                arg1, dtype=dtype
+            ).tobsr(blocksize=blocksize)
             self._set_self(arg1)
 
         if shape is not None:
@@ -425,7 +425,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         # TODO eliminate zeros
 
-        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
+        return self._bsr_container(
+            (data, indices, indptr), shape=(M, N), blocksize=(R, C)
+        )
 
     ######################
     # Conversion methods #
@@ -466,8 +468,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                   indptr,
                   indices,
                   data)
-        from ._csr import csr_matrix
-        return csr_matrix((data, indices, indptr), shape=self.shape)
+        return self._csr_container((data, indices, indptr), shape=self.shape)
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
@@ -508,8 +509,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         if copy:
             data = data.copy()
 
-        from ._coo import coo_matrix
-        return coo_matrix((data,(row,col)), shape=self.shape)
+        return self._coo_container(
+            (data, (row, col)), shape=self.shape
+        )
 
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
@@ -527,8 +529,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         NBLK = self.nnz//(R*C)
 
         if self.nnz == 0:
-            return bsr_matrix((N, M), blocksize=(C, R),
-                              dtype=self.dtype, copy=copy)
+            return self._bsr_container((N, M), blocksize=(C, R),
+                                       dtype=self.dtype, copy=copy)
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
@@ -538,8 +540,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                       self.indptr, self.indices, self.data.ravel(),
                       indptr, indices, data.ravel())
 
-        return bsr_matrix((data, indices, indptr),
-                          shape=(N, M), copy=copy)
+        return self._bsr_container((data, indices, indptr),
+                                   shape=(N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -726,4 +728,5 @@ def isspmatrix_bsr(x):
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, bsr_matrix)
+    from ._arrays import bsr_array
+    return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)

@@ -139,16 +139,13 @@ class csr_matrix(_cs_matrix):
                               "dimensions is the only logical permutation."))
 
         M, N = self.shape
-
-        from ._csc import csc_matrix
-        return csc_matrix((self.data, self.indices,
-                           self.indptr), shape=(N, M), copy=copy)
+        return self._csc_container((self.data, self.indices,
+                                    self.indptr), shape=(N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
-        from ._lil import lil_matrix
-        lil = lil_matrix(self.shape,dtype=self.dtype)
+        lil = self._lil_container(self.shape, dtype=self.dtype)
 
         self.sum_duplicates()
         ptr,ind,dat = self.indptr,self.indices,self.data
@@ -187,23 +184,20 @@ class csr_matrix(_cs_matrix):
                   indices,
                   data)
 
-        from ._csc import csc_matrix
-        A = csc_matrix((data, indices, indptr), shape=self.shape)
+        A = self._csc_container((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
-        from ._bsr import bsr_matrix
-
         if blocksize is None:
             from ._spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
 
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix(arg1, shape=self.shape, copy=copy)
+            return self._bsr_container(arg1, shape=self.shape, copy=copy)
 
         else:
             R,C = blocksize
@@ -226,7 +220,9 @@ class csr_matrix(_cs_matrix):
                       self.data,
                       indptr, indices, data.ravel())
 
-            return bsr_matrix((data,indices,indptr), shape=self.shape)
+            return self._bsr_container(
+                (data, indices, indptr), shape=self.shape
+            )
 
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
@@ -245,7 +241,9 @@ class csr_matrix(_cs_matrix):
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield csr_matrix((data, indices, indptr), shape=shape, copy=True)
+            yield self.__class__(
+                (data, indices, indptr), shape=shape, copy=True
+            )
             i0 = i1
 
     def getrow(self, i):
@@ -260,8 +258,8 @@ class csr_matrix(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
-        return csr_matrix((data, indices, indptr), shape=(1, N),
-                          dtype=self.dtype, copy=False)
+        return self.__class__((data, indices, indptr), shape=(1, N),
+                              dtype=self.dtype, copy=False)
 
     def getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
@@ -275,8 +273,8 @@ class csr_matrix(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
-        return csr_matrix((data, indices, indptr), shape=(M, 1),
-                          dtype=self.dtype, copy=False)
+        return self.__class__((data, indices, indptr), shape=(M, 1),
+                              dtype=self.dtype, copy=False)
 
     def _get_intXarray(self, row, col):
         return self.getrow(row)._minor_index_fancy(col)
@@ -311,8 +309,8 @@ class csr_matrix(_cs_matrix):
             row_indices = abs(row_indices[::-1])
 
         shape = (1, max(0, int(np.ceil(float(stop - start) / stride))))
-        return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
-                          dtype=self.dtype, copy=False)
+        return self.__class__((row_data, row_indices, row_indptr), shape=shape,
+                              dtype=self.dtype, copy=False)
 
     def _get_sliceXint(self, row, col):
         if row.step in (1, None):
@@ -355,4 +353,5 @@ def isspmatrix_csr(x):
     >>> isspmatrix_csr(csc_matrix([[5]]))
     False
     """
-    return isinstance(x, csr_matrix)
+    from ._arrays import csr_array
+    return isinstance(x, csr_matrix) or isinstance(x, csr_array)

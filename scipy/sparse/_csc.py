@@ -113,9 +113,8 @@ class csc_matrix(_cs_matrix):
 
         M, N = self.shape
 
-        from ._csr import csr_matrix
-        return csr_matrix((self.data, self.indices,
-                           self.indptr), (N, M), copy=copy)
+        return self._csr_container((self.data, self.indices,
+                                    self.indptr), (N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -146,8 +145,10 @@ class csc_matrix(_cs_matrix):
                   indices,
                   data)
 
-        from ._csr import csr_matrix
-        A = csr_matrix((data, indices, indptr), shape=self.shape, copy=False)
+        A = self._csr_container(
+            (data, indices, indptr),
+            shape=self.shape, copy=False
+        )
         A.has_sorted_indices = True
         return A
 
@@ -255,4 +256,5 @@ def isspmatrix_csc(x):
     >>> isspmatrix_csc(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, csc_matrix)
+    from ._arrays import csc_array
+    return isinstance(x, csc_matrix) or isinstance(x, csc_array)
