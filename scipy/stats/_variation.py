@@ -60,7 +60,8 @@ def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
     # will generate a warning, so set all the values in such a slice to 1.0.
     # We'll fix the corresponding output later.
     a2[np.broadcast_to(ddof_too_big, a2.shape) | ddof_equal_n] = 1.0
-    std_a = np.nanstd(a2, axis=axis, ddof=ddof, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        std_a = np.nanstd(a2, axis=axis, ddof=ddof, keepdims=True)
     del a2
 
     sum_zero = np.nansum(a, axis=axis, keepdims=True) == 0
@@ -92,7 +93,7 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
     Compute the coefficient of variation.
 
     The coefficient of variation is the ratio of the standard deviation
-    to the mean.
+    to the mean, i.e. ``std(a)/mean(a)``.
 
     By default, this function uses the square root of the biased variance
     to compute the standard deviation, and that behavior is maintained
@@ -138,6 +139,20 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
     -------
     variation : ndarray
         The calculated variation along the requested axis.
+
+    Notes
+    -----
+    There are several edge cases that are handled without generating a
+    warning:
+
+    * If both the mean and the standard deviation are zero, ``nan``
+      is returned.
+    * If the mean is zero and the standard deviation is nonzero, ``inf``
+      is returned.
+    * If the input has length zero (either because the array has zero
+      length, or the array contains all ``nan``s and ``nan_policy`` is
+      ``'omit'``), ``nan`` is returned.
+    * If the input contains ``inf``, ``nan`` is returned.
 
     References
     ----------
@@ -198,9 +213,8 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
             result = result[()]
         return result
 
-    std_a = a.std(axis, ddof=ddof, keepdims=True)
-
     with np.errstate(divide='ignore', invalid='ignore'):
+        std_a = a.std(axis, ddof=ddof, keepdims=True)
         result = std_a / mean_a
 
     if not keepdims:

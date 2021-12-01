@@ -79,9 +79,9 @@ class TestVariation:
         y2 = variation(x2, axis=1)
         assert_equal(y2, [np.inf, np.inf])
 
-    @pytest.mark.parametrize('x', [np.zeros(5), []])
-    def test_all_zero(self, x):
-        # Test some cases where `variation` return nan.
+    @pytest.mark.parametrize('x', [np.zeros(5), [], [1, 2, np.inf, 9]])
+    def test_return_nan(self, x):
+        # Test some cases where `variation` returns nan.
         y = variation(x)
         assert_equal(y, np.nan)
 
