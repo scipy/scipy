@@ -58,7 +58,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     The default values for taps are specifically taken from the first
     option listed for each value of ``nbits`` in:
 
-        http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
+        https://web.archive.org/web/20181001062252/http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
 
     .. versionadded:: 0.15.0
 
@@ -112,7 +112,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
         if np.any(taps < 0) or np.any(taps > nbits) or taps.size < 1:
             raise ValueError('taps must be non-empty with values between '
                              'zero and nbits (inclusive)')
-        taps = np.ascontiguousarray(taps)  # needed for Cython
+        taps = np.array(taps)  # needed for Cython and Pythran
     n_max = (2**nbits) - 1
     if length is None:
         length = n_max

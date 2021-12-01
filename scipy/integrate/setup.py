@@ -64,7 +64,7 @@ def configuration(parent_package='',top_path=None):
     # vode
     cfg = combine_dict(lapack_opt,
                        libraries=['vode'])
-    ext = config.add_extension('vode',
+    ext = config.add_extension('_vode',
                                sources=['vode.pyf'],
                                depends=vode_src,
                                f2py_options=f2py_options,
@@ -74,7 +74,7 @@ def configuration(parent_package='',top_path=None):
     # lsoda
     cfg = combine_dict(lapack_opt,
                        libraries=['lsoda', 'mach'])
-    ext = config.add_extension('lsoda',
+    ext = config.add_extension('_lsoda',
                                sources=['lsoda.pyf'],
                                depends=(lsoda_src + mach_src),
                                f2py_options=f2py_options,

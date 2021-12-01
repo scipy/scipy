@@ -159,6 +159,7 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iircomb       -- Design IIR comb filter.
 
 Continuous-time linear systems
 ==============================
@@ -288,33 +289,42 @@ Spectral analysis
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 """
-from . import sigtools, windows
-from .waveforms import *
+from . import _sigtools, windows
+from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
-# The spline module (a C extension) provides:
-#     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2
-from .spline import *
+from ._spline import (  # noqa: F401
+    cspline2d,
+    qspline2d,
+    sepfir2d,
+    symiirorder1,
+    symiirorder2,
+)
 
-from .bsplines import *
-from .filter_design import *
-from .fir_filter_design import *
-from .ltisys import *
-from .lti_conversion import *
-from .signaltools import *
+from ._bsplines import *
+from ._filter_design import *
+from ._fir_filter_design import *
+from ._ltisys import *
+from ._lti_conversion import *
+from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
-from .spectral import *
-from .wavelets import *
+from ._spectral_py import *
+from ._wavelets import *
 from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
+    spectral, signaltools, waveforms, wavelets, spline
+)
 
 # deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
 # backward compatibility imports for actually deprecated windows not
@@ -354,7 +364,6 @@ for name in deprecated_windows:
     locals()[name] = deco(name)
 
 del deprecated_windows, name, deco
-
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

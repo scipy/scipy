@@ -19,7 +19,7 @@ results['shgo'] = optimize.shgo(eggholder, bounds)
 results['DA'] = optimize.dual_annealing(eggholder, bounds)
 results['DE'] = optimize.differential_evolution(eggholder, bounds)
 results['BH'] = optimize.basinhopping(eggholder, bounds)
-results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=200, iters=5,
+results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=256, iters=5,
                                       sampling_method='sobol')
 
 fig = plt.figure(figsize=(4.5, 4.5))

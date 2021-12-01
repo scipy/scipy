@@ -83,7 +83,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestLocalMaxima1d(object):
+class TestLocalMaxima1d:
 
     def test_empty(self):
         """Test with empty signal."""
@@ -142,7 +142,7 @@ class TestLocalMaxima1d(object):
             _local_maxima_1d(None)
 
 
-class TestRidgeLines(object):
+class TestRidgeLines:
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
@@ -234,7 +234,7 @@ class TestRidgeLines(object):
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
 
 
-class TestArgrel(object):
+class TestArgrel:
 
     def test_empty(self):
         # Regression test for gh-2832.
@@ -317,7 +317,7 @@ class TestArgrel(object):
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
-class TestPeakProminences(object):
+class TestPeakProminences:
 
     def test_empty(self):
         """
@@ -434,7 +434,7 @@ class TestPeakProminences(object):
             peak_prominences([0, 1, 1, 1, 0], [2], wlen=2)
 
 
-class TestPeakWidths(object):
+class TestPeakWidths:
 
     def test_empty(self):
         """
@@ -599,7 +599,7 @@ def test_unpack_condition_args():
         _unpack_condition_args((None, amin_true), np.arange(11), peaks)
 
 
-class TestFindPeaks(object):
+class TestFindPeaks:
 
     # Keys of optionally returned properties
     property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
@@ -770,7 +770,7 @@ class TestFindPeaks(object):
             assert_equal(props[key], peaks)
 
 
-class TestFindPeaksCwt(object):
+class TestFindPeaksCwt:
 
     def test_find_peaks_exact(self):
         """
@@ -845,3 +845,15 @@ class TestFindPeaksCwt(object):
         found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
                                     min_length=None, window_size=20)
         assert found_locs.size == act_locs.size
+
+    def test_find_peaks_with_one_width(self):
+        """
+        Verify that the `width` argument
+        in `find_peaks_cwt` can be a float
+        """
+        xs = np.arange(0, np.pi, 0.05)
+        test_data = np.sin(xs)
+        widths = 1
+        found_locs = find_peaks_cwt(test_data, widths)
+
+        np.testing.assert_equal(found_locs, 32)

@@ -488,6 +488,31 @@ All functions
    cpotrs
    zpotrs
 
+   sppcon
+   dppcon
+   cppcon
+   zppcon
+
+   sppsv
+   dppsv
+   cppsv
+   zppsv
+
+   spptrf
+   dpptrf
+   cpptrf
+   zpptrf
+
+   spptri
+   dpptri
+   cpptri
+   zpptri
+
+   spptrs
+   dpptrs
+   cpptrs
+   zpptrs
+
    sptsv
    dptsv
    cptsv
@@ -664,10 +689,20 @@ All functions
    ctfttr
    ztfttr
 
+   stgexc
+   dtgexc
+   ctgexc
+   ztgexc
+
    stgsen
    dtgsen
    ctgsen
    ztgsen
+
+   stgsen_lwork
+   dtgsen_lwork
+   ctgsen_lwork
+   ztgsen_lwork
 
    stpttf
    dtpttf
@@ -906,7 +941,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     flavor.
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
@@ -921,8 +957,9 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(1000,1000)
-    >>> b = np.random.rand(1000,1)*1j
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((1000, 1000))
+    >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
     ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
     >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix
@@ -985,7 +1022,8 @@ def _compute_lwork(routine, *args, **kwargs):
     if len(ret) == 2:
         return _check_work_float(ret[0].real, dtype, int_dtype)
     else:
-        return tuple(_check_work_float(x.real, dtype, int_dtype) for x in ret[:-1])
+        return tuple(_check_work_float(x.real, dtype, int_dtype)
+                     for x in ret[:-1])
 
 
 def _check_work_float(value, dtype, int_dtype):
@@ -1002,10 +1040,12 @@ def _check_work_float(value, dtype, int_dtype):
     value = int(value)
     if int_dtype.itemsize == 4:
         if value < 0 or value > _int32_max:
-            raise ValueError("Too large work array required -- computation cannot "
-                             "be performed with standard 32-bit LAPACK.")
+            raise ValueError("Too large work array required -- computation "
+                             "cannot be performed with standard 32-bit"
+                             " LAPACK.")
     elif int_dtype.itemsize == 8:
         if value < 0 or value > _int64_max:
-            raise ValueError("Too large work array required -- computation cannot "
-                             "be performed with standard 64-bit LAPACK.")
+            raise ValueError("Too large work array required -- computation"
+                             " cannot be performed with standard 64-bit"
+                             " LAPACK.")
     return value

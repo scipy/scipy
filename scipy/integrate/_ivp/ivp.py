@@ -505,7 +505,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         raise ValueError("`method` must be one of {} or OdeSolver class."
                          .format(METHODS))
 
-    t0, tf = float(t_span[0]), float(t_span[1])
+    t0, tf = map(float, t_span)
 
     if args is not None:
         # Wrap the user's fun (and jac, if given) in lambdas to hide the
@@ -646,7 +646,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if t_eval is None:
         ts = np.array(ts)
         ys = np.vstack(ys).T
-    else:
+    elif ts:
         ts = np.hstack(ts)
         ys = np.hstack(ys)
 

@@ -105,6 +105,11 @@ def configuration(parent_package='', top_path=None):
                          sources=[('_solve_toeplitz.c')],
                          include_dirs=[get_numpy_include_dirs()])
 
+    # _matfuncs_sqrtm_triu:
+    config.add_extension('_matfuncs_sqrtm_triu',
+                         sources=[('_matfuncs_sqrtm_triu.c')],
+                         include_dirs=[get_numpy_include_dirs()])
+
     config.add_data_dir('tests')
 
     # Cython BLAS/LAPACK
@@ -135,9 +140,15 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
 
+    config.add_extension('_cythonized_array_utils',
+                         sources=['_cythonized_array_utils.c'])
+
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

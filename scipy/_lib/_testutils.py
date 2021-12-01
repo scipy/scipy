@@ -16,7 +16,7 @@ class FPUModeChangeWarning(RuntimeWarning):
     pass
 
 
-class PytestTester(object):
+class PytestTester:
     """
     Pytest test runner entry point.
     """

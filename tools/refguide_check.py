@@ -48,7 +48,7 @@ from numpydoc.docscrape_sphinx import get_doc_object
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
-    from sphinx.directives import SeeAlso, Only
+    from sphinx.directives.other import SeeAlso, Only
     directives.register_directive('seealso', SeeAlso)
     directives.register_directive('only', Only)
 else:
@@ -76,6 +76,7 @@ PUBLIC_SUBMODULES = [
     'interpolate',
     'io',
     'io.arff',
+    'io.matlab',
     'io.wavfile',
     'linalg',
     'linalg.blas',
@@ -97,6 +98,8 @@ PUBLIC_SUBMODULES = [
     'stats',
     'stats.mstats',
     'stats.contingency',
+    'stats.qmc',
+    'stats.sampling'
 ]
 
 # Docs for these modules are included in the parent module
@@ -114,6 +117,7 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
+    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -133,17 +137,21 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
+    r'scipy\.integrate\.simps',   # alias for simpson
+    r'scipy\.integrate\.trapz',   # alias for trapezoid
+    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
-             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+             'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
@@ -281,8 +289,8 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     output += "Objects in refguide: %i\n\n" % num_ref
 
     only_all, only_ref, missing = compare(all_dict, others, names, module_name)
-    dep_in_ref = set(only_ref).intersection(deprecated)
-    only_ref = set(only_ref).difference(deprecated)
+    dep_in_ref = only_ref.intersection(deprecated)
+    only_ref = only_ref.difference(deprecated)
 
     if len(dep_in_ref) > 0:
         output += "Deprecated objects in refguide::\n\n"
@@ -330,7 +338,7 @@ def validate_rst_syntax(text, name, dots=True):
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
-        'ref', 'func', 'toctree', 'moduleauthor',
+        'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
 
@@ -471,6 +479,7 @@ CHECK_NAMESPACE = {
       # recognize numpy repr's
       'array': np.array,
       'matrix': np.matrix,
+      'masked_array': np.ma.masked_array,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -484,11 +493,28 @@ CHECK_NAMESPACE = {
       'Inf': np.inf,}
 
 
+def try_convert_namedtuple(got):
+    # suppose that "got" is smth like MoodResult(statistic=10, pvalue=0.1).
+    # Then convert it to the tuple (10, 0.1), so that can later compare tuples.
+    num = got.count('=')
+    if num == 0:
+        # not a nameduple, bail out
+        return got
+    regex = (r'[\w\d_]+\(' +
+             ', '.join([r'[\w\d_]+=(.+)']*num) +
+             r'\)')
+    grp = re.findall(regex, got.replace('\n', ' '))
+    # fold it back to a tuple
+    got_again = '(' + ', '.join(grp[0]) + ')'
+    return got_again
+
+
 class DTRunner(doctest.DocTestRunner):
     DIVIDER = "\n"
 
     def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
         self._item_name = item_name
+        self._had_unexpected_error = False
         doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
                                        optionflags=optionflags)
 
@@ -508,9 +534,15 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_success(self, out, test, example, got)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
+        # Ignore name errors after failing due to an unexpected exception
+        exception_type = exc_info[0]
+        if self._had_unexpected_error and exception_type is NameError:
+            return
+        self._had_unexpected_error = True
+
         self._report_item_name(out)
-        return doctest.DocTestRunner.report_unexpected_exception(
-            self, out, test, example, exc_info)
+        return super().report_unexpected_exception(
+            out, test, example, exc_info)
 
     def report_failure(self, out, test, example, got):
         self._report_item_name(out)
@@ -582,6 +614,22 @@ class Checker(doctest.OutputChecker):
                 s_got = ", ".join(s_got[1:-1].split())
                 return self.check_output(s_want, s_got, optionflags)
 
+            # maybe we are dealing with masked arrays?
+            # their repr uses '--' for masked values and this is invalid syntax
+            # If so, replace '--' by nans (they are masked anyway) and retry
+            if 'masked_array' in want or 'masked_array' in got:
+                s_want = want.replace('--', 'nan')
+                s_got = got.replace('--', 'nan')
+                return self.check_output(s_want, s_got, optionflags)
+
+            if "=" not in want and "=" not in got:
+                # if we're here, want and got cannot be eval-ed (hence cannot
+                # be converted to numpy objects), they are not namedtuples
+                # (those must have at least one '=' sign).
+                # Thus they should have compared equal with vanilla doctest.
+                # Since they did not, it's an error.
+                return False
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -589,18 +637,13 @@ class Checker(doctest.OutputChecker):
             # Then convert the latter to the tuple (10, 0.1),
             # and then compare the tuples.
             try:
-                num = len(a_want)
-                regex = (r'[\w\d_]+\(' +
-                         ', '.join([r'[\w\d_]+=(.+)']*num) +
-                         r'\)')
-                grp = re.findall(regex, got.replace('\n', ' '))
-                if len(grp) > 1:  # no more than one for now
-                    return False
-                # fold it back to a tuple
-                got_again = '(' + ', '.join(grp[0]) + ')'
-                return self.check_output(want, got_again, optionflags)
+                got_again = try_convert_namedtuple(got)
+                want_again = try_convert_namedtuple(want)
             except Exception:
                 return False
+            else:
+                return self.check_output(want_again, got_again, optionflags)
+
 
         # ... and defer to numpy
         try:
@@ -636,6 +679,7 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     success = True
     # Redirect stderr to the stdout or output
     tmp_stderr = sys.stdout if doctest_warnings else output
+    from scipy._lib._util import _fixed_default_rng
 
     @contextmanager
     def temp_cwd():
@@ -650,8 +694,9 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
 
     # Run tests, trying to restore global state afterward
     cwd = os.getcwd()
-    with np.errstate(), np.printoptions(), temp_cwd() as tmpdir, \
-            redirect_stderr(tmp_stderr):
+    with np.errstate(), np.printoptions(), temp_cwd(), \
+            redirect_stderr(tmp_stderr), \
+            _fixed_default_rng():
         # try to ensure random seed is NOT reproducible
         np.random.seed(None)
 

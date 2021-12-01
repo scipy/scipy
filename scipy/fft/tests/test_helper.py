@@ -39,14 +39,13 @@ def _assert_n_smooth(x, n):
            'x={} is not {}-smooth, remainder={}'.format(x_orig, n, x)
 
 
-class TestNextFastLen(object):
+class TestNextFastLen:
 
     def test_next_fast_len(self):
         np.random.seed(1234)
 
         def nums():
-            for j in range(1, 1000):
-                yield j
+            yield from range(1, 1000)
             yield 2**5 * 3**5 * 4**5 + 1
 
         for n in nums():
@@ -109,8 +108,12 @@ class TestNextFastLen(object):
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
+    def test_keyword_args(self):
+        assert next_fast_len(11, real=True) == 12
+        assert next_fast_len(target=7, real=False) == 7
 
-class Test_init_nd_shape_and_axes(object):
+
+class Test_init_nd_shape_and_axes:
 
     def test_py_0d_defaults(self):
         x = np.array(4)

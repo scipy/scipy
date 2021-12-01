@@ -38,6 +38,12 @@ SciPy.
    a "pull request" asking SciPy to "pull" your changes from your fork into
    the official repository.
 
+#. Initialize git submodules::
+
+      git submodule update --init
+
+   This fetches and updates any submodules that SciPy needs (such as `Boost`).
+
 Basic workflow
 ##############
 
@@ -244,6 +250,8 @@ Standard acronyms to start the commit message with are::
    TST: addition or modification of tests
    REL: related to releasing SciPy
 
+.. note:: You can add some markers to skip part of the continuous integration.
+          See :ref:`continuous-integration`.
 
 .. _asking-for-merging:
 
@@ -284,9 +292,6 @@ Checklist before submitting a PR
    module-level description? Tutorial files are in ``doc/source/tutorial``.
 -  If compiled code is added, is it integrated correctly via ``setup.py``?
    See :ref:`compiled-code` for more information.
--  If you are a first-time contributor, did you add yourself to ``THANKS.txt``?
-   Please note that this is perfectly normal and desirable; every contributor
-   deserves credit.
 
 .. include:: ../gitwash/git_links.inc
 

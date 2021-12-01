@@ -106,7 +106,7 @@ class LSODA(OdeSolver):
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(LSODA, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized)
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
@@ -174,7 +174,7 @@ class LSODA(OdeSolver):
 
 class LsodaDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, yh):
-        super(LsodaDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = h
         self.yh = yh
         self.p = np.arange(order + 1)

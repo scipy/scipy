@@ -111,7 +111,8 @@ that do not form a regular grid.
 
     but we only know its values at 1000 data points:
 
-    >>> points = np.random.rand(1000, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((1000, 2))
     >>> values = func(points[:,0], points[:,1])
 
     This can be done with `griddata` -- below, we try out all of the
@@ -146,6 +147,8 @@ that do not form a regular grid.
 
 Spline interpolation
 ====================
+
+.. _tutorial-interpolate_splXXX:
 
 Spline interpolation in 1-D: Procedural (interpolate.splXXX)
 ------------------------------------------------------------
@@ -222,6 +225,17 @@ example that follows.
    >>> plt.legend(['Cubic Spline', 'True'])
    >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
+   >>> plt.show()
+
+   All derivatives of spline
+
+   >>> yders = interpolate.spalde(xnew, tck)
+   >>> plt.figure()
+   >>> for i in range(len(yders[0])):
+   ...    plt.plot(xnew, [d[i] for d in yders], '--', label=f"{i} derivative")
+   >>> plt.legend()
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
+   >>> plt.title('All derivatives of a B-spline')
    >>> plt.show()
 
    Integral of spline
@@ -342,6 +356,7 @@ spline.
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
 
+.. _tutorial-interpolate_2d_spline:
 
 2-D spline representation: Procedural (:func:`bisplrep`)
 --------------------------------------------------------------------
@@ -493,8 +508,9 @@ This example shows how to interpolate scattered 2-D data:
     >>> from matplotlib import cm
 
     >>> # 2-d tests - setup scattered data
-    >>> x = np.random.rand(100)*4.0-2.0
-    >>> y = np.random.rand(100)*4.0-2.0
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(100)*4.0-2.0
+    >>> y = rng.random(100)*4.0-2.0
     >>> z = x*np.exp(-x**2-y**2)
     >>> edges = np.linspace(-2.0, 2.0, 101)
     >>> centers = edges[:-1] + np.diff(edges[:2])[0] / 2.

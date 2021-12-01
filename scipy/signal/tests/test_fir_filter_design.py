@@ -35,7 +35,7 @@ def test_kaiserord():
     assert_equal((numtaps, beta), (2, 0.0))
 
 
-class TestFirwin(object):
+class TestFirwin:
 
     def check_response(self, h, expected_response, tol=.05):
         N = len(h)
@@ -124,7 +124,7 @@ class TestFirwin(object):
             self.check_response(hs, [expected_response], 1e-12)
 
 
-class TestFirWinMore(object):
+class TestFirWinMore:
     """Different author, different style, different tests..."""
 
     def test_lowpass(self):
@@ -272,7 +272,7 @@ class TestFirWinMore(object):
                 firwin(41, [0.5], pass_zero=pass_zero)
 
 
-class TestFirwin2(object):
+class TestFirwin2:
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
@@ -421,7 +421,7 @@ class TestFirwin2(object):
         assert_equal(freq1, freq2)
 
 
-class TestRemez(object):
+class TestRemez:
 
     def test_bad_args(self):
         assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
@@ -477,7 +477,7 @@ class TestRemez(object):
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.), h)
 
 
-class TestFirls(object):
+class TestFirls:
 
     def test_bad_args(self):
         # even numtaps
@@ -588,7 +588,7 @@ class TestFirls(object):
         assert_allclose(np.abs(h[mask]), 0., atol=1e-4)
 
 
-class TestMinimumPhase(object):
+class TestMinimumPhase:
 
     def test_bad_args(self):
         # not enough taps

@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import assert_array_equal, assert_
 
-from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
+from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
 
 
 def test_squeeze_element():
@@ -18,6 +18,9 @@ def test_squeeze_element():
     # Unless it's a structured array
     sq_sa = squeeze_element(np.zeros((1,1),dtype=[('f1', 'f')]))
     assert_(isinstance(sq_sa, np.ndarray))
+    # Squeezing empty arrays maintain their dtypes.
+    sq_empty = squeeze_element(np.empty(0, np.uint8))
+    assert sq_empty.dtype == np.uint8
 
 
 def test_chars_strings():

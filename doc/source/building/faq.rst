@@ -8,7 +8,7 @@ Build/Install FAQ
 version that I use to do my job/research?*
 
 If you use the ``conda`` package manager, this is covered in the
-:ref:`quickstart-mac`, specifically in :ref:`quickstart-mac-install`.
+:ref:`quickstart-mac`.
 
 Another simple way to achieve this is to install the released version in
 site-packages, by using a binary installer or pip, for example, and set

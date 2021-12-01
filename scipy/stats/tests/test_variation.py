@@ -132,3 +132,13 @@ class TestVariation:
                       [0.0, 0.0, 0.0, 0.0]])
         v = variation(x, axis=1, ddof=ddof, nan_policy='omit')
         assert_allclose(v, expected)
+
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = np.array([1, 2, 3, 4, 5])
+        nan_a = np.array([1, 2, 3, np.nan, 4, 5, np.nan])
+        y = variation(a, ddof=1)
+        nan_y = variation(nan_a, nan_policy="omit", ddof=1)
+        assert_allclose(y, np.sqrt(5/2)/3)
+        assert y == nan_y

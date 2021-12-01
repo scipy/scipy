@@ -185,8 +185,8 @@ class BDF(OdeSolver):
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized,
-                                  support_complex=True)
+        super().__init__(fun, t0, y0, t_bound, vectorized,
+                         support_complex=True)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
@@ -443,7 +443,7 @@ class BDF(OdeSolver):
 
 class BdfDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, D):
-        super(BdfDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.order = order
         self.t_shift = self.t - h * np.arange(self.order)
         self.denom = h * (1 + np.arange(self.order))
