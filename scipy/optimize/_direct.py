@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import OptimizeResult
+from ._constraints import old_bound_to_new, Bounds
 from ._directmodule import direct as _direct  # type: ignore
 
 __all__ = ['direct']
@@ -134,6 +135,10 @@ def direct(func, bounds, *, args=(), disp=False,
     .. [2] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
            Modifications of the direct algorithm. Ph.D. Dissertation.
     """
+    if not isinstance(bounds, Bounds):
+        lb, ub = old_bound_to_new(bounds)
+        bounds = Bounds(lb, ub)
+
     lb = np.ascontiguousarray(bounds.lb)
     ub = np.ascontiguousarray(bounds.ub)
 

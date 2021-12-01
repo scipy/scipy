@@ -14,7 +14,7 @@ class TestDIRECT:
     MAXFEVAL = 20000
     MAXITER = 6000
 
-    def gp_func(self, x):
+    def gp_func(x):
         x1, x2 = x[0], x[1]
         fact1a = (x1 + x2 + 1)**2
         fact1b = 19 - 14*x1 + 3*x1**2 - 14*x2 + 6*x1*x2 + 3*x2**2
@@ -26,13 +26,13 @@ class TestDIRECT:
 
         return fact1*fact2
 
-    def dot_func(self, x):
+    def dot_func(x):
         if np.sum(np.abs(x)) > 20:
             return np.nan
         x -= np.array([-1., 2., -4., 3.])
         return np.dot(x, x)
 
-    def neg_inv_func(self, x):
+    def neg_inv_func(x):
         if np.sum(x) == 0:
             return -np.inf
         return -1/np.sum(x)
