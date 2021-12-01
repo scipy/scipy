@@ -305,11 +305,14 @@ def expm(A):
                           a[..., [0], [1]],
                           a[..., [1], [0]],
                           a[..., [1], [1]])
-        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+
         eApD2 = np.exp((a1+a4)/2.)
         AmD2 = (a1 - a4)/2.
         coshMu = np.cosh(mu)
-        sinchMu = _sinch(mu)
+        sinchMu = np.ones_like(coshMu)
+        mask = mu != 0
+        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask]
         eA = np.empty((a.shape), dtype=mu.dtype)
         eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu)
         eA[..., [0], [1]] = eApD2 * a2 * sinchMu
@@ -348,24 +351,24 @@ def expm(A):
         if s != 0:  # squaring needed
 
             if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
+                # This branch implements Code Fragment 2.1 of [1]
+
                 diag_aw = np.diag(aw)
                 # einsum returns a writable view
                 np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
+                # super/sub diagonal
+                sd = np.diag(aw, k=-1 if lu[1] == 0 else 1)
+
                 for i in range(s-1, -1, -1):
                     eAw = eAw @ eAw
 
                     # diagonal
-                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-i))
-                    # super/sub diagonal
-                    sd = np.diag(aw, k=-1 if lu[1] == 0 else 1) * 2**(-i)
-
-                    l1_plus_l2 = (diag_aw[:-1] + diag_aw[1:]) * 2**(-i-1)
-                    l1_minus_l2 = (diag_aw[:-1] - diag_aw[1:]) * 2**(-i-1)
-                    esd = sd*np.exp(l1_plus_l2)*_sinch(l1_minus_l2)
+                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2.**(-i))
+                    exp_sd = _exp_sinch(diag_aw * (2.**(-i))) * (sd * 2**(-i))
                     if lu[1] == 0:  # lower
-                        np.einsum('ii->i', eAw[1:, :-1])[:] = esd
+                        np.einsum('ii->i', eAw[1:, :-1])[:] = exp_sd
                     else:  # upper
-                        np.einsum('ii->i', eAw[:-1, 1:])[:] = esd
+                        np.einsum('ii->i', eAw[:-1, 1:])[:] = exp_sd
 
             else:  # generic
                 for _ in range(s):
@@ -380,13 +383,14 @@ def expm(A):
     return eA
 
 
-def _sinch(x):
-    if np.isscalar(x):
-        return 1. if x == 0. else np.sinh(x)/x
-    m = x == 0.
-    x[m] = 1.
-    x[~m] = np.sinh(x[~m])/x[~m]
-    return x
+def _exp_sinch(x):
+    # Higham's formula (10.42), might overflow, see GH-11839
+    lexp_diff = np.diff(np.exp(x))
+    l_diff = np.diff(x)
+    mask_z = l_diff == 0.
+    lexp_diff[~mask_z] /= l_diff[~mask_z]
+    lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
+    return lexp_diff
 
 
 def cosm(A):
