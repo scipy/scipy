@@ -151,7 +151,7 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
     * If the mean is zero and the standard deviation is nonzero, ``inf``
       is returned.
     * If the input has length zero (either because the array has zero
-      length, or the array contains all ``nan``s and ``nan_policy`` is
+      length, or all the input values are ``nan`` and ``nan_policy`` is
       ``'omit'``), ``nan`` is returned.
     * If the input contains ``inf``, ``nan`` is returned.
 
