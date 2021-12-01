@@ -8129,7 +8129,7 @@ add_newdoc("pdtr",
 
     .. math::
 
-       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{m!}.
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{j!}.
 
     Parameters
     ----------
