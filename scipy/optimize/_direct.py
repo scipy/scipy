@@ -1,7 +1,16 @@
+from __future__ import annotations
+from typing import (
+    Any, Callable, Iterable, Optional, Tuple, TYPE_CHECKING, Union
+)
+
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._directmodule import direct as _direct  # type: ignore
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    from _typeshed import NoneType
 
 __all__ = ['direct']
 
@@ -29,10 +38,22 @@ SUCCESS_MESSAGES = (
 )
 
 
-def direct(func, bounds, *, args=(), disp=False,
-           iatol=1e-4, maxfun=20000, maxiter=6000,
-           locally_biased=True, f_min=-np.inf, f_min_per=0.01,
-           vol_per=-1.0, sigma_per=-1.0, callback=None):
+def direct(
+    func: Callable[[npt.ArrayLike, Tuple[Any]], float],
+    bounds: Union[Iterable, Bounds],
+    *,
+    args: tuple = (),
+    disp: bool = False,
+    iatol: float = 1e-4,
+    maxfun: int = 20000,
+    maxiter: int = 6000,
+    locally_biased: bool = True,
+    f_min: float = -np.inf,
+    f_min_per: float = 0.01,
+    vol_per: float = -1.0,
+    sigma_per: float = -1.0,
+    callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
+) -> OptimizeResult:
     r"""
     Solve an optimization problem using the DIRECT
     (Dividing Rectangles) algorithm.

@@ -103,7 +103,7 @@ Global optimization
 
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
-   differential_evolution - Stochastic minimization using differential evolution.
+   differential_evolution - Stochastic optimizer using differential evolution.
 
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
