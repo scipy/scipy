@@ -400,6 +400,31 @@ PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
     real ? util::good_size_real(n) : util::good_size_cmplx(n));
   }
 
+size_t get_plan_cache_size()
+  {
+  return pocketfft::detail::CacheManager::instance().size();
+  }
+
+void set_plan_cache_size(size_t new_size)
+  {
+  return pocketfft::detail::CacheManager::instance().resize(new_size);
+  }
+
+size_t get_plan_cache_max_memsize()
+  {
+  return pocketfft::detail::CacheManager::instance().get_max_memsize();
+  }
+
+void set_plan_cache_max_memsize(size_t new_max)
+  {
+  return pocketfft::detail::CacheManager::instance().set_max_memsize(new_max);
+  }
+
+void clear_plan_cache()
+  {
+  return pocketfft::detail::CacheManager::instance().clear();
+  }
+
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 
 This module supports
@@ -724,6 +749,11 @@ PYBIND11_MODULE(pypocketfft, m)
     "out"_a=None, "nthreads"_a=1);
   m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
     "out"_a=None, "nthreads"_a=1);
+  m.def("get_plan_cache_size", get_plan_cache_size);
+  m.def("set_plan_cache_size", set_plan_cache_size, "new_size"_a);
+  m.def("get_plan_cache_max_memsize", get_plan_cache_max_memsize);
+  m.def("set_plan_cache_max_memsize", set_plan_cache_max_memsize, "new_size"_a);
+  m.def("clear_plan_cache", clear_plan_cache);
 
   static PyMethodDef good_size_meth[] =
     {{"good_size", (PyCFunction)good_size,
