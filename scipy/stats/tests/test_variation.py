@@ -37,7 +37,7 @@ class TestVariation:
         with pytest.raises(ValueError, match='input contains nan'):
             variation(x, nan_policy='raise')
 
-    def test_bad_nan_polciy(self):
+    def test_bad_nan_policy(self):
         with pytest.raises(ValueError, match='must be one of'):
             variation([1, 2, 3], nan_policy='foobar')
 
