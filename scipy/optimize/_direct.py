@@ -1,6 +1,6 @@
 import numpy as np
+from scipy.optimize import OptimizeResult
 from ._directmodule import direct as _direct  # type: ignore
-from .optimize import OptimizeResult
 
 __all__ = ['direct']
 

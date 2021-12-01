@@ -17,9 +17,9 @@ import numpy as np
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
-                       _minimize_bfgs, _minimize_newtoncg,
-                       _minimize_scalar_brent, _minimize_scalar_bounded,
-                       _minimize_scalar_golden, MemoizeJac)
+                        _minimize_bfgs, _minimize_newtoncg,
+                        _minimize_scalar_brent, _minimize_scalar_bounded,
+                        _minimize_scalar_golden, MemoizeJac)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov

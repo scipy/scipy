@@ -1,7 +1,7 @@
 from __future__ import annotations
 from _typeshed import NoneType
 from typing import Any, TYPE_CHECKING, Callable, Tuple
-from .optimize import OptimizeResult
+from scipy.optimize import OptimizeResult
 from ._constraints import Bounds
 
 if TYPE_CHECKING:

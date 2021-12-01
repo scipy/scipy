@@ -1110,8 +1110,8 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
 
-        # cobyla and direct don't have callback
-        if method == 'cobyla' or method == 'direct':
+        # cobyla doesn't have callback
+        if method == 'cobyla':
             return
 
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
@@ -2052,14 +2052,9 @@ class TestOptimizeResultAttributes:
                 sup.filter(RuntimeWarning,
                            ("Method .+ does not use (gradient|Hessian.*)"
                             " information"))
-                if method == 'direct':
-                    res = optimize.minimize(self.func, None,
-                                            bounds=[(-1.0, 1.0), (-1.0, 1.0)],
-                                            method=method)
-                else:
-                    res = optimize.minimize(self.func, self.x0, method=method,
-                                            jac=self.jac, hess=self.hess,
-                                            hessp=self.hessp)
+                res = optimize.minimize(self.func, self.x0, method=method,
+                                        jac=self.jac, hess=self.hess,
+                                        hessp=self.hessp)
             for attribute in attributes:
                 if method in skip and attribute in skip[method]:
                     continue
@@ -2572,13 +2567,13 @@ def test_x_overwritten_user_function():
     # that the minimizer stops working properly.
     # gh13740
     def fquad(x):
-        a = np.arange(np.size(x)) + 1
+        a = np.arange(np.size(x))
         x -= a
         x *= x
         return np.sum(x)
 
     def fquad_jac(x):
-        a = np.arange(np.size(x)) + 1
+        a = np.arange(np.size(x))
         x *= 2
         x -= 2 * a
         return x
@@ -2598,17 +2593,12 @@ def test_x_overwritten_user_function():
     for meth in MINIMIZE_METHODS:
         jac = None
         hess = None
-        bounds = None
         if meth in meth_jac:
             jac = fquad_jac
         if meth in meth_hess:
             hess = fquad_hess
-        if meth == 'direct':
-            bounds = 5*[(0.0, 10.0)]
-
-        res = optimize.minimize(fquad, x0, bounds=bounds, method=meth,
-                                jac=jac, hess=hess)
-        assert_allclose(res.x, np.arange(np.size(x0)) + 1, atol=2e-4)
+        res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
+        assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
 
 
 class TestGlobalOptimization:
@@ -2622,6 +2612,7 @@ class TestGlobalOptimization:
                    optimize.differential_evolution(func, [(-4, 4)]),
                    optimize.shgo(func, [(-4, 4)]),
                    optimize.dual_annealing(func, [(-4, 4)]),
+                   optimize.direct(func, [(-4, 4)]),
                    ]
 
         for result in results:

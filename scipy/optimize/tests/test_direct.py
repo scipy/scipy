@@ -6,7 +6,7 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from numpy.testing._private.utils import assert_almost_equal
 import pytest
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import direct
 
 
 class TestDIRECT:
@@ -14,7 +14,7 @@ class TestDIRECT:
     MAXFEVAL = 20000
     MAXITER = 6000
 
-    def gp_func(x):
+    def gp_func(self, x):
         x1, x2 = x[0], x[1]
         fact1a = (x1 + x2 + 1)**2
         fact1b = 19 - 14*x1 + 3*x1**2 - 14*x2 + 6*x1*x2 + 3*x2**2
@@ -26,13 +26,13 @@ class TestDIRECT:
 
         return fact1*fact2
 
-    def dot_func(x):
+    def dot_func(self, x):
         if np.sum(np.abs(x)) > 20:
             return np.nan
         x -= np.array([-1., 2., -4., 3.])
         return np.dot(x, x)
 
-    def neg_inv_func(x):
+    def neg_inv_func(self, x):
         if np.sum(x) == 0:
             return -np.inf
         return -1/np.sum(x)
@@ -53,7 +53,7 @@ class TestDIRECT:
            'status': 1, 'success': False}),
         ])
     def test_algorithm(self, func, bounds, result):
-        res = minimize(func, None, bounds=bounds, method='direct')
+        res = direct(func, bounds=bounds)
         assert_array_almost_equal(res.x, result['arg_min'],
                                   decimal=result['arg_decimal'])
         _bounds = np.asarray(bounds)
@@ -69,9 +69,8 @@ class TestDIRECT:
         def callback(x):
             print("DIRECT minimization algorithm callback test")
 
-        minimize(func, None, bounds=bounds, method='direct',
-                 callback=callback,
-                 options={'maxiter': 2, 'disp': True, 'maxfun': 1})
+        direct(func, bounds=bounds, callback=callback,
+               maxiter=2, disp=True, maxfun=1)
 
     def inv(self, x):
         if np.sum(x) == 0:
@@ -81,5 +80,4 @@ class TestDIRECT:
     def test_exception(self):
         bounds = 4*[(-10, 10)]
         with pytest.raises(ZeroDivisionError):
-            minimize(self.inv, None, bounds=bounds,
-                     method='direct')
+            direct(self.inv, bounds=bounds)
