@@ -525,10 +525,8 @@ def _first_nonnan(a, axis):
            [ 2.],
            [nan]])
     """
-    from scipy._lib._numpy_compat import take_along_axis
-
     k = _argmin(np.isnan(a), axis=axis, keepdims=True)
-    return take_along_axis(a, k, axis=axis)
+    return np.take_along_axis(a, k, axis=axis)
 
 
 def _nan_allsame(a, axis, keepdims=False):
