@@ -54,9 +54,9 @@ def direct(func, bounds, *, args=(), disp=False,
 
     Parameters
     ----------
-    fun: callable
+    func: callable
         The objective function to be minimized.
-        ``fun(x, \*args) -> float``
+        ``func(x, \*args) -> float``
         where ``x`` is an 1-D array with shape (n,) and args is a tuple of
         the fixed parameters needed to completely specify the function.
     bounds : sequence or `Bounds`
@@ -67,17 +67,21 @@ def direct(func, bounds, *, args=(), disp=False,
         required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
         to determine the number of parameters in ``x``.
     args : tuple, optional
-        Extra arguments passed to the objective function.
+        Any additional fixed parameters needed to
+        completely specify the objective function.
+    disp : bool, optional
+        Prints the evaluated `func` at every iteration.
     iatol : float, optional
         Ensures sufficient decrease in function value when a new potentially
-        optimal hyper-rectangle is chosen.
+        optimal hyperrectangle is chosen. Default is 0.0001.
     maxfun : int, optional
         Approximate upper bound on objective function evaluations.
+        Default is 2000.
     maxiter : int, optional
-        Maximum number of iterations.
+        Maximum number of iterations. Default is 6000.
     locally_biased : bool, optional
         Whether to use the original [1]_ or modified [2]_ DIRECT algorithm.
-        Possible values:
+        Default is True. Possible values:
 
         * ``locally_biased=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
@@ -91,12 +95,18 @@ def direct(func, bounds, *, args=(), disp=False,
         .. math::
 
             100*(f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
+
+        Default is 0.01.
     vol_per : float, optional
-        Terminate the optimization once the volume of a hyper-rectangle is less
+        Terminate the optimization once the volume of a hyperrectangle is less
         than vol_per percent of the original hyper-rectangle.
+        Default is -1.
     sigma_per : float, optional
-        Terminate the optimization once the measure of the hyper-rectangle is
-        less than this argument.
+        Terminate the optimization once the measure of the hyperrectangle is
+        less than this argument. Default is -1.
+    callback : callable, `callback(xk)`, optional
+        A function to follow the progress of the minimization. ``xk`` is
+        the best solution found so far.
 
     Returns
     -------
