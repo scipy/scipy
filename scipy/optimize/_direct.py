@@ -147,6 +147,7 @@ def direct(func, bounds, *, args=(), disp=False,
     ub = np.ascontiguousarray(bounds.ub)
 
     def _func_wrap(x, *args):
+        x = np.asarray(x)
         f = func(x, *args)
         if np.isnan(f):
             return np.nan
