@@ -55,8 +55,8 @@ def direct(func, bounds, *, args=(), disp=False,
     ----------
     fun: callable
         The objective function to be minimized.
-        fun(x, \*args) -> float
-        where x is an 1-D array with shape (n,) and args is a tuple of
+        ``fun(x, \*args) -> float``
+        where ``x`` is an 1-D array with shape (n,) and args is a tuple of
         the fixed parameters needed to completely specify the function.
     bounds : Bounds
         lower bounds and upper bounds for each element in ``x``, defining
@@ -101,6 +101,30 @@ def direct(func, bounds, *, args=(), disp=False,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
+
+    Notes
+    -----
+
+    DIRECT is a deterministic
+    optimization algorithm capable of minimizing black box function with
+    its variables subject to lower and upper bound constrains by sampling
+    potential solutions in the search space. The algorithm starts with
+    mapping the hyperrectangle (set of all possible values that can be taken
+    by the input variables subject to the bound constraints) n-dimensional
+    unit hypercube. It samples the function at the center of this hypercube
+    and at 2n (n is the number of variables) more points, 2 in each coordinate
+    direction. Using these function values, DIRECT then divides the domain
+    into hyperrectangles, each having exactly one of the sampling points as
+    its center. In each iteration, DIRECT chooses, using the epsilon parameter,
+    by default 1e-4, some of the existing hyperrectangles to be further divided
+    . This division process continues until the maximum iterations or maximum
+    function evaluations allowed are exceeded, or the function value is within
+    the desired percentage error of the global minimum (if known). The improved
+    version of DIRECT algorithm [1]_ is biased towards local search making it
+    effective for functions without too many local minima. This method wraps
+    the C implementation of the original and improved algorithms.
+
+    .. versionadded:: 1.8.0
 
     References
     ----------
