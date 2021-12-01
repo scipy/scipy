@@ -2,6 +2,7 @@
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 from scipy._lib._util import _nan_allsame
+from ._stats_py import _chk_asarray, _contains_nan
 
 
 def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
@@ -92,14 +93,14 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
     """
     Compute the coefficient of variation.
 
-    The coefficient of variation is the ratio of the standard deviation
-    to the mean, i.e. ``std(a)/mean(a)``.
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
 
-    By default, this function uses the square root of the biased variance
-    to compute the standard deviation, and that behavior is maintained
-    for backwards compatibility.  However, most users should probably use
-    ``ddof=1``, so that the usual sample standard deviation (i.e. the
-    square root of the unbiased sample variance) is used.
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     The function does not take the absolute value of the mean of the data,
     so the return value is negative if the mean is negative.
@@ -176,9 +177,6 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
     array([1.05109361, 0.31428986, 0.146483  ])
 
     """
-    # Import here to avoid circular import.
-    from .stats import _chk_asarray, _contains_nan
-
     a, axis = _chk_asarray(a, axis)
     axis = normalize_axis_index(axis, ndim=a.ndim)
     n = a.shape[axis]

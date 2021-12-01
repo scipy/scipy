@@ -450,6 +450,7 @@ Warnings / Errors used in :mod:`scipy.stats`
 """
 
 from ._stats_py import *
+from ._variation import variation
 from .distributions import *
 from ._morestats import *
 from ._binomtest import binomtest
