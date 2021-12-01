@@ -58,20 +58,7 @@ def direct(
     Solve an optimization problem using the DIRECT
     (Dividing Rectangles) algorithm.
 
-    It can be used to solve general nonlinear programming problems of the form:
-
-    .. math::
-
-           \min_ {x \in R^n} f(x)
-
-    subject to
-
-    .. math::
-
-           x_L \leq  x  \leq x_U
-
-    Where :math:`x` are the optimization variables (with upper and lower
-    bounds), :math:`f(x)` is the objective function.
+    The algorithm is due to Jones et al. [1]_.
 
     Parameters
     ----------
@@ -157,8 +144,13 @@ def direct(
     function evaluations allowed are exceeded, or the function value is within
     the desired percentage error of the global minimum (if known). The improved
     version of DIRECT algorithm [1]_ is biased towards local search making it
-    effective for functions without too many local minima. This method wraps
-    the C implementation of the original and improved algorithms.
+    effective for functions without too many local minima.
+
+    This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
+    http://www4.ncsu.edu/~ctk/SOFTWARE/DIRECTv204.tar.gz
+    The C version was initially converted via f2c and then cleaned up and
+    reorganized by Steven G. Johnson, August 2007. And this method wraps
+    the C implementation.
 
     .. versionadded:: 1.8.0
 
