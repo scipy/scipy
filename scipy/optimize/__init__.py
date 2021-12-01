@@ -59,7 +59,6 @@ The `minimize` function supports the following methods:
    optimize.minimize-newtoncg
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
-   optimize.minimize-direct
    optimize.minimize-cobyla
    optimize.minimize-slsqp
    optimize.minimize-trustconstr
@@ -104,11 +103,11 @@ Global optimization
 
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
-   differential_evolution - stochastic minimization using differential evolution.
+   differential_evolution - Stochastic minimization using differential evolution.
 
-   shgo - simplicial homology global optimisation
+   shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
-
+   direct - DIRECT (Dividing Rectangles) optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -421,6 +420,7 @@ from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
+from ._direct import direct
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

@@ -1,6 +1,8 @@
 import numpy as np
-from ._directmodule import direct  # type: ignore
+from ._directmodule import direct as _direct  # type: ignore
 from .optimize import OptimizeResult
+
+__all__ = ['direct']
 
 ERROR_MESSAGES = (
     "Number of function evaluations done is larger than maxfun={}",
@@ -26,14 +28,14 @@ SUCCESS_MESSAGES = (
 )
 
 
-def _minimize_direct(func, bounds, args=(), disp=False,
-                     iatol=1e-4, maxfun=20000, maxiter=6000,
-                     locally_biased=True, f_min=-np.inf, f_min_per=0.01,
-                     vol_per=-1.0, sigma_per=-1.0, callback=None):
+def direct(func, bounds, *, args=(), disp=False,
+           iatol=1e-4, maxfun=20000, maxiter=6000,
+           locally_biased=True, f_min=-np.inf, f_min_per=0.01,
+           vol_per=-1.0, sigma_per=-1.0, callback=None):
     r"""
-
     Solve an optimization problem using the DIRECT
     (Dividing Rectangles) algorithm.
+
     It can be used to solve general nonlinear programming problems of the form:
 
     .. math::
@@ -118,21 +120,23 @@ def _minimize_direct(func, bounds, args=(), disp=False,
         else:
             return f
 
-    x, fun, ret_code, nfev, nit = direct(_func_wrap,
-                                         np.asarray(lb), np.asarray(ub),
-                                         args,
-                                         disp, iatol, maxfun, maxiter,
-                                         locally_biased,
-                                         f_min, f_min_per,
-                                         vol_per, sigma_per, callback)
+    x, fun, ret_code, nfev, nit = _direct(
+        _func_wrap,
+        np.asarray(lb), np.asarray(ub),
+        args,
+        disp, iatol, maxfun, maxiter,
+        locally_biased,
+        f_min, f_min_per,
+        vol_per, sigma_per, callback
+    )
 
     format_val = (maxfun, maxiter, f_min_per, vol_per, vol_per)
     if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 1].format(
                     format_val[ret_code - 1])
-    elif ret_code > 0 and ret_code <= 2:
+    elif 0 < ret_code <= 2:
         message = ERROR_MESSAGES[ret_code - 1].format(format_val[ret_code - 1])
-    elif ret_code < 0 and ret_code > -100:
+    elif 0 > ret_code > -100:
         message = ERROR_MESSAGES[abs(ret_code) + 1]
     else:
         message = ERROR_MESSAGES[ret_code + 99]

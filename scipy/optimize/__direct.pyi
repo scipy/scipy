@@ -7,7 +7,7 @@ from ._constraints import Bounds
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-def _minimize_direct(
+def direct(
         func: Callable[[npt.ArrayLike, Tuple[Any]], float],
         bounds: Bounds,
         args: tuple,
