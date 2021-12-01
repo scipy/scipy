@@ -2393,10 +2393,11 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
 
 
 class TestRegularGridInterpolator:
-    def _get_sample_4d(self):
+    def _get_sample_4d(self, n=3):
         # create a 4-D grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 4
-        values = np.asarray([0., .5, 1.])
+        base = np.linspace(0., 1, n)
+        points = [base]*4
+        values = base
         values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
         values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
@@ -2665,6 +2666,37 @@ class TestRegularGridInterpolator:
                              CloughTocher2DInterpolator):
             interp = interpolator(xy, z)
             interp(XY)
+
+    def test_new_values(self):
+        size = 4
+        points, values = self._get_sample_4d(n=size)
+        sample = np.random.random((int((size)**4), 4))
+
+        interp1 = RegularGridInterpolator(points, values=values)
+        result1 = interp1(xi=sample)
+
+        interp2 = RegularGridInterpolator(points, xi=sample)
+        result2 = interp2(values=values)
+
+        assert_array_almost_equal(result1, result2)
+
+        interp2(values=values, method='nearest',
+                fill_value=-9999, bounds_error=False)
+
+    def test_missing_xi(self):
+        size = 4
+        points, values = self._get_sample_4d(n=size)
+        interp = RegularGridInterpolator(points, values=values)
+        with pytest.raises(AttributeError):
+            interp()
+
+    def test_missing_values(self):
+        size = 4
+        points, values = self._get_sample_4d(n=size)
+        sample = np.random.random((int((size)**4), 4))
+        interp = RegularGridInterpolator(points, xi=sample)
+        with pytest.raises(AttributeError):
+            interp()
 
 
 class MyValue:
