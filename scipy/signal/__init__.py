@@ -288,6 +288,23 @@ Spectral analysis
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
+Chirp Z-transform and Zoom FFT
+============================================
+
+.. autosummary::
+   :toctree: generated/
+
+   czt - Chirp z-transform convenience function
+   zoom_fft - Zoom FFT convenience function
+   CZT - Chirp z-transform function generator
+   ZoomFFT - Zoom FFT function generator
+   czt_points - Output the z-plane points sampled by a chirp z-transform
+
+The functions are simpler to use, but less efficient, because they internally
+generate the same chirp signals with every call.  When using the same
+transform on many arrays of the same length, use the function-generating
+classes instead.
+
 """
 from . import sigtools, windows
 from .waveforms import *
@@ -312,6 +329,7 @@ from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
 from ._peak_finding import *
+from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
 
 # Deprecated namespaces, to be removed in v2.0.0
