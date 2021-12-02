@@ -178,34 +178,17 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    def test_minimizer_kwargs_bounds(self):
-        func = lambda x: np.sum((x-5) * (x-1))
-        bounds = list(zip([-6, -5], [6, 5]))
-        # Test bounds can be passed (see gh-10831)
-
-        with pytest.warns(RuntimeWarning, "Values in x were outside bounds "):
-            dual_annealing(
-                func,
-                bounds=bounds,
-                minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
-
-        with pytest.warns(RuntimeWarning, "Method CG cannot handle "):
-                dual_annealing(
-                func,
-                bounds=bounds,
-                minimizer_kwargs={"method": "CG", "bounds": bounds})
-
     def test_deprecated_local_search_options_bounds(self):
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
-        with pytest.warns(RuntimeWarning, "dual_annealing argument "):
+        with pytest.warns(DeprecationWarning, match=r"dual_annealing argument "):
             dual_annealing(
                 func,
                 bounds=bounds,
                 local_search_options={"method": "SLSQP", "bounds": bounds})
 
-        with pytest.warns(RuntimeWarning, "Method CG cannot handle "):
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
@@ -220,7 +203,7 @@ class TestDualAnnealing:
             bounds=bounds,
             minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
 
-        with pytest.warns(RuntimeWarning, "Method CG cannot handle "):
+        with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
