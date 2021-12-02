@@ -824,27 +824,27 @@ class TestPdist:
 
     @pytest.mark.slow
     def test_pdist_cosine_iris(self):
-        eps = 1e-15
+        eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
         Y_test1 = wpdist(X, 'cosine')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, atol=eps)
 
     @pytest.mark.slow
     def test_pdist_cosine_iris_float32(self):
-        eps = 1e-15
+        eps = 1e-05
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cosine-iris']
         Y_test1 = wpdist(X, 'cosine')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, atol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_cosine_iris_nonC(self):
-        eps = 1e-15
+        eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
         Y_test2 = wpdist(X, 'test_cosine')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
+        assert_allclose(Y_test2, Y_right, atol=eps)
 
     def test_pdist_cosine_bounds(self):
         # Test adapted from @joernhees's example at gh-5208: case where
