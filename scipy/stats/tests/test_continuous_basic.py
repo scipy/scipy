@@ -242,7 +242,7 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
-    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
+    fail_loc_scale = set(['kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
