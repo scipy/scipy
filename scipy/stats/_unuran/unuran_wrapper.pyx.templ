@@ -1121,11 +1121,11 @@ cdef class SimpleRatioUniforms(Method):
 
             if mode is not None:
                 self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
-            self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
 
             if domain is not None:
                 self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
                                                                  domain[1]))
+            self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
 
             self.par = unur_srou_new(self.distr)
             if self.par == NULL:
