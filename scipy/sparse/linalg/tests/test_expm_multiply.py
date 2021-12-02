@@ -183,9 +183,20 @@ class TestExpmActionInterval:
             X = expm_multiply(A, v, num=num, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
-            X = expm_multiply(aslinearoperator(A), v, num=num, **interval)
-            for solution, t in zip(X, samples):
-                assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
+            # test for linear operator with unknown trace -> estimate trace
+            Xguess = expm_multiply(aslinearoperator(A), v, num=num, **interval)
+            # test for linear operator with given trace
+            Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
+                                   traceA=np.trace(A))
+            # test robustness for linear operator with wrong trace
+            Xwrong = expm_multiply(aslinearoperator(A), v, num=num, **interval,
+                                   traceA=np.trace(A)*5)
+            for sol_guess, sol_given, sol_wrong, t in zip(Xguess, Xgiven,
+                                                          Xwrong, samples):
+                correct = scipy.linalg.expm(t*A).dot(v)
+                assert_allclose(sol_guess, correct)
+                assert_allclose(sol_given, correct)
+                assert_allclose(sol_wrong, correct)
 
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
