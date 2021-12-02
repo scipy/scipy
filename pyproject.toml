@@ -86,6 +86,7 @@ test = [
     "asv",
     "mpmath",
     "gmpy2==2.1.0rc1",
+    "threadpoolctl",
     "scikit-umfpack",
 ]
 doc = [
