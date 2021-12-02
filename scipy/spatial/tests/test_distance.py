@@ -454,7 +454,7 @@ class TestCdist:
         X2 = eo['cdist-X2']
         Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
         Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, atol=0, rtol=eps, verbose_=verbose > 2)
+        assert_allclose(Y1, Y2, atol=0, rtol=eps, verbose_=verbose > 2)
 
     def test_cdist_cosine_random(self):
         eps = 1e-07
@@ -964,7 +964,7 @@ class TestPdist:
         X = eo['pdist-double-inp']
         Y1 = wpdist_no_const(X, 'minkowski', p=p)
         Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, atol=0, rtol=eps)
+        assert_allclose(Y1, Y2, atol=0, rtol=eps)
 
     def test_pdist_minkowski_random(self):
         eps = 1e-05
