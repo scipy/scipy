@@ -122,16 +122,15 @@ def lombscargle(x,
 
     Now make a plot of the input data:
 
-    >>> plt.subplot(2, 1, 1)
-    >>> plt.plot(x, y, 'b+')
-    >>> plt.xlabel('Time [s]')
+    >>> fig, (ax_t, ax_w) = plt.subplots(2, 1, constrained_layout=True)
+    >>> ax_t.plot(x, y, 'b+')
+    >>> ax_t.set_xlabel('Time [s]')
 
     Then plot the normalized periodogram:
 
-    >>> plt.subplot(2, 1, 2)
-    >>> plt.plot(w, pgram)
-    >>> plt.xlabel('Angular frequency [rad/s]')
-    >>> plt.ylabel('Normalized amplitude')
+    >>> ax_w.plot(w, pgram)
+    >>> ax_w.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_w.set_ylabel('Normalized amplitude')
     >>> plt.show()
 
     """
