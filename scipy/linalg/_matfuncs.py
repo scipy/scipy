@@ -20,7 +20,7 @@ from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
-           'funm', 'signm', 'sqrtm', 'fractional_matrix_power','expm_frechet',
+           'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
            'expm_cond', 'khatri_rao']
 
 eps = np.finfo('d').eps
