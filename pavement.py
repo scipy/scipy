@@ -20,7 +20,6 @@ which can be uploaded to Github Releases.
 import os
 import sys
 import subprocess
-import re
 import shutil
 import warnings
 from hashlib import md5
@@ -36,7 +35,7 @@ except ImportError as e:
 import paver
 import paver.doctools
 import paver.path
-from paver.easy import options, Bunch, task, needs, dry, sh, call_task, cmdopts
+from paver.easy import options, Bunch, task, needs, dry, sh, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
 try:

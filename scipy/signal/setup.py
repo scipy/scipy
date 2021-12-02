@@ -1,7 +1,6 @@
 from scipy._build_utils import numpy_nodepr_api
 from scipy._build_utils import tempita
 import os
-import sys
 
 
 def configuration(parent_package='', top_path=None):

@@ -3,8 +3,8 @@ import glob
 
 
 def pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, try_add_flag, try_compile, has_flag)
+    from scipy._build_utils.compiler_helper import (set_cxx_flags_hook,
+                                                    try_add_flag)
     cc = build_ext._cxx_compiler
     args = ext.extra_compile_args
 

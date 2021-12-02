@@ -16,7 +16,6 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
-from scipy.optimize import root_scalar
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
