@@ -264,7 +264,7 @@ class SVDSCommonTests:
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
-                      'arpack': [5e-15, 1e-10, 1e-10],
+                      'arpack': [2e-15, 1e-10, 1e-10],
                       'lobpcg': [1e-11, 1e-3, 10]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
