@@ -50,6 +50,7 @@ else:
 
 import sys
 import os
+import errno
 # the following multiprocessing import is necessary to prevent tests that use
 # multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
 # import is enough...
