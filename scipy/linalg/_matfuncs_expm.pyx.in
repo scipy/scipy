@@ -196,7 +196,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
             return 5, s
 
         # m = 7
-        if n < 360:
+        if n < 400:
             {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[2, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
             d8 = norm1(Amv[4, :, :]) ** (1./8.)
         else:
@@ -216,7 +216,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
 
         # m = 13
         # Scale-square
-        if n < 360:
+        if n < 400:
             {{ pfx }}gemm(cN, cN, &intn, &intn, &intn, &one, &Amv[3, 0, 0], &intn, &Amv[2, 0, 0], &intn, &zero, &Amv[4, 0, 0], &intn)
             d10 = norm1(Amv[4, :, :]) ** (1./10.)
         else:
@@ -264,7 +264,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
     cdef {{ prec }} two=2.0
     cdef {{ tname }} one = 1.0, zero = 0.0, neg_one = -1.0
     if not ipiv:
-        raise MemoryError('Internal function "pade_357_UV_calc_c" failed to allocate memory.')
+        raise MemoryError('Internal function "pade_357_UV_calc" failed to allocate memory.')
     try:
         # b[m] is always 1. hence skipped
         if m == 3:
@@ -286,7 +286,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
             b[5] = 1512.
             b[6] = 56.
         else:
-            raise ValueError(f'Internal function "pade_357_UV_calc_c" received an invalid value {m}')
+            raise ValueError(f'Internal function "pade_357_UV_calc" received an invalid value {m}')
 
         # Utilize the unused powers of Am as scratch memory
         if m == 3:
@@ -302,7 +302,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
             # U = Am[0] @ (b[5]*Am[2] + b[3]*Am[1] + b[1]*I_n)
             {{ pfx }}copy(&n2, &Am[1, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
             {{ pfx }}scal(&n2, &b[3], &Am[4, 0, 0], &int_one)
-            {{ pfx }}axpy(&n2, &b[5], &Am[2, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
+            {{ pfx }}axpy(&n2, &one, &Am[2, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
             for i in range(n):
                 Am[4, i, i] = Am[4, i, i] + b[1]
             {{ pfx }}gemm(<char*>'N', <char*>'N', &n, &n, &n, &one, &Am[4, 0, 0], &n, &Am[0, 0, 0], &n, &zero, &Am[3, 0, 0], &n)
@@ -317,7 +317,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
             {{ pfx }}copy(&n2, &Am[1, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
             {{ pfx }}scal(&n2, &b[3], &Am[4, 0, 0], &int_one)
             {{ pfx }}axpy(&n2, &b[5], &Am[2, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
-            {{ pfx }}axpy(&n2, &b[7], &Am[3, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
+            {{ pfx }}axpy(&n2, &one, &Am[3, 0, 0], &int_one, &Am[4, 0, 0], &int_one)
             for i in range(n):
                 Am[4, i, i] = Am[4, i, i] + b[1]
             # We ran out of space for dgemm; first compute V and then reuse space for U
