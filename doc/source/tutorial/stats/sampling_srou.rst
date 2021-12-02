@@ -1,0 +1,90 @@
+.. _sampling-srou:
+
+Simple Ratio-of-Uniforms (SROU)
+===============================
+
+.. currentmodule:: scipy.stats.sampling
+
+* Required: PDF, area under PDF
+* Optional: mode
+* Speed:
+
+  * Set-up: fast
+  * Sampling: slow
+
+SROU is based on the ratio-of-uniforms method that uses universal inequalities for constructing
+a (universal) bounding rectangle. It works for T-concave distributions with T(x) = -1/sqrt(x).
+
+    >>> from scipy.stats.sampling import SimpleRatioUniforms
+
+Suppose we have the normal distribution:
+
+    >>> class StdNorm:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x**2)
+
+Notice that the PDF doesn't integrate to 1. We can either pass the exact
+area under the PDF during initialization of the generator or an upper
+bound to the exact area under the PDF. Also, it is recommended to pass
+the mode of the distribution to speed up the setup:
+
+    >>> urng = np.random.default_rng()
+    >>> dist = StdNorm()
+    >>> rng = SimpleRatioUniforms(dist, mode=0,
+    ...                           pdf_area=np.sqrt(2*np.pi),
+    ...                           random_state=urng)
+
+Now, we can use the `rvs` method to generate samples from the distribution:
+
+    >>> rvs = rng.rvs(10)
+
+If the CDF at mode is avaialble, it can be set to improve the performace of `rvs`:
+
+    >>> from scipy.stats import norm
+    >>> rng = SimpleRatioUniforms(dist, mode=0,
+    ...                           pdf_area=np.sqrt(2*np.pi),
+    ...                           cdf_at_mode=norm.cdf(0),
+    ...                           random_state=urng)
+    >>> rvs = rng.rvs(1000)
+
+We can check that the samples are from the given distribution by visualizing
+its histogram:
+
+.. plot::
+
+    >>> from scipy.stats.sampling import SimpleRatioUniforms
+    >>> from scipy.stats import norm
+    >>> import matplotlib.pyplot as plt
+    >>> class StdNorm:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x**2)
+    ... 
+    >>> urng = np.random.default_rng()
+    >>> dist = StdNorm()
+    >>> rng = SimpleRatioUniforms(dist, mode=0,
+    ...                           pdf_area=np.sqrt(2*np.pi),
+    ...                           cdf_at_mode=norm.cdf(0),
+    ...                           random_state=urng)
+    >>> rvs = rng.rvs(1000)
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
+    >>> fx = 1/np.sqrt(2*np.pi) * dist.pdf(x)
+    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> plt.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF(x)')
+    >>> plt.title('Simple Ratio-of-Uniforms Samples')
+    >>> plt.legend()
+    >>> plt.show()
+
+See [1]_, [2]_, and [3]_ for more details.
+
+References
+----------
+.. [1] UNU.RAN reference manual, Section 5.3.16,
+       "SROU - Simple Ratio-of-Uniforms method",
+       http://statmath.wu.ac.at/software/unuran/doc/unuran.html#SROU
+.. [2] Leydold, Josef. "A simple universal generator for continuous and
+       discrete univariate T-concave distributions." ACM Transactions on
+       Mathematical Software (TOMS) 27.1 (2001): 66-82
+.. [3] Leydold, Josef. "Short universal generators via generalized ratio-of-uniforms
+       method." Mathematics of Computation 72.243 (2003): 1453-1471

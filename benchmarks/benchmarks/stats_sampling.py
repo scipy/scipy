@@ -4,11 +4,16 @@ from .common import Benchmark, safe_import
 with safe_import():
     from scipy import stats
 with safe_import():
+    from scipy.stats import sampling
+with safe_import():
     from scipy import special
 
 
 # Beta distribution with a = 2, b = 3
 class contdist1:
+    def __init__(self):
+        self.mode = 1/3
+
     def pdf(self, x):
         return 12 * x * (1-x)**2
 
@@ -28,6 +33,9 @@ class contdist1:
 
 # Standard Normal Distribution
 class contdist2:
+    def __init__(self):
+        self.mode = 0
+
     def pdf(self, x):
         return 1./np.sqrt(2*np.pi) * np.exp(-0.5 * x*x)
 
@@ -46,6 +54,7 @@ class contdist2:
 class contdist3:
     def __init__(self, shift=0.):
         self.shift = shift
+        self.mode = shift
 
     def pdf(self, x):
         x -= self.shift
@@ -74,6 +83,9 @@ class contdist3:
 #          \  0        otherwise
 # Taken from UNU.RAN test suite (from file t_pinv.c)
 class contdist4:
+    def __init__(self):
+        self.mode = 0
+
     def pdf(self, x):
         return 0.05 + 0.45 * (1 + np.sin(2*np.pi*x))
 
@@ -98,6 +110,9 @@ class contdist4:
 #          \  0        otherwise
 # Taken from UNU.RAN test suite (from file t_pinv.c)
 class contdist5:
+    def __init__(self):
+        self.mode = 0
+
     def pdf(self, x):
         return 0.2 * (0.05 + 0.45 * (1 + np.sin(2*np.pi*x)))
 
@@ -130,21 +145,57 @@ class TransformedDensityRejection(Benchmark):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             try:
-                self.rng = stats.TransformedDensityRejection(
+                self.rng = sampling.TransformedDensityRejection(
                     dist, c=c, random_state=self.urng
                 )
-            except stats.UNURANError:
+            except sampling.UNURANError:
                 # contdist3 is not T-concave for c=0. So, skip such test-cases
                 raise NotImplementedError(f"{dist} not T-concave for c={c}")
 
     def time_tdr_setup(self, dist, c):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
-            stats.TransformedDensityRejection(
+            sampling.TransformedDensityRejection(
                 dist, c=c, random_state=self.urng
             )
 
     def time_tdr_rvs(self, dist, c):
+        self.rng.rvs(100000)
+
+
+class SimpleRatioUniforms(Benchmark):
+
+    param_names = ['dist', 'cdf_at_mode']
+
+    params = [allcontdists, [0, 1]]
+
+    def setup(self, dist, cdf_at_mode):
+        self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
+        try:
+            if cdf_at_mode:
+                cdf_at_mode = dist.cdf(dist.mode)
+            else:
+                cdf_at_mode = None
+            self.rng = sampling.SimpleRatioUniforms(
+                dist, mode=dist.mode,
+                cdf_at_mode=cdf_at_mode,
+                random_state=self.urng
+            )
+        except sampling.UNURANError:
+            raise NotImplementedError("{dist} not T-concave")
+
+    def time_srou_setup(self, dist, cdf_at_mode):
+        if cdf_at_mode:
+            cdf_at_mode = dist.cdf(dist.mode)
+        else:
+            cdf_at_mode = None
+        sampling.SimpleRatioUniforms(
+            dist, mode=dist.mode,
+            cdf_at_mode=cdf_at_mode,
+            random_state=self.urng
+        )
+
+    def time_srou_rvs(self, dist, cdf_at_mode):
         self.rng.rvs(100000)
 
 
@@ -159,16 +210,16 @@ class NumericalInversePolynomial(Benchmark):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             try:
-                self.rng = stats.NumericalInversePolynomial(
+                self.rng = sampling.NumericalInversePolynomial(
                     dist, random_state=self.urng
                 )
-            except stats.UNURANError:
+            except sampling.UNURANError:
                 raise NotImplementedError(f"setup failed for {dist}")
 
     def time_pinv_setup(self, dist):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
-            stats.NumericalInversePolynomial(
+            sampling.NumericalInversePolynomial(
                 dist, random_state=self.urng
             )
 
@@ -186,16 +237,16 @@ class NumericalInverseHermite(Benchmark):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             try:
-                self.rng = stats.NumericalInverseHermite(
+                self.rng = sampling.NumericalInverseHermite(
                     dist, order=order, random_state=self.urng
                 )
-            except stats.UNURANError:
+            except sampling.UNURANError:
                 raise NotImplementedError(f"setup failed for {dist}")
 
     def time_hinv_setup(self, dist, order):
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
-            stats.NumericalInverseHermite(
+            sampling.NumericalInverseHermite(
                 dist, order=order, random_state=self.urng
             )
 
@@ -222,10 +273,10 @@ class DiscreteAliasUrn(Benchmark):
         self.urng = np.random.default_rng(0x2fc9eb71cd5120352fa31b7a048aa867)
         x = np.arange(domain[0], domain[1] + 1)
         self.pv = dist.pmf(x, *params)
-        self.rng = stats.DiscreteAliasUrn(self.pv, random_state=self.urng)
+        self.rng = sampling.DiscreteAliasUrn(self.pv, random_state=self.urng)
 
     def time_dau_setup(self, distribution):
-        stats.DiscreteAliasUrn(self.pv, random_state=self.urng)
+        sampling.DiscreteAliasUrn(self.pv, random_state=self.urng)
 
     def time_dau_rvs(self, distribution):
         self.rng.rvs(100000)
@@ -250,10 +301,10 @@ class DiscreteGuideTable(Benchmark):
         self.urng = np.random.default_rng(0x2fc9eb71cd5120352fa31b7a048aa867)
         x = np.arange(domain[0], domain[1] + 1)
         self.pv = dist.pmf(x, *params)
-        self.rng = stats.DiscreteGuideTable(self.pv, random_state=self.urng)
+        self.rng = sampling.DiscreteGuideTable(self.pv, random_state=self.urng)
 
     def time_dgt_setup(self, distribution):
-        stats.DiscreteGuideTable(self.pv, random_state=self.urng)
+        sampling.DiscreteGuideTable(self.pv, random_state=self.urng)
 
     def time_dgt_rvs(self, distribution):
         self.rng.rvs(100000)

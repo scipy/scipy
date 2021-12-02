@@ -55,6 +55,26 @@ class TransformedDensityRejection(Method):
     def ppf_hat(self, u: npt.ArrayLike) -> np.ndarray: ...
 
 
+class SROUDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class SimpleRatioUniforms(Method):
+    def __init__(self,
+                 dist: SROUDist,
+                 *,
+                 mode: None | float = ...,
+                 pdf_area: float = ...,
+                 domain: None | Tuple[float, float] = ...,
+                 r: float = ...,
+                 cdf_at_mode: float = ...,
+                 use_squeeze: bool = ...,
+                 random_state: SeedType = ...) -> None: ...
+
+
 UError = NamedTuple('UError', [('max_error', float),
                                ('mean_absolute_error', float)])
 
