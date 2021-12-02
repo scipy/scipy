@@ -976,7 +976,7 @@ cdef class SimpleRatioUniforms(Method):
     Simple Ratio-of-Uniforms (SROU) Method.
 
     SROU is based on the ratio-of-uniforms method that uses universal inequalities for constructing
-    a (universal) bounding rectangle. It works for T-concave distributions with T(x) = -1/sqrt(x).
+    a (universal) bounding rectangle. It works for T-concave distributions with ``T(x) = -1/sqrt(x)``.
 
     Parameters
     ----------
@@ -987,7 +987,8 @@ cdef class SimpleRatioUniforms(Method):
           expected to be: ``def pdf(self, x: float) -> float``. i.e.
           the PDF should accept a Python float and
           return a Python float. It doesn't need to integrate to 1 i.e.
-          the PDF doesn't need to be normalized.
+          the PDF doesn't need to be normalized. If not normalized, `pdf_area`
+          should be set to the area under the PDF.
 
     mode : float, optional
         (Exact) Mode of the distribution. When the mode is ``None``, a slow
@@ -1071,12 +1072,13 @@ cdef class SimpleRatioUniforms(Method):
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
     >>> fx = 1/np.sqrt(2*np.pi) * dist.pdf(x)
-    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
-    >>> plt.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
-    >>> plt.xlabel('x')
-    >>> plt.ylabel('PDF(x)')
-    >>> plt.title('Simple Ratio-of-Uniforms Samples')
-    >>> plt.legend()
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> ax.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PDF(x)')
+    >>> ax.set_title('Simple Ratio-of-Uniforms Samples')
+    >>> ax.legend()
     >>> plt.show()
     """
 

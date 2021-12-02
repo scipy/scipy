@@ -5,7 +5,7 @@ Simple Ratio-of-Uniforms (SROU)
 
 .. currentmodule:: scipy.stats.sampling
 
-* Required: PDF, area under PDF
+* Required: PDF, area under PDF if different than 1
 * Optional: mode
 * Speed:
 
@@ -68,12 +68,13 @@ its histogram:
     >>> rvs = rng.rvs(1000)
     >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
     >>> fx = 1/np.sqrt(2*np.pi) * dist.pdf(x)
-    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
-    >>> plt.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
-    >>> plt.xlabel('x')
-    >>> plt.ylabel('PDF(x)')
-    >>> plt.title('Simple Ratio-of-Uniforms Samples')
-    >>> plt.legend()
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> ax.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PDF(x)')
+    >>> ax.set_title('Simple Ratio-of-Uniforms Samples')
+    >>> ax.legend()
     >>> plt.show()
 
 See [1]_, [2]_, and [3]_ for more details.
