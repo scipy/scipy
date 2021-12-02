@@ -1410,8 +1410,6 @@ attributes = ('statistic', 'pvalue', 'null_distribution')
 PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
 
 
-# Functions like these are under review in gh-13312; nice to have them here
-# Remove when they are added to scipy/stats/stats.py or a utility file
 def _broadcast_arrays(arrays, axis=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
@@ -1474,6 +1472,8 @@ def _broadcast_shapes(shapes, axis=None):
 def _all_partitions_concatenated(ns):
     """
     Generate all partitions of indices of groups of given sizes, concatenated
+    
+    `ns` is an iterable of ints.
     """
     def all_partitions(z, n):
         for c in combinations(z, n):
@@ -1873,6 +1873,10 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     For ``a = [a1, a2, a3, a4]`` and ``b = [b1, b2, b3]``, an example of this
     permutation type is ``x = [b3, a1, a2, b2]`` and ``y = [a4, b1, a3]``.
+    Because only one ordering/permutation of the data *within* each sample
+    is considered in an exact test, a resampling like ``x = [b3, a1, b2, a2]`` 
+    and ``y = [a4, a3, b1]`` would *not* be considered distinct from the
+    example above.
 
     ``permutation_type='both'`` does not support one-sample statistics, but it
     can be applied to statistics with more than two samples. In this case, if
