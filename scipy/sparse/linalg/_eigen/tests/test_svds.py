@@ -488,12 +488,16 @@ class SVDSCommonTests:
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
             pytest.skip("ARPACK has additional restriction for complex dtype")
 
+        if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
+            pytest.skip('PROPACK complex-valued SVD methods not available '
+                        'for 32-bit builds')
+
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 u, s, vh = svds(A2, k, solver=self.solver)
         else:
             u, s, vh = svds(A2, k, solver=self.solver)
-        _check_svds(A, k, u, s, vh)
+        _check_svds(A, k, u, s, vh, atol=3e-10)
 
     def test_svd_linop(self):
         solver = self.solver
@@ -557,6 +561,9 @@ class SVDSCommonTests:
             if k < min(n, m) - 1:
                 # Complex input and explicit which="LM".
                 for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
+                    if self.solver == 'propack' and np.intp(0).itemsize < 8:
+                        pytest.skip('PROPACK complex-valued SVD methods '
+                                    'not available for 32-bit builds')
                     rng = np.random.RandomState(1648)
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)
