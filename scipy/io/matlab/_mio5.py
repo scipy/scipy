@@ -84,23 +84,23 @@ import numpy as np
 
 import scipy.sparse
 
-from .byteordercodes import native_code, swapped_code
+from ._byteordercodes import native_code, swapped_code
 
-from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
+from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       arr_to_chars, arr_dtype_number, MatWriteError,
                       MatReadError, MatReadWarning)
 
 # Reader object for matlab 5 format variables
-from .mio5_utils import VarReader5
+from ._mio5_utils import VarReader5
 
 # Constants and helper objects
-from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
+from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
                           mxDOUBLE_CLASS, mclass_info, mat_struct)
 
-from .streams import ZlibInputStream
+from ._streams import ZlibInputStream
 
 
 def _has_struct(elem):

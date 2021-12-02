@@ -14,7 +14,7 @@ from ._base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, get_index_dtype, downcast_intp_index,
-                       check_shape, check_reshape_kwargs, matrix)
+                       check_shape, check_reshape_kwargs)
 
 import operator
 
@@ -231,8 +231,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             new_data = self.data
 
-        return coo_matrix((new_data, (new_row, new_col)),
-                          shape=shape, copy=False)
+        return self.__class__((new_data, (new_row, new_col)),
+                              shape=shape, copy=False)
 
     reshape.__doc__ = spmatrix.reshape.__doc__
 
@@ -295,8 +295,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                               "dimensions is the only logical permutation."))
 
         M, N = self.shape
-        return coo_matrix((self.data, (self.col, self.row)),
-                          shape=(N, M), copy=copy)
+        return self.__class__((self.data, (self.col, self.row)),
+                              shape=(N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -347,9 +347,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        from ._csc import csc_matrix
         if self.nnz == 0:
-            return csc_matrix(self.shape, dtype=self.dtype)
+            return self._csc_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
             idx_dtype = get_index_dtype((self.col, self.row),
@@ -364,7 +363,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(N, M, self.nnz, col, row, self.data,
                       indptr, indices, data)
 
-            x = csc_matrix((data, indices, indptr), shape=self.shape)
+            x = self._csc_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
@@ -389,9 +388,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        from ._csr import csr_matrix
         if self.nnz == 0:
-            return csr_matrix(self.shape, dtype=self.dtype)
+            return self._csr_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
             idx_dtype = get_index_dtype((self.row, self.col),
@@ -406,7 +404,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(M, N, self.nnz, row, col, self.data,
                       indptr, indices, data)
 
-            x = csr_matrix((data, indices, indptr), shape=self.shape)
+            x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
@@ -420,8 +418,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def todia(self, copy=False):
-        from ._dia import dia_matrix
-
         self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
@@ -438,15 +434,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
             data[diag_idx, self.col] = self.data
 
-        return dia_matrix((data,diags), shape=self.shape)
+        return self._dia_container((data, diags), shape=self.shape)
 
     todia.__doc__ = spmatrix.todia.__doc__
 
     def todok(self, copy=False):
-        from ._dok import dok_matrix
-
         self.sum_duplicates()
-        dok = dok_matrix((self.shape), dtype=self.dtype)
+        dok = self._dok_container((self.shape), dtype=self.dtype)
         dok._update(zip(zip(self.row,self.col),self.data))
 
         return dok
@@ -517,10 +511,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return coo_matrix((data, (self.row.copy(), self.col.copy())),
+            return self.__class__((data, (self.row.copy(), self.col.copy())),
                                    shape=self.shape, dtype=data.dtype)
         else:
-            return coo_matrix((data, (self.row, self.col)),
+            return self.__class__((data, (self.row, self.col)),
                                    shape=self.shape, dtype=data.dtype)
 
     def sum_duplicates(self):
@@ -575,7 +569,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         M, N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
-        return matrix(result, copy=False)
+        return self._container(result, copy=False)
 
     def _mul_vector(self, other):
         #output array
@@ -615,4 +609,5 @@ def isspmatrix_coo(x):
     >>> isspmatrix_coo(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, coo_matrix)
+    from ._arrays import coo_array
+    return isinstance(x, coo_matrix) or isinstance(x, coo_array)

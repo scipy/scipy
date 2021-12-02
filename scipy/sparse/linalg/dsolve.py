@@ -9,7 +9,7 @@ from . import _dsolve
 __all__ = [  # noqa: F822
     'MatrixRankWarning', 'SuperLU', 'factorized',
     'spilu', 'splu', 'spsolve',
-    'spsolve_triangular', 'use_solver'
+    'spsolve_triangular', 'use_solver', 'linsolve', 'test'
 ]
 
 dsolve_modules = ['linsolve']

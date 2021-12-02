@@ -317,6 +317,9 @@ class TestChi:
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
     #     1 - CDF[ChiDistribution[4], 10]
     CHI_SF_10_4 = 9.83662422461598e-21
+    # "Exact" value of chi.mean(df=1000) as computed by Wolfram Alpha with
+    #       Mean[ChiDistribution[1000]]
+    CHI_MEAN_1000 = 31.614871896980
 
     def test_sf(self):
         s = stats.chi.sf(10, 4)
@@ -325,6 +328,10 @@ class TestChi:
     def test_isf(self):
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
+
+    def test_mean(self):
+        x = stats.chi.mean(df=1000)
+        assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
 
 
 class TestNBinom:
@@ -1249,6 +1256,19 @@ class TestLogistic:
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
 
+    @pytest.mark.parametrize('testlogcdf', [True, False])
+    def test_logcdfsf_tails(self, testlogcdf):
+        # Test either logcdf or logsf.  By symmetry, we can use the same
+        # expected values for both by switching the sign of x for logsf.
+        x = np.array([-10000, -800, 17, 50, 500])
+        if testlogcdf:
+            y = stats.logistic.logcdf(x)
+        else:
+            y = stats.logistic.logsf(-x)
+        # The expected values were computed with mpmath.
+        expected = [-10000.0, -800.0, -4.139937633089748e-08,
+                    -1.9287498479639178e-22, -7.124576406741286e-218]
+        assert_allclose(y, expected, rtol=2e-15)
 
 class TestLogser:
     def setup_method(self):
@@ -5780,11 +5800,24 @@ class TestArgus:
         x = stats.argus.rvs(50, size=500, random_state=325)
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
-    def test_argus_rvs_ratio_uniforms(self):
-        # test that the ratio of uniforms algorithms works for chi > 2.611
-        x = stats.argus.rvs(3.5, size=1500, random_state=1535)
-        assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
-        assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+    @pytest.mark.parametrize('chi, random_state', [
+            [0.1, 325],   # chi <= 0.5: rejection method case 1
+            [1.3, 155],   # 0.5 < chi <= 1.8: rejection method case 2
+            [3.5, 135]    # chi > 1.8: transform conditional Gamma distribution
+        ])
+    def test_rvs(self, chi, random_state):
+        x = stats.argus.rvs(chi, size=500, random_state=random_state)
+        _, p = stats.kstest(x, "argus", (chi, ))
+        assert_(p > 0.05)
+
+    @pytest.mark.parametrize('chi', [1e-9, 1e-6])
+    def test_rvs_small_chi(self, chi):
+        # test for gh-11699 => rejection method case 1 can even handle chi=0
+        # the CDF of the distribution for chi=0 is 1 - (1 - x**2)**(3/2)
+        # test rvs against distribution of limit chi=0
+        r = stats.argus.rvs(chi, size=500, random_state=890981)
+        _, p = stats.kstest(r, lambda x: 1 - (1 - x**2)**(3/2))
+        assert_(p > 0.05)
 
     # Expected values were computed with mpmath.
     @pytest.mark.parametrize('chi, expected_mean',

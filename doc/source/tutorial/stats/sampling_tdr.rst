@@ -4,7 +4,7 @@
 Transformed Density Rejection (TDR)
 ===================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: T-concave PDF, dPDF
 * Optional: mode, center
@@ -30,7 +30,7 @@ The variant that is implemented uses squeezes proportional to hat function ([1]_
 
 An example of using this method is shown below:
 
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from scipy.stats import norm
     >>> 
     >>> class StandardNormal:

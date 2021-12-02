@@ -22,9 +22,10 @@ a region code for which region of the complex plane belongs to. The regions are
 
     1) |z| < 0.9 and real(z) >= 0
     2) |z| <= 1 and real(z) < 0
-    3) 0.9 <= |z| <= 1 and |1 - z| < 1.0:
-    4) 0.9 <= |z| =< 1 and |1 - z| >= 1.0 and real(z) >= 0:
-    5) |z| > 1
+    3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
+    4) 0.9 <= |z| <= 1 and |1 - z| >= 0.9 and real(z) >= 0:
+    5) 1 < |z| < 1.1 and |1 - z| >= 0.9 and real(z) >= 0
+    6) |z| > 1 and not in 5)
 
 The --regions optional argument allows the user to specify a list of regions
 to which computation will be restricted.
@@ -53,9 +54,11 @@ The --parameter_groups optional argument allows the user to specify a list of
 parameter groups to which computation will be restricted.
 
 The argument z is taken from a grid in the box
-    -2 <= real(z) <= 2, -2 <= imag(z) <= 2.
-with grid size specified using the optional command line argument --grid-size.
-The default value is 20, yielding a 20 * 20 grid in this box.
+    -box_size <= real(z) <= box_size, -box_size <= imag(z) <= box_size.
+with grid size specified using the optional command line argument --grid_size,
+and box_size specificed with the command line argument --box_size.
+The default value of grid_size is 20 and the default value of box_size is 2.0,
+yielding a 20 * 20 grid in the box with corners -2-2j, -2+2j, 2-2j, 2+2j.
 
 The final four columns have the expected value of hyp2f1 for the given
 parameters and argument as calculated with mpmath, the observed value
@@ -85,12 +88,14 @@ def get_region(z):
         return 1
     elif abs(z) <= 1 and z.real < 0:
         return 2
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 1.0:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) < 0.9:
         return 3
-    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 1.0:
+    elif 0.9 <= abs(z) <= 1 and abs(1 - z) >= 0.9:
         return 4
-    else:
+    elif 1 < abs(z) < 1.1 and abs(1 - z) >= 0.9 and z.real >= 0:
         return 5
+    else:
+        return 6
 
 
 def get_result(a, b, c, z, group):
@@ -112,7 +117,26 @@ def get_result(a, b, c, z, group):
     )
 
 
-def get_results(params, Z, n_jobs=1):
+def get_result_no_mp(a, b, c, z, group):
+    """Get results for given parameter and value combination."""
+    expected, observed = complex('nan'), hyp2f1(a, b, c, z)
+    relative_error, absolute_error = float('nan'), float('nan')
+    return (
+        a,
+        b,
+        c,
+        z,
+        abs(z),
+        get_region(z),
+        group,
+        expected,
+        observed,
+        relative_error,
+        absolute_error,
+    )
+
+
+def get_results(params, Z, n_jobs=1, compute_mp=True):
     """Batch compute results for multiple parameter and argument values.
 
     Parameters
@@ -136,7 +160,10 @@ def get_results(params, Z, n_jobs=1):
     )
 
     with Pool(n_jobs) as pool:
-        rows = pool.starmap(get_result, input_)
+        rows = pool.starmap(
+            get_result if compute_mp else get_result_no_mp,
+            input_
+        )
     return rows
 
 
@@ -183,7 +210,15 @@ def make_hyp2f1_test_cases(rows):
     return result
 
 
-def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
+def main(
+        outpath,
+        n_jobs=1,
+        box_size=2.0,
+        grid_size=20,
+        regions=None,
+        parameter_groups=None,
+        compute_mp=True,
+):
     outpath = os.path.realpath(os.path.expanduser(outpath))
 
     random_state = np.random.RandomState(1234)
@@ -310,7 +345,8 @@ def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
     # grid_size * grid_size grid in box with corners
     # -2 - 2j, -2 + 2j, 2 - 2j, 2 + 2j
     X, Y = np.meshgrid(
-        np.linspace(-2, 2, grid_size), np.linspace(-2, 2, grid_size)
+        np.linspace(-box_size, box_size, grid_size),
+        np.linspace(-box_size, box_size, grid_size)
     )
     Z = X + Y * 1j
     Z = Z.flatten().tolist()
@@ -319,7 +355,7 @@ def main(outpath, n_jobs=1, grid_size=20, regions=None, parameter_groups=None):
 
     # Evaluate scipy and mpmath's hyp2f1 for all parameter combinations
     # above against all arguments in the grid Z
-    rows = get_results(params, Z, n_jobs=n_jobs)
+    rows = get_results(params, Z, n_jobs=n_jobs, compute_mp=compute_mp)
 
     with open(outpath, "w", newline="") as f:
         writer = csv.writer(f, delimiter="\t")
@@ -361,11 +397,18 @@ if __name__ == "__main__":
         help="Number of jobs for multiprocessing.",
     )
     parser.add_argument(
+        "--box_size",
+        type=float,
+        default=2.0,
+        help="hyp2f1 is evaluated in box of side_length 2*box_size centered"
+        " at the origin."
+    )
+    parser.add_argument(
         "--grid_size",
         type=int,
         default=20,
         help="hyp2f1 is evaluated on grid_size * grid_size grid in box of side"
-        " length 2 centered at the origin."
+        " length 2*box_size centered at the origin."
     )
     parser.add_argument(
         "--parameter_groups",
@@ -385,11 +428,21 @@ if __name__ == "__main__":
         " the Docstring for this module for more info on regions. Calculate"
         " for all regions by default."
     )
+    parser.add_argument(
+        "--no_mp",
+        action='store_true',
+        help="If this flag is set, do not compute results with mpmath. Saves"
+        " time if results have already been computed elsewhere. Fills in"
+        " \"expected\" column with None values."
+    )
     args = parser.parse_args()
+    compute_mp = not args.no_mp
     main(
         args.outpath,
         n_jobs=args.n_jobs,
+        box_size=args.box_size,
         grid_size=args.grid_size,
         parameter_groups=args.parameter_groups,
-        regions=args.regions
+        regions=args.regions,
+        compute_mp=compute_mp,
     )

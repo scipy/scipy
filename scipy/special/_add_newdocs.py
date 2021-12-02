@@ -5082,7 +5082,16 @@ add_newdoc("hyp2f1",
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    The implementation for complex values of ``z`` is described in [2]_.
+    The implementation for complex values of ``z`` is described in [2]_,
+    except for ``z`` in the region defined by
+
+    .. math::
+
+         0.9 <= \left|z\right| < 1.1,
+         \left|1 - z\right| >= 0.9,
+         \mathrm{real}(z) >= 0
+
+    in which the implementation follows [4]_.
 
     References
     ----------
@@ -5091,6 +5100,9 @@ add_newdoc("hyp2f1",
     .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [4] J.L. Lopez and N.M. Temme, "New series expansions of the Gauss
+           hypergeometric function", Adv Comput Math 39, 349-365 (2013).
+           https://doi.org/10.1007/s10444-012-9283-y
 
     Examples
     --------
@@ -6705,6 +6717,70 @@ add_newdoc("log1p",
 add_newdoc("_log1pmx",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc('log_expit',
+    """
+    log_expit(x)
+
+    Logarithm of the logistic sigmoid function.
+
+    The SciPy implementation of the logistic sigmoid function is
+    `scipy.special.expit`, so this function is called ``log_expit``.
+
+    The function is mathematically equivalent to ``log(expit(x))``, but
+    is formulated to avoid loss of precision for inputs with large
+    (positive or negative) magnitude.
+
+    Parameters
+    ----------
+    x : array_like
+        The values to apply ``log_expit`` to element-wise.
+
+    Returns
+    -------
+    out : ndarray
+        The computed values, an ndarray of the same shape as ``x``.
+
+    See Also
+    --------
+    expit
+
+    Notes
+    -----
+    As a ufunc, ``log_expit`` takes a number of optional keyword arguments.
+    For more information see
+    `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 1.8.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_expit, expit
+
+    >>> log_expit([-3.0, 0.25, 2.5, 5.0])
+    array([-3.04858735, -0.57593942, -0.07888973, -0.00671535])
+
+    Large negative values:
+
+    >>> log_expit([-100, -500, -1000])
+    array([ -100.,  -500., -1000.])
+
+    Note that ``expit(-1000)`` returns 0, so the naive implementation
+    ``log(expit(-1000))`` return ``-inf``.
+
+    Large positive values:
+
+    >>> log_expit([29, 120, 400])
+    array([-2.54366565e-013, -7.66764807e-053, -1.91516960e-174])
+
+    Compare that to the naive implementation:
+
+    >>> np.log(expit([29, 120, 400]))
+    array([-2.54463117e-13,  0.00000000e+00,  0.00000000e+00])
+
+    The first value is accurate to only 3 digits, and the larger inputs
+    lose all precision and return 0.
     """)
 
 add_newdoc('logit',

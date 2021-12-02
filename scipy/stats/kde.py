@@ -6,7 +6,12 @@ import warnings
 from . import _kde
 
 
-__all__ = ['gaussian_kde']  # noqa: F822
+__all__ = [  # noqa: F822
+    'gaussian_kde', 'linalg', 'logsumexp', 'check_random_state',
+    'atleast_2d', 'reshape', 'newaxis', 'exp', 'ravel', 'power',
+    'atleast_1d', 'squeeze', 'sum', 'transpose', 'cov', 'mvn',
+    'gaussian_kernel_estimate'
+]
 
 
 def __dir__():

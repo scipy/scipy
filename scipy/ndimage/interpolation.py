@@ -6,9 +6,12 @@ import warnings
 from . import _interpolation
 
 
-__all__ = ['spline_filter1d', 'spline_filter',  # noqa: F822
-           'geometric_transform', 'map_coordinates',
-           'affine_transform', 'shift', 'zoom', 'rotate']
+__all__ = [  # noqa: F822
+    'spline_filter1d', 'spline_filter',
+    'geometric_transform', 'map_coordinates',
+    'affine_transform', 'shift', 'zoom', 'rotate',
+    'normalize_axis_index', 'docfiller'
+]
 
 
 def __dir__():

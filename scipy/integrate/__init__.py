@@ -99,7 +99,7 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
 from ._quad_vec import quad_vec
 
 # Deprecated namespaces, to be removed in v2.0.0
-from . import dop, lsoda, vode
+from . import dop, lsoda, vode, odepack, quadpack
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

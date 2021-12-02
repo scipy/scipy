@@ -7,7 +7,8 @@ from . import _waveforms
 
 __all__ = [  # noqa: F822
     'sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-    'unit_impulse'
+    'unit_impulse', 'place', 'nan', 'mod', 'extract', 'log', 'exp',
+    'polyval', 'polyint'
 ]
 
 
