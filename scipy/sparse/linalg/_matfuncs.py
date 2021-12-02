@@ -45,7 +45,7 @@ def inv(A):
     -----
     This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
-    `numpy.linalg.inv`.
+    `scipy.linalg.inv`.
 
     Examples
     --------
