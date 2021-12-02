@@ -192,6 +192,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     w2 = zeros(n, dtype=xtype)
     r2 = r1
 
+    if callback is not None:
+        callback(x)
+
     if show:
         print()
         print()

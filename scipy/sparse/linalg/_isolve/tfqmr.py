@@ -132,6 +132,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     else:
         atol = max(atol, tol * r0norm)
 
+    if callback is not None:
+        callback(x)
+
+    # TFQMR iteration
     for iter in range(maxiter):
         even = iter % 2 == 0
         if (even):
