@@ -1157,19 +1157,19 @@ class TestPdist:
             # Test failing on 32-bit Linux on Azure otherwise, see gh-12810
             eps = 1.5e-10
         else:
-            eps = 1e-10
+            eps = 1e-12
 
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
+        assert_allclose(Y_test1, Y_right, atol=eps)
 
     def test_pdist_jensenshannon_iris_float32(self):
-        eps = 1e-5
+        eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+        assert_allclose(Y_test1, Y_right, atol=eps, verbose=verbose > 2)
 
     def test_pdist_jensenshannon_iris_nonC(self):
         eps = 5e-5
