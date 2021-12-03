@@ -22,8 +22,8 @@ def configuration(parent_package='', top_path=None):
     statlib_src = [join('statlib', '*.f')]
     config.add_library('statlib', sources=statlib_src)
 
-    # add statlib module
-    config.add_extension('statlib',
+    # add _statlib module
+    config.add_extension('_statlib',
                          sources=['statlib.pyf'],
                          f2py_options=['--no-wrap-functions'],
                          libraries=['statlib'],
@@ -33,8 +33,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_stats',
                          sources=['_stats.c'])
 
-    # add mvn module
-    config.add_extension('mvn',
+    # add _mvn module
+    config.add_extension('_mvn',
                          sources=['mvn.pyf', 'mvndst.f'])
 
     # add _sobol module
@@ -56,7 +56,7 @@ def configuration(parent_package='', top_path=None):
         config.ext_modules.append(ext)
 
     # add BiasedUrn module
-    config.add_data_files('biasedurn.pxd')
+    config.add_data_files('_biasedurn.pxd')
     from _generate_pyx import isNPY_OLD  # type: ignore[import]
     NPY_OLD = isNPY_OLD()
 
@@ -70,9 +70,9 @@ def configuration(parent_package='', top_path=None):
         biasedurn_libdirs += get_info('npymath')['library_dirs']
 
     ext = config.add_extension(
-        'biasedurn',
+        '_biasedurn',
         sources=[
-            'biasedurn.cxx',
+            '_biasedurn.cxx',
             'biasedurn/impls.cpp',
             'biasedurn/fnchyppr.cpp',
             'biasedurn/wnchyppr.cpp',

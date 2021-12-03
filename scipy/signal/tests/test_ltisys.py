@@ -9,9 +9,9 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
+from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -525,7 +525,7 @@ class Test_lsim2:
 
     def test_05(self):
         # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal.filter_design, but the test passes.  I think the warning
+        # scipy.signal._filter_design, but the test passes.  I think the warning
         # is related to the incomplete handling of multi-input systems in
         # scipy.signal.
 
@@ -1275,4 +1275,3 @@ class Test_freqresp:
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
-

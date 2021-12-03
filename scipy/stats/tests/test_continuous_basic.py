@@ -473,7 +473,7 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
 
 
 def check_sample_mean(sm, v, n, popmean):
-    # from stats.stats.ttest_1samp(a, popmean):
+    # from stats._stats_py.ttest_1samp(a, popmean):
     # Calculates the t-obtained for the independent samples T-test on ONE group
     # of scores a, given a population mean.
     #

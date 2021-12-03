@@ -137,17 +137,17 @@ def pdf():
     ref = os.path.join(bdir_latex, "scipy-ref.pdf")
     shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
-def tarball_name(type='gztar'):
+def tarball_name(type_name='gztar'):
     root = 'scipy-%s' % FULLVERSION
-    if type == 'gztar':
+    if type_name == 'gztar':
         return root + '.tar.gz'
-    elif type == 'xztar':
+    elif type_name == 'xztar':
         return root + '.tar.xz'
-    elif type == 'tar':
+    elif type_name == 'tar':
         return root + '.tar'
-    elif type == 'zip':
+    elif type_name == 'zip':
         return root + '.zip'
-    raise ValueError("Unknown type %s" % type)
+    raise ValueError("Unknown type %s" % type_name)
 
 @task
 def sdist():

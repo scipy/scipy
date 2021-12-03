@@ -514,7 +514,7 @@ def test_empty(hypotest, args, kwds, n_samples, paired, unpacker):
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
-                concat = stats.stats._broadcast_concatenate(samples, axis)
+                concat = stats._stats_py._broadcast_concatenate(samples, axis)
                 with np.testing.suppress_warnings() as sup:
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
@@ -536,6 +536,6 @@ def test_empty(hypotest, args, kwds, n_samples, paired, unpacker):
                 # produce this information.
                 message = "Array shapes are incompatible for broadcasting."
                 with pytest.raises(ValueError, match=message):
-                    stats.stats._broadcast_concatenate(samples, axis)
+                    stats._stats_py._broadcast_concatenate(samples, axis)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)

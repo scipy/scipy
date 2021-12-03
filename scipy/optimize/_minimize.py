@@ -16,7 +16,7 @@ import numpy as np
 
 
 # unconstrained minimization
-from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
                        _minimize_scalar_brent, _minimize_scalar_bounded,
                        _minimize_scalar_golden, MemoizeJac)
@@ -27,10 +27,10 @@ from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
 
 # constrained minimization
-from .lbfgsb import _minimize_lbfgsb
-from .tnc import _minimize_tnc
-from .cobyla import _minimize_cobyla
-from .slsqp import _minimize_slsqp
+from ._lbfgsb_py import _minimize_lbfgsb
+from ._tnc import _minimize_tnc
+from ._cobyla_py import _minimize_cobyla
+from ._slsqp_py import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
@@ -109,34 +109,29 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         obey any specified `bounds`.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg, trust-krylov, trust-exact and trust-constr. If it is
-        callable, it should return the Hessian matrix:
+        trust-ncg, trust-krylov, trust-exact and trust-constr.
+        If it is callable, it should return the Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
         where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
-        parameters. LinearOperator and sparse matrix returns are only allowed
-        for 'trust-constr' method. Alternatively (not available for Newton-CG
-        or dogleg), the keywords {'2-point', '3-point', 'cs'} select a finite
-        difference scheme for numerical estimation. Or, objects implementing
-        the `HessianUpdateStrategy` interface can be used to approximate the
-        Hessian. Available quasi-Newton methods implementing this interface
-        are:
+        parameters.
+        The keywords {'2-point', '3-point', 'cs'} can also be used to select
+        a finite difference scheme for numerical estimation of the hessian.
+        Alternatively, objects implementing the `HessianUpdateStrategy`
+        interface can be used to approximate the Hessian. Available
+        quasi-Newton methods implementing this interface are:
 
             - `BFGS`;
             - `SR1`.
 
-        Whenever the gradient is estimated via finite-differences,
-        the Hessian cannot be estimated with options
-        {'2-point', '3-point', 'cs'} and needs to be
-        estimated using one of the quasi-Newton strategies.
-        'trust-exact' cannot use a finite-difference scheme, and must be used
-        with a callable returning an (n, n) array.
+        Not all of the options are available for each of the methods; for
+        availability refer to the notes.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
-        Only one of `hessp` or `hess` needs to be given.  If `hess` is
-        provided, then `hessp` will be ignored.  `hessp` must compute the
+        Only one of `hessp` or `hess` needs to be given. If `hess` is
+        provided, then `hessp` will be ignored. `hessp` must compute the
         Hessian times an arbitrary vector:
 
             ``hessp(x, p, *args) ->  ndarray shape (n,)``
@@ -274,7 +269,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
     *not* required to be positive definite). It is, in many
-    situations, the Newton method to converge in fewer iteraction
+    situations, the Newton method to converge in fewer iterations
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
@@ -339,8 +334,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
-    inequality constraints  are imposed as well, it swiches to the trust-region
-    interior point  method described in [16]_. This interior point algorithm,
+    inequality constraints are imposed as well, it swiches to the trust-region
+    interior point method described in [16]_. This interior point algorithm,
     in turn, solves inequality constraints by introducing slack variables
     and solving a sequence of equality-constrained barrier problems
     for progressively smaller values of the barrier parameter.
@@ -354,9 +349,34 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the gradient and the Hessian may be approximated using
     three finite-difference schemes: {'2-point', '3-point', 'cs'}.
     The scheme 'cs' is, potentially, the most accurate but it
-    requires the function to correctly handles complex inputs and to
+    requires the function to correctly handle complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
-    accurate than '2-point' but requires twice as many operations.
+    accurate than '2-point' but requires twice as many operations. If the
+    gradient is estimated via finite-differences the Hessian must be
+    estimated using one of the quasi-Newton strategies.
+
+    **Method specific options for the** `hess` **keyword**
+
+    +--------------+------+----------+-------------------------+-----+
+    | method/Hess  | None | callable | '2-point/'3-point'/'cs' | HUS |
+    +==============+======+==========+=========================+=====+
+    | Newton-CG    | x    | (n, n)   | x                       | x   |
+    |              |      | LO       |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | dogleg       |      | (n, n)   |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-ncg    |      | (n, n)   | x                       | x   |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-krylov |      | (n, n)   | x                       | x   |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-exact  |      | (n, n)   |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-constr | x    | (n, n)   |  x                      | x   |
+    |              |      | LO       |                         |     |
+    |              |      | sp       |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+
+    where LO=LinearOperator, sp=Sparse matrix, HUS=HessianUpdateStrategy
 
     **Custom minimizers**
 
@@ -723,10 +743,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     method : str or callable, optional
         Type of solver.  Should be one of:
 
-            - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
-            - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
-            - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
+            - :ref:`Brent <optimize.minimize_scalar-brent>`
+            - :ref:`Bounded <optimize.minimize_scalar-bounded>`
+            - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
+
+        See the 'Notes' section for details of each solver.
 
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific

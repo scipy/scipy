@@ -31,6 +31,9 @@ References
     Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
 [3] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
     Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
+[4] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
+    function. Adv Comput Math 39, 349-365 (2013).
+    https://doi.org/10.1007/s10444-012-9283-y
 """
 
 cimport cython
@@ -196,6 +199,19 @@ cdef inline double complex hyp2f1_complex(
             return result
         # Maximum number of terms 1500 comes from Fortran original.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
+    if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
+        # This condition for applying Euler Transformation (DLMF 15.8.1)
+        # was determined empirically to work better for this case than that
+        # used in the original Fortran implementation for |z| < 0.9,
+        # real(z) >= 0.
+        if (
+                c - a <= a and c - b < b or
+                c - a < a and c - b <= b
+        ):
+            result = zpow(1 - z, c - a - b)
+            result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
+            return result
+        return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
@@ -257,4 +273,45 @@ cdef inline double complex hyp2f1_series(
         if early_stop:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
             result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+cdef inline double complex hyp2f1_lopez_temme_series(
+        double a,
+        double b,
+        double c,
+        double complex z,
+        int max_degree,
+        double rtol,
+) nogil:
+    """Lopez-Temme Series for Gaussian hypergeometric function [4].
+
+    Converges for all z with real(z) < 1, including in the regions surrounding
+    the points exp(+- i*pi/3) that are not covered by any of the standard
+    transformations.
+    """
+    cdef:
+        int n
+        double phi_previous, phi
+        double complex prefactor, previous, Z, result
+    prefactor = zpow(1 - 0.5 * z, -a)
+    # phi(n, b, c) = hyp2f1(-n, b, c, 2). It is computed through a linear
+    # recurrence of degree 2. phi and phi_previous below are the initial
+    # conditions of this recurrence.
+    phi, phi_previous = 1 - 2 * b / c, 1.0
+    previous = 1 + 0j
+    Z = a * z / (z - 2)
+    result = previous + Z * phi
+    for n in range(2, max_degree):
+        phi, phi_previous = (
+            ((n - 1) * phi_previous - (2 * b - c) * phi) / (c + n - 1), phi
+        )
+        Z = Z * (a + n - 1) * z / ((z - 2) * n)
+        previous, result = result, result + Z * phi
+        if zabs(result - previous) <= rtol * zabs(result):
+            result = prefactor * result
+            break
+    else:
+        sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
+        result = zpack(NPY_NAN, NPY_NAN)
     return result

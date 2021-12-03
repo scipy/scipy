@@ -1,51 +1,29 @@
-''' Utilities to allow inserting docstring fragments for common
-parameters into function and method docstrings'''
-
-import numpy as np
-from .._lib import doccer as _ld
-
-__all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
-           'filldoc', 'unindent_dict', 'unindent_string']
-
-@np.deprecate(message="scipy.misc.docformat is deprecated in Scipy 1.3.0")
-def docformat(docstring, docdict=None):
-    return _ld.docformat(docstring, docdict)
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
 
 
-@np.deprecate(message="scipy.misc.inherit_docstring_from is deprecated "
-                      "in SciPy 1.3.0")
-def inherit_docstring_from(cls):
-    return _ld.inherit_docstring_from(cls)
+import warnings
+from . import _doccer
 
 
-@np.deprecate(message="scipy.misc.extend_notes_in_docstring is deprecated "
-                      "in SciPy 1.3.0")
-def extend_notes_in_docstring(cls, notes):
-    return _ld.extend_notes_in_docstring(cls, notes)
+__all__ = [  # noqa: F822
+    'docformat', 'inherit_docstring_from', 'indentcount_lines',
+    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
+    'replace_notes_in_docstring'
+]
 
 
-@np.deprecate(message="scipy.misc.replace_notes_in_docstring is deprecated "
-                      "in SciPy 1.3.0")
-def replace_notes_in_docstring(cls, notes):
-    return _ld.replace_notes_in_docstring(cls, notes)
+def __dir__():
+    return __all__
 
 
-@np.deprecate(message="scipy.misc.indentcount_lines is deprecated "
-                      "in SciPy 1.3.0")
-def indentcount_lines(lines):
-    return _ld.indentcount_lines(lines)
+def __getattr__(name):
+    if name not in __all__:
+        raise AttributeError(
+            "scipy.misc.doccer is deprecated and has no attribute "
+            f"{name}.")
 
+    warnings.warn("The `scipy.misc.doccer` namespace is deprecated and "
+                  "will be removed in SciPy v2.0.0.",
+                  category=DeprecationWarning, stacklevel=2)
 
-@np.deprecate(message="scipy.misc.filldoc is deprecated in SciPy 1.3.0")
-def filldoc(docdict, unindent_params=True):
-    return _ld.filldoc(docdict, unindent_params)
-
-
-@np.deprecate(message="scipy.misc.unindent_dict is deprecated in SciPy 1.3.0")
-def unindent_dict(docdict):
-    return _ld.unindent_dict(docdict)
-
-
-@np.deprecate(message="scipy.misc.unindent_string is deprecated in SciPy 1.3.0")
-def unindent_string(docstring):
-    return _ld.unindent_string(docstring)
+    return getattr(_doccer, name)

@@ -261,7 +261,8 @@ Raw statistical functions
    kolmogi      -- Inverse function to `kolmogorov`.
    tklmbda      -- Tukey-Lambda cumulative distribution function.
    logit        -- Logit ufunc for ndarrays.
-   expit        -- Expit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
@@ -638,7 +639,7 @@ Convenience functions
 
 """
 
-from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
@@ -648,10 +649,10 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
-from . import orthogonal
-from .orthogonal import *
+from . import _orthogonal
+from ._orthogonal import *
 
-from .spfun_stats import multigammaln
+from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -665,10 +666,12 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+# Deprecated namespaces, to be removed in v2.0.0
+from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
     'log_softmax',

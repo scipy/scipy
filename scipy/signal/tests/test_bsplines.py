@@ -7,7 +7,7 @@ from numpy.testing import (assert_equal,
 import pytest
 from pytest import raises
 
-import scipy.signal.bsplines as bsp
+import scipy.signal._bsplines as bsp
 from scipy import signal
 
 

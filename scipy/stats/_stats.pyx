@@ -6,7 +6,6 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
-
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
@@ -530,7 +529,7 @@ cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized_range`"""
     # use a custom function because using cs.ndtr results in incorrect PDF at
     # q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant rather than
-    # math constants because they're not availible on all systems.
+    # math constants because they're not available on all systems.
     cdef double inv_sqrt_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
@@ -700,7 +699,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     Parameters
     ----------
     points : array_like with shape (n, d)
-        Data points to estimate from in d dimenions.
+        Data points to estimate from in d dimensions.
     values : real[:, :] with shape (n, p)
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
