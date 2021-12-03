@@ -527,7 +527,7 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
 
     To graph the magnitude of the resulting transform, use::
 
-        plot(linspace(f1, f2, m), abs(zoom_fft(x, [f1, f2], m)))
+        plot(linspace(f1, f2, m, endpoint=False), abs(zoom_fft(x, [f1, f2], m)))
 
     If the transform needs to be repeated, use `ZoomFFT` to construct
     a specialized transform function which can be reused without
