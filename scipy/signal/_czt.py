@@ -60,6 +60,7 @@ def czt_points(m, w=None, a=1+0j):
         The number of points desired.
     w : complex, optional
         The ratio between points in each step.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
 
@@ -128,6 +129,7 @@ class CZT:
     w : complex, optional
         The ratio between points in each step.  This must be precise or the
         accumulated error will degrade the tail of the output sequence.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
 
@@ -388,6 +390,7 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     w : complex, optional
         The ratio between points in each step.  This must be precise or the
         accumulated error will degrade the tail of the output sequence.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
     axis : int, optional
