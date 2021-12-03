@@ -287,9 +287,13 @@ class ZoomFFT(CZT):
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
-        The number of output points desired.  Default is `n`.
+        The number of points to evaluate.  Default is `n`.
     fs : float, optional
-        The sampling frequency. Default is 2.
+        The sampling frequency.  If ``fs=10`` represented 10 kHz, for example,
+        then `f1` and `f2` would also be given in kHz.
+        The default sampling frequency is 2, so `f1` and `f2` should be
+        in the range [0, 1] to keep the transform below the Nyquist
+        frequency.
     endpoint : bool, optional
         If True, `f2` is the last sample. Otherwise, it is not included.
         Default is False.
@@ -511,8 +515,8 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     m : int, optional
         The number of points to evaluate.  The default is the length of `x`.
     fs : float, optional
-        The sampling frequency.  With a sampling frequency of
-        10kHz for example, the range `f1` and `f2` can be expressed in kHz.
+        The sampling frequency.  If ``fs=10`` represented 10 kHz, for example,
+        then `f1` and `f2` would also be given in kHz.
         The default sampling frequency is 2, so `f1` and `f2` should be
         in the range [0, 1] to keep the transform below the Nyquist
         frequency.
