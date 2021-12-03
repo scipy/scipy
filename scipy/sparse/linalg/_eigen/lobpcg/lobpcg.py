@@ -260,10 +260,14 @@ def lobpcg(
     >>> Y = np.eye(n, 3)
 
     Initial guess for eigenvectors, should have linearly independent
-    columns. Column dimension = number of requested eigenvalues.
+    columns. One of mandatory input parameters, a 2D array with the
+    column dimension determining the number of requested eigenvalues.
+    If no initial approximations available, randomly oriented vectors
+    commonly work best, e.g., with components normally disrtibuted
+    around zero or uniformly distributed on the interval [-1 1].
 
     >>> rng = np.random.default_rng()
-    >>> X = rng.random((n, 3))
+    >>> X = rng.normal(size=(n, 3))
 
     Preconditioner in the inverse of A in this example:
 
