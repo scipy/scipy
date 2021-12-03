@@ -1,7 +1,6 @@
 """
 Ensure that we can use pathlib.Path objects in all relevant IO functions.
 """
-import sys
 from pathlib import Path
 
 import numpy as np

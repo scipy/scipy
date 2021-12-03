@@ -1,4 +1,3 @@
-from functools import partial
 import math
 import threading
 import pickle

@@ -2,7 +2,6 @@
 # License: BSD
 
 from numpy.testing import assert_array_equal
-from pytest import raises as assert_raises
 import pytest
 
 import numpy as np
