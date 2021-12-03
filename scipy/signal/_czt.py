@@ -146,6 +146,10 @@ class CZT:
 
     Notes
     -----
+    The defaults are chosen such that ``f(x)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``f(x, m)`` is equivalent to
+    ``fft.fft(x, m)``.
+
     If `w` does not lie on the unit circle, then the transform will be
     around a spiral with exponentially-increasing radius.  Regardless,
     angle will increase linearly.
@@ -285,7 +289,7 @@ class ZoomFFT(CZT):
     m : int, optional
         The number of output points desired.  Default is `n`.
     fs : float, optional
-        The sampling frequency. (Default=2)
+        The sampling frequency. Default is 2.
     endpoint : bool, optional
         If True, `f2` is the last sample. Otherwise, it is not included.
         Default is False.
@@ -301,6 +305,10 @@ class ZoomFFT(CZT):
 
     Notes
     -----
+    The defaults are chosen such that ``f(x, 2)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``f(x, 2, m)`` is equivalent to
+    ``fft.fft(x, m)``.
+
     Sampling frequency is 1/dt, the time step between samples in the
     signal `x`.  The unit circle corresponds to frequencies from 0 up
     to the sampling frequency.  The default sampling frequency of 2
@@ -410,6 +418,10 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
 
     Notes
     -----
+    The defaults are chosen such that ``signal.czt(x)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``signal.czt(x, m)`` is
+    equivalent to ``fft.fft(x, m)``.
+
     If the transform needs to be repeated, use `CZT` to construct a
     specialized transform function which can be reused without
     recomputing constants.
@@ -523,7 +535,9 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
 
     Notes
     -----
-    ``zoom_fft(x)`` is equivalent to ``fft(x)``.
+    The defaults are chosen such that ``signal.zoom_fft(x, 2)`` is equivalent
+    to ``fft.fft(x)`` and, if ``m > len(x)``, that ``signal.zoom_fft(x, 2, m)``
+    is equivalent to ``fft.fft(x, m)``.
 
     To graph the magnitude of the resulting transform, use::
 
