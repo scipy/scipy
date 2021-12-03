@@ -4,7 +4,7 @@ from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_equal, assert_, assert_approx_equal,
+                           assert_equal, assert_,
                            assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises

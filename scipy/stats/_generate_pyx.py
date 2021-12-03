@@ -1,5 +1,4 @@
 import pathlib
-from shutil import copyfile
 import subprocess
 import sys
 
