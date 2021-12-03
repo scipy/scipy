@@ -300,10 +300,10 @@ Chirp Z-transform and Zoom FFT
    ZoomFFT - Zoom FFT function generator
    czt_points - Output the z-plane points sampled by a chirp z-transform
 
-The functions are simpler to use, but less efficient, because they internally
-generate the same chirp signals with every call.  When using the same
-transform on many arrays of the same length, use the function-generating
-classes instead.
+The functions are simpler to use than the classes, but are less efficient when
+using the same transform on many arrays of the same length, since they
+repeatedly generate the same chirp signal with every call.  In these cases,
+use the classes to create a reusable function instead.
 
 """
 from . import _sigtools, windows
