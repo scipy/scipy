@@ -4094,7 +4094,7 @@ class invgauss_gen(rv_continuous):
             np.isposinf(mu),
             (x, mu),
             lambda x, mu: invgamma.logpdf(x, 0.5, scale=0.5),
-            f2=lambda x, mu: a - 1.5*np.log(x) - 0.5 * (x - mu)**2 / (x * mu**2)
+            f2=lambda x, mu: a - 1.5*np.log(x) - 0.5 * (x-mu)**2 / (x * mu**2)
         )
         return out
 
@@ -4185,7 +4185,7 @@ class invgauss_gen(rv_continuous):
         x0[~mask] = _lazywhere(
             mu[~mask] > 100,
             (mu[~mask], k),
-            lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6)),
+            lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k**6)),
             f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
         )
 
@@ -4202,8 +4202,12 @@ class invgauss_gen(rv_continuous):
             # page 8 of Giner & Smyth (2016)
             d = lq - lx
             mask = np.abs(d) < 1e-05
-            delta[mask] = d[mask] * np.exp(lq[mask] + np.log1p(-0.5 * d[mask]) - lp[mask])
-            delta[~mask] = q[~mask] * np.exp(-lp[~mask]) - np.exp(lx[~mask] - lp[~mask])
+            delta[mask] = (
+                d[mask] * np.exp(lq[mask] + np.log1p(-0.5*d[mask]) - lp[mask])
+            )
+            delta[~mask] = (
+                q[~mask] * np.exp(-lp[~mask]) - np.exp(lx[~mask] - lp[~mask])
+            )
 
             x = x0 + sign * delta
             if np.allclose(x, x0, atol=1e-08):
