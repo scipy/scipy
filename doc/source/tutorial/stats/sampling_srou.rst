@@ -6,7 +6,7 @@ Simple Ratio-of-Uniforms (SROU)
 .. currentmodule:: scipy.stats.sampling
 
 * Required: PDF, area under PDF if different than 1
-* Optional: mode
+* Optional: mode, CDF at mode
 * Speed:
 
   * Set-up: fast
@@ -76,6 +76,34 @@ its histogram:
     >>> ax.set_title('Simple Ratio-of-Uniforms Samples')
     >>> ax.legend()
     >>> plt.show()
+
+The main advantage of the method is a fast setup. This can be beneficial if one
+repeatedly needs to generate small to moderate samples of a distribution with
+different shape parameters. In such a situation, the setup step of
+`sampling.NumericalInverseHermite` or `sampling.NumericalInversePolynomial` will
+lead to poor performance. As an example, assume we are interested to generate
+100 samples for the Gamma distribution with 1000 different shape parameters
+given by `np.arange(1.5, 5, 1000)`.
+
+    >>> import math
+    >>> class GammaDist:
+    ...     def __init__(self, p):
+    ...         self.p = p
+    ...     def pdf(self, x):
+    ...         return x**(self.p-1) * np.exp(-x)
+    ...
+    >>> urng = np.random.default_rng()
+    >>> p = np.arange(1.5, 5, 1000)
+    >>> res = np.empty((1000, 100))
+    >>> for i in range(1000):
+    ...     dist = GammaDist(p[i])
+    ...     rng = SimpleRatioUniforms(dist, mode=p[i]-1,
+    ...                               pdf_area=math.gamma(p[i]),
+    ...                               random_state=urng)
+    ...     with np.suppress_warnings() as sup:
+    ...         sup.filter(RuntimeWarning, "invalid value encountered in double_scalars")
+    ...         sup.filter(RuntimeWarning, "overflow encountered in exp")
+    ...         res[i] = rng.rvs(100)
 
 See [1]_, [2]_, and [3]_ for more details.
 

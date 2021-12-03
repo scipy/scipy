@@ -69,9 +69,7 @@ class SimpleRatioUniforms(Method):
                  mode: None | float = ...,
                  pdf_area: float = ...,
                  domain: None | Tuple[float, float] = ...,
-                 r: float = ...,
                  cdf_at_mode: float = ...,
-                 use_squeeze: bool = ...,
                  random_state: SeedType = ...) -> None: ...
 
 

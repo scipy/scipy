@@ -975,8 +975,12 @@ cdef class SimpleRatioUniforms(Method):
 
     Simple Ratio-of-Uniforms (SROU) Method.
 
-    SROU is based on the ratio-of-uniforms method that uses universal inequalities for constructing
-    a (universal) bounding rectangle. It works for T-concave distributions with ``T(x) = -1/sqrt(x)``.
+    SROU is based on the ratio-of-uniforms method that uses universal inequalities for
+    constructing a (universal) bounding rectangle. It works for T-concave distributions
+    with ``T(x) = -1/sqrt(x)``. The main advantage of the method is a fast setup. This
+    can be beneficial if one repeatedly needs to generate small to moderate samples of
+    a distribution with different shape parameters. In such a situation, the setup step of
+    `NumericalInverseHermite` or `NumericalInversePolynomial` will lead to poor performance.
 
     Parameters
     ----------
