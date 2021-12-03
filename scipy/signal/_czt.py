@@ -56,7 +56,7 @@ def czt_points(m, w=None, a=1+0j):
 
     Parameters
     ----------
-    m : int, optional
+    m : int
         The number of points desired.
     w : complex, optional
         The ratio between points in each step.
@@ -279,7 +279,7 @@ class ZoomFFT(CZT):
     ----------
     n : int
         The size of the signal.
-    fn : array_like, optional
+    fn : array_like
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
@@ -493,7 +493,7 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     ----------
     x : array
         The signal to transform.
-    fn : array_like, optional
+    fn : array_like
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
