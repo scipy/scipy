@@ -50,7 +50,7 @@ def dfoxs(n, nprob, factor):
         x[3] = -1
     elif nprob == 15:  # Chebyquad function.
         for k in range(n):
-            x[k] = (k+1)/(n+1)
+            x[k] = (k + 1) / (n + 1)
     elif nprob == 16:  # Brown almost-linear function.
         x = 0.5 * np.ones(n)
     elif nprob == 17:  # Osborne 1 function.
@@ -79,15 +79,16 @@ def dfoxs(n, nprob, factor):
         for i in range(n):
             ss = 0
             for j in range(n):
-                frac = (i+1) / (j+1)
-                ss = ss + np.sqrt(frac) * \
-                    ((np.sin(np.log(np.sqrt(frac))))**5
-                     + (np.cos(np.log(np.sqrt(frac))))**5)
-            x[i] = -8.710996e-4 * ((i-49)**3 + ss)
+                frac = (i + 1) / (j + 1)
+                ss = ss + np.sqrt(frac) * (
+                    (np.sin(np.log(np.sqrt(frac)))) ** 5
+                    + (np.cos(np.log(np.sqrt(frac)))) ** 5
+                )
+            x[i] = -8.710996e-4 * ((i - 49) ** 3 + ss)
     elif nprob == 22:  # Heart8ls.
         x = np.asarray([-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5])
     else:
-        print(f'unrecognized function number {nprob}')
+        print(f"unrecognized function number {nprob}")
         return None
 
     return factor * x

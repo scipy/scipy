@@ -59,13 +59,13 @@ class TestLineSearch:
         dp = -1 - 3*s**2 + 4*s**3
         return p, dp
 
-    def _scalar_func_2(self, s, fs=None):
+    def _scalar_func_2(self, s):
         self.fcount += 1
         p = np.exp(-4*s) + s**2
         dp = -4*np.exp(-4*s) + 2*s
         return p, dp
 
-    def _scalar_func_3(self, s, fs=None):
+    def _scalar_func_3(self, s):
         self.fcount += 1
         p = -np.sin(10*s)
         dp = -10*np.cos(10*s)
@@ -156,7 +156,7 @@ class TestLineSearch:
         def phi(alpha):
             return (alpha - 5) ** 2
 
-        def derphi(alpha, fs=None):
+        def derphi(alpha):
             return 2 * (alpha - 5)
 
         s, _, _, _ = assert_warns(LineSearchWarning,
@@ -348,7 +348,7 @@ class TestLineSearch:
             count[0] += 1
             return -s + 0.05*s**2
 
-        def derphi(s, fs=None):
+        def derphi(s):
             count[0] += 1
             return -1 + 0.05*2*s
 
