@@ -1534,9 +1534,11 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     # from 0 to n_obs. We'll concatenate the samples, use these indices to
     # permute the data, then split the samples apart again.
     if n_permutations >= n_max:
+        exact_test = True
         n_permutations = n_max
         perm_generator = _all_partitions_concatenated(n_obs_i)
     else:
+        exact_test = False
         # Neither RandomState.permutation nor Generator.permutation
         # can permute axis-slices independently. If this feature is
         # added in the future, batches of the desired size should be
@@ -1570,7 +1572,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
         null_distribution.append(statistic(*data_batch, axis=-1))
     null_distribution = np.concatenate(null_distribution, axis=0)
 
-    return null_distribution, n_permutations
+    return null_distribution, n_permutations, exact_test
 
 
 def _calculate_null_pairings(data, statistic, n_permutations, batch,
@@ -1587,11 +1589,13 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     # `perm_generator` is an iterator that produces a list of permutations of
     # indices from 0 to n_obs_sample, one for each sample.
     if n_permutations >= n_max:
+        exact_test = True
         n_permutations = n_max
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
     else:
+        exact_test = False
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
@@ -1624,7 +1628,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         null_distribution.append(statistic(*data_batch, axis=-1))
     null_distribution = np.concatenate(null_distribution, axis=0)
 
-    return null_distribution, n_permutations
+    return null_distribution, n_permutations, exact_test
 
 
 def _calculate_null_samples(data, statistic, n_permutations, batch,
@@ -1790,13 +1794,27 @@ def permutation_test(data, statistic, *, permutation_type='independent',
         ``None``, in which case ``batch`` is the number of permutations.
     alternative : {'two-sided', 'less', 'greater'}, optional
         The alternative hypothesis for which the p-value is calculated.
-        For each alternative, the p-value is defined as follows.
+        For each alternative, the p-value is defined for exact tests as
+        follows.
 
         - ``'greater'`` : the percentage of the null distribution that is
           greater than or equal to the observed value of the test statistic.
         - ``'less'`` : the percentage of the null distribution that is
           less than or equal to the observed value of the test statistic.
         - ``'two-sided'`` (default) : twice the smaller of the p-values above.
+
+        Note that p-values for randomized tests are calculated according to the
+        conservative (over-estimated) approximation suggested in [2]_ and [3]_
+        rather than the unbiased estimator suggested in [4]_. That is, when
+        calculating the proportion of the randomized null distribution that is
+        as extreme as the observed value of the test statistic, the values in
+        the numerator and denominator are both increased by one. An
+        interpretation of this adjustment is that the observed value of the
+        test statistic is always included as an element of the randomized
+        null distribution.
+        The convention used for two-sided p-values is not universal;
+        the observed test statistic and null distribution are returned in
+        case a different definition is preferred.
 
     axis : int, default: 0
         The axis of the (broadcasted) samples over which to calculate the
@@ -1956,6 +1974,18 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     only one sample, then the null distribution is formed by independently
     changing the *sign* of each observation.
 
+    References
+    ----------
+
+    .. [1] R. A. Fisher. The Design of Experiments, 6th Ed (1951).
+    .. [2] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
+    .. [3] M. D. Ernst. "Permutation Methods: A Basis for Exact Inference".
+       Statistical Science (2004).
+    .. [4] B. Efron and R. J. Tibshirani. An Introduction to the Bootstrap
+       (1993).
+
     Examples
     --------
 
@@ -2016,7 +2046,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> print(res.statistic)
     -0.5230459671240913
     >>> print(res.pvalue)
-    0.00016
+    0.00016999830001699983
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
@@ -2055,16 +2085,20 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     null_calculator_args = (data, statistic, n_resamples,
                             batch, random_state)
     calculate_null = null_calculators[permutation_type]
-    null_distribution, n_resamples = calculate_null(*null_calculator_args)
+    null_distribution, n_resamples, exact_test = (
+        calculate_null(*null_calculator_args))
+
+    # See References [2] and [3]
+    adjustment = 0 if exact_test else 1
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 
     def two_sided(null_distribution, observed):
