@@ -243,16 +243,16 @@ def lobpcg(
     >>> import numpy as np
     >>> from scipy.sparse import spdiags, issparse
     >>> from scipy.sparse.linalg import lobpcg, LinearOperator
-    
-    The marix size: 
-    
+
+    The marix size:
+
     >>> n = 100
     >>> vals = np.arange(1, n + 1)
-    
+
     The first mandatory input parameter, in this test
     a sparse 2D array representing the square matrix
     of the eigenvalue problem to solve:
-    
+
     >>> A = spdiags(vals, 0, n, n)
     >>> A.toarray()
     array([[  1.,   0.,   0., ...,   0.,   0.,   0.],
@@ -274,7 +274,7 @@ def lobpcg(
     >>> X = rng.normal(size=(n, 3))
 
     Constraints - an optional input parameter is a 2D array comprising
-    of column vectors that the eigenvectors must be orthogonal to: 
+    of column vectors that the eigenvectors must be orthogonal to:
 
     >>> Y = np.eye(n, 3)
 
