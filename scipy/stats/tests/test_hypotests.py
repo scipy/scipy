@@ -1381,7 +1381,7 @@ class TestPermutationTest:
 
     # -- Test Parameters -- #
     @pytest.mark.parametrize('permutation_type',
-                             ['pairings', 'samples', 'both'])
+                             ['pairings', 'samples', 'independent'])
     def test_batch(self, permutation_type):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
@@ -1419,7 +1419,7 @@ class TestPermutationTest:
     @pytest.mark.parametrize('permutation_type, exact_size',
                              [('pairings', special.factorial(3)**2),
                               ('samples', 2**3),
-                              ('both', special.binom(6, 3))])
+                              ('independent', special.binom(6, 3))])
     def test_permutations(self, permutation_type, exact_size):
         # make sure that the `permutations` parameter is respected by checking
         # the size of the null distribution
@@ -1462,7 +1462,7 @@ class TestPermutationTest:
         def statistic(x, y, axis):
             return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 
-        kwds = {'vectorized': True, 'permutation_type': 'both',
+        kwds = {'vectorized': True, 'permutation_type': 'independent',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
         res = permutation_test(data, statistic, **kwds,
                                n_resamples=permutations)
@@ -1631,7 +1631,7 @@ class TestPermutationTest:
     @pytest.mark.slow()
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis):
-        # Test that permutation_test with permutation_type='both' works
+        # Test that permutation_test with permutation_type='independent' works
         # properly for a 3-sample statistic with nd array samples of different
         # (but compatible) shapes and ndims. Show that exact permutation test
         # and random permutation tests approximate SciPy's asymptotic pvalues
@@ -1664,7 +1664,7 @@ class TestPermutationTest:
 
         # Calculate exact and randomized permutation results
         kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
-                'permutation_type': 'both', 'random_state': 0}
+                'permutation_type': 'independent', 'random_state': 0}
         res = permutation_test(data, statistic1d, n_resamples=np.inf, **kwds)
         res2 = permutation_test(data, statistic1d, n_resamples=1000, **kwds)
 

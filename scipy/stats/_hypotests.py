@@ -1666,7 +1666,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    permutation_types = {'samples', 'pairings', 'both'}
+    permutation_types = {'samples', 'pairings', 'independent'}
     permutation_type = permutation_type.lower()
     if permutation_type not in permutation_types:
         raise ValueError(f"`permutation_type` must be in {permutation_types}.")
@@ -1679,7 +1679,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     message = "`data` must be a tuple containing at least two samples"
     try:
-        if len(data) < 2 and permutation_type == "both":
+        if len(data) < 2 and permutation_type == 'independent':
             raise ValueError(message)
     except TypeError:
         raise TypeError(message)
@@ -1717,7 +1717,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
             batch_iv, alternative, axis_int, random_state)
 
 
-def permutation_test(data, statistic, *, permutation_type='both',
+def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=False, n_resamples=np.inf, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
@@ -1743,7 +1743,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
         provided `axis` of the sample arrays.
-    permutation_type : {'both', 'samples', 'pairings'}, optional
+    permutation_type : {'independent', 'samples', 'pairings'}, optional
         The type of permutations to be performed, in accordance with the
         null hypothesis. The first two permutation types are for paired sample
         statistics, in which all samples contain the same number of
@@ -1760,11 +1760,11 @@ def permutation_test(data, statistic, *, permutation_type='both',
           appropriate for association/correlation tests with statistics such
           as Spearman's :math:`\rho`, Kendall's :math:`\tau`, and Pearson's
           :math:`r`.
-        - ``'both'`` (default) : observations are assigned to different samples
-          without preserving pairs. Samples may contain different numbers of
-          observations. This permutation type is appropriate for
-          independent sample hypothesis tests such as the Mann-Whitney
-          :math:`U` test and the independent sample t-test.
+        - ``'independent'`` (default) : observations are assigned to different
+          samples. Samples may contain different numbers of observations. This
+          permutation type is appropriate for independent sample hypothesis
+          tests such as the Mann-Whitney :math:`U` test and the independent
+          sample t-test.
 
           Please see the Notes section below for more detailed descriptions
           of the permutation types.
@@ -1830,7 +1830,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     The three types of permutation tests supported by this function are
     described below.
 
-    **Unpaired statistics** (``permutation_type='both'``):
+    **Unpaired statistics** (``permutation_type='independent'``):
 
     The null hypothesis associated with this permutation type is that all
     observations are sampled from the same underlying distribution and that
@@ -1866,10 +1866,10 @@ def permutation_test(data, statistic, *, permutation_type='both',
     and ``y = [a4, a3, b1]`` would *not* be considered distinct from the
     example above.
 
-    ``permutation_type='both'`` does not support one-sample statistics, but it
-    can be applied to statistics with more than two samples. In this case, if
-    ``n`` is an array of the number of observations within each sample, the
-    number of distinct partitions is::
+    ``permutation_type='independent'`` does not support one-sample statistics,
+    but it can be applied to statistics with more than two samples. In this
+    case, if ``n`` is an array of the number of observations within each
+    sample, the number of distinct partitions is::
 
         np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
@@ -2050,7 +2050,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     null_calculators = {"pairings": _calculate_null_pairings,
                         "samples": _calculate_null_samples,
-                        "both": _calculate_null_both}
+                        "independent": _calculate_null_both}
     null_calculator_args = (data, statistic, n_resamples,
                             batch, random_state)
     calculate_null = null_calculators[permutation_type]
