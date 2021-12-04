@@ -1659,7 +1659,7 @@ def _calculate_null_samples(data, statistic, n_permutations, batch,
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
-                         permutations, batch, alternative, axis, random_state):
+                         n_resamples, batch, alternative, axis, random_state):
     """Input validation for `permutation_test`."""
 
     axis_int = int(axis)
@@ -1694,10 +1694,10 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
-    permutations_int = (int(permutations) if not np.isinf(permutations)
+    n_resamples_int = (int(n_resamples) if not np.isinf(n_resamples)
                         else np.inf)
-    if permutations != permutations_int or permutations_int <= 0:
-        raise ValueError("`permutations` must be a positive integer.")
+    if n_resamples != n_resamples_int or n_resamples_int <= 0:
+        raise ValueError("`n_resamples` must be a positive integer.")
 
     if batch is None:
         batch_iv = batch
@@ -1713,12 +1713,12 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, permutation_type, vectorized, permutations_int,
+    return (data_iv, statistic, permutation_type, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int, random_state)
 
 
 def permutation_test(data, statistic, *, permutation_type='both',
-                     vectorized=False, permutations=np.inf, batch=None,
+                     vectorized=False, n_resamples=np.inf, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
@@ -1776,8 +1776,8 @@ def permutation_test(data, statistic, *, permutation_type='both',
         vectorized to compute the statistic along the provided `axis` of the ND
         arrays in `data`. Use of a vectorized statistic can reduce computation
         time.
-    permutations : int, default: ``np.inf``
-        Number of random permutations used to approximate the null
+    n_resamples : int, default: ``np.inf``
+        Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
         permutations, the exact null distribution will be computed.
         Note that the number of distinct permutations grows very rapidly with
@@ -1806,7 +1806,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
-        Pseudorandom number generator state used to generate resamples.
+        Pseudorandom number generator state used to generate permutations.
 
         If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
@@ -1837,7 +1837,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     they have been assigned to one of the samples at random.
 
     Suppose ``data`` contains two samples; e.g. ``a, b = data``.
-    When ``1 < permutations < binom(n, k)``, where
+    When ``1 < n_resamples < binom(n, k)``, where
 
     * ``k`` is the number of observations in ``a``,
     * ``n`` is the total number of observations in ``a`` and ``b``, and
@@ -1849,7 +1849,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     statistic under the null hypothesis. The statistic of the original
     data is compared to this distribution to determine the p-value.
 
-    When ``permutations >= binom(n, k)``, an exact test is performed: the data
+    When ``n_resamples >= binom(n, k)``, an exact test is performed: the data
     are *partitioned* between the samples in each distinct way exactly once,
     and the exact null distribution is formed.
     Note that for a given partitioning of the data between the samples,
@@ -1885,7 +1885,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     of a second sample, ``b``. Let ``n`` be the number of observations in
     ``a``, which must also equal the number of observations in ``b``.
 
-    When ``1 < permutations < factorial(n)``, the elements of ``a`` are
+    When ``1 < n_resamples < factorial(n)``, the elements of ``a`` are
     randomly permuted. The user-supplied statistic accepts one data argument,
     say ``a_perm``, and calculates the statistic considering ``a_perm`` and
     ``b``. This process is performed repeatedly, `permutation` times,
@@ -1893,7 +1893,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     The statistic of the original data is compared to this distribution to
     determine the p-value.
 
-    When ``permutations >= factorial(n)``, an exact test is performed:
+    When ``n_resamples >= factorial(n)``, an exact test is performed:
     ``a`` is permuted in each distinct way exactly once. Therefore, the
     `statistic` is computed for each unique pairing of samples between ``a``
     and ``b`` exactly once.
@@ -1927,14 +1927,14 @@ def permutation_test(data, statistic, *, permutation_type='both',
     Let ``n`` be the number of observations in ``a``, which must also equal
     the number of observations in ``b``.
 
-    When ``1 < permutations < 2**n``, the elements of ``a`` are ``b`` are
+    When ``1 < n_resamples < 2**n``, the elements of ``a`` are ``b`` are
     randomly swapped between samples (maintaining their pairings) and the
     statistic is calculated. This process is performed repeatedly,
     `permutation` times,  generating a distribution of the statistic under the
     null hypothesis. The statistic of the original data is compared to this
     distribution to determine the p-value.
 
-    When ``permutations >= 2**n``, an exact test is performed: the observations
+    When ``n_resamples >= 2**n``, an exact test is performed: the observations
     are assigned to the two samples in each distinct way (while maintaining
     pairings) exactly once.
 
@@ -2009,7 +2009,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     >>> x = norm.rvs(size=100, random_state=rng)
     >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test((x, y), statistic, permutations=100000,
+    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
@@ -2041,9 +2041,9 @@ def permutation_test(data, statistic, *, permutation_type='both',
 
     """
     args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
-                                permutations, batch, alternative, axis,
+                                n_resamples, batch, alternative, axis,
                                 random_state)
-    (data, statistic, permutation_type, vectorized, permutations, batch,
+    (data, statistic, permutation_type, vectorized, n_resamples, batch,
      alternative, axis, random_state) = args
 
     observed = statistic(*data, axis=-1)
@@ -2051,19 +2051,19 @@ def permutation_test(data, statistic, *, permutation_type='both',
     null_calculators = {"pairings": _calculate_null_pairings,
                         "samples": _calculate_null_samples,
                         "both": _calculate_null_both}
-    null_calculator_args = (data, statistic, permutations,
+    null_calculator_args = (data, statistic, n_resamples,
                             batch, random_state)
     calculate_null = null_calculators[permutation_type]
-    null_distribution, permutations = calculate_null(*null_calculator_args)
+    null_distribution, n_resamples = calculate_null(*null_calculator_args)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / permutations
+        pvalues = cmps.sum(axis=0) / n_resamples
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / permutations
+        pvalues = cmps.sum(axis=0) / n_resamples
         return pvalues
 
     def two_sided(null_distribution, observed):

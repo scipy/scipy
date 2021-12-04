@@ -1354,13 +1354,13 @@ class TestPermutationTest:
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, vectorized=1.5)
 
-        message = "`permutations` must be a positive integer."
+        message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, permutations=-1000)
+            permutation_test(([1, 2, 3], [1, 2, 3]), stat, n_resamples=-1000)
 
-        message = "`permutations` must be a positive integer."
+        message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, permutations=1000.5)
+            permutation_test(([1, 2, 3], [1, 2, 3]), stat, n_resamples=1000.5)
 
         message = "`batch` must be a positive integer or None."
         with pytest.raises(ValueError, match=message):
@@ -1397,7 +1397,7 @@ class TestPermutationTest:
         statistic.counter = 0
         statistic.batch_size = 0
 
-        kwds = {'permutations': 1000, 'permutation_type': permutation_type,
+        kwds = {'n_resamples': 1000, 'permutation_type': permutation_type,
                 'vectorized': True, 'random_state': 0}
         res1 = stats.permutation_test((x, y), statistic, batch=1, **kwds)
         assert_equal(statistic.counter, 1001)
@@ -1432,7 +1432,7 @@ class TestPermutationTest:
 
         kwds = {'permutation_type': permutation_type,
                 'vectorized': True, 'random_state': 0}
-        res = stats.permutation_test((x, y), statistic, permutations=3, **kwds)
+        res = stats.permutation_test((x, y), statistic, n_resamples=3, **kwds)
         assert_equal(res.null_distribution.size, 3)
 
         res = stats.permutation_test((x, y), statistic, **kwds)
@@ -1465,7 +1465,7 @@ class TestPermutationTest:
         kwds = {'vectorized': True, 'permutation_type': 'both',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
         res = permutation_test(data, statistic, **kwds,
-                               permutations=permutations)
+                               n_resamples=permutations)
         res2 = permutation_test(data, statistic, **kwds)
 
         assert res.statistic == res2.statistic
@@ -1490,7 +1490,7 @@ class TestPermutationTest:
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
         res = permutation_test(data, statistic, **kwds,
-                               permutations=permutations)
+                               n_resamples=permutations)
         res2 = permutation_test(data, statistic, **kwds)
 
         assert res.statistic == res2.statistic
@@ -1521,7 +1521,7 @@ class TestPermutationTest:
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
         res = permutation_test(data, statistic, **kwds,
-                               permutations=permutations)
+                               n_resamples=permutations)
         res2 = permutation_test(data, statistic, **kwds)
 
         assert res.statistic == res2.statistic
@@ -1547,7 +1547,7 @@ class TestPermutationTest:
             return stats.ttest_ind(x, y, axis=axis).statistic
 
         res2 = permutation_test((x, y), statistic, vectorized=True,
-                                permutations=permutations,
+                                n_resamples=permutations,
                                 alternative=alternative, axis=axis,
                                 random_state=0)
 
@@ -1665,8 +1665,8 @@ class TestPermutationTest:
         # Calculate exact and randomized permutation results
         kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
                 'permutation_type': 'both', 'random_state': 0}
-        res = permutation_test(data, statistic1d, permutations=np.inf, **kwds)
-        res2 = permutation_test(data, statistic1d, permutations=1000, **kwds)
+        res = permutation_test(data, statistic1d, n_resamples=np.inf, **kwds)
+        res2 = permutation_test(data, statistic1d, n_resamples=1000, **kwds)
 
         # Check results
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
@@ -1808,8 +1808,8 @@ class TestPermutationTest:
 
         kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
                 'permutation_type': 'pairings', 'random_state': 0}
-        res = permutation_test(data, statistic1d, permutations=np.inf, **kwds)
-        res2 = permutation_test(data, statistic1d, permutations=5000, **kwds)
+        res = permutation_test(data, statistic1d, n_resamples=np.inf, **kwds)
+        res2 = permutation_test(data, statistic1d, n_resamples=5000, **kwds)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
