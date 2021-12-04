@@ -1464,9 +1464,9 @@ class TestPermutationTest:
 
         kwds = {'vectorized': True, 'permutation_type': 'independent',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
-        res = permutation_test(data, statistic, **kwds,
-                               n_resamples=permutations)
-        res2 = permutation_test(data, statistic, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations,
+                               **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
@@ -1489,9 +1489,9 @@ class TestPermutationTest:
 
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
-        res = permutation_test(data, statistic, **kwds,
-                               n_resamples=permutations)
-        res2 = permutation_test(data, statistic, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations,
+                               **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
@@ -1520,9 +1520,9 @@ class TestPermutationTest:
 
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
-        res = permutation_test(data, statistic, **kwds,
-                               n_resamples=permutations)
-        res2 = permutation_test(data, statistic, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations,
+                               **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
@@ -1568,7 +1568,8 @@ class TestPermutationTest:
             return stats.ks_2samp(x, y, mode='asymp',
                                   alternative=alternative).statistic
 
-        res = permutation_test((x, y), statistic1d, alternative=alternative)
+        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+                               alternative=alternative)
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1589,7 +1590,8 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
 
-        res = permutation_test((x, y), statistic1d, alternative=alternative)
+        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+                               alternative=alternative)
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1606,7 +1608,8 @@ class TestPermutationTest:
             return stats.mannwhitneyu(x, y, axis=axis).statistic
 
         res = permutation_test((x, y), statistic, vectorized=True,
-                               alternative=alternative, axis=1)
+                               n_resamples=np.inf, alternative=alternative,
+                               axis=1)
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1623,7 +1626,8 @@ class TestPermutationTest:
                                               method='asymptotic').statistic
 
         # cramervonmises_2samp has only one alternative, greater
-        res = permutation_test((x, y), statistic1d, alternative='greater')
+        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+                               alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1701,11 +1705,11 @@ class TestPermutationTest:
         expected_p = expected[:, 1, :]
 
         res1 = permutation_test((x-y,), statistic_1samp_1d, vectorized=False,
-                                permutation_type='samples',
+                                permutation_type='samples', n_resamples=np.inf,
                                 alternative=alternative, axis=1)
 
         res2 = permutation_test((x, y), statistic_2samp_1d, vectorized=False,
-                                permutation_type='samples',
+                                permutation_type='samples', n_resamples=np.inf,
                                 alternative=alternative, axis=1)
 
         # `wilcoxon` returns a different statistic with 'two-sided'
@@ -1733,6 +1737,7 @@ class TestPermutationTest:
 
         res = stats.permutation_test((x,), statistic, vectorized=True,
                                      permutation_type='samples',
+                                     n_resamples=np.inf,
                                      alternative=alternative)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
@@ -1749,7 +1754,8 @@ class TestPermutationTest:
             return stats.kendalltau(x, y, method='asymptotic').correlation
 
         # kendalltau currently has only one alternative, two-sided
-        res = permutation_test((x,), statistic1d, permutation_type='pairings')
+        res = permutation_test((x,), statistic1d, permutation_type='pairings',
+                               n_resamples=np.inf)
 
         assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1767,7 +1773,7 @@ class TestPermutationTest:
         tab = stats.contingency.crosstab(x, y)[1]
 
         res = permutation_test((x,), statistic, permutation_type='pairings',
-                               alternative=alternative)
+                               n_resamples=np.inf, alternative=alternative)
         res2 = stats.fisher_exact(tab, alternative=alternative)
 
         assert_allclose(res.pvalue, res2[1])
@@ -1875,8 +1881,9 @@ class TestPermutationTest:
 
         with np.testing.suppress_warnings() as sup:
             sup.filter(UserWarning, "Ties preclude use of exact statistic")
-            res = permutation_test((x, y), statistic1d, alternative='less')
-            res2 = permutation_test((x, y), statistic1d,
+            res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+                                   alternative='less')
+            res2 = permutation_test((x, y), statistic1d, n_resamples=np.inf,
                                     alternative='two-sided')
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
@@ -1917,9 +1924,8 @@ class TestPermutationTest:
         def statistic1d(x):
             return stats.spearmanr(x, y).correlation
 
-        res = permutation_test((x,), statistic1d,
-                               permutation_type='pairings',
-                               alternative=alternative)
+        res = permutation_test((x,), statistic1d, permutation_type='pairings',
+                               n_resamples=np.inf, alternative=alternative)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected_pvalue, atol=1e-13)

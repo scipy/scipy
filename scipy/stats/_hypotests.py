@@ -1718,7 +1718,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
 
 def permutation_test(data, statistic, *, permutation_type='independent',
-                     vectorized=False, n_resamples=np.inf, batch=None,
+                     vectorized=False, n_resamples=9999, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
@@ -1776,7 +1776,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
         vectorized to compute the statistic along the provided `axis` of the ND
         arrays in `data`. Use of a vectorized statistic can reduce computation
         time.
-    n_resamples : int, default: ``np.inf``
+    n_resamples : int or np.inf, default: 9999
         Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
         permutations, the exact null distribution will be computed.
@@ -1991,8 +1991,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     >>> from scipy.stats import permutation_test
     >>> # because our statistic is vectorized, we pass `vectorized=True`
+    >>> # `n_resamples=np.inf` indicates that an exact test is to be performed
     >>> res = permutation_test((x, y), statistic, vectorized=True,
-    ...                        alternative='less')
+    ...                        n_resamples=np.inf, alternative='less')
     >>> print(res.statistic)
     -3.5411688580987266
     >>> print(res.pvalue)
