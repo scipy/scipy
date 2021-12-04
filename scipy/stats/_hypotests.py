@@ -1472,7 +1472,7 @@ def _broadcast_shapes(shapes, axis=None):
 def _all_partitions_concatenated(ns):
     """
     Generate all partitions of indices of groups of given sizes, concatenated
-    
+
     `ns` is an iterable of ints.
     """
     def all_partitions(z, n):
@@ -1678,6 +1678,9 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
+    if not vectorized:
+        statistic = _bootstrap._vectorize_statistic(statistic)
+
     message = "`data` must be a tuple containing at least two samples"
     try:
         if len(data) < 2 and permutation_type == "both":
@@ -1874,7 +1877,7 @@ def permutation_test(data, statistic, *, permutation_type='both',
     For ``a = [a1, a2, a3, a4]`` and ``b = [b1, b2, b3]``, an example of this
     permutation type is ``x = [b3, a1, a2, b2]`` and ``y = [a4, b1, a3]``.
     Because only one ordering/permutation of the data *within* each sample
-    is considered in an exact test, a resampling like ``x = [b3, a1, b2, a2]`` 
+    is considered in an exact test, a resampling like ``x = [b3, a1, b2, a2]``
     and ``y = [a4, a3, b1]`` would *not* be considered distinct from the
     example above.
 
@@ -2058,17 +2061,12 @@ def permutation_test(data, statistic, *, permutation_type='both',
     (data, statistic, permutation_type, vectorized, permutations, batch,
      alternative, axis, random_state) = args
 
-    if not vectorized:
-        statistic_vectorized = _bootstrap._vectorize_statistic(statistic)
-    else:
-        statistic_vectorized = statistic
-
-    observed = statistic_vectorized(*data, axis=-1)
+    observed = statistic(*data, axis=-1)
 
     null_calculators = {"pairings": _calculate_null_pairings,
                         "samples": _calculate_null_samples,
                         "both": _calculate_null_both}
-    null_calculator_args = (data, statistic_vectorized, permutations,
+    null_calculator_args = (data, statistic, permutations,
                             batch, random_state)
     calculate_null = null_calculators[permutation_type]
     null_distribution, permutations = calculate_null(*null_calculator_args)
