@@ -6080,7 +6080,11 @@ def test_support_broadcasting_gh13294_regression(distname, args):
         (4*[np.nan],) if isinstance(dist, stats.rv_discrete)
         else ([np.nan, 0, 0, 1], [3, np.nan, 0, -1])
     )
-    a0, b0 = dist.support(*args, *array_loc_scale)
+    with np.testing.suppress_warnings() as sup:
+        # on windows, numpy throws RuntimeWarning when using
+        # comparison operators on arrays with NaN values
+        sup.filter(RuntimeWarning, "invalid value encountered in greater")
+        a0, b0 = dist.support(*args, *array_loc_scale)
     ex_a0 = np.array(4*[np.nan])
     ex_b0 = np.array(4*[np.nan])
     assert_equal(a0, ex_a0)
@@ -6092,7 +6096,11 @@ def test_support_broadcasting_gh13294_regression(distname, args):
         ([],) if isinstance(dist, stats.rv_discrete)
         else ([], [])
     )
-    a1, b1 = dist.support(*args, *empty_loc_scale)
+    with np.testing.suppress_warnings() as sup:
+        # on windows, numpy throws RuntimeWarning when using
+        # comparison operators on arrays with NaN values
+        sup.filter(RuntimeWarning, "invalid value encountered in greater")
+        a1, b1 = dist.support(*args, *empty_loc_scale)
     ex_a1, ex_b1 = np.array([]), np.array([])
     assert_equal(a1, ex_a1)
     assert_equal(b1, ex_b1)
@@ -6118,7 +6126,11 @@ def test_support_broadcasting_gh13294_regression(distname, args):
              4*[np.nan]]
         )
 
-        a2, b2 = dist.support(*args, *broadcast_loc_scale)
+        with np.testing.suppress_warnings() as sup:
+            # on windows, numpy throws RuntimeWarning when using
+            # comparison operators on arrays with NaN values
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            a2, b2 = dist.support(*args, *broadcast_loc_scale)
         assert_equal(a2, ex_a2)
         assert_equal(b2, ex_b2)
         assert a2.shape == ex_a2.shape
