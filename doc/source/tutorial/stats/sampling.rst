@@ -85,6 +85,7 @@ Methods for continuous distributions   Required Inputs  Optional Inputs  Setup S
 :class:`~TransformedDensityRejection`  pdf, dpdf        none             slow         fast
 :class:`~NumericalInverseHermite`      cdf              pdf, dpdf        (very) slow  (very) fast
 :class:`~NumericalInversePolynomial`   pdf              cdf              (very) slow  (very) fast
+:class:`~SimpleRatioUniforms`          pdf              none             fast         slow
 =====================================  ===============  ===============  ===========  ==============
 
 where
@@ -293,6 +294,7 @@ Generators in :mod:`scipy.stats.sampling`
    sampling_pinv
    sampling_dgt
    sampling_hinv
+   sampling_srou
 
 
 References
