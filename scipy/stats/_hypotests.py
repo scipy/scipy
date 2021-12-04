@@ -1530,8 +1530,6 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
                      for i in range(n_samples-1, 0, -1)])
 
-    _memory_check(data, min(n_permutations, n_max))
-
     # perm_generator is an iterator that produces permutations of indices
     # from 0 to n_obs. We'll concatenate the samples, use these indices to
     # permute the data, then split the samples apart again.
@@ -1585,8 +1583,6 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     # compute number of permutations (factorial(n) permutations of each sample)
     n_obs_sample = data[0].shape[-1]  # observations per sample; same for each
     n_max = factorial(n_obs_sample)**n_samples
-
-    _memory_check(data, min(n_permutations, n_max))
 
     # `perm_generator` is an iterator that produces a list of permutations of
     # indices from 0 to n_obs_sample, one for each sample.
@@ -1719,17 +1715,6 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     return (data_iv, statistic, permutation_type, vectorized, permutations_int,
             batch_iv, alternative, axis_int, random_state)
-
-
-# This is mostly to protect me while developing. Eventually we want to batch
-# the computations, so this will be less of an issue, but if it sounds like a
-# good feature, let me know.
-def _memory_check(data, permutations):
-    needed = sum([sample.size for sample in data]) * permutations * 8
-    available = 1e9  # psutil.virtual_memory()[1] # can't use in SciPy
-    if needed > 0.8 * available:
-        raise MemoryError("Not enough memory available. "
-                          "Consider reducing the batch size.")
 
 
 def permutation_test(data, statistic, *, permutation_type='both',
