@@ -45,7 +45,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     pp 1627-1639.
     Jianwen Luo, Kui Ying, and Jing Bai. 2005. Savitzky-Golay smoothing and
     differentiation filter for even number data. Signal Process.
-    85, 7 (July 2005), 1429-1434. 
+    85, 7 (July 2005), 1429-1434.
 
     See Also
     --------
@@ -242,7 +242,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
-        If `mode` is 'interp', `window_length` must be less than or equal 
+        If `mode` is 'interp', `window_length` must be less than or equal
         to the size of `x`.
     polyorder : int
         The order of the polynomial used to fit the samples.
