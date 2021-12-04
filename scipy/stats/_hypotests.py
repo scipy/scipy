@@ -1695,7 +1695,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
         data_iv.append(sample)
 
     n_resamples_int = (int(n_resamples) if not np.isinf(n_resamples)
-                        else np.inf)
+                       else np.inf)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
         raise ValueError("`n_resamples` must be a positive integer.")
 
