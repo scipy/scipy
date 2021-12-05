@@ -1,11 +1,11 @@
 from numpy import array, kron, diag
 from numpy.testing import assert_, assert_equal
 
-from scipy.sparse import spfuncs
+from scipy.sparse import _spfuncs as spfuncs
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse._sparsetools import (csr_scale_rows, csr_scale_columns,
                                        bsr_scale_rows, bsr_scale_columns)
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestSparseFunctions:

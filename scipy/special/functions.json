@@ -368,6 +368,36 @@
 	    "_factorial": "d->d"
 	}
     },
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -912,6 +942,13 @@
         },
         "cephes.h": {
             "log1p": "d->d"
+        }
+    },
+    "log_expit": {
+        "_logit.h++": {
+            "log_expit": "d->d",
+            "log_expitf": "f->f",
+            "log_expitl": "g->g"
         }
     },
     "log_ndtr": {

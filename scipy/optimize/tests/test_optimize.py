@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
@@ -25,8 +26,8 @@ from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
-from scipy.optimize._differentiable_functions import ScalarFunction
-from scipy.optimize.optimize import MemoizeJac, show_options
+from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+from scipy.optimize._optimize import MemoizeJac, show_options
 
 
 def test_check_grad():
@@ -534,7 +535,9 @@ def test_maxfev_test():
         return rng.random(1) * 1000  # never converged problem
 
     for imaxfev in [1, 10, 50]:
-        # TODO: extend to more methods
+        # "TNC" and "L-BFGS-B" also supports max function evaluation, but
+        # these may violate the limit because of evaluating gradients
+        # by numerical differentiation. See the discussion in PR #14805.
         for method in ['Powell', 'Nelder-Mead']:
             result = optimize.minimize(cost, rng.random(10),
                                        method=method,
@@ -547,7 +550,7 @@ def test_wrap_scalar_function_with_validation():
     def func_(x):
         return x
 
-    fcalls, func = optimize.optimize.\
+    fcalls, func = optimize._optimize.\
         _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     for i in range(5):
@@ -555,10 +558,10 @@ def test_wrap_scalar_function_with_validation():
         assert fcalls[0] == i+1
 
     msg = "Too many function calls"
-    with assert_raises(optimize.optimize._MaxFuncCallError, match=msg):
+    with assert_raises(optimize._optimize._MaxFuncCallError, match=msg):
         func(np.asarray(i))  # exceeded maximum function call
 
-    fcalls, func = optimize.optimize.\
+    fcalls, func = optimize._optimize.\
         _wrap_scalar_function_maxfun_validation(func_, np.asarray(1), 5)
 
     msg = "The user-provided objective function must return a scalar value."
@@ -816,7 +819,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
-    def test_finite_differences(self):
+    def test_finite_differences_jac(self):
         methods = ['BFGS', 'CG', 'TNC']
         jacs = ['2-point', '3-point', None]
         for method, jac in itertools.product(methods, jacs):
@@ -824,6 +827,32 @@ class TestOptimizeSimple(CheckOptimize):
                                        method=method, jac=jac)
             assert_allclose(self.func(result.x), self.func(self.solution),
                             atol=1e-6)
+
+    def test_finite_differences_hess(self):
+        # test that all the methods that require hess can use finite-difference
+        # For Newton-CG, trust-ncg, trust-krylov the FD estimated hessian is
+        # wrapped in a hessp function
+        # dogleg, trust-exact actually require true hessians at the moment, so
+        # they're excluded.
+        methods = ['trust-constr', 'Newton-CG', 'trust-ncg', 'trust-krylov']
+        hesses = FD_METHODS + (optimize.BFGS,)
+        for method, hess in itertools.product(methods, hesses):
+            if hess is optimize.BFGS:
+                hess = hess()
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method, jac=self.grad,
+                                       hess=hess)
+            assert result.success
+
+        # check that the methods demand some sort of Hessian specification
+        # Newton-CG creates its own hessp, and trust-constr doesn't need a hess
+        # specified either
+        methods = ['trust-ncg', 'trust-krylov', 'dogleg', 'trust-exact']
+        for method in methods:
+            with pytest.raises(ValueError):
+                optimize.minimize(self.func, self.startparams,
+                                  method=method, jac=self.grad,
+                                  hess=None)
 
     def test_bfgs_gh_2169(self):
         def f(x):
@@ -1698,13 +1727,33 @@ class TestNewtonCg:
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
+    def test_finite_difference(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess='2-point',
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
+    def test_hessian_update_strategy(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess=optimize.BFGS(),
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert sol.success, sol.message
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
 
 def test_line_for_search():
     # _line_for_search is only used in _linesearch_powell, which is also
     # tested below. Thus there are more tests of _line_for_search in the
     # test_linesearch_powell_bounded function.
 
-    line_for_search = optimize.optimize._line_for_search
+    line_for_search = optimize._optimize._line_for_search
     # args are x0, alpha, lower_bound, upper_bound
     # returns lmin, lmax
 
@@ -1764,7 +1813,7 @@ def test_line_for_search():
 
 def test_linesearch_powell():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p + direction, direction
     func = lambda x: np.sum((x - np.array([-1., 2., 1.5, -.4]))**2)
@@ -1801,7 +1850,7 @@ def test_linesearch_powell():
 
 def test_linesearch_powell_bounded():
     # helper function in optimize.py, not a public function.
-    linesearch_powell = optimize.optimize._linesearch_powell
+    linesearch_powell = optimize._optimize._linesearch_powell
     # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
     # returns new_fval, p+direction, direction
     func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
@@ -2402,6 +2451,11 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     gh12502 - Divide by zero in Jacobian numerical differentiation when
     equality bounds constraints are used
     """
+    # GH-15051; slightly more skips than necessary; hopefully fixed by GH-14882
+    if (platform.machine() == 'aarch64' and method == "TNC"
+            and kwds["jac"] is False and callback is not None):
+        pytest.skip('Tolerance violation on aarch')
+
     lb, ub = eb_data["lb"], eb_data["ub"]
     x0, i_eb = eb_data["x0"], eb_data["i_eb"]
 

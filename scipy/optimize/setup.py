@@ -84,7 +84,7 @@ def configuration(parent_package='', top_path=None):
                          **numpy_nodepr_api)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
-    config.add_extension('minpack2',
+    config.add_extension('_minpack2',
                          sources=[join('minpack2', x) for x in sources],
                          **numpy_nodepr_api)
 

@@ -3,7 +3,7 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse

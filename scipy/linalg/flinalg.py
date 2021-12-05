@@ -3,7 +3,7 @@
 import warnings
 from . import _flinalg_py
 
-__all__ = ['get_flinalg_funcs']  # noqa: F822
+__all__ = ['get_flinalg_funcs', 'has_column_major_storage']  # noqa: F822
 
 
 def __dir__():

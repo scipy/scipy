@@ -568,8 +568,9 @@ def argsreduce(cond, *args):
         newargs = [newargs, ]
 
     if np.all(cond):
-        # Nothing to do
-        return newargs
+        # broadcast arrays with cond
+        *newargs, cond = np.broadcast_arrays(*newargs, cond)
+        return [arg.ravel() for arg in newargs]
 
     s = cond.shape
     # np.extract returns flattened arrays, which are not broadcastable together

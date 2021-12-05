@@ -49,7 +49,6 @@ functions. Use ``pdist`` for this purpose.
    minkowski        -- the Minkowski distance.
    seuclidean       -- the normalized Euclidean distance.
    sqeuclidean      -- the squared Euclidean distance.
-   wminkowski       -- (deprecated) alias of `minkowski`.
 
 Distance functions between two boolean vectors (representing sets) ``u`` and
 ``v``.  As in the case of numerical vectors, ``pdist`` is more efficient for
@@ -105,7 +104,6 @@ __all__ = [
     'sokalsneath',
     'sqeuclidean',
     'squareform',
-    'wminkowski',
     'yule'
 ]
 
@@ -118,7 +116,6 @@ from typing import List, Optional, Set, Callable
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
-from scipy._lib.deprecation import _deprecated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -257,8 +254,8 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     else:
-        if kwargs['p'] < 1:
-            raise ValueError("p must be at least 1")
+        if kwargs['p'] <= 0:
+            raise ValueError("p must be greater than 0")
 
     return kwargs
 
@@ -319,20 +316,6 @@ def _validate_weights(w, dtype=np.double):
     if np.any(w < 0):
         raise ValueError("Input weights should be all non-negative")
     return w
-
-
-@_deprecated(
-    msg="'wminkowski' metric is deprecated and will be removed in"
-        " SciPy 1.8.0, use 'minkowski' instead.")
-def _validate_wminkowski_kwargs(X, m, n, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is None:
-        raise ValueError('weighted minkowski requires a weight '
-                         'vector `w` to be given.')
-    kwargs['w'] = _validate_weights(w)
-    if 'p' not in kwargs:
-        kwargs['p'] = 2.
-    return kwargs
 
 
 def directed_hausdorff(u, v, seed=0):
@@ -444,7 +427,7 @@ def minkowski(u, v, p=2, w=None):
 
     .. math::
 
-       {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
+       {\\|u-v\\|}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
 
 
        \\left(\\sum{w_i(|(u_i - v_i)|^p)}\\right)^{1/p}.
@@ -456,7 +439,9 @@ def minkowski(u, v, p=2, w=None):
     v : (N,) array_like
         Input array.
     p : scalar
-        The order of the norm of the difference :math:`{||u-v||}_p`.
+        The order of the norm of the difference :math:`{\\|u-v\\|}_p`. Note
+        that for :math:`0 < p < 1`, the triangle inequality only holds with
+        an additional multiplicative factor, i.e. it is only a quasi-metric.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -485,8 +470,8 @@ def minkowski(u, v, p=2, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if p < 1:
-        raise ValueError("p must be at least 1")
+    if p <= 0:
+        raise ValueError("p must be greater than 0")
     u_v = u - v
     if w is not None:
         w = _validate_weights(w)
@@ -504,62 +489,6 @@ def minkowski(u, v, p=2, w=None):
     return dist
 
 
-def wminkowski(u, v, p, w):
-    """
-    Compute the weighted Minkowski distance between two 1-D arrays.
-
-    The weighted Minkowski distance between `u` and `v`, defined as
-
-    .. math::
-
-       \\left(\\sum{(|w_i (u_i - v_i)|^p)}\\right)^{1/p}.
-
-    Parameters
-    ----------
-    u : (N,) array_like
-        Input array.
-    v : (N,) array_like
-        Input array.
-    p : scalar
-        The order of the norm of the difference :math:`{||u-v||}_p`.
-    w : (N,) array_like
-        The weight vector.
-
-    Returns
-    -------
-    wminkowski : double
-        The weighted Minkowski distance between vectors `u` and `v`.
-
-    Notes
-    -----
-    `wminkowski` is deprecated and will be removed in SciPy 1.8.0.
-    Use `minkowski` with the ``w`` argument instead.
-
-    Examples
-    --------
-    >>> from scipy.spatial import distance
-    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 1, np.ones(3))
-    2.0
-    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 2, np.ones(3))
-    1.4142135623730951
-    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 3, np.ones(3))
-    1.2599210498948732
-    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 1, np.ones(3))
-    1.0
-    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 2, np.ones(3))
-    1.0
-    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 3, np.ones(3))
-    1.0
-
-    """
-    warnings.warn(
-        message="scipy.distance.wminkowski is deprecated and will be removed "
-                "in SciPy 1.8.0, use scipy.distance.minkowski instead.",
-        category=DeprecationWarning)
-    w = _validate_weights(w)
-    return minkowski(u, v, p=p, w=w**p)
-
-
 def euclidean(u, v, w=None):
     """
     Computes the Euclidean distance between two 1-D arrays.
@@ -568,7 +497,7 @@ def euclidean(u, v, w=None):
 
     .. math::
 
-       {||u-v||}_2
+       {\\|u-v\\|}_2
 
        \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)^{1/2}
 
@@ -607,7 +536,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {||u-v||}_2^2
+       {\\|u-v\\|}_2^2
 
        \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
 
@@ -663,7 +592,7 @@ def correlation(u, v, w=None, centered=True):
     .. math::
 
         1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                  {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                  {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
     where :math:`\\bar{u}` is the mean of the elements of `u`
     and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
@@ -712,7 +641,7 @@ def cosine(u, v, w=None):
     .. math::
 
         1 - \\frac{u \\cdot v}
-                  {||u||_2 ||v||_2}.
+                  {\\|u\\|_2 \\|v\\|_2}.
 
     where :math:`u \\cdot v` is the dot product of :math:`u` and
     :math:`v`.
@@ -2010,16 +1939,6 @@ _METRIC_INFOS = [
         pdist_func=_distance_pybind.pdist_sqeuclidean,
     ),
     MetricInfo(
-        canonical_name='wminkowski',
-        aka={'wminkowski', 'wmi', 'wm', 'wpnorm'},
-        validator=_validate_wminkowski_kwargs,
-        dist_func=wminkowski,
-        cdist_func=CDistWeightedMetricWrapper(
-            'wminkowski', 'old_weighted_minkowski'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'wminkowski', 'old_weighted_minkowski'),
-    ),
-    MetricInfo(
         canonical_name='yule',
         aka={'yule'},
         types=['bool'],
@@ -2113,7 +2032,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = pdist(X, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (p-norm) where :math:`p \\geq 1`.
+       :math:`\\|u-v\\|_p` (:math:`p`-norm) where :math:`p > 0` (note
+       that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = pdist(X, 'cityblock')``
 
@@ -2136,7 +2056,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     5. ``Y = pdist(X, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
+       Computes the squared Euclidean distance :math:`\\|u-v\\|_2^2` between
        the vectors.
 
     6. ``Y = pdist(X, 'cosine')``
@@ -2146,9 +2066,9 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{u \\cdot v}
-                   {{||u||}_2 {||v||}_2}
+                   {{\\|u\\|}_2 {\\|v\\|}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       where :math:`\\|*\\|_2` is the 2-norm of its argument ``*``, and
        :math:`u \\cdot v` is the dot product of ``u`` and ``v``.
 
     7. ``Y = pdist(X, 'correlation')``
@@ -2158,7 +2078,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                   {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
        where :math:`\\bar{v}` is the mean of the elements of vector v,
        and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
@@ -2275,15 +2195,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Kulczynski 1 distance between each pair of
         boolean vectors. (see kulczynski1 function documentation)
 
-    24. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
-
-        Computes the weighted Minkowski distance between each pair of
-        vectors. (see wminkowski function documentation)
-
-        'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
-        Use 'minkowski' instead.
-
-    25. ``Y = pdist(X, f)``
+    24. ``Y = pdist(X, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
@@ -2724,7 +2636,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
         'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
-        'sokalsneath', 'sqeuclidean', 'wminkowski', 'yule'.
+        'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2778,7 +2690,8 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     2. ``Y = cdist(XA, XB, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \\geq 1`.
+       :math:`\\|u-v\\|_p` (:math:`p`-norm) where :math:`p > 0` (note
+       that this is only a quasi-metric if :math:`0 < p < 1`).
 
     3. ``Y = cdist(XA, XB, 'cityblock')``
 
@@ -2800,7 +2713,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
 
     5. ``Y = cdist(XA, XB, 'sqeuclidean')``
 
-       Computes the squared Euclidean distance :math:`||u-v||_2^2` between
+       Computes the squared Euclidean distance :math:`\\|u-v\\|_2^2` between
        the vectors.
 
     6. ``Y = cdist(XA, XB, 'cosine')``
@@ -2810,9 +2723,9 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{u \\cdot v}
-                   {{||u||}_2 {||v||}_2}
+                   {{\\|u\\|}_2 {\\|v\\|}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       where :math:`\\|*\\|_2` is the 2-norm of its argument ``*``, and
        :math:`u \\cdot v` is the dot product of :math:`u` and :math:`v`.
 
     7. ``Y = cdist(XA, XB, 'correlation')``
@@ -2822,7 +2735,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
        .. math::
 
           1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                   {{\\|(u - \\bar{u})\\|}_2 {\\|(v - \\bar{v})\\|}_2}
 
        where :math:`\\bar{v}` is the mean of the elements of vector v,
        and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
@@ -2934,16 +2847,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the Sokal-Sneath distance between the vectors. (see
         `sokalsneath` function documentation)
 
-
-    23. ``Y = cdist(XA, XB, 'wminkowski', p=2., w=w)``
-
-        Computes the weighted Minkowski distance between the
-        vectors. (see `wminkowski` function documentation)
-
-        'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
-        Use 'minkowski' instead.
-
-    24. ``Y = cdist(XA, XB, f)``
+    23. ``Y = cdist(XA, XB, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
