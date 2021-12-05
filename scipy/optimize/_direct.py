@@ -163,7 +163,7 @@ def direct(
            optimization without the Lipschitz constant. J Optim Theory Appl
            79, 157-181 (1993)
     .. [2] Gablonsky, J., Kelley, C. A Locally-Biased form of the DIRECT
-           Algorithm. Journal of Global Optimization 21, 27–37 (2001).
+           Algorithm. Journal of Global Optimization 21, 27-37 (2001).
     """
     if not isinstance(bounds, Bounds):
         lb, ub = old_bound_to_new(bounds)
