@@ -132,19 +132,22 @@ def direct(
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
     potential solutions in the search space. The algorithm starts by
-    normalising the hyperrectangle (set of all possible values that can be taken
-    by the input variables subject to the bound constraints) to an n-dimensional
-    unit hypercube. It samples the function at the center of this hypercube
-    and at 2n (n is the number of variables) more points, 2 in each coordinate
-    direction. Using these function values, DIRECT then divides the domain
-    into hyperrectangles, each having exactly one of the sampling points as
-    its center. In each iteration, DIRECT chooses, using the epsilon parameter,
-    which defaults to 1e-4, some of the existing hyperrectangles to be further
-    divided. This division process continues until the maximum iterations or
-    maximum function evaluations allowed are exceeded, or the function value
-    is within the desired percentage error of the global minimum (if known).
-    The improved version of the DIRECT algorithm [2]_ is biased towards local
-    search making it effective for functions without too many local minima.
+    normalising the hyperrectangle (set of all possible values that can
+    be taken by the input variables subject to the bound constraints) to
+    an n-dimensional unit hypercube. It samples the function at the
+    center of this hypercube and at 2n (n is the number of variables)
+    more points, 2 in each coordinate direction. Using these function
+    values, DIRECT then divides the domain into hyperrectangles, each
+    having exactly one of the sampling points as its center. In each
+    iteration, DIRECT chooses, using the epsilon parameter, which defaults
+    to 1e-4, some of the existing hyperrectangles to be further divided.
+    This division process continues until the maximum iterations or
+    maximum function evaluations allowed are exceeded, or the function
+    value is within the desired percentage error of the global minimum
+    (if known). The locally biased variant of DIRECT
+    (originally called DIRECT_L) [2]_ is used by default. It makes the
+    search more locally biased and more efficient for cases with only a
+    few local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     http://www4.ncsu.edu/~ctk/SOFTWARE/DIRECTv204.tar.gz
