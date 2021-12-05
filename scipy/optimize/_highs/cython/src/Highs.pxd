@@ -33,7 +33,7 @@ cdef extern from "Highs.h":
         const HighsModelStatus & getModelStatus(const bool scaled_model) const
 
         const HighsInfo& getHighsInfo() const
-        string highsModelStatusToString(const HighsModelStatus model_status) const
+        string modelStatusToString(const HighsModelStatus model_status) const
         #HighsStatus getHighsInfoValue(const string& info, int& value)
         HighsStatus getHighsInfoValue(const string& info, double& value) const
         const HighsOptions& getHighsOptions() const

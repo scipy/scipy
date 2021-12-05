@@ -8,8 +8,8 @@ cdef extern from "HighsInfo.h" nogil:
         int simplex_iteration_count
         int ipm_iteration_count
         int crossover_iteration_count
-        int primal_status
-        int dual_status
+        int primal_solution_status
+        int dual_solution_status
         double objective_function_value
         int num_primal_infeasibilities
         double max_primal_infeasibility
