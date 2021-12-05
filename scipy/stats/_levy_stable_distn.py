@@ -728,7 +728,9 @@ class levy_stable_gen(rv_continuous):
 
     Any non-missing value for the attribute
     ``levy_stable.pdf_fft_min_points_threshold`` will set
-    ``levy_stable.pdf_default_method`` to 'fft-simpson'.
+    ``levy_stable.pdf_default_method`` to 'fft-simpson' if a valid
+    default method is not otherwise set.
+
 
 
     .. warning::
