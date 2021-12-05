@@ -7,6 +7,9 @@ from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
+from scipy.sparse import isspmatrix
+from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.linalg import svd
 
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
