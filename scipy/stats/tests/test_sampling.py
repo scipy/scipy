@@ -12,6 +12,7 @@ from scipy.stats.sampling import (
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
+    SimpleRatioUniforms,
     UNURANError
 )
 from scipy import stats
@@ -42,7 +43,8 @@ all_methods = [
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
     ("DiscreteGuideTable", {"dist": [0.02, 0.18, 0.8]}),
     ("NumericalInversePolynomial", {"dist": StandardNormal()}),
-    ("NumericalInverseHermite", {"dist": StandardNormal()})
+    ("NumericalInverseHermite", {"dist": StandardNormal()}),
+    ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
@@ -1237,16 +1239,52 @@ class TestDiscreteGuideTable:
             DiscreteGuideTable(stats.binom(10, 0.2), domain=domain)
 
 
-class Gamma:
-    def __init__(self, p):
-        self.p = p
+class TestSimpleRatioUniforms:
+    # pdf with piecewise linear function as transformed density
+    # with T = -1/sqrt with shift. Taken from UNU.RAN test suite
+    # (from file t_srou.c)
+    class dist:
+        def __init__(self, shift):
+            self.shift = shift
+            self.mode = shift
 
-    def pdf(self, x):
-        return x**(self.p - 1) * math.exp(-x)
+        def pdf(self, x):
+            x -= self.shift
+            y = 1. / (abs(x) + 1.)
+            return 0.5 * y * y
 
-    def cdf(self, x):
-        return stats.gamma.cdf(x, self.p)
+        def cdf(self, x):
+            x -= self.shift
+            if x <= 0.:
+                return 0.5 / (1. - x)
+            else:
+                return 1. - 0.5 / (1. + x)
 
-    @staticmethod
-    def support():
-        return 0, np.inf
+    dists = [dist(0.), dist(10000.)]
+
+    # exact mean and variance of the distributions in the list dists
+    mv1 = [0., np.inf]
+    mv2 = [10000., np.inf]
+    mvs = [mv1, mv2]
+
+    @pytest.mark.parametrize("dist, mv_ex",
+                             zip(dists, mvs))
+    def test_basic(self, dist, mv_ex):
+        rng = SimpleRatioUniforms(dist, mode=dist.mode, random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+        rng = SimpleRatioUniforms(dist, mode=dist.mode,
+                                  cdf_at_mode=dist.cdf(dist.mode),
+                                  random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+
+    # test domains with inf + nan in them. need to write a custom test for
+    # this because not all methods support infinite tails.
+    @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
+    def test_inf_nan_domains(self, domain, err, msg):
+        with pytest.raises(err, match=msg):
+            SimpleRatioUniforms(StandardNormal(), domain=domain)
+
+    def test_bad_args(self):
+        # pdf_area < 0
+        with pytest.raises(ValueError, match=r"`pdf_area` must be > 0"):
+            SimpleRatioUniforms(StandardNormal(), mode=0, pdf_area=-1)
