@@ -30,7 +30,7 @@ ERROR_MESSAGES = (
 
 SUCCESS_MESSAGES = (
     ("The best function value found is within {} percent "
-     "of the (known) global optimum"),
+     "of the (known) global optimum f_min"),
     ("The volume of the hyper-rectangle with best function value found "
      "is below vol_per={}"),
     ("The measure of the hyper-rectangle with best function value found "
@@ -129,7 +129,7 @@ def direct(
     -----
 
     DIRECT is a deterministic
-    optimization algorithm capable of minimizing black box function with
+    optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
     potential solutions in the search space. The algorithm starts with
     mapping the hyperrectangle (set of all possible values that can be taken
@@ -139,11 +139,11 @@ def direct(
     direction. Using these function values, DIRECT then divides the domain
     into hyperrectangles, each having exactly one of the sampling points as
     its center. In each iteration, DIRECT chooses, using the epsilon parameter,
-    by default 1e-4, some of the existing hyperrectangles to be further divided
-    . This division process continues until the maximum iterations or maximum
+    which defaults to 1e-4, some of the existing hyperrectangles to be further
+    divided. This division process continues until the maximum iterations or maximum
     function evaluations allowed are exceeded, or the function value is within
     the desired percentage error of the global minimum (if known). The improved
-    version of DIRECT algorithm [1]_ is biased towards local search making it
+    version of the DIRECT algorithm [1]_ is biased towards local search making it
     effective for functions without too many local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
@@ -172,10 +172,7 @@ def direct(
     def _func_wrap(x, *args):
         x = np.asarray(x)
         f = func(x, *args)
-        if np.isnan(f):
-            return np.nan
-        else:
-            return f
+        return f
 
     x, fun, ret_code, nfev, nit = _direct(
         _func_wrap,
