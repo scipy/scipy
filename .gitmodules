@@ -19,3 +19,9 @@
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
+[submodule "scipy/_lib/highs"]
+	path = scipy/_lib/highs
+	url = https://github.com/mckib2/scipy
+    shallow = true
+    active = false
+    ignore = all
