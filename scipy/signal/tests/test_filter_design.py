@@ -3968,7 +3968,7 @@ class TestGroupDelay:
                               0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-     def test_singular(self):
+    def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
         # check if warning is raised and the group delay is set to zero at
         # these frequencies.
