@@ -165,7 +165,7 @@ def load_name_map(filename):
 # Communicating with Git
 #------------------------------------------------------------------------------
 
-class Cmd(object):
+class Cmd:
     executable = None
 
     def __init__(self, executable):

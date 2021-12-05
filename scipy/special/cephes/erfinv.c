@@ -17,6 +17,17 @@ double erfinv(double y) {
     const double domain_lb = -1;
     const double domain_ub = 1;
 
+    const double thresh = 1e-7;
+
+    /* 
+     * For small arguments, use the Taylor expansion
+     * erf(y) = 2/\sqrt{\pi} (y - y^3 / 3 + O(y^5)),    y\to 0 
+     * where we only retain the linear term.
+     * Otherwise, y + 1 loses precision for |y| << 1.
+     */
+    if ((-thresh < y) && (y < thresh)){
+        return y / M_2_SQRTPI;
+    } 
     if ((domain_lb < y) && (y < domain_ub)) {
         return ndtri(0.5 * (y+1)) * NPY_SQRT1_2;
     }

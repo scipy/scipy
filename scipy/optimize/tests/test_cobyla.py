@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_
 from scipy.optimize import fmin_cobyla, minimize
 
 
-class TestCobyla(object):
+class TestCobyla:
     def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]

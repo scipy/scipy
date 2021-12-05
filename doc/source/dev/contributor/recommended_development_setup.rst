@@ -22,6 +22,7 @@ account and then create your local repository via::
 
     $ git clone git@github.com:YOURUSERNAME/scipy.git scipy
     $ cd scipy
+    $ git submodule update --init
     $ git remote add upstream git://github.com/scipy/scipy.git
 
 Second to code review pull requests it is helpful to have a local copy of the

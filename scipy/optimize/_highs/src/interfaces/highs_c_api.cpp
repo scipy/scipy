@@ -71,28 +71,14 @@ int Highs_writeSolution(void* highs, const char* filename) {
   return (int)((Highs*)highs)->writeSolution(std::string(filename));
 }
 
-int Highs_passLp(void* highs, int numcol, int numrow, int numnz,
-                 double* colcost, double* collower, double* colupper,
-                 double* rowlower, double* rowupper, int* astart, int* aindex,
-                 double* avalue) {
-  HighsLp lp;
-  lp.numCol_ = numcol;
-  lp.numRow_ = numrow;
-
-  lp.colCost_.assign(colcost, colcost + numcol);
-  lp.colLower_.assign(collower, collower + numcol);
-  lp.colUpper_.assign(colupper, colupper + numcol);
-
-  lp.rowLower_.assign(rowlower, rowlower + numrow);
-  lp.rowUpper_.assign(rowupper, rowupper + numrow);
-
-  lp.Astart_.assign(astart, astart + numcol);
-  lp.Astart_.resize(numcol + 1);
-  lp.Astart_[numcol] = numnz;
-  lp.Aindex_.assign(aindex, aindex + numnz);
-  lp.Avalue_.assign(avalue, avalue + numnz);
-
-  return (int)((Highs*)highs)->passModel(lp);
+int Highs_passLp(void* highs, const int numcol, const int numrow,
+                 const int numnz, const double* colcost, const double* collower,
+                 const double* colupper, const double* rowlower,
+                 const double* rowupper, const int* astart, const int* aindex,
+                 const double* avalue) {
+  return (int)((Highs*)highs)
+      ->passModel(numcol, numrow, numnz, colcost, collower, colupper, rowlower,
+                  rowupper, astart, aindex, avalue);
 }
 
 int Highs_clearModel(void* highs) { return (int)((Highs*)highs)->clearModel(); }

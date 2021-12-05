@@ -42,9 +42,6 @@ using std::runtime_error;
 void setSimplexOptions(HighsModelObject& highs_model_object) {
   const HighsOptions& options = highs_model_object.options_;
   HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
-  //  HighsSolutionParams& scaled_solution_params =
-  //  highs_model_object.scaled_solution_params_;
-  //
   // Copy values of HighsOptions for the simplex solver
   //
   // Currently most of these options are straight copies, but they
@@ -57,34 +54,43 @@ void setSimplexOptions(HighsModelObject& highs_model_object) {
   simplex_info.price_strategy = options.simplex_price_strategy;
   simplex_info.dual_simplex_cost_perturbation_multiplier =
       options.dual_simplex_cost_perturbation_multiplier;
+  simplex_info.factor_pivot_threshold = options.factor_pivot_threshold;
   simplex_info.update_limit = options.simplex_update_limit;
 
   // Set values of internal options
   simplex_info.store_squared_primal_infeasibility = true;
   // Option for analysing the LP solution
 #ifdef HiGHSDEV
-  bool useful_analysis = false;  // true;  //
+  bool useful_analysis = true;  // false;  //
   bool full_timing = false;
   // Options for reporting timing
-  simplex_info.report_simplex_inner_clock = true;  // useful_analysis;
+  simplex_info.report_simplex_inner_clock = useful_analysis;  // true;
   simplex_info.report_simplex_outer_clock = full_timing;
   simplex_info.report_simplex_phases_clock = full_timing;
   simplex_info.report_HFactor_clock = useful_analysis;  // full_timing;//
   // Options for analysing the LP and simplex iterations
   simplex_info.analyse_lp = useful_analysis;  // false;  //
   simplex_info.analyse_iterations = useful_analysis;
-  //  simplex_info.analyse_invert_form = useful_analysis;
+  simplex_info.analyse_invert_form = useful_analysis;
   //  simplex_info.analyse_invert_condition = useful_analysis;
   simplex_info.analyse_invert_time = full_timing;
   simplex_info.analyse_rebuild_time = full_timing;
 #endif
 }
 
-HighsStatus transition(HighsModelObject& highs_model_object) {
+int initialiseSimplexLpBasisAndFactor(HighsModelObject& highs_model_object,
+                                      const bool only_from_known_basis) {
   // Perform the transition from whatever information is known about
-  // the LP to a status where simplex data are set up for the initial
-  // rebuild() of the chosen solver - primal, scalar dual or parallel
-  // dual.
+  // the LP to a status where the LP is scaled and has the inverse of
+  // a basis. According to only_from_known_basis, this will be
+  //
+  // * Only done for any resident simplex basis or HiGHS basis, with its
+  // rank deficiency returned in the value, or an error return of -1
+  // inicating there is no resident basis
+  //
+  // * Attempted for any resident simplex basis or HiGHS basis - with
+  // rank deficiency handled - otherwise a logical basis is created
+  // unless crashing is permitted.
   //
   // First look at what basis and solution information is known. If a
   // simplex basis is known, then it's used, and there's no need for
@@ -95,39 +101,32 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
   // If there is a HiGHS basis: use it to determine what's basic and nonbasic
   // (nonbasicFlag).
   //
-  // If there's no HiGHS basis: generate nonbasicFlag, possibly by dualising and
-  // performing a crash.
+  // If there's no HiGHS basis: generate nonbasicFlag, possibly by performing a
+  // crash.
   //
   // Use nonbasicFlag to generate basicIndex
   //
-  // Use nonbasicFlag and any HiGHS solution to determine nonbasicMove
-  //
-  HighsStatus return_status = HighsStatus::OK;
+
   const HighsOptions& options = highs_model_object.options_;
+  const HighsBasis& basis = highs_model_object.basis_;
   const HighsSolution& solution = highs_model_object.solution_;
-  HighsBasis& basis = highs_model_object.basis_;
-  HighsScale& scale = highs_model_object.scale_;
-  HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  const HighsLp& simplex_lp = highs_model_object.simplex_lp_;
   HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status =
       highs_model_object.simplex_lp_status_;
   SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
   HFactor& factor = highs_model_object.factor_;
-  HMatrix& matrix = highs_model_object.matrix_;
+  HighsScale& scale = highs_model_object.scale_;
   HighsSimplexAnalysis& analysis = highs_model_object.simplex_analysis_;
-  // First determine whether the HiGHS solution space has been
-  // allocated, a necessary condition for its values to be used later
-  bool have_highs_solution =
-      isSolutionRightSize(highs_model_object.lp_, solution);
   if (!simplex_lp_status.valid) {
-    // Simplex LP is not valid so initialise the simplex LP data
-    analysis.simplexTimerStart(initialiseSimplexLpDefinitionClock);
+    // Simplex LP is not valid so
+    //
+    // Set simplex options from HiGHS options.
+    setSimplexOptions(highs_model_object);
+    // Initialise the simplex LP data
     initialiseSimplexLpDefinition(highs_model_object);
-    analysis.simplexTimerStop(initialiseSimplexLpDefinitionClock);
     // Initialise the real and integer random vectors
-    analysis.simplexTimerStart(initialiseSimplexLpRandomVectorsClock);
     initialiseSimplexLpRandomVectors(highs_model_object);
-    analysis.simplexTimerStop(initialiseSimplexLpRandomVectorsClock);
   }
   if (simplex_lp_status.has_basis) {
     // There is a simplex basis: it should be valid - since it's set
@@ -136,8 +135,7 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
         HighsDebugStatus::LOGICAL_ERROR) {
       HighsLogMessage(options.logfile, HighsMessageType::ERROR,
                       "Supposed to be a Simplex basis, but incorrect");
-      highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
-      return HighsStatus::Error;
+      return -(int)HighsStatus::Error;
     }
   }
 
@@ -151,20 +149,23 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
           HighsDebugStatus::LOGICAL_ERROR) {
         HighsLogMessage(options.logfile, HighsMessageType::ERROR,
                         "Supposed to be a Highs basis, but not valid");
-        highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
-        return HighsStatus::Error;
+        return -(int)HighsStatus::Error;
       }
-      analysis.simplexTimerStart(setNonbasicFlagClock);
       // Allocate memory for nonbasicFlag and set it up from the HiGHS basis
       simplex_basis.nonbasicFlag_.resize(simplex_lp.numCol_ +
                                          simplex_lp.numRow_);
       setNonbasicFlag(simplex_lp, simplex_basis.nonbasicFlag_,
                       &basis.col_status[0], &basis.row_status[0]);
-      analysis.simplexTimerStop(setNonbasicFlagClock);
     }
     // nonbasicFlag is valid if the HiGHS basis exists and has the correct
     // number of basic variables
     bool nonbasicFlag_valid = basis.valid_;
+    // If not valid, and only this basis should be used, then return error
+    if (!nonbasicFlag_valid && only_from_known_basis) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "Supposed to be a HiGHS basis, but incorrect");
+      return -(int)HighsStatus::Error;
+    }
     if (!nonbasicFlag_valid) {
       // So, nonbasicFlag is not valid - either because there is no
       // simplex or HiGHS basis, or because what was claimed to be
@@ -173,38 +174,16 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
       //
       // This is taken to imply that this is a "new" LP to be solved, so
       //
-      // 1. Set simplex options from HiGHS options. This is only done with a new
-      // LP so that strategy and knowledge based on run-time experience with the
-      // same LP should be preserved.
-      //      setSimplexOptions(highs_model_object);
+      // Generate a simplex basis, possibly by performing a crash,
       //
-      // 2. Initialise the simplex timing
-      //      SimplexTimer simplex_timer;
-      //      simplex_timer.initialiseSimplexClocks(highs_model_object);
-      //
-      // 3. Generate a simplex basis, possibly by performing a crash,
-      // and possibly after dualising
-
-      /*
-      // Possibly dualise, making sure that no simplex or other data are used to
-      initialise
-      //
-      if (options.simplex_dualise_strategy != OPTION_OFF) {
-      dualiseSimplexLp(highs_model_object); have_highs_solution = false;
-        // Initialise the real and integer random vectors
-        initialiseSimplexLpRandomVectors(highs_model_object);
-      }
-      */
       // Possibly permute the columns of the LP to be used by the solver.
       if (options.simplex_permute_strategy != OPTION_OFF) {
         permuteSimplexLp(highs_model_object);
       }
-      analysis.simplexTimerStart(setNonbasicFlagClock);
       // Allocate memory for nonbasicFlag and set it up for a logical basis
       simplex_basis.nonbasicFlag_.resize(simplex_lp.numCol_ +
                                          simplex_lp.numRow_);
       setNonbasicFlag(simplex_lp, simplex_basis.nonbasicFlag_);
-      analysis.simplexTimerStop(setNonbasicFlagClock);
 
       // Possibly find a crash basis
       if (options.simplex_crash_strategy != SIMPLEX_CRASH_STRATEGY_OFF) {
@@ -222,15 +201,6 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
                         num_basic_structurals, simplex_lp.numRow_);
       }
     }
-    // Now that the dimensions of the LP to be solved by the simplex
-    // method are known, make sure that there is a postive number of
-    // rows. ToDo: Ensure that LPs with no rows can still be solved
-    assert(simplex_lp.numRow_ > 0);
-    if (simplex_lp.numRow_ == 0) {
-      printf("Solution of LPs with no rows shouldn't reach transition()\n");
-      highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
-      return HighsStatus::Error;
-    }
     // There is now a nonbasicFlag: it should be valid - since it's
     // just been set but check
     if (debugNonbasicFlagConsistent(options, simplex_lp, simplex_basis) ==
@@ -238,12 +208,10 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
       HighsLogMessage(
           options.logfile, HighsMessageType::ERROR,
           "Supposed to be a Simplex basis, but nonbasicFlag not valid");
-      highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
-      return HighsStatus::Error;
+      return -(int)HighsStatus::Error;
     }
     // Use nonbasicFlag to form basicIndex
     // Allocate memory for basicIndex
-    analysis.simplexTimerStart(setBasicIndexClock);
     simplex_basis.basicIndex_.resize(simplex_lp.numRow_);
     int num_basic_variables = 0;
     simplex_info.num_basic_logicals = 0;
@@ -254,22 +222,18 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
         num_basic_variables++;
       }
     }
-    analysis.simplexTimerStop(setBasicIndexClock);
     // Double-check that we have the right number of basic variables
     nonbasicFlag_valid = num_basic_variables == simplex_lp.numRow_;
     assert(nonbasicFlag_valid);
     updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
   }
   // Execute from here for all calls
-  // Note whether a HiGHS basis can be used to (try to) choose the better bound
-  // for boxed variables
-  bool have_highs_basis = basis.valid_;
   //
-  // Possibly scale the LP to be solved
+  // Possibly scale the LP
   //
-  // If the LP to be solved isn't scaled then initialise unit scaling
-  // factors, to simplify things if no scaling is performed. ToDo This
-  // is inefficient if the LP isn't to be scales and is repeatedly
+  // If the LP isn't scaled then initialise unit scaling factors, to
+  // simplify things if no scaling is performed. ToDo This is
+  // inefficient if the LP isn't to be scales and is repeatedly
   // hot-started - but is this really going to happen?
   if (!simplex_lp_status.scaling_tried) scaleHighsModelInit(highs_model_object);
   //
@@ -308,13 +272,15 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
   //
   // First setup the factor arrays if they don't exist
   if (!simplex_lp_status.has_factor_arrays) {
-    analysis.simplexTimerStart(factorSetupClock);
+    assert(simplex_info.factor_pivot_threshold >=
+           options.factor_pivot_threshold);
     factor.setup(simplex_lp.numCol_, simplex_lp.numRow_, &simplex_lp.Astart_[0],
                  &simplex_lp.Aindex_[0], &simplex_lp.Avalue_[0],
                  &simplex_basis.basicIndex_[0], options.highs_debug_level,
-                 options.logfile, options.output, options.message_level);
+                 options.logfile, options.output, options.message_level,
+                 simplex_info.factor_pivot_threshold,
+                 options.factor_pivot_tolerance);
     simplex_lp_status.has_factor_arrays = true;
-    analysis.simplexTimerStop(factorSetupClock);
   }
   // Reinvert if there isn't a fresh INVERT. ToDo Override this for MIP hot
   // start
@@ -322,80 +288,181 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
   bool reinvert = !simplex_lp_status.has_invert;
   if (reinvert) {
     analysis.simplexTimerStart(InvertClock);
-    computeFactor(highs_model_object);
+    const int rank_deficiency = computeFactor(highs_model_object);
     analysis.simplexTimerStop(InvertClock);
-    simplex_lp_status.has_fresh_invert = true;
+    if (rank_deficiency) {
+      // Basis is rank deficient
+      if (only_from_known_basis) {
+        // If only this basis should be used, then return error
+        HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                        "Supposed to be a full-rank basis, but incorrect");
+        return rank_deficiency;
+      } else {
+        // Account for rank deficiency by correcing nonbasicFlag
+        simplexHandleRankDeficiency(highs_model_object);
+        updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
+        simplex_lp_status.has_invert = true;
+        simplex_lp_status.has_fresh_invert = true;
+      }
+    }
     assert(simplex_lp_status.has_invert);
   }
   // Possibly check for basis condition. ToDo Override this for MIP hot start
   bool basis_condition_ok = true;
-  if (options.simplex_initial_condition_check)
-    basis_condition_ok = basisConditionOk(highs_model_object);
-  // ToDo Handle ill-conditioned basis with basis crash, in which case
-  // ensure that HiGHS and simplex basis are invalidated and simplex
-  // work and base arrays are re-populated
-  //  assert(basis_condition_ok);
-  if (!basis_condition_ok) {
-    // Basis crash really doesn't work, so use logical basis
-    simplex_basis.basicIndex_.resize(simplex_lp.numRow_);
-    for (int iCol = 0; iCol < simplex_lp.numCol_; iCol++)
-      simplex_basis.nonbasicFlag_[iCol] = NONBASIC_FLAG_TRUE;
-    for (int iRow = 0; iRow < simplex_lp.numRow_; iRow++) {
-      int iVar = simplex_lp.numCol_ + iRow;
-      simplex_basis.nonbasicFlag_[iVar] = NONBASIC_FLAG_FALSE;
-      simplex_basis.basicIndex_[iRow] = iVar;
-    }
-    simplex_info.num_basic_logicals = simplex_lp.numRow_;
-    analysis.simplexTimerStart(InvertClock);
-    computeFactor(highs_model_object);
-    analysis.simplexTimerStop(InvertClock);
-
-    /*
-    HCrash crash(highs_model_object);
-    analysis.simplexTimerStart(CrashClock);
-    crash.crash(SIMPLEX_CRASH_STRATEGY_BASIC);
-    analysis.simplexTimerStop(CrashClock);
-     HighsLogMessage(options.logfile,
-    HighsMessageType::INFO, "Performed crash to prioritise previously basic
-    variables " "in well-conditioned basis");
-    // Use nonbasicFlag to form basicIndex
-    // Allocate memory for basicIndex
-    simplex_basis.basicIndex_.resize(simplex_lp.numRow_);
-    int num_basic_variables = 0;
-    simplex_info.num_basic_logicals = 0;
-    for (int iVar = 0; iVar < simplex_lp.numCol_ + simplex_lp.numRow_; iVar++) {
-      if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_FALSE) {
-        simplex_basis.basicIndex_[num_basic_variables] = iVar;
-        if (iVar >= simplex_lp.numCol_) simplex_info.num_basic_logicals++;
-        num_basic_variables++;
+  if (options.simplex_initial_condition_check) {
+    const double basis_condition_tolerance =
+        highs_model_object.options_.simplex_initial_condition_tolerance;
+    basis_condition_ok =
+        basisConditionOk(highs_model_object, basis_condition_tolerance);
+    // ToDo Handle ill-conditioned basis with basis crash, in which case
+    // ensure that HiGHS and simplex basis are invalidated and simplex
+    // work and base arrays are re-populated
+    //  assert(basis_condition_ok);
+    if (!basis_condition_ok) {
+      // If only this basis should be used, then return error
+      if (only_from_known_basis) {
+        HighsLogMessage(
+            options.logfile, HighsMessageType::ERROR,
+            "Supposed to be a well-conditioned basis, but incorrect");
+        return -(int)HighsStatus::Error;
       }
+      // Basis crash really doesn't work, so use logical basis
+      simplex_basis.basicIndex_.resize(simplex_lp.numRow_);
+      for (int iCol = 0; iCol < simplex_lp.numCol_; iCol++)
+        simplex_basis.nonbasicFlag_[iCol] = NONBASIC_FLAG_TRUE;
+      for (int iRow = 0; iRow < simplex_lp.numRow_; iRow++) {
+        int iVar = simplex_lp.numCol_ + iRow;
+        simplex_basis.nonbasicFlag_[iVar] = NONBASIC_FLAG_FALSE;
+        simplex_basis.basicIndex_[iRow] = iVar;
+      }
+      simplex_info.num_basic_logicals = simplex_lp.numRow_;
+      analysis.simplexTimerStart(InvertClock);
+      const int rank_deficiency = computeFactor(highs_model_object);
+      analysis.simplexTimerStop(InvertClock);
+      assert(!rank_deficiency);
+
+      /*
+      HCrash crash(highs_model_object);
+      analysis.simplexTimerStart(CrashClock);
+      crash.crash(SIMPLEX_CRASH_STRATEGY_BASIC);
+      analysis.simplexTimerStop(CrashClock);
+       HighsLogMessage(options.logfile,
+      HighsMessageType::INFO, "Performed crash to prioritise previously basic
+      variables " "in well-conditioned basis");
+      // Use nonbasicFlag to form basicIndex
+      // Allocate memory for basicIndex
+      simplex_basis.basicIndex_.resize(simplex_lp.numRow_);
+      int num_basic_variables = 0;
+      simplex_info.num_basic_logicals = 0;
+      for (int iVar = 0; iVar < simplex_lp.numCol_ + simplex_lp.numRow_; iVar++)
+      { if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_FALSE) {
+          simplex_basis.basicIndex_[num_basic_variables] = iVar;
+          if (iVar >= simplex_lp.numCol_) simplex_info.num_basic_logicals++;
+          num_basic_variables++;
+        }
+      }
+      // Double-check that we have the right number of basic variables
+      assert(num_basic_variables == simplex_lp.numRow_);
+      updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
+      // Report on the outcome of crash
+      int num_basic_structurals =
+          simplex_lp.numRow_ - simplex_info.num_basic_logicals;
+      HighsLogMessage(options.logfile, HighsMessageType::INFO,
+                      "Crash has created a basis with %d/%d structurals",
+                      num_basic_structurals, simplex_lp.numRow_);
+      // Now reinvert
+      int rank_deficiency = computeFactor(highs_model_object);
+      if (rank_deficiency) {
+        // ToDo Handle rank deficiency by replacing singular columns with
+      logicals throw runtime_error("Transition has singular basis matrix");
+      }
+      // Check the condition after the basis crash
+      basis_condition_ok = basisConditionOk(highs_model_object);
+      */
+      updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
+      simplex_lp_status.has_invert = true;
+      simplex_lp_status.has_fresh_invert = true;
     }
-    // Double-check that we have the right number of basic variables
-    assert(num_basic_variables == simplex_lp.numRow_);
-    updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
-    // Report on the outcome of crash
-    int num_basic_structurals =
-        simplex_lp.numRow_ - simplex_info.num_basic_logicals;
-    HighsLogMessage(options.logfile, HighsMessageType::INFO,
-                    "Crash has created a basis with %d/%d structurals",
-                    num_basic_structurals, simplex_lp.numRow_);
-    // Now reinvert
-    int rank_deficiency = computeFactor(highs_model_object);
-    if (rank_deficiency) {
-      // ToDo Handle rank deficiency by replacing singular columns with logicals
-      throw runtime_error("Transition has singular basis matrix");
-    }
-    // Check the condition after the basis crash
-    basis_condition_ok = basisConditionOk(highs_model_object);
-    */
-    updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
-    simplex_lp_status.has_fresh_invert = true;
+  }
+  // If simplex basis isn't complete, set up nonbasicMove
+  if (!simplex_lp_status.has_basis) {
+    // First determine whether the HiGHS solution space has been
+    // allocated, a necessary condition for its values to be used later
+    const bool have_highs_solution =
+        isSolutionRightSize(highs_model_object.lp_, solution);
+    // Note whether a HiGHS basis can be used to (try to) choose the better
+    // bound for boxed variables
+    const bool have_highs_basis = basis.valid_;
+    simplex_basis.nonbasicMove_.resize(simplex_lp.numCol_ + simplex_lp.numRow_);
+    setNonbasicMove(simplex_lp, scale, have_highs_basis, basis,
+                    have_highs_solution, solution, simplex_basis);
+    simplex_lp_status.has_basis = true;
+  }
+  assert(simplex_lp_status.has_basis);
+  return 0;
+}
+
+HighsStatus transition(HighsModelObject& highs_model_object) {
+  // Perform the transition from whatever information is known about
+  // the LP to a status where simplex data are set up for the initial
+  // rebuild() of the chosen solver - primal, scalar dual or parallel
+  // dual.
+  //
+  // First look at what basis and solution information is known. If a
+  // simplex basis is known, then it's used, and there's no need for
+  // the solution values. This will usually correspond to hot start
+  // when solving MIP problems. Otherwise, generate a simplex basis,
+  // thus:
+  //
+  // If there is a HiGHS basis: use it to determine what's basic and nonbasic
+  // (nonbasicFlag).
+  //
+  // If there's no HiGHS basis: generate nonbasicFlag, possibly by dualising and
+  // performing a crash.
+  //
+  // Use nonbasicFlag to generate basicIndex
+  //
+  // Use nonbasicFlag and any HiGHS solution to determine nonbasicMove
+  //
+  HighsStatus return_status = HighsStatus::OK;
+
+  const HighsSolution& solution = highs_model_object.solution_;
+  HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+  HighsSimplexLpStatus& simplex_lp_status =
+      highs_model_object.simplex_lp_status_;
+  SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
+  HMatrix& matrix = highs_model_object.matrix_;
+  HighsSimplexAnalysis& analysis = highs_model_object.simplex_analysis_;
+
+  int return_code;
+  // Perform the transition from whatever information is known about
+  // the LP to a status where the LP is scaled and has the inverse of
+  // a basis.
+  analysis.simplexTimerStart(initialiseSimplexLpBasisAndFactorClock);
+  return_code = initialiseSimplexLpBasisAndFactor(highs_model_object);
+  analysis.simplexTimerStop(initialiseSimplexLpBasisAndFactorClock);
+  assert(return_code <= 0);
+  if (return_code) {
+    highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
+    return HighsStatus::Error;
   }
 
-  // Now there are nonbasicFlag and basicIndex corresponding to a
-  // basis with well-conditioned invertible representation - and
-  // corresponding nonbasicMove if simplex_lp_status.has_basis is true
-  //
+  // Now there is a simplex basis corresponding to a well-conditioned
+  // invertible representation
+  assert(simplex_lp_status.has_basis);
+  assert(simplex_lp_status.has_invert);
+
+  // Now that the dimensions of the LP to be solved by the simplex
+  // method are known, make sure that there is a postive number of
+  // rows. ToDo: Ensure that LPs with no rows can still be solved
+  assert(simplex_lp.numRow_ > 0);
+  if (simplex_lp.numRow_ == 0) {
+    printf("Solution of LPs with no rows shouldn't reach transition()\n");
+    highs_model_object.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
+    return HighsStatus::Error;
+  }
+
   // Possibly set up the HMatrix column-wise and row-wise copies of the matrix
   if (!simplex_lp_status.has_matrix_col_wise ||
       !simplex_lp_status.has_matrix_row_wise) {
@@ -406,15 +473,6 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
     simplex_lp_status.has_matrix_col_wise = true;
     simplex_lp_status.has_matrix_row_wise = true;
     analysis.simplexTimerStop(matrixSetupClock);
-  }
-  // If simplex basis isn't complete, set up nonbasicMove
-  if (!simplex_lp_status.has_basis) {
-    analysis.simplexTimerStart(setNonbasicMoveClock);
-    simplex_basis.nonbasicMove_.resize(simplex_lp.numCol_ + simplex_lp.numRow_);
-    setNonbasicMove(simplex_lp, scale, have_highs_basis, basis,
-                    have_highs_solution, solution, simplex_basis);
-    simplex_lp_status.has_basis = true;
-    analysis.simplexTimerStop(setNonbasicMoveClock);
   }
 
   // Set up the simplex work and base arrays
@@ -443,6 +501,8 @@ HighsStatus transition(HighsModelObject& highs_model_object) {
   simplex_lp_status.has_nonbasic_dual_values = true;
   //}
 
+  const bool have_highs_solution =
+      isSolutionRightSize(highs_model_object.lp_, solution);
   if (have_highs_solution) {
     // There is a HiGHS solution so possibly determine the changes in
     // basic and nonbasic values and duals for columns and rows
@@ -650,15 +710,14 @@ void initialiseNonbasicWorkValue(const HighsLp& simplex_lp,
   }
 }
 
-bool basisConditionOk(HighsModelObject& highs_model_object) {
+bool basisConditionOk(HighsModelObject& highs_model_object,
+                      const double tolerance) {
   HighsSimplexAnalysis& analysis = highs_model_object.simplex_analysis_;
   bool basis_condition_ok;
   analysis.simplexTimerStart(BasisConditionClock);
   double basis_condition = computeBasisCondition(highs_model_object);
   analysis.simplexTimerStop(BasisConditionClock);
-  double basis_condition_tolerance =
-      highs_model_object.options_.simplex_initial_condition_tolerance;
-  basis_condition_ok = basis_condition < basis_condition_tolerance;
+  basis_condition_ok = basis_condition <= tolerance;
   HighsMessageType message_type = HighsMessageType::INFO;
   std::string condition_comment;
   if (basis_condition_ok) {
@@ -667,12 +726,12 @@ bool basisConditionOk(HighsModelObject& highs_model_object) {
     message_type = HighsMessageType::WARNING;
     condition_comment = "exceeds";
   }
-  HighsLogMessage(
-      highs_model_object.options_.logfile, message_type,
-      "Initial basis condition estimate of %11.4g %s the tolerance of %g",
-      basis_condition, condition_comment.c_str(), basis_condition_tolerance);
+  HighsLogMessage(highs_model_object.options_.logfile, message_type,
+                  "Basis condition estimate of %11.4g %s the tolerance of %g",
+                  basis_condition, condition_comment.c_str(), tolerance);
   return basis_condition_ok;
 }
+
 bool dual_infeasible(const double value, const double lower, const double upper,
                      const double dual, const double value_tolerance,
                      const double dual_tolerance) {
@@ -707,16 +766,12 @@ bool dual_infeasible(const double value, const double lower, const double upper,
       // Assumed to be nonbasic at that bound
       assert(fabs(residual) < value_tolerance);
       if (lower < upper) {
-        // Boxed
         if (value < midpoint) {
-          // At lower bound
           infeasible = dual <= -dual_tolerance;
         } else {
-          // At upper bound
           infeasible = dual >= dual_tolerance;
         }
       } else {
-        // Fixed
         infeasible = false;
       }
     }
@@ -736,13 +791,10 @@ void appendNonbasicColsToBasis(HighsLp& lp, HighsBasis& basis, int XnumNewCol) {
   // Make any new columns nonbasic
   for (int iCol = lp.numCol_; iCol < newNumCol; iCol++) {
     if (!highs_isInfinity(-lp.colLower_[iCol])) {
-      // Has finite lower bound so set it there
       basis.col_status[iCol] = HighsBasisStatus::LOWER;
     } else if (!highs_isInfinity(lp.colUpper_[iCol])) {
-      // Has finite upper bound so set it there
       basis.col_status[iCol] = HighsBasisStatus::UPPER;
     } else {
-      // Free variable so set to zero
       basis.col_status[iCol] = HighsBasisStatus::ZERO;
     }
   }
@@ -1077,20 +1129,24 @@ void initialiseSimplexLpDefinition(HighsModelObject& highs_model_object) {
 
 void initialiseSimplexLpRandomVectors(HighsModelObject& highs_model_object) {
   HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+
   const int numCol = highs_model_object.simplex_lp_.numCol_;
   const int numTot = highs_model_object.simplex_lp_.numCol_ +
                      highs_model_object.simplex_lp_.numRow_;
+  if (!numTot) return;
   // Instantiate and (re-)initialise the random number generator
   HighsRandom& random = highs_model_object.random_;
   random.initialise();
-  //
-  // Generate a random permutation of the column indices
-  simplex_info.numColPermutation_.resize(numCol);
-  int* numColPermutation = &simplex_info.numColPermutation_[0];
-  for (int i = 0; i < numCol; i++) numColPermutation[i] = i;
-  for (int i = numCol - 1; i >= 1; i--) {
-    int j = random.integer() % (i + 1);
-    std::swap(numColPermutation[i], numColPermutation[j]);
+
+  if (numCol) {
+    // Generate a random permutation of the column indices
+    simplex_info.numColPermutation_.resize(numCol);
+    int* numColPermutation = &simplex_info.numColPermutation_[0];
+    for (int i = 0; i < numCol; i++) numColPermutation[i] = i;
+    for (int i = numCol - 1; i >= 1; i--) {
+      int j = random.integer() % (i + 1);
+      std::swap(numColPermutation[i], numColPermutation[j]);
+    }
   }
 
   // Re-initialise the random number generator and generate the
@@ -1111,6 +1167,56 @@ void initialiseSimplexLpRandomVectors(HighsModelObject& highs_model_object) {
   simplex_info.numTotRandomValue_.resize(numTot);
   double* numTotRandomValue = &simplex_info.numTotRandomValue_[0];
   for (int i = 0; i < numTot; i++) {
+    numTotRandomValue[i] = random.fraction();
+  }
+}
+
+void extendSimplexLpRandomVectors(HighsModelObject& highs_model_object,
+                                  const int num_new_col,
+                                  const int num_new_row) {
+  HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+
+  const int numCol = highs_model_object.simplex_lp_.numCol_;
+  const int numTot = highs_model_object.simplex_lp_.numCol_ +
+                     highs_model_object.simplex_lp_.numRow_;
+  assert(num_new_col >= 0);
+  assert(num_new_row >= 0);
+  if (num_new_col + num_new_row == 0) return;
+  const int new_numCol = numCol + num_new_col;
+  const int new_numTot = numTot + num_new_col + num_new_row;
+  // Instantiate and (re-)initialise the random number generator
+  HighsRandom& random = highs_model_object.random_;
+  random.initialise();
+  //
+  // Extend a random permutation of the column indices
+  if (num_new_col) {
+    simplex_info.numColPermutation_.resize(new_numCol);
+    int* numColPermutation = &simplex_info.numColPermutation_[0];
+    for (int i = numCol; i < new_numCol; i++) numColPermutation[i] = i;
+    for (int i = new_numCol - 1; i >= numCol + 1; i--) {
+      int j = random.integer() % (i + 1);
+      std::swap(numColPermutation[i], numColPermutation[j]);
+    }
+  }
+
+  // Re-initialise the random number generator and generate the
+  // random vectors in the same order as hsol to maintain repeatable
+  // performance
+  random.initialise();
+  //
+  // Extend a random permutation of all the indices
+  simplex_info.numTotPermutation_.resize(new_numTot);
+  int* numTotPermutation = &simplex_info.numTotPermutation_[0];
+  for (int i = numTot; i < new_numTot; i++) numTotPermutation[i] = i;
+  for (int i = new_numTot - 1; i >= numTot + 1; i--) {
+    int j = random.integer() % (i + 1);
+    std::swap(numTotPermutation[i], numTotPermutation[j]);
+  }
+
+  // Extend a vector of random reals
+  simplex_info.numTotRandomValue_.resize(new_numTot);
+  double* numTotRandomValue = &simplex_info.numTotRandomValue_[0];
+  for (int i = numTot; i < new_numTot; i++) {
     numTotRandomValue[i] = random.fraction();
   }
 }
@@ -2132,13 +2238,6 @@ void initialiseCost(HighsModelObject& highs_model_object, int perturb) {
   }
 }
 
-void populateWorkArrays(HighsModelObject& highs_model_object) {
-  // Initialize the values
-  initialiseCost(highs_model_object);
-  initialiseBound(highs_model_object);
-  initialiseValueAndNonbasicMove(highs_model_object);
-}
-
 #ifdef HiGHSDEV
 void reportSimplexProfiling(HighsModelObject& highs_model_object) {
   HighsTimer& timer = highs_model_object.timer_;
@@ -2336,48 +2435,20 @@ void flip_bound(HighsModelObject& highs_model_object, int iCol) {
       move == 1 ? simplex_info.workLower_[iCol] : simplex_info.workUpper_[iCol];
 }
 
-int simplexHandleRankDeficiency(HighsModelObject& highs_model_object) {
+void simplexHandleRankDeficiency(HighsModelObject& highs_model_object) {
   HighsLp& simplex_lp = highs_model_object.simplex_lp_;
   HFactor& factor = highs_model_object.factor_;
   SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
   int rank_deficiency = factor.rank_deficiency;
   vector<int>& noPvC = factor.noPvC;
-  printf("Returned %d = factor.build();\n", rank_deficiency);
-  fflush(stdout);
-  vector<int> basicRows;
-  const int numTot = simplex_lp.numCol_ + simplex_lp.numRow_;
-  basicRows.resize(numTot);
-  //    printf("Before - simplex_basis.basicIndex_:");
-  // for (int iRow=0; iRow<simplex_lp.numRow_; iRow++)
-  //    printf(" %2d", simplex_basis.basicIndex_[iRow]); printf("\n");
-  for (int iRow = 0; iRow < simplex_lp.numRow_; iRow++)
-    basicRows[simplex_basis.basicIndex_[iRow]] = iRow;
+  vector<int>& noPvR = factor.noPvR;
   for (int k = 0; k < rank_deficiency; k++) {
-    //      printf("noPvR[%2d] = %d; noPvC[%2d] = %d; \n", k, factor.noPvR[k],
-    //      k, noPvC[k]);fflush(stdout);
-    int columnIn = simplex_lp.numCol_ + factor.noPvR[k];
+    int columnIn = simplex_lp.numCol_ + noPvR[k];
     int columnOut = noPvC[k];
-    int rowOut = basicRows[columnOut];
-    //      printf("columnIn = %6d; columnOut = %6d; rowOut = %6d [%11.4g,
-    //      %11.4g]\n", columnIn, columnOut, rowOut,
-    //      simplex_info.workLower_[columnOut],
-    //      simplex_info.workUpper_[columnOut]);
-    assert(simplex_basis.basicIndex_[rowOut] == columnOut);
-    if (highs_model_object.simplex_info_.initialised) {
-      int sourceOut = setSourceOutFmBd(highs_model_object, columnOut);
-      update_pivots(highs_model_object, columnIn, rowOut, sourceOut);
-      update_matrix(highs_model_object, columnIn, columnOut);
-    } else {
-      simplex_basis.basicIndex_[rowOut] = columnIn;
-      simplex_basis.nonbasicFlag_[columnIn] = NONBASIC_FLAG_FALSE;
-      simplex_basis.nonbasicFlag_[columnOut] = NONBASIC_FLAG_TRUE;
-    }
+    simplex_basis.nonbasicFlag_[columnIn] = NONBASIC_FLAG_FALSE;
+    simplex_basis.nonbasicFlag_[columnOut] = NONBASIC_FLAG_TRUE;
   }
-  //    printf("After  - simplex_basis.basicIndex_:");
-  // for (int iRow=0; iRow<simplex_lp.numRow_; iRow++)
-  //    printf(" %2d", simplex_basis.basicIndex_[iRow]); printf("\n");
-  debugCheckInvert(highs_model_object.options_, highs_model_object.factor_);
-  return 0;
+  highs_model_object.simplex_lp_status_.has_matrix_row_wise = false;
 }
 
 int computeFactor(HighsModelObject& highs_model_object) {
@@ -2404,10 +2475,7 @@ int computeFactor(HighsModelObject& highs_model_object) {
       highs_model_object.simplex_analysis_.getThreadFactorTimerClockPtr(
           thread_id);
 #endif
-  int rank_deficiency = factor.build(factor_timer_clock_pointer);
-  if (rank_deficiency) {
-    simplexHandleRankDeficiency(highs_model_object);
-  }
+  const int rank_deficiency = factor.build(factor_timer_clock_pointer);
 #ifdef HiGHSDEV
   if (simplex_info.analyse_invert_form) {
     const bool report_kernel = false;
@@ -2445,7 +2513,7 @@ int computeFactor(HighsModelObject& highs_model_object) {
           0.05 * kernel_fill_factor;
       if (report_kernel) printf("; fill = %6.2f", kernel_fill_factor);
       if (kernel_relative_dim >
-          simplex_info.major_kernel_relative_dim_threshhold) {
+          simplex_info.major_kernel_relative_dim_threshold) {
         simplex_info.num_major_kernel++;
         simplex_info.sum_major_kernel_fill_factor += kernel_fill_factor;
         simplex_info.running_average_major_kernel_fill_factor =
@@ -2455,11 +2523,11 @@ int computeFactor(HighsModelObject& highs_model_object) {
     }
     if (report_kernel) printf("\n");
   }
-#endif
-  simplex_info.update_count = 0;
-  debugCheckInvert(highs_model_object.options_, highs_model_object.factor_);
-
-#ifdef HiGHSDEV
+  if (simplex_info.analyse_invert_condition) {
+    analysis.simplexTimerStart(BasisConditionClock);
+    simplex_info.invert_condition = computeBasisCondition(highs_model_object);
+    analysis.simplexTimerStop(BasisConditionClock);
+  }
   if (simplex_info.analyse_invert_time) {
     simplex_info.total_inverts = analysis.simplexTimerNumCall(InvertClock);
     simplex_info.total_invert_time = analysis.simplexTimerRead(InvertClock);
@@ -2473,17 +2541,25 @@ int computeFactor(HighsModelObject& highs_model_object) {
   }
 #endif
 
-  // Now have a representation of B^{-1}, and it is fresh!
-  simplex_lp_status.has_invert = true;
-  simplex_lp_status.has_fresh_invert = true;
+  const bool force = rank_deficiency;
+  debugCheckInvert(highs_model_object.options_, highs_model_object.factor_,
+                   force);
 
-#ifdef HiGHSDEV
-  if (simplex_info.analyse_invert_condition) {
-    analysis.simplexTimerStart(BasisConditionClock);
-    simplex_info.invert_condition = computeBasisCondition(highs_model_object);
-    analysis.simplexTimerStop(BasisConditionClock);
+  if (rank_deficiency) {
+    // Have an invertible representation, but of B with column(s)
+    // replacements due to singularity. So no (fresh) representation of
+    // B^{-1}
+    simplex_lp_status.has_invert = false;
+    simplex_lp_status.has_fresh_invert = false;
+  } else {
+    // Now have a representation of B^{-1}, and it is fresh!
+    simplex_lp_status.has_invert = true;
+    simplex_lp_status.has_fresh_invert = true;
   }
-#endif
+  // Set the update count to zero since the corrected invertible
+  // representation may be used for an initial basis. In any case the
+  // number of updates shouldn't be positive
+  simplex_info.update_count = 0;
 
   return rank_deficiency;
 }
@@ -2888,7 +2964,7 @@ void computeTableauRowFromPiP(HighsModelObject& highs_model_object,
 #ifdef HiGHSDEV
   // Possibly analyse the error in the result of PRICE
   const bool analyse_price_error = false;
-  if (analyse_price_error) matrix->price_er_ck(row_ap, row_ep);
+  if (analyse_price_error) matrix->debugPriceResult(row_ap, row_ep);
 #endif
   // Update the record of average row_ap density
   const double local_row_ap_density = (double)row_ap.count / solver_num_col;
@@ -3091,6 +3167,10 @@ void correctDual(HighsModelObject& highs_model_object,
 void shift_cost(HighsModelObject& highs_model_object, int iCol, double amount) {
   HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
   simplex_info.costs_perturbed = 1;
+  if (simplex_info.workShift_[iCol] != 0) {
+    printf("Column %d already has nonzero shift of %g\n", iCol,
+           simplex_info.workShift_[iCol]);
+  }
   assert(simplex_info.workShift_[iCol] == 0);
   simplex_info.workShift_[iCol] = amount;
 }
@@ -3193,7 +3273,7 @@ void update_matrix(HighsModelObject& highs_model_object, int columnIn,
 }
 
 bool reinvertOnNumericalTrouble(const std::string method_name,
-                                const HighsModelObject& highs_model_object,
+                                HighsModelObject& highs_model_object,
                                 double& numerical_trouble_measure,
                                 const double alpha_from_col,
                                 const double alpha_from_row,
@@ -3206,29 +3286,38 @@ bool reinvertOnNumericalTrouble(const std::string method_name,
   const int update_count = highs_model_object.simplex_info_.update_count;
   // Reinvert if the relative difference is large enough, and updates have been
   // performed
-  const bool reinvert =
-      numerical_trouble_measure > numerical_trouble_tolerance &&
-      update_count > 0;
-#ifdef HiGHSDEV
-  const int iteration_count = highs_model_object.iteration_counts_.simplex;
-  string model_name = highs_model_object.simplex_lp_.model_name_;
-  const bool rp_numerical_trouble = false;  // true;//
-  if (rp_numerical_trouble)
-    printf("%s Measure %11.4g from [Col: %11.4g; Row: %11.4g; Diff = %11.4g]\n",
-           method_name.c_str(), numerical_trouble_measure, abs_alpha_from_col,
-           abs_alpha_from_row, abs_alpha_diff);
-#endif
+  const bool numerical_trouble =
+      numerical_trouble_measure > numerical_trouble_tolerance;
+  const bool reinvert = numerical_trouble && update_count > 0;
+  debugReportReinvertOnNumericalTrouble(
+      method_name, highs_model_object, numerical_trouble_measure,
+      alpha_from_col, alpha_from_row, numerical_trouble_tolerance, reinvert);
   if (reinvert) {
-#ifdef HiGHSDEV
-    printf(
-        "%s has identified numerical trouble solving LP %s in iteration %d so "
-        "reinvert\n",
-        method_name.c_str(), model_name.c_str(), iteration_count);
-#else
-    HighsLogMessage(highs_model_object.options_.logfile,
-                    HighsMessageType::WARNING,
-                    "HiGHS has identified numerical trouble so reinvert");
-#endif
+    // Consider increasing the Markowitz multiplier
+    const double current_pivot_threshold =
+        highs_model_object.simplex_info_.factor_pivot_threshold;
+    double new_pivot_threshold = 0;
+    if (current_pivot_threshold < default_pivot_threshold) {
+      // Threshold is below default value, so increase it
+      new_pivot_threshold =
+          min(current_pivot_threshold * pivot_threshold_change_factor,
+              default_pivot_threshold);
+    } else if (current_pivot_threshold < max_pivot_threshold) {
+      // Threshold is below max value, so increase it if few updates have been
+      // performed
+      if (update_count < 10)
+        new_pivot_threshold =
+            min(current_pivot_threshold * pivot_threshold_change_factor,
+                max_pivot_threshold);
+    }
+    if (new_pivot_threshold) {
+      HighsLogMessage(
+          highs_model_object.options_.logfile, HighsMessageType::WARNING,
+          "   Increasing Markowitz threshold to %g", new_pivot_threshold);
+      highs_model_object.simplex_info_.factor_pivot_threshold =
+          new_pivot_threshold;
+      highs_model_object.factor_.setPivotThreshold(new_pivot_threshold);
+    }
   }
   return reinvert;
 }
@@ -3575,6 +3664,8 @@ void invalidateSimplexLpBasisArtifacts(
   simplex_lp_status.has_fresh_rebuild = false;
   simplex_lp_status.has_dual_objective_value = false;
   simplex_lp_status.has_primal_objective_value = false;
+  simplex_lp_status.has_dual_ray = false;
+  simplex_lp_status.has_primal_ray = false;
 }
 
 void invalidateSimplexLpBasis(HighsSimplexLpStatus& simplex_lp_status) {
@@ -3669,6 +3760,29 @@ void updateSimplexLpStatus(HighsSimplexLpStatus& simplex_lp_status,
       printf(" LpAction::DEL_ROWS_BASIS_OK\n");
 #endif
       //      simplex_info.simplex_lp_ = true;
+      break;
+    case LpAction::SCALED_COL:
+#ifdef HIGHSDEV
+      printf(" LpAction::SCALED_COL\n");
+#endif
+      invalidateSimplexLpBasisArtifacts(simplex_lp_status);
+      break;
+    case LpAction::SCALED_ROW:
+#ifdef HIGHSDEV
+      printf(" LpAction::SCALED_ROW\n");
+#endif
+      invalidateSimplexLpBasisArtifacts(simplex_lp_status);
+      break;
+    case LpAction::BACKTRACKING:
+#ifdef HIGHSDEV
+      printf(" LpAction::BACKTRACKING\n");
+#endif
+      simplex_lp_status.has_matrix_row_wise = false;
+      simplex_lp_status.has_nonbasic_dual_values = false;
+      simplex_lp_status.has_basic_primal_values = false;
+      simplex_lp_status.has_fresh_rebuild = false;
+      simplex_lp_status.has_dual_objective_value = false;
+      simplex_lp_status.has_primal_objective_value = false;
       break;
     default:
 #ifdef HIGHSDEV

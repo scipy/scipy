@@ -9,7 +9,7 @@ import os
 import numpy as np
 import argparse
 
-from distutils.util import newer
+from distutils.util import newer  # type: ignore
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
                 changed = set(old_data.keys()) != set(key for key, _ in files)
             finally:
                 old_data.close()
-        except (IOError, OSError):
+        except OSError:
             # corrupted file
             changed = True
 

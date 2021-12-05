@@ -3,7 +3,7 @@ Compressed Sparse Graph Routines (`scipy.sparse.csgraph`)
 
 .. sectionauthor:: Jake Vanderplas <vanderplas@astro.washington.edu>
 
-.. currentmodule: scipy.sparse.csgraph
+.. currentmodule:: scipy.sparse.csgraph
 
 
 Example: Word Ladders

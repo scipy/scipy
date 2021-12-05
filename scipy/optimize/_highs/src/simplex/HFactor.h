@@ -36,7 +36,20 @@ enum UPDATE_METHOD {
   UPDATE_METHOD_APF = 4
 };
 /**
- * Necessary threshholds for historical density to trigger
+ * Limits and default value of pivoting threshold
+ */
+const double min_pivot_threshold = 8e-4;
+const double default_pivot_threshold = 0.1;
+const double pivot_threshold_change_factor = 5.0;
+const double max_pivot_threshold = 0.5;
+/**
+ * Limits and default value of minimum absolute pivot
+ */
+const double min_pivot_tolerance = 0;
+const double default_pivot_tolerance = 1e-10;
+const double max_pivot_tolerance = 1.0;
+/**
+ * Necessary thresholds for historical density to trigger
  * hyper-sparse TRANs,
  */
 const double hyperFTRANL = 0.15;
@@ -44,11 +57,11 @@ const double hyperFTRANU = 0.10;
 const double hyperBTRANL = 0.10;
 const double hyperBTRANU = 0.15;
 /**
- * Necessary threshhold for RHS density to trigger hyper-sparse TRANs,
+ * Necessary threshold for RHS density to trigger hyper-sparse TRANs,
  */
 const double hyperCANCEL = 0.05;
 /**
- * Threshhold for result density for it to be considered as
+ * Threshold for result density for it to be considered as
  * hyper-sparse - only for reporting
  */
 const double hyperRESULT = 0.10;
@@ -99,18 +112,20 @@ class HFactor {
    * factor and Update buffer, allocated space for Markowitz matrices,
    * count-link-list, L factor and U factor
    */
-  void setup(int numCol,            //!< Number of columns
-             int numRow,            //!< Number of rows
-             const int* Astart,     //!< Column starts of constraint matrix
-             const int* Aindex,     //!< Row indices of constraint matrix
-             const double* Avalue,  //!< Row values of constraint matrix
-             int* baseIndex,        //!< Indices of basic variables
-             int highs_debug_level = HIGHS_DEBUG_LEVEL_MIN,
-             FILE* logfile = NULL, FILE* output = NULL,
-             int message_level = ML_NONE,
-             const bool use_original_HFactor_logic = true,
-             int updateMethod =
-                 UPDATE_METHOD_FT  //!< Default update method is Forrest Tomlin
+  void setup(
+      int numCol,            //!< Number of columns
+      int numRow,            //!< Number of rows
+      const int* Astart,     //!< Column starts of constraint matrix
+      const int* Aindex,     //!< Row indices of constraint matrix
+      const double* Avalue,  //!< Row values of constraint matrix
+      int* baseIndex,        //!< Indices of basic variables
+      int highs_debug_level = HIGHS_DEBUG_LEVEL_MIN, FILE* logfile = NULL,
+      FILE* output = NULL, int message_level = ML_NONE,
+      double pivot_threshold = default_pivot_threshold,  //!< Pivoting threshold
+      double pivot_tolerance = default_pivot_tolerance,  //!< Min absolute pivot
+      const bool use_original_HFactor_logic = true,
+      int updateMethod =
+          UPDATE_METHOD_FT  //!< Default update method is Forrest Tomlin
   );
 
   /**
@@ -145,6 +160,17 @@ class HFactor {
               int* iRow,    //!< Index of pivotal row
               int* hint     //!< Reinversion status
   );
+
+  /**
+   * @brief Sets pivoting threshold
+   */
+  bool setPivotThreshold(
+      const double new_pivot_threshold = default_pivot_threshold);
+  /**
+   * @brief Sets minimum absolute pivot
+   */
+  bool setMinAbsPivot(
+      const double new_pivot_tolerance = default_pivot_tolerance);
 
   /**
    * @brief Wall clock time for INVERT
@@ -225,6 +251,8 @@ class HFactor {
   FILE* logfile;
   FILE* output;
   int message_level;
+  double pivot_threshold;
+  double pivot_tolerance;
 
   // Working buffer
   int nwork;
@@ -354,7 +382,7 @@ class HFactor {
     double maxValue = 0;
     for (int k = MCstart[iCol]; k < MCstart[iCol] + MCcountA[iCol]; k++)
       maxValue = max(maxValue, fabs(MCvalue[k]));
-    MCminpivot[iCol] = maxValue * 0.1;
+    MCminpivot[iCol] = maxValue * pivot_threshold;
   }
 
   double colDelete(const int iCol, const int iRow) {

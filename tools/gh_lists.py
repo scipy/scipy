@@ -98,7 +98,7 @@ def get_issues(getter, project, milestone):
     return issues
 
 
-class CachedGet(object):
+class CachedGet:
     def __init__(self, filename, getter):
         self._getter = getter
 
@@ -127,7 +127,7 @@ class CachedGet(object):
         os.rename(tmp, self.filename)
 
 
-class GithubGet(object):
+class GithubGet:
     def __init__(self, auth=False):
         self.headers = {'User-Agent': 'gh_lists.py',
                         'Accept': 'application/vnd.github.v3+json'}

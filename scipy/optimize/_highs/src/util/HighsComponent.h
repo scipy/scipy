@@ -15,7 +15,6 @@
 #define UTIL_HIGHS_COMPONENT_H_
 
 #include "lp_data/HighsOptions.h"
-#include "lp_data/HighsStatus.h"
 
 // HighsComponentData is a placeholder for structs which we will keep after
 // run() is done, internally.
@@ -44,7 +43,7 @@ class HighsComponent {
   const HighsComponentData& getData() { return data_; }
   const HighsComponentOptions& getOptions() { return options_; }
 
-  virtual ~HighsComponent() {}
+  virtual ~HighsComponent() = default;
 
  private:
   bool has_run_ = false;

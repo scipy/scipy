@@ -13,67 +13,11 @@
  */
 #include "lp_data/HighsLp.h"
 
-bool isBasisConsistent(const HighsLp& lp, const HighsBasis& basis) {
-  bool consistent = true;
-  consistent = isBasisRightSize(lp, basis) && consistent;
-  int num_basic_variables = 0;
-  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
-    if (basis.col_status[iCol] == HighsBasisStatus::BASIC)
-      num_basic_variables++;
-  }
-  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
-    if (basis.row_status[iRow] == HighsBasisStatus::BASIC)
-      num_basic_variables++;
-  }
-  bool right_num_basic_variables = num_basic_variables == lp.numRow_;
-  consistent = right_num_basic_variables && consistent;
-  return consistent;
-}
-
-bool isSolutionRightSize(const HighsLp& lp, const HighsSolution& solution) {
-  bool right_size = true;
-  right_size = (int)solution.col_value.size() == lp.numCol_ && right_size;
-  right_size = (int)solution.col_dual.size() == lp.numCol_ && right_size;
-  right_size = (int)solution.row_value.size() == lp.numRow_ && right_size;
-  right_size = (int)solution.row_dual.size() == lp.numRow_ && right_size;
-  return right_size;
-}
-
-bool isBasisRightSize(const HighsLp& lp, const HighsBasis& basis) {
-  bool right_size = true;
-  right_size = (int)basis.col_status.size() == lp.numCol_ && right_size;
-  right_size = (int)basis.row_status.size() == lp.numRow_ && right_size;
-  return right_size;
-}
-
-void clearSolutionUtil(HighsSolution& solution) {
-  solution.col_dual.clear();
-  solution.col_value.clear();
-  solution.row_dual.clear();
-  solution.row_value.clear();
-}
-
-void clearBasisUtil(HighsBasis& basis) {
-  basis.row_status.clear();
-  basis.col_status.clear();
-  basis.valid_ = false;
-}
-
-void clearLp(HighsLp& lp) {
-  lp.Astart_.clear();
-  lp.Aindex_.clear();
-  lp.Avalue_.clear();
-
-  lp.col_names_.clear();
-  lp.row_names_.clear();
-
-  lp.sense_ = ObjSense::MINIMIZE;
-
-  lp.colCost_.clear();
-  lp.colLower_.clear();
-  lp.colUpper_.clear();
-
-  lp.integrality_.clear();
+bool HighsLp::operator==(const HighsLp& lp) {
+  bool equal = equalButForNames(lp);
+  equal = this->row_names_ == lp.row_names_ && equal;
+  equal = this->col_names_ == lp.col_names_ && equal;
+  return equal;
 }
 
 bool HighsLp::equalButForNames(const HighsLp& lp) {
@@ -94,9 +38,27 @@ bool HighsLp::equalButForNames(const HighsLp& lp) {
   return equal;
 }
 
-bool HighsLp::operator==(const HighsLp& lp) {
-  bool equal = equalButForNames(lp);
-  equal = this->row_names_ == lp.row_names_ && equal;
-  equal = this->col_names_ == lp.col_names_ && equal;
-  return equal;
+void HighsLp::clear() {
+  this->numCol_ = 0;
+  this->numRow_ = 0;
+
+  this->Astart_.clear();
+  this->Aindex_.clear();
+  this->Avalue_.clear();
+  this->colCost_.clear();
+  this->colLower_.clear();
+  this->colUpper_.clear();
+  this->rowLower_.clear();
+  this->rowUpper_.clear();
+
+  this->sense_ = ObjSense::MINIMIZE;
+  this->offset_ = 0;
+
+  this->model_name_ = "";
+  this->lp_name_ = "";
+
+  this->col_names_.clear();
+  this->row_names_.clear();
+
+  this->integrality_.clear();
 }

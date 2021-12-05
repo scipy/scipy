@@ -45,15 +45,23 @@ using std::flush;
 using std::runtime_error;
 
 HighsStatus HDual::solve() {
+  assert(SOLVE_PHASE_ERROR == -3);
+  assert(SOLVE_PHASE_EXIT == -2);
+  assert(SOLVE_PHASE_UNKNOWN == -1);
+  assert(SOLVE_PHASE_OPTIMAL == 0);
+  assert(SOLVE_PHASE_1 == 1);
+  assert(SOLVE_PHASE_2 == 2);
+  assert(SOLVE_PHASE_CLEANUP == 4);
   HighsOptions& options = workHMO.options_;
   HighsSolutionParams& scaled_solution_params = workHMO.scaled_solution_params_;
   HighsIterationCounts& iteration_counts = workHMO.iteration_counts_;
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
-  workHMO.scaled_model_status_ = HighsModelStatus::NOTSET;
+  HighsModelStatus& scaled_model_status = workHMO.scaled_model_status_;
+  scaled_model_status = HighsModelStatus::NOTSET;
   if (debugSimplexInfoBasisRightSize(workHMO) ==
       HighsDebugStatus::LOGICAL_ERROR)
-    return HighsStatus::Error;
+    return returnFromSolve(HighsStatus::Error);
   // Assumes that the LP has a positive number of rows, since
   // unconstrained LPs should be solved in solveLpSimplex
   bool positive_num_row = workHMO.simplex_lp_.numRow_ > 0;
@@ -63,7 +71,7 @@ HighsStatus HDual::solve() {
                     "HPrimal::solve called for LP with non-positive (%d) "
                     "number of constraints",
                     workHMO.simplex_lp_.numRow_);
-    return HighsStatus::Error;
+    return returnFromSolve(HighsStatus::Error);
   }
 
   invertHint = INVERT_HINT_NO;
@@ -71,7 +79,7 @@ HighsStatus HDual::solve() {
   // Set solve_bailout to be true if control is to be returned immediately to
   // calling function
   solve_bailout = false;
-  if (bailoutOnTimeIterations()) return HighsStatus::Warning;
+  if (bailoutOnTimeIterations()) return returnFromSolve(HighsStatus::Warning);
 
   // Initialise working environment. Does LOTS, including
   // initialisation of edge weights to 1s. Should only be called if
@@ -83,7 +91,7 @@ HighsStatus HDual::solve() {
   if (!dual_info_ok) {
     HighsLogMessage(workHMO.options_.logfile, HighsMessageType::ERROR,
                     "HPrimalDual::solve has error in dual information");
-    return HighsStatus::Error;
+    return returnFromSolve(HighsStatus::Error);
   }
 
   // Decide whether to use LiDSE by not storing squared primal infeasibilities
@@ -98,11 +106,11 @@ HighsStatus HDual::solve() {
   }
 
   initialiseCost(workHMO, 1);
-  assert(simplex_lp_status.has_fresh_invert);
-  if (!simplex_lp_status.has_fresh_invert) {
-    printf(
-        "ERROR: Should enter with fresh INVERT - unless no_invert_on_optimal "
-        "is set\n");
+  assert(simplex_lp_status.has_invert);
+  if (!simplex_lp_status.has_invert) {
+    HighsLogMessage(workHMO.options_.logfile, HighsMessageType::ERROR,
+                    "HPrimalDual:: Should enter solve with INVERT");
+    return returnFromSolve(HighsStatus::Error);
   }
   // Consider initialising edge weights
   //
@@ -180,21 +188,9 @@ HighsStatus HDual::solve() {
   // Determine the number of dual infeasibilities, and hence the solve phase
   computeDualInfeasibleWithFlips(workHMO);
   dualInfeasCount = scaled_solution_params.num_dual_infeasibilities;
-  solvePhase = dualInfeasCount > 0 ? 1 : 2;
-  //
-  // Check that the model is OK to solve:
-  //
-  // Level 0 just checks the flags
-  //
-  // Level 1 also checks that the basis is OK and that the necessary
-  // data in work* is populated.
-  //
+  solvePhase = dualInfeasCount > 0 ? SOLVE_PHASE_1 : SOLVE_PHASE_2;
   if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
-    return HighsStatus::Error;
-#ifdef HiGHSDEV
-    // reportSimplexLpStatus(simplex_lp_status, "Before HDual major solving
-    // loop");
-#endif
+    return returnFromSolve(HighsStatus::Error);
   //
   // The major solving loop
   //
@@ -205,39 +201,100 @@ HighsStatus HDual::solve() {
     // computed from scratch in build() isn't checked against the the
     // updated value
     simplex_lp_status.has_dual_objective_value = false;
-    switch (solvePhase) {
-      case 1:
-        analysis->simplexTimerStart(SimplexDualPhase1Clock);
-        solvePhase1();
-        analysis->simplexTimerStop(SimplexDualPhase1Clock);
-        simplex_info.dual_phase1_iteration_count +=
-            (iteration_counts.simplex - it0);
-        break;
-      case 2:
-        analysis->simplexTimerStart(SimplexDualPhase2Clock);
-        solvePhase2();
-        analysis->simplexTimerStop(SimplexDualPhase2Clock);
-        simplex_info.dual_phase2_iteration_count +=
-            (iteration_counts.simplex - it0);
-        break;
-      case 4:
-        break;
-      default:
-        solvePhase = 0;
-        break;
+    if (solvePhase == SOLVE_PHASE_UNKNOWN) {
+      // Reset the phase 2 bounds so that true number of dual
+      // infeasibilities canbe determined
+      initialiseBound(workHMO);
+      // Determine the number of dual infeasibilities, and hence the solve phase
+      computeDualInfeasibleWithFlips(workHMO);
+      dualInfeasCount = scaled_solution_params.num_dual_infeasibilities;
+      solvePhase = dualInfeasCount > 0 ? SOLVE_PHASE_1 : SOLVE_PHASE_2;
+      if (simplex_info.backtracking_) {
+        // Backtracking, so set the bounds and primal values
+        initialiseBound(workHMO, solvePhase);
+        initialiseValueAndNonbasicMove(workHMO);
+        // Can now forget that we might have been backtracking
+        simplex_info.backtracking_ = false;
+      }
     }
-    if (solve_bailout) return HighsStatus::Warning;
-    // Jump for primal
-    if (solvePhase == 4) break;
+    assert(solvePhase == SOLVE_PHASE_1 || solvePhase == SOLVE_PHASE_2);
+    if (solvePhase == SOLVE_PHASE_1) {
+      // Phase 1
+      analysis->simplexTimerStart(SimplexDualPhase1Clock);
+      solvePhase1();
+      analysis->simplexTimerStop(SimplexDualPhase1Clock);
+      simplex_info.dual_phase1_iteration_count +=
+          (iteration_counts.simplex - it0);
+    } else if (solvePhase == SOLVE_PHASE_2) {
+      // Phase 2
+      analysis->simplexTimerStart(SimplexDualPhase2Clock);
+      solvePhase2();
+      analysis->simplexTimerStop(SimplexDualPhase2Clock);
+      simplex_info.dual_phase2_iteration_count +=
+          (iteration_counts.simplex - it0);
+    } else {
+      // Should only be SOLVE_PHASE_1 or SOLVE_PHASE_2
+      scaled_model_status = HighsModelStatus::SOLVE_ERROR;
+      return returnFromSolve(HighsStatus::Error);
+    }
+    // Return if bailing out from solve
+    if (solve_bailout) return returnFromSolve(HighsStatus::Warning);
+    // Can have all possible cases of solvePhase
+    assert(solvePhase >= SOLVE_PHASE_MIN && solvePhase <= SOLVE_PHASE_MAX);
+    // Look for scenarios when the major solving loop ends
+    if (solvePhase == SOLVE_PHASE_ERROR) {
+      // Solver error so return HighsStatus::Error
+      assert(scaled_model_status == HighsModelStatus::SOLVE_ERROR);
+      return returnFromSolve(HighsStatus::Error);
+    }
+    if (solvePhase == SOLVE_PHASE_EXIT) {
+      // LP identified as not having an optimal solution
+      assert(scaled_model_status == HighsModelStatus::PRIMAL_DUAL_INFEASIBLE ||
+             scaled_model_status == HighsModelStatus::PRIMAL_INFEASIBLE);
+      break;
+    }
+    if (solvePhase == SOLVE_PHASE_1 &&
+        scaled_model_status == HighsModelStatus::DUAL_INFEASIBLE) {
+      // Dual infeasibilities after phase 2 for a problem known to be dual
+      // infeasible.
+      break;
+    }
+    if (solvePhase == SOLVE_PHASE_CLEANUP) {
+      // Dual infeasibilities after phase 2 for a problem not known to be dual
+      // infeasible Primal feasible and dual infeasibilities
+      break;
+    }
+    // If solvePhase == SOLVE_PHASE_OPTIMAL == 0 then major solving
+    // loop ends naturally since solvePhase is false
   }
   // If bailing out, should have returned already
   assert(!solve_bailout);
-
-  if (solvePhase != 0 && solvePhase != 4) {
-    printf("What ho! HDual::solve() returning with solvePhase = %d\n",
-           solvePhase);
+  // Should only have these cases
+  assert(solvePhase == SOLVE_PHASE_EXIT || solvePhase == SOLVE_PHASE_UNKNOWN ||
+         solvePhase == SOLVE_PHASE_OPTIMAL || solvePhase == SOLVE_PHASE_1 ||
+         solvePhase == SOLVE_PHASE_CLEANUP);
+  if (solvePhase == SOLVE_PHASE_1) {
+    assert(scaled_model_status == HighsModelStatus::DUAL_INFEASIBLE);
+    // Resolve case of LP that is dual infeasible (and not primal
+    // feasible since that would yield solvePhase ==
+    // SOLVE_PHASE_CLEANUP Looking to identify primal infeasiblilty or
+    // primal unboundedness Cleanup with phase 1 for new primal code
+    computePrimalObjectiveValue(workHMO);
+    HQPrimal hPrimal(workHMO);
+    hPrimal.solve();
+    // Horrible hack until the primal simplex solver is refined
+    if (scaled_model_status == HighsModelStatus::OPTIMAL) {
+      if (workHMO.scaled_solution_params_.num_primal_infeasibilities) {
+        // Optimal with primal infeasibilities => primal infeasible
+        assert(workHMO.scaled_solution_params_.num_primal_infeasibilities > 0);
+        scaled_model_status = HighsModelStatus::PRIMAL_DUAL_INFEASIBLE;
+      }
+    } else {
+      // Should only be primal unbounded
+      assert(scaled_model_status == HighsModelStatus::PRIMAL_UNBOUNDED);
+    }
   }
-  if (solvePhase == 4) {
+  if (solvePhase == SOLVE_PHASE_CLEANUP) {
     computePrimalObjectiveValue(workHMO);
 #ifdef HiGHSDEV
     vector<double> primal_value_before_cleanup;
@@ -253,7 +310,7 @@ HighsStatus HDual::solve() {
       // optimally. Optimality (unlikely) for the unscaled LP will
       // still be assessed honestly, so leave it to the user to
       // deceide whether the solution can be accepted.
-      workHMO.scaled_model_status_ = HighsModelStatus::OPTIMAL;
+      scaled_model_status = HighsModelStatus::OPTIMAL;
     } else {
       // Use primal to clean up
 #ifdef HiGHSDEV
@@ -307,9 +364,9 @@ HighsStatus HDual::solve() {
     }
   }
   if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
-    return HighsStatus::Error;
+    return returnFromSolve(HighsStatus::Error);
   computePrimalObjectiveValue(workHMO);
-  return HighsStatus::OK;
+  return returnFromSolve(HighsStatus::OK);
 }
 
 void HDual::options() {
@@ -320,7 +377,6 @@ void HDual::options() {
       workHMO.scaled_solution_params_;
 
   interpretDualEdgeWeightStrategy(simplex_info.dual_edge_weight_strategy);
-  //  interpretPriceStrategy(simplex_info.price_strategy);
 
   // Copy values of simplex solver options to dual simplex options
   primal_feasibility_tolerance =
@@ -474,8 +530,21 @@ void HDual::initSlice(const int initial_num_slice) {
 }
 
 void HDual::solvePhase1() {
+  // Performs dual phase 1 iterations. Returns solvePhase with value
+  //
+  // SOLVE_PHASE_ERROR => Solver error
+  //
+  // SOLVE_PHASE_UNKNOWN => Back-tracking due to singularity
+  //
+  // SOLVE_PHASE_1 => Dual infeasibility suspected, but have to go out
+  // and back in to solvePhase1 to perform fresh rebuild. Also if
+  // bailing out due to reaching time/iteration limit.
+  //
+  // SOLVE_PHASE_2 => Continue with dual phase 2 iterations
+
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
+  HighsModelStatus& scaled_model_status = workHMO.scaled_model_status_;
   // When starting a new phase the (updated) dual objective function
   // value isn't known. Indicate this so that when the value computed
   // from scratch in build() isn't checked against the the updated
@@ -484,9 +553,9 @@ void HDual::solvePhase1() {
   simplex_lp_status.has_dual_objective_value = false;
   // Set invertHint so that it's assigned when first tested
   invertHint = INVERT_HINT_NO;
-  // Set solvePhase = 1 and solve_bailout = false so they are set if
+  // Set solvePhase = SOLVE_PHASE_1 and solve_bailout = false so they are set if
   // solvePhase1() is called directly
-  solvePhase = 1;
+  solvePhase = SOLVE_PHASE_1;
   solve_bailout = false;
   if (bailoutOnTimeIterations()) return;
   // Report the phase start
@@ -495,12 +564,26 @@ void HDual::solvePhase1() {
   // Switch to dual phase 1 bounds
   initialiseBound(workHMO, 1);
   initialiseValueAndNonbasicMove(workHMO);
+
+  // If there's no backtracking basis Save the initial basis in case of
+  // backtracking
+  if (!simplex_info.valid_backtracking_basis_) putBacktrackingBasis();
+
   // Main solving structure
   analysis->simplexTimerStart(IterateClock);
   for (;;) {
     analysis->simplexTimerStart(IterateDualRebuildClock);
     rebuild();
     analysis->simplexTimerStop(IterateDualRebuildClock);
+    if (solvePhase == SOLVE_PHASE_ERROR) {
+      scaled_model_status = HighsModelStatus::SOLVE_ERROR;
+      return;
+    }
+    if (solvePhase == SOLVE_PHASE_UNKNOWN) {
+      // If backtracking, may change phase, so drop out
+      analysis->simplexTimerStop(IterateClock);
+      return;
+    }
     if (bailoutOnTimeIterations()) break;
     for (;;) {
       switch (simplex_info.simplex_strategy) {
@@ -532,6 +615,7 @@ void HDual::solvePhase1() {
 
   // If bailing out, should have done so already
   assert(!solve_bailout);
+  // Assess outcome of dual phase 1
   if (rowOut == -1) {
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_DETAILED, "dual-phase-1-optimal\n");
@@ -550,7 +634,7 @@ void HDual::solvePhase1() {
       //
       // OK if costs are perturbed, since they remain perturbed in phase 2 until
       // the final clean-up
-      solvePhase = 2;
+      solvePhase = SOLVE_PHASE_2;
     } else {
       // A negative dual objective value at an optimal solution of
       // phase 1 means that there are dual infeasibilities. If the
@@ -563,10 +647,10 @@ void HDual::solvePhase1() {
   } else if (invertHint == INVERT_HINT_CHOOSE_COLUMN_FAIL) {
     // chooseColumn has failed
     // Behave as "Report strange issues" below
-    solvePhase = -1;
+    solvePhase = SOLVE_PHASE_ERROR;
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_MINIMAL, "dual-phase-1-not-solved\n");
-    workHMO.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
+    scaled_model_status = HighsModelStatus::SOLVE_ERROR;
   } else if (columnIn == -1) {
     // We got dual phase 1 unbounded - strange
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
@@ -580,18 +664,18 @@ void HDual::solvePhase1() {
       if (dualInfeasCount == 0) {
         // No dual infeasibilities and (since unbounded) at least zero
         // phase 1 objective so go to phase 2
-        solvePhase = 2;
+        solvePhase = SOLVE_PHASE_2;
       }
     } else {
       // Report strange issues
-      solvePhase = -1;
+      solvePhase = SOLVE_PHASE_ERROR;
       HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                         ML_MINIMAL, "dual-phase-1-not-solved\n");
-      workHMO.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
+      scaled_model_status = HighsModelStatus::SOLVE_ERROR;
     }
   }
 
-  if (solvePhase == 2) {
+  if (solvePhase == SOLVE_PHASE_2) {
     // Moving to phase 2 so allow cost perturbation. It may have been
     // prevented to avoid cleanup-perturbation loops when optimal in
     // phase 1
@@ -603,8 +687,31 @@ void HDual::solvePhase1() {
 }
 
 void HDual::solvePhase2() {
+  // Performs dual phase 2 iterations. Returns solvePhase with value
+  //
+  // SOLVE_PHASE_ERROR => Solver error
+  //
+  // SOLVE_PHASE_EXIT => LP identified as not having an optimal solution
+  //
+  // SOLVE_PHASE_UNKNOWN => Back-tracking due to singularity
+  //
+  // SOLVE_PHASE_OPTIMAL => Primal feasible and no dual infeasibilities =>
+  // Optimal
+  //
+  // SOLVE_PHASE_1 => Primal feasible and dual infeasibilities for a
+  // problem known to be dual infeasible => Use primal phase 2 to
+  // determine primal unboundedness.
+  //
+  // SOLVE_PHASE_2 => Dual unboundedness suspected, but have to go out
+  // and back in to solvePhase2 to perform fresh rebuild. Also if
+  // bailing out due to reaching time/iteration limit or dual
+  // objective
+  //
+  // SOLVE_PHASE_CLEANUP => Contrinue with primal phase 2 iterations to clean up
+  // dual infeasibilities
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
+  HighsModelStatus& scaled_model_status = workHMO.scaled_model_status_;
   // When starting a new phase the (updated) dual objective function
   // value isn't known. Indicate this so that when the value computed
   // from scratch in build() isn't checked against the the updated
@@ -613,9 +720,9 @@ void HDual::solvePhase2() {
   simplex_lp_status.has_dual_objective_value = false;
   // Set invertHint so that it's assigned when first tested
   invertHint = INVERT_HINT_NO;
-  // Set solvePhase = 2 and solve_bailout = false so they are set if
+  // Set solvePhase = SOLVE_PHASE_2 and solve_bailout = false so they are set if
   // solvePhase2() is called directly
-  solvePhase = 2;
+  solvePhase = SOLVE_PHASE_2;
   solve_bailout = false;
   if (bailoutOnTimeIterations()) return;
   // Report the phase start
@@ -623,6 +730,11 @@ void HDual::solvePhase2() {
                     ML_DETAILED, "dual-phase-2-start\n");
   // Collect free variables
   dualRow.createFreelist();
+
+  // If there's no backtracking basis Save the initial basis in case of
+  // backtracking
+  if (!simplex_info.valid_backtracking_basis_) putBacktrackingBasis();
+
   // Main solving structure
   analysis->simplexTimerStart(IterateClock);
   for (;;) {
@@ -631,6 +743,15 @@ void HDual::solvePhase2() {
     analysis->simplexTimerStart(IterateDualRebuildClock);
     rebuild();
     analysis->simplexTimerStop(IterateDualRebuildClock);
+    if (solvePhase == SOLVE_PHASE_ERROR) {
+      scaled_model_status = HighsModelStatus::SOLVE_ERROR;
+      return;
+    }
+    if (solvePhase == SOLVE_PHASE_UNKNOWN) {
+      // If backtracking, may change phase, so drop out
+      analysis->simplexTimerStop(IterateClock);
+      return;
+    }
     if (bailoutOnTimeIterations()) break;
     if (bailoutOnDualObjective()) break;
     if (dualInfeasCount > 0) break;
@@ -666,11 +787,15 @@ void HDual::solvePhase2() {
 
   // If bailing out, should have done so already
   assert(!solve_bailout);
+  // Assess outcome of dual phase 2
   if (dualInfeasCount > 0) {
-    // There are dual infeasiblities so switch to Phase 1 and return
+    // There are dual infeasiblities so possibly switch to Phase 1 and
+    // return. "Possibly" because, if dual infeasibility has already
+    // been shown, primal simplex is used to distinguish primal
+    // unboundedness from primal infeasibility
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_DETAILED, "dual-phase-2-found-free\n");
-    solvePhase = 1;
+    solvePhase = SOLVE_PHASE_1;
   } else if (rowOut == -1) {
     // There is no candidate in CHUZR, even after rebuild so probably optimal
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
@@ -680,21 +805,21 @@ void HDual::solvePhase2() {
     if (dualInfeasCount > 0) {
       // There are dual infeasiblities, so consider performing primal
       // simplex iterations to get dual feasibility
-      solvePhase = 4;
+      solvePhase = SOLVE_PHASE_CLEANUP;
     } else {
       // There are no dual infeasiblities so optimal!
-      solvePhase = 0;
+      solvePhase = SOLVE_PHASE_OPTIMAL;
       HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                         ML_DETAILED, "problem-optimal\n");
-      workHMO.scaled_model_status_ = HighsModelStatus::OPTIMAL;
+      scaled_model_status = HighsModelStatus::OPTIMAL;
     }
   } else if (invertHint == INVERT_HINT_CHOOSE_COLUMN_FAIL) {
     // chooseColumn has failed
     // Behave as "Report strange issues" below
-    solvePhase = -1;
+    solvePhase = SOLVE_PHASE_ERROR;
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_MINIMAL, "dual-phase-2-not-solved\n");
-    workHMO.scaled_model_status_ = HighsModelStatus::SOLVE_ERROR;
+    scaled_model_status = HighsModelStatus::SOLVE_ERROR;
   } else if (columnIn == -1) {
     // There is no candidate in CHUZC, so probably dual unbounded
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
@@ -704,11 +829,23 @@ void HDual::solvePhase2() {
       cleanup();
     } else {
       // If the costs have not been perturbed, so dual unbounded---and hence
-      // primal infeasible
-      solvePhase = -1;
-      HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
-                        ML_MINIMAL, "problem-infeasible\n");
-      workHMO.scaled_model_status_ = HighsModelStatus::PRIMAL_INFEASIBLE;
+      // primal infeasible (and possibly also dual infeasible)
+      solvePhase = SOLVE_PHASE_EXIT;
+      if (scaled_model_status == HighsModelStatus::DUAL_INFEASIBLE) {
+        HighsPrintMessage(workHMO.options_.output,
+                          workHMO.options_.message_level, ML_MINIMAL,
+                          "problem-primal-dual-infeasible\n");
+        scaled_model_status = HighsModelStatus::PRIMAL_DUAL_INFEASIBLE;
+      } else {
+        // Dual unbounded, so save dual ray
+        saveDualRay();
+        // Model status should be unset?
+        assert(scaled_model_status == HighsModelStatus::NOTSET);
+        HighsPrintMessage(workHMO.options_.output,
+                          workHMO.options_.message_level, ML_MINIMAL,
+                          "problem-primal-infeasible\n");
+        scaled_model_status = HighsModelStatus::PRIMAL_INFEASIBLE;
+      }
     }
   }
   return;
@@ -734,32 +871,31 @@ void HDual::rebuild() {
     }
   }
   if (reInvert) {
-    const int* baseIndex = &workHMO.simplex_basis_.basicIndex_[0];
-    // Scatter the edge weights so that, after INVERT,
-    // they can be gathered according to the new
-
-    // permutation of baseIndex
-    analysis->simplexTimerStart(PermWtClock);
-    for (int i = 0; i < solver_num_row; i++)
-      dualRHS.workEdWtFull[baseIndex[i]] = dualRHS.workEdWt[i];
-    analysis->simplexTimerStop(PermWtClock);
-
-    analysis->simplexTimerStart(InvertClock);
-
-    // Call computeFactor to perform INVERT
-    int rank_deficiency = computeFactor(workHMO);
-    analysis->simplexTimerStop(InvertClock);
-
-    if (rank_deficiency)
-      throw runtime_error("Dual reInvert: singular-basis-matrix");
-    // Gather the edge weights according to the
-    // permutation of baseIndex after INVERT
-    analysis->simplexTimerStart(PermWtClock);
-    for (int i = 0; i < solver_num_row; i++)
-      dualRHS.workEdWt[i] = dualRHS.workEdWtFull[baseIndex[i]];
-    analysis->simplexTimerStop(PermWtClock);
+    // Get a nonsingular inverse if possible. One of three things
+    // happens: Current basis is nonsingular; Current basis is
+    // singular and last nonsingular basis is refactorized as
+    // nonsingular - or found singular. Latter is code failure.
+    if (!getNonsingularInverse()) {
+      solvePhase = SOLVE_PHASE_ERROR;
+      return;
+    }
   }
 
+  if (!workHMO.simplex_lp_status_.has_matrix_row_wise ||
+      !workHMO.simplex_lp_status_.has_matrix_col_wise) {
+    // Don't have the matrix either row-wise or col-wise, so
+    // reinitialise it
+    assert(simplex_info.backtracking_);
+    HighsLp& simplex_lp = workHMO.simplex_lp_;
+    analysis->simplexTimerStart(matrixSetupClock);
+    workHMO.matrix_.setup(simplex_lp.numCol_, simplex_lp.numRow_,
+                          &simplex_lp.Astart_[0], &simplex_lp.Aindex_[0],
+                          &simplex_lp.Avalue_[0],
+                          &workHMO.simplex_basis_.nonbasicFlag_[0]);
+    simplex_lp_status.has_matrix_col_wise = true;
+    simplex_lp_status.has_matrix_row_wise = true;
+    analysis->simplexTimerStop(matrixSetupClock);
+  }
   // Record whether the update objective value should be tested. If
   // the objective value is known, then the updated objective value
   // should be correct - once the correction due to recomputing the
@@ -783,6 +919,11 @@ void HDual::rebuild() {
   computeDual(workHMO);
   analysis->simplexTimerStop(ComputeDualClock);
 
+  if (simplex_info.backtracking_) {
+    // If backtracking, may change phase, so drop out
+    solvePhase = SOLVE_PHASE_UNKNOWN;
+    return;
+  }
   analysis->simplexTimerStart(CorrectDualClock);
   correctDual(workHMO, &dualInfeasCount);
   analysis->simplexTimerStop(CorrectDualClock);
@@ -820,7 +961,7 @@ void HDual::rebuild() {
   if (!simplex_info.run_quiet) {
     // Report the primal infeasiblities
     computeSimplexPrimalInfeasible(workHMO);
-    if (solvePhase == 1) {
+    if (solvePhase == SOLVE_PHASE_1) {
       // In phase 1, report the simplex LP dual infeasiblities
       computeSimplexLpDualInfeasible(workHMO);
     } else {
@@ -888,7 +1029,7 @@ void HDual::cleanup() {
     computeSimplexPrimalInfeasible(workHMO);
     // In phase 1, report the simplex LP dual infeasiblities
     // In phase 2, report the simplex dual infeasiblities (known)
-    if (solvePhase == 1) computeSimplexLpDualInfeasible(workHMO);
+    if (solvePhase == SOLVE_PHASE_1) computeSimplexLpDualInfeasible(workHMO);
     reportRebuild();
   }
 }
@@ -909,18 +1050,6 @@ void HDual::iterate() {
   analysis->simplexTimerStart(IterateChuzcClock);
   chooseColumn(&row_ep);
   analysis->simplexTimerStop(IterateChuzcClock);
-
-#ifdef HiGHSDEV
-  if (rp_iter_da && rowOut >= 0) {
-    // for (int row=0; row < workHMO.lp_.numRow_; row++) printf("Row %2d: Devex
-    // Weight = %11.4g\n", row, dualRHS.workEdWt[row]);
-    printf(
-        "Iter %4d: rowOut %4d; colOut %4d; colIn %4d; Wt = %11.4g; thetaDual = "
-        "%11.4g; alpha = %11.4g; Dvx = %d\n",
-        workHMO.iteration_counts_.simplex, rowOut, columnOut, columnIn,
-        computed_edge_weight, thetaDual, alphaRow, num_devex_iterations);
-  }
-#endif
 
   analysis->simplexTimerStart(IterateFtranClock);
   updateFtranBFRT();
@@ -1030,17 +1159,19 @@ void HDual::iterationAnalysisData() {
   analysis->dual_step = thetaDual;
   analysis->pivot_value_from_column = alpha;
   analysis->pivot_value_from_row = alphaRow;
+  analysis->factor_pivot_threshold = simplex_info.factor_pivot_threshold;
   analysis->numerical_trouble = numericalTrouble;
   analysis->objective_value = simplex_info.updated_dual_objective_value;
   // Since maximization is achieved by minimizing the LP with negated
   // costs, in phase 2 the dual objective value is negated, so flip
   // its sign according to the LP sense
-  if (solvePhase == 2) analysis->objective_value *= (int)workHMO.lp_.sense_;
+  if (solvePhase == SOLVE_PHASE_2)
+    analysis->objective_value *= (int)workHMO.lp_.sense_;
   analysis->num_primal_infeasibilities =
       simplex_info.num_primal_infeasibilities;
   analysis->sum_primal_infeasibilities =
       simplex_info.sum_primal_infeasibilities;
-  if (solvePhase == 1) {
+  if (solvePhase == SOLVE_PHASE_1) {
     analysis->num_dual_infeasibilities =
         scaled_solution_params.num_dual_infeasibilities;
     analysis->sum_dual_infeasibilities =
@@ -1175,9 +1306,9 @@ void HDual::chooseRow() {
 bool HDual::acceptDualSteepestEdgeWeight(const double updated_edge_weight) {
   // Accept the updated weight if it is at least a quarter of the
   // computed weight. Excessively large updated weights don't matter!
-  const double accept_weight_threshhold = 0.25;
+  const double accept_weight_threshold = 0.25;
   const bool accept_weight =
-      updated_edge_weight >= accept_weight_threshhold * computed_edge_weight;
+      updated_edge_weight >= accept_weight_threshold * computed_edge_weight;
   analysis->dualSteepestEdgeWeightError(computed_edge_weight,
                                         updated_edge_weight);
   return accept_weight;
@@ -1192,9 +1323,9 @@ bool HDual::newDevexFramework(const double updated_edge_weight) {
   i_te = max(minAbsNumberDevexIterations, i_te);
   // Square maxAllowedDevexWeightRatio due to keeping squared
   // weights
-  const double accept_ratio_threshhold =
+  const double accept_ratio_threshold =
       maxAllowedDevexWeightRatio * maxAllowedDevexWeightRatio;
-  const bool accept_ratio = devex_ratio <= accept_ratio_threshhold;
+  const bool accept_ratio = devex_ratio <= accept_ratio_threshold;
   const bool accept_it = num_devex_iterations <= i_te;
   bool return_new_devex_framework;
   return_new_devex_framework = !accept_ratio || !accept_it;
@@ -1781,7 +1912,12 @@ void HDual::initialiseDevexFramework(const bool parallel) {
 
 void HDual::interpretDualEdgeWeightStrategy(
     const int dual_edge_weight_strategy) {
-  if (dual_edge_weight_strategy == SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG) {
+  if (dual_edge_weight_strategy == SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE) {
+    dual_edge_weight_mode = DualEdgeWeightMode::STEEPEST_EDGE;
+    initialise_dual_steepest_edge_weights = true;
+    allow_dual_steepest_edge_to_devex_switch = true;
+  } else if (dual_edge_weight_strategy ==
+             SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG) {
     dual_edge_weight_mode = DualEdgeWeightMode::DANTZIG;
   } else if (dual_edge_weight_strategy ==
              SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX) {
@@ -1796,11 +1932,6 @@ void HDual::interpretDualEdgeWeightStrategy(
     dual_edge_weight_mode = DualEdgeWeightMode::STEEPEST_EDGE;
     initialise_dual_steepest_edge_weights = false;
     allow_dual_steepest_edge_to_devex_switch = false;
-  } else if (dual_edge_weight_strategy ==
-             SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH) {
-    dual_edge_weight_mode = DualEdgeWeightMode::STEEPEST_EDGE;
-    initialise_dual_steepest_edge_weights = true;
-    allow_dual_steepest_edge_to_devex_switch = true;
   } else {
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_MINIMAL,
@@ -1814,40 +1945,144 @@ void HDual::interpretDualEdgeWeightStrategy(
   }
 }
 
-/*
-void HDual::interpretPriceStrategy(const int price_strategy) {
-  allow_priceByColumn_switch = false;
-  allow_priceByRowSparseResult_switch = false;
-  if (price_strategy == SIMPLEX_PRICE_STRATEGY_COL) {
-    price_mode = PriceMode::COL;
-  } else if (price_strategy == SIMPLEX_PRICE_STRATEGY_ROW) {
-    price_mode = PriceMode::ROW;
-  } else if (price_strategy == SIMPLEX_PRICE_STRATEGY_ROW_SWITCH) {
-    price_mode = PriceMode::ROW;
-    allow_priceByRowSparseResult_switch = true;
-  } else if (price_strategy == SIMPLEX_PRICE_STRATEGY_ROW_SWITCH_COL_SWITCH) {
-    price_mode = PriceMode::ROW;
-    allow_priceByColumn_switch = true;
-    allow_priceByRowSparseResult_switch = true;
-  } else {
-    HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
-ML_MINIMAL, "HDual::interpretPriceStrategy: unrecognised price_strategy = %d - "
-                      "using row Price with switch or colump price switch\n",
-        price_strategy);
-    price_mode = PriceMode::ROW;
-    allow_priceByColumn_switch = true;
-    allow_priceByRowSparseResult_switch = true;
-  }
+HighsStatus HDual::returnFromSolve(const HighsStatus return_status) {
+  HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
+  simplex_info.valid_backtracking_basis_ = false;
+  return return_status;
 }
-*/
+
+void HDual::saveDualRay() {
+  workHMO.simplex_lp_status_.has_dual_ray = true;
+  workHMO.simplex_info_.dual_ray_row_ = rowOut;
+  workHMO.simplex_info_.dual_ray_sign_ = sourceOut;
+}
+
+bool HDual::getNonsingularInverse() {
+  const vector<int>& basicIndex = workHMO.simplex_basis_.basicIndex_;
+  // Take a copy of basicIndex from before INVERT to be used as the
+  // saved ordering of basic variables - so reinvert will run
+  // identically.
+  const vector<int> basicIndex_before_compute_factor = basicIndex;
+  // Save the number of updates performed in case it has to be used to determine
+  // a limit
+  HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
+  const int simplex_update_count = simplex_info.update_count;
+  // Scatter the edge weights so that, after INVERT, they can be
+  // gathered according to the new permutation of basicIndex
+  analysis->simplexTimerStart(PermWtClock);
+  for (int i = 0; i < solver_num_row; i++)
+    dualRHS.workEdWtFull[basicIndex[i]] = dualRHS.workEdWt[i];
+  analysis->simplexTimerStop(PermWtClock);
+
+  // Call computeFactor to perform INVERT
+  analysis->simplexTimerStart(InvertClock);
+  int rank_deficiency = computeFactor(workHMO);
+  analysis->simplexTimerStop(InvertClock);
+  const bool artificial_rank_deficiency = false;  // true;
+  if (artificial_rank_deficiency) {
+    if (!simplex_info.phase1_backtracking_test_done &&
+        solvePhase == SOLVE_PHASE_1) {
+      // Claim rank deficiency to test backtracking
+      printf("Phase1 (Iter %d) Claiming rank deficiency to test backtracking\n",
+             workHMO.iteration_counts_.simplex);
+      rank_deficiency = 1;
+      simplex_info.phase1_backtracking_test_done = true;
+    } else if (!simplex_info.phase2_backtracking_test_done &&
+               solvePhase == SOLVE_PHASE_2) {
+      // Claim rank deficiency to test backtracking
+      printf("Phase2 (Iter %d) Claiming rank deficiency to test backtracking\n",
+             workHMO.iteration_counts_.simplex);
+      rank_deficiency = 1;
+      simplex_info.phase2_backtracking_test_done = true;
+    }
+  }
+  if (rank_deficiency) {
+    // Rank deficient basis, so backtrack to last full rank basis
+    //
+    // Get the last nonsingular basis - so long as there is one
+    if (!getBacktrackingBasis(dualRHS.workEdWtFull)) return false;
+    // Record that backtracking is taking place
+    simplex_info.backtracking_ = true;
+    updateSimplexLpStatus(workHMO.simplex_lp_status_, LpAction::BACKTRACKING);
+    analysis->simplexTimerStart(InvertClock);
+    int backtrack_rank_deficiency = computeFactor(workHMO);
+    analysis->simplexTimerStop(InvertClock);
+    // This basis has previously been inverted successfully, so it shouldn't be
+    // singular
+    if (backtrack_rank_deficiency) return false;
+    // simplex update limit will be half of the number of updates
+    // performed, so make sure that at least one update was performed
+    if (simplex_update_count <= 1) return false;
+    int use_simplex_update_limit = simplex_info.update_limit;
+    int new_simplex_update_limit = simplex_update_count / 2;
+    simplex_info.update_limit = new_simplex_update_limit;
+    HighsLogMessage(workHMO.options_.logfile, HighsMessageType::WARNING,
+                    "Rank deficiency of %d after %d simplex updates, so "
+                    "backtracking: max updates reduced from %d to %d",
+                    rank_deficiency, simplex_update_count,
+                    use_simplex_update_limit, new_simplex_update_limit);
+  } else {
+    // Current basis is full rank so save it
+    putBacktrackingBasis(basicIndex_before_compute_factor,
+                         dualRHS.workEdWtFull);
+    // Indicate that backtracking is not taking place
+    simplex_info.backtracking_ = false;
+    // Reset the update limit in case this is the first successful
+    // inversion after backtracking
+    simplex_info.update_limit = workHMO.options_.simplex_update_limit;
+  }
+  // Gather the edge weights according to the permutation of
+  // basicIndex after INVERT
+  analysis->simplexTimerStart(PermWtClock);
+  for (int i = 0; i < solver_num_row; i++)
+    dualRHS.workEdWt[i] = dualRHS.workEdWtFull[basicIndex[i]];
+  analysis->simplexTimerStop(PermWtClock);
+  return true;
+}
+
+bool HDual::getBacktrackingBasis(vector<double>& scattered_edge_weights) {
+  HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
+  if (!simplex_info.valid_backtracking_basis_) return false;
+
+  workHMO.simplex_basis_ = simplex_info.backtracking_basis_;
+  simplex_info.costs_perturbed =
+      simplex_info.backtracking_basis_costs_perturbed_;
+  simplex_info.workShift_ = simplex_info.backtracking_basis_workShift_;
+  scattered_edge_weights = simplex_info.backtracking_basis_edge_weights_;
+  return true;
+}
+
+void HDual::putBacktrackingBasis() {
+  const vector<int>& basicIndex = workHMO.simplex_basis_.basicIndex_;
+  analysis->simplexTimerStart(PermWtClock);
+  for (int i = 0; i < solver_num_row; i++)
+    dualRHS.workEdWtFull[basicIndex[i]] = dualRHS.workEdWt[i];
+  analysis->simplexTimerStop(PermWtClock);
+  putBacktrackingBasis(basicIndex, dualRHS.workEdWtFull);
+}
+
+void HDual::putBacktrackingBasis(
+    const vector<int>& basicIndex_before_compute_factor,
+    const vector<double>& scattered_edge_weights) {
+  HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
+  simplex_info.valid_backtracking_basis_ = true;
+  simplex_info.backtracking_basis_ = workHMO.simplex_basis_;
+  simplex_info.backtracking_basis_.basicIndex_ =
+      basicIndex_before_compute_factor;
+  simplex_info.backtracking_basis_costs_perturbed_ =
+      simplex_info.costs_perturbed;
+  simplex_info.backtracking_basis_workShift_ = simplex_info.workShift_;
+  simplex_info.backtracking_basis_edge_weights_ = scattered_edge_weights;
+}
 
 void HDual::assessPhase1Optimality() {
   // Should only be called when optimal in phase 1 (rowOut == -1) with negative
   // dual activity
-  assert(solvePhase == 1);
+  assert(solvePhase == SOLVE_PHASE_1);
   assert(rowOut == -1);
-  assert(workHMO.simplex_info_.dual_objective_value < 0);
+  //  assert(workHMO.simplex_info_.dual_objective_value < 0);
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
+  HighsModelStatus& scaled_model_status = workHMO.scaled_model_status_;
   // We still have dual infeasibilities, so clean up any perturbations
   // before concluding dual infeasibility
   //
@@ -1864,43 +2099,56 @@ void HDual::assessPhase1Optimality() {
     // If there are now dual infeasibilities with respect to phase 1
     // bounds, have to got back to rebuild()
     if (dualInfeasCount == 0) {
-      // No dual infeasibilities with respect to phase 1 bounds. In
-      // this case, although the LP is dual infeasible if the dual
-      // objective is (sufficiently) positive, no conclusions on the
-      // primal LP can be deduced. Have to shift any dual
-      // infeasibilities and go to dual phase 2 to determine whether
-      // dual unboundedness implies that the LP is primal
-      // infeasible. If dual phase 2 finds a primal feasible point
-      // then the shifts are removed and primal phase 2 will identify
-      // whether the LP is primal unbounded.
-      //
+      // No dual infeasibilities with respect to phase 1 bounds.
       if (simplex_info.dual_objective_value == 0) {
+        // No dual infeasibilities (with respect to phase 2 bounds) so
+        // go to phase 2
         HighsLogMessage(workHMO.options_.logfile, HighsMessageType::INFO,
                         "LP is dual feasible after removing cost perturbations "
                         "so go to phase 2");
       } else {
+        // LP is dual infeasible if the dual objective is sufficiently
+        // positive, so no conclusions on the primal LP can be deduced
+        // - could be primal unbounded or primal infeasible.
+        //
+        // Shift any dual infeasibilities and go to dual phase 2. If a
+        // primal feasible point is found then the shifts are removed
+        // and primal phase 2 will identify whether the LP is primal
+        // unbounded. If dual unboundedness is found, then no
+        // conclusion can be drawn. Have to use primal phase 1 (and
+        // possibly phase 2) to determine whether the LP is primal
+        // infeasible or unbounded.
+        //
+        // What's important is that the solver doesn't go back to dual
+        // phase 1, otherwise it can fail to terminate
+        //
+        // Indicate the conclusion of dual infeasiblility by setting
+        // the scaled model status
         reportOnPossibleLpDualInfeasibility();
+        scaled_model_status = HighsModelStatus::DUAL_INFEASIBLE;
       }
-      solvePhase = 2;
+      solvePhase = SOLVE_PHASE_2;
     }
   } else {
     // Phase 1 problem is optimal with original costs and negative
     // dual objective. In this case, hsol deduces dual infeasibility
     // and returns UNBOUNDED as a status, but this is wrong if the LP
-    // is primal infeasible. As discvussed above, this can only be
-    // determined by going to dual phase 2.
+    // is primal infeasible. As discussed above, this can only be
+    // determined by going to dual phase 2, and then primal phase 1,
+    // if necessary.
     //
     reportOnPossibleLpDualInfeasibility();
-    solvePhase = 2;
+    scaled_model_status = HighsModelStatus::DUAL_INFEASIBLE;
+    solvePhase = SOLVE_PHASE_2;
   }
   if (dualInfeasCount > 0) {
-    // Must still be solvePhase = 1 since dual infeasibilities with
+    // Must still be solvePhase = SOLVE_PHASE_1 since dual infeasibilities with
     // respect to phase 1 bounds mean that primal values must
     // change, so primal feasibility is unknown
-    assert(solvePhase == 1);
+    assert(solvePhase == SOLVE_PHASE_1);
   } else {
     // Optimal in dual phase 1, so must go to phase 2
-    assert(solvePhase == 2);
+    assert(solvePhase == SOLVE_PHASE_2);
     // Reset the duals, if necessary shifting costs of free variable
     // so that their duals are zero
     exitPhase1ResetDuals();
@@ -1967,9 +2215,9 @@ void HDual::exitPhase1ResetDuals() {
 
 void HDual::reportOnPossibleLpDualInfeasibility() {
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
-  assert(solvePhase == 1);
+  assert(solvePhase == SOLVE_PHASE_1);
   assert(rowOut == -1);
-  assert(simplex_info.dual_objective_value < 0);
+  //  assert(simplex_info.dual_objective_value < 0);
   assert(!simplex_info.costs_perturbed);
   const int num_lp_dual_infeasibilities =
       workHMO.scaled_solution_params_.num_dual_infeasibilities;
@@ -2027,22 +2275,21 @@ bool HDual::bailoutReturn() {
 }
 
 bool HDual::bailoutOnTimeIterations() {
+  HighsModelStatus& scaled_model_status = workHMO.scaled_model_status_;
   if (solve_bailout) {
     // Bailout has already been decided: check that it's for one of these
     // reasons
-    assert(workHMO.scaled_model_status_ ==
-               HighsModelStatus::REACHED_TIME_LIMIT ||
-           workHMO.scaled_model_status_ ==
-               HighsModelStatus::REACHED_ITERATION_LIMIT ||
-           workHMO.scaled_model_status_ ==
+    assert(scaled_model_status == HighsModelStatus::REACHED_TIME_LIMIT ||
+           scaled_model_status == HighsModelStatus::REACHED_ITERATION_LIMIT ||
+           scaled_model_status ==
                HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND);
   } else if (workHMO.timer_.readRunHighsClock() > workHMO.options_.time_limit) {
     solve_bailout = true;
-    workHMO.scaled_model_status_ = HighsModelStatus::REACHED_TIME_LIMIT;
+    scaled_model_status = HighsModelStatus::REACHED_TIME_LIMIT;
   } else if (workHMO.iteration_counts_.simplex >=
              workHMO.options_.simplex_iteration_limit) {
     solve_bailout = true;
-    workHMO.scaled_model_status_ = HighsModelStatus::REACHED_ITERATION_LIMIT;
+    scaled_model_status = HighsModelStatus::REACHED_ITERATION_LIMIT;
   }
   return solve_bailout;
 }
@@ -2057,7 +2304,8 @@ bool HDual::bailoutOnDualObjective() {
                HighsModelStatus::REACHED_ITERATION_LIMIT ||
            workHMO.scaled_model_status_ ==
                HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND);
-  } else if (workHMO.lp_.sense_ == ObjSense::MINIMIZE && solvePhase == 2) {
+  } else if (workHMO.lp_.sense_ == ObjSense::MINIMIZE &&
+             solvePhase == SOLVE_PHASE_2) {
     if (workHMO.simplex_info_.updated_dual_objective_value >
         workHMO.options_.dual_objective_value_upper_bound)
       solve_bailout = reachedExactDualObjectiveValueUpperBound();
@@ -2156,8 +2404,9 @@ double HDual::computeExactDualObjectiveValue() {
     norm_dual += fabs(exact_dual);
     norm_delta_dual += residual;
     if (residual > 1e10)
-      printf(
-          "Col %4d: ExactDual = %11.4g; WorkDual = %11.4g; Residual = %11.4g\n",
+      HighsLogMessage(
+          workHMO.options_.logfile, HighsMessageType::WARNING,
+          "Col %4d: ExactDual = %11.4g; WorkDual = %11.4g; Residual = %11.4g",
           iCol, exact_dual, simplex_info.workDual_[iCol], residual);
     dual_objective += simplex_info.workValue_[iCol] * exact_dual;
   }
@@ -2169,8 +2418,9 @@ double HDual::computeExactDualObjectiveValue() {
     norm_dual += fabs(exact_dual);
     norm_delta_dual += residual;
     if (residual > 1e10)
-      printf(
-          "Row %4d: ExactDual = %11.4g; WorkDual = %11.4g; Residual = %11.4g\n",
+      HighsLogMessage(
+          workHMO.options_.logfile, HighsMessageType::WARNING,
+          "Row %4d: ExactDual = %11.4g; WorkDual = %11.4g; Residual = %11.4g",
           iRow, exact_dual, simplex_info.workDual_[iVar], residual);
     dual_objective += simplex_info.workValue_[iVar] * exact_dual;
   }

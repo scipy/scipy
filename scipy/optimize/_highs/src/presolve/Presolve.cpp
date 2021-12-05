@@ -237,11 +237,31 @@ void Presolve::reportDevMainLoop() {
   return;
 }
 
+void Presolve::removeEmpty() {
+  // cols
+  for (int col = 0; col < numCol; col++) {
+    if (flagCol[col])
+      if (nzCol[col] == 0) {
+        removeEmptyColumn(col);
+      }
+  }
+
+  // rows
+  for (int row = 0; row < numRow; row++) {
+    if (flagRow[row])
+      if (nzRow[row] == 0) {
+        removeEmptyRow(row);
+      }
+  }
+}
+
 int Presolve::runPresolvers(const std::vector<Presolver>& order) {
   //***************** main loop ******************
 
   checkBoundsAreConsistent();
   if (status) return status;
+
+  if (iPrint) std::cout << "----> fixed cols" << std::endl;
 
   for (Presolver main_loop_presolver : order) {
     double time_start = timer.timer_.readRunHighsClock();
@@ -251,6 +271,10 @@ int Presolve::runPresolvers(const std::vector<Presolver>& order) {
     if (iPrint) std::cout << (*it).second << std::endl;
 
     switch (main_loop_presolver) {
+      case Presolver::kMainEmpty:
+        removeEmpty();
+        removeFixed();
+        break;
       case Presolver::kMainRowSingletons:
         timer.recordStart(REMOVE_ROW_SINGLETONS);
         removeRowSingletons();
@@ -276,6 +300,12 @@ int Presolve::runPresolvers(const std::vector<Presolver>& order) {
         removeDominatedColumns();
         timer.recordFinish(REMOVE_DOMINATED_COLUMNS);
         break;
+      case Presolver::kMainSingletonsOnly:
+        // To implement
+        // timer.recordStart(SING_ONLY);
+        removeSingletonsOnly();
+        // timer.recordFinish(SING_ONLY);
+        break;
     }
 
     double time_end = timer.timer_.readRunHighsClock();
@@ -289,6 +319,31 @@ int Presolve::runPresolvers(const std::vector<Presolver>& order) {
   //***************** main loop ******************
   return status;
 }
+
+// void Presolve::removeSingletonsOnly() {
+//   for (int row = 0; row < numRow; row++) {
+//     if (!flagRow[row]) continue;
+//     bool valid = true;
+//     int nz_col = 0;
+//     for (int k = ARstart[row]; k < ARstart[row + 1]; k++) {
+//       const int col = ARindex[k];
+//       if (!flagCol[col]) continue;
+//       if (nzCol[col] != 1) {
+//         valid = false;
+//         break;
+//       }
+//       nz_col++;
+//     }
+//     if (!valid) continue;
+//     if (nz_col == 0) {
+//       flagRow[row] = false;
+//       continue;
+//     }
+
+//     std::cout << "Singletons only row found! nzcol = " << nz_col << " L = "
+//     << rowLower[row] << " U = " << rowUpper[row] << std::endl;
+//   }
+// }
 
 void Presolve::removeFixed() {
   timer.recordStart(FIXED_COL);
@@ -326,13 +381,13 @@ int Presolve::presolve(int print) {
   initializeVectors();
   if (status) return status;
 
+  // removeFixed();
+  // if (status) return status;
+
   int iter = 1;
-
-  removeFixed();
-  if (status) return status;
-
   if (order.size() == 0) {
     // pre_release_order:
+    order.push_back(Presolver::kMainEmpty);
     order.push_back(Presolver::kMainRowSingletons);
     order.push_back(Presolver::kMainForcing);
     order.push_back(Presolver::kMainRowSingletons);
@@ -340,9 +395,14 @@ int Presolve::presolve(int print) {
     order.push_back(Presolver::kMainRowSingletons);
     order.push_back(Presolver::kMainColSingletons);
     order.push_back(Presolver::kMainDominatedCols);
+    // wip
+    // order.push_back(Presolver::kMainSingletonsOnly);
   }
-  // Else: The order has been modified for experiments
 
+  int prev_cols_rows = 0;
+  double prev_diff = 0;
+  // max_iterations = 10;
+  // Else: The order has been modified for experiments
   while (hasChange == 1) {
     if (max_iterations > 0 && iter > max_iterations) break;
     hasChange = false;
@@ -352,15 +412,36 @@ int Presolve::presolve(int print) {
     int run_status = runPresolvers(order);
     timer.recordFinish(RUN_PRESOLVERS);
     assert(run_status == status);
-    if (run_status != status) {
-    }
-    if (status) return status;
+    if (run_status) return status;
 
-    // todo: next
-    // Exit check: less than 10 % of what we had before.
+    // Exit check
+    int current_cols_rows = 0;
+    for (int i = 0; i < numRow; i++)
+      if (flagRow[i]) current_cols_rows++;
+    for (int i = 0; i < numCol; i++)
+      if (flagCol[i]) current_cols_rows++;
+
+    if (current_cols_rows == 0) break;
+
+    if (iter == 1) {
+      prev_cols_rows = current_cols_rows;
+      iter++;
+      continue;
+    } else {
+      double diff = (double)prev_cols_rows - (double)current_cols_rows;
+      if (iter < 10) {
+        prev_diff = diff;
+        iter++;
+        continue;
+      }
+      // iter > 10 : check difference
+      // if (prev_diff * diff / current_cols_rows < 0.05) break;
+    }
 
     iter++;
   }
+
+  // std::cout << "   MAIN LOOP ITER = " << iter << std::endl;
 
   reportDevMainLoop();
 
@@ -483,12 +564,6 @@ pair<int, int> Presolve::getXYDoubletonEquations(const int row) {
     y = col2;
   }
 
-  // two singletons case handled elsewhere
-  if (nzCol.at(y) == 1 && nzCol.at(x) == 1) {
-    colIndex.second = -1;
-    return colIndex;
-  }
-
   colIndex.first = x;
   colIndex.second = y;
   return colIndex;
@@ -558,8 +633,42 @@ void Presolve::processRowDoubletonEquation(const int row, const int x,
   if (!hasChange) hasChange = true;
 }
 
-void Presolve::caseTwoSingletonsDoubletonEquation(const int row, const int x,
-                                                  const int y) {}
+void Presolve::caseTwoSingletonsDoubletonInequality(const int row, const int x,
+                                                    const int y) {
+  // std::cout << "Call caseTwoSing..." << std::endl;
+
+  // std::cout << "Two column singletons: row " << row << ", x = " << x << ", y
+  // = " << y << std::endl; std::cout << "                     cx = " <<
+  // colCost[x] << "  cy = " << colCost[y] << std::endl; std::cout << " ax = "
+  // << getaij(row, x) << "  ay = " << getaij(row, y) << std::endl; std::cout <<
+  // "   L = " << rowLower[row] << "  U = " << rowUpper[row] << std::endl;
+  // std::cout << "   lx = " << colLower[x] << "  ux = " << colUpper[x] <<
+  // std::endl; std::cout << "   ly = " << colLower[y] << "  uy = " <<
+  // colUpper[y] << std::endl;
+
+  assert(nzRow[row] = 2);
+  assert(nzCol[x] = 1);
+  assert(nzCol[y] = 1);
+
+  assert(flagCol[x]);
+  assert(flagCol[y]);
+  assert(flagRow[row]);
+
+  // trivial case
+  // if(rowLower[row] == 0 && rowUpper[row] == 0) {
+  //   if ((colLower[x] <= 0 && colUpper[x] >= 0) &&
+  //       (colLower[y] <= 0 && colUpper[y] >= 0)) {
+
+  //     // primal and dual values set to 0 already. just flagRow
+  //     flagRow[row] = false;
+  //     flagCol[x] = false;
+  //     flagCol[y] = false;
+  //     postValue.push((double)y);
+  //     addChange(PresolveRule::TWO_COL_SING_TRIVIAL, row, x);
+  //     std::cout << "Trivial case row " << row << std::endl;
+  //   }
+  // }
+}
 
 void Presolve::removeDoubletonEquations() {
   if (timer.reachLimit()) {
@@ -593,9 +702,15 @@ void Presolve::removeDoubletonEquations() {
         const int x = colIndex.first;
         const int y = colIndex.second;
 
+        if (x >= 0 && y == -1) {
+          // no second variable
+          nzRow[row]--;
+          continue;
+        }
+
         // two singletons case handled elsewhere
         if (y < 0 || ((nzCol.at(y) == 1 && nzCol.at(x) == 1))) {
-          caseTwoSingletonsDoubletonEquation(row, x, y);
+          caseTwoSingletonsDoubletonInequality(row, x, y);
           continue;
         }
 
@@ -752,7 +867,6 @@ void Presolve::UpdateMatrixCoeffDoubletonEquationXnonZero(
     if (nzRow.at(i) == 1) singRow.push_back(i);
 
     if (nzRow.at(i) == 0) {
-      // singRow.remove(i);
       removeEmptyRow(i);
       countRemovedRows(DOUBLETON_EQUATION);
     }
@@ -1574,6 +1688,7 @@ void Presolve::removeSecondColumnSingletonInDoubletonRow(const int j,
   // case two singleton columns
   // when we get here bounds on xj are updated so we can choose low/upper one
   // depending on the cost of xj
+  // throw; // does not get triggered by ctest or small.
   flagRow.at(i) = 0;
   double value;
   if (colCost.at(j) > 0) {
@@ -1607,6 +1722,19 @@ void Presolve::removeSecondColumnSingletonInDoubletonRow(const int j,
   // singCol.remove(j);
 }
 
+void Presolve::removeZeroCostColumnSingleton(const int col, const int row,
+                                             const int k) {
+  assert(Aindex[k] == row);
+  assert(fabs(colCost[col]) < tol);
+  std::cout << "Zero cost column singleton: col = " << col << ", row " << row
+            << ", coeff = " << Avalue[k] << ", cost = " << colCost[col]
+            << std::endl;
+  std::cout << "   L = " << rowLower[row] << "  U = " << rowUpper[row]
+            << std::endl;
+  std::cout << "   l = " << colLower[col] << "  u = " << colUpper[col]
+            << std::endl;
+}
+
 void Presolve::removeColumnSingletons() {
   list<int>::iterator it = singCol.begin();
 
@@ -1618,13 +1746,23 @@ void Presolve::removeColumnSingletons() {
   while (it != singCol.end()) {
     if (flagCol[*it]) {
       const int col = *it;
+      assert(0 <= col && col <= numCol);
       const int k = getSingColElementIndexInA(col);
       if (k < 0) {
         it = singCol.erase(it);
+        if (k == -2) flagCol[col] = 0;
         continue;
       }
       assert(k < (int)Aindex.size());
       const int i = Aindex.at(k);
+
+      // zero cost
+      bool on_zero_cost = false;
+      if (on_zero_cost && fabs(colCost.at(col)) < tol) {
+        removeZeroCostColumnSingleton(col, i, k);
+        it = singCol.erase(it);
+        continue;
+      }
 
       // free
       if (colLower.at(col) <= -HIGHS_CONST_INF &&
@@ -1657,6 +1795,71 @@ void Presolve::removeColumnSingletons() {
     } else
       it = singCol.erase(it);
   }
+}
+
+void Presolve::removeSingletonsOnly() {
+  for (int row = 0; row < numRow; row++) {
+    if (!flagRow[row]) continue;
+    bool valid = true;
+    int nz_col = 0;
+    for (int k = ARstart[row]; k < ARstart[row + 1]; k++) {
+      const int col = ARindex[k];
+      if (!flagCol[col]) continue;
+      if (nzCol[col] != 1) {
+        valid = false;
+        break;
+      }
+      nz_col++;
+    }
+    if (!valid) continue;
+    if (nz_col == 0) {
+      flagRow[row] = false;
+      continue;
+    }
+
+    std::cout << "Singletons only row found! nzcol = " << nz_col
+              << " L = " << rowLower[row] << " U = " << rowUpper[row]
+              << std::endl;
+  }
+  // timer.recordStart(KNAPSACK);
+
+  list<int>::iterator it = singCol.begin();
+  while (it != singCol.end()) {
+    const int col = *it;
+    if (!flagCol[col]) {
+      it = singCol.erase(it);
+      continue;
+    }
+
+    bool remove = isKnapsack(col);
+    if (remove) {
+      removeKnapsack(col);
+      it = singCol.erase(it);
+      continue;
+    }
+    it++;
+  }
+
+  // timer.recordFinish(KNAPSACK);
+}
+
+void Presolve::removeKnapsack(const int col) {
+  for (int k = Astart[col]; k < Aend[col]; k++) {
+    assert(Aindex[k] >= 0 && Aindex[k] <= numRow);
+    // todo:
+  }
+
+  return;
+}
+
+bool Presolve::isKnapsack(const int col) const {
+  for (int k = Astart[col]; k < Aend[col]; k++) {
+    assert(Aindex[k] >= 0 && Aindex[k] <= numRow);
+    if (flagRow[Aindex[k]]) {
+      if (nzCol[Aindex[k]] != 1) return false;
+    }
+  }
+  return true;
 }
 
 pair<double, double> Presolve::getBoundsImpliedFree(double lowInit,
@@ -1925,8 +2128,6 @@ void Presolve::setVariablesToBoundForForcingRow(const int row,
     ++k;
   }
 
-  // if (nzRow.at(row) == 1) singRow.remove(row);
-
   countRemovedRows(FORCING_ROW);
 }
 
@@ -2185,7 +2386,7 @@ void Presolve::addChange(PresolveRule type, int row, int col) {
 
 // when setting a value to a primal variable and eliminating row update b,
 // singleton Rows linked list, number of nonzeros in rows
-void Presolve::setPrimalValue(int j, double value) {
+void Presolve::setPrimalValue(const int j, const double value) {
   flagCol.at(j) = 0;
   if (!hasChange) hasChange = true;
   valuePrimal.at(j) = value;
@@ -2198,8 +2399,6 @@ void Presolve::setPrimalValue(int j, double value) {
 
       // update singleton row list
       if (nzRow.at(row) == 1) singRow.push_back(row);
-      // else if (nzRow.at(row) == 0)
-      //   singRow.remove(row);
     }
   }
 
@@ -2211,6 +2410,8 @@ void Presolve::setPrimalValue(int j, double value) {
     for (int k = Astart.at(j); k < Aend.at(j); ++k)
       if (flagRow.at(Aindex.at(k))) {
         const int row = Aindex[k];
+        // std::cout << row << " " << rowLower[row] << " " << rowUpper[row] <<
+        // std::endl;
 
         if (iKKTcheck == 1) {
           bndsL.push_back(make_pair(row, rowLower.at(row)));
@@ -2226,7 +2427,19 @@ void Presolve::setPrimalValue(int j, double value) {
         if (implRowValueUpper.at(row) < HIGHS_CONST_INF)
           implRowValueUpper.at(row) -= Avalue.at(k) * value;
 
-        // std::cout << "Bounds of row " << row << " updated." << std::endl;
+        if (nzRow.at(row) == 0) {
+          if (rowLower[row] - rowUpper[row] > tol) {
+            status = Infeasible;
+            return;
+          }
+          if (rowLower[row] > tol || rowUpper[row] < -tol) {
+            status = Infeasible;
+            return;
+          }
+
+          flagRow[row] = 0;
+          addChange(PresolveRule::EMPTY_ROW, row, j);
+        }
       }
 
     if (iKKTcheck == 1) {
@@ -2421,9 +2634,14 @@ int Presolve::getSingRowElementIndexInAR(int i) {
 
 int Presolve::getSingColElementIndexInA(int j) {
   int k = Astart.at(j);
+  assert(k >= 0 && k < (int)Aindex.size());
+  assert(Aindex[k] >= 0 && Aindex[k] < numRow);
+  assert(flagRow.size() == (unsigned int)numRow);
+
   while (!flagRow.at(Aindex.at(k))) ++k;
   if (k >= Aend.at(j)) {
-    return -1;
+    assert(nzCol[j] == 0);
+    return -2;
   }
   int rest = k + 1;
   while (rest < Aend.at(j) && !flagRow.at(Aindex.at(rest))) ++rest;
@@ -2572,6 +2790,19 @@ HighsPostsolveStatus Presolve::postsolve(const HighsSolution& reduced_solution,
 
     setBasisElement(c);
     switch (c.type) {
+      case TWO_COL_SING_TRIVIAL: {
+        // WIP
+        int y = (int)postValue.top();
+        postValue.pop();
+        int x = (int)postValue.top();
+        postValue.pop();
+        assert(x == c.col);
+        flagRow[c.row] = true;
+        flagCol[x] = true;
+        flagCol[y] = true;
+        row_status.at(c.row) = HighsBasisStatus::BASIC;
+        break;
+      }
       case DOUBLETON_EQUATION: {  // Doubleton equation row
         getDualsDoubletonEquation(c.row, c.col);
 
@@ -3779,8 +4010,6 @@ void Presolve::getDualsDoubletonEquation(const int row, const int col) {
       // std::cout << lbxNew << " lbxNew " << std::endl;
       // std::cout << ubxNew << " ubxNew " << std::endl;
       // std::cout << valueX << " val  " << std::endl;
-      if (ubxNew > lbxNew) assert(x_status_reduced == HighsBasisStatus::BASIC);
-
       // if X was non basic make it basic
       if (x_status_reduced != HighsBasisStatus::BASIC) {
         valueColDual.at(x) = 0;

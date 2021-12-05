@@ -3,7 +3,7 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
@@ -15,7 +15,7 @@ def _arr_to_scalar(x):
     return x.item() if isinstance(x, np.ndarray) else x
 
 
-class NonlinearConstraint(object):
+class NonlinearConstraint:
     """Nonlinear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -116,7 +116,7 @@ class NonlinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class LinearConstraint(object):
+class LinearConstraint:
     """Linear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -154,7 +154,7 @@ class LinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class Bounds(object):
+class Bounds:
     """Bounds constraint on the variables.
 
     The constraint has the general inequality form::
@@ -166,7 +166,7 @@ class Bounds(object):
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
@@ -180,18 +180,20 @@ class Bounds(object):
         Default is False. Has no effect for equality constraints.
     """
     def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = lb
-        self.ub = ub
+        self.lb = np.asarray(lb)
+        self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
+        start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            end = f", keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            end = ")"
+        return start + end
 
 
-class PreparedConstraint(object):
+class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and
@@ -368,7 +370,7 @@ def new_constraint_to_old(con, x0):
 
         A = con.A
         if issparse(A):
-            A = A.todense()
+            A = A.toarray()
         fun = lambda x: np.dot(A, x)
         jac = lambda x: A
 
@@ -397,7 +399,7 @@ def new_constraint_to_old(con, x0):
             def j_eq(x):
                 dy = jac(x)
                 if issparse(dy):
-                    dy = dy.todense()
+                    dy = dy.toarray()
                 dy = np.atleast_2d(dy)
                 return dy[i_eq, :]
             ceq[0]["jac"] = j_eq
@@ -419,7 +421,7 @@ def new_constraint_to_old(con, x0):
                 dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
                 dy_all = jac(x)
                 if issparse(dy_all):
-                    dy_all = dy_all.todense()
+                    dy_all = dy_all.toarray()
                 dy_all = np.atleast_2d(dy_all)
                 dy[:n_bound_below, :] = dy_all[i_bound_below]
                 dy[n_bound_below:, :] = -dy_all[i_bound_above]
