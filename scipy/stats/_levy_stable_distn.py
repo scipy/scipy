@@ -20,7 +20,8 @@ from ._levy_stable.levyst import Nolan
 # some being advantageous for numerical considerations and others
 # useful due to their location/scale awareness.
 #
-# Here we follow [NO] convention.
+# Here we follow [NO] convention (see the references in the docstring
+# for levy_stable_gen below).
 #
 # S0 / Z0 / x0 (aka Zoleterav's M)
 # S1 / Z1 / x1
@@ -469,7 +470,9 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
 def _fitstart_S0(data):
     alpha, beta, delta1, gamma = _fitstart_S1(data)
 
-    # TODO: is this correct?
+    # Formulas for mapping parameters in S1 parameterization to
+    # those in S0 parameterization can be found in [NO]. Note that
+    # only delta changes.
     if alpha != 1:
         delta0 = delta1 + beta * gamma * np.tan(np.pi * alpha / 2.0)
     else:
