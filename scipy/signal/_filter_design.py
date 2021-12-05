@@ -696,7 +696,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{0}], around which a singularity may be present".
+            "The filter's denominator is extremely small at frequencies [{0}], \
+            around which a singularity may be present".
             format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular]))
         )
 
