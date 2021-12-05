@@ -73,7 +73,7 @@ def configuration(parent_package='', top_path=None):
     ext._pre_build_hook = pre_build_hook
 
     sources = ['moduleTNC.c', 'tnc.c']
-    config.add_extension('_moduleTNC',
+    config.add_extension('moduleTNC',
                          sources=[join('tnc', x) for x in sources],
                          depends=[join('tnc', 'tnc.h')],
                          **numpy_nodepr_api)

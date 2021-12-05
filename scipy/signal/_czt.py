@@ -56,10 +56,11 @@ def czt_points(m, w=None, a=1+0j):
 
     Parameters
     ----------
-    m : int, optional
+    m : int
         The number of points desired.
     w : complex, optional
         The ratio between points in each step.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
 
@@ -128,6 +129,7 @@ class CZT:
     w : complex, optional
         The ratio between points in each step.  This must be precise or the
         accumulated error will degrade the tail of the output sequence.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
 
@@ -144,6 +146,10 @@ class CZT:
 
     Notes
     -----
+    The defaults are chosen such that ``f(x)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``f(x, m)`` is equivalent to
+    ``fft.fft(x, m)``.
+
     If `w` does not lie on the unit circle, then the transform will be
     around a spiral with exponentially-increasing radius.  Regardless,
     angle will increase linearly.
@@ -277,13 +283,17 @@ class ZoomFFT(CZT):
     ----------
     n : int
         The size of the signal.
-    fn : array_like, optional
+    fn : array_like
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
-        The number of output points desired.  Default is `n`.
+        The number of points to evaluate.  Default is `n`.
     fs : float, optional
-        The sampling frequency. (Default=2)
+        The sampling frequency.  If ``fs=10`` represented 10 kHz, for example,
+        then `f1` and `f2` would also be given in kHz.
+        The default sampling frequency is 2, so `f1` and `f2` should be
+        in the range [0, 1] to keep the transform below the Nyquist
+        frequency.
     endpoint : bool, optional
         If True, `f2` is the last sample. Otherwise, it is not included.
         Default is False.
@@ -299,6 +309,10 @@ class ZoomFFT(CZT):
 
     Notes
     -----
+    The defaults are chosen such that ``f(x, 2)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``f(x, 2, m)`` is equivalent to
+    ``fft.fft(x, m)``.
+
     Sampling frequency is 1/dt, the time step between samples in the
     signal `x`.  The unit circle corresponds to frequencies from 0 up
     to the sampling frequency.  The default sampling frequency of 2
@@ -388,6 +402,7 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     w : complex, optional
         The ratio between points in each step.  This must be precise or the
         accumulated error will degrade the tail of the output sequence.
+        Defaults to equally spaced points around the entire unit circle.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
     axis : int, optional
@@ -407,6 +422,10 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
 
     Notes
     -----
+    The defaults are chosen such that ``signal.czt(x)`` is equivalent to
+    ``fft.fft(x)`` and, if ``m > len(x)``, that ``signal.czt(x, m)`` is
+    equivalent to ``fft.fft(x, m)``.
+
     If the transform needs to be repeated, use `CZT` to construct a
     specialized transform function which can be reused without
     recomputing constants.
@@ -490,14 +509,14 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     ----------
     x : array
         The signal to transform.
-    fn : array_like, optional
+    fn : array_like
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
         The number of points to evaluate.  The default is the length of `x`.
     fs : float, optional
-        The sampling frequency.  With a sampling frequency of
-        10kHz for example, the range `f1` and `f2` can be expressed in kHz.
+        The sampling frequency.  If ``fs=10`` represented 10 kHz, for example,
+        then `f1` and `f2` would also be given in kHz.
         The default sampling frequency is 2, so `f1` and `f2` should be
         in the range [0, 1] to keep the transform below the Nyquist
         frequency.
@@ -520,11 +539,13 @@ def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
 
     Notes
     -----
-    ``zoom_fft(x)`` is equivalent to ``fft(x)``.
+    The defaults are chosen such that ``signal.zoom_fft(x, 2)`` is equivalent
+    to ``fft.fft(x)`` and, if ``m > len(x)``, that ``signal.zoom_fft(x, 2, m)``
+    is equivalent to ``fft.fft(x, m)``.
 
     To graph the magnitude of the resulting transform, use::
 
-        plot(linspace(f1, f2, m), abs(zoom_fft(x, [f1, f2], m)))
+        plot(linspace(f1, f2, m, endpoint=False), abs(zoom_fft(x, [f1, f2], m)))
 
     If the transform needs to be repeated, use `ZoomFFT` to construct
     a specialized transform function which can be reused without
