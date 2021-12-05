@@ -131,9 +131,9 @@ def direct(
     DIRECT is a deterministic
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
-    potential solutions in the search space. The algorithm starts with
-    mapping the hyperrectangle (set of all possible values that can be taken
-    by the input variables subject to the bound constraints) n-dimensional
+    potential solutions in the search space. The algorithm starts by
+    normalising the hyperrectangle (set of all possible values that can be taken
+    by the input variables subject to the bound constraints) to an n-dimensional
     unit hypercube. It samples the function at the center of this hypercube
     and at 2n (n is the number of variables) more points, 2 in each coordinate
     direction. Using these function values, DIRECT then divides the domain
