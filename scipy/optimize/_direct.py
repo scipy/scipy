@@ -143,7 +143,7 @@ def direct(
     divided. This division process continues until the maximum iterations or maximum
     function evaluations allowed are exceeded, or the function value is within
     the desired percentage error of the global minimum (if known). The improved
-    version of the DIRECT algorithm [1]_ is biased towards local search making it
+    version of the DIRECT algorithm [2]_ is biased towards local search making it
     effective for functions without too many local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
@@ -159,8 +159,8 @@ def direct(
     .. [1] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
            optimization without the Lipschitz constant. J Optim Theory Appl
            79, 157-181 (1993)
-    .. [2] Jorg Maximilian Xaver Gablonsky and Carl Timothy Kelley. 2001.
-           Modifications of the direct algorithm. Ph.D. Dissertation.
+    .. [2] Gablonsky, J., Kelley, C. A Locally-Biased form of the DIRECT
+           Algorithm. Journal of Global Optimization 21, 27–37 (2001).
     """
     if not isinstance(bounds, Bounds):
         lb, ub = old_bound_to_new(bounds)
