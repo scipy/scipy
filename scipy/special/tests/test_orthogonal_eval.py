@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose
 import pytest
 
-import scipy.special.orthogonal as orth
+import scipy.special._orthogonal as orth
 from scipy.special._testutils import FuncData
 
 
@@ -29,7 +29,7 @@ def test_warnings():
         orth.eval_gegenbauer(1, 1, 0)
 
 
-class TestPolys(object):
+class TestPolys:
     """
     Check that the eval_* functions agree with the constructed polynomials
 
@@ -134,7 +134,7 @@ class TestPolys(object):
                         param_ranges=[], x_range=[-100, 100])
 
 
-class TestRecurrence(object):
+class TestRecurrence:
     """
     Check that the eval_* functions sig='ld->d' and 'dd->d' agree.
 

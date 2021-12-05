@@ -93,7 +93,7 @@ def inherit_docstring_from(cls):
     In the following, the docstring for Bar.func created using the
     docstring of `Foo.func`.
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     def func(self):
     ...         '''Do something useful.'''
     ...         return
@@ -255,11 +255,11 @@ def doc_replace(obj, oldval, newval):
 
     Parameters
     ----------
-    obj: object
+    obj : object
         The object to take the docstring from.
-    oldval: string
+    oldval : string
         The string to replace from the original docstring.
-    newval: string
+    newval : string
         The string to replace ``oldval`` with.
     """
     # __doc__ may be None for optimized Python (-OO)

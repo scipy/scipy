@@ -64,7 +64,7 @@ def redundancy_removed(A, B):
     return A.shape[0] == np.linalg.matrix_rank(A) == np.linalg.matrix_rank(B)
 
 
-class RRCommonTests(object):
+class RRCommonTests:
     def test_no_redundancy(self):
         m, n = 10, 10
         A0 = np.random.rand(m, n)

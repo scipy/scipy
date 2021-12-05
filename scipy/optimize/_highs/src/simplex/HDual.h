@@ -285,15 +285,6 @@ class HDual {
   void interpretDualEdgeWeightStrategy(
       const int simplex_dual_edge_weight_strategy);
 
-  /**
-   * @brief Interpret the PRICE strategy as setting of a mode and other actions
-   */
-  /*
-  void interpretPriceStrategy(
-                              const int simplex_price_strategy
-                              );
-  */
-
   bool reachedExactDualObjectiveValueUpperBound();
   double computeExactDualObjectiveValue();
 
@@ -385,6 +376,15 @@ class HDual {
    */
   void majorRollback();
 
+  // private:
+  HighsStatus returnFromSolve(const HighsStatus return_status);
+  void saveDualRay();
+  bool getNonsingularInverse();
+  bool getBacktrackingBasis(vector<double>& scattered_edge_weights);
+  void putBacktrackingBasis();
+  void putBacktrackingBasis(const vector<int>& basicIndex_before_compute_factor,
+                            const vector<double>& scattered_edge_weights);
+
   void assessPhase1Optimality();
   void exitPhase1ResetDuals();
   void reportOnPossibleLpDualInfeasibility();
@@ -472,6 +472,8 @@ class HDual {
   // (Local) value of computed weight
   double computed_edge_weight;
 
+  bool check_invert_condition = false;
+
   // Partitioned coefficient matrix
   int slice_num;
   int slice_PRICE;
@@ -527,7 +529,6 @@ class HDual {
   MFinish multi_finish[HIGHS_THREAD_LIMIT];
 
 #ifdef HiGHSDEV
-  const bool rp_iter_da = false;                  // true;//
   const bool rp_reinvert_syntheticClock = false;  // true;//
   const bool rp_numericalTrouble = false;         // true;//
 #endif

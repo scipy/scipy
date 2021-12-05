@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
@@ -302,6 +302,13 @@ def check_pickling(distfn, args):
     r1 = unpickled.rvs(size=8)
     npt.assert_equal(r0, r1)
 
+    # check pickling/unpickling of .fit method
+    if hasattr(distfn, "fit"):
+        fit_function = distfn.fit
+        pickled_fit_function = pickle.dumps(fit_function)
+        unpickled_fit_function = pickle.loads(pickled_fit_function)
+        assert fit_function.__name__ == unpickled_fit_function.__name__ == "fit"
+    
     # restore the random_state
     distfn.random_state = rndm
 

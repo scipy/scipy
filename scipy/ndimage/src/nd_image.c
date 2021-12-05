@@ -928,7 +928,6 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     Py_XDECREF(slc);
     free(regions);
     if (PyErr_Occurred()) {
-        Py_XDECREF(result);
         return NULL;
     } else {
         return result;

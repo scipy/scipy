@@ -67,7 +67,8 @@ def delaunay_plot_2d(tri, ax=None):
 
     The Delaunay triangulation of a set of random points:
 
-    >>> points = np.random.rand(30, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))
     >>> tri = Delaunay(points)
 
     Plot it:
@@ -122,7 +123,8 @@ def convex_hull_plot_2d(hull, ax=None):
 
     The convex hull of a random set of points:
 
-    >>> points = np.random.rand(30, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))
     >>> hull = ConvexHull(points)
 
     Plot it:
@@ -189,7 +191,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     Set of point:
 
     >>> import matplotlib.pyplot as plt
-    >>> points = np.random.rand(10,2) #random
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((10,2))
 
     Voronoi diagram of the points:
 

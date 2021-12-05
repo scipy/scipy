@@ -360,6 +360,8 @@ class HighsTimer {
         .count();
   }
 
+  virtual ~HighsTimer() = default;
+
   // private:
   using wall_clock = std::chrono::high_resolution_clock;
   using time_point = wall_clock::time_point;

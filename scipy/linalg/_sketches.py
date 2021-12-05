@@ -12,7 +12,7 @@ __all__ = ['clarkson_woodruff_transform']
 
 
 def cwt_matrix(n_rows, n_columns, seed=None):
-    r""""
+    r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
     Given the desired size of matrix, the method returns a matrix S of size
@@ -26,12 +26,15 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns: int
         Number of columns of S
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -53,7 +56,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
 
 
 def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
-    r""""
+    r"""
     Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
     Given an input_matrix ``A`` of size ``(n, d)``, compute a matrix ``A'`` of
@@ -70,12 +73,15 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -107,11 +113,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> from scipy import sparse
+    >>> rng = np.random.default_rng()
     >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = np.random.randn(n_rows, n_columns)
+    >>> D = rng.standard_normal((n_rows, n_columns))
     >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
     >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
     >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
@@ -126,7 +133,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((n_rows, n_columns))
     >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
     >>> sketch.shape
     (200, 100)
@@ -141,8 +149,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
-    >>> b = np.random.randn(n_rows)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((n_rows, n_columns))
+    >>> b = rng.standard_normal(n_rows)
     >>> x = np.linalg.lstsq(A, b, rcond=None)
     >>> Ab = np.hstack((A, b.reshape(-1,1)))
     >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows)

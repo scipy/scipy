@@ -44,9 +44,13 @@ HighsDebugStatus debugComputeDual(const HighsModelObject& highs_model_object,
                                   const std::vector<double>& basic_costs,
                                   const std::vector<double>& row_dual);
 
+HighsDebugStatus debugSimplexDualFeasibility(
+    const HighsModelObject& highs_model_object, const std::string message,
+    const bool force = false);
+
 HighsDebugStatus debugUpdatedObjectiveValue(
     HighsModelObject& highs_model_object, const SimplexAlgorithm algorithm,
-    const int phase, const std::string message);
+    const int phase, const std::string message, const bool force = false);
 
 HighsDebugStatus debugUpdatedObjectiveValue(
     const HighsModelObject& highs_model_object,
@@ -109,4 +113,9 @@ bool debugOneNonbasicMoveVsWorkArraysOk(
 bool debugAllNonbasicMoveVsWorkArraysOk(
     const HighsModelObject& highs_model_object);
 
+void debugReportReinvertOnNumericalTrouble(
+    const std::string method_name, const HighsModelObject& highs_model_object,
+    const double numerical_trouble_measure, const double alpha_from_col,
+    const double alpha_from_row, const double numerical_trouble_tolerance,
+    const bool reinvert);
 #endif  // SIMPLEX_HSIMPLEXDEBUG_H_

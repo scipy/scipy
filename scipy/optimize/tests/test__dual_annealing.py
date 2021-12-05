@@ -60,12 +60,15 @@ class TestDualAnnealing:
         self.ngev += 1
         return rosen_der(x, *args)
 
-    def test_visiting_stepping(self):
+    # FIXME: there are some discontinuities in behaviour as a function of `qv`,
+    #        this needs investigating - see gh-12384
+    @pytest.mark.parametrize('qv', [1.1, 1.41, 2, 2.62, 2.9])
+    def test_visiting_stepping(self, qv):
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         dim = lower.size
-        vd = VisitingDistribution(lower, upper, self.qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rs)
         values = np.zeros(dim)
         x_step_low = vd.visiting(values, 0, self.high_temperature)
         # Make sure that only the first component is changed
@@ -75,11 +78,12 @@ class TestDualAnnealing:
         # Make sure that component other than at dim has changed
         assert_equal(np.not_equal(x_step_high[0], 0), True)
 
-    def test_visiting_dist_high_temperature(self):
+    @pytest.mark.parametrize('qv', [2.25, 2.62, 2.9])
+    def test_visiting_dist_high_temperature(self, qv):
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
-        vd = VisitingDistribution(lower, upper, self.qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rs)
         # values = np.zeros(self.nbtestvalues)
         # for i in np.arange(self.nbtestvalues):
         #     values[i] = vd.visit_fn(self.high_temperature)
@@ -178,10 +182,14 @@ class TestDualAnnealing:
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
-        dual_annealing(
-            func,
-            bounds=bounds,
-            local_search_options={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Values in x were outside bounds ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                local_search_options={"method": "SLSQP", "bounds": bounds})
 
         with np.testing.suppress_warnings() as sup:
             sup.record(RuntimeWarning, "Method CG cannot handle ")

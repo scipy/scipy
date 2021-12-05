@@ -45,6 +45,7 @@ void initializePresolveRuleInfo(std::vector<PresolveRuleInfo>& rules) {
   rules.push_back(
       PresolveRuleInfo(DOMINATED_COL_BOUNDS, "Dom col bounds", "DCB"));
   rules.push_back(PresolveRuleInfo(EMPTY_COL, "Empty col", "EMC"));
+  // rules.push_back(PresolveRuleInfo(KNAPSACK, "Knapsack", "KNP"));
   rules.push_back(PresolveRuleInfo(MATRIX_COPY, "Initialize matrix", "INM"));
   rules.push_back(PresolveRuleInfo(RESIZE_MATRIX, "Resize matrix", "RSM"));
   //
@@ -57,6 +58,8 @@ void initializePresolveRuleInfo(std::vector<PresolveRuleInfo>& rules) {
   //
   rules.push_back(
       PresolveRuleInfo(TOTAL_PRESOLVE_TIME, "Total presolve time", "TPT"));
+  //   rules.push_back(
+  //       PresolveRuleInfo(SING_ONLY, "Sing only row", "SOR"));
 
   // Plus one for the total resize time.
   assert((int)rules.size() == PRESOLVE_RULES_COUNT);

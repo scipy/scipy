@@ -206,9 +206,6 @@ HighsDebugStatus debugSimplexInfoBasisRightSize(
         simplex_lp.numCol_, numRow, simplex_lp.numRow_);
     return_status = HighsDebugStatus::LOGICAL_ERROR;
   }
-  //  if (!simplex_info.initialised) {printf("SimplexInfo not initialised)\n");
-  //  return true;}
-
   bool right_size = true;
   right_size = (int)simplex_info.workCost_.size() == numTot && right_size;
   right_size = (int)simplex_info.workDual_.size() == numTot && right_size;
@@ -286,12 +283,6 @@ HighsDebugStatus debugComputePrimal(const HighsModelObject& highs_model_object,
       "primal values\n",
       value_adjective.c_str(), computed_absolute_primal_norm,
       computed_relative_primal_norm);
-  if (have_primal_rhs && !primal_rhs_norm) {
-    HighsLogMessage(highs_model_object.options_.logfile,
-                    HighsMessageType::WARNING,
-                    "ComputePrimal: |PrimalRHS| = %9.4g", primal_rhs_norm);
-    return_status = HighsDebugStatus::WARNING;
-  }
   return return_status;
 }
 HighsDebugStatus debugComputeDual(const HighsModelObject& highs_model_object,
@@ -476,12 +467,70 @@ HighsDebugStatus debugComputeDual(const HighsModelObject& highs_model_object,
   return return_status;
 }
 
+HighsDebugStatus debugSimplexDualFeasibility(
+    const HighsModelObject& highs_model_object, const std::string message,
+    const bool force) {
+  // Non-trivially expensive check of dual feasibility.
+  if (highs_model_object.options_.highs_debug_level <
+          HIGHS_DEBUG_LEVEL_COSTLY &&
+      !force)
+    return HighsDebugStatus::NOT_CHECKED;
+  if (force)
+    HighsPrintMessage(highs_model_object.options_.output, 1, 1,
+                      "SmplxDuFeas:   Forcing debug\n");
+
+  const HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  const HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+  const SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
+  double scaled_dual_feasibility_tolerance =
+      highs_model_object.scaled_solution_params_.dual_feasibility_tolerance;
+
+  int num_dual_infeasibilities = 0;
+  double sum_dual_infeasibilities = 0;
+  double max_dual_infeasibility = 0;
+  for (int iVar = 0; iVar < simplex_lp.numCol_ + simplex_lp.numRow_; iVar++) {
+    if (!simplex_basis.nonbasicFlag_[iVar]) continue;
+    // Nonbasic column
+    const double dual = simplex_info.workDual_[iVar];
+    const double lower = simplex_info.workLower_[iVar];
+    const double upper = simplex_info.workUpper_[iVar];
+    double dual_infeasibility = 0;
+    if (highs_isInfinity(-lower) && highs_isInfinity(upper)) {
+      // Free: any nonzero dual value is infeasible
+      dual_infeasibility = fabs(dual);
+    } else {
+      // Not free: any dual infeasibility is given by the dual value
+      // signed by nonbasicMove
+      dual_infeasibility = -simplex_basis.nonbasicMove_[iVar] * dual;
+    }
+    if (dual_infeasibility > 0) {
+      if (dual_infeasibility >= scaled_dual_feasibility_tolerance)
+        num_dual_infeasibilities++;
+      max_dual_infeasibility =
+          std::max(dual_infeasibility, max_dual_infeasibility);
+      sum_dual_infeasibilities += dual_infeasibility;
+    }
+  }
+  if (num_dual_infeasibilities) {
+    HighsPrintMessage(highs_model_object.options_.output,
+                      highs_model_object.options_.message_level, ML_ALWAYS,
+                      "SmplxDuFeas:   num/max/sum simplex dual infeasibilities "
+                      "= %d / %g / %g - %s\n",
+                      num_dual_infeasibilities, max_dual_infeasibility,
+                      sum_dual_infeasibilities, message.c_str());
+    return HighsDebugStatus::LOGICAL_ERROR;
+  }
+  return HighsDebugStatus::OK;
+}
+
 HighsDebugStatus debugUpdatedObjectiveValue(
     HighsModelObject& highs_model_object, const SimplexAlgorithm algorithm,
-    const int phase, const std::string message) {
+    const int phase, const std::string message, const bool force) {
   // Non-trivially expensive check of updated objective value. Computes the
   // exact objective value
-  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_COSTLY)
+  if (highs_model_object.options_.highs_debug_level <
+          HIGHS_DEBUG_LEVEL_COSTLY &&
+      !force)
     return HighsDebugStatus::NOT_CHECKED;
   HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
 
@@ -579,6 +628,11 @@ HighsDebugStatus debugUpdatedObjectiveValue(
   HighsDebugStatus return_status = HighsDebugStatus::OK;
   std::string error_adjective;
   int report_level;
+  bool at_least_small_error =
+      updated_objective_relative_error >
+          updated_objective_small_relative_error ||
+      updated_objective_absolute_error > updated_objective_small_absolute_error;
+  if (!at_least_small_error) return return_status;
   if (updated_objective_relative_error >
           updated_objective_large_relative_error ||
       updated_objective_absolute_error >
@@ -601,7 +655,7 @@ HighsDebugStatus debugUpdatedObjectiveValue(
   HighsPrintMessage(
       highs_model_object.options_.output,
       highs_model_object.options_.message_level, report_level,
-      "UpdateObjVal:  %-9s large absolute (%9.4g) or relative (%9.4g) error in "
+      "UpdateObjVal:  %-9s absolute (%9.4g) or relative (%9.4g) error in "
       "updated %s objective value"
       " - objective change - exact (%9.4g) updated (%9.4g) | %s\n",
       error_adjective.c_str(), updated_objective_error,
@@ -1507,8 +1561,6 @@ HighsDebugStatus debugOkForSolve(const HighsModelObject& highs_model_object,
        simplex_lp_status.has_factor_arrays &&
        simplex_lp_status.has_dual_steepest_edge_weights &&
        simplex_lp_status.has_invert;
-  // TODO: Eliminate the following line ASAP!!!
-  ok = true;
   if (!ok) {
     if (!simplex_lp_status.has_basis)
       HighsLogMessage(options.logfile, HighsMessageType::ERROR,
@@ -1859,4 +1911,54 @@ bool debugAllNonbasicMoveVsWorkArraysOk(
   // ok must be true if we reach here
   assert(ok);
   return ok;
+}
+
+void debugReportReinvertOnNumericalTrouble(
+    const std::string method_name, const HighsModelObject& highs_model_object,
+    const double numerical_trouble_measure, const double alpha_from_col,
+    const double alpha_from_row, const double numerical_trouble_tolerance,
+    const bool reinvert) {
+  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return;
+  const double abs_alpha_from_col = fabs(alpha_from_col);
+  const double abs_alpha_from_row = fabs(alpha_from_row);
+  const double abs_alpha_diff = fabs(abs_alpha_from_col - abs_alpha_from_row);
+  const int iteration_count = highs_model_object.iteration_counts_.simplex;
+  const int update_count = highs_model_object.simplex_info_.update_count;
+  const std::string model_name = highs_model_object.simplex_lp_.model_name_;
+
+  const bool numerical_trouble =
+      numerical_trouble_measure > numerical_trouble_tolerance;
+  const bool near_numerical_trouble =
+      10 * numerical_trouble_measure > numerical_trouble_tolerance;
+
+  const bool wrong_sign = alpha_from_col * alpha_from_row <= 0;
+  if (!near_numerical_trouble && !wrong_sign) return;
+  std::string adjective;
+  if (numerical_trouble) {
+    adjective = "       exceeds";
+  } else if (near_numerical_trouble) {
+    adjective = "almost exceeds";
+  } else {
+    adjective = "clearly satisfies";
+  }
+  HighsLogMessage(highs_model_object.options_.logfile,
+                  HighsMessageType::WARNING,
+                  "%s (%s) [Iter %d; Update %d] Col: %11.4g; Row: %11.4g; Diff "
+                  "= %11.4g: Measure %11.4g %s %11.4g",
+                  method_name.c_str(), model_name.c_str(), iteration_count,
+                  update_count, abs_alpha_from_col, abs_alpha_from_row,
+                  abs_alpha_diff, numerical_trouble_measure, adjective.c_str(),
+                  numerical_trouble_tolerance);
+  if (wrong_sign) {
+    HighsLogMessage(highs_model_object.options_.logfile,
+                    HighsMessageType::WARNING,
+                    "   Incompatible signs for Col: %11.4g and Row: %11.4g",
+                    alpha_from_col, alpha_from_row);
+  }
+  if ((numerical_trouble || wrong_sign) && !reinvert) {
+    HighsLogMessage(highs_model_object.options_.logfile,
+                    HighsMessageType::WARNING,
+                    "   Numerical trouble or wrong sign and not reinverting");
+  }
 }

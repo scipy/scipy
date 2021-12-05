@@ -1,4 +1,5 @@
 from os.path import join
+import os
 
 
 def configuration(parent_package='', top_path=None):
@@ -106,9 +107,17 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[get_numpy_include_dirs()])
 
     # _matfuncs_sqrtm_triu:
-    config.add_extension('_matfuncs_sqrtm_triu',
-                         sources=[('_matfuncs_sqrtm_triu.c')],
-                         include_dirs=[get_numpy_include_dirs()])
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.linalg._matfuncs_sqrtm_triu',
+            sources=["scipy/linalg/_matfuncs_sqrtm_triu.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_matfuncs_sqrtm_triu',
+                             sources=[('_matfuncs_sqrtm_triu.c')],
+                             include_dirs=[get_numpy_include_dirs()])
 
     config.add_data_dir('tests')
 
@@ -140,9 +149,15 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
 
+    config.add_extension('_cythonized_array_utils',
+                         sources=['_cythonized_array_utils.c'])
+
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

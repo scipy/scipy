@@ -156,7 +156,7 @@ class HighsSimplexAnalysis {
   int numCol;
   int numTot;
   bool allow_dual_steepest_edge_to_devex_switch;
-  double dual_steepest_edge_weight_log_error_threshhold;
+  double dual_steepest_edge_weight_log_error_threshold;
   FILE* logfile;
   FILE* output;
   int message_level;
@@ -195,6 +195,7 @@ class HighsSimplexAnalysis {
   double dual_step = 0;
   double pivot_value_from_column = 0;
   double pivot_value_from_row = 0;
+  double factor_pivot_threshold = 0;
   double numerical_trouble = 0;
   double objective_value = 0;
   double sum_primal_infeasibilities = 0;
@@ -252,8 +253,8 @@ class HighsSimplexAnalysis {
   const double AnIterFracNumCostlyDseItbfSw = 0.05;   //!<
   double AnIterCostlyDseMeasure;
 
-  const double accept_weight_threshhold = 0.25;
-  const double weight_error_threshhold = 4.0;
+  const double accept_weight_threshold = 0.25;
+  const double weight_error_threshold = 4.0;
 
   int num_dual_steepest_edge_weight_check = 0;
   int num_dual_steepest_edge_weight_reject = 0;
@@ -319,8 +320,9 @@ class HighsSimplexAnalysis {
 
   HighsValueDistribution primal_step_distribution;
   HighsValueDistribution dual_step_distribution;
-  HighsValueDistribution pivot_distribution;
+  HighsValueDistribution simplex_pivot_distribution;
   HighsValueDistribution numerical_trouble_distribution;
+  HighsValueDistribution factor_pivot_threshold_distribution;
 #endif
 };
 

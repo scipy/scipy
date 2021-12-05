@@ -49,7 +49,7 @@ def test_save_and_load_one_entry():
 
 
 def test_malicious_load():
-    class Executor(object):
+    class Executor:
         def __reduce__(self):
             return (assert_, (False, 'unexpected code execution'))
 

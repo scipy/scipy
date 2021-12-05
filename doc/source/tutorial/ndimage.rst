@@ -214,7 +214,9 @@ Smoothing filters
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
   or 3 corresponds to convolution with the first, second, or third
   derivatives of a Gaussian. Higher-order derivatives are not
-  implemented.
+  implemented. 
+
+
 
 - The :func:`gaussian_filter` function implements a multidimensional
   Gaussian filter. The standard deviations of the Gaussian filter
@@ -227,7 +229,13 @@ Smoothing filters
   first, second, or third derivatives of a Gaussian. Higher-order
   derivatives are not implemented. The *order* parameter must be a
   number, to specify the same order for all axes, or a sequence of
-  numbers to specify a different order for each axis.
+  numbers to specify a different order for each axis. The example below
+  shows the filter applied on test data with different values of *sigma*.
+  The *order* parameter is kept at 0. 
+
+  .. plot:: tutorial/examples/gaussian_filter_plot1.py
+      :align: center
+      :include-source: 0
 
   .. note::
 
@@ -1352,7 +1360,7 @@ gradient magnitude filter. It uses an array containing initial markers
 for the objects:
 
 - The :func:`watershed_ift` function applies a watershed from markers
-  algorithm, using an Iterative Forest Transform, as described in
+  algorithm, using Image Foresting Transform, as described in
   [4]_.
 
 - The inputs of this function are the array to which the transform is
@@ -1996,12 +2004,12 @@ References
 
 .. [3] C. R. Maurer, Jr., R. Qi, and V. Raghavan, "A linear time
        algorithm for computing exact euclidean distance transforms of
-       binary images in arbitrary dimensions. IEEE Trans. PAMI 25,
+       binary images in arbitrary dimensions." IEEE Trans. PAMI 25,
        265-270, 2003.
 
-.. [4] P. Felkel, R. Wegenkittl, and M. Bruckschwaiger,
-       "Implementation and Complexity of the Watershed-from-Markers Algorithm
-       Computed as a Minimal Cost Forest.", Eurographics 2001, pp. C:26-35.
+.. [4] A. X. Falcão, J. Stolfi, and R. A. Lotufo. "The image foresting
+       transform: Theory, algorithms, and applications." IEEE Trans.
+       PAMI 26, 19-29. 2004.
 
 .. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
        Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
