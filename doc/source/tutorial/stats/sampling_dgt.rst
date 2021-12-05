@@ -2,6 +2,7 @@
 .. _sampling-dgt:
 
 Discrete Guide Table (DGT)
+==========================
 
 .. currentmodule:: scipy.stats.sampling
 
