@@ -672,22 +672,27 @@ class levy_stable_gen(rv_continuous):
     where :math:`-\infty < t < \infty`. This integral does not have a known
     closed form.
 
-    For evaluation of pdf we use either Nolan's piecewise approach using
-    Zolotarev :math:`M` parameterization with integration, direct numerical
-    integration of standard parameterization of characteristic function or FFT
-    of characteristic function.
+    Evaluation of the pdf uses Nolan's piecewise integration approach with the
+    Zolotarev :math:`M` parameterization by default. There is also the option
+    to use direct numerical integration of the standard parameterization of the
+    characteristic function or to evaluate by taking the FFT of the
+    characteristic function.
 
-    Switch parameterizations by setting ``levy_stable.parameterization``
-    to either 'S0' or 'S1'. The default is 'S1'.
+    The default method can changed by setting the class variable
+    ``levy_stable.pdf_default_method`` to one of 'piecewise' for Nolan's
+    approach, 'dni' for direct numerical integration, or 'fft-simpson' for the
+    FFT based approach. For the sake of backwards compatibility, the methods
+    'best' and 'zolotarev' are equivalent to 'piecewise' and the method
+    'quadrature' is equivalent to 'dni'.
 
-    The default method is 'piecewise' which uses Nolan's piecewise method. The
-    default method can be changed by setting ``levy_stable.pdf_default_method``
-    to either 'piecewise', 'dni' or 'fft-simpson'.
+    The parameterization can be changed  by setting the class variable
+    ``levy_stable.parameterization`` to either 'S0' or 'S1'.
+    The default is 'S1'.
 
     To improve performance of piecewise and direct numerical integration one
     can specify ``levy_stable.quad_eps`` (defaults to 1.2e-14). This is used
-    as the absolute and relative quadrature tolerances for direct numerical
-    integration and the relative quadrature tolerance for the piecewise method.
+    as both the absolute and relative quadrature tolerance for direct numerical
+    integration and as the relative quadrature tolerance for the piecewise method.
     One can also specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to
     0.005) for how close x is to zeta before it is considered the same as x
     [NO]. The exact check is
@@ -702,17 +707,18 @@ class levy_stable_gen(rv_continuous):
 
     Further control over FFT calculation is available by setting
     ``pdf_fft_interpolation_degree`` (defaults to 3) for spline order and
-    ``pdf_fft_interpolation_level`` for determine number of points for
-    Newton-Cote formula when approximating the characteristic function
+    ``pdf_fft_interpolation_level`` for determining the number of points to use
+    in the Newton-Cotes formula when approximating the characteristic function
     (considered experimental).
 
-    For evaluation of cdf we use Nolan's piecewise approach using Zolatarev
-    :math:`S_0` parameterization with integration or integral of the pdf FFT
-    interpolated spline. The settings affecting FFT calculation are the same as
-    for pdf calculation. The default cdf method can be changed by setting
-    ``levy_stable.cdf_default_method`` to either 'piecewise' or 'fft-simpson'.
-    For cdf calculations the Zolatarev method is superior in accuracy, so FFT
-    is disabled by default.
+    Evaluation of the cdf uses Nolan's piecewise integration approach with the
+    Zolatarev :math:`S_0` parameterization by default. There is also the option
+    to evaluate through integration of an interpolated spline of the pdf
+    calculated by means of the FFT method. The settings affecting FFT
+    calculation are the same as for pdf calculation. The default cdf method can
+    be changed by setting ``levy_stable.cdf_default_method`` to either
+    'piecewise' or 'fft-simpson'.  For cdf calculations the Zolatarev method is
+    superior in accuracy, so FFT is disabled by default.
 
     Fitting estimate uses quantile estimation method in [MC]. MLE estimation of
     parameters in fit method uses this quantile estimate initially. Note that
@@ -724,8 +730,6 @@ class levy_stable_gen(rv_continuous):
     ``levy_stable.pdf_fft_min_points_threshold`` will set
     ``levy_stable.pdf_default_method`` to 'fft-simpson'.
 
-    The pdf methods 'best' and 'zolotarev' are equivalent to 'piecewise'. The
-    pdf method 'quadrature' is equivalent to 'dni'.
 
     .. warning::
 
@@ -764,11 +768,6 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_n_points_two_power = None
     pdf_fft_interpolation_level = 3
     pdf_fft_interpolation_degree = 3
-    cdf_fft_min_points_threshold = None
-    cdf_fft_grid_spacing = 0.001
-    cdf_fft_n_points_two_power = None
-    cdf_fft_interpolation_level = 3
-    cdf_fft_interpolation_degree = 3
 
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
@@ -1016,10 +1015,10 @@ class levy_stable_gen(rv_continuous):
             "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
-        fft_grid_spacing = self.cdf_fft_grid_spacing
-        fft_n_points_two_power = self.cdf_fft_n_points_two_power
-        fft_interpolation_level = self.cdf_fft_interpolation_level
-        fft_interpolation_degree = self.cdf_fft_interpolation_degree
+        fft_grid_spacing = self.pdf_fft_grid_spacing
+        fft_n_points_two_power = self.pdf_fft_n_points_two_power
+        fft_interpolation_level = self.pdf_fft_interpolation_level
+        fft_interpolation_degree = self.pdf_fft_interpolation_degree
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
