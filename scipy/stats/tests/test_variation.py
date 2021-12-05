@@ -48,6 +48,20 @@ class TestVariation:
                              [np.sqrt(2)/7]])
         assert_allclose(y, expected)
 
+    @pytest.mark.parametrize('axis, expected',
+                             [(0, np.empty((1, 0))),
+                              (1, np.full((5, 1), fill_value=np.nan))])
+    def test_keepdims_size0(self, axis, expected):
+        x = np.zeros((5, 0))
+        y = variation(x, axis=axis, keepdims=True)
+        assert_equal(y, expected)
+
+    @pytest.mark.parametrize('incr, expected_fill', [(0, np.inf), (1, np.nan)])
+    def test_keepdims_and_ddof_eq_len_plus_incr(self, incr, expected_fill):
+        x = np.array([[1, 1, 2, 2], [1, 2, 3, 3]])
+        y = variation(x, axis=1, ddof=x.shape[1] + incr, keepdims=True)
+        assert_equal(y, np.full((2, 1), fill_value=expected_fill))
+
     def test_propagate_nan(self):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817

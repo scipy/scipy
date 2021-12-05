@@ -89,7 +89,7 @@ def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
     return result
 
 
-def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
+def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """
     Compute the coefficient of variation.
 
@@ -204,9 +204,9 @@ def variation(a, axis=0, nan_policy='propagate', *, ddof=0, keepdims=False):
 
     if ddof == n:
         # Another special case.  Result is either inf or nan.
-        std_a = a.std(axis=axis, ddof=0)
+        std_a = a.std(axis=axis, ddof=0, keepdims=True)
         result = np.full_like(std_a, fill_value=np.nan)
-        result[std_a > 0] = np.sign(mean_a) * np.inf
+        result.flat[std_a.flat > 0] = (np.sign(mean_a) * np.inf).flat
         if result.shape == ():
             result = result[()]
         return result
