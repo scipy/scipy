@@ -1917,12 +1917,19 @@ add_newdoc("ellipe",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre E integral is related to Carlson's symmetric R_D or R_G
+    functions in multiple ways [3]_. For example,
+
+    .. math:: E(m) = 2 R_G(0, 1-k^2, 1) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
 
     References
     ----------
@@ -1931,6 +1938,9 @@ add_newdoc("ellipe",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
 
     Examples
     --------
@@ -1994,12 +2004,23 @@ add_newdoc("ellipeinc",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre E incomplete integral can be related to combinations
+    of Carlson's symmetric integrals R_D, R_F, and R_G in multiple
+    ways [3]_. For example, with :math:`c = \csc^2\phi`,
+
+    .. math::
+      E(\phi, m) = R_F(c-1, c-k^2, c)
+        - \frac{1}{3} k^2 R_D(c-1, c-k^2, c) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
 
     References
     ----------
@@ -2008,6 +2029,9 @@ add_newdoc("ellipeinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
     """)
 
 add_newdoc("ellipj",
@@ -2107,6 +2131,7 @@ add_newdoc("ellipkm1",
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
@@ -2145,18 +2170,27 @@ add_newdoc("ellipk",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre K integral is related to Carlson's symmetric R_F
+    function by [2]_:
+
+    .. math:: K(m) = R_F(0, 1-k^2, 1) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind around m = 1
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
     .. [1] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [2] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
 
     """)
 
@@ -2170,7 +2204,7 @@ add_newdoc("ellipkinc",
 
     .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
 
-    This function is also called `F(phi, m)`.
+    This function is also called :math:`F(\phi, m)`.
 
     Parameters
     ----------
@@ -2196,12 +2230,19 @@ add_newdoc("ellipkinc",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre K incomplete integral (or F integral) is related to
+    Carlson's symmetric R_F function [3]_.
+    Setting :math:`c = \csc^2\phi`,
+
+    .. math:: F(\phi, m) = R_F(c-1, c-k^2, c) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
@@ -2210,6 +2251,351 @@ add_newdoc("ellipkinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+    """)
+
+add_newdoc(
+    "elliprc",
+    r"""
+    elliprc(x, y)
+
+    Degenerate symmetric elliptic integral.
+
+    The function RC is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{C}}(x, y) =
+           \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt
+           = R_{\mathrm{F}}(x, y, y)
+
+    Parameters
+    ----------
+    x, y : array_like
+        Real or complex input parameters. `x` can be any number in the
+        complex plane cut along the negative real axis. `y` must be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If `y` is real and negative, the Cauchy
+        principal value is returned. If both of `x` and `y` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+    Notes
+    -----
+    RC is a degenerate case of the symmetric integral RF: ``elliprc(x, y) ==
+    elliprf(x, y, y)``. It is an elementary function rather than an elliptic
+    integral.
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]_
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E6
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc(
+    "elliprd",
+    r"""
+    elliprd(x, y, z)
+
+    Symmetric elliptic integral of the second kind.
+
+    The function RD is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{D}}(x, y, z) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2}
+           dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x` or `y` can be any number in the
+        complex plane cut along the negative real axis, but at most one of them
+        can be zero, while `z` must be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+    Notes
+    -----
+    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) ==
+    elliprj(x, y, z, z)``.
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]_
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric elliptic integral.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E5
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc(
+    "elliprf",
+    r"""
+    elliprf(x, y, z)
+
+    Completely-symmetric elliptic integral of the first kind.
+
+    The function RF is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{F}}(x, y, z) =
+           \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis, but at most one of
+        them can be zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order (cf.:
+    https://dlmf.nist.gov/19.36.i) and the AGM algorithm for the complete
+    integral. [2]_
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc(
+    "elliprg",
+    r"""
+    elliprg(x, y, z)
+
+    Completely-symmetric elliptic integral of the second kind.
+
+    The function RG is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{G}}(x, y, z) =
+           \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t
+           dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
+
+    Notes
+    -----
+    The implementation uses the relation [1]_
+
+    .. math::
+
+        2 R_{\mathrm{G}}(x, y, z) =
+           z R_{\mathrm{F}}(x, y, z) -
+           \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) +
+           \sqrt{\frac{x y}{z}}
+
+    and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
+    be chosen as the pivot. When one of the arguments is close to zero, the AGM
+    method is applied instead. Other special cases are computed following Ref.
+    [2]_
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+           https://dlmf.nist.gov/19.20.ii
+
+    Examples
+    --------
+    The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
+    ``c`` is given by
+
+    .. math::
+
+        S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
+
+    >>> from scipy.special import elliprg
+    >>> def ellipsoid_area(a, b, c):
+    ...     r = 4.0 * np.pi * a * b * c
+    ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
+    >>> print(ellipsoid_area(1, 3, 5))
+    108.62688289491807
+    """)
+
+add_newdoc(
+    "elliprj",
+    r"""
+    elliprj(x, y, z, p)
+
+    Symmetric elliptic integral of the third kind.
+
+    The function RJ is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{J}}(x, y, z, p) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           (t + p)^{-1} dt
+
+    .. warning::
+        This function should be considered experimental when the inputs are
+        unbalanced.  Check correctness with another independent implementation.
+
+    Parameters
+    ----------
+    x, y, z, p : array_like
+        Real or complex input parameters. `x`, `y`, or `z` are numbers in
+        the complex plane cut along the negative real axis (subject to further
+        constraints, see Notes), and at most one of them can be zero. `p` must
+        be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of `x`, `y`, `z`, and `p` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+        If `p` is real and negative, while `x`, `y`, and `z` are real,
+        non-negative, and at most one of them is zero, the Cauchy principal
+        value is returned. [1]_ [2]_
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [3]_ The algorithm is slightly
+    different from its earlier incarnation as it appears in [1]_, in that the
+    call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
+    the inner loop. Asymptotic approximations are used where arguments differ
+    widely in the order of magnitude. [5]_
+
+    The input values are subject to certain sufficient but not necessary
+    constaints when input arguments are complex. Notably, ``x``, ``y``, and
+    ``z`` must have non-negative real parts, unless two of them are
+    non-negative and complex-conjugates to each other while the other is a real
+    non-negative number. [1]_ If the inputs do not satisfy the sufficient
+    condition described in Ref. [1]_ they are rejected outright with the output
+    set to NaN.
+
+    In the case where one of ``x``, ``y``, and ``z`` is equal to ``p``, the
+    function ``elliprd`` should be preferred because of its less restrictive
+    domain.
+
+    .. versionadded:: 1.8.0
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.20.iii
+    .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
+           Integrands with the Square Root of Two Quadratic Factors," J.
+           Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
+           https://doi.org/10.1016/S0377-0427(00)00282-X
+    .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
+           Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
+           Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
+           Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
+           Switzerland: Springer Nature Switzerland)
+           https://arxiv.org/abs/1806.06725
+           https://doi.org/10.1007/978-3-030-04480-0
+    .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
+           Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
+           pp. 288-303, 1994.
+           https://arxiv.org/abs/math/9310223
+           https://doi.org/10.1137/S0036141092228477
     """)
 
 add_newdoc("entr",
@@ -4049,10 +4435,8 @@ add_newdoc("gammainc",
     See also
     --------
     gammaincc : regularized upper incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
-    gammainccinv : inverse of the regularized upper incomplete gamma
-        function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
@@ -4118,10 +4502,8 @@ add_newdoc("gammaincc",
     See also
     --------
     gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
-    gammainccinv : inverse to of the regularized upper incomplete
-        gamma function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
@@ -4155,13 +4537,13 @@ add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse of the upper incomplete gamma function with respect to `x`
+    Inverse of the regularized upper incomplete gamma function.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
-    that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
-    gamma function; see `gammaincc`. This is well-defined because the
-    upper incomplete gamma function is monotonic as can be seen from
-    its definition in [dlmf]_.
+    that :math:`y = Q(a, x)`. Here :math:`Q` is the regularized upper
+    incomplete gamma function; see `gammaincc`. This is well-defined
+    because the upper incomplete gamma function is monotonic as can
+    be seen from its definition in [dlmf]_.
 
     Parameters
     ----------
@@ -4179,8 +4561,7 @@ add_newdoc("gammainccinv",
     --------
     gammaincc : regularized upper incomplete gamma function
     gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
-        function with respect to `x`
+    gammaincinv : inverse of the regularized lower incomplete gamma function
 
     References
     ----------
@@ -4212,7 +4593,7 @@ add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to the lower incomplete gamma function with respect to `x`.
+    Inverse to the regularized lower incomplete gamma function.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
@@ -4236,8 +4617,7 @@ add_newdoc("gammaincinv",
     --------
     gammainc : regularized lower incomplete gamma function
     gammaincc : regularized upper incomplete gamma function
-    gammainccinv : inverse of the regualizred upper incomplete gamma
-        function with respect to `x`
+    gammainccinv : inverse of the regularized upper incomplete gamma function
 
     References
     ----------
@@ -5088,7 +5468,16 @@ add_newdoc("hyp2f1",
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    The implementation for complex values of ``z`` is described in [2]_.
+    The implementation for complex values of ``z`` is described in [2]_,
+    except for ``z`` in the region defined by
+
+    .. math::
+
+         0.9 <= \left|z\right| < 1.1,
+         \left|1 - z\right| >= 0.9,
+         \mathrm{real}(z) >= 0
+
+    in which the implementation follows [4]_.
 
     References
     ----------
@@ -5097,6 +5486,9 @@ add_newdoc("hyp2f1",
     .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [4] J.L. Lopez and N.M. Temme, "New series expansions of the Gauss
+           hypergeometric function", Adv Comput Math 39, 349-365 (2013).
+           https://doi.org/10.1007/s10444-012-9283-y
 
     Examples
     --------
@@ -6713,6 +7105,70 @@ add_newdoc("_log1pmx",
     Internal function, do not use.
     """)
 
+add_newdoc('log_expit',
+    """
+    log_expit(x)
+
+    Logarithm of the logistic sigmoid function.
+
+    The SciPy implementation of the logistic sigmoid function is
+    `scipy.special.expit`, so this function is called ``log_expit``.
+
+    The function is mathematically equivalent to ``log(expit(x))``, but
+    is formulated to avoid loss of precision for inputs with large
+    (positive or negative) magnitude.
+
+    Parameters
+    ----------
+    x : array_like
+        The values to apply ``log_expit`` to element-wise.
+
+    Returns
+    -------
+    out : ndarray
+        The computed values, an ndarray of the same shape as ``x``.
+
+    See Also
+    --------
+    expit
+
+    Notes
+    -----
+    As a ufunc, ``log_expit`` takes a number of optional keyword arguments.
+    For more information see
+    `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 1.8.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_expit, expit
+
+    >>> log_expit([-3.0, 0.25, 2.5, 5.0])
+    array([-3.04858735, -0.57593942, -0.07888973, -0.00671535])
+
+    Large negative values:
+
+    >>> log_expit([-100, -500, -1000])
+    array([ -100.,  -500., -1000.])
+
+    Note that ``expit(-1000)`` returns 0, so the naive implementation
+    ``log(expit(-1000))`` return ``-inf``.
+
+    Large positive values:
+
+    >>> log_expit([29, 120, 400])
+    array([-2.54366565e-013, -7.66764807e-053, -1.91516960e-174])
+
+    Compare that to the naive implementation:
+
+    >>> np.log(expit([29, 120, 400]))
+    array([-2.54463117e-13,  0.00000000e+00,  0.00000000e+00])
+
+    The first value is accurate to only 3 digits, and the larger inputs
+    lose all precision and return 0.
+    """)
+
 add_newdoc('logit',
     """
     logit(x)
@@ -8059,7 +8515,7 @@ add_newdoc("pdtr",
 
     .. math::
 
-       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{m!}.
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{j!}.
 
     Parameters
     ----------

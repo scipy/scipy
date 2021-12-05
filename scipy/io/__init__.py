@@ -21,6 +21,8 @@ MATLAB® files
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
    whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
 
+For low-level MATLAB reading and writing utilities, see `scipy.io.matlab`.
+
 IDL® files
 ==========
 
@@ -91,10 +93,9 @@ Arff files (:mod:`scipy.io.arff`)
    MetaData
    ArffError
    ParseArffError
-
 """
 # matfile read and write
-from ._matlab import loadmat, savemat, whosmat, byteordercodes
+from .matlab import loadmat, savemat, whosmat
 
 # netCDF file support
 from ._netcdf import netcdf_file, netcdf_variable
@@ -105,6 +106,9 @@ from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 from ._mmio import mminfo, mmread, mmwrite
 from ._idl import readsav
 from ._harwell_boeing import hb_read, hb_write
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import arff, harwell_boeing, idl, mmio, netcdf, wavfile
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

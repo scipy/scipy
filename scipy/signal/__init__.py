@@ -288,6 +288,23 @@ Spectral analysis
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
+Chirp Z-transform and Zoom FFT
+============================================
+
+.. autosummary::
+   :toctree: generated/
+
+   czt - Chirp z-transform convenience function
+   zoom_fft - Zoom FFT convenience function
+   CZT - Chirp z-transform function generator
+   ZoomFFT - Zoom FFT function generator
+   czt_points - Output the z-plane points sampled by a chirp z-transform
+
+The functions are simpler to use than the classes, but are less efficient when
+using the same transform on many arrays of the same length, since they
+repeatedly generate the same chirp signal with every call.  In these cases,
+use the classes to create a reusable function instead.
+
 """
 from . import _sigtools, windows
 from ._waveforms import *
@@ -312,8 +329,14 @@ from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
 from ._wavelets import *
 from ._peak_finding import *
+from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
+    spectral, signaltools, waveforms, wavelets, spline
+)
 
 # deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
@@ -359,7 +382,6 @@ for name in deprecated_windows:
     locals()[name] = deco(name)
 
 del deprecated_windows, name, deco
-
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

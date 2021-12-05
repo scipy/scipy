@@ -5,7 +5,12 @@
 import warnings
 from . import _decomp_lu
 
-__all__ = ['lu', 'lu_solve', 'lu_factor']  # noqa: F822
+__all__ = [  # noqa: F822
+    'lu', 'lu_solve', 'lu_factor',
+    'asarray_chkfinite', 'LinAlgWarning', 'get_lapack_funcs',
+    'get_flinalg_funcs'
+
+]
 
 
 def __dir__():

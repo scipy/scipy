@@ -6,7 +6,8 @@ import subprocess
 import numpy
 from numpy.distutils.misc_util import get_numpy_include_dirs, get_info
 
-from scipy._build_utils.compiler_helper import set_c_flags_hook
+from scipy._build_utils.compiler_helper import (set_c_flags_hook,
+                                                set_cxx_flags_hook)
 
 
 def configuration(parent_package='',top_path=None):
@@ -91,17 +92,19 @@ def configuration(parent_package='',top_path=None):
     _ufuncs._pre_build_hook = set_c_flags_hook
 
     # Extension _ufuncs_cxx
-    ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.c',
+    ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.cc',
+                      'ellint_carlson_wrap.cxx',
                       '_faddeeva.cxx', 'Faddeeva.cc',
                       '_wright.cxx', 'wright.cc']
     ufuncs_cxx_dep = (headers + ufuncs_cxx_src + cephes_src
-                      + ['*.hh'])
-    config.add_extension('_ufuncs_cxx',
-                         sources=ufuncs_cxx_src,
-                         depends=ufuncs_cxx_dep,
-                         include_dirs=[curdir] + inc_dirs,
-                         define_macros=define_macros,
-                         extra_info=get_info("npymath"))
+                      + ['*.hh', join('ellint_carlson_cpp_lite', '*.hh')])
+    ufuncs_cxx_ext = config.add_extension('_ufuncs_cxx',
+                                          sources=ufuncs_cxx_src,
+                                          depends=ufuncs_cxx_dep,
+                                          include_dirs=[curdir] + inc_dirs,
+                                          define_macros=define_macros,
+                                          extra_info=get_info("npymath"))
+    ufuncs_cxx_ext._pre_build_hook = set_cxx_flags_hook
 
     cfg = combine_dict(lapack_opt, include_dirs=inc_dirs)
     config.add_extension('_ellip_harm_2',

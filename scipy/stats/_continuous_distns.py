@@ -21,7 +21,6 @@ import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
-from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
@@ -1248,7 +1247,7 @@ class chi_gen(rv_continuous):
         return np.sqrt(2*sc.gammainccinv(.5*df, q))
 
     def _stats(self, df):
-        mu = np.sqrt(2)*sc.gamma(df/2.0+0.5)/sc.gamma(df/2.0)
+        mu = np.sqrt(2)*np.exp(sc.gammaln(df/2.0+0.5)-sc.gammaln(df/2.0))
         mu2 = df - mu*mu
         g1 = (2*mu**3.0 + mu*(1-2*df))/np.asarray(np.power(mu2, 1.5))
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
@@ -5160,6 +5159,9 @@ class logistic_gen(rv_continuous):
 
     `logistic` is a special case of `genlogistic` with ``c=1``.
 
+    Remark that the survival function (``logistic.sf``) is equal to the
+    Fermi-Dirac distribution describing fermionic statistics.
+
     %(after_notes)s
 
     %(example)s
@@ -5179,11 +5181,17 @@ class logistic_gen(rv_continuous):
     def _cdf(self, x):
         return sc.expit(x)
 
+    def _logcdf(self, x):
+        return sc.log_expit(x)
+
     def _ppf(self, q):
         return sc.logit(q)
 
     def _sf(self, x):
         return sc.expit(-x)
+
+    def _logsf(self, x):
+        return sc.log_expit(-x)
 
     def _isf(self, q):
         return -sc.logit(q)
@@ -9074,12 +9082,12 @@ class argus_gen(rv_continuous):
 
     %(after_notes)s
 
-    .. versionadded:: 0.19.0
-
     References
     ----------
     .. [1] "ARGUS distribution",
            https://en.wikipedia.org/wiki/ARGUS_distribution
+
+    .. versionadded:: 0.19.0
 
     %(example)s
     """
@@ -9124,76 +9132,105 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None, random_state=None):
-        # if chi <= 2.611:
+        # if chi <= 1.8:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
-        # write: self.pdf = c * g(x) * h(x), where
+        # write: PDF f(x) = c * g(x) * h(x), where
         # h is [0,1]-valued and g is a density
-        # g(x) = d1 * chi**2 * x * exp(-chi**2 * (1 - x**2) / 2), 0 <= x <= 1
+        # we use two ways to write f
+        #
+        # Case 1:
+        # write g(x) = 3*x*sqrt(1-x**2), h(x) = exp(-chi**2 (1-x**2) / 2)
+        # If X has a distribution with density g its ppf G_inv is given by:
+        # G_inv(u) = np.sqrt(1 - u**(2/3))
+        #
+        # Case 2:
+        # g(x) = chi**2 * x * exp(-chi**2 * (1-x**2)/2) / (1 - exp(-chi**2 /2))
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
-        # Integrating g, we get:
-        # G(x) = d1 * exp(-chi**2 * (1 - x**2) / 2) - d2
-        # d1 and d2 are determined by G(0) = 0 and G(1) = 1
-        # d1 = 1 / (1 - exp(-0.5 * chi**2))
-        # d2 = 1 / (exp(0.5 * chi**2) - 1)
-        # => G(x) = (exp(chi**2 * x**2 /2) - 1) / (exp(chi**2 / 2) - 1)
-        # expected number of iterations is c with
-        # c = -np.expm1(-0.5 * chi**2) * chi / (_norm_pdf_C * _argus_phi(chi))
-        # note that G can be inverted easily, so we can sample
-        # rvs from this distribution
-        # G_inv(y) = sqrt(2 * log(1 + (exp(chi**2 / 2) - 1) * y) / chi**2)
-        # to avoid an overflow of exp(chi**2 / 2), it is convenient to write
-        # G_inv(y) = sqrt(1 + 2 * log(exp(-chi**2 / 2) * (1-y) + y) / chi**2)
+        # one can show that
+        # G_inv(u) = np.sqrt(2*np.log(u*(np.exp(chi**2/2)-1)+1))/chi
+        #          = np.sqrt(1 + 2*np.log(np.exp(-chi**2/2)*(1-u)+u)/chi**2)
+        # the latter expression is used for precision with small chi
         #
-        # if chi > 2.611:
-        # use ratio of uniforms method applied to a transformed variable of X
-        # (X is ARGUS with parameter chi):
-        # Y = chi * sqrt(1 - X**2) has density proportional to
-        # u**2 * exp(-u**2 / 2) on [0, chi] (Maxwell distribution conditioned
-        # on [0, chi]). Apply ratio of uniforms to this density to generate
-        # samples of Y and convert back to X
+        # In both cases, the inverse cdf of g can be written analytically, and
+        # we can apply the rejection method:
         #
-        # The expected number of iterations using the rejection method
-        # increases with increasing chi, whereas the expected number of
-        # iterations using the ratio of uniforms method decreases with
-        # increasing chi. The crossover occurs where
-        # chi*(1 - exp(-0.5*chi**2)) = 8*sqrt(2)*exp(-1.5) => chi ~ 2.611
-        # Switching algorithms at chi=2.611 means that the expected number of
-        # iterations is always below 2.2.
+        # REPEAT
+        #    Generate U uniformly distributed on [0, 1]
+        #    Generate X with density g (e.g. via inverse transform sampling:
+        #    X = G_inv(V) with V uniformly distributed on [0, 1])
+        # UNTIL X <= h(X)
+        # RETURN X
+        #
+        # We use case 1 for chi <= 0.5 as it maintains precision for small chi
+        # and case 2 for 0.5 < chi <= 1.8 due to its speed for moderate chi.
+        #
+        # if chi > 1.8:
+        # use relation to the Gamma distribution: if X is ARGUS with parameter
+        # chi), then Y = chi**2 * (1 - X**2) / 2 has density proportional to
+        # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
+        # conditioned on [0, chi**2 / 2]). Therefore, to sample X from the
+        # ARGUS distribution, we sample Y from the gamma distribution, keeping
+        # only samples on [0, chi**2 / 2], and apply the inverse
+        # transformation X = (1 - 2*Y/chi**2)**(1/2). Since we only
+        # look at chi > 1.8, gamma(1.5).cdf(chi**2/2) is large enough such
+        # Y falls in the inteval [0, chi**2 / 2] with a high probability:
+        # stats.gamma(1.5).cdf(1.8**2/2) = 0.644...
+        #
+        # The points to switch between the different methods are determined
+        # by a comparison of the runtime of the different methods. However,
+        # the runtime is platform-dependent. The implemented values should
+        # ensure a good overall performance and are supported by an analysis
+        # of the rejection constants of different methods.
 
-        if chi <= 2.611:
-            # use rejection method
-            size1d = tuple(np.atleast_1d(numsamples))
-            N = int(np.prod(size1d))
-            x = np.zeros(N)
-            echi = np.exp(-chi**2 / 2)
-            simulated = 0
+        size1d = tuple(np.atleast_1d(numsamples))
+        N = int(np.prod(size1d))
+        x = np.zeros(N)
+        simulated = 0
+        chi2 = chi * chi
+        if chi <= 0.5:
+            d = -chi2 / 2
             while simulated < N:
                 k = N - simulated
                 u = random_state.uniform(size=k)
                 v = random_state.uniform(size=k)
+                z = v**(2/3)
                 # acceptance condition: u <= h(G_inv(v)). This simplifies to
-                z = 2 * np.log(echi * (1 - v) + v) / chi**2
+                accept = (np.log(u) <= d * z)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    # we still need to transform z=v**(2/3) to X = G_inv(v)
+                    rvs = np.sqrt(1 - z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
+        elif chi <= 1.8:
+            echi = np.exp(-chi2 / 2)
+            while simulated < N:
+                k = N - simulated
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
+                z = 2 * np.log(echi * (1 - v) + v) / chi2
+                # as in case one, simplify u <= h(G_inv(v)) and then transform
+                # z to the target distribution X = G_inv(v)
                 accept = (u**2 + z <= 0)
                 num_accept = np.sum(accept)
                 if num_accept > 0:
-                    # rvs follow a distribution with density g: rvs = G_inv(v)
                     rvs = np.sqrt(1 + z[accept])
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
-
-            return np.reshape(x, size1d)
         else:
-            # use ratio of uniforms method
-            def f(x):
-                return np.where((x >= 0) & (x <= chi),
-                                np.exp(2*np.log(x) - x**2/2), 0)
+            # conditional Gamma for chi > 1.8
+            while simulated < N:
+                k = N - simulated
+                g = random_state.standard_gamma(1.5, size=k)
+                accept = (g <= chi2 / 2)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    x[simulated:(simulated + num_accept)] = g[accept]
+                    simulated += num_accept
+            x = np.sqrt(1 - 2 * x / chi2)
 
-            umax = np.sqrt(2) / np.exp(0.5)
-            vmax = 4 / np.exp(1)
-            z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
-                                   random_state=random_state)
-            return np.sqrt(1 - z*z / chi**2)
+        return np.reshape(x, size1d)
 
     def _stats(self, chi):
         # need to ensure that dtype is float

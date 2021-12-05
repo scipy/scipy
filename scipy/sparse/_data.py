@@ -177,13 +177,16 @@ class _minmax_mixin:
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
 
-        from . import coo_matrix
         if axis == 0:
-            return coo_matrix((value, (np.zeros(len(value)), major_index)),
-                              dtype=self.dtype, shape=(1, M))
+            return self._coo_container(
+                (value, (np.zeros(len(value)), major_index)),
+                dtype=self.dtype, shape=(1, M)
+            )
         else:
-            return coo_matrix((value, (major_index, np.zeros(len(value)))),
-                              dtype=self.dtype, shape=(M, 1))
+            return self._coo_container(
+                (value, (major_index, np.zeros(len(value)))),
+                dtype=self.dtype, shape=(M, 1)
+            )
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:

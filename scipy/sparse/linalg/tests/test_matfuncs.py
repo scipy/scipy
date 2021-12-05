@@ -1,7 +1,7 @@
 #
 # Created by: Pearu Peterson, March 2002
 #
-""" Test functions for scipy.linalg.matfuncs module
+""" Test functions for scipy.linalg._matfuncs module
 
 """
 import math
@@ -15,7 +15,7 @@ from numpy.testing import (
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse._construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm, _expm,
+from scipy.sparse.linalg._matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
 from scipy.sparse._sputils import matrix
@@ -579,4 +579,3 @@ class TestOperators:
             op = MatrixPowerOperator(A, p)
             assert_allclose(op.matmat(B), matrix_power(A, p).dot(B))
             assert_allclose(op.T.matmat(B), matrix_power(A, p).T.dot(B))
-

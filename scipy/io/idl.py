@@ -6,7 +6,10 @@ import warnings
 from . import _idl
 
 
-__all__ = ['readsav']  # noqa: F822
+__all__ = [  # noqa: F822
+    'readsav', 'DTYPE_DICT', 'RECTYPE_DICT', 'STRUCT_DICT',
+    'Pointer', 'ObjectPointer', 'AttrDict'
+]
 
 
 def __dir__():

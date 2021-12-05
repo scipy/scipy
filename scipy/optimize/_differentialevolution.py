@@ -113,7 +113,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
+        the best solution found so far. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).

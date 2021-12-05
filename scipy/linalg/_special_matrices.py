@@ -21,7 +21,7 @@ def tri(N, M=None, k=0, dtype=None):
     """
     Construct (N, M) matrix filled with ones at and below the kth diagonal.
 
-    The matrix has A[i,j] == 1 for i <= j + k
+    The matrix has A[i,j] == 1 for j <= i + k
 
     Parameters
     ----------

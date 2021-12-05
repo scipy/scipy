@@ -16,7 +16,6 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
-from scipy.optimize import root_scalar
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -1136,7 +1135,7 @@ def zpk2tf(z, p, k):
     return b, a
 
 
-def tf2sos(b, a, pairing='nearest'):
+def tf2sos(b, a, pairing=None, *, analog=False):
     """
     Return second-order sections from transfer function representation
 
@@ -1146,9 +1145,14 @@ def tf2sos(b, a, pairing='nearest'):
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
-    pairing : {'nearest', 'keep_odd'}, optional
+    pairing : {None, 'nearest', 'keep_odd', 'minimal'}, optional
         The method to use to combine pairs of poles and zeros into sections.
-        See `zpk2sos`.
+        See `zpk2sos` for information and restrictions on `pairing` and
+        `analog` arguments.
+    analog : bool, optional
+        If True, system is analog, otherwise discrete.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -1171,7 +1175,7 @@ def tf2sos(b, a, pairing='nearest'):
 
     .. versionadded:: 0.16.0
     """
-    return zpk2sos(*tf2zpk(b, a), pairing=pairing)
+    return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
 def sos2tf(sos):
@@ -1252,17 +1256,28 @@ def sos2zpk(sos):
 
 def _nearest_real_complex_idx(fro, to, which):
     """Get the next closest real or complex element based on distance"""
-    assert which in ('real', 'complex')
+    assert which in ('real', 'complex', 'any')
     order = np.argsort(np.abs(fro - to))
-    mask = np.isreal(fro[order])
-    if which == 'complex':
-        mask = ~mask
-    return order[np.nonzero(mask)[0][0]]
+    if which == 'any':
+        return order[0]
+    else:
+        mask = np.isreal(fro[order])
+        if which == 'complex':
+            mask = ~mask
+        return order[np.nonzero(mask)[0][0]]
 
 
-def zpk2sos(z, p, k, pairing='nearest'):
-    """
-    Return second-order sections from zeros, poles, and gain of a system
+def _single_zpksos(z, p, k):
+    """Create one second-order section from up to two zeros and poles"""
+    sos = np.zeros(6)
+    b, a = zpk2tf(z, p, k)
+    sos[3-len(b):3] = b
+    sos[6-len(a):6] = a
+    return sos
+
+
+def zpk2sos(z, p, k, pairing=None, *, analog=False):
+    """Return second-order sections from zeros, poles, and gain of a system
 
     Parameters
     ----------
@@ -1272,9 +1287,15 @@ def zpk2sos(z, p, k, pairing='nearest'):
         Poles of the transfer function.
     k : float
         System gain.
-    pairing : {'nearest', 'keep_odd'}, optional
+    pairing : {None, 'nearest', 'keep_odd', 'minimal'}, optional
         The method to use to combine pairs of poles and zeros into sections.
-        See Notes below.
+        If analog is False and pairing is None, pairing is set to 'nearest';
+        if analog is True, pairing must be 'minimal', and is set to that if
+        it is None.
+    analog : bool, optional
+        If True, system is analog, otherwise discrete.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -1293,29 +1314,36 @@ def zpk2sos(z, p, k, pairing='nearest'):
     minimize errors due to numerical precision issues. The pairing
     algorithm attempts to minimize the peak gain of each biquadratic
     section. This is done by pairing poles with the nearest zeros, starting
-    with the poles closest to the unit circle.
+    with the poles closest to the unit circle for discrete-time systems, and
+    poles closest to the imaginary axis for continuous-time systems.
+
+    ``pairing='minimal'`` outputs may not be suitable for `sosfilt`,
+    and ``analog=True`` outputs will never be suitable for `sosfilt`.
 
     *Algorithms*
 
-    The current algorithms are designed specifically for use with digital
-    filters. (The output coefficients are not correct for analog filters.)
+    The steps in the ``pairing='nearest'``, ``pairing='keep_odd'``,
+    and ``pairing='minimal'`` algorithms are mostly shared. The
+    ``'nearest'`` algorithm attempts to minimize the peak gain, while
+    ``'keep_odd'`` minimizes peak gain under the constraint that
+    odd-order systems should retain one section as first order.
+    ``'minimal'`` is similar to ``'keep_odd'``, but no additional
+    poles or zeros are introduced
 
-    The steps in the ``pairing='nearest'`` and ``pairing='keep_odd'``
-    algorithms are mostly shared. The ``nearest`` algorithm attempts to
-    minimize the peak gain, while ``'keep_odd'`` minimizes peak gain under
-    the constraint that odd-order systems should retain one section
-    as first order. The algorithm steps and are as follows:
+    The algorithm steps are as follows:
 
-    As a pre-processing step, add poles or zeros to the origin as
-    necessary to obtain the same number of poles and zeros for pairing.
-    If ``pairing == 'nearest'`` and there are an odd number of poles,
-    add an additional pole and a zero at the origin.
+    As a pre-processing step for ``pairing='nearest'``,
+    ``pairing='keep_odd'``, add poles or zeros to the origin as
+    necessary to obtain the same number of poles and zeros for
+    pairing.  If ``pairing == 'nearest'`` and there are an odd number
+    of poles, add an additional pole and a zero at the origin.
 
     The following steps are then iterated over until no more poles or
     zeros remain:
 
     1. Take the (next remaining) pole (complex or real) closest to the
-       unit circle to begin a new filter section.
+       unit circle (or imaginary axis, for ``analog=True``) to
+       begin a new filter section.
 
     2. If the pole is real and there are no other remaining real poles [#]_,
        add the closest real zero to the section and leave it as a first
@@ -1351,7 +1379,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
                zero closest to that pole.
 
     .. [#] This conditional can only be met for specific odd-order inputs
-           with the ``pairing == 'keep_odd'`` method.
+           with the ``pairing = 'keep_odd'`` or ``'minimal'`` methods.
 
     .. versionadded:: 0.16.0
 
@@ -1363,9 +1391,9 @@ def zpk2sos(z, p, k, pairing='nearest'):
     1000 Hz. The ripple in the pass-band should not exceed 0.087 dB, and
     the attenuation in the stop-band should be at least 90 dB.
 
-    In the following call to `signal.ellip`, we could use ``output='sos'``,
-    but for this example, we'll use ``output='zpk'``, and then convert to SOS
-    format with `zpk2sos`:
+    In the following call to `ellip`, we could use ``output='sos'``,
+    but for this example, we'll use ``output='zpk'``, and then convert
+    to SOS format with `zpk2sos`:
 
     >>> from scipy import signal
     >>> z, p, k = signal.ellip(6, 0.087, 90, 1000/(0.5*8000), output='zpk')
@@ -1419,6 +1447,13 @@ def zpk2sos(z, p, k, pairing='nearest'):
     The extra pole and zero at the origin are in the same section.
     The first section is, in effect, a first-order section.
 
+    With ``pairing='minimal'``, the first-order section doesn't have
+    the extra pole and zero at the origin:
+
+    >>> signal.zpk2sos(z1, p1, 1, pairing='minimal')
+    array([[ 0.  ,  1.  ,  1.  ,  0.  ,  1.  , -0.75],
+           [ 1.  ,  1.  ,  0.5 ,  1.  , -1.6 ,  0.65]])
+
     """
     # TODO in the near future:
     # 1. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
@@ -1428,100 +1463,133 @@ def zpk2sos(z, p, k, pairing='nearest'):
     # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
-    valid_pairings = ['nearest', 'keep_odd']
+    if pairing is None:
+        pairing = 'minimal' if analog else 'nearest'
+
+    valid_pairings = ['nearest', 'keep_odd', 'minimal']
     if pairing not in valid_pairings:
         raise ValueError('pairing must be one of %s, not %s'
                          % (valid_pairings, pairing))
+
+    if analog and pairing != 'minimal':
+        raise ValueError('for analog zpk2sos conversion, '
+                         'pairing must be "minimal"')
+
     if len(z) == len(p) == 0:
-        return array([[k, 0., 0., 1., 0., 0.]])
+        if not analog:
+            return np.array([[k, 0., 0., 1., 0., 0.]])
+        else:
+            return np.array([[0., 0., k, 0., 0., 1.]])
 
-    # ensure we have the same number of poles and zeros, and make copies
-    p = np.concatenate((p, np.zeros(max(len(z) - len(p), 0))))
-    z = np.concatenate((z, np.zeros(max(len(p) - len(z), 0))))
-    n_sections = (max(len(p), len(z)) + 1) // 2
-    sos = zeros((n_sections, 6))
+    if pairing != 'minimal':
+        # ensure we have the same number of poles and zeros, and make copies
+        p = np.concatenate((p, np.zeros(max(len(z) - len(p), 0))))
+        z = np.concatenate((z, np.zeros(max(len(p) - len(z), 0))))
+        n_sections = (max(len(p), len(z)) + 1) // 2
 
-    if len(p) % 2 == 1 and pairing == 'nearest':
-        p = np.concatenate((p, [0.]))
-        z = np.concatenate((z, [0.]))
-    assert len(p) == len(z)
+        if len(p) % 2 == 1 and pairing == 'nearest':
+            p = np.concatenate((p, [0.]))
+            z = np.concatenate((z, [0.]))
+        assert len(p) == len(z)
+    else:
+        if len(p) < len(z):
+            raise ValueError('for analog zpk2sos conversion, '
+                             'must have len(p)>=len(z)')
+
+        n_sections = (len(p) + 1) // 2
 
     # Ensure we have complex conjugate pairs
     # (note that _cplxreal only gives us one element of each complex pair):
     z = np.concatenate(_cplxreal(z))
     p = np.concatenate(_cplxreal(p))
+    if not np.isreal(k):
+        raise ValueError('k must be real')
+    k = k.real
 
-    p_sos = np.zeros((n_sections, 2), np.complex128)
-    z_sos = np.zeros_like(p_sos)
-    for si in range(n_sections):
+    if not analog:
+        # digital: "worst" is the closest to the unit circle
+        def idx_worst(p):
+            return np.argmin(np.abs(1 - np.abs(p)))
+    else:
+        # analog: "worst" is the closest to the imaginary axis
+        def idx_worst(p):
+            return np.argmin(np.abs(np.real(p)))
+
+    sos = np.zeros((n_sections, 6))
+
+    # Construct the system, reversing order so the "worst" are last
+    for si in range(n_sections-1, -1, -1):
         # Select the next "worst" pole
-        p1_idx = np.argmin(np.abs(1 - np.abs(p)))
+        p1_idx = idx_worst(p)
         p1 = p[p1_idx]
         p = np.delete(p, p1_idx)
 
         # Pair that pole with a zero
 
         if np.isreal(p1) and np.isreal(p).sum() == 0:
-            # Special case to set a first-order section
-            z1_idx = _nearest_real_complex_idx(z, p1, 'real')
-            z1 = z[z1_idx]
-            z = np.delete(z, z1_idx)
-            p2 = z2 = 0
-        else:
-            if not np.isreal(p1) and np.isreal(z).sum() == 1:
-                # Special case to ensure we choose a complex zero to pair
-                # with so later (setting up a first-order section)
-                z1_idx = _nearest_real_complex_idx(z, p1, 'complex')
-                assert not np.isreal(z[z1_idx])
+            # Special case (1): last remaining real pole
+            if pairing != 'minimal':
+                z1_idx = _nearest_real_complex_idx(z, p1, 'real')
+                z1 = z[z1_idx]
+                z = np.delete(z, z1_idx)
+                sos[si] = _single_zpksos([z1, 0], [p1, 0], 1)
+            elif len(z) > 0:
+                z1_idx = _nearest_real_complex_idx(z, p1, 'real')
+                z1 = z[z1_idx]
+                z = np.delete(z, z1_idx)
+                sos[si] = _single_zpksos([z1], [p1], 1)
             else:
-                # Pair the pole with the closest zero (real or complex)
-                z1_idx = np.argmin(np.abs(p1 - z))
-            z1 = z[z1_idx]
-            z = np.delete(z, z1_idx)
+                sos[si] = _single_zpksos([], [p1], 1)
 
-            # Now that we have p1 and z1, figure out what p2 and z2 need to be
-            if not np.isreal(p1):
-                if not np.isreal(z1):  # complex pole, complex zero
-                    p2 = p1.conj()
-                    z2 = z1.conj()
-                else:  # complex pole, real zero
-                    p2 = p1.conj()
-                    z2_idx = _nearest_real_complex_idx(z, p1, 'real')
-                    z2 = z[z2_idx]
-                    assert np.isreal(z2)
-                    z = np.delete(z, z2_idx)
-            else:
-                if not np.isreal(z1):  # real pole, complex zero
-                    z2 = z1.conj()
-                    p2_idx = _nearest_real_complex_idx(p, z1, 'real')
-                    p2 = p[p2_idx]
-                    assert np.isreal(p2)
-                else:  # real pole, real zero
-                    # pick the next "worst" pole to use
-                    idx = np.nonzero(np.isreal(p))[0]
-                    assert len(idx) > 0
-                    p2_idx = idx[np.argmin(np.abs(np.abs(p[idx]) - 1))]
-                    p2 = p[p2_idx]
-                    # find a real zero to match the added pole
-                    assert np.isreal(p2)
-                    z2_idx = _nearest_real_complex_idx(z, p2, 'real')
-                    z2 = z[z2_idx]
-                    assert np.isreal(z2)
-                    z = np.delete(z, z2_idx)
+        elif (len(p) + 1 == len(z)
+              and not np.isreal(p1)
+              and np.isreal(p).sum() == 1
+              and np.isreal(z).sum() == 1):
+
+            # Special case (2): there's one real pole and one real zero
+            # left, and an equal number of poles and zeros to pair up.
+            # We *must* pair with a complex zero
+
+            z1_idx = _nearest_real_complex_idx(z, p1, 'complex')
+            z1 = z[z1_idx]
+            z = np.delete(z, z1_idx)
+            sos[si] = _single_zpksos([z1, z1.conj()], [p1, p1.conj()], 1)
+
+        else:
+            if np.isreal(p1):
+                prealidx = np.flatnonzero(np.isreal(p))
+                p2_idx = prealidx[idx_worst(p[prealidx])]
+                p2 = p[p2_idx]
                 p = np.delete(p, p2_idx)
-        p_sos[si] = [p1, p2]
-        z_sos[si] = [z1, z2]
+            else:
+                p2 = p1.conj()
+
+            # find closest zero
+            if len(z) > 0:
+                z1_idx = _nearest_real_complex_idx(z, p1, 'any')
+                z1 = z[z1_idx]
+                z = np.delete(z, z1_idx)
+
+                if not np.isreal(z1):
+                    sos[si] = _single_zpksos([z1, z1.conj()], [p1, p2], 1)
+                else:
+                    if len(z) > 0:
+                        z2_idx = _nearest_real_complex_idx(z, p1, 'real')
+                        z2 = z[z2_idx]
+                        assert np.isreal(z2)
+                        z = np.delete(z, z2_idx)
+                        sos[si] = _single_zpksos([z1, z2], [p1, p2], 1)
+                    else:
+                        sos[si] = _single_zpksos([z1], [p1, p2], 1)
+            else:
+                # no more zeros
+                sos[si] = _single_zpksos([], [p1, p2], 1)
+
     assert len(p) == len(z) == 0  # we've consumed all poles and zeros
     del p, z
 
-    # Construct the system, reversing order so the "worst" are last
-    p_sos = np.reshape(p_sos[::-1], (n_sections, 2))
-    z_sos = np.reshape(z_sos[::-1], (n_sections, 2))
-    gains = np.ones(n_sections, np.array(k).dtype)
-    gains[0] = k
-    for si in range(n_sections):
-        x = zpk2tf(z_sos[si], p_sos[si], gains[si])
-        sos[si] = np.concatenate(x)
+    # put gain in first sos
+    sos[0][:3] *= k
     return sos
 
 
@@ -2212,13 +2280,21 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         raise ValueError("wp and ws must have one or two elements each, and"
                          "the same shape, got %s and %s"
                          % (wp.shape, ws.shape))
+
+    if any(wp <= 0) or any(ws <= 0):
+        raise ValueError("Values for wp, ws must be greater than 0")
+
+    if not analog:
+        if fs is None:
+            if any(wp >= 1) or any(ws >= 1):
+                raise ValueError("Values for wp, ws must be less than 1")
+        elif any(wp >= fs/2) or any(ws >= fs/2):
+            raise ValueError("Values for wp, ws must be less than fs/2"
+                             " (fs={} -> fs/2={})".format(fs, fs/2))
+
     if wp.shape[0] == 2:
-        if wp[0] < 0 or ws[0] < 0:
-            raise ValueError("Values for wp, ws can't be negative")
-        elif 1 < wp[1] or 1 < ws[1]:
-            raise ValueError("Values for wp, ws can't be larger than 1")
-        elif not((ws[0] < wp[0] and wp[1] < ws[1]) or
-            (wp[0] < ws[0] and ws[1] < wp[1])):
+        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+               (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                          " or vice versa")
 
@@ -2373,6 +2449,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             raise ValueError("fs cannot be specified for an analog filter")
         Wn = 2*Wn/fs
 
+    if numpy.any(Wn <= 0):
+        raise ValueError("filter critical frequencies must be greater than 0")
+
     try:
         btype = band_dict[btype]
     except KeyError as e:
@@ -2462,7 +2541,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif output == 'ba':
         return zpk2tf(z, p, k)
     elif output == 'sos':
-        return zpk2sos(z, p, k)
+        return zpk2sos(z, p, k, analog=analog)
 
 
 def _relative_degree(z, p):
@@ -2862,10 +2941,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 
-        For digital filters, `Wn` are in the same units as `fs`.  By default,
-        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
-        where 1 is the Nyquist frequency. (`Wn` is thus in
-        half-cycles / sample.)
+        For digital filters, if `fs` is not specified, `Wn` units are
+        normalized from 0 to 1, where 1 is the Nyquist frequency (`Wn` is
+        thus in half cycles / sample and defined as 2*critical frequencies
+        / `fs`). If `fs` is specified, `Wn` is in the same units as `fs`.
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional

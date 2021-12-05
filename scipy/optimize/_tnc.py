@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
-from scipy.optimize import _moduleTNC as moduleTNC
+from scipy.optimize import moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
@@ -147,7 +147,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         max(1,min(50,n/2)). Defaults to -1.
     maxfun : int, optional
         Maximum number of function evaluation. If None, maxfun is
-        set to max(100, 10*len(x0)). Defaults to None.
+        set to max(100, 10*len(x0)). Defaults to None. Note that this function
+        may violate the limit because of evaluating gradients by numerical
+        differentiation.
     eta : float, optional
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
@@ -411,11 +413,15 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         else:
             maxfun = max(100, 10*len(x0))
 
-    rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
-                                        offset, messages, maxCGit, maxfun,
-                                        eta, stepmx, accuracy, fmin, ftol,
-                                        xtol, pgtol, rescale, callback)
-
+    rc, nf, nit, x, funv, jacv = moduleTNC.tnc_minimize(
+        func_and_grad, x0, low, up, scale,
+        offset, messages, maxCGit, maxfun,
+        eta, stepmx, accuracy, fmin, ftol,
+        xtol, pgtol, rescale, callback
+    )
+    # the TNC documentation states: "On output, x, f and g may be very
+    # slightly out of sync because of scaling". Therefore re-evaluate
+    # func_and_grad so they are synced.
     funv, jacv = func_and_grad(x)
 
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,

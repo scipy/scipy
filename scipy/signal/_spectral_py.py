@@ -99,40 +99,38 @@ def lombscargle(x,
     First define some input parameters for the signal:
 
     >>> A = 2.
-    >>> w = 1.
-    >>> phi = 0.5 * np.pi
-    >>> nin = 1000
+    >>> w0 = 1.  # rad/sec
+    >>> nin = 150
     >>> nout = 100000
-    >>> frac_points = 0.9  # Fraction of points to select
 
-    Randomly select a fraction of an array with timesteps:
+    Randomly generate sample times:
 
-    >>> r = rng.standard_normal(nin)
-    >>> x = np.linspace(0.01, 10*np.pi, nin)
-    >>> x = x[r >= frac_points]
+    >>> x = rng.uniform(0, 10*np.pi, nin)
 
     Plot a sine wave for the selected times:
 
-    >>> y = A * np.sin(w*x+phi)
+    >>> y = A * np.cos(w0*x)
 
     Define the array of frequencies for which to compute the periodogram:
 
-    >>> f = np.linspace(0.01, 10, nout)
+    >>> w = np.linspace(0.01, 10, nout)
 
     Calculate Lomb-Scargle periodogram:
 
     >>> import scipy.signal as signal
-    >>> pgram = signal.lombscargle(x, y, f, normalize=True)
+    >>> pgram = signal.lombscargle(x, y, w, normalize=True)
 
     Now make a plot of the input data:
 
-    >>> plt.subplot(2, 1, 1)
-    >>> plt.plot(x, y, 'b+')
+    >>> fig, (ax_t, ax_w) = plt.subplots(2, 1, constrained_layout=True)
+    >>> ax_t.plot(x, y, 'b+')
+    >>> ax_t.set_xlabel('Time [s]')
 
     Then plot the normalized periodogram:
 
-    >>> plt.subplot(2, 1, 2)
-    >>> plt.plot(f, pgram)
+    >>> ax_w.plot(w, pgram)
+    >>> ax_w.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_w.set_ylabel('Normalized amplitude')
     >>> plt.show()
 
     """

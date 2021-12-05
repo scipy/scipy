@@ -5,7 +5,10 @@
 import warnings
 from . import _misc
 
-__all__ = ['LinAlgError', 'LinAlgWarning', 'norm']  # noqa: F822
+__all__ = [  # noqa: F822
+    'LinAlgError', 'LinAlgWarning', 'norm', 'get_blas_funcs',
+    'get_lapack_funcs'
+]
 
 
 def __dir__():

@@ -10,13 +10,11 @@ import os
 import warnings
 from collections import namedtuple
 from itertools import product
-from copy import deepcopy
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
-                           assert_string_equal,
                            assert_array_less)
 import pytest
 from pytest import raises as assert_raises
@@ -2455,6 +2453,20 @@ class TestZmapZscore:
         z = stats.zscore(x)
         assert_equal(z, x)
 
+    def test_gzscore_normal_array(self):
+        z = stats.gzscore([1, 2, 3, 4])
+        desired = ([-1.526072095151, -0.194700599824, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
+    def test_gzscore_masked_array(self):
+        x = np.array([1, 2, -1, 3, 4])
+        mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
+        z = stats.gzscore(mx)
+        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):
@@ -2737,6 +2749,14 @@ class TestIQR:
         assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
         assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
         assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
+
+        # Check all method= values new in numpy 1.22.0 are accepted
+        if NumpyVersion(np.__version__) >= '1.22.0':
+            for method in ('inverted_cdf', 'averaged_inverted_cdf',
+                           'closest_observation', 'interpolated_inverted_cdf',
+                           'hazen', 'weibull', 'median_unbiased',
+                           'normal_unbiased'):
+                stats.iqr(y, interpolation=method)
 
         assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 

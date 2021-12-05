@@ -8,7 +8,7 @@ from . import _harwell_boeing
 __all__ = [  # noqa: F822
     'MalformedHeader', 'hb_read', 'hb_write', 'HBInfo',
     'HBFile', 'HBMatrixType', 'FortranFormatParser', 'IntFormat',
-    'ExpFormat', 'BadFortranFormat'
+    'ExpFormat', 'BadFortranFormat', 'hb'
 ]
 
 

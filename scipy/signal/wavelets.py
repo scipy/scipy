@@ -6,7 +6,8 @@ import warnings
 from . import _wavelets
 
 __all__ = [  # noqa: F822
-    'daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt'
+    'daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt',
+    'eig', 'comb', 'convolve'
 ]
 
 

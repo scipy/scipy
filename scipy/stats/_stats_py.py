@@ -33,6 +33,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
+from numpy.lib import NumpyVersion
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
@@ -60,8 +61,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
-           'median_abs_deviation',
+           'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
+           'median_absolute_deviation', 'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -2469,6 +2470,94 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
+def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
+    """
+    Compute the geometric standard score.
+
+    Compute the geometric z score of each strictly positive value in the
+    sample, relative to the geometric mean and standard deviation.
+    Mathematically the geometric z score can be evaluated as::
+
+        gzscore = log(a/gmu) / log(gsigma)
+
+    where ``gmu`` (resp. ``gsigma``) is the geometric mean (resp. standard
+    deviation).
+
+    Parameters
+    ----------
+    a : array_like
+        Sample data.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    ddof : int, optional
+        Degrees of freedom correction in the calculation of the
+        standard deviation. Default is 0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.  Note that when the value is 'omit',
+        nans in the input also propagate to the output, but they do not affect
+        the geometric z scores computed for the non-nan values.
+
+    Returns
+    -------
+    gzscore : array_like
+        The geometric z scores, standardized by geometric mean and geometric
+        standard deviation of input array `a`.
+
+    See Also
+    --------
+    gmean : Geometric mean
+    gstd : Geometric standard deviation
+    zscore : Standard score
+
+    Notes
+    -----
+    This function preserves ndarray subclasses, and works also with
+    matrices and masked arrays (it uses ``asanyarray`` instead of
+    ``asarray`` for parameters).
+
+    .. versionadded:: 1.8
+
+    Examples
+    --------
+    Draw samples from a log-normal distribution:
+
+    >>> from scipy.stats import zscore, gzscore
+    >>> import matplotlib.pyplot as plt
+
+    >>> rng = np.random.default_rng()
+    >>> mu, sigma = 3., 1.  # mean and standard deviation
+    >>> x = rng.lognormal(mu, sigma, size=500)
+
+    Display the histogram of the samples:
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(x, 50)
+    >>> plt.show()
+
+    Display the histogram of the samples standardized by the classical zscore.
+    Distribution is rescaled but its shape is unchanged.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(zscore(x), 50)
+    >>> plt.show()
+
+    Demonstrate that the distribution of geometric zscores is rescaled and
+    quasinormal:
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(gzscore(x), 50)
+    >>> plt.show()
+
+    """
+    a = np.asanyarray(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+
+    return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
+
+
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -2715,18 +2804,18 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     rng : Two-element sequence containing floats in range of [0,100] optional
         Percentiles over which to compute the range. Each must be
         between 0 and 100, inclusive. The default is the true IQR:
-        `(25, 75)`. The order of the elements is not important.
+        ``(25, 75)``. The order of the elements is not important.
     scale : scalar or str, optional
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
           * 'raw' : No scaling, just return the raw IQR.
-            **Deprecated!**  Use `scale=1` instead.
+            **Deprecated!**  Use ``scale=1`` instead.
           * 'normal' : Scale by
             :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 1.0. The use of scale='raw' is deprecated.
-        Array-like scale is also allowed, as long
+        The default is 1.0. The use of ``scale='raw'`` is deprecated.
+        Array-like `scale` is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -2738,22 +2827,24 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    interpolation : {'linear', 'lower', 'higher', 'midpoint',
-                     'nearest'}, optional
+    interpolation : str, optional
 
         Specifies the interpolation method to use when the percentile
-        boundaries lie between two data points `i` and `j`.
+        boundaries lie between two data points ``i`` and ``j``.
         The following options are available (default is 'linear'):
 
-          * 'linear': `i + (j - i) * fraction`, where `fraction` is the
-            fractional part of the index surrounded by `i` and `j`.
-          * 'lower': `i`.
-          * 'higher': `j`.
-          * 'nearest': `i` or `j` whichever is nearest.
-          * 'midpoint': `(i + j) / 2`.
+          * 'linear': ``i + (j - i)*fraction``, where ``fraction`` is the
+            fractional part of the index surrounded by ``i`` and ``j``.
+          * 'lower': ``i``.
+          * 'higher': ``j``.
+          * 'nearest': ``i`` or ``j`` whichever is nearest.
+          * 'midpoint': ``(i + j)/2``.
+
+        For NumPy >= 1.22.0, the additional options provided by the ``method``
+        keyword of `numpy.percentile` are also valid.
 
     keepdims : bool, optional
-        If this is set to `True`, the reduced axes are left in the
+        If this is set to True, the reduced axes are left in the
         result as dimensions with size one. With this option, the result
         will broadcast correctly against the original array `x`.
 
@@ -2768,27 +2859,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     See Also
     --------
     numpy.std, numpy.var
-
-    Notes
-    -----
-    This function is heavily dependent on the version of `numpy` that is
-    installed. Versions greater than 1.11.0b3 are highly recommended, as they
-    include a number of enhancements and fixes to `numpy.percentile` and
-    `numpy.nanpercentile` that affect the operation of this function. The
-    following modifications apply:
-
-    Below 1.10.0 : `nan_policy` is poorly defined.
-        The default behavior of `numpy.percentile` is used for 'propagate'. This
-        is a hybrid of 'omit' and 'propagate' that mostly yields a skewed
-        version of 'omit' since NaNs are sorted to the end of the data. A
-        warning is raised if there are NaNs in the data.
-    Below 1.9.0: `numpy.nanpercentile` does not exist.
-        This means that `numpy.percentile` is used regardless of `nan_policy`
-        and a warning is issued. See previous item for a description of the
-        behavior.
-    Below 1.9.0: `keepdims` and `interpolation` are not supported.
-        The keywords get ignored with a warning if supplied with non-default
-        values. However, multiple axes are still supported.
 
     References
     ----------
@@ -2849,8 +2919,12 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                          keepdims=keepdims)
+    if NumpyVersion(np.__version__) >= '1.22.0':
+        pct = percentile_func(x, rng, axis=axis, method=interpolation,
+                              keepdims=keepdims)
+    else:
+        pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
+                              keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -3761,7 +3835,7 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     We use `alexandergovern` to test the null hypothesis that all cities
     have the same mean APR against the alternative that the cities do not
-    all have the same mean APR. We decide that a sigificance level of 5%
+    all have the same mean APR. We decide that a significance level of 5%
     is required to reject the null hypothesis in favor of the alternative.
 
     >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
@@ -5181,7 +5255,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         Requires that `func` be pickleable. The default is ``1``.
     is_twosamp : bool, optional
         If `True`, a two sample test will be run. If ``x`` and ``y`` have
-        shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
+        shapes ``(n, p)`` and ``(m, p)``, this optional will be overridden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
         Note that this will not run if inputs are distance matrices.
@@ -5491,7 +5565,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
     # the global scale at is the statistic calculated at maximial nearest
-    # neighbors. Threshold is the maximium on the global and local scales
+    # neighbors. Threshold is the maximum on the global and local scales
     threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
 
     # find the largest connected component of significant correlations
@@ -6061,7 +6135,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     called Yuen's t-test, this is an extension of Welch's t-test, with the
     difference being the use of winsorized means in calculation of the variance
     and the trimmed sample size in calculation of the statistic. Trimming is
-    reccomended if the underlying distribution is long-tailed or contaminated
+    recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
     References

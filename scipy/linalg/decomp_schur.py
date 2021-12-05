@@ -5,7 +5,10 @@
 import warnings
 from . import _decomp_schur
 
-__all__ = ['schur', 'rsf2csf']  # noqa: F822
+__all__ = [  # noqa: F822
+    'schur', 'rsf2csf', 'asarray_chkfinite', 'single', 'array', 'norm',
+    'LinAlgError', 'get_lapack_funcs', 'eigvals', 'eps', 'feps'
+]
 
 
 def __dir__():
