@@ -3413,13 +3413,13 @@ class TestDeconvolve:
     def test_n_dimensional_signal(self):
         recorded = [[0, 0], [0, 0]]
         impulse_response = [0, 0]
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="signal must be 1-D."):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_n_dimensional_divisor(self):
         recorded = [0, 0]
         impulse_response = [[0, 0], [0, 0]]
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="divisor must be 1-D."):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
 
