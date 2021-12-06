@@ -6,7 +6,7 @@ import functools
 
 import numpy as np
 
-from scipy._lib._util import MapWrapper
+from scipy._lib._util import MapWrapper, _FunctionWrapper
 
 
 class LRUDict(collections.OrderedDict):
@@ -102,7 +102,8 @@ class _Bunch:
 
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature=None, full_output=False):
+             workers=1, points=None, quadrature=None, full_output=False,
+             *, args=()):
     r"""Adaptive integration of a vector-valued function.
 
     Parameters
@@ -140,6 +141,10 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
     full_output : bool, optional
         Return an additional ``info`` dictionary.
+    args : tuple, optional
+        Extra arguments to pass to function, if any.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -215,6 +220,13 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     a = float(a)
     b = float(b)
 
+    if args:
+        if not isinstance(args, tuple):
+            args = (args,)
+
+        # create a wrapped function to allow the use of map and Pool.map
+        f = _FunctionWrapper(f, args)
+
     # Use simple transformations to deal with integrals over infinite
     # intervals.
     kwargs = dict(epsabs=epsabs,
@@ -266,7 +278,6 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         norm_func = norm
     else:
         norm_func = norm_funcs[norm]
-
 
     parallel_count = 128
     min_intervals = 2

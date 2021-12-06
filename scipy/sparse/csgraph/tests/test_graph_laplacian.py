@@ -11,7 +11,7 @@ from scipy.sparse import csgraph
 
 def _explicit_laplacian(x, normed=False):
     if sparse.issparse(x):
-        x = x.todense()
+        x = x.toarray()
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
@@ -30,7 +30,7 @@ def _check_symmetric_graph_laplacian(mat, normed):
 
     if sparse.issparse(mat):
         sp_mat = mat
-        mat = sp_mat.todense()
+        mat = sp_mat.toarray()
     else:
         sp_mat = sparse.csr_matrix(mat)
 
@@ -39,8 +39,8 @@ def _check_symmetric_graph_laplacian(mat, normed):
     if not normed:
         assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
     assert_array_almost_equal(laplacian.T, laplacian)
-    assert_array_almost_equal(laplacian,
-            csgraph.laplacian(sp_mat, normed=normed).todense())
+    assert_array_almost_equal(
+        laplacian, csgraph.laplacian(sp_mat, normed=normed).toarray())
 
     assert_array_almost_equal(laplacian,
             _explicit_laplacian(mat, normed=normed))
@@ -57,13 +57,15 @@ def test_laplacian_value_error():
 
 
 def test_symmetric_graph_laplacian():
-    symmetric_mats = ('np.arange(10) * np.arange(10)[:, np.newaxis]',
-            'np.ones((7, 7))',
-            'np.eye(19)',
-            'sparse.diags([1, 1], [-1, 1], shape=(4,4))',
-            'sparse.diags([1, 1], [-1, 1], shape=(4,4)).todense()',
-            'np.asarray(sparse.diags([1, 1], [-1, 1], shape=(4,4)).todense())',
-            'np.vander(np.arange(4)) + np.vander(np.arange(4)).T')
+    symmetric_mats = (
+        'np.arange(10) * np.arange(10)[:, np.newaxis]',
+        'np.ones((7, 7))',
+        'np.eye(19)',
+        'sparse.diags([1, 1], [-1, 1], shape=(4, 4))',
+        'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray()',
+        'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).todense()',
+        'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
+    )
     for mat_str in symmetric_mats:
         for normed in True, False:
             _check_symmetric_graph_laplacian(mat_str, normed)

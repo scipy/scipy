@@ -7,6 +7,7 @@ import sys
 import pickle
 import os
 import json
+import platform
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -36,6 +37,10 @@ from itertools import product
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
+
+# Failing on macOS 11, Intel CPUs. See gh-14901
+MACOS_INTEL = (sys.platform == 'darwin') and (platform.machine() == 'x86_64')
+
 
 # distributions to skip while testing the fix for the support method
 # introduced in gh-13294. These distributions are skipped as they
@@ -312,6 +317,9 @@ class TestChi:
     # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
     #     1 - CDF[ChiDistribution[4], 10]
     CHI_SF_10_4 = 9.83662422461598e-21
+    # "Exact" value of chi.mean(df=1000) as computed by Wolfram Alpha with
+    #       Mean[ChiDistribution[1000]]
+    CHI_MEAN_1000 = 31.614871896980
 
     def test_sf(self):
         s = stats.chi.sf(10, 4)
@@ -320,6 +328,10 @@ class TestChi:
     def test_isf(self):
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
+
+    def test_mean(self):
+        x = stats.chi.mean(df=1000)
+        assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
 
 
 class TestNBinom:
@@ -1244,6 +1256,19 @@ class TestLogistic:
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
 
+    @pytest.mark.parametrize('testlogcdf', [True, False])
+    def test_logcdfsf_tails(self, testlogcdf):
+        # Test either logcdf or logsf.  By symmetry, we can use the same
+        # expected values for both by switching the sign of x for logsf.
+        x = np.array([-10000, -800, 17, 50, 500])
+        if testlogcdf:
+            y = stats.logistic.logcdf(x)
+        else:
+            y = stats.logistic.logsf(-x)
+        # The expected values were computed with mpmath.
+        expected = [-10000.0, -800.0, -4.139937633089748e-08,
+                    -1.9287498479639178e-22, -7.124576406741286e-218]
+        assert_allclose(y, expected, rtol=2e-15)
 
 class TestLogser:
     def setup_method(self):
@@ -2840,6 +2865,7 @@ class TestBeta:
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12635(self):
         # Confirm that Boost's beta distribution resolves gh-12635.
         # Check against R:
@@ -2851,6 +2877,7 @@ class TestBeta:
         p, a, b = 0.9999999999997369, 75.0, 66334470.0
         assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12794(self):
         # Confirm that Boost's beta distribution resolves gh-12794.
         # Check against R.
@@ -2868,6 +2895,7 @@ class TestBeta:
         res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
         assert_allclose(res, p)
 
+    @pytest.mark.skipif(MACOS_INTEL, reason="Overflow, see gh-14901")
     def test_issue_12796(self):
         # Confirm that Boost's beta distribution succeeds in the case
         # of gh-12796
@@ -2889,6 +2917,11 @@ class TestBeta:
         # when a<1
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
+
+    def test_boost_eval_issue_14606(self):
+        q, a, b = 0.995, 1.0e11, 1.0e13
+        with pytest.warns(RuntimeWarning):
+            stats.beta.ppf(q, a, b)
 
 
 class TestBetaPrime:
@@ -5615,7 +5648,7 @@ def test_invweibull():
     def optimizer(func, x0, args=(), disp=0):
         return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
 
-    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    x = np.array([1, 1.25, 2, 2.5, 2.8, 3, 3.8, 4, 5, 8, 10, 12, 64, 99])
     c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
     assert_allclose(c, 1.048482, rtol=5e-6)
     assert loc == 0
@@ -5767,11 +5800,24 @@ class TestArgus:
         x = stats.argus.rvs(50, size=500, random_state=325)
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
-    def test_argus_rvs_ratio_uniforms(self):
-        # test that the ratio of uniforms algorithms works for chi > 2.611
-        x = stats.argus.rvs(3.5, size=1500, random_state=1535)
-        assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
-        assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+    @pytest.mark.parametrize('chi, random_state', [
+            [0.1, 325],   # chi <= 0.5: rejection method case 1
+            [1.3, 155],   # 0.5 < chi <= 1.8: rejection method case 2
+            [3.5, 135]    # chi > 1.8: transform conditional Gamma distribution
+        ])
+    def test_rvs(self, chi, random_state):
+        x = stats.argus.rvs(chi, size=500, random_state=random_state)
+        _, p = stats.kstest(x, "argus", (chi, ))
+        assert_(p > 0.05)
+
+    @pytest.mark.parametrize('chi', [1e-9, 1e-6])
+    def test_rvs_small_chi(self, chi):
+        # test for gh-11699 => rejection method case 1 can even handle chi=0
+        # the CDF of the distribution for chi=0 is 1 - (1 - x**2)**(3/2)
+        # test rvs against distribution of limit chi=0
+        r = stats.argus.rvs(chi, size=500, random_state=890981)
+        _, p = stats.kstest(r, lambda x: 1 - (1 - x**2)**(3/2))
+        assert_(p > 0.05)
 
     # Expected values were computed with mpmath.
     @pytest.mark.parametrize('chi, expected_mean',
@@ -6047,6 +6093,17 @@ def test_support_broadcasting_gh13294_regression():
     assert_equal(b2, ex_b2)
     assert a2.shape == ex_a2.shape
     assert b2.shape == ex_b2.shape
+
+
+def test_stats_broadcasting_gh14953_regression():
+    # test case in gh14953
+    loc = [0., 0.]
+    scale = [[1.], [2.], [3.]]
+    assert_equal(stats.norm.var(loc, scale), [[1., 1.], [4., 4.], [9., 9.]])
+    # test some edge cases
+    loc = np.empty((0, ))
+    scale = np.empty((1, 0))
+    assert stats.norm.var(loc, scale).shape == (1, 0)
 
 
 # Check a few values of the cosine distribution's cdf, sf, ppf and

@@ -1,5 +1,4 @@
 import pathlib
-from shutil import copyfile
 import subprocess
 import sys
 
@@ -16,11 +15,25 @@ def isNPY_OLD():
 
 def make_biasedurn():
     '''Substitute True/False values for NPY_OLD Cython build variable.'''
-    biasedurn_base = (pathlib.Path(__file__).parent / 'biasedurn').absolute()
+    biasedurn_base = (pathlib.Path(__file__).parent / '_biasedurn').absolute()
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
     with open(biasedurn_base.with_suffix('.pyx'), 'w') as dest:
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
+
+
+def make_unuran():
+    """Substitute True/False values for NPY_OLD Cython build variable."""
+    import re
+    unuran_base = (
+        pathlib.Path(__file__).parent / "_unuran" / "unuran_wrapper"
+    ).absolute()
+    with open(unuran_base.with_suffix(".pyx.templ"), "r") as src:
+        contents = src.read()
+    with open(unuran_base.with_suffix(".pyx"), "w") as dest:
+        dest.write(re.sub("DEF NPY_OLD = isNPY_OLD",
+                          f"DEF NPY_OLD = {isNPY_OLD()}",
+                          contents))
 
 
 def make_boost():
@@ -31,4 +44,5 @@ def make_boost():
 
 if __name__ == '__main__':
     make_biasedurn()
+    make_unuran()
     make_boost()

@@ -18,7 +18,7 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
-from scipy.ndimage.filters import correlate1d
+from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
@@ -29,7 +29,7 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
@@ -748,9 +748,9 @@ class TestFFTConvolve:
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
-        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
-        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
+        a = np.moveaxis(a.swapaxes(0, 2), 1, 4)
+        b = np.moveaxis(b.swapaxes(0, 2), 1, 4)
+        expected = np.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
         a = np.tile(a, [2, 1, 3, 1, 1])
@@ -834,7 +834,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -863,7 +863,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -884,7 +884,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -916,7 +916,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -1071,7 +1071,6 @@ class TestMedFilt:
 
         with pytest.raises(ValueError, match="order_filterND"):
             signal.medfilt2d(in_typed)
-
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
@@ -1258,6 +1257,14 @@ class TestResample:
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
         assert(y.dtype == np.float32)
+
+    @pytest.mark.parametrize('padtype', padtype_options)
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_output_match_dtype(self, padtype, dtype):
+        # Test that the dtype of x is preserved per issue #14733
+        x = np.arange(10, dtype=dtype)
+        y = signal.resample_poly(x, 1, 2, padtype=padtype)
+        assert(y.dtype == x.dtype)
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -2319,7 +2326,7 @@ def filtfilt_gust_opt(b, a, x):
     An alternative implementation of filtfilt with Gustafsson edges.
 
     This function computes the same result as
-    `scipy.signal.signaltools._filtfilt_gust`, but only 1-d arrays
+    `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
     `_filtfilt_gust` is significanly faster than this implementation.
     """

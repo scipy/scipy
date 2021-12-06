@@ -62,7 +62,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
-    cond,  arrays = args[0], args[1:]
+    cond, arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -104,8 +104,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
-    for index in range(len(condlist)):
-        func, cond = choicelist[index], condlist[index]
+    for func, cond in zip(choicelist, condlist):
         if np.all(cond is False):
             continue
         cond, _ = np.broadcast_arrays(cond, arrays[0])
@@ -232,14 +231,9 @@ def check_random_state(seed):
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):
         return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
+    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
-    try:
-        # Generator is only available in numpy >= 1.17
-        if isinstance(seed, np.random.Generator):
-            return seed
-    except AttributeError:
-        pass
+
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
@@ -401,6 +395,18 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
+class _FunctionWrapper:
+    """
+    Object to wrap user's function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)
+
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
@@ -548,3 +554,96 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         yield
     finally:
         np.random.default_rng = orig_fun
+
+
+def _argmin(a, keepdims=False, axis=None):
+    """
+    argmin with a `keepdims` parameter.
+
+    See https://github.com/numpy/numpy/issues/8710
+
+    If axis is not None, a.shape[axis] must be greater than 0.
+    """
+    res = np.argmin(a, axis=axis)
+    if keepdims and axis is not None:
+        res = np.expand_dims(res, axis=axis)
+    return res
+
+
+def _first_nonnan(a, axis):
+    """
+    Return the first non-nan value along the given axis.
+
+    If a slice is all nan, nan is returned for that slice.
+
+    The shape of the return value corresponds to ``keepdims=True``.
+
+    Examples
+    --------
+    >>> nan = np.nan
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
+    >>> _first_nonnan(a, axis=0)
+    array([[3., 3., 2., 3.]])
+    >>> _first_nonnan(a, axis=1)
+    array([[ 3.],
+           [ 1.],
+           [ 9.],
+           [ 5.],
+           [ 2.],
+           [nan]])
+    """
+    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
+    return np.take_along_axis(a, k, axis=axis)
+
+
+def _nan_allsame(a, axis, keepdims=False):
+    """
+    Determine if the values along an axis are all the same.
+
+    nan values are ignored.
+
+    `a` must be a numpy array.
+
+    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
+
+    For an axis of length 0, the result is True.  That is, we adopt the
+    convention that ``allsame([])`` is True. (There are no values in the
+    input that are different.)
+
+    `True` is returned for slices that are all nan--not because all the
+    values are the same, but because this is equivalent to ``allsame([])``.
+
+    Examples
+    --------
+    >>> a
+    array([[ 3.,  3., nan,  3.],
+           [ 1., nan,  2.,  4.],
+           [nan, nan,  9., -1.],
+           [nan,  5.,  4.,  3.],
+           [ 2.,  2.,  2.,  2.],
+           [nan, nan, nan, nan]])
+    >>> _nan_allsame(a, axis=1, keepdims=True)
+    array([[ True],
+           [False],
+           [False],
+           [False],
+           [ True],
+           [ True]])
+    """
+    if axis is None:
+        if a.size == 0:
+            return True
+        a = a.ravel()
+        axis = 0
+    else:
+        shp = a.shape
+        if shp[axis] == 0:
+            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
+            return np.full(shp, fill_value=True, dtype=bool)
+    a0 = _first_nonnan(a, axis=axis)
+    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)

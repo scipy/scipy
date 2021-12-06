@@ -4,7 +4,7 @@ import sys
 import pytest
 from numpy.testing import assert_equal, suppress_warnings
 
-from scipy.misc import doccer
+import scipy.misc._doccer as doccer
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1

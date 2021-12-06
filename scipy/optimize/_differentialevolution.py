@@ -6,8 +6,8 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, MapWrapper
+from scipy.optimize._optimize import _status_message
+from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
@@ -113,7 +113,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
+        the best solution found so far. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
@@ -956,8 +956,10 @@ class DifferentialEvolutionSolver:
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
+        # these are the number of function evals left to stay under the
+        # maxfun budget
         nfevs = min(num_members,
-                    self.maxfun - num_members)
+                    self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
@@ -965,7 +967,7 @@ class DifferentialEvolutionSolver:
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
-            energies[0:nfevs] = np.squeeze(calc_energies)
+            calc_energies = np.squeeze(calc_energies)
         except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
@@ -973,6 +975,11 @@ class DifferentialEvolutionSolver:
                 "The map-like callable must be of the form f(func, iterable), "
                 "returning a sequence of numbers the same length as 'iterable'"
             ) from e
+
+        if calc_energies.size != nfevs:
+            raise RuntimeError("func(x, *args) must return a scalar value")
+
+        energies[0:nfevs] = calc_energies
 
         self._nfev += nfevs
 
@@ -1168,7 +1175,7 @@ class DifferentialEvolutionSolver:
                                       self.feasible[candidate],
                                       self.constraint_violation[candidate]):
                     self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+                    self.population_energies[candidate] = np.squeeze(energy)
                     self.feasible[candidate] = feasible
                     self.constraint_violation[candidate] = cv
 
@@ -1332,18 +1339,6 @@ class DifferentialEvolutionSolver:
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
         return idxs
-
-
-class _FunctionWrapper:
-    """
-    Object to wrap user cost function, allowing picklability
-    """
-    def __init__(self, f, args):
-        self.f = f
-        self.args = [] if args is None else args
-
-    def __call__(self, x):
-        return self.f(x, *self.args)
 
 
 class _ConstraintWrapper:

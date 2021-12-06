@@ -1,5 +1,4 @@
 import os
-import pathlib
 
 
 def check_boost_submodule():

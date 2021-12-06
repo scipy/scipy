@@ -10,7 +10,7 @@ import pytest
 from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial.ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 
 import itertools
@@ -680,7 +680,7 @@ class sparse_distance_matrix_consistency:
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
         expected = distance_matrix(self.T1.data, self.T2.data)
         expected[expected > self.r] = 0
-        assert_array_almost_equal(M1.todense(), expected, decimal=14)
+        assert_array_almost_equal(M1.toarray(), expected, decimal=14)
 
     def test_against_logic_error_regression(self):
         # regression test for gh-5077 logic error
@@ -688,7 +688,7 @@ class sparse_distance_matrix_consistency:
         too_many = np.array(np.random.randn(18, 2), dtype=int)
         tree = self.kdtree_type(
             too_many, balanced_tree=False, compact_nodes=False)
-        d = tree.sparse_distance_matrix(tree, 3).todense()
+        d = tree.sparse_distance_matrix(tree, 3).toarray()
         assert_array_almost_equal(d, d.T, decimal=14)
 
     def test_ckdtree_return_types(self):
@@ -719,11 +719,11 @@ class sparse_distance_matrix_consistency:
         # test return type 'dok_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='dok_matrix')
-        assert_array_almost_equal(ref, r.todense(), decimal=14)
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
         # test return type 'coo_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='coo_matrix')
-        assert_array_almost_equal(ref, r.todense(), decimal=14)
+        assert_array_almost_equal(ref, r.toarray(), decimal=14)
 
 
 @KDTreeTest
@@ -1247,23 +1247,24 @@ def test_kdtree_duplicated_inputs(kdtree_type):
     # check kdtree with duplicated inputs
     n = 1024
     for m in range(1, 8):
-        data = np.concatenate([
-            np.full((n // 2, m), 1),
-            np.full((n // 2, m), 2)], axis=0)
+        data = np.ones((n, m))
+        data[n//2:] = 2
 
-        # it shall not divide more than 3 nodes.
-        # root left (1), and right (2)
-        kdtree = kdtree_type(data, leafsize=1)
-        assert_equal(kdtree.size, 3)
+        for balanced, compact in itertools.product((False, True), repeat=2):
+            kdtree = kdtree_type(data, balanced_tree=balanced,
+                                 compact_nodes=compact, leafsize=1)
+            assert kdtree.size == 3
 
-        kdtree = kdtree_type(data)
-        assert_equal(kdtree.size, 3)
+            tree = (kdtree.tree if kdtree_type is cKDTree else
+                    kdtree.tree._node)
 
-        # if compact_nodes are disabled, the number
-        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
-        # and the root
-        kdtree = kdtree_type(data, compact_nodes=False, leafsize=1)
-        assert_equal(kdtree.size, n + m * 2 - 1)
+            assert_equal(
+                np.sort(tree.lesser.indices),
+                np.arange(0, n // 2))
+            assert_equal(
+                np.sort(tree.greater.indices),
+                np.arange(n // 2, n))
+
 
 def test_kdtree_noncumulative_nondecreasing(kdtree_type):
     # check kdtree with duplicated inputs

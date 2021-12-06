@@ -1,6 +1,8 @@
 cimport numpy as np
 cimport cython
 
+np.import_array()
+
 ctypedef fused DTYPE_floating_t:
     float
     float complex
