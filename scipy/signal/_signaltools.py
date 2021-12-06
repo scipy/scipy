@@ -2143,17 +2143,17 @@ def deconvolve(signal, divisor):
     Parameters
     ----------
     signal : 1-D array_like
-    Signal data, typically a recorded signal
+        Signal data, typically a recorded signal
     divisor : 1-D array_like
-    Divisor data, typically an impulse response or filter that was
-    applied to the original signal
+        Divisor data, typically an impulse response or filter that was
+        applied to the original signal
 
     Returns
     -------
     quotient : ndarray
-    Quotient, typically the recovered original signal
+        Quotient, typically the recovered original signal
     remainder : ndarray
-    Remainder
+        Remainder
 
     Examples
     --------
@@ -2167,13 +2167,12 @@ def deconvolve(signal, divisor):
     array([0, 2, 1, 0, 2, 3, 1, 0, 0])
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
-    array([ 0., 1., 0., 0., 1., 1., 0., 0.])
+    array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
 
     See Also
     --------
     numpy.polydiv : performs polynomial division (same operation, but
-    also accepts poly1d objects)
-
+                    also accepts poly1d objects)
     """
     num = np.atleast_1d(signal)
     den = np.atleast_1d(divisor)
