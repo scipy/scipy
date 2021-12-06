@@ -3207,7 +3207,7 @@ class TestLevyStable:
         """Test that fit agrees with rvs for each parametrization."""
         stats.levy_stable.parametrization = parametrization
         data = stats.levy_stable.rvs(
-            alpha, beta, loc=delta, scale=gamma, size=10000
+            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=1234
         )
         fit = stats.levy_stable._fitstart(data)
         alpha_obs_S0, beta_obs_S0, delta_obs_S0, gamma_obs_S0 = fit
