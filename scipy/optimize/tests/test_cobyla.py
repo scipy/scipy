@@ -40,7 +40,6 @@ class TestCobyla:
 
         callback = Callback()
 
-
         # Minimize with method='COBYLA'
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
