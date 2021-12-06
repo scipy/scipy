@@ -56,7 +56,7 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
-           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
@@ -964,65 +964,6 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
-
-
-def variation(a, axis=0, nan_policy='propagate', ddof=0):
-    """Compute the coefficient of variation.
-
-    The coefficient of variation is the standard deviation divided by the
-    mean.  This function is equivalent to::
-
-        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
-
-    The default for ``ddof`` is 0, but many definitions of the coefficient
-    of variation use the square root of the unbiased sample variance
-    for the sample standard deviation, which corresponds to ``ddof=1``.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate the coefficient of variation. Default
-        is 0. If None, compute over the whole array `a`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-        * 'propagate': returns nan
-        * 'raise': throws an error
-        * 'omit': performs the calculations ignoring nan values
-
-    ddof : int, optional
-        Delta degrees of freedom.  Default is 0.
-
-    Returns
-    -------
-    variation : ndarray
-        The calculated variation along the requested axis.
-
-    References
-    ----------
-    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    Examples
-    --------
-    >>> from scipy.stats import variation
-    >>> variation([1, 2, 3, 4, 5])
-    0.47140452079103173
-
-    """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis, ddof)
-
-    return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
