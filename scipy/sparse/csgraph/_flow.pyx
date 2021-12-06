@@ -14,6 +14,8 @@ include 'parameters.pxi'
 
 np.import_array()
 
+DEF NO_PARENT_PLACEHOLDER = -2
+
 
 class MaximumFlowResult:
     """Represents the result of a maximum flow calculation.
@@ -820,9 +822,9 @@ def minimum_cost_flow(csgraph, demand, cost):
 
 
 def _network_simplex_checks(
-    DTYPE_t[:] capacities,           # IN
-    ITYPE_t[:] demand,               # IN
-    ITYPE_t[:] cost,                 # IN
+    capacities,           # IN
+    demand,               # IN
+    cost,                 # IN
 ):
     """
     Performs checks on input parameter to make sure that they
@@ -879,7 +881,7 @@ cdef void _initialize_spanning_tree(
             vertex_potentials[v] = -faux_inf
 
     # parent initialization
-    parent[0] = -2
+    parent[0] = NO_PARENT_PLACEHOLDER
     subtree_size[0] = n_verts + 1
     prev_vertex_dft[0] = n_verts
     last_descendent_dft[0] = n_verts
@@ -982,7 +984,7 @@ cdef return_struct _find_entering_edges(
         blocks to search is determined following Bland's rule."
     """
     cdef:
-        ITYPE_t l, i = -2, min_r_cost, p, q, c
+        ITYPE_t l, i = NO_PARENT_PLACEHOLDER, min_r_cost, p, q, c
         ITYPE_t e, r_cost, B
 
     if not r_struct.prev_ret_value:
@@ -1171,7 +1173,10 @@ cdef edge_result _find_leaving_edge(
     """Return the leaving edge in a cycle represented by Wn and We."""
     cdef:
         ITYPE_t min_res_cap, res_cap
-        ITYPE_t i = -2, p, j = -2, s = -2, t, idx_e, idx_n
+        ITYPE_t i = NO_PARENT_PLACEHOLDER
+        ITYPE_t j = NO_PARENT_PLACEHOLDER
+        ITYPE_t s = NO_PARENT_PLACEHOLDER
+        ITYPE_t p, t, idx_e, idx_n
     min_res_cap = INT_MAX
     idx_n = Wne_len[0] - 1
     idx_e = Wne_len[1] - 1
@@ -1252,8 +1257,8 @@ cdef void _remove_edge(
     last_t = last_descendent_dft[t]
     next_last_t = next_vertex_dft[last_t]
     # Remove (s, t).
-    parent[t] = -2
-    parent_edge[t] = -2
+    parent[t] = NO_PARENT_PLACEHOLDER
+    parent_edge[t] = NO_PARENT_PLACEHOLDER
     # Remove the subtree rooted at t from the depth-first thread.
     next_vertex_dft[prev_t] = next_last_t
     prev_vertex_dft[next_last_t] = prev_t
@@ -1261,7 +1266,7 @@ cdef void _remove_edge(
     prev_vertex_dft[t] = last_t
     # Update the subtree sizes and last descendants of the (old) ancestors
     # of t.
-    while s != -2:
+    while s != NO_PARENT_PLACEHOLDER:
         subtree_size[s] -= size_t
         if last_descendent_dft[s] == last_t:
             last_descendent_dft[s] = prev_t
@@ -1284,7 +1289,7 @@ cdef void _make_root(
         ITYPE_t size_p, last_p, last_q, prev_q
         ITYPE_t next_last_q
     idx = 0
-    while q != -2:
+    while q != NO_PARENT_PLACEHOLDER:
         ancestors[idx] = q
         q = parent[q]
         idx += 1
@@ -1300,9 +1305,9 @@ cdef void _make_root(
         next_last_q = next_vertex_dft[last_q]
         # Make p a child of q.
         parent[p] = q
-        parent[q] = -2
+        parent[q] = NO_PARENT_PLACEHOLDER
         parent_edge[p] = parent_edge[q]
-        parent_edge[q] = -2
+        parent_edge[q] = NO_PARENT_PLACEHOLDER
         subtree_size[p] = size_p - subtree_size[q]
         subtree_size[q] = size_p
         # Remove the subtree rooted at q from the depth-first thread.
@@ -1352,7 +1357,7 @@ cdef void _add_edge(
     next_vertex_dft[last_q] = next_last_p
     # Update the subtree sizes and last descendants of the (new) ancestors
     # of q.
-    while p != -2:
+    while p != NO_PARENT_PLACEHOLDER:
         subtree_size[p] += size_q
         if last_descendent_dft[p] == last_p:
             last_descendent_dft[p] = last_q
