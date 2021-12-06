@@ -36,3 +36,4 @@ dependencies:
   # Some optional test dependencies
   - mpmath
   - gmpy2=2.1.0rc1
+  - threadpoolctl

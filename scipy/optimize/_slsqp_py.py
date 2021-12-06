@@ -15,14 +15,13 @@ Functions
 
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
-import warnings
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function, _clip_x_for_func,
-                       _check_clip_x)
+                        _prepare_scalar_function, _clip_x_for_func,
+                        _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 

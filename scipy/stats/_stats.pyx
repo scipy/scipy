@@ -6,7 +6,6 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
-
 import warnings
 import numpy as np
 import scipy.stats, scipy.special

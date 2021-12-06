@@ -59,6 +59,11 @@ Elliptic functions and integrals
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.
+   elliprc   -- Degenerate symmetric integral RC.
+   elliprd   -- Symmetric elliptic integral of the second kind.
+   elliprf   -- Completely-symmetric elliptic integral of the first kind.
+   elliprg   -- Completely-symmetric elliptic integral of the second kind.
+   elliprj   -- Symmetric elliptic integral of the third kind.
 
 Bessel functions
 ----------------
@@ -261,7 +266,8 @@ Raw statistical functions
    kolmogi      -- Inverse function to `kolmogorov`.
    tklmbda      -- Tukey-Lambda cumulative distribution function.
    logit        -- Logit ufunc for ndarrays.
-   expit        -- Expit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.

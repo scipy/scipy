@@ -218,16 +218,6 @@ def _weight_masked(arrays, weights, axis):
     return weights
 
 
-def within_tol(a, b, tol):
-    return np.abs(a - b).max() < tol
-
-
-def _assert_within_tol(a, b, atol=0, rtol=0, verbose_=False):
-    if verbose_:
-        print(np.abs(a - b).max())
-    assert_allclose(a, b, rtol=rtol, atol=atol)
-
-
 def _rand_split(arrays, weights, axis, split_per, seed=None):
     # inverse operation for stats.collapse_weights
     weights = np.array(weights, dtype=np.float64)  # modified inplace; need a copy
@@ -439,12 +429,12 @@ class TestCdist:
                               arg=1.1, kwarg2=3.3), 5.4)
 
     def test_cdist_euclidean_random_unicode(self):
-        eps = 1e-07
+        eps = 1e-15
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         Y1 = wcdist_no_const(X1, X2, 'euclidean')
         Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 1.23,
                                    2.0, 3.8, 4.6, np.inf])
@@ -454,10 +444,10 @@ class TestCdist:
         X2 = eo['cdist-X2']
         Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
         Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, atol=0, rtol=eps, verbose_=verbose > 2)
+        assert_allclose(Y1, Y2, atol=0, rtol=eps, verbose=verbose > 2)
 
     def test_cdist_cosine_random(self):
-        eps = 1e-07
+        eps = 1e-14
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         Y1 = wcdist(X1, X2, 'cosine')
@@ -468,7 +458,7 @@ class TestCdist:
 
         Y2 = 1 - np.dot((X1 / norms(X1)), (X2 / norms(X2)).T)
 
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
     def test_cdist_mahalanobis(self):
         # 1-dimensional observations
@@ -516,8 +506,8 @@ class TestCdist:
             assert_raises(e_cls, cdist, X1, X2, metric=eval(metric), **kwargs)
             assert_raises(e_cls, cdist, X1, X2, metric="test_" + metric, **kwargs)
         else:
-            _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
-            _assert_within_tol(y1, y3, rtol=eps, verbose_=verbose > 2)
+            assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
+            assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
 
     def test_cdist_calling_conventions(self):
         # Ensures that specifying the metric with a str or scipy function
@@ -576,11 +566,11 @@ class TestCdist:
                 else:
                     for new_type in test[1]:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
-                        _assert_within_tol(y1, y2, eps, verbose > 2)
+                        assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
     def test_cdist_out(self):
         # Test that out parameter works properly
-        eps = 1e-07
+        eps = 1e-15
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         out_r, out_c = X1.shape[0], X2.shape[0]
@@ -593,7 +583,7 @@ class TestCdist:
             Y1 = cdist(X1, X2, metric, **kwargs)
             Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
             # test that output is numerically equivalent
-            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
             # test that Y_test1 and out1 are the same object
             assert_(Y2 is out1)
             # test for incorrect shape
@@ -617,7 +607,7 @@ class TestCdist:
     def test_striding(self):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
-        eps = 1e-07
+        eps = 1e-15
         X1 = eo['cdist-X1'][::2, ::2]
         X2 = eo['cdist-X2'][::2, ::2]
         X1_copy = X1.copy()
@@ -639,7 +629,7 @@ class TestCdist:
             Y1 = cdist(X1, X2, metric, **kwargs)
             Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
             # test that output is numerically equivalent
-            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
     def test_cdist_refcount(self):
         for metric in _METRICS_NAMES:
@@ -711,151 +701,151 @@ class TestPdist:
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_euclidean_random_u(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_euclidean_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-euclidean']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_euclidean_random_nonC(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
         Y_test2 = wpdist_no_const(X, 'test_euclidean')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_euclidean_iris_double(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_euclidean_iris_float32(self):
-        eps = 1e-06
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-euclidean-iris']
         Y_test1 = wpdist_no_const(X, 'euclidean')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_euclidean_iris_nonC(self):
         # Test pdist(X, 'test_euclidean') [the non-C implementation] on the
         # Iris data set.
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
         Y_test2 = wpdist_no_const(X, 'test_euclidean')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_random(self):
-        eps = 1e-05
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
         Y_test1 = pdist(X, 'seuclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_random_float32(self):
-        eps = 1e-05
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-seuclidean']
         Y_test1 = pdist(X, 'seuclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
         # Check no error is raise when V has float32 dtype (#11171).
         V = np.var(X, axis=0, ddof=1)
         Y_test2 = pdist(X, 'seuclidean', V=V)
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_random_nonC(self):
         # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
-        eps = 1e-05
+        eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
         Y_test2 = pdist(X, 'test_seuclidean')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_iris(self):
-        eps = 1e-05
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
         Y_test1 = pdist(X, 'seuclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_iris_float32(self):
         # Tests pdist(X, 'seuclidean') on the Iris data set (float32).
-        eps = 1e-05
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-seuclidean-iris']
         Y_test1 = pdist(X, 'seuclidean')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_seuclidean_iris_nonC(self):
         # Test pdist(X, 'test_seuclidean') [the non-C implementation] on the
         # Iris data set.
-        eps = 1e-05
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
         Y_test2 = pdist(X, 'test_seuclidean')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_cosine_random(self):
-        eps = 1e-08
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cosine']
         Y_test1 = wpdist(X, 'cosine')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_cosine_random_float32(self):
-        eps = 1e-08
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-cosine']
         Y_test1 = wpdist(X, 'cosine')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_cosine_random_nonC(self):
         # Test pdist(X, 'test_cosine') [the non-C implementation]
-        eps = 1e-08
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cosine']
         Y_test2 = wpdist(X, 'test_cosine')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_cosine_iris(self):
-        eps = 1e-08
+        eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
         Y_test1 = wpdist(X, 'cosine')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, atol=eps)
 
     @pytest.mark.slow
     def test_pdist_cosine_iris_float32(self):
-        eps = 1e-07
+        eps = 1e-05
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cosine-iris']
         Y_test1 = wpdist(X, 'cosine')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, atol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_cosine_iris_nonC(self):
-        eps = 1e-08
+        eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
         Y_test2 = wpdist(X, 'test_cosine')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, atol=eps)
 
     def test_pdist_cosine_bounds(self):
         # Test adapted from @joernhees's example at gh-5208: case where
@@ -867,25 +857,25 @@ class TestPdist:
                 msg='cosine distance should be non-negative')
 
     def test_pdist_cityblock_random(self):
-        eps = 1e-06
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cityblock']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_cityblock_random_float32(self):
-        eps = 1e-06
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-cityblock']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_cityblock_random_nonC(self):
-        eps = 1e-06
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cityblock']
         Y_test2 = wpdist_no_const(X, 'test_cityblock')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_cityblock_iris(self):
@@ -893,15 +883,15 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_cityblock_iris_float32(self):
-        eps = 1e-06
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cityblock-iris']
         Y_test1 = wpdist_no_const(X, 'cityblock')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_cityblock_iris_nonC(self):
@@ -911,52 +901,52 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
         Y_test2 = wpdist_no_const(X, 'test_cityblock')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_correlation_random(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-correlation']
         Y_test1 = wpdist(X, 'correlation')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_correlation_random_float32(self):
-        eps = 1e-07
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-correlation']
         Y_test1 = wpdist(X, 'correlation')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_correlation_random_nonC(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-correlation']
         Y_test2 = wpdist(X, 'test_correlation')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_correlation_iris(self):
-        eps = 1e-08
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test1 = wpdist(X, 'correlation')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_float32(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = np.float32(eo['pdist-correlation-iris'])
         Y_test1 = wpdist(X, 'correlation')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
-        eps = 1e-08
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
     def test_pdist_minkowski_random_p(self, p):
@@ -964,76 +954,76 @@ class TestPdist:
         X = eo['pdist-double-inp']
         Y1 = wpdist_no_const(X, 'minkowski', p=p)
         Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
-        _assert_within_tol(Y1, Y2, atol=0, rtol=eps)
+        assert_allclose(Y1, Y2, atol=0, rtol=eps)
 
     def test_pdist_minkowski_random(self):
-        eps = 1e-05
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-minkowski-3.2']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_minkowski_random_float32(self):
-        eps = 1e-05
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-minkowski-3.2']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_minkowski_random_nonC(self):
-        eps = 1e-05
+        eps = 1e-7
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-minkowski-3.2']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_float32(self):
-        eps = 1e-06
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_nonC(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_float32(self):
-        eps = 1e-06
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_nonC(self):
-        eps = 1e-07
+        eps = 1e-7
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=5.8)
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_mahalanobis(self):
         # 1-dimensional observations
@@ -1053,114 +1043,114 @@ class TestPdist:
                       wpdist, [[0, 1], [2, 3]], metric='mahalanobis')
 
     def test_pdist_hamming_random(self):
-        eps = 1e-07
+        eps = 1e-15
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-hamming']
         Y_test1 = wpdist(X, 'hamming')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_hamming_random_float32(self):
-        eps = 1e-07
+        eps = 1e-15
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test1 = wpdist(X, 'hamming')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_hamming_random_nonC(self):
-        eps = 1e-07
+        eps = 1e-15
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-hamming']
         Y_test2 = wpdist(X, 'test_hamming')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_dhamming_random(self):
-        eps = 1e-07
+        eps = 1e-15
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test1 = wpdist(X, 'hamming')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_dhamming_random_float32(self):
-        eps = 1e-07
+        eps = 1e-15
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test1 = wpdist(X, 'hamming')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_dhamming_random_nonC(self):
-        eps = 1e-07
+        eps = 1e-15
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test2 = wpdist(X, 'test_hamming')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_jaccard_random(self):
-        eps = 1e-08
+        eps = 1e-8
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-jaccard']
         Y_test1 = wpdist(X, 'jaccard')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_jaccard_random_float32(self):
-        eps = 1e-08
+        eps = 1e-8
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test1 = wpdist(X, 'jaccard')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_jaccard_random_nonC(self):
-        eps = 1e-08
+        eps = 1e-8
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-jaccard']
         Y_test2 = wpdist(X, 'test_jaccard')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_djaccard_random(self):
-        eps = 1e-08
+        eps = 1e-8
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test1 = wpdist(X, 'jaccard')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_djaccard_random_float32(self):
-        eps = 1e-08
+        eps = 1e-8
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test1 = wpdist(X, 'jaccard')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_djaccard_allzeros(self):
-        eps = 1e-08
+        eps = 1e-15
         Y = pdist(np.zeros((5, 3)), 'jaccard')
-        _assert_within_tol(np.zeros(10), Y, eps)
+        assert_allclose(np.zeros(10), Y, rtol=eps)
 
     def test_pdist_djaccard_random_nonC(self):
-        eps = 1e-08
+        eps = 1e-8
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test2 = wpdist(X, 'test_jaccard')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_jensenshannon_random(self):
-        eps = 1e-08
+        eps = 1e-11
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-jensenshannon']
         Y_test1 = pdist(X, 'jensenshannon')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_jensenshannon_random_float32(self):
-        eps = 1e-07
+        eps = 1e-8
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-jensenshannon']
         Y_test1 = pdist(X, 'jensenshannon')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_jensenshannon_random_nonC(self):
-        eps = 1e-08
+        eps = 1e-11
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-jensenshannon']
         Y_test2 = pdist(X, 'test_jensenshannon')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_jensenshannon_iris(self):
         if _is_32bit():
@@ -1172,68 +1162,68 @@ class TestPdist:
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, atol=eps)
 
     def test_pdist_jensenshannon_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, atol=eps, verbose=verbose > 2)
 
     def test_pdist_jensenshannon_iris_nonC(self):
-        eps = 5e-12
+        eps = 5e-5
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test2 = pdist(X, 'test_jensenshannon')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_djaccard_allzeros_nonC(self):
-        eps = 1e-08
+        eps = 1e-15
         Y = pdist(np.zeros((5, 3)), 'test_jaccard')
-        _assert_within_tol(np.zeros(10), Y, eps)
+        assert_allclose(np.zeros(10), Y, rtol=eps)
 
     def test_pdist_chebyshev_random(self):
-        eps = 1e-08
+        eps = 1e-8
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-chebyshev']
         Y_test1 = pdist(X, 'chebyshev')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_chebyshev_random_float32(self):
-        eps = 1e-07
+        eps = 1e-7
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-chebyshev']
         Y_test1 = pdist(X, 'chebyshev')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_chebyshev_random_nonC(self):
-        eps = 1e-08
+        eps = 1e-8
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-chebyshev']
         Y_test2 = pdist(X, 'test_chebyshev')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_chebyshev_iris(self):
-        eps = 1e-15
+        eps = 1e-14
         X = eo['iris']
         Y_right = eo['pdist-chebyshev-iris']
         Y_test1 = pdist(X, 'chebyshev')
-        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_allclose(Y_test1, Y_right, rtol=eps)
 
     def test_pdist_chebyshev_iris_float32(self):
-        eps = 1e-06
+        eps = 1e-5
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-chebyshev-iris']
         Y_test1 = pdist(X, 'chebyshev')
-        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_chebyshev_iris_nonC(self):
-        eps = 1e-15
+        eps = 1e-14
         X = eo['iris']
         Y_right = eo['pdist-chebyshev-iris']
         Y_test2 = pdist(X, 'test_chebyshev')
-        _assert_within_tol(Y_test2, Y_right, eps)
+        assert_allclose(Y_test2, Y_right, rtol=eps)
 
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
@@ -1374,10 +1364,10 @@ class TestPdist:
         D = eo['iris']
         if verbose > 2:
             print(D.shape, D.dtype)
-        eps = 1e-10
+        eps = 1e-15
         y1 = wpdist_no_const(D, "canberra")
         y2 = wpdist_no_const(D, "test_canberra")
-        _assert_within_tol(y1, y2, eps, verbose > 2)
+        assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_canberra_ticket_711(self):
         # Test pdist(X, 'canberra') to see if Canberra gives the right result
@@ -1385,7 +1375,7 @@ class TestPdist:
         eps = 1e-8
         pdist_y = wpdist_no_const(([3.3], [3.4]), "canberra")
         right_y = 0.01492537
-        _assert_within_tol(pdist_y, right_y, eps, verbose > 2)
+        assert_allclose(pdist_y, right_y, atol=eps, verbose=verbose > 2)
 
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
@@ -1416,8 +1406,8 @@ class TestPdist:
             assert_raises(e_cls, pdist, X, metric=eval(metric), **kwargs)
             assert_raises(e_cls, pdist, X, metric="test_" + metric, **kwargs)
         else:
-            _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
-            _assert_within_tol(y1, y3, rtol=eps, verbose_=verbose > 2)
+            assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
+            assert_allclose(y1, y3, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_calling_conventions(self):
         # Ensures that specifying the metric with a str or scipy function
@@ -1471,11 +1461,11 @@ class TestPdist:
                 else:
                     for new_type in test[1]:
                         y2 = pdist(new_type(X1), metric=metric)
-                        _assert_within_tol(y1, y2, eps, verbose > 2)
+                        assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
     def test_pdist_out(self):
         # Test that out parameter works properly
-        eps = 1e-07
+        eps = 1e-15
         X = eo['random-float32-data'][::5, ::2]
         out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
         for metric in _METRICS_NAMES:
@@ -1486,7 +1476,7 @@ class TestPdist:
             Y_right = pdist(X, metric, **kwargs)
             Y_test1 = pdist(X, metric, out=out1, **kwargs)
             # test that output is numerically equivalent
-            _assert_within_tol(Y_test1, Y_right, eps)
+            assert_allclose(Y_test1, Y_right, rtol=eps)
             # test that Y_test1 and out1 are the same object
             assert_(Y_test1 is out1)
             # test for incorrect shape
@@ -1502,7 +1492,7 @@ class TestPdist:
     def test_striding(self):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
-        eps = 1e-07
+        eps = 1e-15
         X = eo['random-float32-data'][::5, ::2]
         X_copy = X.copy()
 
@@ -1517,7 +1507,7 @@ class TestPdist:
             Y1 = pdist(X, metric, **kwargs)
             Y2 = pdist(X_copy, metric, **kwargs)
             # test that output is numerically equivalent
-            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
 class TestSomeDistanceFunctions:
 

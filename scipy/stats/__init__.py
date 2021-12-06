@@ -301,6 +301,7 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   permutation_test
    tukey_hsd
 
 .. autosummary::
@@ -450,6 +451,7 @@ Warnings / Errors used in :mod:`scipy.stats`
 """
 
 from ._stats_py import *
+from ._variation import variation
 from .distributions import *
 from ._morestats import *
 from ._binomtest import binomtest

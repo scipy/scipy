@@ -21,6 +21,7 @@ For continuous distributions
    NumericalInverseHermite
    NumericalInversePolynomial
    TransformedDensityRejection
+   SimpleRatioUniforms
 
 For discrete distributions
 --------------------------
@@ -45,5 +46,6 @@ from ._unuran.unuran_wrapper import (  # noqa: F401
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
+    SimpleRatioUniforms,
     UNURANError
 )

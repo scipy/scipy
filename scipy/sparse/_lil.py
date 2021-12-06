@@ -12,8 +12,7 @@ import numpy as np
 from ._base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       get_index_dtype, check_shape, check_reshape_kwargs,
-                       asmatrix)
+                       get_index_dtype, check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
@@ -116,12 +115,11 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             # assume A is dense
             try:
-                A = asmatrix(arg1)
+                A = self._ascontainer(arg1)
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
             else:
-                from ._csr import csr_matrix
-                A = csr_matrix(A, dtype=dtype).tolil()
+                A = self._csr_container(A, dtype=dtype).tolil()
 
                 self._shape = check_shape(A.shape)
                 self.dtype = A.dtype
@@ -184,7 +182,7 @@ class lil_matrix(spmatrix, IndexMixin):
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
         """
-        new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
+        new = self._lil_container((1, self.shape[1]), dtype=self.dtype)
         new.rows[0] = self.rows[i]
         new.data[0] = self.data[i]
         return new
@@ -197,7 +195,7 @@ class lil_matrix(spmatrix, IndexMixin):
             i += M
         if i < 0 or i >= M:
             raise IndexError('row index out of bounds')
-        new = lil_matrix((1, N), dtype=self.dtype)
+        new = self._lil_container((1, N), dtype=self.dtype)
         new.rows[0] = self.rows[i][:]
         new.data[0] = self.data[i][:]
         return new
@@ -232,6 +230,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
+        row = row.squeeze()
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_intXslice(self, row, col):
@@ -260,7 +259,7 @@ class lil_matrix(spmatrix, IndexMixin):
     def _get_arrayXarray(self, row, col):
         # inner indexing
         i, j = map(np.atleast_2d, _prepare_index_for_memoryview(row, col))
-        new = lil_matrix(i.shape, dtype=self.dtype)
+        new = self._lil_container(i.shape, dtype=self.dtype)
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
@@ -286,7 +285,7 @@ class lil_matrix(spmatrix, IndexMixin):
         j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
         col_range = range(j_start, j_stop, j_stride)
         nj = len(col_range)
-        new = lil_matrix((len(rows), nj), dtype=self.dtype)
+        new = self._lil_container((len(rows), nj), dtype=self.dtype)
 
         _csparsetools.lil_get_row_ranges(self.shape[0], self.shape[1],
                                          self.rows, self.data,
@@ -311,7 +310,7 @@ class lil_matrix(spmatrix, IndexMixin):
         if (x.shape == self.shape and
                 isinstance(row, slice) and row == slice(None) and
                 isinstance(col, slice) and col == slice(None)):
-            x = lil_matrix(x, dtype=self.dtype)
+            x = self._lil_container(x, dtype=self.dtype)
             self.rows = x.rows
             self.data = x.data
             return
@@ -335,7 +334,7 @@ class lil_matrix(spmatrix, IndexMixin):
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix
-            new = lil_matrix(self.shape, dtype=self.dtype)
+            new = self._lil_container(self.shape, dtype=self.dtype)
         else:
             res_dtype = upcast_scalar(self.dtype, other)
 
@@ -358,7 +357,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
     def copy(self):
         M, N = self.shape
-        new = lil_matrix(self.shape, dtype=self.dtype)
+        new = self._lil_container(self.shape, dtype=self.dtype)
         # This is ~14x faster than calling deepcopy() on rows and data.
         _csparsetools.lil_get_row_ranges(M, N, self.rows, self.data,
                                          new.rows, new.data, range(M),
@@ -378,7 +377,7 @@ class lil_matrix(spmatrix, IndexMixin):
             else:
                 return self
 
-        new = lil_matrix(shape, dtype=self.dtype)
+        new = self._lil_container(shape, dtype=self.dtype)
 
         if order == 'C':
             ncols = self.shape[1]
@@ -447,11 +446,9 @@ class lil_matrix(spmatrix, IndexMixin):
     tolil.__doc__ = spmatrix.tolil.__doc__
 
     def tocsr(self, copy=False):
-        from ._csr import csr_matrix
-
         M, N = self.shape
         if M == 0 or N == 0:
-            return csr_matrix((M, N), dtype=self.dtype)
+            return self._csr_container((M, N), dtype=self.dtype)
 
         # construct indptr array
         if M*N <= np.iinfo(np.int32).max:
@@ -478,7 +475,7 @@ class lil_matrix(spmatrix, IndexMixin):
         _csparsetools.lil_flatten_to_array(self.data, data)
 
         # init csr matrix
-        return csr_matrix((data, indices, indptr), shape=self.shape)
+        return self._csr_container((data, indices, indptr), shape=self.shape)
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
@@ -547,4 +544,5 @@ def isspmatrix_lil(x):
     >>> isspmatrix_lil(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, lil_matrix)
+    from ._arrays import lil_array
+    return isinstance(x, lil_matrix) or isinstance(x, lil_array)

@@ -969,6 +969,191 @@ cdef class TransformedDensityRejection(Method):
         return np.asarray(out).reshape(oshape)[()]
 
 
+cdef class SimpleRatioUniforms(Method):
+    r"""
+    SimpleRatioUniforms(dist, *, mode=None, pdf_area=1, domain=None, cdf_at_mode=None, random_state=None)
+
+    Simple Ratio-of-Uniforms (SROU) Method.
+
+    SROU is based on the ratio-of-uniforms method that uses universal inequalities for
+    constructing a (universal) bounding rectangle. It works for T-concave distributions
+    with ``T(x) = -1/sqrt(x)``. The main advantage of the method is a fast setup. This
+    can be beneficial if one repeatedly needs to generate small to moderate samples of
+    a distribution with different shape parameters. In such a situation, the setup step of
+    `NumericalInverseHermite` or `NumericalInversePolynomial` will lead to poor performance.
+
+    Parameters
+    ----------
+    dist : object
+        An instance of a class with ``pdf`` method.
+
+        * ``pdf``: PDF of the distribution. The signature of the PDF is
+          expected to be: ``def pdf(self, x: float) -> float``. i.e.
+          the PDF should accept a Python float and
+          return a Python float. It doesn't need to integrate to 1 i.e.
+          the PDF doesn't need to be normalized. If not normalized, `pdf_area`
+          should be set to the area under the PDF.
+
+    mode : float, optional
+        (Exact) Mode of the distribution. When the mode is ``None``, a slow
+        numerical routine is used to approximate it. Default is ``None``.
+    pdf_area : float, optional
+        Area under the PDF. Optionally, an upper bound to the area under
+        the PDF can be passed at the cost of increased rejection constant.
+        Default is 1.
+    domain : list or tuple of length 2, optional
+        The support of the distribution.
+        Default is ``None``. When ``None``:
+
+        * If a ``support`` method is provided by the distribution object
+          `dist`, it is used to set the domain of the distribution.
+        * Otherwise the support is assumed to be :math:`(-\infty, \infty)`.
+
+    cdf_at_mode : float, optional
+        CDF at the mode. It can be given to increase the performance of the
+        algorithm. The rejection constant is halfed when CDF at mode is given.
+        Default is ``None``.
+    random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+        A NumPy random number generator or seed for the underlying NumPy random
+        number generator used to generate the stream of uniform random numbers.
+        If `random_state` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    References
+    ----------
+    .. [1] UNU.RAN reference manual, Section 5.3.16,
+           "SROU - Simple Ratio-of-Uniforms method",
+           http://statmath.wu.ac.at/software/unuran/doc/unuran.html#SROU
+    .. [2] Leydold, Josef. "A simple universal generator for continuous and
+           discrete univariate T-concave distributions." ACM Transactions on
+           Mathematical Software (TOMS) 27.1 (2001): 66-82
+    .. [3] Leydold, Josef. "Short universal generators via generalized ratio-of-uniforms
+           method." Mathematics of Computation 72.243 (2003): 1453-1471
+
+    Examples
+    --------
+    >>> from scipy.stats.sampling import SimpleRatioUniforms
+
+    Suppose we have the normal distribution:
+
+    >>> class StdNorm:
+    ...     def pdf(self, x):
+    ...         return np.exp(-0.5 * x**2)
+
+    Notice that the PDF doesn't integrate to 1. We can either pass the exact
+    area under the PDF during initialization of the generator or an upper
+    bound to the exact area under the PDF. Also, it is recommended to pass
+    the mode of the distribution to speed up the setup:
+
+    >>> urng = np.random.default_rng()
+    >>> dist = StdNorm()
+    >>> rng = SimpleRatioUniforms(dist, mode=0,
+    ...                           pdf_area=np.sqrt(2*np.pi),
+    ...                           random_state=urng)
+
+    Now, we can use the `rvs` method to generate samples from the distribution:
+
+    >>> rvs = rng.rvs(10)
+
+    If the CDF at mode is avaialble, it can be set to improve the performace of `rvs`:
+
+    >>> from scipy.stats import norm
+    >>> rng = SimpleRatioUniforms(dist, mode=0,
+    ...                           pdf_area=np.sqrt(2*np.pi),
+    ...                           cdf_at_mode=norm.cdf(0),
+    ...                           random_state=urng)
+    >>> rvs = rng.rvs(1000)
+
+    We can check that the samples are from the given distribution by visualizing
+    its histogram:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, 1000)
+    >>> fx = 1/np.sqrt(2*np.pi) * dist.pdf(x)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, fx, 'r-', lw=2, label='true distribution')
+    >>> ax.hist(rvs, bins=10, density=True, alpha=0.8, label='random variates')
+    >>> ax.set_xlabel('x')
+    >>> ax.set_ylabel('PDF(x)')
+    >>> ax.set_title('Simple Ratio-of-Uniforms Samples')
+    >>> ax.legend()
+    >>> plt.show()
+    """
+
+    def __cinit__(self,
+                  dist,
+                  *,
+                  mode=None,
+                  pdf_area=1,
+                  domain=None,
+                  cdf_at_mode=None,
+                  random_state=None):
+        (domain, pdf_area) = self._validate_args(dist, domain, pdf_area)
+
+        # save all the arguments for pickling support
+        self._kwargs = {
+            'dist': dist,
+            'mode': mode,
+            'pdf_area': pdf_area,
+            'domain': domain,
+            'cdf_at_mode': cdf_at_mode,
+            'random_state': random_state
+        }
+
+        cdef:
+            unur_distr *distr
+            unur_par *par
+            unur_gen *rng
+
+        self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
+        def _callback_wrapper(x, name):
+            return self.callbacks[name](x)
+        self._callback_wrapper = _callback_wrapper
+        self._messages = MessageStream()
+        _lock.acquire()
+        try:
+            unur_set_stream(self._messages.handle)
+
+            self.distr = unur_distr_cont_new()
+            if self.distr == NULL:
+                raise UNURANError(self._messages.get())
+            _pack_distr(self.distr, self.callbacks)
+
+            if mode is not None:
+                self._check_errorcode(unur_distr_cont_set_mode(self.distr, mode))
+
+            if domain is not None:
+                self._check_errorcode(unur_distr_cont_set_domain(self.distr, domain[0],
+                                                                 domain[1]))
+            self._check_errorcode(unur_distr_cont_set_pdfarea(self.distr, pdf_area))
+
+            self.par = unur_srou_new(self.distr)
+            if self.par == NULL:
+                raise UNURANError(self._messages.get())
+
+            if cdf_at_mode is not None:
+                self._check_errorcode(unur_srou_set_cdfatmode(self.par, cdf_at_mode))
+                # Always use squeeze when CDF at mode is given to improve performance
+                self._check_errorcode(unur_srou_set_usesqueeze(self.par, True))
+
+            self._set_rng(random_state)
+        finally:
+            _lock.release()
+
+    cdef object _validate_args(self, dist, domain, pdf_area):
+        # validate args
+        domain = _validate_domain(domain, dist)
+        if pdf_area < 0:
+            raise ValueError("`pdf_area` must be > 0")
+        return domain, pdf_area
+
+
 UError = namedtuple('UError', ['max_error', 'mean_absolute_error'])
 
 

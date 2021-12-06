@@ -5,14 +5,10 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-import itertools
-from copy import deepcopy
 import numpy as np
 from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
-                            rosen_hess_prod, BFGS)
-from scipy.optimize._differentiable_functions import FD_METHODS
-import pytest
+                            rosen_hess_prod)
 
 
 class Accumulator:

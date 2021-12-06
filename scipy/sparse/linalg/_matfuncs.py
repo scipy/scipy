@@ -33,19 +33,19 @@ def inv(A):
 
     Parameters
     ----------
-    A : (M,M) ndarray or sparse matrix
+    A : (M, M) sparse matrix
         square matrix to be inverted
 
     Returns
     -------
-    Ainv : (M,M) ndarray or sparse matrix
+    Ainv : (M, M) sparse matrix
         inverse of `A`
 
     Notes
     -----
     This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
-    scipy.linalg.inv.
+    `scipy.linalg.inv`.
 
     Examples
     --------
@@ -66,10 +66,11 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
-    #check input
+    # Check input
     if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
         raise TypeError('Input must be a sparse matrix')
 
+    # Use sparse direct solver to solve "AX = I" accurately
     I = _ident_like(A)
     Ainv = spsolve(A, I)
     return Ainv
@@ -92,7 +93,7 @@ def _onenorm_matrix_power_nnm(A, p):
         The 1-norm of the matrix power p of A.
 
     """
-    # check input
+    # Check input
     if int(p) != p or p < 0:
         raise ValueError('expected non-negative integer p')
     p = int(p)

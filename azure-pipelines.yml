@@ -291,6 +291,7 @@ stages:
         pytest-env
         pytest-timeout
         pytest-xdist==1.34.0
+        threadpoolctl
       displayName: 'Install dependencies'
     # DLL resolution mechanics were changed in
     # Python 3.8: https://bugs.python.org/issue36085

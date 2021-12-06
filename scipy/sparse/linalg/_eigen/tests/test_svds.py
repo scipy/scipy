@@ -222,7 +222,13 @@ class SVDSCommonTests:
         # smallest eigenvalues are returned
         rng = np.random.default_rng(0)
         A = rng.random((10, 10))
-        res = svds(A, k=k, which=which, solver=self.solver, random_state=0)
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                res = svds(A, k=k, which=which, solver=self.solver,
+                           random_state=0)
+        else:
+            res = svds(A, k=k, which=which, solver=self.solver,
+                       random_state=0)
         _check_svds(A, k, *res, which=which, atol=8e-10)
 
     # loop instead of parametrize for simplicity
@@ -246,13 +252,19 @@ class SVDSCommonTests:
         A = csc_matrix(A)
 
         def err(tol):
-            _, s2, _ = svds(A, k=k, v0=np.ones(n), solver=self.solver, tol=tol)
+            if self.solver == 'lobpcg' and tol == 1e-4:
+                with pytest.warns(UserWarning, match="Exited at iteration"):
+                    _, s2, _ = svds(A, k=k, v0=np.ones(n),
+                                    solver=self.solver, tol=tol)
+            else:
+                _, s2, _ = svds(A, k=k, v0=np.ones(n),
+                                solver=self.solver, tol=tol)
             return np.linalg.norm((s2 - s[k-1::-1])/s[k-1::-1])
 
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
-                      'arpack': [5e-15, 1e-10, 1e-10],
+                      'arpack': [2e-15, 1e-10, 1e-10],
                       'lobpcg': [1e-11, 1e-3, 10]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
@@ -374,7 +386,8 @@ class SVDSCommonTests:
         elif self.solver == 'lobpcg':
             message = "Not equal to tolerance"
             with pytest.raises(AssertionError, match=message):
-                u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
+                with pytest.warns(UserWarning, match="Exited at iteration"):
+                    u2, s2, vh2 = svds(A, k, maxiter=1, solver=self.solver)
                 assert_allclose(np.abs(u2), np.abs(u))
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
@@ -397,28 +410,53 @@ class SVDSCommonTests:
         respect_u = True if self.solver == 'propack' else M <= N
         respect_vh = True if self.solver == 'propack' else M > N
 
-        if rsv is False:
-            s2 = svds(A, k, return_singular_vectors=rsv,
-                      solver=self.solver, random_state=rng)
-            assert_allclose(s2, s)
-        elif rsv == 'u' and respect_u:
-            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver, random_state=rng)
-            assert_allclose(np.abs(u2), np.abs(u))
-            assert_allclose(s2, s)
-            assert vh2 is None
-        elif rsv == 'vh' and respect_vh:
-            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver, random_state=rng)
-            assert u2 is None
-            assert_allclose(s2, s)
-            assert_allclose(np.abs(vh2), np.abs(vh))
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                if rsv is False:
+                    s2 = svds(A, k, return_singular_vectors=rsv,
+                              solver=self.solver, random_state=rng)
+                    assert_allclose(s2, s)
+                elif rsv == 'u' and respect_u:
+                    u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                       solver=self.solver, random_state=rng)
+                    assert_allclose(np.abs(u2), np.abs(u))
+                    assert_allclose(s2, s)
+                    assert vh2 is None
+                elif rsv == 'vh' and respect_vh:
+                    u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                       solver=self.solver, random_state=rng)
+                    assert u2 is None
+                    assert_allclose(s2, s)
+                    assert_allclose(np.abs(vh2), np.abs(vh))
+                else:
+                    u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                       solver=self.solver, random_state=rng)
+                    assert_allclose(np.abs(u2), np.abs(u))
+                    assert_allclose(s2, s)
+                    assert_allclose(np.abs(vh2), np.abs(vh))
         else:
-            u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                               solver=self.solver, random_state=rng)
-            assert_allclose(np.abs(u2), np.abs(u))
-            assert_allclose(s2, s)
-            assert_allclose(np.abs(vh2), np.abs(vh))
+            if rsv is False:
+                s2 = svds(A, k, return_singular_vectors=rsv,
+                          solver=self.solver, random_state=rng)
+                assert_allclose(s2, s)
+            elif rsv == 'u' and respect_u:
+                u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                   solver=self.solver, random_state=rng)
+                assert_allclose(np.abs(u2), np.abs(u))
+                assert_allclose(s2, s)
+                assert vh2 is None
+            elif rsv == 'vh' and respect_vh:
+                u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                   solver=self.solver, random_state=rng)
+                assert u2 is None
+                assert_allclose(s2, s)
+                assert_allclose(np.abs(vh2), np.abs(vh))
+            else:
+                u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
+                                   solver=self.solver, random_state=rng)
+                assert_allclose(np.abs(u2), np.abs(u))
+                assert_allclose(s2, s)
+                assert_allclose(np.abs(vh2), np.abs(vh))
 
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
@@ -450,8 +488,16 @@ class SVDSCommonTests:
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
             pytest.skip("ARPACK has additional restriction for complex dtype")
 
-        u, s, vh = svds(A2, k, solver=self.solver)
-        _check_svds(A, k, u, s, vh)
+        if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
+            pytest.skip('PROPACK complex-valued SVD methods not available '
+                        'for 32-bit builds')
+
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                u, s, vh = svds(A2, k, solver=self.solver)
+        else:
+            u, s, vh = svds(A2, k, solver=self.solver)
+        _check_svds(A, k, u, s, vh, atol=3e-10)
 
     def test_svd_linop(self):
         solver = self.solver
@@ -474,9 +520,13 @@ class SVDSCommonTests:
                 v0 = np.ones(n)
             else:
                 v0 = np.ones(min(A.shape))
-
-            U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver))
-            U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver))
+            if solver == 'lobpcg':
+                with pytest.warns(UserWarning, match="The problem size"):
+                    U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver))
+            else:
+                U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver))
+                U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
@@ -490,10 +540,17 @@ class SVDSCommonTests:
 
             # TODO: arpack crashes when v0=v0, which="SM"
             kwargs = {'v0': v0} if solver not in {None, 'arpack'} else {}
-            U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
-                                       **kwargs))
-            U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
-                                       **kwargs))
+            if self.solver == 'lobpcg':
+                with pytest.warns(UserWarning, match="The problem size"):
+                    U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
+                                               **kwargs))
+                    U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
+                                               **kwargs))
+            else:
+                U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
+                                           **kwargs))
+                U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
+                                           **kwargs))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
@@ -504,14 +561,25 @@ class SVDSCommonTests:
             if k < min(n, m) - 1:
                 # Complex input and explicit which="LM".
                 for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
+                    if self.solver == 'propack' and np.intp(0).itemsize < 8:
+                        pytest.skip('PROPACK complex-valued SVD methods '
+                                    'not available for 32-bit builds')
                     rng = np.random.RandomState(1648)
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)
 
-                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                               solver=solver))
-                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                               solver=solver))
+                    if self.solver == 'lobpcg':
+                        with pytest.warns(UserWarning,
+                                          match="The problem size"):
+                            U1, s1, VH1 = reorder(svds(A, k, which="LM",
+                                                       solver=solver))
+                            U2, s2, VH2 = reorder(svds(L, k, which="LM",
+                                                       solver=solver))
+                    else:
+                        U1, s1, VH1 = reorder(svds(A, k, which="LM",
+                                                   solver=solver))
+                        U2, s2, VH2 = reorder(svds(L, k, which="LM",
+                                                   solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
@@ -531,7 +599,11 @@ class SVDSCommonTests:
         n, m = shape
         A = np.ones((n, m), dtype=dtype)
 
-        U, s, VH = svds(A, k, solver=self.solver)
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                U, s, VH = svds(A, k, solver=self.solver)
+        else:
+            U, s, VH = svds(A, k, solver=self.solver)
 
         # Check some generic properties of svd.
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
@@ -556,7 +628,11 @@ class SVDSCommonTests:
                 and k == min(A.shape) - 1):
             pytest.skip("ARPACK has additional restriction for complex dtype")
 
-        U, s, VH = svds(A, k, solver=self.solver)
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                U, s, VH = svds(A, k, solver=self.solver)
+        else:
+            U, s, VH = svds(A, k, solver=self.solver)
 
         # Check some generic properties of svd.
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
