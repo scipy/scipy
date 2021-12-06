@@ -1,6 +1,6 @@
-==========================
+=========================
 SciPy 1.8.0 Release Notes
-==========================
+=========================
 
 .. note:: Scipy 1.8.0 is not released yet!
 
@@ -43,7 +43,7 @@ New features
 ============================
 
 `scipy.fft` improvements
-============================
+========================
 
 Added an ``orthogonalize=None`` parameter to the real transforms in `scipy.fft`
 which controls whether the modified definition of DCT/DST is used without
@@ -72,7 +72,7 @@ A new method ``from_cubic`` in ``BSpline`` class allows to convert a
 `scipy.linalg` improvements
 ===========================
 
-`scipy.linalg` gained three new public array structure investigation functions. 
+`scipy.linalg` gained three new public array structure investigation functions.
 `scipy.linalg.bandwidth` returns information about the bandedness of an array
 and can be used to test for triangular structure discovery, while
 `scipy.linalg.issymmetric` and `scipy.linalg.ishermitian` test the array for
@@ -86,7 +86,7 @@ exact and approximate symmetric/Hermitian structure.
 `scipy.optimize` improvements
 =============================
 
-`scipy.optimize.check_grad` introduces two new optional keyword only arguments, 
+`scipy.optimize.check_grad` introduces two new optional keyword only arguments,
 ``direction`` and ``seed``. ``direction`` can take values, ``'all'`` (default),
 in which case all the one hot direction vectors will be used for verifying
 the input analytical gradient function and ``'random'``, in which case a
@@ -174,7 +174,7 @@ logistic sigmoid function. The function is formulated to provide accurate
 results for large positive and negative inputs, so it avoids the problems
 that would occur in the naive implementation ``log(expit(x))``.
 
-A suite of five new functions for elliptic integrals: 
+A suite of five new functions for elliptic integrals:
 ``scipy.special.ellipr{c,d,f,g,j}``. These are the
 `Carlson symmetric elliptic integrals <https://dlmf.nist.gov/19.16>`_, which
 have computational advantages over the classical Legendre integrals. Previous
@@ -249,19 +249,37 @@ undesirable return of a masked array from the function in some cases.
 Deprecated features
 *******************
 
-Namespaces that were private but happened to miss underscores have been
-deprecated. These include:
+Clear split between public and private API
+==========================================
 
-- `scipy.signal.spline`
-- `scipy.ndimage.filters`
-- `scipy.ndimage.fourier`
-- `scipy.ndimage.measurements`
-- `scipy.ndimage.morphology`
-- `scipy.ndimage.interpolation`
+SciPy has always documented what its public API consisted of in
+:ref:`its API reference docs <scipy-api>`,
+however there never was a clear split between public and
+private namespaces in the code base. In this release, all namespaces that were
+private but happened to miss underscores in their names have been deprecated.
+These include (as examples, there are many more):
 
-All functions in these namespaces are accessible from their respective public
-namespace (e.g. `scipy.signal`). See
-`Issue 14360 <https://github.com/scipy/scipy/issues/14360>`_ for more details.
+- ``scipy.signal.spline``
+- ``scipy.ndimage.filters``
+- ``scipy.ndimage.fourier``
+- ``scipy.ndimage.measurements``
+- ``scipy.ndimage.morphology``
+- ``scipy.ndimage.interpolation``
+- ``scipy.sparse.linalg.solve``
+- ``scipy.sparse.linalg.eigen``
+- ``scipy.sparse.linalg.isolve``
+
+All functions and other objects in these namespaces that were meant to be
+public are accessible from their respective public namespace (e.g.
+`scipy.signal`). The design principle is that any public object must be
+accessible from a single namespace only; there are a few exceptions, mostly for
+historical reasons (e.g., ``stats`` and ``stats.distributions`` overlap).
+For other libraries aiming to provide a SciPy-compatible API, it is now
+unambiguous what namespace structure to follow.  See
+`gh-14360 <https://github.com/scipy/scipy/issues/14360>`_ for more details.
+
+Other deprecations
+==================
 
 ``NumericalInverseHermite`` has been deprecated from `scipy.stats` and moved
 to the `scipy.stats.sampling` submodule. It now uses the C implementation of
