@@ -7,6 +7,8 @@
 A Dual Annealing global optimization algorithm
 """
 
+import warnings
+
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize
@@ -432,10 +434,10 @@ class LocalSearchWrapper:
 
 
 def dual_annealing(func, bounds, args=(), maxiter=1000,
-                   local_search_options={}, initial_temp=5230.,
+                   minimizer_kwargs=None, initial_temp=5230.,
                    restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
                    maxfun=1e7, seed=None, no_local_search=False,
-                   callback=None, x0=None):
+                   callback=None, x0=None, local_search_options=None):
     """
     Find the global minimum of a function using Dual Annealing.
 
@@ -454,7 +456,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         objective function.
     maxiter : int, optional
         The maximum number of global search iterations. Default value is 1000.
-    local_search_options : dict, optional
+    minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the local minimizer
         (`minimize`). Some important options could be:
         ``method`` for the minimizer method to use and ``args`` for
@@ -512,6 +514,9 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
         Coordinates of a single N-D starting point.
+    local_search_options : dict, optional
+        Backwards compatible flag for `minimizer_kwargs`, only one of these
+        should be supplied.
 
     Returns
     -------
@@ -631,9 +636,22 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
-    # Wrapper fot the minimizer
+    # Wrapper for the minimizer
+    if local_search_options and minimizer_kwargs:
+        raise ValueError("dual_annealing only allows either 'minimizer_kwargs' (preferred) or "
+                         "'local_search_options' (deprecated); not both!")
+    if local_search_options is not None:
+        warnings.warn("dual_annealing argument 'local_search_options' is "
+                      "deprecated in favor of 'minimizer_kwargs'",
+                      category=DeprecationWarning, stacklevel=2)
+        minimizer_kwargs = local_search_options
+
+    # minimizer_kwargs has to be a dict, not None
+    minimizer_kwargs = minimizer_kwargs or {}
+
     minimizer_wrapper = LocalSearchWrapper(
-        bounds, func_wrapper, **local_search_options)
+        bounds, func_wrapper, **minimizer_kwargs)
+
     # Initialization of random Generator for reproducible runs if seed provided
     rand_state = check_random_state(seed)
     # Initialization of the energy state
