@@ -2,6 +2,7 @@
 from itertools import product
 
 import numpy as np
+import pytest
 from numpy.testing import (assert_allclose, assert_, assert_equal,
                            suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
@@ -10,6 +11,20 @@ import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
         _expm_multiply_interval)
+
+
+def estimated(func):
+    """If trace is estimated, it should warn.
+
+    We warn that estimation of trace might impact performance.
+    All result have to be correct nevertheless!
+
+    """
+    def wrapped(*args, **kwds):
+        with pytest.warns(UserWarning,
+                          match="Trace of LinearOperator not available"):
+            return func(*args, **kwds)
+    return wrapped
 
 
 def less_than_or_close(a, b):
@@ -66,7 +81,7 @@ class TestExpmActionSimple:
             observed = expm_multiply(A, B)
             expected = np.dot(scipy.linalg.expm(A), B)
             assert_allclose(observed, expected)
-            observed = expm_multiply(aslinearoperator(A), B)
+            observed = estimated(expm_multiply)(aslinearoperator(A), B)
             assert_allclose(observed, expected)
             traceA = np.trace(A)
             observed = expm_multiply(aslinearoperator(A), B, traceA=traceA)
@@ -82,7 +97,7 @@ class TestExpmActionSimple:
             observed = expm_multiply(A, v)
             expected = np.dot(scipy.linalg.expm(A), v)
             assert_allclose(observed, expected)
-            observed = expm_multiply(aslinearoperator(A), v)
+            observed = estimated(expm_multiply)(aslinearoperator(A), v)
             assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply(self):
@@ -97,7 +112,9 @@ class TestExpmActionSimple:
                 observed = _expm_multiply_simple(A, B, t=t)
                 expected = np.dot(scipy.linalg.expm(t*A), B)
                 assert_allclose(observed, expected)
-                observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+                observed = estimated(_expm_multiply_simple)(
+                    aslinearoperator(A), B, t=t
+                )
                 assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
@@ -110,7 +127,9 @@ class TestExpmActionSimple:
         observed = _expm_multiply_simple(A, B, t=t)
         expected = scipy.linalg.expm(t*A).dot(B)
         assert_allclose(observed, expected)
-        observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+        observed = estimated(_expm_multiply_simple)(
+            aslinearoperator(A), B, t=t
+        )
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
@@ -129,7 +148,7 @@ class TestExpmActionSimple:
                            "spsolve is more efficient when sparse b is in the CSC matrix format")
                 expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
-            observed = expm_multiply(aslinearoperator(A), B)
+            observed = estimated(expm_multiply)(aslinearoperator(A), B)
             assert_allclose(observed, expected)
 
     def test_complex(self):
@@ -142,7 +161,7 @@ class TestExpmActionSimple:
             1j * np.exp(1j) + 1j * (1j*np.cos(1) - np.sin(1)),
             1j * np.exp(1j)], dtype=complex)
         assert_allclose(observed, expected)
-        observed = expm_multiply(aslinearoperator(A), B)
+        observed = estimated(expm_multiply)(aslinearoperator(A), B)
         assert_allclose(observed, expected)
 
 
@@ -184,7 +203,8 @@ class TestExpmActionInterval:
             for solution, t in zip(X, samples):
                 assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
             # test for linear operator with unknown trace -> estimate trace
-            Xguess = expm_multiply(aslinearoperator(A), v, num=num, **interval)
+            Xguess = estimated(expm_multiply)(aslinearoperator(A), v,
+                                              num=num, **interval)
             # test for linear operator with given trace
             Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
                                    traceA=np.trace(A))
@@ -208,7 +228,8 @@ class TestExpmActionInterval:
             X = expm_multiply(A, B, num=num, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
-            X = expm_multiply(aslinearoperator(A), B, num=num, **interval)
+            X = estimated(expm_multiply)(aslinearoperator(A), B, num=num,
+                                         **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
 

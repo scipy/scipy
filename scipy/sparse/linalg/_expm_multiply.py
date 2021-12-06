@@ -1,4 +1,5 @@
 """Compute the action of the matrix exponential."""
+from warnings import warn
 
 import numpy as np
 
@@ -129,12 +130,19 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     traceA : scalar, optional
         Trace of `A`. If not given the trace is estimated for linear operators,
         or calculated exactly for sparse matrices. It is used to precondition
-        `A`, thus an approximate trace is acceptable
+        `A`, thus an approximate trace is acceptable.
+        For linear operators, `traceA` should be provided to ensure performance
+        as the estimation is not reliable.
 
     Returns
     -------
     expm_A_B : ndarray
          The result of the action :math:`e^{t_k A} B`.
+
+    Warns
+    -----
+    UserWarning
+        If `A` is a linear operator and ``traceA==None`` (default).
 
     Notes
     -----
@@ -247,6 +255,9 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     u_d = 2**-53
     tol = u_d
     if traceA is None:  # TODO: we need a good number for m3
+        if is_linear_operator:
+            warn("Trace of LinearOperator not available, it will be estimated."
+                 " Provide `traceA` to ensure performance.")
         traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
     A = A - mu * ident
@@ -640,6 +651,9 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     u_d = 2**-53
     tol = u_d
     if traceA is None:  # TODO: we need a good number for m3
+        if is_linear_operator:
+            warn("Trace of LinearOperator not available, it will be estimated."
+                 " Provide `traceA` to ensure performance.")
         traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
 
