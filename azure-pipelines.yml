@@ -198,7 +198,7 @@ stages:
   - job: Windows
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'windows-latest'
+      vmImage: 'windows-2019'
     variables:
       # OPENBLAS64_ variable has same value
       # but only needed for ILP64 build below
