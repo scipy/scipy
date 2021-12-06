@@ -158,3 +158,4 @@ else:
 
     # This makes "from scipy import fft" return scipy.fft, not np.fft
     del fft
+    from . import fft
