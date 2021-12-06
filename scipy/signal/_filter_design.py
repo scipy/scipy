@@ -691,14 +691,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         gd[singular] = 0
         warnings.warn(
             "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular]))
+            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
             "The filter's denominator is extremely small at frequencies [{0}], \
             around which a singularity may be present".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular]))
+            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            stacklevel=2
         )
 
     w = w*fs/(2*pi)
