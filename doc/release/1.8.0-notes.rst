@@ -245,6 +245,9 @@ Improved performance of `scipy.stats.argus.rvs`.
 Added the parameter ``keepdims`` to `scipy.stats.variation` and prevent the
 undesirable return of a masked array from the function in some cases.
 
+``permutation_test`` performs an exact or randomized permutation test of a
+given statistic on provided data.
+
 *******************
 Deprecated features
 *******************
