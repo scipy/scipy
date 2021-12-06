@@ -161,11 +161,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         else:
             X = np.random.RandomState(52).randn(min(A.shape), k)
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol, maxiter=maxiter,
+        eigvals, eigvec = lobpcg(XH_X, X, tol=tol**2, maxiter=maxiter,
                                  largest=largest)
 
     elif solver == 'arpack' or solver is None:
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol, maxiter=maxiter,
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol**2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
     else:
