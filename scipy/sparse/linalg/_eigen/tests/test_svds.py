@@ -431,9 +431,11 @@ class SVDSCommonTests:
                 else:
                     u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                        solver=self.solver, random_state=rng)
-                    assert_allclose(np.abs(u2), np.abs(u))
+                    if u2 is not None:
+                        assert_allclose(np.abs(u2), np.abs(u))
                     assert_allclose(s2, s)
-                    assert_allclose(np.abs(vh2), np.abs(vh))
+                    if vh2 is not None:
+                        assert_allclose(np.abs(vh2), np.abs(vh))
         else:
             if rsv is False:
                 s2 = svds(A, k, return_singular_vectors=rsv,
@@ -454,9 +456,11 @@ class SVDSCommonTests:
             else:
                 u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
                                    solver=self.solver, random_state=rng)
-                assert_allclose(np.abs(u2), np.abs(u))
+                if u2 is not None:
+                    assert_allclose(np.abs(u2), np.abs(u))
                 assert_allclose(s2, s)
-                assert_allclose(np.abs(vh2), np.abs(vh))
+                if vh2 is not None:
+                    assert_allclose(np.abs(vh2), np.abs(vh))
 
     # --- Test Basic Functionality ---
     # Tests the accuracy of each solver for real and complex matrices provided
@@ -611,7 +615,9 @@ class SVDSCommonTests:
         # Check that the largest singular value is near sqrt(n*m)
         # and the other singular values have been forced to zero.
         assert_allclose(np.max(s), np.sqrt(n*m))
-        assert_array_equal(sorted(s)[:-1], 0)
+        s = sorted(s)[:-1] + 1
+        z = np.ones_like(s)
+        assert_array_equal(s, z)
 
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
