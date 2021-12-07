@@ -247,11 +247,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         X_matmat = A.matmat
         XH_dot = A.rmatvec
         XH_mat = A.rmatmat
+        transpose = False
     else:
         X_dot = A.rmatvec
         X_matmat = A.rmatmat
         XH_dot = A.matvec
         XH_mat = A.matmat
+        transpose = True
 
         dtype = getattr(A, 'dtype', None)
         if dtype is None:
