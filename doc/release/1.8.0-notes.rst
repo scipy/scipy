@@ -26,21 +26,20 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- A sparse array API has been added to facilitate the ecosystem-wide
-  transition away from the matrix API.
+- A sparse array API has been added for early testing and feedback; users
+  may expect backwards compatibility changes in future releases
 - The sparse SVD library PROPACK is now vendored with SciPy, and an interface
   is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``.
 - A new `scipy.stats.sampling` submodule that leverages the ``UNU.RAN`` C
   library to sample from arbitrary univariate non-uniform continuous and
   discrete distributions
+- All namespaces that were private but happened to miss underscores in
+  their names have been deprecated.
 
 
 ************
 New features
 ************
-
-`scipy.cluster` improvements
-============================
 
 `scipy.fft` improvements
 ========================
@@ -77,11 +76,6 @@ A new method ``from_cubic`` in ``BSpline`` class allows to convert a
 and can be used to test for triangular structure discovery, while
 `scipy.linalg.issymmetric` and `scipy.linalg.ishermitian` test the array for
 exact and approximate symmetric/Hermitian structure.
-
-
-`scipy.ndimage` improvements
-============================
-
 
 `scipy.optimize` improvements
 =============================
@@ -120,9 +114,9 @@ Added the Chirp Z-transform and Zoom FFT available as `scipy.signal.CZT` and
 `scipy.sparse` improvements
 ===========================
 
-An array API has been added to facilitate the ecosystem-wide transition away
-from the matrix API. We recommend that new work uses these array objects:
-``bsr_array``, ``coo_array``, etc. Please refer to the `scipy.sparse`
+An array API has been added for early testing and feedback. This work is
+ongoing, and users may expect backwards compatibility changes in
+future releases. Please refer to the `scipy.sparse`
 docstring for more information.
 
 ``maximum_flow`` introduces optional keyword only argument, ``method``
@@ -134,37 +128,32 @@ algorithms in
 `this comment <https://github.com/scipy/scipy/pull/14358#issue-684212523>`_.
 
 Parameters ``atol``, ``btol`` now default to 1e-6 in
-`scipy.sparse.linalg.isolve.lsmr` to match with default values in
-`scipy.sparse.linalg.isolve.lsqr`.
+`scipy.sparse.linalg.lsmr` to match with default values in
+`scipy.sparse.linalg.lsqr`.
 
 Add the Transpose-Free Quasi-Minimal Residual algorithm (TFQMR) for general
-nonsingular non-Hermitian linear systems in `scipy.sparse.linalg.isolve.tfqmr`.
+nonsingular non-Hermitian linear systems in `scipy.sparse.linalg.tfqmr`.
 
 The sparse SVD library PROPACK is now vendored with SciPy, and an interface is
 exposed via `scipy.sparse.svds` with ``solver='PROPACK'``. For some problems,
 this may be faster and/or more accurate than the default, ARPACK.
 
-``sparse.linalg`` now has a nonzero initial guess option, which may be
-specified as ``x0 = 'Mb'``.
-
-Some performance and behavior improvements for
-`scipy.sparse.csgraph.maximum_flow`.
+``sparse.linalg`` iterative solvers now have a nonzero initial guess option,
+which may be specified as ``x0 = 'Mb'``.
 
 The ``trace`` method has been added for sparse matrices.
-
 
 `scipy.spatial` improvements
 ============================
 
 `scipy.spatial.transform.Rotation` now supports item assignment and has a new
-``concatenate`` method. `scipy.spatial.distance.minkowski` now also supports
-``0<p<1``.
+``concatenate`` method.
 
 Add `scipy.spatial.distance.kulczynski1` in favour of
 `scipy.spatial.distance.kulsinski` which will be deprecated in the next
 release.
 
-We now allow `p>0` for the Minkowski distance.
+`scipy.spatial.distance.minkowski` now also supports ``0<p<1``.
 
 `scipy.special` improvements
 ============================
@@ -220,7 +209,7 @@ Add `scipy.stats.gzscore` to calculate the geometrical z score.
 
 Random variate generators to sample from arbitrary univariate non-uniform
 continuous and discrete distributions have been added to the new
-scipy.stats.sampling submodule. Implementations of a C library
+`scipy.stats.sampling` submodule. Implementations of a C library
 `UNU.RAN <http://statmath.wu.ac.at/software/unuran/>`_ are used for
 performance. The generators added are:
 
@@ -240,7 +229,7 @@ several ``stats`` functions.
 
 Added the Tukey-Kramer test as `scipy.stats.tukey_hsd`.
 
-Improved performance of `scipy.stats.argus.rvs`.
+Improved performance of `scipy.stats.argus` ``rvs`` method.
 
 Added the parameter ``keepdims`` to `scipy.stats.variation` and prevent the
 undesirable return of a masked array from the function in some cases.
@@ -286,7 +275,7 @@ Other deprecations
 
 ``NumericalInverseHermite`` has been deprecated from `scipy.stats` and moved
 to the `scipy.stats.sampling` submodule. It now uses the C implementation of
-the UNU.RAN library so the result of methods like ``ppf`` may wary slightly.
+the UNU.RAN library so the result of methods like ``ppf`` may vary slightly.
 Parameter ``tol`` has been deprecated and renamed to ``u_resolution``. The
 parameter ``max_intervals`` has also been deprecated and will be removed in a
 future release of SciPy.
@@ -321,19 +310,17 @@ Authors
 *******
 
 * @endolith
-* [Sara Fridovich-Keil] +
 * adamadanandy +
 * akeemlh +
 * Anton Akhmerov
 * Marvin Albert +
 * alegresor +
-* Anirudh +
 * Andrew Annex +
 * Pantelis Antonoudiou +
 * Ross Barnowski +
-* baumgarc
 * Christoph Baumgarten
 * Stephen Becker +
+* Nickolai Belakovski
 * Peter Bell
 * berberto +
 * Georgii Bocharov +
@@ -344,23 +331,21 @@ Authors
 * Dennis Collaris +
 * David Cottrell +
 * cruyffturn +
-* czgdp1807 +
 * da-woods +
 * Anirudh Dagar
-* derb12 +
 * Tiger Du +
 * Thomas Duvernay
 * Dani El-Ayyass +
 * Castedo Ellerman +
+* Donnie Erb +
 * Andreas Esders-Kopecky +
-* Evan +
 * Livio F +
 * Isuru Fernando
 * Evelyn Fitzgerald +
-* Fred-Renner +
+* Sara Fridovich-Keil +
 * Mark E Fuller +
-* Mark E. Fuller +
 * Ralf Gommers
+* Kevin Richard Green +
 * Nitish Gupta +
 * h-vetinari
 * Matt Haberland
@@ -372,9 +357,10 @@ Authors
 * Itrimel +
 * Jan-Hendrik Müller +
 * Jebby993 +
+* Evan W Jones +
 * Nathaniel Jones +
 * Jeffrey Kelling +
-* kevinrichardgreen +
+* Malik Idrees Hasan Khan +
 * Sergey B Kirpichev
 * Kadatatlu Kishore +
 * Andrew Knyazev
@@ -394,7 +380,6 @@ Authors
 * Cong Ma
 * Lorenzo Maffioli +
 * majiang +
-* MalikIdreesHasa +
 * Brian McFee +
 * Nicholas McKibben
 * John Speed Meyers +
@@ -403,7 +388,6 @@ Authors
 * Harsh Mishra +
 * Boaz Mohar +
 * naelsondouglas +
-* nbelakovski
 * Andrew Nelson
 * Nico Schlömer
 * Thomas Nowotny +
@@ -413,16 +397,15 @@ Authors
 * ParticularMiner +
 * Dima Pasechnik
 * Tirth Patel
-* Patol75 +
 * Matti Picus
 * Ilhan Polat
 * Adrian Price-Whelan +
-* qbarthelemy +
+* Quentin Barthélemy +
 * Sundar R +
 * Judah Rand +
 * Tyler Reddy
 * Renal-Of-Loon +
-* reshamas +
+* Frederic Renner +
 * Pamphile Roy
 * Bharath Saiguhan +
 * Atsushi Sakai
@@ -433,7 +416,6 @@ Authors
 * Namami Shanker
 * Walter Simson +
 * Gagandeep Singh +
-* Smit-create +
 * Leo C. Stein +
 * Albert Steppi
 * Kai Striega
@@ -451,17 +433,15 @@ Authors
 * Arthur Volant
 * Samuel Wallan
 * Stefan van der Walt
-* warren +
 * Warren Weckesser
 * Josh Wilson
 * Haoyin Xu +
 * Rory Yorke
 * Egor Zemlyanoy
 * Gang Zhao +
-* zhaog6 +
 * 赵丰 (Zhao Feng) +
 
-A total of 140 people contributed to this release.
+A total of 131 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
