@@ -68,10 +68,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.8.0-notes.rst'
+RELEASE = 'doc/release/1.9.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.7.0'
+LOG_START = 'v1.8.0'
 LOG_END = 'master'
 
 
