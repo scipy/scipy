@@ -272,17 +272,17 @@ class multivariate_normal_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, mean=None, cov=1, allow_singular=False)``
+    pdf(x, mean=None, cov=1, allow_singular=False)
         Probability density function.
-    ``logpdf(x, mean=None, cov=1, allow_singular=False)``
+    logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    ``cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Cumulative distribution function.
-    ``logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
-    ``rvs(mean=None, cov=1, size=1, random_state=None)``
+    rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    ``entropy()``
+    entropy()
         Compute the differential entropy of the multivariate normal.
 
     Parameters
@@ -826,11 +826,11 @@ class matrix_normal_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(X, mean=None, rowcov=1, colcov=1)``
+    pdf(X, mean=None, rowcov=1, colcov=1)
         Probability density function.
-    ``logpdf(X, mean=None, rowcov=1, colcov=1)``
+    logpdf(X, mean=None, rowcov=1, colcov=1)
         Log of the probability density function.
-    ``rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)``
+    rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
 
     Parameters
@@ -1302,17 +1302,17 @@ class dirichlet_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, alpha)``
+    pdf(x, alpha)
         Probability density function.
-    ``logpdf(x, alpha)``
+    logpdf(x, alpha)
         Log of the probability density function.
-    ``rvs(alpha, size=1, random_state=None)``
+    rvs(alpha, size=1, random_state=None)
         Draw random samples from a Dirichlet distribution.
-    ``mean(alpha)``
+    mean(alpha)
         The mean of the Dirichlet distribution
-    ``var(alpha)``
+    var(alpha)
         The variance of the Dirichlet distribution
-    ``entropy(alpha)``
+    entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
 
     Parameters
@@ -1629,13 +1629,13 @@ class wishart_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, df, scale)``
+    pdf(x, df, scale)
         Probability density function.
-    ``logpdf(x, df, scale)``
+    logpdf(x, df, scale)
         Log of the probability density function.
-    ``rvs(df, scale, size=1, random_state=None)``
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from a Wishart distribution.
-    ``entropy()``
+    entropy()
         Compute the differential entropy of the Wishart distribution.
 
     Parameters
@@ -2367,11 +2367,11 @@ class invwishart_gen(wishart_gen):
 
     Methods
     -------
-    ``pdf(x, df, scale)``
+    pdf(x, df, scale)
         Probability density function.
-    ``logpdf(x, df, scale)``
+    logpdf(x, df, scale)
         Log of the probability density function.
-    ``rvs(df, scale, size=1, random_state=None)``
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
 
     Parameters
@@ -2885,15 +2885,15 @@ class multinomial_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pmf(x, n, p)``
+    pmf(x, n, p)
         Probability mass function.
-    ``logpmf(x, n, p)``
+    logpmf(x, n, p)
         Log of the probability mass function.
-    ``rvs(n, p, size=1, random_state=None)``
+    rvs(n, p, size=1, random_state=None)
         Draw random samples from a multinomial distribution.
-    ``entropy(n, p)``
+    entropy(n, p)
         Compute the entropy of the multinomial distribution.
-    ``cov(n, p)``
+    cov(n, p)
         Compute the covariance matrix of the multinomial distribution.
 
     Parameters
@@ -3278,7 +3278,7 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from SO(N).
 
     Parameters
@@ -3432,7 +3432,7 @@ class ortho_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from O(N).
 
     Parameters
@@ -3534,7 +3534,7 @@ class random_correlation_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(eigs=None, random_state=None)``
+    rvs(eigs=None, random_state=None)
         Draw random correlation matrices, all with eigenvalues eigs.
 
     Parameters
@@ -3723,7 +3723,7 @@ class unitary_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from U(N).
 
     Parameters
@@ -3852,11 +3852,11 @@ class multivariate_t_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+    pdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Probability density function.
-    ``logpdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+    logpdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Log of the probability density function.
-    ``rvs(loc=None, shape=1, df=1, size=1, random_state=None)``
+    rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
 
     Parameters
@@ -4260,18 +4260,18 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pmf(x, m, n)``
+    pmf(x, m, n)
         Probability mass function.
-    ``logpmf(x, m, n)``
+    logpmf(x, m, n)
         Log of the probability mass function.
-    ``rvs(m, n, size=1, random_state=None)``
+    rvs(m, n, size=1, random_state=None)``
         Draw random samples from a multivariate hypergeometric
         distribution.
-    ``mean(m, n)``
+    mean(m, n)
         Mean of the multivariate hypergeometric distribution.
-    ``var(m, n)``
+    var(m, n)
         Variance of the multivariate hypergeometric distribution.
-    ``cov(m, n)``
+    cov(m, n)
         Compute the covariance matrix of the multivariate
         hypergeometric distribution.
 
