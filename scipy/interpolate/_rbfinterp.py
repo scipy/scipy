@@ -417,7 +417,7 @@ class RBFInterpolator:
                 x, self.y, self.kernel, self.epsilon, self.powers, self._shift,
                 self._scale, self._coeffs
                 )
-            out = np.dot(vec, self._coeff)
+            out = np.dot(vec, self._coeffs)
 
         else:
             # Get the indices of the k nearest observation points to each
