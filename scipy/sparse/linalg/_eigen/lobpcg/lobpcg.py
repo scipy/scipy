@@ -244,7 +244,7 @@ def lobpcg(
     >>> from scipy.sparse import spdiags, issparse
     >>> from scipy.sparse.linalg import lobpcg, LinearOperator
 
-    The marix size:
+    The square matrix size:
 
     >>> n = 100
     >>> vals = np.arange(1, n + 1)
