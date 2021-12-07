@@ -3214,6 +3214,7 @@ class TestLevyStable:
         assert_allclose(
             [alpha, beta, delta, gamma],
             [alpha_obs, beta_obs, delta_obs, gamma_obs],
+            rtol=0.01,
         )
 
     @pytest.mark.parametrize(
