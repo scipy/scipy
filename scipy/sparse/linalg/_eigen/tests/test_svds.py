@@ -615,7 +615,7 @@ class SVDSCommonTests:
         # Check that the largest singular value is near sqrt(n*m)
         # and the other singular values have been forced to zero.
         assert_allclose(np.max(s), np.sqrt(n*m))
-        s = sorted(s)[:-1] + 1
+        s = np.array(sorted(s)[:-1]) + 1
         z = np.ones_like(s)
         assert_array_equal(s, z)
 
