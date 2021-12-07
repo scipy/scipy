@@ -5,7 +5,6 @@ import warnings
 import re
 import sys
 import pickle
-import platform
 from pathlib import Path
 import os
 import json
