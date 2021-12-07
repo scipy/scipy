@@ -413,10 +413,11 @@ class RBFInterpolator:
                 )
 
         if self.neighbors is None:
-            out = _evaluate(
+            vec = _evaluate(
                 x, self.y, self.kernel, self.epsilon, self.powers, self._shift,
                 self._scale, self._coeffs
                 )
+            out = np.dot(vec, self._coeff)
 
         else:
             # Get the indices of the k nearest observation points to each
@@ -451,11 +452,12 @@ class RBFInterpolator:
                 shift, scale, coeffs = _build_and_solve_system(
                     ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
                     )
-
-                out[xidx] = _evaluate(
+                vec = _evaluate(
                     xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
                     scale, coeffs
                     )
+                out[xidx] = np.dot(vec, self.coeffs)
+
 
         out = out.view(self.d_dtype)
         out = out.reshape((nx,) + self.d_shape)
