@@ -1917,6 +1917,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
 
     if cns:
         # If a score is nan, then the output should be nan
+        # (also if nan_policy is "omit", because it only applies to `a`)
         score = ma.masked_where(np.isnan(score), score)
 
     if cna:
