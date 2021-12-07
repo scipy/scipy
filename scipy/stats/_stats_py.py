@@ -1842,10 +1842,10 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
           * 'mean': The average of the "weak" and "strict" scores, often used
             in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Specifies how to treat `nan` values in the input.
+        Specifies how to treat `nan` values in `a`.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
+          * 'propagate': returns nan (for each value in `score`).
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
