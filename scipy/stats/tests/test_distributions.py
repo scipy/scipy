@@ -3210,10 +3210,10 @@ class TestLevyStable:
             alpha, beta, loc=delta, scale=gamma, size=10000, random_state=1234
         )
         fit = stats.levy_stable._fitstart(data)
-        alpha_obs_S0, beta_obs_S0, delta_obs_S0, gamma_obs_S0 = fit
+        alpha_obs, beta_obs, delta_obs, gamma_obs = fit
         assert_allclose(
             [alpha, beta, delta, gamma],
-            [alpha_obs_S0, beta_obs_S0, delta_obs_S0, gamma_obs_S0]
+            [alpha_obs, beta_obs, delta_obs, gamma_obs],
         )
 
     @pytest.mark.parametrize(
