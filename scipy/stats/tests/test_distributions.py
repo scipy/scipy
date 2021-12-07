@@ -3192,6 +3192,31 @@ class TestLevyStable:
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
 
+    @pytest.mark.xfail(reason="Bug. Possibly fixed by #14476.")
+    @pytest.mark.parametrize(
+        "alpha,beta,delta,gamma",
+        [
+            (1.5, 0.4, 2, 3),
+            (1.0, 0.4, 2, 3),
+        ]
+    )
+    @pytest.mark.parametrize(
+        "parametrization", ["S0", "S1"]
+    )
+    def test_fit_rvs(self, alpha, beta, delta, gamma, parametrization):
+        """Test that fit agrees with rvs for each parametrization."""
+        stats.levy_stable.parametrization = parametrization
+        data = stats.levy_stable.rvs(
+            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=1234
+        )
+        fit = stats.levy_stable._fitstart(data)
+        alpha_obs, beta_obs, delta_obs, gamma_obs = fit
+        assert_allclose(
+            [alpha, beta, delta, gamma],
+            [alpha_obs, beta_obs, delta_obs, gamma_obs],
+            rtol=0.01,
+        )
+
     @pytest.mark.parametrize(
         "pct_range,alpha_range,beta_range", [
             pytest.param(

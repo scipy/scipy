@@ -20,7 +20,8 @@ from ._levy_stable.levyst import Nolan
 # some being advantageous for numerical considerations and others
 # useful due to their location/scale awareness.
 #
-# Here we follow [NO] convention.
+# Here we follow [NO] convention (see the references in the docstring
+# for levy_stable_gen below).
 #
 # S0 / Z0 / x0 (aka Zoleterav's M)
 # S1 / Z1 / x1
@@ -187,7 +188,8 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return _norm_pdf(x0 / np.sqrt(2)) / np.sqrt(2)
     elif alpha == 0.5 and beta == 1.0:
         # levy
-        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        # since S(1/2, 1, gamma, delta; <x>) ==
+        # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
         if _x < 0:
             return 0
@@ -310,7 +312,8 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return _norm_cdf(x0 / np.sqrt(2))
     elif alpha == 0.5 and beta == 1.0:
         # levy
-        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        # since S(1/2, 1, gamma, delta; <x>) ==
+        # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
         if _x < 0:
             return 0
@@ -467,7 +470,9 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
 def _fitstart_S0(data):
     alpha, beta, delta1, gamma = _fitstart_S1(data)
 
-    # TODO: is this correct?
+    # Formulas for mapping parameters in S1 parameterization to
+    # those in S0 parameterization can be found in [NO]. Note that
+    # only delta changes.
     if alpha != 1:
         delta0 = delta1 + beta * gamma * np.tan(np.pi * alpha / 2.0)
     else:
@@ -667,22 +672,27 @@ class levy_stable_gen(rv_continuous):
     where :math:`-\infty < t < \infty`. This integral does not have a known
     closed form.
 
-    For evaluation of pdf we use either Nolan's piecewise approach using
-    Zolotarev :math:`M` parameterization with integration, direct numerical
-    integration of standard parameterization of characteristic function or FFT
-    of characteristic function.
+    Evaluation of the pdf uses Nolan's piecewise integration approach with the
+    Zolotarev :math:`M` parameterization by default. There is also the option
+    to use direct numerical integration of the standard parameterization of the
+    characteristic function or to evaluate by taking the FFT of the
+    characteristic function.
 
-    Switch parameterizations by setting ``levy_stable.parameterization``
-    to either 'S0' or 'S1'. The default is 'S1'.
+    The default method can changed by setting the class variable
+    ``levy_stable.pdf_default_method`` to one of 'piecewise' for Nolan's
+    approach, 'dni' for direct numerical integration, or 'fft-simpson' for the
+    FFT based approach. For the sake of backwards compatibility, the methods
+    'best' and 'zolotarev' are equivalent to 'piecewise' and the method
+    'quadrature' is equivalent to 'dni'.
 
-    The default method is 'piecewise' which uses Nolan's piecewise method. The
-    default method can be changed by setting ``levy_stable.pdf_default_method``
-    to either 'piecewise', 'dni' or 'fft-simpson'.
+    The parameterization can be changed  by setting the class variable
+    ``levy_stable.parameterization`` to either 'S0' or 'S1'.
+    The default is 'S1'.
 
     To improve performance of piecewise and direct numerical integration one
     can specify ``levy_stable.quad_eps`` (defaults to 1.2e-14). This is used
-    as the absolute and relative quadrature tolerances for direct numerical
-    integration and the relative quadrature tolerance for the piecewise method.
+    as both the absolute and relative quadrature tolerance for direct numerical
+    integration and as the relative quadrature tolerance for the piecewise method.
     One can also specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to
     0.005) for how close x is to zeta before it is considered the same as x
     [NO]. The exact check is
@@ -696,18 +706,19 @@ class levy_stable_gen(rv_continuous):
     calculated that sufficiently covers the input range).
 
     Further control over FFT calculation is available by setting
-    ``pdf_fft_interpolation_kind`` (defaults to 3) for spline order and
-    ``pdf_fft_interpolation_level`` for determine number of points for
-    Newton-Cote formula when approximating the characteristic function
+    ``pdf_fft_interpolation_degree`` (defaults to 3) for spline order and
+    ``pdf_fft_interpolation_level`` for determining the number of points to use
+    in the Newton-Cotes formula when approximating the characteristic function
     (considered experimental).
 
-    For evaluation of cdf we use Nolan's piecewise approach using Zolatarev
-    :math:`S_0` parameterization with integration or integral of the pdf FFT
-    interpolated spline. The settings affecting FFT calculation are the same as
-    for pdf calculation. The default cdf method can be changed by setting
-    ``levy_stable.cdf_default_method`` to either 'piecewise' or 'fft-simpson'.
-    For cdf calculations the Zolatarev method is superior in accuracy, so FFT
-    is disabled by default.
+    Evaluation of the cdf uses Nolan's piecewise integration approach with the
+    Zolatarev :math:`S_0` parameterization by default. There is also the option
+    to evaluate through integration of an interpolated spline of the pdf
+    calculated by means of the FFT method. The settings affecting FFT
+    calculation are the same as for pdf calculation. The default cdf method can
+    be changed by setting ``levy_stable.cdf_default_method`` to either
+    'piecewise' or 'fft-simpson'.  For cdf calculations the Zolatarev method is
+    superior in accuracy, so FFT is disabled by default.
 
     Fitting estimate uses quantile estimation method in [MC]. MLE estimation of
     parameters in fit method uses this quantile estimate initially. Note that
@@ -717,10 +728,10 @@ class levy_stable_gen(rv_continuous):
 
     Any non-missing value for the attribute
     ``levy_stable.pdf_fft_min_points_threshold`` will set
-    ``levy_stable.pdf_default_method`` to 'fft-simpson'.
+    ``levy_stable.pdf_default_method`` to 'fft-simpson' if a valid
+    default method is not otherwise set.
 
-    The pdf methods 'best' and 'zolotarev' are equivalent to 'piecewise'. The
-    pdf method 'quadrature' is equivalent to 'dni'.
+
 
     .. warning::
 
@@ -758,7 +769,7 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_grid_spacing = 0.001
     pdf_fft_n_points_two_power = None
     pdf_fft_interpolation_level = 3
-    pdf_fft_interpolation_kind = 3
+    pdf_fft_interpolation_degree = 3
 
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
@@ -870,7 +881,7 @@ class levy_stable_gen(rv_continuous):
         fft_grid_spacing = self.pdf_fft_grid_spacing
         fft_n_points_two_power = self.pdf_fft_n_points_two_power
         fft_interpolation_level = self.pdf_fft_interpolation_level
-        fft_interpolation_kind = self.pdf_fft_interpolation_kind
+        fft_interpolation_degree = self.pdf_fft_interpolation_degree
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -934,8 +945,8 @@ class levy_stable_gen(rv_continuous):
                     q=q,
                     level=fft_interpolation_level,
                 )
-                f = interpolate.interp1d(
-                    density_x, np.real(density), kind=fft_interpolation_kind
+                f = interpolate.InterpolatedUnivariateSpline(
+                    density_x, np.real(density), k=fft_interpolation_degree
                 )  # patch FFT to use cubic
                 data_out[data_mask] = f(_x)
 
@@ -1009,10 +1020,7 @@ class levy_stable_gen(rv_continuous):
         fft_grid_spacing = self.pdf_fft_grid_spacing
         fft_n_points_two_power = self.pdf_fft_n_points_two_power
         fft_interpolation_level = self.pdf_fft_interpolation_level
-        # TODO: CDF handling does not use fft_interpolation_kind.
-        #  This variable is assigned, but never used.
-        #  Is this intended?
-        # fft_interpolation_kind = self.pdf_fft_interpolation_kind
+        fft_interpolation_degree = self.pdf_fft_interpolation_degree
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -1062,7 +1070,7 @@ class levy_stable_gen(rv_continuous):
                     level=fft_interpolation_level,
                 )
                 f = interpolate.InterpolatedUnivariateSpline(
-                    density_x, np.real(density)
+                    density_x, np.real(density), k=fft_interpolation_degree
                 )
                 data_out[data_mask] = np.array(
                     [f.integral(self.a, x_1) for x_1 in _x]
