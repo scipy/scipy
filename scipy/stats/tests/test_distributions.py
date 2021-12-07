@@ -3192,7 +3192,7 @@ class TestLevyStable:
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
 
-    @pytest.mark.xfail(reason="Undetermined bug")
+    @pytest.mark.xfail(reason="Bug. Possibly fixed by #14476.")
     @pytest.mark.parametrize(
         "alpha,beta,delta,gamma",
         [
