@@ -729,7 +729,7 @@ Pull requests for 1.8.0
 * `#14644 <https://github.com/scipy/scipy/pull/14644>`__: DOC: stats: add UNU.RAN references in the tutorial
 * `#14649 <https://github.com/scipy/scipy/pull/14649>`__: DOC: clarify SciPy compatibility with Python and NumPy.
 * `#14655 <https://github.com/scipy/scipy/pull/14655>`__: MAINT: remove support for Python 3.7 (hence NumPy 1.16)
-* `#14656 <https://github.com/scipy/scipy/pull/14656>`__: MAINT: replacing assert_ with assert
+* `#14656 <https://github.com/scipy/scipy/pull/14656>`__: MAINT: replacing ``assert_`` with assert
 * `#14658 <https://github.com/scipy/scipy/pull/14658>`__: DOC: use conda-forge in Ubuntu quickstart
 * `#14660 <https://github.com/scipy/scipy/pull/14660>`__: MAINT: refactor "for ... in range(len(" statements
 * `#14663 <https://github.com/scipy/scipy/pull/14663>`__: MAINT: update leftover Python and NumPy version from pyproject.toml
